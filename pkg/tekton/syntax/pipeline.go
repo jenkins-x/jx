@@ -157,10 +157,10 @@ type Step struct {
 	// for this option, so translate the string value for that option to a number.
 	Options map[string]string `json:"options,omitempty"`
 
-	Loop Loop `json:"loop,omitempty"`
+	Loop *Loop `json:"loop,omitempty"`
 
 	// agent can be overridden on a step
-	Agent Agent `json:"agent,omitempty"`
+	Agent *Agent `json:"agent,omitempty"`
 
 	// Image alows the docker image for a step to be specified
 	Image string `json:"image,omitempty"`
@@ -372,7 +372,7 @@ func (s *Step) GetImage() string {
 	if s.Image != "" {
 		return s.Image
 	}
-	if !equality.Semantic.DeepEqual(s.Agent, Agent{}) && s.Agent.Image != "" {
+	if s.Agent != nil && s.Agent.Image != "" {
 		return s.Agent.Image
 	}
 
@@ -656,22 +656,22 @@ func validateStep(s Step) *apis.FieldError {
 		}
 	}
 
-	if s.Command == "" && s.Step == "" && equality.Semantic.DeepEqual(s.Loop, Loop{}) {
+	if s.Command == "" && s.Step == "" && s.Loop == nil {
 		return apis.ErrMissingOneOf("command", "step", "loop")
 	}
 
-	if moreThanOneAreTrue(s.Command != "", s.Step != "", !equality.Semantic.DeepEqual(s.Loop, Loop{})) {
+	if moreThanOneAreTrue(s.Command != "", s.Step != "", s.Loop != nil) {
 		return apis.ErrMultipleOneOf("command", "step", "loop")
 	}
 
-	if (s.Command != "" || !equality.Semantic.DeepEqual(s.Loop, Loop{})) && len(s.Options) != 0 {
+	if (s.Command != "" || s.Loop != nil) && len(s.Options) != 0 {
 		return &apis.FieldError{
 			Message: "Cannot set options for a command or a loop",
 			Paths:   []string{"options"},
 		}
 	}
 
-	if (s.Step != "" || !equality.Semantic.DeepEqual(s.Loop, Loop{})) && len(s.Arguments) != 0 {
+	if (s.Step != "" || s.Loop != nil) && len(s.Arguments) != 0 {
 		return &apis.FieldError{
 			Message: "Cannot set command-line arguments for a step or a loop",
 			Paths:   []string{"args"},
@@ -682,11 +682,14 @@ func validateStep(s Step) *apis.FieldError {
 		return err.ViaField("loop")
 	}
 
-	return validateAgent(s.Agent).ViaField("agent")
+	if s.Agent != nil {
+		return validateAgent(*s.Agent).ViaField("agent")
+	}
+	return nil
 }
 
-func validateLoop(l Loop) *apis.FieldError {
-	if !equality.Semantic.DeepEqual(l, Loop{}) {
+func validateLoop(l *Loop) *apis.FieldError {
+	if l != nil {
 		if l.Variable == "" {
 			return apis.ErrMissingField("variable")
 		}
@@ -1114,7 +1117,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	if parentContainer != nil {
-		merged, err := mergeContainers(parentContainer, stageContainer)
+		merged, err := MergeContainers(parentContainer, stageContainer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error merging stage and parent container overrides: %s", err)
 		}
@@ -1245,7 +1248,8 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
 }
 
-func mergeContainers(parentContainer, childContainer *corev1.Container) (*corev1.Container, error) {
+// MergeContainers combines parent and child container structs, with the child overriding the parent.
+func MergeContainers(parentContainer, childContainer *corev1.Container) (*corev1.Container, error) {
 	if parentContainer == nil {
 		return childContainer, nil
 	} else if childContainer == nil {
@@ -1336,7 +1340,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 				volumes[volume.Name] = volume
 			}
 			if !equality.Semantic.DeepEqual(c, &corev1.Container{}) {
-				merged, err := mergeContainers(&containers[0], c)
+				merged, err := MergeContainers(&containers[0], c)
 				if err != nil {
 					return nil, nil, stepCounter, errors.Wrapf(err, "Error merging pod template and parent container: %s", err)
 				}
@@ -1373,7 +1377,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 		c.Env = scopedEnv(toContainerEnvVars(step.Env), scopedEnv(env, c.Env))
 
 		steps = append(steps, *c)
-	} else if !equality.Semantic.DeepEqual(step.Loop, Loop{}) {
+	} else if step.Loop != nil {
 		for _, v := range step.Loop.Values {
 			loopEnv := scopedEnv([]corev1.EnvVar{{Name: step.Loop.Variable, Value: v}}, env)
 
@@ -1719,7 +1723,7 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container)
 	}
 
 	if parentContainer != nil {
-		merged, err := mergeContainers(parentContainer, childContainer)
+		merged, err := MergeContainers(parentContainer, childContainer)
 		if err != nil {
 			return tektonv1alpha1.TaskSpec{}, err
 		}

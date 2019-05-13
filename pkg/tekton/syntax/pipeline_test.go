@@ -1872,7 +1872,7 @@ func StagePost(condition syntax.PostCondition, ops ...PipelinePostOp) StageOp {
 
 func StepAgent(image string) StepOp {
 	return func(step *syntax.Step) {
-		step.Agent = syntax.Agent{
+		step.Agent = &syntax.Agent{
 			Image: image,
 		}
 	}
@@ -1916,13 +1916,13 @@ func StepDir(dir string) StepOp {
 
 func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
 	return func(step *syntax.Step) {
-		loop := syntax.Loop{
+		loop := &syntax.Loop{
 			Variable: variable,
 			Values:   values,
 		}
 
 		for _, op := range ops {
-			op(&loop)
+			op(loop)
 		}
 
 		step.Loop = loop
@@ -2153,7 +2153,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 						Steps: []syntax.Step{{
 							Command:   "echo",
 							Arguments: []string{"hello", "world"},
-							Agent: syntax.Agent{
+							Agent: &syntax.Agent{
 								Image: "some-other-image",
 							},
 						}},
@@ -2183,7 +2183,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 							{
 								Name: "Another stage",
 								Steps: []syntax.Step{{
-									Loop: syntax.Loop{
+									Loop: &syntax.Loop{
 										Variable: "SOME_VAR",
 										Values:   []string{"a", "b", "c"},
 										Steps: []syntax.Step{{

@@ -141,6 +141,22 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "master",
 			kind:         "release",
 		},
+		{
+			name:         "loop-in-buildpack-syntax",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "containeroptions-on-pipelineconfig",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
@@ -171,7 +187,9 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			assert.NoError(t, err)
 
 			projectConfig, projectConfigFile, err := config.LoadProjectConfig(caseDir)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
+			}
 
 			createTask := &cmd.StepCreateTaskOptions{
 				Pack:             tt.language,

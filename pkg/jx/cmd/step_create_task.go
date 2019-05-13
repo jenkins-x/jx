@@ -559,6 +559,14 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
 
+	if pipelineConfig.ContainerOptions != nil {
+		mergedContainer, err := syntax.MergeContainers(pipelineConfig.ContainerOptions, parsed.Options.ContainerOptions)
+		if err != nil {
+			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Could not merge containerOptions from parent")
+		}
+		parsed.Options.ContainerOptions = mergedContainer
+	}
+
 	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
 	if validateErr := parsed.Validate(ctx); validateErr != nil {
@@ -1102,6 +1110,10 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 		}
 
 		steps = append(steps, modifyStep)
+	} else if step.Loop != nil {
+		// Just copy in the loop step without altering it.
+		// TODO: We don't get magic around image resolution etc, but we avoid naming collisions that result otherwise.
+		steps = append(steps, *step)
 	}
 	for _, s := range step.Steps {
 		// TODO add child prefix?

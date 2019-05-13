@@ -4,8 +4,8 @@ pipelineConfig:
       value: BANANA
     - name: GIT_AUTHOR_NAME
       value: somebodyelse
-  pipelines:
-    release:
-      promote:
-        steps:
-          - sh: echo "FRUIT is ${FRUIT}"
+  containerOptions:
+    resources:
+      limits:
+        cpu: 0.1
+        memory: 64Mi
