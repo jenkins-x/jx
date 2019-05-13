@@ -114,11 +114,7 @@ pipelineConfig:
                 command: make
                 args: ['release-distro']
 
-              - name: update-docs
+              - name: update-downstream
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/update-website.sh
 
-              - name: update-clients
-                # Needs maven as openapi tools are written in Java!
-                image: gcr.io/jenkinsxio/builder-maven:0.1.448
-                command: ./jx/scripts/update-clients.sh

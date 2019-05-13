@@ -20,10 +20,6 @@ pipelineConfig:
                 value: /workspace/source
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy:80
-              - name: JAVA_OPTIONS
-                value: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms1G -Xmx4G
-              - name: MAVEN_OPTIONS
-                value: -Xmx3000m
             options:
               containerOptions:
                 resources:
@@ -45,13 +41,16 @@ pipelineConfig:
                 command: helm
                 args: ['init','--client-only']
 
+              - name: check
+                #image: docker.io/golang:1.11.5
+                # needs helm in the image for install_gitops_integration_test.go
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args: ['check']
+
               - name: build-binary
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
-                args: ['build']
-
-              - name: update-clients
-                image: gcr.io/jenkinsxio/builder-maven:0.1.448
-                command: sleep 3600
+                args: ['test-slow-integration']

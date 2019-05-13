@@ -5,9 +5,7 @@ for org_repo in "${ORG_REPOS[@]}"; do
   echo "Forked repo to $OUTDIR"
   VERSION="$(cat VERSION)"
   pushd $OUTDIR
-  echo "Running make all in $ORG_REPOS"
   make all
-  echo "make all complete in $ORG_REPOS"
   git add -N .
   git diff --exit-code
   if [ $? -ne 0 ]; then
