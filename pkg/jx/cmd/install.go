@@ -3,14 +3,16 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
+
+	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -25,10 +27,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -121,6 +123,7 @@ type InstallFlags struct {
 	StaticJenkins               bool
 	LongTermStorage             bool
 	LongTermStorageBucketName   string
+	TenantCluster               bool
 }
 
 // Secrets struct for secrets
@@ -252,6 +255,12 @@ var (
 		# If you know the cloud provider you can pass this as a CLI argument. E.g. for AWS
 		jx install --provider=aws
 `)
+	disalloedDomainCharacters = regexp.MustCompile("^(([a-zA-Z]{1})|" +
+		"([a-zA-Z]{1}[a-zA-Z]{1})|" +
+		"([a-zA-Z]{1}[0-9]{1})|" +
+		"([0-9]{1}[a-zA-Z]{1})|" +
+		"([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9])).([a-zA-Z]{2,6}|" +
+		"[a-zA-Z0-9-]{2,30}.[a-zA-Z]{2,3})$")
 )
 
 // NewCmdInstall creates a command object for the generic "install" action, which
@@ -355,6 +364,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvSetup, "no-gitops-env-setup", "", false, "When using GitOps to install the development environment this flag skips the post-install setup")
+	cmd.Flags().BoolVarP(&flags.TenantCluster, "tenant-cluster", "tc", false, "When setting up a letter/tenant cluster, this creates a tenant cluster")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().BoolVarP(&flags.RecreateVaultBucket, "vault-bucket-recreate", "", true, "If the vault bucket already exists delete it then create it empty")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
@@ -429,11 +439,20 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 
+	// check tenant flag combination
+	if flags.TenantCluster {
+		if options.Flags.Provider == cloud.GKE {
+			flags.ExternalDNS = true
+		} else if flags.TenantCluster && flags.Provider != cloud.GKE {
+			flags.TenantCluster = false
+			log.Warnf("TenantCluster mode is currently only supported on GKE")
+		}
+	}
+
 	// If we're using external-dns then remove the namespace subdomain from the URLTemplate
 	if flags.ExternalDNS {
 		flags.ExposeControllerURLTemplate = "{{.Service}}-{{.Namespace}}.{{.Domain}}"
 	}
-
 	return nil
 }
 
@@ -454,6 +473,13 @@ func (options *InstallOptions) Run() error {
 	err := options.checkFlags()
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
+	}
+
+	if options.Flags.TenantCluster {
+		err = options.createTenantCluster()
+		if err != nil {
+			return errors.Wrap(err, "while configuring the tenant cluster")
+		}
 	}
 
 	err = options.selectJenkinsInstallation()
@@ -2382,6 +2408,61 @@ func (options *InstallOptions) ensureGKEInstallValuesAreFilled() error {
 		}
 		options.installValues[kube.ClusterName] = clusterName
 	}
+	return nil
+}
+
+func (options *InstallOptions) createTenantCluster() error {
+
+	var err error
+	clusterName := options.installValues[kube.ClusterName]
+	projectID := options.installValues[kube.ProjectID]
+	if projectID == "" || clusterName == "" {
+		if kubeClient, ns, err := options.KubeClientAndDevNamespace(); err == nil {
+			if data, err := kube.ReadInstallValues(kubeClient, ns); err == nil && data != nil {
+				if projectID == "" {
+					projectID = data[kube.ProjectID]
+				}
+				if clusterName == "" {
+					clusterName = data[kube.ClusterName]
+				}
+			}
+		}
+	}
+	if projectID == "" {
+		projectID, err = options.GetGoogleProjectId()
+		if err != nil {
+			return errors.Wrap(err, "getting the GCP project ID")
+		}
+	}
+	if clusterName == "" {
+		clusterName, err = options.GetGKEClusterNameFromContext()
+		if err != nil {
+			return errors.Wrap(err, "gettting the GKE cluster name from current context")
+		}
+	}
+
+	// TODO: get domain value
+	var domain = fmt.Sprintf("%s.%s", clusterName, "jxaas.dev")
+	err = validateDomainName(domain)
+	if err != nil {
+		return errors.Wrap(err, "domain name failed validation")
+	}
+
+	// Checking whether dns api is enabled
+	err = gke.EnableAPIs(projectID, "dns")
+	if err != nil {
+		return errors.Wrap(err, "enabling the dns api")
+	}
+
+	// Create domain if it doesn't exist and return name servers list
+	nameServers, err := options.createTenantsSubDomainDNSZone(projectID, domain)
+	if err != nil {
+		return err
+	}
+
+	// TODO: return nameservers list
+	log.Infof("%s domain created with the following nameservers %v", domain, nameServers)
+	options.Flags.Domain = domain
 
 	return nil
 }
@@ -2407,6 +2488,36 @@ func (options *InstallOptions) doCreateBucket(bucketName string, bucketKind stri
 	}
 
 	return bucketURL, err
+}
+
+// createTenantsSubDomainDNSZone creates the tenants DNS zone if it doesn't exist
+// and returns the list of name servers for the given domain and project
+func (options *InstallOptions) createTenantsSubDomainDNSZone(projectID string, domain string) ([]string, error) {
+	var nameServers []string = []string{}
+	err := gke.CreateManagedZone(projectID, domain)
+	if err != nil {
+		return []string{}, err
+	}
+	nameServers, err = gke.GetManagedZoneNameServers(projectID, domain)
+	if err != nil {
+		return []string{}, err
+	}
+	return nameServers, nil
+}
+
+// validateDomainName checks for compliance in a supplied domain name
+func validateDomainName(domain string) error {
+	// Check whether the domain is greater than 3 and fewer than 63 characters in length
+	if len(domain) < 3 || len(domain) > 63 {
+		err := fmt.Errorf("domain name %v is less that 3 or greater than the maximum 63 characters", domain)
+		return err
+	}
+	// Ensure each part of the domain name only contains lower/upper case characters, numbers and dashes
+	if disalloedDomainCharacters.MatchString(domain) {
+		err := fmt.Errorf("domain name %v contains invalid characters.", domain)
+		return err
+	}
+	return nil
 }
 
 func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {

@@ -2,6 +2,7 @@ package gke
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,6 +34,136 @@ var (
 		"roles/storage.objectAdmin",
 		"roles/storage.objectCreator"}
 )
+
+// getManagedZoneName constructs and returns a managed zone name using the domain value
+func getManagedZoneName(domain string) string {
+
+	var managedZoneName string
+
+	if domain != "" {
+		managedZoneName = strings.Replace(domain, ".", "-", -1)
+		return fmt.Sprintf("%s-zone", managedZoneName)
+	}
+	return ""
+}
+
+// managedZoneExists checks for a given domain zone within the specified project
+func managedZoneExists(projectID string, domain string) (bool, error) {
+	args := []string{"dns",
+		"managed-zones",
+		fmt.Sprintf("--project=%s", projectID),
+		"list",
+		fmt.Sprintf("--filter=%s.", domain),
+		"--format=json",
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return true, errors.Wrap(err, "executing gcloud dns managed-zones list command ")
+	}
+
+	type managedZone struct {
+		Name string `json:"name"`
+	}
+
+	var managedZones []managedZone
+
+	err = yaml.Unmarshal([]byte(output), &managedZones)
+	if err != nil {
+		return true, errors.Wrap(err, "unmarshalling gcloud response")
+	}
+
+	if len(managedZones) > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// CreateManagedZone creates a managed zone for the given domain in the specified project
+func CreateManagedZone(projectID string, domain string) error {
+	zoneExists, err := managedZoneExists(projectID, domain)
+	if err != nil {
+		return errors.Wrap(err, "unable to determine whether managed zone exists")
+	}
+	if !zoneExists {
+		log.Infof("Managed Zone doesn't exist for %s domain, creating...\n", domain)
+		managedZoneName := getManagedZoneName(domain)
+		args := []string{"dns",
+			"managed-zones",
+			fmt.Sprintf("--project=%s", projectID),
+			"create",
+			managedZoneName,
+			"--dns-name",
+			fmt.Sprintf("%s.", domain),
+			"--description=managed-zone utilised by jx",
+		}
+
+		cmd := util.Command{
+			Name: "gcloud",
+			Args: args,
+		}
+
+		_, err := cmd.RunWithoutRetry()
+		if err != nil {
+			return errors.Wrap(err, "executing gcloud dns managed-zones list command ")
+		}
+	} else {
+		log.Infof("Managed Zone exists for %s domain.\n", domain)
+	}
+	return nil
+}
+
+// GetManagedZoneNameServers retrieves a list of name servers associated with a zone
+func GetManagedZoneNameServers(projectID string, domain string) ([]string, error) {
+	var nameServers []string = []string{}
+	zoneExists, err := managedZoneExists(projectID, domain)
+	if err != nil {
+		return []string{}, errors.Wrap(err, "unable to determine whether managed zone exists")
+	}
+	if zoneExists {
+		log.Infof("Getting nameservers for %s domain\n", domain)
+		managedZoneName := getManagedZoneName(domain)
+		args := []string{"dns",
+			"managed-zones",
+			fmt.Sprintf("--project=%s", projectID),
+			"describe",
+			managedZoneName,
+			"--format=json",
+		}
+
+		cmd := util.Command{
+			Name: "gcloud",
+			Args: args,
+		}
+
+		type mz struct {
+			Name        string   `json:"name"`
+			NameServers []string `json:"nameServers"`
+		}
+
+		var managedZone mz
+
+		output, err := cmd.RunWithoutRetry()
+		if err != nil {
+			return []string{}, errors.Wrap(err, "executing gcloud dns managed-zones list command ")
+		}
+
+		json.Unmarshal([]byte(output), &managedZone)
+		if err != nil {
+			return []string{}, errors.Wrap(err, "unmarshalling gcloud response when returning managed-zone nameservers")
+		}
+		nameServers = managedZone.NameServers
+	} else {
+		log.Infof("Managed Zone doesn't exist for %s domain.\n", domain)
+	}
+	return nameServers, nil
+}
 
 // ClusterZone retrives the zone of GKE cluster description
 func ClusterZone(cluster string) (string, error) {
