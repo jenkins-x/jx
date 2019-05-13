@@ -13,7 +13,6 @@ import (
 	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/pkg/environments"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -522,73 +521,18 @@ func (o *CommonOptions) deleteAndReClone(wrkDir string, versionRepository string
 }
 
 func (o *CommonOptions) clone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) error {
-	if referenceName == "" || referenceName == "master" {
-		referenceName = "refs/heads/master"
-	} else if !strings.Contains(referenceName, "/") {
-		if strings.HasPrefix(referenceName, "PR-") {
-			prNumber := strings.TrimPrefix(referenceName, "PR-")
-
-			log.Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
-			return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, prNumber, "")
-		}
-		log.Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
-
-		err := o.Git().Clone(versionRepository, wrkDir)
-		if err != nil {
-			return errors.Wrapf(err, "failed to clone repository: %s to dir %s", versionRepository, wrkDir)
-		}
-		err = o.RunCommandFromDir(wrkDir, "git", "fetch", "origin", referenceName)
-		if err != nil {
-			return errors.Wrapf(err, "failed to git fetch origin %s for repo: %s in dir %s", referenceName, versionRepository, wrkDir)
-		}
-		err = o.Git().Checkout(wrkDir, "FETCH_HEAD")
-		if err != nil {
-			return errors.Wrapf(err, "failed to checkout FETCH_HEAD of repo: %s in dir %s", versionRepository, wrkDir)
-		}
-		return nil
-
-		// TODO doesn't seem to work at all for a git ref....
-		//return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", referenceName)
-	}
-	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
-	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
-		URL:           versionRepository,
-		ReferenceName: plumbing.ReferenceName(referenceName),
-		SingleBranch:  true,
-		Progress:      fw,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "failed to clone reference: %s", referenceName)
-	}
-	return err
-}
-
-func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, revision string) error {
-	if pullRequestNumber != "" {
-		log.Infof("shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
-			pullRequestNumber, dir)
-		err := o.Git().ShallowClone(dir, gitURL, "", pullRequestNumber)
-		if err != nil {
-			return errors.Wrapf(err, "shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
-				pullRequestNumber, dir)
-		}
-	} else if revision != "" {
-		log.Infof("shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
-			revision, dir)
-		err := o.Git().ShallowClone(dir, gitURL, revision, "")
-		if err != nil {
-			return errors.Wrapf(err, "shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
-				revision, dir)
-		}
+	prNumber := ""
+	if !strings.Contains(referenceName, "/") && strings.HasPrefix(referenceName, "PR-") {
+		prNumber = strings.TrimPrefix(referenceName, "PR-")
+		referenceName = ""
+		log.Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+	} else if referenceName == "" || referenceName == "master" {
+		referenceName = "master"
+		log.Infof("Cloning the Jenkins X versions repo %s master branch to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(wrkDir))
 	} else {
-		log.Infof("shallow cloning master of repository %s to temp dir %s\n", gitURL, dir)
-		err := o.Git().ShallowClone(dir, gitURL, "", "")
-		if err != nil {
-			return errors.Wrapf(err, "shallow cloning master of repository %s to temp dir %s\n", gitURL, dir)
-		}
+		log.Infof("Cloning the Jenkins X versions repo %s with commitish %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	}
-
-	return nil
+	return o.Git().ShallowClone(wrkDir, versionRepository, referenceName, prNumber)
 }
 
 // DeleteChart deletes the given chart

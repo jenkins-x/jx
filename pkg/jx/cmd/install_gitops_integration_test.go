@@ -68,7 +68,7 @@ func TestInstallGitOps(t *testing.T) {
 	}
 	o := cmd.CreateInstallOptions(&co)
 
-	gitter := gits.NewGitFake()
+	gitter := gits.NewGitLocalWithRemoteRead()
 	helmer := helm_test.NewMockHelmer()
 	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{

@@ -49,14 +49,14 @@ pipelineConfig:
               - name: check
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.451
                 command: make
                 args: ['check']
 
               - name: build-binary
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.451
                 command: make
                 args: ['test-slow-integration']
 

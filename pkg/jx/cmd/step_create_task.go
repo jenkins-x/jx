@@ -1431,55 +1431,23 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 }
 
 func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error {
-	var err error
-	o.Dir, err = ioutil.TempDir("", "git")
-	if err != nil {
-		return err
-	}
-	log.Infof("shallow cloning repository %s to temp dir %s\n", gitURL, o.Dir)
-	err = o.Git().Init(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to init a new git repository in directory %s", o.Dir)
-	}
-	if o.Verbose {
-		log.Infof("ran git init in %s", o.Dir)
-	}
-	err = o.Git().AddRemote(o.Dir, "origin", gitURL)
-	if err != nil {
-		return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, o.Dir)
-	}
-	if o.Verbose {
-		log.Infof("ran git add remote origin %s in %s", gitURL, o.Dir)
-	}
-	commitish := make([]string, 0)
-	if o.PullRequestNumber != "" {
-		pr := fmt.Sprintf("pull/%s/head:%s", o.PullRequestNumber, o.Branch)
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, o.Dir)
-		}
-		commitish = append(commitish, pr)
+	if o.Revision != "" && o.PullRequestNumber != "" {
+		return errors.Errorf("cannot specify both revision and pull request number")
 	}
 	if o.Revision != "" {
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", o.Revision, gitURL, o.Dir)
-		}
-		commitish = append(commitish, o.Revision)
-	} else {
-		commitish = append(commitish, "master")
-	}
-	err = o.Git().FetchBranchShallow(o.Dir, "origin", commitish...)
-	if err != nil {
-		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, o.Dir)
-	}
-	if o.Revision != "" {
-		err = o.Git().Checkout(o.Dir, o.Revision)
+		err := o.Git().ShallowClone(o.Dir, gitURL, o.Revision, "")
 		if err != nil {
-			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
+			return errors.Wrapf(err, "shallow cloning revision %s of %s", o.Revision, gitURL)
+		}
+	} else if o.PullRequestNumber != "" {
+		err := o.Git().ShallowClone(o.Dir, gitURL, "", o.PullRequestNumber)
+		if err != nil {
+			return errors.Wrapf(err, "shallow cloning pull request #%s of %s", o.PullRequestNumber, gitURL)
 		}
 	} else {
-		err = o.Git().Checkout(o.Dir, "master")
+		err := o.Git().ShallowClone(o.Dir, gitURL, "master", "")
 		if err != nil {
-			return errors.Wrapf(err, "failed to checkout revision master")
+			return errors.Wrapf(err, "shallow cloning master of %s", gitURL)
 		}
 	}
 	return nil

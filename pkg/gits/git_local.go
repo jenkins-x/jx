@@ -13,9 +13,11 @@ import (
 // FakeGit. When using it in tests you must make sure you are operating on a temporary copy of a git repo NOT the
 // real one on your disk (as it will get changed!).
 // Faked out methods have the comment "Faked out"
+// If RemoteRead is true, then additionally remote methods that perform read operations will delegate to GitCLI
 type GitLocal struct {
-	GitCLI  *GitCLI
-	GitFake *GitFake
+	GitCLI     *GitCLI
+	GitFake    *GitFake
+	RemoteRead bool
 }
 
 // NewGitLocal creates a new GitLocal instance
@@ -23,6 +25,15 @@ func NewGitLocal() *GitLocal {
 	return &GitLocal{
 		GitCLI:  NewGitCLI(),
 		GitFake: &GitFake{},
+	}
+}
+
+// NewGitLocal creates a new GitLocal instance
+func NewGitLocalWithRemoteRead() *GitLocal {
+	return &GitLocal{
+		GitCLI:     NewGitCLI(),
+		GitFake:    &GitFake{},
+		RemoteRead: true,
 	}
 }
 
@@ -35,30 +46,45 @@ func (g *GitLocal) FindGitConfigDir(dir string) (string, string, error) {
 // Clone clones the given git URL into the given directory
 // Faked out
 func (g *GitLocal) Clone(url string, dir string) error {
+	if g.RemoteRead {
+		return g.GitCLI.Clone(url, dir)
+	}
 	return g.GitFake.Clone(url, dir)
 }
 
 // ShallowCloneBranch clones a single branch of the given git URL into the given directory
 // Faked out
 func (g *GitLocal) ShallowCloneBranch(url string, branch string, dir string) error {
+	if g.RemoteRead {
+		return g.GitCLI.ShallowCloneBranch(url, branch, dir)
+	}
 	return g.GitFake.ShallowCloneBranch(url, branch, dir)
 }
 
 // ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
 // Faked out
 func (g *GitLocal) ShallowClone(dir string, url string, commitish string, pullRequest string) error {
+	if g.RemoteRead {
+		return g.GitCLI.ShallowClone(dir, url, commitish, pullRequest)
+	}
 	return g.GitFake.ShallowClone(dir, url, commitish, pullRequest)
 }
 
 // Pull pulls the Git repository in the given directory
 // Faked out
 func (g *GitLocal) Pull(dir string) error {
+	if g.RemoteRead {
+		return g.GitCLI.Pull(dir)
+	}
 	return g.GitFake.Pull(dir)
 }
 
 // PullRemoteBranches pulls the remote Git tags from the given given directory
 // Faked out
 func (g *GitLocal) PullRemoteBranches(dir string) error {
+	if g.RemoteRead {
+		return g.PullRemoteBranches(dir)
+	}
 	return g.GitFake.PullRemoteBranches(dir)
 }
 
@@ -71,18 +97,24 @@ func (g *GitLocal) DeleteRemoteBranch(dir string, remoteName string, branch stri
 // CloneOrPull clones  the given git URL or pull if it already exists
 // Faked out
 func (g *GitLocal) CloneOrPull(url string, dir string) error {
+	if g.RemoteRead {
+		return g.GitCLI.CloneOrPull(url, dir)
+	}
 	return g.GitFake.CloneOrPull(url, dir)
 }
 
 // PullUpstream pulls the remote upstream branch into master branch into the given directory
 // Faked out
 func (g *GitLocal) PullUpstream(dir string) error {
+	if g.RemoteRead {
+		return g.GitCLI.PullUpstream(dir)
+	}
 	return g.GitFake.PullUpstream(dir)
 }
 
 // ResetToUpstream resets the given branch to the upstream version
 func (g *GitLocal) ResetToUpstream(dir string, branch string) error {
-	return g.GitFake.ResetToUpstream(dir, branch)
+	return g.GitCLI.ResetToUpstream(dir, branch)
 }
 
 // AddRemote adds a remote repository at the given URL and with the given name
@@ -137,7 +169,7 @@ func (g *GitLocal) RemoveForce(dir, fileName string) error {
 
 // CleanForce cleans a git repository located at a given directory
 func (g *GitLocal) CleanForce(dir, fileName string) error {
-	return g.CleanForce(dir, fileName)
+	return g.GitCLI.CleanForce(dir, fileName)
 }
 
 // Status returns the status of the git repository at the given directory
@@ -228,18 +260,27 @@ func (g *GitLocal) ConvertToValidBranchName(name string) string {
 // FetchBranch fetches a branch
 // Faked out
 func (g *GitLocal) FetchBranch(dir string, repo string, refspec ...string) error {
+	if g.RemoteRead {
+		return g.GitCLI.FetchBranch(dir, repo, refspec...)
+	}
 	return g.GitFake.FetchBranch(dir, repo, refspec...)
 }
 
 // FetchBranchShallow fetches a branch
 // Faked out
 func (g *GitLocal) FetchBranchShallow(dir string, repo string, refspec ...string) error {
+	if g.RemoteRead {
+		return g.GitCLI.FetchBranchShallow(dir, repo, refspec...)
+	}
 	return g.GitFake.FetchBranchShallow(dir, repo, refspec...)
 }
 
 // FetchBranchUnshallow fetches a branch
 // Faked out
 func (g *GitLocal) FetchBranchUnshallow(dir string, repo string, refspec ...string) error {
+	if g.RemoteRead {
+		return g.GitCLI.FetchBranchUnshallow(dir, repo, refspec...)
+	}
 	return g.GitFake.FetchBranch(dir, repo, refspec...)
 }
 
@@ -301,6 +342,9 @@ func (g *GitLocal) GetLatestCommitMessage(dir string) (string, error) {
 // FetchTags fetches all the tags
 // Faked out
 func (g *GitLocal) FetchTags(dir string) error {
+	if g.RemoteRead {
+		return g.FetchTags(dir)
+	}
 	return g.GitFake.FetchTags(dir)
 }
 
@@ -380,6 +424,9 @@ func (g *GitLocal) LoadFileFromBranch(dir string, branch string, file string) (s
 // FetchUnshallow does nothing
 // Faked out
 func (g *GitLocal) FetchUnshallow(dir string) error {
+	if g.RemoteRead {
+		return g.GitCLI.FetchUnshallow(dir)
+	}
 	return g.GitFake.FetchUnshallow(dir)
 }
 
@@ -411,6 +458,9 @@ func (g *GitLocal) ResetHard(dir string, commitish string) error {
 // RemoteUpdate performs a git remote update
 // Faked out
 func (g *GitLocal) RemoteUpdate(dir string) error {
+	if g.RemoteRead {
+		return g.GitCLI.RemoteUpdate(dir)
+	}
 	return g.GitFake.RemoteUpdate(dir)
 }
 

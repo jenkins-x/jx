@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -25,12 +26,23 @@ const (
 	replaceInvalidBranchChars = '_'
 )
 
+var sha1Regex = regexp.MustCompile(`(?i)^[0-9a-f]{40}$`)
+
 // GitCLI implements common git actions based on git CLI
-type GitCLI struct{}
+type GitCLI struct {
+	Verbose bool
+}
 
 // NewGitCLI creates a new GitCLI instance
 func NewGitCLI() *GitCLI {
 	return &GitCLI{}
+}
+
+// NewVerboseGitCLI creates a new GitCLI instance with verbose logging
+func NewVerboseGitCLI() *GitCLI {
+	return &GitCLI{
+		Verbose: true,
+	}
 }
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -66,97 +78,134 @@ func (g *GitCLI) FindGitConfigDir(dir string) (string, string, error) {
 
 // Clone clones the given git URL into the given directory
 func (g *GitCLI) Clone(url string, dir string) error {
-	return g.clone(dir, url, "", false, false, "", "", "")
+	return g.clone(dir, url, "", false, "", "", "")
 }
 
 // Clone clones a single branch of the given git URL into the given directory
 func (g *GitCLI) ShallowCloneBranch(url string, branch string, dir string) error {
-	return g.clone(dir, url, "", true, false, branch, "", "")
+	return g.clone(dir, url, "", true, branch, "", "")
 }
 
-// ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
+// ShallowClone shallow clones the repo at url from the specified commit or pull request to a local master branch
 func (g *GitCLI) ShallowClone(dir string, url string, commitish string, pullRequest string) error {
-	return g.clone(dir, url, "", true, false, "master", commitish, pullRequest)
+	return g.clone(dir, url, "", true, "", commitish, pullRequest)
 }
 
 // clone is a safer implementation of the `git clone` method
-func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow bool, verbose bool, localBranch string,
+func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow bool, localBranch string,
 	commitish string, pullRequest string) error {
 	var err error
-	if verbose {
+	if g.Verbose {
 		log.Infof("cloning repository %s to dir %s\n", gitURL, dir)
 	}
 	if remoteName == "" {
 		remoteName = "origin"
 	}
-	if commitish == "" {
-		if pullRequest == "" {
-			commitish = "master"
-		} else {
-			pullRequestNumber, err := strconv.Atoi(strings.TrimPrefix(pullRequest, "PR-"))
-			if err != nil {
-				return errors.Wrapf(err, "converting %s to a pull request number", pullRequest)
-			}
-			fmt.Sprintf("refs/pull/%d/head", pullRequestNumber)
-		}
-	} else if pullRequest != "" {
-		return errors.Errorf("cannot specify both pull request and commitish")
+	if pullRequest != "" && commitish != "" {
+		return errors.Errorf("cannot set pullRequest (%s) and commitish (%s)", pullRequest, commitish)
 	}
-	if localBranch == "" {
-		localBranch = commitish
+	if commitish == "" && pullRequest == "" {
+		commitish = "master"
+	}
+
+	refspec := ""
+	treeish := ""
+	remoteBranch := ""
+	upstream := ""
+	if pullRequest != "" {
+		pullRequestNumber, err := strconv.Atoi(strings.TrimPrefix(pullRequest, "PR-"))
+		if err != nil {
+			return errors.Wrapf(err, "converting %s to a pull request number", pullRequest)
+		}
+		refspec = fmt.Sprintf("pull/%d/head", pullRequestNumber)
+		remoteBranch = refspec
+		treeish = fmt.Sprintf("%s/%s", remoteName, refspec)
+		if localBranch == "" {
+			localBranch = fmt.Sprintf("PR-%d", pullRequestNumber)
+		}
+		upstream = remoteBranch
+	}
+	if commitish != "" {
+		if sha1Regex.MatchString(commitish) {
+			refspec = commitish
+			treeish = refspec
+			if localBranch == "" {
+				localBranch = "master"
+			}
+		} else if strings.HasPrefix(commitish, "tags/") {
+			remoteBranch = strings.Trim(commitish, "tags/")
+			localBranch = fmt.Sprintf("branch-%s", remoteBranch)
+			refspec = fmt.Sprintf("refs/tags/%s:refs/tags/%s", remoteBranch, localBranch)
+			treeish = commitish
+		} else {
+			refspec = commitish
+			remoteBranch = refspec
+			treeish = fmt.Sprintf("%s/%s", remoteName, commitish)
+			if localBranch == "" && !strings.Contains(remoteBranch, "/") {
+				localBranch = remoteBranch
+			} else {
+				localBranch = "master"
+			}
+			upstream = remoteBranch
+		}
 	}
 
 	err = g.Init(dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to init a new git repository in directory %s", dir)
 	}
-	if verbose {
+	if g.Verbose {
 		log.Infof("ran git init in %s", dir)
 	}
 	err = g.AddRemote(dir, "origin", gitURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to add remote %s with url %s in directory %s", remoteName, gitURL, dir)
 	}
-	if verbose {
+	if g.Verbose {
 		log.Infof("ran git add remote %s %s in %s", remoteName, gitURL, dir)
 	}
 
-	err = g.fetchBranch(dir, remoteName, false, shallow, verbose, commitish)
+	err = g.fetchBranch(dir, remoteName, false, shallow, refspec)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL,
+		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", refspec, gitURL,
 			dir)
 	}
 	if localBranch != "master" {
-		// git init checks out the master branch by default
-		err = g.CreateBranch(dir, localBranch)
+		// git init checks out the master branch by default, otherwise we create the branch and check it out
+		err = g.CreateBranchFrom(dir, localBranch, treeish)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create branch %s in directory %s", localBranch, dir)
 		}
-		if verbose {
+		if g.Verbose {
 			log.Infof("ran git branch %s in directory %s", localBranch, dir)
 		}
-	}
-	if commitish == "" {
-		commitish = localBranch
-		if commitish == "" {
-			commitish = "master"
+		err = g.Checkout(dir, localBranch)
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout branch %s in directory %s", localBranch, dir)
+		}
+		if g.Verbose {
+			log.Infof("ran git checkout %s in directory %s", localBranch, dir)
+		}
+	} else {
+		err = g.ResetHard(dir, treeish)
+		if err != nil {
+			return errors.Wrapf(err, "failed to reset hard to %s in directory %s", treeish, dir)
+		}
+		if g.Verbose {
+			log.Infof("ran git reset --hard %s in directory %s", treeish, dir)
 		}
 	}
-	err = g.ResetHard(dir, fmt.Sprintf("%s/%s", remoteName, commitish))
-	if err != nil {
-		return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
-	}
-	if verbose {
-		log.Infof("ran git reset --hard %s in directory %s", commitish, dir)
-	}
-	err = g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("%s/%s", remoteName, commitish), localBranch)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set tracking information to %s/%s %s in directory %s", remoteName,
-			commitish, localBranch, dir)
-	}
-	if verbose {
-		log.Infof("ran git branch --set-upstream-to %s/%s %s in directory %s", remoteName, commitish,
-			localBranch, dir)
+
+	if upstream != "" {
+		err = g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("%s/%s", remoteName, upstream), localBranch)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set tracking information to %s/%s %s in directory %s", remoteName,
+				upstream, localBranch, dir)
+		}
+		if g.Verbose {
+			log.Infof("ran git branch --set-upstream-to %s/%s %s in directory %s", remoteName, upstream,
+				localBranch, dir)
+		}
 	}
 	return nil
 }
@@ -320,7 +369,16 @@ func (g *GitCLI) Status(dir string) error {
 
 // Branch returns the current branch of the repository located at the given directory
 func (g *GitCLI) Branch(dir string) (string, error) {
-	return g.gitCmdWithOutput(dir, "rev-parse", "--abbrev-ref", "HEAD")
+	out, err := g.gitCmdWithOutput(dir, "branch")
+	if err != nil {
+		return "", errors.Wrapf(err, "running git branch in %s", dir)
+	}
+	for _, line := range strings.Split(out, "\n") {
+		if trimmed := strings.TrimSpace(line); strings.HasPrefix(trimmed, "*") {
+			return strings.TrimSpace(strings.TrimPrefix(trimmed, "*")), nil
+		}
+	}
+	return "", errors.Errorf("unable to find current branch (branches are %v)", out)
 }
 
 // WriteOperation performs a generic write operation, with nicer error handling
@@ -394,7 +452,14 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Args: args,
 	}
 	output, err := cmd.RunWithoutRetry()
-	return errors.Wrapf(err, "git output: %s", output)
+	if err != nil {
+		version, err1 := g.Version()
+		if err1 != nil {
+			log.Errorf("error getting git version %v", err1)
+		}
+		return errors.Wrapf(err, "%s output: %s", version, output)
+	}
+	return nil
 }
 
 func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
@@ -403,7 +468,15 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 		Name: "git",
 		Args: args,
 	}
-	return cmd.RunWithoutRetry()
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		version, err1 := g.Version()
+		if err1 != nil {
+			log.Errorf("error getting git version %v", err1)
+		}
+		return "", errors.Wrapf(err, "%s output: %s", version, output)
+	}
+	return output, nil
 }
 
 // CreatePushURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
@@ -500,22 +573,21 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 
 // FetchBranch fetches the refspecs from the repo
 func (g *GitCLI) FetchBranch(dir string, repo string, refspecs ...string) error {
-	return g.fetchBranch(dir, repo, false, false, false, refspecs...)
+	return g.fetchBranch(dir, repo, false, false, refspecs...)
 }
 
 // FetchBranchShallow fetches the refspecs from the repo
 func (g *GitCLI) FetchBranchShallow(dir string, repo string, refspecs ...string) error {
-	return g.fetchBranch(dir, repo, false, true, false, refspecs...)
+	return g.fetchBranch(dir, repo, false, true, refspecs...)
 }
 
 // FetchBranch fetches the refspecs from the repo
 func (g *GitCLI) FetchBranchUnshallow(dir string, repo string, refspecs ...string) error {
-	return g.fetchBranch(dir, repo, true, false, false, refspecs...)
+	return g.fetchBranch(dir, repo, true, false, refspecs...)
 }
 
 // FetchBranch fetches the refspecs from the repo
-func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, shallow bool,
-	verbose bool, refspecs ...string) error {
+func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, shallow bool, refspecs ...string) error {
 	args := []string{"fetch", repo}
 	if shallow && unshallow {
 		return errors.Errorf("cannot use --depth=1 and --unshallow at the same time")
@@ -533,7 +605,7 @@ func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, shallow bo
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	if verbose {
+	if g.Verbose {
 		if shallow {
 			log.Infof("ran git fetch %s --depth=1 %s in dir %s", repo, strings.Join(refspecs, " "), dir)
 		} else if unshallow {
@@ -712,7 +784,7 @@ func (g *GitCLI) Tags(dir string) ([]string, error) {
 
 // CreateTag creates a tag with the given name and message in the repository at the given directory
 func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
-	return g.gitCmd("", "tag", "-fa", tag, "-m", msg)
+	return g.gitCmd(dir, "tag", "-fa", tag, "-m", msg)
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
