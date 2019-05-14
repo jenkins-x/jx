@@ -37,7 +37,7 @@ func TestCreateMLQuickstartProjects(t *testing.T) {
 	testDir, err := ioutil.TempDir("", "test-create-mlquickstart")
 	assert.NoError(t, err)
 
-		appName := "mymlapp"
+	appName := "mymlapp"
 
 	o := &cmd.CreateMLQuickstartOptions{
 		CreateProjectOptions: cmd.CreateProjectOptions{
