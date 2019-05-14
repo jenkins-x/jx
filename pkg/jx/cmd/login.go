@@ -149,6 +149,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 		m["user-data-dir"] = userDataDir
 		m["log-net-log"] = netLogFile
 		m["net-log-capture-mode"] = "IncludeCookiesAndCredentials"
+		m["disable-features"] = "NetworkService"
 		m["v"] = 1
 		return nil
 	}
