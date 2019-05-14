@@ -423,7 +423,7 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 	} else {
 		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
-			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
+			return "", "", nil, fork, fmt.Errorf("failed to create directory %s due to %s", dir, err)
 		}
 		cloneGitURL, err := gitter.CreatePushURL(gitURL, &userDetails)
 		if err != nil {
