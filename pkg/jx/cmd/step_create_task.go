@@ -1642,7 +1642,7 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*syntax.Step) error {
 func (o *StepCreateTaskOptions) modifyStep(projectConfig *config.ProjectConfig, parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *syntax.Step, containerName string, dir string) syntax.Step {
 
 	if !o.NoKaniko {
-		if strings.HasPrefix(parsedStep.Command, "skaffold build") ||
+		if strings.HasPrefix(parsedStep.GetCommand(), "skaffold build") ||
 			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) {
 			sourceDir := o.getWorkspaceDir()
 			dockerfile := filepath.Join(sourceDir, "Dockerfile")

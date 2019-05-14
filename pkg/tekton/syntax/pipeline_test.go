@@ -1066,6 +1066,38 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
+		{
+			name: "script_step",
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageStep(
+						StepScript("echo hello world\necho goodbye world\n"),
+						StepName("A Step With A Script"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+				),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("source"))),
+						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+						tb.Step("a-step-with-a-script", "some-image", tb.Command("/bin/sh", "-c"),
+							tb.Args("echo hello world\necho goodbye world\n"),
+							workingDir("/workspace/source")),
+					)),
+			},
+			structure: PipelineStructure("somepipeline-1",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			),
+		},
 	}
 
 	for _, tt := range tests {
@@ -1191,41 +1223,41 @@ func TestFailedValidation(t *testing.T) {
 		},
 		{
 			name:          "step_without_command_step_or_loop",
-			expectedError: apis.ErrMissingOneOf("command", "step", "loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+			expectedError: apis.ErrMissingOneOf("command", "step", "loop", "script").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name:          "step_with_both_command_and_step",
-			expectedError: apis.ErrMultipleOneOf("command", "step", "loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+			expectedError: apis.ErrMultipleOneOf("command", "step", "loop", "script").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name:          "step_with_both_command_and_loop",
-			expectedError: apis.ErrMultipleOneOf("command", "step", "loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+			expectedError: apis.ErrMultipleOneOf("command", "step", "loop", "script").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name: "step_with_command_and_options",
 			expectedError: (&apis.FieldError{
-				Message: "Cannot set options for a command or a loop",
+				Message: "Cannot set options for a command, a loop, or a script",
 				Paths:   []string{"options"},
 			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name: "step_with_step_and_arguments",
 			expectedError: (&apis.FieldError{
-				Message: "Cannot set command-line arguments for a step or a loop",
+				Message: "Cannot set command-line arguments for a step, a loop, or a script",
 				Paths:   []string{"args"},
 			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name: "step_with_loop_and_options",
 			expectedError: (&apis.FieldError{
-				Message: "Cannot set options for a command or a loop",
+				Message: "Cannot set options for a command, a loop, or a script",
 				Paths:   []string{"options"},
 			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name: "step_with_loop_and_arguments",
 			expectedError: (&apis.FieldError{
-				Message: "Cannot set command-line arguments for a step or a loop",
+				Message: "Cannot set command-line arguments for a step, a loop, or a script",
 				Paths:   []string{"args"},
 			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
@@ -1881,6 +1913,12 @@ func StepAgent(image string) StepOp {
 func StepCmd(cmd string) StepOp {
 	return func(step *syntax.Step) {
 		step.Command = cmd
+	}
+}
+
+func StepScript(script string) StepOp {
+	return func(step *syntax.Step) {
+		step.Script = script
 	}
 }
 

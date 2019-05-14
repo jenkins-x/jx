@@ -1,0 +1,13 @@
+pipelineConfig:
+  pipelines:
+    release:
+      pipeline:
+        agent:
+          image: some-image
+        stages:
+          - name: A Working Stage
+            steps:
+              - script: |
+                  echo hello world
+                  echo goodbye world
+                name: A Step With A Script

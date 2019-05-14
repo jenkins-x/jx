@@ -168,6 +168,11 @@ type Step struct {
 	// env allows defining per-step environment variables
 	Env []EnvVar `json:"env,omitempty"`
 
+	// Script allows you to specify a shell step, to be run with /bin/bash -c, containing one or more shell commands,
+	// without needing to worry about chaining them together with && etc, and lets you use multiline strings for defining
+	// the script.
+	Script string `json:"script,omitempty"`
+
 	// Legacy fields from jenkinsfile.PipelineStep before it was eliminated.
 	Comment   string  `json:"comment,omitempty"`
 	Groovy    string  `json:"groovy,omitempty"`
@@ -656,24 +661,24 @@ func validateStep(s Step) *apis.FieldError {
 		}
 	}
 
-	if s.Command == "" && s.Step == "" && s.Loop == nil {
-		return apis.ErrMissingOneOf("command", "step", "loop")
+	if s.Command == "" && s.Step == "" && s.Loop == nil && s.Script == "" {
+		return apis.ErrMissingOneOf("command", "step", "loop", "script")
 	}
 
-	if moreThanOneAreTrue(s.Command != "", s.Step != "", s.Loop != nil) {
-		return apis.ErrMultipleOneOf("command", "step", "loop")
+	if moreThanOneAreTrue(s.Command != "", s.Step != "", s.Loop != nil, s.Script != "") {
+		return apis.ErrMultipleOneOf("command", "step", "loop", "script")
 	}
 
-	if (s.Command != "" || s.Loop != nil) && len(s.Options) != 0 {
+	if (s.Command != "" || s.Loop != nil || s.Script != "") && len(s.Options) != 0 {
 		return &apis.FieldError{
-			Message: "Cannot set options for a command or a loop",
+			Message: "Cannot set options for a command, a loop, or a script",
 			Paths:   []string{"options"},
 		}
 	}
 
-	if (s.Step != "" || s.Loop != nil) && len(s.Arguments) != 0 {
+	if (s.Step != "" || s.Loop != nil || s.Script != "") && len(s.Arguments) != 0 {
 		return &apis.FieldError{
-			Message: "Cannot set command-line arguments for a step or a loop",
+			Message: "Cannot set command-line arguments for a step, a loop, or a script",
 			Paths:   []string{"args"},
 		}
 	}
@@ -1328,7 +1333,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 		// TODO: Should be using SourceName from step_create_task, but initial experiments there ended up with some null cases.
 		workingDir = "/workspace/source"
 	}
-	if step.Command != "" {
+	if step.GetCommand() != "" || step.Script != "" {
 		c := &corev1.Container{}
 		if parentContainer != nil {
 			c = parentContainer.DeepCopy()
@@ -1354,15 +1359,17 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 		}
 		// Special-casing for commands starting with /kaniko
 		// TODO: Should this be more general?
-		if strings.HasPrefix(step.Command, "/kaniko") {
-			c.Command = []string{step.Command}
+		if strings.HasPrefix(step.GetCommand(), "/kaniko") {
+			c.Command = []string{step.GetCommand()}
 			c.Args = step.Arguments
-		} else {
-			cmdStr := step.Command
+		} else if step.GetCommand() != "" {
+			cmdStr := step.GetCommand()
 			if len(step.Arguments) > 0 {
 				cmdStr += " " + strings.Join(step.Arguments, " ")
 			}
 			c.Args = []string{cmdStr}
+		} else if step.Script != "" {
+			c.Args = []string{step.Script}
 		}
 		c.WorkingDir = workingDir
 		stepCounter++
