@@ -12,10 +12,10 @@ const (
 	MINISHIFT  = "minishift"
 	KUBERNETES = "kubernetes"
 	OPENSHIFT  = "openshift"
-	ORACLE     = "oracle"
 	ICP        = "icp"
 	JX_INFRA   = "jx-infra"
+	ALIBABA    = "alibaba"
 )
 
 // KubernetesProviders list of all available Kubernetes providers
-var KubernetesProviders = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
+var KubernetesProviders = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP, ALIBABA}
