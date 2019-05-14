@@ -407,7 +407,13 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("created tekton CRDs for %s\n", run.Name)
 	}
 
-	// output results for invokers of this command like the pipelinerunner
+	activityKey := o.GeneratePipelineActivity(ns)
+
+	if o.Verbose {
+		log.Infof(" PipelineActivity for %s created successfully", pipeline.Name)
+	}
+
+	//output results for invokers of this command like the pipelinerunner
 	o.Results.Pipeline = pipeline
 	o.Results.Tasks = tasks
 	o.Results.Resources = resources
@@ -415,12 +421,12 @@ func (o *StepCreateTaskOptions) Run() error {
 	o.Results.Structure = structure
 
 	if o.NoApply {
-		err := o.writeOutput(o.OutDir, pipeline, tasks, run, resources, structure)
+		err := o.writeOutput(o.OutDir, pipeline, tasks, run, resources, structure, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
 	} else {
-		err := o.applyPipeline(pipeline, tasks, resources, structure, run, o.GitInfo, o.Branch)
+		err := o.applyPipeline(pipeline, tasks, resources, structure, run, o.GitInfo, o.Branch, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}
@@ -428,10 +434,31 @@ func (o *StepCreateTaskOptions) Run() error {
 		run.Labels = util.MergeMaps(run.Labels, o.labels)
 
 		if o.Verbose {
-			log.Infof("applied tekton CRDs for %s\n", run.Name)
+			log.Infof(" for %s\n", run.Name)
 		}
 	}
 	return nil
+}
+
+// GeneratePipelineActivity generates a initial PipelineActivity CRD so UI/get act can get an earlier notification that the jobs have been scheduled
+func (o *StepCreateTaskOptions) GeneratePipelineActivity(ns string) *kube.PromoteStepActivityKey {
+
+	build := o.BuildNumber
+	org := o.GitInfo.Organisation
+	repo := o.GitInfo.Name
+	branch := o.Branch
+
+	name := org + "-" + repo + "-" + branch + "-" + build
+	pipeline := org + "/" + repo + "/" + branch
+	log.Infof("PipelineActivity for %s", name)
+	return &kube.PromoteStepActivityKey{
+		PipelineActivityKey: kube.PipelineActivityKey{
+			Name:     name,
+			Pipeline: pipeline,
+			Build:    build,
+			GitInfo:  o.GitInfo,
+		},
+	}
 }
 
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline
@@ -882,7 +909,7 @@ func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.Pipeli
 // TODO: Use the same YAML lib here as in buildpipeline/pipeline.go
 // TODO: Use interface{} with a helper function to reduce code repetition?
 // TODO: Take no arguments and use o.Results internally?
-func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure) error {
+func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, pipelineActivity *kube.PromoteStepActivityKey) error {
 	if err := os.Mkdir(folder, os.ModePerm); err != nil {
 		if !os.IsExist(err) {
 			return err
@@ -955,13 +982,24 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 	}
 	log.Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
 
+	data, err = yaml.Marshal(pipelineActivity)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal PipelineActivity YAML")
+	}
+	fileName = filepath.Join(folder, "pipelineActivity.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save PipelineActivity file %s", fileName)
+	}
+	log.Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
+
 	return nil
 }
 
 // Given a Pipeline and its Tasks, applies the Tasks and Pipeline to the cluster
 // and creates and applies a PipelineResource for their source repo and a PipelineRun
 // to execute them.
-func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, run *pipelineapi.PipelineRun, gitInfo *gits.GitRepository, branch string) error {
+func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, run *pipelineapi.PipelineRun, gitInfo *gits.GitRepository, branch string, activityKey *kube.PromoteStepActivityKey) error {
 	_, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -1036,6 +1074,18 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 			return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
 		}
 		log.Infof("created PipelineStructure %s\n", info(structure.Name))
+	}
+
+	if activityKey != nil {
+
+		jxClient, _, jxErr := o.JXClientAndDevNamespace()
+		if jxErr != nil {
+			return jxErr
+		}
+		_, _, err := activityKey.GetOrCreate(jxClient, pipeline.Namespace)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
