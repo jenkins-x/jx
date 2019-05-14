@@ -8,13 +8,13 @@ import (
 )
 
 type ExposeControllerConfig struct {
-	Domain        string `json:"domain,omitempty"`
-	Exposer       string `json:"exposer,omitempty"`
-	HTTP          string `json:"http,omitempty"`
-	TLSAcme       string `json:"tlsacme,omitempty"`
-	PathMode      string `json:"pathMode,omitempty"`
-	UrlTemplate   string `json:"urltemplate,omitempty"`
-	IngressClass  string `json:"ingressClass,omitempty"`
+	Domain       string `json:"domain,omitempty"`
+	Exposer      string `json:"exposer,omitempty"`
+	HTTP         string `json:"http,omitempty"`
+	TLSAcme      string `json:"tlsacme,omitempty"`
+	PathMode     string `json:"pathMode,omitempty"`
+	UrlTemplate  string `json:"urltemplate,omitempty"`
+	IngressClass string `json:"ingressClass,omitempty"`
 }
 type ExposeController struct {
 	Config      ExposeControllerConfig `json:"config,omitempty"`
