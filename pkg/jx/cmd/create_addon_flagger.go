@@ -27,6 +27,7 @@ const (
 	defaultFlaggerVersion               = ""
 	defaultFlaggerRepo                  = "https://flagger.app"
 	optionGrafanaChart                  = "grafana-chart"
+	optionGrafanaVersion                = "grafana-version"
 	defaultFlaggerProductionEnvironment = "production"
 	defaultIstioGateway                 = "jx-gateway"
 )
@@ -46,6 +47,7 @@ type CreateAddonFlaggerOptions struct {
 	CreateAddonOptions
 	Chart                 string
 	GrafanaChart          string
+	GrafanaVersion        string
 	ProductionEnvironment string
 	IstioGateway          string
 }
@@ -74,6 +76,7 @@ func NewCmdCreateAddonFlagger(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartFlagger, "The name of the chart to use")
 	cmd.Flags().StringVarP(&options.GrafanaChart, optionGrafanaChart, "", kube.ChartFlaggerGrafana, "The name of the Flagger Grafana chart to use")
+	cmd.Flags().StringVarP(&options.GrafanaVersion, optionGrafanaVersion, "", "", "The version of the Flagger Grafana chart")
 	cmd.Flags().StringVarP(&options.ProductionEnvironment, "environment", "e", defaultFlaggerProductionEnvironment, "The name of the production environment where Istio will be enabled")
 	cmd.Flags().StringVarP(&options.IstioGateway, "istio-gateway", "", defaultIstioGateway, "The name of the Istio Gateway that will be created if it does not exist")
 	return cmd
@@ -116,7 +119,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	helmOptions = helm.InstallChartOptions{
 		Chart:       o.GrafanaChart,
 		ReleaseName: o.ReleaseName + "-grafana",
-		Version:     o.Version,
+		Version:     o.GrafanaVersion,
 		Ns:          o.Namespace,
 		SetValues:   values,
 	}
