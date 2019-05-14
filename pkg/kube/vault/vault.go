@@ -20,12 +20,10 @@ import (
 const (
 	BankVaultsOperatorImage = "banzaicloud/vault-operator"
 	BankVaultsImage         = "banzaicloud/bank-vaults"
-	BankVaultsImageTag      = "master"
-	defaultNumVaults        = 1
-	vaultImage              = "vault"
-	vaultImageTag           = "1.1.2"
-	gcpServiceAccountEnv    = "GOOGLE_APPLICATION_CREDENTIALS"
-	gcpServiceAccountPath   = "/etc/gcp/service-account.json"
+	VaultImage              = "vault"
+
+	gcpServiceAccountEnv  = "GOOGLE_APPLICATION_CREDENTIALS"
+	gcpServiceAccountPath = "/etc/gcp/service-account.json"
 
 	awsServiceAccountEnv  = "AWS_SHARED_CREDENTIALS_FILE"
 	awsServiceAccountPath = "/etc/aws/credentials"
@@ -37,6 +35,7 @@ const (
 	vaultRoleName = "vault-auth"
 
 	vaultSecretEngines = "secrets"
+	defaultNumVaults   = 1
 )
 
 // Vault stores some details of a Vault resource
@@ -177,10 +176,11 @@ func SystemVaultNameForCluster(clusterName string) string {
 
 // CreateGKEVault creates a new vault backed by GCP KMS and storage
 func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
-	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
+	images map[string]string, gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
 	authServiceAccountNamespace string, secretsPathPrefix string) error {
 
-	vault, err := InitializeVault(kubeClient, name, ns, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
+	vault, err := initializeVault(kubeClient, name, ns, images,
+		authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
 	if err != nil {
 		return err
 	}
@@ -221,10 +221,10 @@ func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 
 // CreateAWSVault creates a new vault backed by AWS KMS and DynamoDB storage
 func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
-	awsServiceAccountSecretName string, awsConfig *AWSConfig, authServiceAccount string,
+	images map[string]string, awsServiceAccountSecretName string, awsConfig *AWSConfig, authServiceAccount string,
 	authServiceAccountNamespace string, secretsPathPrefix string) error {
 
-	vault, err := InitializeVault(kubeClient, name, ns, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
+	vault, err := initializeVault(kubeClient, name, ns, images, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
 	if err != nil {
 		return err
 	}
@@ -259,9 +259,9 @@ func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 	return err
 }
 
-// InitializeVault intializes and returns vault struct
-func InitializeVault(kubeClient kubernetes.Interface, name string, ns string, authServiceAccount string,
-	authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
+// initializeVault intializes and returns vault struct
+func initializeVault(kubeClient kubernetes.Interface, name string, ns string, images map[string]string,
+	authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
 
 	err := createVaultServiceAccount(kubeClient, ns, name)
 	if err != nil {
@@ -298,8 +298,8 @@ func InitializeVault(kubeClient kubernetes.Interface, name string, ns string, au
 		},
 		Spec: v1alpha1.VaultSpec{
 			Size:            defaultNumVaults,
-			Image:           vaultImage + ":" + vaultImageTag,
-			BankVaultsImage: BankVaultsImage + ":" + BankVaultsImageTag,
+			Image:           images[VaultImage],
+			BankVaultsImage: images[BankVaultsImage],
 			ServiceType:     string(v1.ServiceTypeClusterIP),
 			ServiceAccount:  name,
 			Config: map[string]interface{}{
