@@ -133,7 +133,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 				localBranch = "master"
 			}
 		} else if strings.HasPrefix(commitish, "tags/") {
-			remoteBranch = strings.Trim(commitish, "tags/")
+			remoteBranch = strings.TrimPrefix(commitish, "tags/")
 			localBranch = fmt.Sprintf("branch-%s", remoteBranch)
 			refspec = fmt.Sprintf("refs/tags/%s:refs/tags/%s", remoteBranch, localBranch)
 			treeish = commitish
