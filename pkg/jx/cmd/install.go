@@ -429,6 +429,11 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 
+	// If we're using external-dns then remove the namespace subdomain from the URLTemplate
+	if flags.ExternalDNS {
+		flags.ExposeControllerURLTemplate = "{{.Service}}-{{.Namespace}}.{{.Domain}}"
+	}
+
 	return nil
 }
 
