@@ -287,7 +287,7 @@ func TestGetAppsHasStatus(t *testing.T) {
 
 	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
 		ThenReturn(map[string]helm.ReleaseSummary{
-			name1: {Status: "DEPLOYED"},
+			name1: {Status: "DEPLOYED", Chart: name1},
 		}, nil, nil)
 
 	getAppOptions.Args = []string{name1}
@@ -329,7 +329,7 @@ func TestGetAppsAsJson(t *testing.T) {
 
 	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
 		ThenReturn(map[string]helm.ReleaseSummary{
-			name1: {Status: "DEPLOYED"},
+			name1: {Status: "DEPLOYED", Chart: name1},
 		}, nil, nil)
 
 	getAppOptions.Args = []string{name1}
@@ -376,7 +376,7 @@ func TestGetAppsAsYaml(t *testing.T) {
 
 	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
 		ThenReturn(map[string]helm.ReleaseSummary{
-			name1: {Status: "DEPLOYED"},
+			name1: {Status: "DEPLOYED", Chart: name1},
 		}, nil, nil)
 
 	getAppOptions.Args = []string{name1}

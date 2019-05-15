@@ -288,8 +288,8 @@ func (o *GetAppsOptions) getAppsStatus(gitOps bool, namespace string, apps *v1.A
 	if err != nil {
 		return nil, errors.Wrap(err, "there was a problem getting the status of the apps")
 	}
-	for k, v := range statusReleases {
-		appsStatus[k] = v.Status
+	for _, v := range statusReleases {
+		appsStatus[v.Chart] = v.Status
 	}
 	return appsStatus, nil
 }
