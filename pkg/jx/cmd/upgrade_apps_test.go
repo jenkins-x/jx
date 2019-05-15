@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/petergtz/pegomock"
 
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
@@ -28,7 +28,6 @@ import (
 )
 
 func TestUpgradeAppForGitOps(t *testing.T) {
-	t.Parallel()
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
@@ -92,7 +91,6 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
-	//t.Parallel()
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
