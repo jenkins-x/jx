@@ -145,7 +145,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
-	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")
+	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "out", "The directory to write the output to as YAML. Defaults to 'out'")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
@@ -403,6 +403,12 @@ func (o *StepCreateTaskOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRD")
 	}
+
+	if o.ViewSteps {
+		o.viewSteps(tasks...)
+		return nil
+	}
+
 	if o.Verbose {
 		log.Infof("created tekton CRDs for %s\n", run.Name)
 	}
@@ -603,10 +609,6 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	pipeline, tasks, structure, err = parsed.GenerateCRDs(pipelineResourceName, o.BuildNumber, ns, o.PodTemplates, o.GetDefaultTaskInputs().Params, o.SourceName)
 	if err != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generation failed for Pipeline")
-	}
-
-	if o.ViewSteps {
-		return nil, nil, nil, nil, nil, o.viewSteps(tasks...)
 	}
 
 	resources = append(resources, o.generateSourceRepoResource(pipelineResourceName))
