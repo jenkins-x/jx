@@ -118,18 +118,18 @@ func (o *EnvironmentOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
 		}
-		fmt.Fprintf(o.Out, "Now using environment '%s' in team '%s' on server '%s'.\n",
-			info(env), info(devNs), info(kube.Server(config, ctx)))
+		fmt.Fprintf(o.Out, "Now using environment '%s' in team '%s' on cluster '%s'.\n",
+			info(env), info(devNs), info(kube.Cluster(config)))
 	} else {
 		ns := kube.CurrentNamespace(config)
-		server := kube.CurrentServer(config)
+		cluster := kube.Cluster(config)
 		if env == "" {
 			env = currentEnv
 		}
 		if env == "" {
-			fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
+			fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on cluster '%s'.\n", info(ns), info(config.CurrentContext), info(cluster))
 		} else {
-			fmt.Fprintf(o.Out, "Using environment '%s' in team '%s' on server '%s'.\n", info(env), info(devNs), info(server))
+			fmt.Fprintf(o.Out, "Using environment '%s' in team '%s' on cluster '%s'.\n", info(env), info(devNs), info(cluster))
 		}
 	}
 	return nil
