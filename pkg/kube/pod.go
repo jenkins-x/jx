@@ -241,7 +241,7 @@ func GetContainersWithStatusAndIsInit(pod *v1.Pod) ([]v1.Container, []v1.Contain
 	statuses := pod.Status.InitContainerStatuses
 	containers := pod.Spec.Containers
 
-	if len(containers) > 1 && containers[len(containers)-1].Name == "nop" {
+	if len(containers) > 1 && len(pod.Status.ContainerStatuses) == len(containers) && containers[len(containers)-1].Name == "nop" {
 		isInit = false
 		// Add the non-init containers, and trim off the no-op container at the end of the list.
 		allContainers = append(allContainers, containers[:len(containers)-1]...)
