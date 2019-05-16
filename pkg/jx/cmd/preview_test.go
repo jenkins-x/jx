@@ -13,10 +13,7 @@ import (
 
 // Constants for some test data to be used.
 const (
-	application = "test-app"
-	releaseName = "test-app-release-name"
-	name        = "test-app-name"
-	namespace   = "jx"
+	namespace = "jx"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {

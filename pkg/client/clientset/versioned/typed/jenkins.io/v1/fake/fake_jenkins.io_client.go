@@ -60,8 +60,16 @@ func (c *FakeJenkinsV1) Releases(namespace string) v1.ReleaseInterface {
 	return &FakeReleases{c, namespace}
 }
 
+func (c *FakeJenkinsV1) Schedulers(namespace string) v1.SchedulerInterface {
+	return &FakeSchedulers{c, namespace}
+}
+
 func (c *FakeJenkinsV1) SourceRepositories(namespace string) v1.SourceRepositoryInterface {
 	return &FakeSourceRepositories{c, namespace}
+}
+
+func (c *FakeJenkinsV1) SourceRepositoryGroups(namespace string) v1.SourceRepositoryGroupInterface {
+	return &FakeSourceRepositoryGroups{c, namespace}
 }
 
 func (c *FakeJenkinsV1) Teams(namespace string) v1.TeamInterface {

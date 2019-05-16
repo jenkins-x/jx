@@ -61,10 +61,6 @@ type InstallOptions struct {
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
 
-var defaultPrefixes = []string{
-	"jx-app-",
-}
-
 // AddApp adds the app at a particular version (
 // or latest if not specified) from the repository with username and password. A releaseName can be specified.
 // Values can be passed with in files or as a slice of name=value pairs. An alias can be specified.

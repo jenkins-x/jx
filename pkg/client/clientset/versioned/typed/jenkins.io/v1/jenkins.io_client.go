@@ -23,7 +23,9 @@ type JenkinsV1Interface interface {
 	PipelineStructuresGetter
 	PluginsGetter
 	ReleasesGetter
+	SchedulersGetter
 	SourceRepositoriesGetter
+	SourceRepositoryGroupsGetter
 	TeamsGetter
 	UsersGetter
 	WorkflowsGetter
@@ -82,8 +84,16 @@ func (c *JenkinsV1Client) Releases(namespace string) ReleaseInterface {
 	return newReleases(c, namespace)
 }
 
+func (c *JenkinsV1Client) Schedulers(namespace string) SchedulerInterface {
+	return newSchedulers(c, namespace)
+}
+
 func (c *JenkinsV1Client) SourceRepositories(namespace string) SourceRepositoryInterface {
 	return newSourceRepositories(c, namespace)
+}
+
+func (c *JenkinsV1Client) SourceRepositoryGroups(namespace string) SourceRepositoryGroupInterface {
+	return newSourceRepositoryGroups(c, namespace)
 }
 
 func (c *JenkinsV1Client) Teams(namespace string) TeamInterface {

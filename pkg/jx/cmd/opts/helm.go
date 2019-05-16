@@ -591,18 +591,6 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 	return nil
 }
 
-func deleteDirectory(wrkDir string) error {
-	log.Infof("Delete previous Jenkins X version repo from %s\n", wrkDir)
-	// If it exists a this stage most likely its content is not consistent
-	if exists, err := util.DirExists(wrkDir); err == nil && exists {
-		err := util.DeleteDirContents(wrkDir)
-		if err != nil {
-			return errors.Wrapf(err, "cleaning the content of %q dir", wrkDir)
-		}
-	}
-	return nil
-}
-
 // DeleteChart deletes the given chart
 func (o *CommonOptions) DeleteChart(releaseName string, purge bool) error {
 	_, ns, err := o.KubeClientAndNamespace()

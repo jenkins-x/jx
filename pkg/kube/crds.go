@@ -100,6 +100,14 @@ func RegisterPipelineCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the SourceRepository CRD")
 	}
+	err = RegisterPipelineScheduler(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the PipelineScheduler CRD")
+	}
+	err = RegisterSourceRepositoryGroup(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the RegisterSourceRepositoryGroup CRD")
+	}
 	return nil
 }
 
@@ -342,6 +350,43 @@ func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
 		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
+}
+
+// RegisterPipelineScheduler ensures that the CRD is registered for App
+func RegisterPipelineScheduler(apiClient apiextensionsclientset.Interface) error {
+	name := "schedulers." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Scheduler",
+		ListKind:   "SchedulerList",
+		Plural:     "schedulers",
+		Singular:   "scheduler",
+		ShortNames: []string{"scheduler"},
+		Categories: []string{"all"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{}
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
+}
+
+// RegisterSourceRepositoryGroup ensures that the CRD is registered for App
+func RegisterSourceRepositoryGroup(apiClient apiextensionsclientset.Interface) error {
+	name := "sourcerepositorygroups." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "SourceRepositoryGroup",
+		ListKind:   "SourceRepositoryGroupList",
+		Plural:     "sourcerepositorygroups",
+		Singular:   "sourcerepositorygroup",
+		ShortNames: []string{"srg"},
+		Categories: []string{"all"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Scheduler",
+			Type:        "string",
+			Description: "The pipeline scheduler used by the source repository group",
+			JSONPath:    ".spec.scheduler.name",
+		},
+	}
 	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 

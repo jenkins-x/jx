@@ -61,6 +61,8 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepStash(commonOpts))
 	cmd.AddCommand(NewCmdStepUnstash(commonOpts))
 	cmd.AddCommand(NewCmdStepValuesSchemaTemplate(commonOpts))
+	cmd.AddCommand(NewCmdStepScheduler(commonOpts))
+
 	return cmd
 }
 

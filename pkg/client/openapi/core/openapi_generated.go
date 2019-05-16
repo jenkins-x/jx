@@ -13,106 +13,140 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AccountReference":                  schema_pkg_apis_jenkinsio_v1_AccountReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.App":                               schema_pkg_apis_jenkinsio_v1_App(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppList":                           schema_pkg_apis_jenkinsio_v1_AppList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppSpec":                           schema_pkg_apis_jenkinsio_v1_AppSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment":                        schema_pkg_apis_jenkinsio_v1_Attachment(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Binary":                            schema_pkg_apis_jenkinsio_v1_Binary(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPack":                         schema_pkg_apis_jenkinsio_v1_BuildPack(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackList":                     schema_pkg_apis_jenkinsio_v1_BuildPackList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackSpec":                     schema_pkg_apis_jenkinsio_v1_BuildPackSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ChartRef":                          schema_pkg_apis_jenkinsio_v1_ChartRef(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatus":                      schema_pkg_apis_jenkinsio_v1_CommitStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusCommitReference":       schema_pkg_apis_jenkinsio_v1_CommitStatusCommitReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusDetails":               schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusItem":                  schema_pkg_apis_jenkinsio_v1_CommitStatusItem(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusList":                  schema_pkg_apis_jenkinsio_v1_CommitStatusList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusSpec":                  schema_pkg_apis_jenkinsio_v1_CommitStatusSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary":                     schema_pkg_apis_jenkinsio_v1_CommitSummary(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep":                  schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment":                       schema_pkg_apis_jenkinsio_v1_Environment(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter":                 schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentList":                   schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRepository":             schema_pkg_apis_jenkinsio_v1_EnvironmentRepository(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding":            schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBinding(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingList":        schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec":        schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus":      schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentSpec":                   schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentStatus":                 schema_pkg_apis_jenkinsio_v1_EnvironmentStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentVariable":               schema_pkg_apis_jenkinsio_v1_EnvironmentVariable(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Extension":                         schema_pkg_apis_jenkinsio_v1_Extension(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfig":                   schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfigList":               schema_pkg_apis_jenkinsio_v1_ExtensionConfigList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinition":               schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference": schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionChildReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionList":           schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference":      schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReferenceList":  schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReferenceList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution":                schema_pkg_apis_jenkinsio_v1_ExtensionExecution(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionList":                     schema_pkg_apis_jenkinsio_v1_ExtensionList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameter":                schema_pkg_apis_jenkinsio_v1_ExtensionParameter(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameterValue":           schema_pkg_apis_jenkinsio_v1_ExtensionParameterValue(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference":      schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReferenceList":  schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionSpec":                     schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact":                              schema_pkg_apis_jenkinsio_v1_Fact(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactList":                          schema_pkg_apis_jenkinsio_v1_FactList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec":                          schema_pkg_apis_jenkinsio_v1_FactSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus":                        schema_pkg_apis_jenkinsio_v1_FactStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService":                        schema_pkg_apis_jenkinsio_v1_GitService(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceList":                    schema_pkg_apis_jenkinsio_v1_GitServiceList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec":                    schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitStatus":                         schema_pkg_apis_jenkinsio_v1_GitStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueLabel":                        schema_pkg_apis_jenkinsio_v1_IssueLabel(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary":                      schema_pkg_apis_jenkinsio_v1_IssueSummary(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement":                       schema_pkg_apis_jenkinsio_v1_Measurement(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original":                          schema_pkg_apis_jenkinsio_v1_Original(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity":                  schema_pkg_apis_jenkinsio_v1_PipelineActivity(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityList":              schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec":              schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus":            schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure":                 schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureList":             schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage":            schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Plugin":                            schema_pkg_apis_jenkinsio_v1_Plugin(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginList":                        schema_pkg_apis_jenkinsio_v1_PluginList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginSpec":                        schema_pkg_apis_jenkinsio_v1_PluginSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep":               schema_pkg_apis_jenkinsio_v1_PreviewActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewGitSpec":                    schema_pkg_apis_jenkinsio_v1_PreviewGitSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep":               schema_pkg_apis_jenkinsio_v1_PromoteActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromotePullRequestStep":            schema_pkg_apis_jenkinsio_v1_PromotePullRequestStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteUpdateStep":                 schema_pkg_apis_jenkinsio_v1_PromoteUpdateStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteWorkflowStep":               schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation":                schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Release":                           schema_pkg_apis_jenkinsio_v1_Release(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseList":                       schema_pkg_apis_jenkinsio_v1_ReleaseList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseSpec":                       schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseStatus":                     schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference":                 schema_pkg_apis_jenkinsio_v1_ResourceReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepository":                  schema_pkg_apis_jenkinsio_v1_SourceRepository(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryList":              schema_pkg_apis_jenkinsio_v1_SourceRepositoryList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositorySpec":              schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep":                 schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement":                         schema_pkg_apis_jenkinsio_v1_Statement(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation":                   schema_pkg_apis_jenkinsio_v1_StorageLocation(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Team":                              schema_pkg_apis_jenkinsio_v1_Team(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamList":                          schema_pkg_apis_jenkinsio_v1_TeamList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSettings":                      schema_pkg_apis_jenkinsio_v1_TeamSettings(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSpec":                          schema_pkg_apis_jenkinsio_v1_TeamSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamStatus":                        schema_pkg_apis_jenkinsio_v1_TeamStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.User":                              schema_pkg_apis_jenkinsio_v1_User(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails":                       schema_pkg_apis_jenkinsio_v1_UserDetails(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserList":                          schema_pkg_apis_jenkinsio_v1_UserList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserSpec":                          schema_pkg_apis_jenkinsio_v1_UserSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Workflow":                          schema_pkg_apis_jenkinsio_v1_Workflow(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowList":                      schema_pkg_apis_jenkinsio_v1_WorkflowList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowPreconditions":             schema_pkg_apis_jenkinsio_v1_WorkflowPreconditions(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowSpec":                      schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStatus":                    schema_pkg_apis_jenkinsio_v1_WorkflowStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStep":                      schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AccountReference":                    schema_pkg_apis_jenkinsio_v1_AccountReference(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.App":                                 schema_pkg_apis_jenkinsio_v1_App(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppList":                             schema_pkg_apis_jenkinsio_v1_AppList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppSpec":                             schema_pkg_apis_jenkinsio_v1_AppSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve":                             schema_pkg_apis_jenkinsio_v1_Approve(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment":                          schema_pkg_apis_jenkinsio_v1_Attachment(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Binary":                              schema_pkg_apis_jenkinsio_v1_Binary(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy":       schema_pkg_apis_jenkinsio_v1_BranchProtectionContextPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher":                            schema_pkg_apis_jenkinsio_v1_Brancher(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPack":                           schema_pkg_apis_jenkinsio_v1_BuildPack(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackList":                       schema_pkg_apis_jenkinsio_v1_BuildPackList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackSpec":                       schema_pkg_apis_jenkinsio_v1_BuildPackSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ChartRef":                            schema_pkg_apis_jenkinsio_v1_ChartRef(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatus":                        schema_pkg_apis_jenkinsio_v1_CommitStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusCommitReference":         schema_pkg_apis_jenkinsio_v1_CommitStatusCommitReference(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusDetails":                 schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusItem":                    schema_pkg_apis_jenkinsio_v1_CommitStatusItem(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusList":                    schema_pkg_apis_jenkinsio_v1_CommitStatusList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusSpec":                    schema_pkg_apis_jenkinsio_v1_CommitStatusSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary":                       schema_pkg_apis_jenkinsio_v1_CommitSummary(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec":                       schema_pkg_apis_jenkinsio_v1_ConfigMapSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater":                       schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy":                       schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep":                    schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment":                         schema_pkg_apis_jenkinsio_v1_Environment(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter":                   schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentList":                     schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRepository":               schema_pkg_apis_jenkinsio_v1_EnvironmentRepository(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding":              schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBinding(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingList":          schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec":          schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus":        schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentSpec":                     schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentStatus":                   schema_pkg_apis_jenkinsio_v1_EnvironmentStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentVariable":                 schema_pkg_apis_jenkinsio_v1_EnvironmentVariable(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Extension":                           schema_pkg_apis_jenkinsio_v1_Extension(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfig":                     schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfigList":                 schema_pkg_apis_jenkinsio_v1_ExtensionConfigList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinition":                 schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference":   schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionChildReference(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionList":             schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference":        schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReference(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReferenceList":    schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReferenceList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution":                  schema_pkg_apis_jenkinsio_v1_ExtensionExecution(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionList":                       schema_pkg_apis_jenkinsio_v1_ExtensionList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameter":                  schema_pkg_apis_jenkinsio_v1_ExtensionParameter(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameterValue":             schema_pkg_apis_jenkinsio_v1_ExtensionParameterValue(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference":        schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReference(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReferenceList":    schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionSpec":                       schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExternalPlugin":                      schema_pkg_apis_jenkinsio_v1_ExternalPlugin(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact":                                schema_pkg_apis_jenkinsio_v1_Fact(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactList":                            schema_pkg_apis_jenkinsio_v1_FactList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec":                            schema_pkg_apis_jenkinsio_v1_FactSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus":                          schema_pkg_apis_jenkinsio_v1_FactStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService":                          schema_pkg_apis_jenkinsio_v1_GitService(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceList":                      schema_pkg_apis_jenkinsio_v1_GitServiceList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec":                      schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitStatus":                           schema_pkg_apis_jenkinsio_v1_GitStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy":              schema_pkg_apis_jenkinsio_v1_GlobalProtectionPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueLabel":                          schema_pkg_apis_jenkinsio_v1_IssueLabel(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary":                        schema_pkg_apis_jenkinsio_v1_IssueSummary(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase":                             schema_pkg_apis_jenkinsio_v1_JobBase(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm":                                schema_pkg_apis_jenkinsio_v1_Lgtm(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement":                         schema_pkg_apis_jenkinsio_v1_Measurement(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger":                              schema_pkg_apis_jenkinsio_v1_Merger(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original":                            schema_pkg_apis_jenkinsio_v1_Original(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity":                    schema_pkg_apis_jenkinsio_v1_PipelineActivity(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityList":                schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec":                schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep":                schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure":                   schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureList":               schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage":              schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Plugin":                              schema_pkg_apis_jenkinsio_v1_Plugin(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginList":                          schema_pkg_apis_jenkinsio_v1_PluginList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginSpec":                          schema_pkg_apis_jenkinsio_v1_PluginSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmit":                          schema_pkg_apis_jenkinsio_v1_Postsubmit(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits":                         schema_pkg_apis_jenkinsio_v1_Postsubmits(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmit":                           schema_pkg_apis_jenkinsio_v1_Presubmit(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits":                          schema_pkg_apis_jenkinsio_v1_Presubmits(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep":                 schema_pkg_apis_jenkinsio_v1_PreviewActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewGitSpec":                      schema_pkg_apis_jenkinsio_v1_PreviewGitSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep":                 schema_pkg_apis_jenkinsio_v1_PromoteActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromotePullRequestStep":              schema_pkg_apis_jenkinsio_v1_PromotePullRequestStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteUpdateStep":                   schema_pkg_apis_jenkinsio_v1_PromoteUpdateStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteWorkflowStep":                 schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicies":                  schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy":                    schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query":                               schema_pkg_apis_jenkinsio_v1_Query(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation":                  schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher":                 schema_pkg_apis_jenkinsio_v1_RegexpChangeMatcher(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Release":                             schema_pkg_apis_jenkinsio_v1_Release(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseList":                         schema_pkg_apis_jenkinsio_v1_ReleaseList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseSpec":                         schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseStatus":                       schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy": schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringContextPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString":        schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringString(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins":   schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfExternalPlugins(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings":           schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfStrings(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RepoContextPolicy":                   schema_pkg_apis_jenkinsio_v1_RepoContextPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference":                   schema_pkg_apis_jenkinsio_v1_ResourceReference(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions":                        schema_pkg_apis_jenkinsio_v1_Restrictions(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReviewPolicy":                        schema_pkg_apis_jenkinsio_v1_ReviewPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Scheduler":                           schema_pkg_apis_jenkinsio_v1_Scheduler(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent":                      schema_pkg_apis_jenkinsio_v1_SchedulerAgent(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerList":                       schema_pkg_apis_jenkinsio_v1_SchedulerList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerSpec":                       schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepository":                    schema_pkg_apis_jenkinsio_v1_SourceRepository(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroup":               schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroup(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupList":           schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec":           schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryList":                schema_pkg_apis_jenkinsio_v1_SourceRepositoryList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositorySpec":                schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep":                   schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement":                           schema_pkg_apis_jenkinsio_v1_Statement(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation":                     schema_pkg_apis_jenkinsio_v1_StorageLocation(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Team":                                schema_pkg_apis_jenkinsio_v1_Team(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamList":                            schema_pkg_apis_jenkinsio_v1_TeamList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSettings":                        schema_pkg_apis_jenkinsio_v1_TeamSettings(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSpec":                            schema_pkg_apis_jenkinsio_v1_TeamSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamStatus":                          schema_pkg_apis_jenkinsio_v1_TeamStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger":                             schema_pkg_apis_jenkinsio_v1_Trigger(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.User":                                schema_pkg_apis_jenkinsio_v1_User(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails":                         schema_pkg_apis_jenkinsio_v1_UserDetails(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserList":                            schema_pkg_apis_jenkinsio_v1_UserList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserSpec":                            schema_pkg_apis_jenkinsio_v1_UserSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Workflow":                            schema_pkg_apis_jenkinsio_v1_Workflow(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowList":                        schema_pkg_apis_jenkinsio_v1_WorkflowList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowPreconditions":               schema_pkg_apis_jenkinsio_v1_WorkflowPreconditions(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowSpec":                        schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStatus":                      schema_pkg_apis_jenkinsio_v1_WorkflowStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStep":                        schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref),
 	}
 }
 
@@ -254,6 +288,48 @@ func schema_pkg_apis_jenkinsio_v1_AppSpec(ref common.ReferenceCallback) common.O
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_Approve(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Approve specifies a configuration for a single approve.\n\nThe configuration for the approve plugin is defined as a list of these structures.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"issueRequired": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IssueRequired indicates if an associated issue is required for approval in the specified repos.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"requireSelfApproval": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RequireSelfApproval requires PR authors to explicitly approve their PRs. Otherwise the plugin assumes the author of the PR approves the changes in the PR.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"lgtmActsAsApprove": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LgtmActsAsApprove indicates that the lgtm command should be used to indicate approval",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"ignoreReviewState": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IgnoreReviewState causes the approve plugin to ignore the GitHub review state. Otherwise: * an APPROVE github review is equivalent to leaving an \"/approve\" message. * A REQUEST_CHANGES github review is equivalent to leaving an /approve cancel\" message.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_Attachment(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -315,6 +391,61 @@ func schema_pkg_apis_jenkinsio_v1_Binary(ref common.ReferenceCallback) common.Op
 			},
 		},
 		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_BranchProtectionContextPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BranchProtectionContextPolicy configures required git provider contexts. Strict determines whether merging to the branch invalidates existing contexts.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"contexts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Contexts appends required contexts that must be green to merge",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"strict": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Strict overrides whether new commits in the base branch require updating the PR if set",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Brancher(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Brancher is for shared code between jobs that only run against certain branches. An empty brancher runs against all branches.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"skipBranches": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Do not run against these branches. Default is no branches.",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"branches": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Only run against these branches. Default is all branches.",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -767,6 +898,139 @@ func schema_pkg_apis_jenkinsio_v1_CommitSummary(ref common.ReferenceCallback) co
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ConfigMapSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ConfigMapSpec contains configuration options for the configMap being updated by the config-updater plugin.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of ConfigMap",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Key is the key in the ConfigMap to update with the file contents. If no explicit key is given, the basename of the file will be used.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespace in which the configMap needs to be deployed. If no namespace is specified it will be deployed to the ProwJobNamespace.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"additional_namespaces": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespaces in which the configMap needs to be deployed, in addition to the above namespace provided, or the default if it is not set.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ConfigUpdater holds configuration for the config updater plugin",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"map": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec"),
+									},
+								},
+							},
+						},
+					},
+					"configFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"pluginFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextPolicy configures options about how to handle various contexts.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"skipUnknownContexts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "whether to consider unknown contexts optional (skip) or required.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"requiredContexts": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"requiredIfPresentContexts": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"optionalContexts": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"fromBranchProtection": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Infer required and optional jobs from Branch Protection configuration",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -1929,6 +2193,42 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_ExternalPlugin(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ExternalPlugin holds configuration for registering an external plugin.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the plugin.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"endpoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Endpoint is the location of the external plugin. Defaults to the name of the plugin, ie. \"http://{{name}}\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"events": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ReplaceableSliceOfStrings are the events that need to be demuxed by the hook server to the external plugin. If no events are specified, everything is sent.",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_Fact(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2261,6 +2561,32 @@ func schema_pkg_apis_jenkinsio_v1_GitStatus(ref common.ReferenceCallback) common
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_GlobalProtectionPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GlobalProtectionPolicy defines the default branch protection policy for the scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ProtectionPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
+						},
+					},
+					"protectTested": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_IssueLabel(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2382,6 +2708,98 @@ func schema_pkg_apis_jenkinsio_v1_IssueSummary(ref common.ReferenceCallback) com
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_JobBase(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JobBase contains attributes common to all job types",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The name of the job. Must match regex [A-Za-z0-9-._]+ e.g. pull-test-infra-bazel-build",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"labels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ReplaceableMapOfStringString are added to jobs and pods created for this job.",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString"),
+						},
+					},
+					"maxConcurrency": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MaximumConcurrency of this job, 0 implies no limit.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"agent": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Agent that will take care of running this job.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cluster": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Cluster is the alias of the cluster to run this job in. (Default: kube.DefaultClusterAlias)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespace is the namespace in which pods schedule.\n  empty: results in scheduler.DefaultNamespace",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name", "agent"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Lgtm(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Lgtm specifies a configuration for a single lgtm. The configuration for the lgtm plugin is defined as a list of these structures.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"reviewActsAsLgtm": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ReviewActsAsLgtm indicates that a Github review of \"approve\" or \"request changes\" acts as adding or removing the lgtm label",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"storeTreeHash": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StoreTreeHash indicates if tree_hash should be stored inside a comment to detect squashed commits before removing lgtm labels",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"trustedTeamForStickyLgtm": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WARNING: This disables the security mechanism that prevents a malicious member (or compromised GitHub account) from merging arbitrary code. Use with caution.\n\nStickyLgtmTeam specifies the Github team whose members are trusted with sticky LGTM, which eliminates the need to re-lgtm minor fixes/updates.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_Measurement(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2425,6 +2843,69 @@ func schema_pkg_apis_jenkinsio_v1_Measurement(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Merger(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Merger defines the options used to merge the PR",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"targetUrl": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL for status contexts.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"prStatusBaseUrl": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PRStatusBaseURL is the base URL for the PR status page. This is used to link to a merge requirements overview in the status context.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"blockerLabel": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BlockerLabel is an optional label that is used to identify merge blocking Git Provider issues. Leave this blank to disable this feature and save 1 API token per sync loop.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"squashLabel": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SquashLabel is an optional label that is used to identify PRs that should always be squash merged. Leave this blank to disable this feature.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"maxGoroutines": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MaxGoroutines is the maximum number of goroutines spawned inside the controller to handle org/repo:branch pools. Defaults to 20. Needs to be a positive number.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"mergeMethod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Override the default method of merge. Valid options are squash, rebase, and merge.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"policy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContextOptions defines the default merge options. If not set it will infer the required and optional contexts from the jobs configured and use the Git Provider combined status; otherwise it may apply the branch protection setting or let user define their own options in case branch protection is not used.",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"},
 	}
 }
 
@@ -3126,6 +3607,217 @@ func schema_pkg_apis_jenkinsio_v1_PluginSpec(ref common.ReferenceCallback) commo
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_Postsubmit(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Postsubmit runs on push events.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"JobBase": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase"),
+						},
+					},
+					"RegexpChangeMatcher": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"),
+						},
+					},
+					"Brancher": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher"),
+						},
+					},
+					"context": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Context is the name of the GitHub status context for the job.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"report": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Report will comment and set status on GitHub.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"context"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Postsubmits(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Postsubmits is a list of Postsubmit job configurations that can optionally completely replace the Postsubmit job configurations in the parent scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"entries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Items are the post submit configurations",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmit"),
+									},
+								},
+							},
+						},
+					},
+					"replace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replace the existing entries",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmit"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Presubmit(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Presubmit defines a job configuration for pull requests",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"JobBase": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase"),
+						},
+					},
+					"Brancher": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher"),
+						},
+					},
+					"RegexpChangeMatcher": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"),
+						},
+					},
+					"alwaysRun": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AlwaysRun automatically for every PR, or only when a comment triggers it. By default true.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"context": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Context is the name of the Git Provider status context for the job.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"optional": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optional indicates that the job's status context should not be required for merge. By default false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"report": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Report enables reporting the job status on the git provider",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"trigger": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Trigger is the regular expression to trigger the job. e.g. `@k8s-bot e2e test this` RerunCommand must also be specified if this field is specified. (Default: `(?m)^/test (?:.*? )?<job name>(?: .*?)?$`)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"rerunCommand": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The RerunCommand to give users. Must match Trigger. Trigger must also be specified if this field is specified. (Default: `/test <job name>`)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"mergeMethod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Override the default method of merge. Valid options are squash, rebase, and merge.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"query": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query"),
+						},
+					},
+					"policy": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicies"),
+						},
+					},
+					"context_options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContextOptions defines the merge options. If not set it will infer the required and optional contexts from the jobs configured and use the Git Provider combined status; otherwise it may apply the branch protection setting or let user define their own options in case branch protection is not used.",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RepoContextPolicy"),
+						},
+					},
+				},
+				Required: []string{"alwaysRun", "context", "trigger", "rerunCommand"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicies", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RepoContextPolicy"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Presubmits(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Presubmits is a list of Presubmit job configurations that can optionally completely replace the Presubmit job configurations in the parent scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"entries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Items are the Presubmit configurtations",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmit"),
+									},
+								},
+							},
+						},
+					},
+					"replace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replace the existing entries",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmit"},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_PreviewActivityStep(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3450,6 +4142,138 @@ func schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref common.ReferenceCallba
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ProtectionPolicies defines the branch protection policies",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ProtectionPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
+						},
+					},
+					"Replace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"entries": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ProtectionPolicy for merging.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"protect": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Protect overrides whether branch protection is enabled if set.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"requiredStatusChecks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RequiredStatusChecks configures github contexts",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy"),
+						},
+					},
+					"enforceAdmins": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Admins overrides whether protections apply to admins if set.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"restrictions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Restrictions limits who can merge",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions"),
+						},
+					},
+					"requiredPullRequestReviews": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RequiredPullRequestReviews specifies approval/review criteria.",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReviewPolicy"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReviewPolicy"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Query(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Query is turned into a Git Provider search query. See the docs for details: https://help.github.com/articles/searching-issues-and-pull-requests/",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"excludedBranches": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"includedBranches": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"labels": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"missingLabels": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"milestone": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"reviewApprovedRequired": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3499,6 +4323,27 @@ func schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref common.ReferenceCallbac
 									},
 								},
 							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_RegexpChangeMatcher(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RegexpChangeMatcher is for code shared between jobs that run only when certain files are changed.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"runIfChanged": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RunIfChanged defines a regex used to select which subset of file changes should trigger this job. If any file in the changeset matches this regex, the job will be triggered",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -3713,6 +4558,169 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringContextPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ReplaceableMapOfStringContextPolicy is a map of context policies that can optionally completely replace any context policies defined in the parent scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"replace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"Items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"Items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringString(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ReplaceableMapOfStringString is a map of strings that can optionally completely replace the map of strings in the parent scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"entries": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"replace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replace the existing entries",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfExternalPlugins(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ReplaceableSliceOfExternalPlugins is a list of external plugins that can optionally completely replace the plugins in any parent SchedulerSpec",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Replace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"entries": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExternalPlugin"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"Replace"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExternalPlugin"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfStrings(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ReplaceableSliceOfStrings is a slice of strings that can optionally completely replace the slice of strings defined in the parent scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"entries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Items is the string values",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"replace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replace the existing entries",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_RepoContextPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RepoContextPolicy overrides the policy for repo, and any branch overrides.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ContextPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"),
+						},
+					},
+					"branches": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy"),
+						},
+					},
+				},
+				Required: []string{"ContextPolicy"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy"},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_ResourceReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3755,6 +4763,254 @@ func schema_pkg_apis_jenkinsio_v1_ResourceReference(ref common.ReferenceCallback
 	}
 }
 
+func schema_pkg_apis_jenkinsio_v1_Restrictions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Restrictions limits who can merge Users and Teams entries are appended to parent lists.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"users": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"teams": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+				},
+				Required: []string{"users", "teams"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_ReviewPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ReviewPolicy specifies git provider approval/review criteria. Any nil values inherit the policy from the parent, otherwise bool/ints are overridden. Non-empty lists are appended to parent lists.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"dismissalRestrictions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Restrictions appends users/teams that are allowed to merge",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions"),
+						},
+					},
+					"dismissStaleReviews": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DismissStale overrides whether new commits automatically dismiss old reviews if set",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"requireCodeOwnerReviews": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RequireOwners overrides whether CODEOWNERS must approve PRs if set",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"requiredApprovingReviewCount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Approvals overrides the number of approvals required if set (set to 0 to disable)",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Scheduler(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Scheduler is configuration for a pipeline scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_SchedulerAgent(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SchedulerAgent defines the scheduler agent configuration",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"agent": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Agent defines the agent used to schedule jobs, by default Prow",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"agent"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_SchedulerList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SchedulerList is a list of configurations for a pipeline scheduler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Scheduler"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Scheduler", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SchedulerSpec defines the pipeline scheduler (e.g. Prow) configuration",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"schedulerAgent": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent"),
+						},
+					},
+					"policy": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy"),
+						},
+					},
+					"presubmits": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits"),
+						},
+					},
+					"postsubmits": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits"),
+						},
+					},
+					"trigger": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger"),
+						},
+					},
+					"approve": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve"),
+						},
+					},
+					"lgtm": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm"),
+						},
+					},
+					"externalPlugins": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins"),
+						},
+					},
+					"merger": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger"),
+						},
+					},
+					"plugins": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Plugins is a list of plugin names enabled for a repo",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+					"configUpdater": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger"},
+	}
+}
+
 func schema_pkg_apis_jenkinsio_v1_SourceRepository(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3792,6 +5048,144 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepository(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositorySpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroup(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SourceRepositoryGroup is the metadata for an Application/Project/SourceRepository",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SourceRepositoryGroupList is a structure used by k8s to store lists of apps",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroup"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroup", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SourceRepositoryGroupSpec is the metadata for an Application/Project/SourceRepository",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"repositories": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+									},
+								},
+							},
+						},
+					},
+					"scheduler": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+						},
+					},
+				},
+				Required: []string{"repositories", "scheduler"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3881,10 +5275,16 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref common.ReferenceCallb
 							Format:      "",
 						},
 					},
+					"scheduler": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+						},
+					},
 				},
 			},
 		},
-		Dependencies: []string{},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"},
 	}
 }
 
@@ -4324,11 +5724,16 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							},
 						},
 					},
+					"defaultScheduler": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation", "k8s.io/api/batch/v1.Job"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation", "k8s.io/api/batch/v1.Job"},
 	}
 }
 
@@ -4388,6 +5793,48 @@ func schema_pkg_apis_jenkinsio_v1_TeamStatus(ref common.ReferenceCallback) commo
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Trigger(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Trigger specifies a configuration for a single trigger.\n\nThe configuration for the trigger plugin is defined as a list of these structures.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"trustedOrg": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TrustedOrg is the org whose members' PRs will be automatically built for PRs to the above repos. The default is the PR's org.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"joinOrgUrl": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JoinOrgURL is a link that redirects users to a location where they should be able to read more about joining the organization in order to become trusted members. Defaults to the Github link of TrustedOrg.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"onlyOrgMembers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnlyOrgMembers requires PRs and/or /ok-to-test comments to come from org members. By default, trigger also include repo collaborators.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"ignoreOkToTest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IgnoreOkToTest makes trigger ignore /ok-to-test comments. This is a security mitigation to only allow testing from trusted users.",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 				},
