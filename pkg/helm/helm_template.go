@@ -994,7 +994,7 @@ func (h *HelmTemplate) runKubectl(args ...string) error {
 	h.Runner.SetName(h.Binary)
 	h.Runner.SetArgs(args)
 	output, err := h.Runner.RunWithoutRetry()
-	log.Info(output + "\n")
+	log.Info(util.ColorInfo(output) + "\n")
 	return err
 }
 
