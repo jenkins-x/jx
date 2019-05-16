@@ -242,6 +242,21 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:         "command-as-multiline-script",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-js-test-repo-really-long-1",
+					Pipeline: "abayer/js-test-repo/really-long",
+					Build:    "1",
+				},
+			},
+		},
 	}
 
 	k8sObjects := []runtime.Object{
