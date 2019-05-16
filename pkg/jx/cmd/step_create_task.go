@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/ghodss/yaml"
@@ -1013,6 +1014,27 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 
 	info := util.ColorInfo
 
+	var activityOwnerReference *metav1.OwnerReference
+
+	if activityKey != nil {
+
+		jxClient, _, jxErr := o.JXClientAndDevNamespace()
+		if jxErr != nil {
+			return jxErr
+		}
+		activity, _, err := activityKey.GetOrCreate(jxClient, pipeline.Namespace)
+		if err != nil {
+			return err
+		}
+
+		activityOwnerReference = &metav1.OwnerReference{
+			APIVersion: jenkinsio.GroupAndVersion,
+			Kind:       "PipelineActivity",
+			Name:       activity.Name,
+			UID:        activity.UID,
+		}
+	}
+
 	for _, resource := range resources {
 		_, err := tekton.CreateOrUpdateSourceResource(tektonClient, ns, resource)
 		if err != nil {
@@ -1027,11 +1049,18 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	for _, task := range tasks {
+		if activityOwnerReference != nil {
+			task.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
+		}
 		_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 		}
 		log.Infof("upserted Task %s\n", info(task.Name))
+	}
+
+	if activityOwnerReference != nil {
+		pipeline.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
 	}
 
 	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline)
@@ -1076,18 +1105,6 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 			return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
 		}
 		log.Infof("created PipelineStructure %s\n", info(structure.Name))
-	}
-
-	if activityKey != nil {
-
-		jxClient, _, jxErr := o.JXClientAndDevNamespace()
-		if jxErr != nil {
-			return jxErr
-		}
-		_, _, err := activityKey.GetOrCreate(jxClient, pipeline.Namespace)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
