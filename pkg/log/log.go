@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"strings"
 
@@ -44,6 +45,25 @@ func init() {
 	} else {
 		SetFormatter(FormatLayoutText)
 	}
+}
+
+// SetLevel sets the logging level
+func SetLevel(s string) error {
+	level, err := logrus.ParseLevel(s)
+	if err != nil {
+		return errors.Errorf("Invalid log level '%s'", s)
+	}
+	logrus.SetLevel(level)
+	return nil
+}
+
+// GetLevels returns the list of valid log levels
+func GetLevels() []string {
+	var levels []string
+	for _, level := range logrus.AllLevels {
+		levels = append(levels, level.String())
+	}
+	return levels
 }
 
 // SetFormatter sets the logrus format to use either text or JSON formatting
@@ -193,4 +213,13 @@ func Successf(msg string, args ...interface{}) {
 // Failure red logging
 func Failure(msg string) {
 	logrus.Info(colorError(msg))
+}
+
+// CaptureOutput calls the specified function capturing and returning all logged messages.
+func CaptureOutput(f func()) string {
+	var buf bytes.Buffer
+	logrus.SetOutput(&buf)
+	f()
+	logrus.SetOutput(os.Stderr)
+	return buf.String()
 }
