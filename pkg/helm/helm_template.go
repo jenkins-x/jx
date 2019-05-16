@@ -700,9 +700,17 @@ func splitObjectsInFiles(inputFile string, baseDir string, relativePath, default
 	}
 	if buf.Len() > 0 && !isWhitespaceOrComments(buf.Bytes()) {
 		if count > 0 {
-			log.Warnf("//TODO not determining the namespace correctly...\n")
-			// TODO fix this, should not be default namespace
-			objFile, err := writeObjectInFile(&buf, baseDir, relativePath, defaultNamespace, fileName, count)
+			data := buf.Bytes()
+
+			m := yaml.MapSlice{}
+			err = yaml.Unmarshal(data, &m)
+
+			namespace := getYamlValueString(&m, "metadata", "namespace")
+			if namespace == "" {
+				namespace = defaultNamespace
+			}
+
+			objFile, err := writeObjectInFile(&buf, baseDir, relativePath, namespace, fileName, count)
 			if err != nil {
 				return result, errors.Wrapf(err, "saving object")
 			}
