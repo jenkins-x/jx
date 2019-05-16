@@ -92,7 +92,7 @@ func NewCmdCreateMLQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "mlquickstart",
-		Short:   "Create a new app from a mlquickstart and import the generated code into Git and Jenkins for CI/CD",
+		Short:   "Create a new machine learning app from a set of quickstarts and import the generated code into Git and Jenkins for CI/CD",
 		Long:    createMLQuickstartLong,
 		Example: createMLQuickstartExample,
 		Aliases: []string{"arch"},
@@ -119,6 +119,13 @@ func NewCmdCreateMLQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements the generic Create command
 func (o *CreateMLQuickstartOptions) Run() error {
 	o.Debugf("Running CreateMLQuickstart...\n")
+
+	interactive := true
+	if o.BatchMode {
+		interactive = false
+		o.Debugf("In batch mode.\n")
+	}
+
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
@@ -248,7 +255,8 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		stub := o.Filter.ProjectName
 		for _, project := range ps {
 			w.ImportOptions = o.ImportOptions // Reset the options each time as they are modified by Import (DraftPack)
-			if !o.BatchMode {
+			if interactive {
+				o.Debugf("Setting Quickstart from surveys.\n")
 				w.ImportOptions.Organisation = details.Organisation
 				w.GitRepositoryOptions = o.GitRepositoryOptions
 				w.GitRepositoryOptions.ServerURL = details.GitServer.URL
