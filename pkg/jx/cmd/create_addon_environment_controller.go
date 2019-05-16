@@ -236,7 +236,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	}
 	setValues = append(setValues, "source.owner="+gitInfo.Organisation)
 	setValues = append(setValues, "source.repo="+gitInfo.Name)
-	setValues = append(setValues, "source.serverURL="+serverURL)
+	setValues = append(setValues, "source.serverUrl="+serverURL)
 	setValues = append(setValues, "source.gitKind="+o.GitKind)
 	setValues = append(setValues, "source.user="+o.GitUser)
 	setValues = append(setValues, "source.token="+o.GitToken)
