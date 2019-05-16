@@ -232,6 +232,9 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		provider := ""
 		if adminTeamSettings != nil {
 			provider = adminTeamSettings.KubeProvider
+			io.GitRepositoryOptions.Private = adminTeamSettings.GitPrivate
+			io.GitRepositoryOptions.ServerURL = adminTeamSettings.GitServer
+			io.GitRepositoryOptions.Username = adminTeamSettings.PipelineUsername
 		}
 		if provider == "" {
 			log.Warnf("No kube provider specified on admin team settings %s\n. Defaulting to gke", adminNs)
