@@ -78,6 +78,7 @@ type PipelineRunInfoFilter struct {
 	Build      string
 	Filter     string
 	Pending    bool
+	Context    string
 }
 
 // GetBuild gets the build identifier
@@ -432,6 +433,9 @@ func (o *PipelineRunInfoFilter) PipelineRunMatches(info *PipelineRunInfo) bool {
 	if o.Build != "" && o.Build != info.Build {
 		return false
 	}
+	if o.Context != "" && o.Context != info.Context {
+		return false
+	}
 	if o.Filter != "" && !strings.Contains(info.Name, o.Filter) {
 		return false
 	}
@@ -483,6 +487,7 @@ func (pri PipelineRunInfo) ToBuildPodInfo() *builds.BuildPodInfo {
 		Branch:            pri.Branch,
 		Build:             pri.Build,
 		BuildNumber:       pri.BuildNumber,
+		Context:           pri.Context,
 		Pipeline:          pri.Pipeline,
 		LastCommitSHA:     pri.LastCommitSHA,
 		LastCommitURL:     pri.LastCommitURL,
