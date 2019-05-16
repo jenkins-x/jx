@@ -745,7 +745,6 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 	partFile := fmt.Sprintf("%s%d-%s", filePrefix, count, fileName)
 	absFile := filepath.Join(baseDir, "namespaces", namespace, relativeDir, partFile)
 
-	//log.Infof("absFile - %s\n", absFile)
 	absFileDir := filepath.Dir(absFile)
 
 	err := os.MkdirAll(absFileDir, os.ModePerm)
@@ -757,7 +756,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 		return "", errors.Wrapf(err, "creating file %q", absFile)
 	}
 
-	log.Infof("writing data to %s\n", absFile)
+	log.Debugf("writing data to %s\n", absFile)
 
 	defer file.Close()
 	_, err = buf.WriteTo(file)
