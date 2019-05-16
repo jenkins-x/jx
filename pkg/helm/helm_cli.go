@@ -416,7 +416,7 @@ func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, 
 		if len(lines) > 1 {
 			for _, line := range lines[1:] {
 				fields := strings.Fields(line)
-				if len(fields) == 10 {
+				if len(fields) == 10 || len(fields) == 11 {
 					chartFullName := fields[8]
 					lastDash := strings.LastIndex(chartFullName, "-")
 					releaseName := fields[0]
@@ -428,7 +428,7 @@ func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, 
 							fields[6]),
 						Status:        fields[7],
 						ChartFullName: chartFullName,
-						Namespace:     fields[9],
+						Namespace:     ns,
 						Chart:         chartFullName[:lastDash],
 						ChartVersion:  chartFullName[lastDash+1:],
 					}
