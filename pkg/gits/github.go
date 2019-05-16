@@ -32,6 +32,7 @@ type GitHubProvider struct {
 	Git    Gitter
 }
 
+
 func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
@@ -1301,4 +1302,11 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 		}
 	}
 	return commits, nil
+}
+
+// GetPRNumFromBranchName returns the PR Number from a branch name.
+func (p *GitHubProvider) GetPRNumFromBranchName(owner string, repo *GitRepository, branchName string) (int, error) {
+	pullRequestName:=strings.TrimPrefix(branchName, "PR-")
+	prNum, err :=strconv.Atoi(pullRequestName)
+	return prNum, err
 }

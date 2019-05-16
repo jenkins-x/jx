@@ -749,3 +749,10 @@ func (f *FakeProvider) ListCommits(owner, name string, opt *ListCommitsArguments
 func (f *FakeProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return nil
 }
+
+// GetPRNumFromBranchName returns the PR Number from a branch name.
+func (p *FakeProvider) GetPRNumFromBranchName(owner string, repo *GitRepository, branchName string) (int, error) {
+	pullRequestName:=strings.TrimPrefix(branchName, "PR-")
+	prNum, err :=strconv.Atoi(pullRequestName)
+	return prNum, err
+}

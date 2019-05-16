@@ -503,6 +503,22 @@ func (suite *BitbucketCloudProviderTestSuite) TestAcceptInvitations() {
 	suite.Require().Nil(err)
 }
 
+
+func (suite *BitbucketCloudProviderTestSuite) TestGetPRNumFromBranchName() {
+	repo, err := suite.provider.GetRepository(
+		suite.provider.Username,
+		"test-repo",
+	)
+
+	suite.Require().NotNil(repo)
+	suite.Require().Nil(err)
+
+	id, err :=	suite.provider.GetPRNumFromBranchName(suite.provider.Username, repo, "PR-1")
+
+	suite.Require().True(id == 1)
+	suite.Require().Nil(err)
+}
+
 func TestBitbucketCloudProviderTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping BitbucketCloudProviderTestSuite in short mode")
@@ -510,6 +526,7 @@ func TestBitbucketCloudProviderTestSuite(t *testing.T) {
 		suite.Run(t, new(BitbucketCloudProviderTestSuite))
 	}
 }
+
 
 func (suite *BitbucketCloudProviderTestSuite) TearDownSuite() {
 	suite.server.Close()

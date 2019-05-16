@@ -151,6 +151,9 @@ type GitProvider interface {
 	// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 	// before creating a pull request
 	ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool
+
+	// GetPRNumFromBranchName returns the PR Number from a branch name.
+	GetPRNumFromBranchName(string, *GitRepository, string) (int, error)
 }
 
 // Gitter defines common git actions used by Jenkins X via git cli

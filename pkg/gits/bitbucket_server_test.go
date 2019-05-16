@@ -370,6 +370,18 @@ func (suite *BitbucketServerProviderTestSuite) TestAddPRComment() {
 	suite.Require().Nil(err)
 }
 
+func (suite *BitbucketServerProviderTestSuite) TestGetPRNumFromBranchName() {
+
+	repo, err := suite.provider.GetRepository("TEST-ORG", "test-repo")
+	suite.Require().Nil(err)
+	suite.Require().NotNil(repo)
+
+	id, err :=	suite.provider.GetPRNumFromBranchName("TEST-ORG", repo, "PR-1")
+
+	suite.Require().True(id == 1)
+	suite.Require().Nil(err)
+}
+
 func TestBitbucketServerProviderTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestBitbucketServerProviderTestSuite in short mode")

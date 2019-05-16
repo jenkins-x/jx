@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
+	pkgError "github.com/pkg/errors"
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -158,7 +158,7 @@ func (g *GitlabProvider) GetRepository(org, name string) (*GitRepository, error)
 	if err != nil {
 		return nil, err
 	}
-	project, response, err := g.Client.Projects.GetProject(pid)
+	project, response, err := g.Client.Projects.GetProject(pid, nil)
 	if err != nil {
 		return nil, fmt.Errorf("request: %s failed due to: %s", response.Request.URL, err)
 	}
@@ -301,7 +301,7 @@ func (g *GitlabProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if err != nil {
 		return err
 	}
-	mr, _, err := g.Client.MergeRequests.GetMergeRequest(pid, *pr.Number)
+	mr, _, err := g.Client.MergeRequests.GetMergeRequest(pid, *pr.Number, nil)
 	if err != nil {
 		return err
 	}
@@ -385,26 +385,30 @@ func (g *GitlabProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string
 	owner := pr.Owner
 	repo := pr.Repo
 
-	ref := pr.LastCommitSha
-	if ref == "" {
-		return "", fmt.Errorf("missing String for LastCommitSha %#v", pr)
+	if pr.Number == nil {
+		return "", fmt.Errorf("missing PR Id (Id == nil) for PR %#v", pr)
+
+	}
+	ref := *pr.Number
+	if ref == 0 {
+		return "", fmt.Errorf("missing PR Id (Id == 0) for PR %#v", pr)
 	}
 
 	pid, err := g.projectId(owner, g.Username, repo)
 	if err != nil {
 		return "", err
 	}
-	c, _, err := g.Client.Commits.GetCommitStatuses(pid, ref, nil)
+
+	m, _, err := g.Client.MergeRequests.GetMergeRequest(pid, ref, nil)
 	if err != nil {
 		return "", err
 	}
 
-	for _, result := range c {
-		if result.Status != "" {
-			return result.Status, nil
-		}
+	if m.MergeStatus == "can_be_merged"  {
+		return "success", nil
 	}
-	return "", fmt.Errorf("could not find a status for repository %s with ref %s", pid, ref)
+
+	return "", fmt.Errorf("could not find a status for repository %s with merge request %#v", pid, pr)
 }
 
 func (g *GitlabProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
@@ -448,7 +452,15 @@ func (g *GitlabProvider) MergePullRequest(pr *GitPullRequest, message string) er
 
 	opt := &gitlab.AcceptMergeRequestOptions{MergeCommitMessage: &message}
 
-	_, _, err = g.Client.MergeRequests.AcceptMergeRequest(pid, *pr.Number, opt)
+	mrStatus, _, err := g.Client.MergeRequests.AcceptMergeRequest(pid, *pr.Number, opt)
+
+	if err == nil && mrStatus.State == "merged" {
+		statusOption := gitlab.SetCommitStatusOptions{ State:"success"}
+		_, _, err := g.Client.Commits.SetCommitStatus(pid, mrStatus.MergeCommitSHA, &statusOption )
+
+		return err
+
+	}
 	return err
 }
 
@@ -707,7 +719,7 @@ func (g *GitlabProvider) GetContent(org string, name string, path string, ref st
 // before creating a pull request
 func (g *GitlabProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
 	// return originalOwner != username
-	// TODO assuming forking doesn't work yet?
+	// TODO as suming forking doesn't work yet?
 	return false
 }
 
@@ -725,3 +737,40 @@ func (g *GitlabProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 func (g *GitlabProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on gitlab yet")
 }
+
+// GetPRNumFromBranchName returns the PR Number from a branch name.
+func (g *GitlabProvider) GetPRNumFromBranchName(owner string, repo *GitRepository, branchName string) (int, error) {
+
+	pid, err := g.projectId(owner, g.Username, repo.Name)
+	if err != nil {
+		return 0, err
+	}
+	gitlabOpen := "opened"
+	opt := &gitlab.ListProjectMergeRequestsOptions {
+		State: &gitlabOpen,
+		ListOptions: gitlab.ListOptions{
+			Page:    0,
+			PerPage: pageSize,
+		},
+		SourceBranch: &branchName,
+	}
+	mergeRequests, _, err := g.Client.MergeRequests.ListProjectMergeRequests(pid, opt)
+
+	if err != nil {
+		return 0, pkgError.Wrapf(err,"Could not get PR number from branch %s: Gitlab ListProjectMergeRequests returned an error: ", branchName )
+	}
+
+	if mergeRequests == nil {
+		return 0, fmt.Errorf("No MRs found for branch: %s (mergeRquests == nil)", branchName)
+	}
+	noRequests := len(mergeRequests)
+
+	if noRequests == 0 {
+		return 0, fmt.Errorf("No MRs found for branch: %s (noRequests == 0)", branchName)
+	}
+
+	return mergeRequests[0].IID, nil
+
+
+}
+

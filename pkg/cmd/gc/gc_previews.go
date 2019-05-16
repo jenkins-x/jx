@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"strconv"
-
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -106,7 +104,7 @@ func (o *GCPreviewsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			prNum, err := strconv.Atoi(e.Spec.PreviewGitSpec.Name)
+			prNum, _, err := gitProvider.GetPRNumFromBranchName(gitInfo.Organisation, gitInfo, e.Spec.PreviewGitSpec.Name)
 			if err != nil {
 				log.Logger().Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "")
 			}

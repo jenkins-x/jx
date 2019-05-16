@@ -1074,3 +1074,10 @@ func (b *BitbucketServerProvider) ListCommits(owner, repo string, opt *ListCommi
 func (b *BitbucketServerProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on bitbucket")
 }
+
+// GetPRNumFromBranchName returns the PR Number from a branch name.
+func (p *BitbucketServerProvider) GetPRNumFromBranchName(owner string, repo *GitRepository, branchName string) (int, error) {
+	pullRequestName:=strings.TrimPrefix(branchName, "PR-")
+	prNum, err :=strconv.Atoi(pullRequestName)
+	return prNum, err
+}

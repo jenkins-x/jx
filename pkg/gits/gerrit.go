@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	gerrit "github.com/andygrunwald/go-gerrit"
@@ -325,4 +327,11 @@ func (p *GerritProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 // AddLabelsToIssue adds labels to issues or pullrequests
 func (p *GerritProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on gerrit")
+}
+
+// GetPRNumFromBranchName returns the PR Number from a branch name.
+func (p *GerritProvider) GetPRNumFromBranchName(owner string, repo *GitRepository, branchName string) (int, error) {
+	pullRequestName:=strings.TrimPrefix(branchName, "PR-")
+	prNum, err :=strconv.Atoi(pullRequestName)
+	return prNum, err
 }

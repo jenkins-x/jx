@@ -98,6 +98,13 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 			"GET": "project.json",
 		},
 	}
+
+	mux.HandleFunc(fmt.Sprintf("/api/v4/projects/%s/merge_requests", gitlabProjectID), func(w http.ResponseWriter, r *http.Request) {
+		src, err := ioutil.ReadFile("test_data/gitlab/project-merge-requests.json")
+		suite.Require().Nil(err)
+		w.Write(src)
+	})
+
 	for path, methodMap := range gitlabRouter {
 		mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/gitlab", methodMap))
 	}
@@ -172,6 +179,17 @@ func (suite *GitlabProviderSuite) TestAcceptInvitations() {
 	suite.Require().Nil(err)
 }
 
+func (suite *GitlabProviderSuite) TestGetPRNumFromBranchName() {
+	repo, err := suite.provider.GetRepository(gitlabUserName, gitlabProjectName)
+	suite.Require().NotNil(repo)
+	suite.Require().Nil(err)
+
+	id, err :=	suite.provider.GetPRNumFromBranchName(gitlabUserName, repo, "test1")
+
+	suite.Require().Nil(err)
+	suite.Require().True(id == 1)
+
+}
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestGitlabProviderSuite(t *testing.T) {

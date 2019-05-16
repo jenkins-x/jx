@@ -93,6 +93,21 @@ func (suite *GerritProviderTestSuite) TestCreateRepository() {
 	suite.Require().Equal(fmt.Sprintf("%s:test-org/test-repo", suite.server.URL), repo.SSHURL)
 }
 
+func (suite *GerritProviderTestSuite) TestGetPRNumFromBranchName() {
+	repo, err := suite.provider.GetRepository(
+		suite.provider.Username,
+		"test-repo",
+	)
+
+	suite.Require().NotNil(repo)
+	suite.Require().Nil(err)
+
+	id, err :=	suite.provider.GetPRNumFromBranchName(suite.provider.Username, repo, "PR-1")
+
+	suite.Require().True(id == 1)
+	suite.Require().Nil(err)
+}
+
 func TestGerritProviderTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping GerritProviderTestSuite in short mode")

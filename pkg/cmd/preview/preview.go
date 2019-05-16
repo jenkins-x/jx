@@ -237,10 +237,7 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	prNum, err := strconv.Atoi(o.PullRequestName)
-	if err != nil {
-		log.Logger().Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "")
-	}
+
 
 	var user *v1.UserSpec
 	buildStatus := ""
@@ -263,6 +260,14 @@ func (o *PreviewOptions) Run() error {
 			GitProvider: gitProvider,
 			JXClient:    jxClient,
 			Namespace:   currentNs,
+		}
+
+
+		prNum, err := gitProvider.GetPRNumFromBranchName(o.GitInfo.Organisation, o.GitInfo, o.PullRequest)
+		o.PullRequestName = strconv.Itoa(prNum)
+
+		if err != nil {
+			log.Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
 		}
 
 		if prNum > 0 {
@@ -797,6 +802,7 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 	}
 
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
+
 
 	if o.SourceURL != "" {
 		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)

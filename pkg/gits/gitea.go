@@ -744,3 +744,10 @@ func (p *GiteaProvider) ListCommits(owner, repo string, opt *ListCommitsArgument
 func (p *GiteaProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on gitea")
 }
+
+// GetPRNumFromBranchName returns the PR Number from a branch name.
+func (p *GiteaProvider) GetPRNumFromBranchName(owner string, repo *GitRepository, branchName string) (int, error) {
+	pullRequestName:=strings.TrimPrefix(branchName, "PR-")
+	prNum, err :=strconv.Atoi(pullRequestName)
+	return prNum, err
+}
