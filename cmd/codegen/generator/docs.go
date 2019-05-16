@@ -14,9 +14,9 @@ const (
 )
 
 // InstallGenAPIDocs installs the gen-apidocs tool from the kubernetes-incubator/reference-docs repository.
-func InstallGenAPIDocs(version string) error {
+func InstallGenAPIDocs(version string, gopath string) error {
 	util.AppLogger().Infof("installing %s in version %s via 'go get'", genAPIDocsBin, version)
-	err := util.GoGet(genAPIDocsBin, version, true)
+	err := util.GoGet(genAPIDocsBin, version, gopath, true, false)
 	if err != nil {
 		return err
 	}
@@ -26,8 +26,8 @@ func InstallGenAPIDocs(version string) error {
 
 // DetermineSourceLocation determines the source location for the installed kubernetes-incubator/reference-docs/
 // The location is based on GOPATH/pkd/mod and the current version.
-func DetermineSourceLocation(moduleDir string) (string, error) {
-	moduleDir, err := util.GetModuleDir(moduleDir, genAPIDocsRepo)
+func DetermineSourceLocation(moduleDir string, gopath string) (string, error) {
+	moduleDir, err := util.GetModuleDir(moduleDir, genAPIDocsRepo, gopath)
 	if err != nil {
 		return "", errors.Wrapf(err, "Unable to determine source directory for %s", genAPIDocsRepo)
 	}
@@ -36,7 +36,7 @@ func DetermineSourceLocation(moduleDir string) (string, error) {
 
 // GenerateAPIDocs runs the apidocs-gen tool against configDirectory which includes the openapi-spec dir,
 // the config.yaml file, static content and the static_includes
-func GenerateAPIDocs(configDir string) error {
+func GenerateAPIDocs(configDir string, gopath string) error {
 	includesDir := filepath.Join(configDir, "includes")
 	err := util.DeleteDirContents(includesDir)
 	if err != nil {
@@ -49,7 +49,7 @@ func GenerateAPIDocs(configDir string) error {
 	}
 	cmd := util.Command{
 		Dir:  configDir,
-		Name: filepath.Join(util.GoPathBin(), "gen-apidocs"),
+		Name: filepath.Join(util.GoPathBin(gopath), "gen-apidocs"),
 		Args: []string{
 			"--config-dir",
 			configDir,

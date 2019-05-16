@@ -83,7 +83,7 @@ func NewGenerateClientSetCmd(genOpts GenerateOptions) *cobra.Command {
 	cobraCmd.Flags().StringVarP(&o.InputPackage, optionInputPackage, "i", "", "Input package, must specify")
 	cobraCmd.Flags().StringVarP(&o.OutputPackage, optionOutputPackage, "o", "", "Output package, must specify")
 	cobraCmd.Flags().StringVarP(&o.InputBase, optionInputBase, "", wd, "Input base, defaults working directory")
-
+	cobraCmd.Flags().BoolVarP(&o.Global, global, "", false, "use the users GOPATH")
 	return cobraCmd
 }
 
@@ -109,11 +109,18 @@ func (o *ClientSetGenerationOptions) Run() error {
 		return errors.Wrapf(err, "ensure GOPATH is set correctly")
 	}
 
-	err = generator.InstallCodeGenerators(o.GeneratorVersion)
+	gopath := util.GoPath()
+	if !o.Global {
+		gopath, err = util.IsolatedGoPath()
+		if err != nil {
+			return errors.Wrapf(err, "getting isolated gopath")
+		}
+	}
+	err = generator.InstallCodeGenerators(o.GeneratorVersion, gopath)
 	if err != nil {
 		return errors.Wrapf(err, "installing kubernetes code generator tools")
 	}
 	util.AppLogger().Infof("generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.GoPathInputPackage)
 	return generator.GenerateClient(o.Generators, o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage,
-		filepath.Join(build.Default.GOPATH, "src"), o.BoilerplateFile)
+		filepath.Join(build.Default.GOPATH, "src"), o.BoilerplateFile, gopath)
 }
