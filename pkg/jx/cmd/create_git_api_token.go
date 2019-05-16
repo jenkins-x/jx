@@ -1,23 +1,15 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"io/ioutil"
-	"time"
 
-	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/chromedp"
-	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 var (
@@ -157,132 +149,8 @@ func (o *CreateGitTokenOptions) Run() error {
 
 // lets try use the users browser to find the API token
 func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
-	var ctxt context.Context
-	var cancel context.CancelFunc
-	if o.Timeout != "" {
-		duration, err := time.ParseDuration(o.Timeout)
-		if err != nil {
-			return err
-		}
-		ctxt, cancel = context.WithTimeout(context.Background(), duration)
-	} else {
-		ctxt, cancel = context.WithCancel(context.Background())
-	}
-	defer cancel()
-	log.Infof("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
-
-	c, err := o.createChromeClient(ctxt)
-	if err != nil {
-		return err
-	}
-
-	err = c.Run(ctxt, chromedp.Tasks{
-		chromedp.Navigate(tokenUrl),
-	})
-	if err != nil {
-		return err
-	}
-
-	nodeSlice := []*cdp.Node{}
-	err = c.Run(ctxt, chromedp.Nodes("//input", &nodeSlice))
-	if err != nil {
-		return err
-	}
-
-	login := false
-	for _, node := range nodeSlice {
-		name := node.AttributeValue("name")
-		if name == "user_name" {
-			login = true
-		}
-	}
-
-	if login {
-		o.captureScreenshot(ctxt, c, "screenshot-git-login.png", "//div")
-
-		log.Infof("logging in\n")
-		err = c.Run(ctxt, chromedp.Tasks{
-			chromedp.WaitVisible("user_name", chromedp.ByID),
-			chromedp.SendKeys("user_name", userAuth.Username, chromedp.ByID),
-			chromedp.SendKeys("password", o.Password+"\n", chromedp.ByID),
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
-
-	log.Info("Generating new token")
-
-	tokenId := "jx-" + string(uuid.NewUUID())
-	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
-
-	tokenResultDivSelector := "//div[@class='ui info message']/p"
-	err = c.Run(ctxt, chromedp.Tasks{
-		chromedp.WaitVisible(generateNewTokenButtonSelector),
-		chromedp.Click(generateNewTokenButtonSelector),
-		chromedp.WaitVisible("name", chromedp.ByID),
-		chromedp.SendKeys("name", tokenId+"\n", chromedp.ByID),
-		chromedp.WaitVisible(tokenResultDivSelector),
-		chromedp.Nodes(tokenResultDivSelector, &nodeSlice),
-	})
-	if err != nil {
-		return err
-	}
-	token := ""
-	for _, node := range nodeSlice {
-		text := nodes.NodeText(node)
-		if text != "" && token == "" {
-			token = text
-			break
-		}
-	}
-	log.Info("Found API Token")
-	if token != "" {
-		userAuth.ApiToken = token
-	}
-
-	err = c.Shutdown(ctxt)
-	if err != nil {
-		return err
-	}
-	return nil
+	log.Info("No automation for launching browser presently")
+	return fmt.Errorf("No automation to obtain API token via browser")
 }
 
-// lets try use the users browser to find the API token
-func (o *CreateGitTokenOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
-	if o.BatchMode {
-		options := func(m map[string]interface{}) error {
-			m["remote-debugging-port"] = 9222
-			m["no-sandbox"] = true
-			m["headless"] = true
-			return nil
-		}
 
-		return chromedp.New(ctxt, chromedp.WithRunnerOptions(runner.CommandLineOption(options)))
-	}
-	return chromedp.New(ctxt)
-}
-
-func (o *CreateGitTokenOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
-	log.Info("Creating a screenshot...")
-
-	var picture []byte
-	err := c.Run(ctxt, chromedp.Tasks{
-		chromedp.Sleep(2 * time.Second),
-		chromedp.Screenshot(selector, &picture, options...),
-	})
-	if err != nil {
-		return err
-	}
-	log.Info("Saving a screenshot...")
-
-	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	log.Infof("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
-	return err
-}
