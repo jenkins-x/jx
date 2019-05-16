@@ -3,6 +3,8 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,10 +29,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -2408,6 +2410,7 @@ func (options *InstallOptions) ensureGKEInstallValuesAreFilled() error {
 		}
 		options.installValues[kube.ClusterName] = clusterName
 	}
+
 	return nil
 }
 
