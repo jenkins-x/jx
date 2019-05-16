@@ -1,0 +1,9 @@
+coverage:
+  status:
+    project:
+      default:
+        # basic
+        target: auto
+    patch:
+      defualt:
+        target: 80%

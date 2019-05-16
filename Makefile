@@ -218,6 +218,9 @@ clean: ## Clean the generated artifacts
 richgo:
 	go get -u github.com/kyoh86/richgo
 
+codecov-upload:
+	bash <(curl -s https://codecov.io/bash) -B ${BRANCH_NAME} -C ${PULL_PULL_SHA} -P ${PULL_NUMBER} -B ${BUILD_NUMBER}
+
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
 	@if [ "$(FORMATTED)" == "" ]; \
