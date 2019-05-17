@@ -6,11 +6,10 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
-
-	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
@@ -207,7 +206,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 						return err
 					}
 				} else {
-					err := o.AddHelmRepoIfMissing(current.Chart.Repo, current.Chart.RepoName, "", "")
+					_, err := o.AddHelmBinaryRepoIfMissing(current.Chart.Repo, current.Chart.RepoName, "", "")
 					if err != nil {
 						return err
 					}
@@ -261,7 +260,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 		} else {
 			repoUrl = fmt.Sprintf("https://%s", current.Chart.Repo)
 		}
-		err := o.AddHelmRepoIfMissing(repoUrl, current.Chart.RepoName, "", "")
+		_, err := o.AddHelmBinaryRepoIfMissing(repoUrl, current.Chart.RepoName, "", "")
 		if err != nil {
 			return err
 		}

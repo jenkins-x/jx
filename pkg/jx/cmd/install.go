@@ -3,15 +3,18 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -26,10 +29,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -1073,7 +1076,7 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 }
 
 func (options *InstallOptions) configureHelmRepo() error {
-	err := options.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, "jenkins-x", "", "")
+	_, err := options.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, "jenkins-x", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
 	}
@@ -1874,7 +1877,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
 	case cloud.IKS:
-		err := options.AddHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
+		_, err := options.AddHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add the IBM helm repo")
 		}

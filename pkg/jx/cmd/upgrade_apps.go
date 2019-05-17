@@ -46,6 +46,7 @@ type UpgradeAppsOptions struct {
 
 	HelmUpdate bool
 	AskAll     bool
+	AutoMerge  bool
 
 	Version string
 	All     bool
@@ -98,7 +99,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev environment)")
 	cmd.Flags().BoolVarP(&o.AskAll, "ask-all", "", false, "Ask all configuration questions. "+
 		"By default existing answers are reused automatically.")
-
+	cmd.Flags().BoolVarP(&o.AutoMerge, "auto-merge", "", false, "Automatically merge GitOps pull requests that pass CI")
 	return cmd
 }
 
@@ -109,6 +110,15 @@ func (o *UpgradeAppsOptions) Run() error {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrapf(err, "getting kubeClient")
+	}
+	jxClient, ns, err := o.JXClient()
+	if err != nil {
+		return errors.Wrapf(err, "getting jx client")
+	}
+
 	installOpts := apps.InstallOptions{
 		In:        o.In,
 		DevEnv:    o.DevEnv,
@@ -117,8 +127,18 @@ func (o *UpgradeAppsOptions) Run() error {
 		Out:       o.Out,
 		GitOps:    o.GitOps,
 		BatchMode: o.BatchMode,
+		AutoMerge: o.AutoMerge,
 
-		Helmer: o.Helm(),
+		Helmer:         o.Helm(),
+		Namespace:      o.Namespace,
+		KubeClient:     kubeClient,
+		JxClient:       jxClient,
+		InstallTimeout: opts.DefaultInstallTimeout,
+	}
+	if o.Namespace != "" {
+		installOpts.Namespace = o.Namespace
+	} else {
+		installOpts.Namespace = ns
 	}
 
 	if o.GitOps {
@@ -145,6 +165,7 @@ func (o *UpgradeAppsOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
 		}
+
 		installOpts.GitProvider = gitProvider
 		installOpts.ConfigureGitFn = o.ConfigureGitCallback
 		installOpts.Gitter = o.Git()
@@ -157,22 +178,6 @@ func (o *UpgradeAppsOptions) Run() error {
 		if o.Version != "" {
 			return util.InvalidOptionf(optionVersion, o.ReleaseName, msg, optionVersion)
 		}
-		jxClient, ns, err := o.JXClient()
-		if err != nil {
-			return errors.Wrapf(err, "getting jx client")
-		}
-		kubeClient, err := o.KubeClient()
-		if err != nil {
-			return errors.Wrapf(err, "getting kubeClient")
-		}
-		if o.Namespace != "" {
-			installOpts.Namespace = o.Namespace
-		} else {
-			installOpts.Namespace = ns
-		}
-		installOpts.KubeClient = kubeClient
-		installOpts.JxClient = jxClient
-		installOpts.InstallTimeout = opts.DefaultInstallTimeout
 	}
 
 	if o.GetSecretsLocation() == secrets.VaultLocationKind {

@@ -744,3 +744,8 @@ func (f *FakeProvider) ListCommits(owner, name string, opt *ListCommitsArguments
 	return commits, nil
 
 }
+
+// AddLabelsToIssue adds labels to an issue
+func (f *FakeProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
+	return nil
+}
