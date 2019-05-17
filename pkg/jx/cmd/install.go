@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"io/ioutil"
 	"os"
@@ -269,7 +270,7 @@ func NewCmdInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

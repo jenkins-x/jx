@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"os"
@@ -283,7 +284,7 @@ func setLoggingLevel(cmd *cobra.Command, args []string) {
 	err := log.SetLevel(level)
 	if err != nil {
 		invalidOptionErr := util.InvalidOption(opts.OptionLogLevel, level, log.GetLevels())
-		CheckErr(invalidOptionErr)
+		helper.CheckErr(invalidOptionErr)
 	}
 }
 

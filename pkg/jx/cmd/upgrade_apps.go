@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
@@ -74,7 +75,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 			o.Cmd = cmd
 			o.Args = args
 			err := o.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

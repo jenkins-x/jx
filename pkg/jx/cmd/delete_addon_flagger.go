@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -45,7 +46,7 @@ func NewCmdDeleteAddonFlagger(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "flagger", "The chart release name")
