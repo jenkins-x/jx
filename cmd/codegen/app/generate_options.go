@@ -2,11 +2,12 @@ package app
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"go/build"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/cmd/codegen/util"
 )
@@ -20,6 +21,7 @@ const (
 	optionOutputBase      = "output-base"
 	optionBoilerplateFile = "boilerplate-file"
 	optionModuleName      = "module-name"
+	global                = "global"
 )
 
 // CommonOptions contains the common options
@@ -42,6 +44,7 @@ type GenerateOptions struct {
 	GoPathOutputBase    string
 	OutputPackage       string
 	InputBase           string
+	Global              bool
 }
 
 func (o *GenerateOptions) configure() error {

@@ -17,8 +17,6 @@ import (
 
 	"github.com/jenkins-x/jx/cmd/codegen/util"
 
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/ghodss/yaml"
 
 	"k8s.io/kube-openapi/pkg/builder"
@@ -166,9 +164,9 @@ type schemaWriterTemplateData struct {
 }
 
 // InstallOpenApiGen installs the openapi-gen tool from the github.com/kubernetes/kube-openapi repository.
-func InstallOpenApiGen(version string) error {
-	util.AppLogger().Infof("installing %s in version %s via 'go get'", openApiGen, version)
-	err := util.GoGet(openApiGen, version, true)
+func InstallOpenApiGen(version string, gopath string) error {
+	util.AppLogger().Infof("installing %s with version %s via 'go get' to %s", openApiGen, version, gopath)
+	err := util.GoGet(openApiGen, version, gopath, true, false)
 	if err != nil {
 		return err
 	}
@@ -182,20 +180,20 @@ func InstallOpenApiGen(version string) error {
 // A boilerplateFile is written to the top of any generated files.
 // The gitter client is used to ensure the correct versions of dependencies are loaded.
 func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPackage string, relativePackage string,
-	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string) error {
+	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string, gopath string) error {
 	basePkg := fmt.Sprintf("%s/openapi", outputPackage)
 	corePkg := fmt.Sprintf("%s/core", basePkg)
 	allPkg := fmt.Sprintf("%s/all", basePkg)
 
 	// Generate the dependent openapi structs as these are missing from the k8s client
 	dependentPackages, err := generateOpenApiDependenciesStruct(outputPackage, relativePackage, outputBase,
-		openApiDependencies, moduleDir, moduleName, boilerplateFile)
+		openApiDependencies, moduleDir, moduleName, boilerplateFile, gopath)
 	if err != nil {
 		return err
 	}
 	// Generate the main openapi struct
 	err = defaultGenerate(openApiGenerator, "openapi", groupsWithVersions, inputPackage,
-		corePkg, outputBase, boilerplateFile, "--output-package", corePkg)
+		corePkg, outputBase, boilerplateFile, gopath, "--output-package", corePkg)
 	if err != nil {
 		return err
 	}
@@ -355,7 +353,7 @@ func packageToDirName(pkg string) string {
 // outputDir is the base directory for writing the schemas to (they get put in the openapi-spec subdir),
 // inputPackage is the package in which generated code lives, inputBase is the path to the module,
 // title and version are used in the OpenAPI spec files.
-func GenerateSchema(outputDir string, inputPackage string, inputBase string, title string, version string) error {
+func GenerateSchema(outputDir string, inputPackage string, inputBase string, title string, version string, gopath string) error {
 	schemaWriterSrc := filepath.Join(inputPackage, OpenApiDir, SchemaWriterSrcFileName)
 	schemaWriterBinary, err := ioutil.TempFile("", "")
 	outputDir = filepath.Join(outputDir, "openapi-spec")
@@ -380,6 +378,7 @@ func GenerateSchema(outputDir string, inputPackage string, inputBase string, tit
 		},
 		Env: map[string]string{
 			"GO111MODULE": "on",
+			"GOPATH":      gopath,
 		},
 	}
 	out, err := cmd.RunWithoutRetry()
@@ -433,192 +432,152 @@ func getOutputPackageForOpenApi(pkg string, groupWithVersion []string, outputPac
 }
 
 func toValidPackageName(pkg string) string {
-	return strings.Replace(pkg, "-", "_", -1)
+	return strings.Replace(strings.Replace(pkg, "-", "_", -1), ".", "_", -1)
 }
 
 func generateOpenApiDependenciesStruct(outputPackage string, relativePackage string, outputBase string,
-	openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string) ([]string, error) {
+	openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string, gopath string) ([]string, error) {
 	paths := make([]string, 0)
-	modulesRequirements, err := util.GetModuleRequirements(moduleDir)
+	modulesRequirements, err := util.GetModuleRequirements(moduleDir, gopath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting module requirements for %s", moduleDir)
 	}
 	for _, d := range openApiDependencies {
-		// First, make sure we have the right files in our .jx GOPATH
-		// Use go mod to find out the dependencyVersion for our main tree
-		ds := strings.Split(d, ":")
-		if len(ds) != 4 {
-			return nil, errors.Errorf("--open-api-dependency %s must be of the format path:package:group"+
-				":apiVersion", d)
-		}
-		path := ds[0]
-		pkg := ds[1]
-		group := ds[2]
-		version := ds[3]
-		groupsWithVersions := []string{
-			fmt.Sprintf("%s:%s", group, version),
-		}
-
-		dependencyVersion := "master"
-		if moduleRequirement, ok := modulesRequirements[moduleName]; !ok {
-			util.AppLogger().Warnf("unable to find module requirement for %s, please add it to your go.mod, "+
-				"for now using HEAD of the master branch", moduleName)
-		} else {
-			if requirementVersion, ok := moduleRequirement[path]; !ok {
-				util.AppLogger().Warnf("unable to find module requirement version for %s (module %s), "+
-					"please add it to your go.mod, "+
-					"for now using HEAD of the master branch", pkg, moduleName)
-			} else {
-				dependencyVersion = requirementVersion
-			}
-		}
-
-		if strings.HasPrefix(dependencyVersion, "v0.0.0-") {
-			parts := strings.Split(dependencyVersion, "-")
-			if len(parts) != 3 {
-				return nil, errors.Errorf("unable to parse dependencyVersion %s", dependencyVersion)
-			}
-			// this is the sha
-			dependencyVersion = parts[2]
-		}
+		outputPackage, err := generate(d, outputPackage, relativePackage, outputBase, moduleName, boilerplateFile, gopath, modulesRequirements)
 		if err != nil {
-			return nil, err
-		}
-		// Use go get to download it
-		cmd := util.Command{
-			Name: "go",
-			Args: []string{
-				"get",
-				"-d",
-				fmt.Sprintf("%s/...", path),
-			},
-			Env: map[string]string{
-				"GO111MODULE": "off",
-			},
-		}
-		out, err := cmd.RunWithoutRetry()
-		if err != nil {
-			return nil, errors.Wrapf(err, "running %s, output %s", cmd.String(), out)
-		}
-
-		parts := []string{
-			util.GoPathSrc(),
-		}
-		parts = append(parts, strings.Split(path, "/")...)
-		dir := filepath.Join(parts...)
-		util.AppLogger().Infof("adding OpenAPI dependency %s to %s\n", d, dir)
-		branchNameUUID, err := uuid.NewV4()
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		branchName := branchNameUUID.String()
-		err = createBranchFrom(dir, branchName, dependencyVersion)
-		if err != nil {
-			return nil, errors.Wrapf(err, "creating branch from %s", dependencyVersion)
-		}
-		err = checkout(dir, branchName)
-		if err != nil {
-			return nil, errors.Wrapf(err, "checking out branch from %s", branchName)
-		}
-		// Now we can run the generator against it
-		generator := openApiGenerator
-		outputPackage, err := getOutputPackageForOpenApi(path, []string{group, version}, outputPackage)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting filename for openapi structs for %s", d)
-		}
-		err = defaultGenerate(generator,
-			"openapi",
-			groupsWithVersions,
-			filepath.Join(path, pkg),
-			outputPackage,
-			outputBase,
-			boilerplateFile,
-			"--output-package",
-			outputPackage)
-		if err != nil {
-			return nil, err
-		}
-		relativeOutputPackage, err := getOutputPackageForOpenApi(path, []string{group, version}, relativePackage)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting filename for openapi structs for %s", d)
-		}
-		// the generator forgets to add the spec import in some cases
-		generatedFile := filepath.Join(relativeOutputPackage, "openapi_generated.go")
-		fs := token.NewFileSet()
-		f, err := parser.ParseFile(fs, generatedFile, nil, parser.ParseComments)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parsing %s", generatedFile)
-		}
-		found := false
-		for _, imp := range f.Imports {
-			if strings.Trim(imp.Path.Value, "\"") == "github.com/go-openapi/spec" {
-				found = true
-				break
-			}
-		}
-		if !found {
-			// Add the imports
-			for i := 0; i < len(f.Decls); i++ {
-				d := f.Decls[i]
-
-				switch d.(type) {
-				case *ast.FuncDecl:
-					// No action
-				case *ast.GenDecl:
-					dd := d.(*ast.GenDecl)
-
-					// IMPORT Declarations
-					if dd.Tok == token.IMPORT {
-						// Add the new import
-						iSpec := &ast.ImportSpec{Path: &ast.BasicLit{Value: strconv.Quote("github.com/go-openapi/spec")}}
-						dd.Specs = append(dd.Specs, iSpec)
-					}
-				}
-			}
-
-			// Sort the imports
-			ast.SortImports(fs, f)
-			var buf bytes.Buffer
-			err = format.Node(&buf, fs, f)
-			if err != nil {
-				return nil, errors.Wrapf(err, "convert AST to []byte for %s", generatedFile)
-			}
-			// Manually add new lines after build tags
-			lines := strings.Split(string(buf.Bytes()), "\n")
-			buf.Reset()
-			for _, line := range lines {
-				buf.WriteString(line)
-				buf.WriteString("\r\n")
-				if strings.HasPrefix(line, "// +") {
-					buf.WriteString("\r\n")
-				}
-			}
-
-			err = ioutil.WriteFile(generatedFile, buf.Bytes(), 0644)
-			if err != nil {
-				return nil, errors.Wrapf(err, "writing %s", generatedFile)
-			}
+			return nil, errors.Wrapf(err, "generating open api dependency %s", d)
 		}
 		paths = append(paths, outputPackage)
 	}
 	return paths, nil
 }
 
-func checkout(dir string, branch string) error {
-	return gitCmd(dir, "checkout", branch)
-}
-
-// createBranchFrom creates a new branch called branchName from startPoint
-func createBranchFrom(dir string, branchName string, startPoint string) error {
-	return gitCmd(dir, "branch", branchName, startPoint)
-}
-
-func gitCmd(dir string, args ...string) error {
-	cmd := util.Command{
-		Dir:  dir,
-		Name: "git",
-		Args: args,
+func generate(d string, outputPackage string, relativePackage string, outputBase string, moduleName string, boilerplateFile string, gopath string, modulesRequirements map[string]map[string]string) (string, error) {
+	// First, make sure we have the right files in our .jx GOPATH
+	// Use go mod to find out the dependencyVersion for our main tree
+	ds := strings.Split(d, ":")
+	if len(ds) != 4 {
+		return "", errors.Errorf("--open-api-dependency %s must be of the format path:package:group"+
+			":apiVersion", d)
 	}
-	output, err := cmd.RunWithoutRetry()
-	return errors.Wrapf(err, "git output: %s", output)
+	path := ds[0]
+	pkg := ds[1]
+	group := ds[2]
+	version := ds[3]
+	groupsWithVersions := []string{
+		fmt.Sprintf("%s:%s", group, version),
+	}
+	modules := false
+	if strings.Contains(path, "?modules") {
+		path = strings.TrimSuffix(path, "?modules")
+		modules = true
+	}
+
+	dependencyVersion := "master"
+	if moduleRequirement, ok := modulesRequirements[moduleName]; !ok {
+		util.AppLogger().Warnf("unable to find module requirement for %s, please add it to your go.mod, "+
+			"for now using HEAD of the master branch", moduleName)
+	} else {
+		if requirementVersion, ok := moduleRequirement[path]; !ok {
+			util.AppLogger().Warnf("unable to find module requirement version for %s (module %s), "+
+				"please add it to your go.mod, "+
+				"for now using HEAD of the master branch", pkg, moduleName)
+		} else {
+			dependencyVersion = requirementVersion
+		}
+	}
+
+	if strings.HasPrefix(dependencyVersion, "v0.0.0-") {
+		parts := strings.Split(dependencyVersion, "-")
+		if len(parts) != 3 {
+			return "", errors.Errorf("unable to parse dependencyVersion %s", dependencyVersion)
+		}
+		// this is the sha
+		dependencyVersion = parts[2]
+	}
+	err := util.GoGet(path, dependencyVersion, gopath, modules, true)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	// Now we can run the generator against it
+	generator := openApiGenerator
+	modifiedOutputPackage, err := getOutputPackageForOpenApi(path, []string{group, version}, outputPackage)
+	if err != nil {
+		return "", errors.Wrapf(err, "getting filename for openapi structs for %s", d)
+	}
+	err = defaultGenerate(generator,
+		"openapi",
+		groupsWithVersions,
+		filepath.Join(path, pkg),
+		modifiedOutputPackage,
+		outputBase,
+		boilerplateFile,
+		gopath,
+		"--output-package",
+		modifiedOutputPackage)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	relativeOutputPackage, err := getOutputPackageForOpenApi(path, []string{group, version}, relativePackage)
+	if err != nil {
+		return "", errors.Wrapf(err, "getting filename for openapi structs for %s", d)
+	}
+	// the generator forgets to add the spec import in some cases
+	generatedFile := filepath.Join(relativeOutputPackage, "openapi_generated.go")
+	fs := token.NewFileSet()
+	f, err := parser.ParseFile(fs, generatedFile, nil, parser.ParseComments)
+	if err != nil {
+		return "", errors.Wrapf(err, "parsing %s", generatedFile)
+	}
+	found := false
+	for _, imp := range f.Imports {
+		if strings.Trim(imp.Path.Value, "\"") == "github.com/go-openapi/spec" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		// Add the imports
+		for i := 0; i < len(f.Decls); i++ {
+			d := f.Decls[i]
+
+			switch d.(type) {
+			case *ast.FuncDecl:
+				// No action
+			case *ast.GenDecl:
+				dd := d.(*ast.GenDecl)
+
+				// IMPORT Declarations
+				if dd.Tok == token.IMPORT {
+					// Add the new import
+					iSpec := &ast.ImportSpec{Path: &ast.BasicLit{Value: strconv.Quote("github.com/go-openapi/spec")}}
+					dd.Specs = append(dd.Specs, iSpec)
+				}
+			}
+		}
+
+		// Sort the imports
+		ast.SortImports(fs, f)
+		var buf bytes.Buffer
+		err = format.Node(&buf, fs, f)
+		if err != nil {
+			return "", errors.Wrapf(err, "convert AST to []byte for %s", generatedFile)
+		}
+		// Manually add new lines after build tags
+		lines := strings.Split(string(buf.Bytes()), "\n")
+		buf.Reset()
+		for _, line := range lines {
+			buf.WriteString(line)
+			buf.WriteString("\r\n")
+			if strings.HasPrefix(line, "// +") {
+				buf.WriteString("\r\n")
+			}
+		}
+
+		err = ioutil.WriteFile(generatedFile, buf.Bytes(), 0644)
+		if err != nil {
+			return "", errors.Wrapf(err, "writing %s", generatedFile)
+		}
+	}
+	return modifiedOutputPackage, nil
 }

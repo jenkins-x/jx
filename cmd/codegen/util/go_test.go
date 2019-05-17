@@ -98,7 +98,7 @@ func Test_get_gopath_src(t *testing.T) {
 		assert.Fail(t, "unable to set env variable")
 	}
 
-	goPathSrc := GoPathSrc()
+	goPathSrc := GoPathSrc(tmpGoDir)
 	assert.Equal(t, filepath.Join(tmpGoDir, "src"), goPathSrc)
 }
 
@@ -113,7 +113,7 @@ func Test_get_gopath_bin(t *testing.T) {
 		assert.Fail(t, "unable to set env variable")
 	}
 
-	goPathBin := GoPathBin()
+	goPathBin := GoPathBin(tmpGoDir)
 	assert.Equal(t, filepath.Join(tmpGoDir, "bin"), goPathBin)
 }
 
@@ -133,7 +133,7 @@ func Test_go_get(t *testing.T) {
 		assert.Fail(t, "unable to set env variable")
 	}
 
-	err = GoGet("github.com/golang/lint/golint", "", false)
+	err = GoGet("github.com/golang/lint/golint", "", tmpGoDir, false, false)
 	assert.NoError(t, err, "go get should be successful")
 	assert.FileExists(t, filepath.Join(tmpGoDir, "bin", "golint"))
 }

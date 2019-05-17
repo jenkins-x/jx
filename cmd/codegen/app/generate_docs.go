@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/cmd/codegen/generator"
 	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 )
@@ -64,6 +65,7 @@ func NewCreateDocsCmd(genOpts GenerateOptions) *cobra.Command {
 		"Input base (root of module), by default the current working directory")
 	cobraCmd.Flags().StringVarP(&o.OutputBase, optionOutputBase, "o", filepath.Join(wd, "docs/apidocs"),
 		"output base directory, by default the <current working directory>/docs/apidocs")
+	cobraCmd.Flags().BoolVarP(&o.Global, global, "", false, "use the users GOPATH")
 	return cobraCmd
 }
 
@@ -74,17 +76,24 @@ func run(o *GenerateDocsOptions) error {
 	}
 	util.AppLogger().Infof("generating docs to %s\n", o.OutputBase)
 
-	err = generator.InstallGenAPIDocs(o.GeneratorVersion)
+	gopath := util.GoPath()
+	if !o.Global {
+		gopath, err = util.IsolatedGoPath()
+		if err != nil {
+			return errors.Wrapf(err, "getting isolated gopath")
+		}
+	}
+	err = generator.InstallGenAPIDocs(o.GeneratorVersion, gopath)
 	if err != nil {
 		return err
 	}
 
-	referenceDocsRepo, err := generator.DetermineSourceLocation(o.InputBase)
+	referenceDocsRepo, err := generator.DetermineSourceLocation(o.InputBase, gopath)
 	if err != nil {
 		return err
 	}
 
-	err = generator.GenerateAPIDocs(o.OutputBase)
+	err = generator.GenerateAPIDocs(o.OutputBase, gopath)
 	if err != nil {
 		return err
 	}

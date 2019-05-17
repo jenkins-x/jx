@@ -2,10 +2,11 @@ package generator
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -25,14 +26,14 @@ var (
 )
 
 // InstallCodeGenerators installs client-gen from the kubernetes-incubator/reference-docs repository.
-func InstallCodeGenerators(version string) error {
+func InstallCodeGenerators(version string, gopath string) error {
 	if version == "" {
 		version = defaultVersion
 	}
 	for _, generator := range allGenerators {
 		path := fmt.Sprintf("%s/%s", basePath, generator)
 		util.AppLogger().Infof("installing %s in version %s via 'go get'", path, version)
-		err := util.GoGet(path, version, true)
+		err := util.GoGet(path, version, gopath, true, false)
 		if err != nil {
 			return err
 		}
@@ -44,7 +45,7 @@ func InstallCodeGenerators(version string) error {
 // GenerateClient runs the generators specified. It looks at the specified groupsWithVersions in inputPackage and generates to outputPackage (
 //// relative to the module outputBase). A boilerplateFile is written to the top of any generated files.
 func GenerateClient(generators []string, groupsWithVersions []string, inputPackage string, outputPackage string,
-	outputBase string, boilerplateFile string) error {
+	outputBase string, boilerplateFile string, gopath string) error {
 	for _, generatorName := range generators {
 		if generator, ok := allGenerators[generatorName]; ok {
 			switch generatorName {
@@ -56,6 +57,7 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 					outputPackage,
 					outputBase,
 					boilerplateFile,
+					gopath,
 					"--clientset-name",
 					"versioned")
 				if err != nil {
@@ -69,6 +71,7 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 					outputPackage,
 					outputBase,
 					boilerplateFile,
+					gopath,
 					"-O",
 					"zz_generated.deepcopy",
 					"--bounding-dirs",
@@ -84,6 +87,7 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 					outputPackage,
 					outputBase,
 					boilerplateFile,
+					gopath,
 					"--versioned-clientset-package",
 					fmt.Sprintf("%s/clientset/versioned", outputPackage),
 					"--listers-package",
@@ -93,7 +97,7 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 				}
 			default:
 				err := generateWithOutputPackage(generator, generatorName, groupsWithVersions, inputPackage,
-					outputPackage, outputBase, boilerplateFile)
+					outputPackage, outputBase, boilerplateFile, gopath)
 				if err != nil {
 					return err
 				}
@@ -123,8 +127,8 @@ func GetBoilerplateFile(fileName string) (string, error) {
 }
 
 func generateWithOutputPackage(generator string, name string, groupsWithVersions []string,
-	inputPackage string, outputPackage string, outputBase string, boilerplateFile string, args ...string) error {
+	inputPackage string, outputPackage string, outputBase string, boilerplateFile string, gopath string, args ...string) error {
 	args = append(args, "--output-package", fmt.Sprintf("%s/%s", outputPackage, name))
 	return defaultGenerate(generator, name, groupsWithVersions, inputPackage, outputPackage, outputBase,
-		boilerplateFile, args...)
+		boilerplateFile, gopath, args...)
 }
