@@ -82,7 +82,7 @@ func (o *CommonOptions) GetGoogleProjectId() (string, error) {
 func (o *CommonOptions) GetGoogleZone(projectId string) (string, error) {
 	configuredZone, err := o.GetCommandOutput("", "gcloud", "config", "get-value", "compute/zone")
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "getting google zone")
 	}
 	return o.GetGoogleZoneWithDefault(projectId, configuredZone)
 }
@@ -91,7 +91,7 @@ func (o *CommonOptions) GetGoogleZone(projectId string) (string, error) {
 func (o *CommonOptions) GetGoogleRegion(projectId string) (string, error) {
 	configuredRegion, err := o.GetCommandOutput("", "gcloud", "config", "get-value", "compute/region")
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "getting google region")
 	}
 	return o.GetGoogleRegionWithDefault(projectId, configuredRegion)
 }
