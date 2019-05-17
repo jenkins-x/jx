@@ -105,10 +105,6 @@ func (o *CreateGitTokenOptions) Run() error {
 
 	tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, userAuth.Username)
 
-	if userAuth.IsInvalid() && o.Password != "" {
-		err = o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
-	}
-
 	if err != nil || userAuth.IsInvalid() {
 		f := func(username string) error {
 			tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, username)
@@ -146,11 +142,3 @@ func (o *CreateGitTokenOptions) Run() error {
 
 	return nil
 }
-
-// lets try use the users browser to find the API token
-func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
-	log.Info("No automation for launching browser presently")
-	return fmt.Errorf("No automation to obtain API token via browser")
-}
-
-
