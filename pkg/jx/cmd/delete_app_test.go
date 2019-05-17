@@ -2,12 +2,12 @@ package cmd_test
 
 import (
 	"fmt"
-	"github.com/satori/go.uuid"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/petergtz/pegomock"
 
@@ -19,7 +19,6 @@ import (
 )
 
 func TestDeleteAppForGitOps(t *testing.T) {
-	t.Parallel()
 	nameUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	name := nameUUID.String()
@@ -65,7 +64,6 @@ func TestDeleteAppForGitOps(t *testing.T) {
 }
 
 func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
-	t.Parallel()
 	nameUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	name := nameUUID.String()
