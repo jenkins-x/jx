@@ -125,9 +125,12 @@ func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns 
 // GetJenkinsURL gets the Jenkins URL for the given namespace
 func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
 	// lets find the Kubernetes service
-	client, ns, err := f.CreateKubeClient()
+	client, curNS, err := f.CreateKubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create the kube client")
+	}
+	if ns == "" {
+		ns = curNS
 	}
 	url, err := services.FindServiceURL(client, ns, kube.ServiceJenkins)
 	if err != nil {
