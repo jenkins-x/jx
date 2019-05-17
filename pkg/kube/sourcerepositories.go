@@ -42,7 +42,7 @@ func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, 
 			return answer, errors.Wrapf(err, "failed to create SourceRepository %s and cannot get it either: %s", resourceName, err2.Error())
 		}
 		answer = sr
-		copy := *sr
+		copy := *sr.DeepCopy()
 		copy.Spec.Description = description
 		copy.Spec.Org = organisation
 		copy.Spec.Provider = providerURL
