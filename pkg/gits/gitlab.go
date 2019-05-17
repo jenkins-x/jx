@@ -85,7 +85,7 @@ func getRepositories(g *gitlab.Client, username string, org string) ([]*gitlab.P
 }
 
 func GetOwnerNamespaceId(g *gitlab.Client, owner string) (int, error) {
-	n := &gitlab.ListNamespacesOptions {
+	n := &gitlab.ListNamespacesOptions{
 		Search: &owner,
 	}
 
@@ -93,13 +93,13 @@ func GetOwnerNamespaceId(g *gitlab.Client, owner string) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	
+
 	for _, v := range namespaces {
-	    if v.FullPath == owner {
-		    return v.ID, nil
+		if v.FullPath == owner {
+			return v.ID, nil
 		}
 	}
-	
+
 	return -1, fmt.Errorf("no namespace found for owner %s", owner)
 }
 
@@ -125,8 +125,8 @@ func (g *GitlabProvider) CreateRepository(org string, name string, private bool)
 	}
 
 	p := &gitlab.CreateProjectOptions{
-		Name:       &name,
-		Visibility: &visibility,
+		Name:        &name,
+		Visibility:  &visibility,
 		NamespaceID: &namespaceId,
 	}
 
