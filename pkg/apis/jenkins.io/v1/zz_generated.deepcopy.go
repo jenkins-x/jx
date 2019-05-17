@@ -544,6 +544,7 @@ func (in *ConfigUpdater) DeepCopyInto(out *ConfigUpdater) {
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
+	in.ConfigMap.DeepCopyInto(&out.ConfigMap)
 	return
 }
 

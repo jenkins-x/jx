@@ -12,6 +12,7 @@ scripts=(
     "./hack/gofmt.sh"
     "./hack/linter.sh"
     "make verify-generation-complete"
+    "make generate-docs"
 )
 fail=0
 for s in "${scripts[@]}"; do
