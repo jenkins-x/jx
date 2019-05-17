@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io"
 	"os"
 	"os/exec"
@@ -71,15 +72,15 @@ func NewCmdCreateClusterMinikube(commonOpts *opts.CommonOptions) *cobra.Command 
 		Example: createClusterMinikubeExample,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := features.IsEnabled(cmd)
-			CheckErr(err)
+			helper.CheckErr(err)
 			err = options.InstallOptions.CheckFeatures()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

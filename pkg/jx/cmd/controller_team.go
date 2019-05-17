@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"time"
 
@@ -46,7 +47,7 @@ func NewCmdControllerTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.ControllerOptions.Cmd = cmd
 			options.ControllerOptions.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		Aliases: []string{"team"},
 	}

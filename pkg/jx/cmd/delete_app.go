@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/pkg/errors"
 
@@ -64,7 +65,7 @@ func NewCmdDeleteApp(commonOpts *opts.CommonOptions) *cobra.Command {
 			o.Cmd = cmd
 			o.Args = args
 			err := o.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

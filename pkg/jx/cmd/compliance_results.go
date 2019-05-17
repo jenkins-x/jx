@@ -3,6 +3,7 @@ package cmd
 import (
 	"archive/tar"
 	"compress/gzip"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io"
 	"os"
 	"sort"
@@ -53,7 +54,7 @@ func NewCmdComplianceResults(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

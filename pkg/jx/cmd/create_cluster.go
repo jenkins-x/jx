@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"sort"
 	"strings"
 
@@ -106,7 +107,7 @@ func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd2
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

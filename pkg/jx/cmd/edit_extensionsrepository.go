@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -70,7 +71,7 @@ func NewCmdEditExtensionsRepository(commonOpts *opts.CommonOptions) *cobra.Comma
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryUrl, optionExtensionsRepositoryUrl, "", "", "The extensions repository URL to use")

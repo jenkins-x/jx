@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 
@@ -18,7 +19,7 @@ func NewCmdDocs(commonOpts *opts.CommonOptions) *cobra.Command {
 		Short: "Open the documentation in a browser",
 		Run: func(cmd *cobra.Command, args []string) {
 			err := browser.OpenURL(docsURL)
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	return cmd
