@@ -84,7 +84,7 @@ func getRepositories(g *gitlab.Client, username string, org string) ([]*gitlab.P
 	return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
 }
 
-func GetOwnerNamespaceId(g *gitlab.Client, owner string) (int, error) {
+func GetOwnerNamespaceID(g *gitlab.Client, owner string) (int, error) {
 	n := &gitlab.ListNamespacesOptions{
 		Search: &owner,
 	}
@@ -119,7 +119,7 @@ func (g *GitlabProvider) CreateRepository(org string, name string, private bool)
 		visibility = gitlab.PrivateVisibility
 	}
 
-	namespaceId, err := GetOwnerNamespaceId(g.Client, owner(org, g.Username))
+	namespaceID, err := GetOwnerNamespaceID(g.Client, owner(org, g.Username))
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (g *GitlabProvider) CreateRepository(org string, name string, private bool)
 	p := &gitlab.CreateProjectOptions{
 		Name:        &name,
 		Visibility:  &visibility,
-		NamespaceID: &namespaceId,
+		NamespaceID: &namespaceID,
 	}
 
 	project, _, err := g.Client.Projects.CreateProject(p)
