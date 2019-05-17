@@ -29,7 +29,12 @@ pipelineConfig:
                   requests:
                     cpu: 3
                     memory: 3072Mi
-
+                env:
+                - name: CODECOV_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: token
+                      name: codecov-token
             steps:
               - name: init-jx
                 image: jenkinsxio/jx:2.0.128
@@ -54,3 +59,8 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['test-slow-integration']
+
+              - name: codecov-upload
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args: ['codecov-upload']
