@@ -31,6 +31,15 @@ pipelineConfig:
                 value: http://jenkins-x-athens-proxy
               - name: MAVEN_OPTS
                 value: -Xmx3000m
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
             steps:
               - name: init-helm
                 image: alpine/helm:2.12.3
