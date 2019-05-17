@@ -137,6 +137,12 @@ func (v *client) List(path string) ([]string, error) {
 	if secrets == nil {
 		return secretNames, nil
 	}
+	
+	// Don't do type assertion on nil
+	if secrets.Data["keys"] == nil {
+		return secretNames, nil
+	}
+	
 	for _, s := range secrets.Data["keys"].([]interface{}) {
 		if orig, ok := s.(string); ok {
 			secretNames = append(secretNames, orig)
