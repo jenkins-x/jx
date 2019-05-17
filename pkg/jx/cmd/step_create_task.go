@@ -77,6 +77,7 @@ type StepCreateTaskOptions struct {
 	CustomLabels      []string
 	CustomEnvs        []string
 	NoApply           bool
+	DryRun            bool
 	Trigger           string
 	TargetPath        string
 	SourceName        string
@@ -157,6 +158,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.CloneGitURL, "clone-git-url", "", "", "Specify the git URL to clone to a temporary directory to get the source code")
 	cmd.Flags().StringVarP(&options.PullRequestNumber, "pr-number", "", "", "If a Pull Request this is it's number")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
+	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file, without side effects")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 
 	options.AddCommonFlags(cmd)
@@ -316,7 +318,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
-	if o.NoApply {
+	if o.NoApply || o.DryRun {
 		o.BuildNumber = "1"
 	} else {
 		jxClient, _, err := o.JXClient()
@@ -428,12 +430,14 @@ func (o *StepCreateTaskOptions) Run() error {
 	o.Results.PipelineRun = run
 	o.Results.Structure = structure
 
-	if o.NoApply {
+	if o.NoApply || o.DryRun {
+		log.Infof("Writing output ")
 		err := o.writeOutput(o.OutDir, pipeline, tasks, run, resources, structure, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
 	} else {
+		log.Infof("Applying changes ")
 		err := o.applyPipeline(pipeline, tasks, resources, structure, run, o.GitInfo, o.Branch, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
@@ -1513,13 +1517,53 @@ func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
 	return nil
 }
 
+func getVersionFromFile(dir string) (string, error) {
+	var version string
+	versionFile := filepath.Join(dir, "VERSION")
+	exist, err := util.FileExists(versionFile)
+	if err != nil {
+		return "", err
+	}
+	if exist {
+		data, err := ioutil.ReadFile(versionFile)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to read file %s", versionFile)
+		}
+		text := strings.TrimSpace(string(data))
+		if text == "" {
+			log.Warnf("versions file %s is empty!\n", versionFile)
+		} else {
+			version = text
+			if version != "" {
+				return version, nil
+			}
+		}
+	}
+	return "", errors.New("failed to read file " + versionFile)
+}
+
 func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jenkinsfile.PipelineConfig) error {
 	if o.NoReleasePrepare || o.ViewSteps {
 		return nil
 	}
 	version := ""
 
-	if o.PipelineKind == jenkinsfile.PipelineKindRelease {
+	if o.DryRun {
+		version, err := getVersionFromFile(o.Dir)
+		if err != nil {
+			log.Warn("No version file or incorrect content; using 0.0.1 as version")
+			version = "0.0.1"
+		}
+		o.version = version
+		o.Revision = "v" + version
+		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+			Name:  "version",
+			Value: o.version,
+		})
+		log.Infof("Version used: '%s'", util.ColorInfo(version))
+
+		return nil
+	} else if o.PipelineKind == jenkinsfile.PipelineKindRelease {
 		release := pipelineConfig.Pipelines.Release
 		if release == nil {
 			return fmt.Errorf("no Release pipeline available")
@@ -1542,27 +1586,11 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		if err != nil {
 			return err
 		}
-
-		versionFile := filepath.Join(o.Dir, "VERSION")
-		exist, err := util.FileExists(versionFile)
+		version, err = getVersionFromFile(o.Dir)
 		if err != nil {
 			return err
 		}
-		if exist {
-			data, err := ioutil.ReadFile(versionFile)
-			if err != nil {
-				return errors.Wrapf(err, "failed to read file %s", versionFile)
-			}
-			text := strings.TrimSpace(string(data))
-			if text == "" {
-				log.Warnf("versions file %s is empty!\n", versionFile)
-			} else {
-				version = text
-				if version != "" {
-					o.Revision = "v" + version
-				}
-			}
-		}
+		o.Revision = "v" + version
 	} else {
 		// lets use the branch name if we can find it for the version number
 		branch := o.Branch

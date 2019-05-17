@@ -5,16 +5,23 @@ metadata:
   name: jenkins-x-jx-fix-kaniko-special-1
   namespace: jx
 spec:
-  params: []
+  params:
+    - default: 0.0.1
+      description: the version number for this pipeline which is used as a tag on docker
+        images and helm charts
+      name: version
   resources:
-  - name: jenkins-x-jx-fix-kaniko-special
-    type: git
+    - name: jenkins-x-jx-fix-kaniko-special
+      type: git
   tasks:
-  - name: ci
-    resources:
-      inputs:
-      - name: workspace
-        resource: jenkins-x-jx-fix-kaniko-special
-    taskRef:
-      name: jenkins-x-jx-fix-kaniko-special-ci-1
+    - name: ci
+      params:
+        - name: version
+          value: ${params.version}
+      resources:
+        inputs:
+          - name: workspace
+            resource: jenkins-x-jx-fix-kaniko-special
+      taskRef:
+        name: jenkins-x-jx-fix-kaniko-special-ci-1
 status: {}
