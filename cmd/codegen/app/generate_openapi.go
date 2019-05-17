@@ -101,7 +101,7 @@ func NewCmdCreateClientOpenAPI(genOpts GenerateOptions) *cobra.Command {
 	cobraCmd.Flags().StringVarP(&o.Title, "title", "", "Jenkins X", "Title for OpenAPI, JSON Schema and HTML docs")
 	cobraCmd.Flags().StringVarP(&o.Version, "version", "", "", "Version for OpenAPI, JSON Schema and HTML docs")
 	cobraCmd.Flags().StringArrayVarP(&o.OpenAPIDependencies, "open-api-dependency", "", openAPIDependencies,
-		"Add <path:package:group:apiVersion> dependencies for OpenAPI generation")
+		"Add <path?modules:package:group:apiVersion> dependencies for OpenAPI generation")
 	cobraCmd.Flags().StringVarP(&o.OpenAPIOutputDir, "openapi-output-directory", "",
 		"docs/apidocs", "Output directory for the OpenAPI specs, "+
 			"relative to the output-base unless absolute. "+
@@ -110,6 +110,7 @@ func NewCmdCreateClientOpenAPI(genOpts GenerateOptions) *cobra.Command {
 		"group name:version (e.g. jenkins.io:v1) to generate, must specify at least once")
 	cobraCmd.Flags().StringVarP(&o.ModuleName, optionModuleName, "", moduleName,
 		"module name (e.g. github.com/jenkins-x/jx)")
+	cobraCmd.Flags().BoolVarP(&o.Global, global, "", false, "use the users GOPATH")
 	return cobraCmd
 }
 
@@ -136,7 +137,14 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 		return util.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
 	}
 
-	err = generator.InstallOpenApiGen(o.GeneratorVersion)
+	gopath := util.GoPath()
+	if !o.Global {
+		gopath, err = util.IsolatedGoPath()
+		if err != nil {
+			return errors.Wrapf(err, "getting isolated gopath")
+		}
+	}
+	err = generator.InstallOpenApiGen(o.GeneratorVersion, gopath)
 	if err != nil {
 		return errors.Wrapf(err, "error installing kubernetes openapi tools")
 	}
@@ -147,14 +155,14 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 
 	util.AppLogger().Infof("generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.InputPackage)
 	err = generator.GenerateOpenApi(o.GroupsWithVersions, o.InputPackage, o.GoPathOutputPackage, o.OutputPackage,
-		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, o.BoilerplateFile)
+		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, o.BoilerplateFile, gopath)
 	if err != nil {
 		return errors.Wrapf(err, "generating openapi structs to %s", o.GoPathOutputPackage)
 	}
 
 	util.AppLogger().Infof("generating OpenAPI spec files to %s from package %s\n", o.OpenAPIOutputDir, filepath.Join(o.InputBase,
 		o.InputPackage))
-	err = generator.GenerateSchema(o.OpenAPIOutputDir, o.OutputPackage, o.InputBase, o.Title, o.Version)
+	err = generator.GenerateSchema(o.OpenAPIOutputDir, o.OutputPackage, o.InputBase, o.Title, o.Version, gopath)
 	if err != nil {
 		return errors.Wrapf(err, "generating schema to %s", o.OpenAPIOutputDir)
 	}

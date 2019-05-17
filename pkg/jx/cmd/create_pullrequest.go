@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"strings"
 
@@ -73,7 +74,7 @@ func NewCmdCreatePullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -107,7 +108,7 @@ func (o *CreatePullRequestOptions) Run() error {
 		return errors.WithStack(err)
 	}
 
-	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, o.Base, details, nil, true, o.Push, o.Push, provider, o.Git())
+	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, o.Base, details, nil, true, o.Push, o.Push, false, provider, o.Git())
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
 	}

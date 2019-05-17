@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -62,7 +63,7 @@ func NewCmdCreateAddonAmbassador(commonOpts *opts.CommonOptions) *cobra.Command 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -80,7 +81,7 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.AddHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName, "", "")
+	_, err := o.AddHelmBinaryRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName, "", "")
 	if err != nil {
 		return err
 	}

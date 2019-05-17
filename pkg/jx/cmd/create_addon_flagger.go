@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -68,7 +69,7 @@ func NewCmdCreateAddonFlagger(commonOpts *opts.CommonOptions) *cobra.Command {
 		Example: createAddonFlaggerExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -101,7 +102,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	values := []string{}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.AddHelmRepoIfMissing(defaultFlaggerRepo, "flagger", "", "")
+	_, err = o.AddHelmBinaryRepoIfMissing(defaultFlaggerRepo, "flagger", "", "")
 	if err != nil {
 		return errors.Wrap(err, "Flagger deployment failed")
 	}

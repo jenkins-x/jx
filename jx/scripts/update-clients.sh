@@ -5,7 +5,9 @@ for org_repo in "${ORG_REPOS[@]}"; do
   OUTDIR="$(jx step git fork-and-clone -b --print-out-dir --dir=$TMPDIR https://github.com/$org_repo)"
   echo "Forked repo to $OUTDIR"
   pushd $OUTDIR
+  echo "Running make all in $ORG_REPOS"
   make all
+  echo "make all complete in $ORG_REPOS"
   git add -N .
   git diff --exit-code
   if [ $? -ne 0 ]; then

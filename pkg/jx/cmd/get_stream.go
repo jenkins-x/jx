@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -58,7 +59,7 @@ func NewCmdGetStream(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "docker", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))

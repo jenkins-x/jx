@@ -163,6 +163,7 @@ type GitPullRequestArguments struct {
 	Head          string
 	Base          string
 	GitRepository *GitRepository
+	Labels        []string
 }
 
 type GitWebHookArguments struct {

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"net/url"
 	"sort"
 
@@ -63,7 +64,7 @@ func NewCmdGetPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

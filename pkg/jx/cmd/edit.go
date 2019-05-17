@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"reflect"
 	"strconv"
 
@@ -46,7 +47,7 @@ func NewCmdEdit(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		SuggestFor: []string{"modify"},
 	}
@@ -64,7 +65,7 @@ func NewCmdEdit(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdEditExtensionsRepository(commonOpts))
 
 	err := addTeamSettingsCommandsFromTags(cmd, options)
-	CheckErr(err)
+	helper.CheckErr(err)
 
 	return cmd
 }
@@ -102,7 +103,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOption
 						value = args[0]
 					} else if structField.Type.String() == "bool" {
 						value, err = strconv.ParseBool(args[0])
-						CheckErr(err)
+						helper.CheckErr(err)
 					}
 				} else if !options.BatchMode {
 					var err error
@@ -111,9 +112,9 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOption
 					} else if structField.Type.String() == "bool" {
 						value = util.Confirm(commandUsage+":", field.Bool(), "", options.In, options.Out, options.Err)
 					}
-					CheckErr(err)
+					helper.CheckErr(err)
 				} else {
-					fatal(fmt.Sprintf("No value to set %s", command), 1)
+					helper.Fatal(fmt.Sprintf("No value to set %s", command), 1)
 				}
 
 				callback := func(env *v1.Environment) error {
@@ -128,7 +129,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOption
 					log.Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
 					return nil
 				}
-				CheckErr(options.ModifyDevEnvironment(callback))
+				helper.CheckErr(options.ModifyDevEnvironment(callback))
 			},
 		}
 

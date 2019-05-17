@@ -4,30 +4,31 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"testing"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
-	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_test "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/vault/mocks"
+	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
 	"github.com/petergtz/pegomock"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -189,6 +190,7 @@ func (o *AppTestOptions) Cleanup() error {
 }
 
 // CreateAppTestOptions configures the mock environment for running apps related tests
+// If you use this function, then don't use t.Parallel
 func CreateAppTestOptions(gitOps bool, appName string, t *testing.T) *AppTestOptions {
 	mockFactory := cmd_test.NewMockFactory()
 	commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)

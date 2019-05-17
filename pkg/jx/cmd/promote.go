@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -129,7 +130,7 @@ func NewCmdPromote(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -488,7 +489,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	info, err := options.Create(env, environmentsDir, &details, releaseInfo.PullRequestInfo, "")
+	info, err := options.Create(env, environmentsDir, &details, releaseInfo.PullRequestInfo, "", false)
 	releaseInfo.PullRequestInfo = info
 	return err
 }

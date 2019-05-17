@@ -8,17 +8,18 @@ metadata:
     repo: jx
   name: jenkins-x-jx-fix-kaniko-special-1
 spec:
-  Status: ""
+  params:
+    - name: version
+      value: 0.0.1
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: jenkins-x-jx-fix-kaniko-special-1
   resources:
-  - name: jenkins-x-jx-fix-kaniko-special
-    resourceRef:
-      apiVersion: tekton.dev/v1alpha1
-      name: jenkins-x-jx-fix-kaniko-special
+    - name: jenkins-x-jx-fix-kaniko-special
+      resourceRef:
+        apiVersion: tekton.dev/v1alpha1
+        name: jenkins-x-jx-fix-kaniko-special
   serviceAccount: tekton-bot
   trigger:
     type: manual
-status:
-  conditions: null
+status: {}

@@ -31,6 +31,15 @@ pipelineConfig:
                 value: http://jenkins-x-athens-proxy
               - name: MAVEN_OPTS
                 value: -Xmx3000m
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
             steps:
               - name: init-helm
                 image: alpine/helm:2.12.3
@@ -116,7 +125,11 @@ pipelineConfig:
                 command: make
                 args: ['release-distro']
 
-              - name: update-downstream
+              - name: update-docs
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/update-website.sh
 
+              - name: update-clients
+                # Needs maven as openapi tools are written in Java!
+                image: gcr.io/jenkinsxio/builder-maven:0.1.448
+                command: ./jx/scripts/update-clients.sh

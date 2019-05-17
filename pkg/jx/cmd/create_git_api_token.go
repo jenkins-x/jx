@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -58,7 +57,7 @@ func NewCmdCreateGitToken(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	options.ServerFlags.AddGitServerFlags(cmd)
@@ -102,8 +101,6 @@ func (o *CreateGitTokenOptions) Run() error {
 	if o.ApiToken != "" {
 		userAuth.ApiToken = o.ApiToken
 	}
-
-	tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, userAuth.Username)
 
 	if err != nil || userAuth.IsInvalid() {
 		f := func(username string) error {

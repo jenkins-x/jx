@@ -5,17 +5,23 @@ metadata:
   name: abayer-js-test-repo-no-default-1
   namespace: jx
 spec:
-  params: []
+  params:
+    - default: 0.0.1
+      description: the version number for this pipeline which is used as a tag on docker
+        images and helm charts
+      name: version
   resources:
-  - name: abayer-js-test-repo-no-default
-    type: git
+    - name: abayer-js-test-repo-no-default
+      type: git
   tasks:
-  - name: from-build-pack
-    resources:
-      inputs:
-      - name: workspace
-        resource: abayer-js-test-repo-no-default
-      outputs: null
-    taskRef:
-      name: abayer-js-test-repo-no-default-from-build-pack-1
+    - name: from-build-pack
+      params:
+        - name: version
+          value: ${params.version}
+      resources:
+        inputs:
+          - name: workspace
+            resource: abayer-js-test-repo-no-default
+      taskRef:
+        name: abayer-js-test-repo-no-default-from-build-pack-1
 status: {}

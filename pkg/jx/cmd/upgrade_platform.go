@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	"sigs.k8s.io/yaml"
 
@@ -72,7 +73,7 @@ func NewCmdUpgradePlatform(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to.")

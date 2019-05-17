@@ -18,6 +18,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"os"
 	"os/exec"
@@ -56,9 +58,10 @@ const (
 func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWriter,
 	err io.Writer, args []string) *cobra.Command {
 	cmds := &cobra.Command{
-		Use:   "jx",
-		Short: "jx is a command line tool for working with Jenkins X",
-		Run:   runHelp,
+		Use:              "jx",
+		Short:            "jx is a command line tool for working with Jenkins X",
+		PersistentPreRun: setLoggingLevel,
+		Run:              runHelp,
 	}
 
 	features.Init()
@@ -274,6 +277,15 @@ func fullPath(command *cobra.Command) string {
 		return fullPath(parent) + " " + name
 	}
 	return name
+}
+
+func setLoggingLevel(cmd *cobra.Command, args []string) {
+	level := cmd.Flag(opts.OptionLogLevel).Value.String()
+	err := log.SetLevel(level)
+	if err != nil {
+		invalidOptionErr := util.InvalidOption(opts.OptionLogLevel, level, log.GetLevels())
+		helper.CheckErr(invalidOptionErr)
+	}
 }
 
 func runHelp(cmd *cobra.Command, args []string) {

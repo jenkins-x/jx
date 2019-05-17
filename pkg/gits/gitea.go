@@ -739,3 +739,8 @@ func (p *GiteaProvider) ShouldForkForPullRequest(originalOwner string, repoName 
 func (p *GiteaProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
 	return nil, fmt.Errorf("Listing commits not supported on gitea")
 }
+
+// AddLabelsToIssue adds labels to issues or pullrequests
+func (p *GiteaProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
+	return fmt.Errorf("Getting content not supported on gitea")
+}

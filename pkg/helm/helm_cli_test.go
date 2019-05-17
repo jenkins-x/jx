@@ -125,14 +125,14 @@ func TestIsRepoMissing(t *testing.T) {
 	helm, runner := createHelm(t, nil, listRepoOutput)
 
 	url := "http://chartmuseum.jenkins-x.io"
-	missing, err := helm.IsRepoMissing(url)
+	missing, _, err := helm.IsRepoMissing(url)
 
 	assert.NoError(t, err, "should search missing repos without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
 	assert.False(t, missing, "should find url '%s'", url)
 
 	url = "https://test"
-	missing, err = helm.IsRepoMissing(url)
+	missing, _, err = helm.IsRepoMissing(url)
 
 	assert.NoError(t, err, "search missing repos should not return an error")
 	assert.True(t, missing, "should not find url '%s'", url)

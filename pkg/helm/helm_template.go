@@ -136,7 +136,7 @@ func (h *HelmTemplate) SearchCharts(filter string) ([]ChartSummary, error) {
 }
 
 // IsRepoMissing checks if the repository with the given URL is missing from helm
-func (h *HelmTemplate) IsRepoMissing(URL string) (bool, error) {
+func (h *HelmTemplate) IsRepoMissing(URL string) (bool, string, error) {
 	return h.Client.IsRepoMissing(URL)
 }
 

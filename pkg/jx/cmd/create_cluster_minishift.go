@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"os/exec"
 	"runtime"
@@ -63,15 +64,15 @@ func NewCmdCreateClusterMinishift(commonOpts *opts.CommonOptions) *cobra.Command
 		Example: createClusterMinishiftExample,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := features.IsEnabled(cmd)
-			CheckErr(err)
+			helper.CheckErr(err)
 			err = options.InstallOptions.CheckFeatures()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

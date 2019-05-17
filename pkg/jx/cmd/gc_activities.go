@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
 
@@ -90,7 +91,7 @@ func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Dry run mode. If enabled just list the resources that would be removed")

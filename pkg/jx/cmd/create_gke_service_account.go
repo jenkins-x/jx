@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -50,7 +51,7 @@ func NewCmdCreateGkeServiceAccount(commonOpts *opts.CommonOptions) *cobra.Comman
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

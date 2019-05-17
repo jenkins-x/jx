@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"path/filepath"
 	"strings"
 
@@ -59,7 +60,7 @@ func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Comman
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")

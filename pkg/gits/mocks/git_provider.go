@@ -61,6 +61,21 @@ func (mock *MockGitProvider) AddCollaborator(_param0 string, _param1 string, _pa
 	return ret0
 }
 
+func (mock *MockGitProvider) AddLabelsToIssue(_param0 string, _param1 string, _param2 int, _param3 []string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("AddLabelsToIssue", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGitProvider) AddPRComment(_param0 *gits.GitPullRequest, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -952,6 +967,45 @@ func (c *MockGitProvider_AddCollaborator_OngoingVerification) GetAllCapturedArgu
 		_param2 = make([]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitProvider) AddLabelsToIssue(_param0 string, _param1 string, _param2 int, _param3 []string) *MockGitProvider_AddLabelsToIssue_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddLabelsToIssue", params, verifier.timeout)
+	return &MockGitProvider_AddLabelsToIssue_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitProvider_AddLabelsToIssue_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitProvider_AddLabelsToIssue_OngoingVerification) GetCapturedArguments() (string, string, int, []string) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
+}
+
+func (c *MockGitProvider_AddLabelsToIssue_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int, _param3 [][]string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]int, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(int)
+		}
+		_param3 = make([][]string, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.([]string)
 		}
 	}
 	return

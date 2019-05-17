@@ -191,28 +191,30 @@ func (h *HelmCLI) SearchCharts(filter string) ([]ChartSummary, error) {
 	return answer, nil
 }
 
-// IsRepoMissing checks if the repository with the given URL is missing from helm
-func (h *HelmCLI) IsRepoMissing(URL string) (bool, error) {
+// IsRepoMissing checks if the repository with the given URL is missing from helm.
+// If the repo is found, the name of the repo will be returned
+func (h *HelmCLI) IsRepoMissing(URL string) (bool, string, error) {
 	repos, err := h.ListRepos()
 	if err != nil {
-		return true, errors.Wrap(err, "failed to list the repositories")
+		return true, "", errors.Wrap(err, "failed to list the repositories")
 	}
 	searchedURL, err := url.Parse(URL)
 	if err != nil {
-		return true, errors.Wrap(err, "provided repo URL is invalid")
+		return true, "", errors.Wrap(err, "provided repo URL is invalid")
 	}
-	for _, repoURL := range repos {
+	for name, repoURL := range repos {
 		if len(repoURL) > 0 {
 			url, err := url.Parse(repoURL)
 			if err != nil {
-				return true, errors.Wrap(err, "failed to parse the repo URL")
+				return true, "", errors.Wrap(err, "failed to parse the repo URL")
 			}
+			// match on the whole URL as helm dep build requires on username + passowrd in the URL
 			if url.Host == searchedURL.Host {
-				return false, nil
+				return false, name, nil
 			}
 		}
 	}
-	return true, nil
+	return true, "", nil
 }
 
 // UpdateRepo updates the helm repositories

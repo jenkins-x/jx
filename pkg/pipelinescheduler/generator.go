@@ -2,18 +2,19 @@ package pipelinescheduler
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/environments"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm"
-	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
-	v1 "k8s.io/api/core/v1"
-	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/helm/pkg/proto/hapi/chart"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/environments"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
+	uuid "github.com/satori/go.uuid"
+	v1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -272,7 +273,7 @@ func (o *GitOpsOptions) AddToEnvironmentRepo(cfg *config.Config, plugs *plugins.
 		GitProvider:   o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "")
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", false)
 
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for prow config")

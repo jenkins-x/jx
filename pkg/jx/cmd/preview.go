@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -118,7 +119,7 @@ func NewCmdPreview(commonOpts *opts.CommonOptions) *cobra.Command {
 				options.BatchMode = commonOpts.InCDPipeline()
 			}
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	//addCreateAppFlags(cmd, &options.CreateOptions)

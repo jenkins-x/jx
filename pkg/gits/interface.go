@@ -44,6 +44,8 @@ type GitProvider interface {
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
 
+	AddLabelsToIssue(owner, repo string, number int, labels []string) error
+
 	GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error)
 
 	ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error)

@@ -1,25 +1,24 @@
 package cmd_test
 
 import (
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"testing"
+
 	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/mholt/archiver"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-	"testing"
 )
 
 func TestApplyAppsTemplateOverrides(t *testing.T) {
-	t.Parallel()
-
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "dummy", t)
 	_, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)

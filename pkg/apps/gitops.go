@@ -27,7 +27,7 @@ type GitOpsOptions struct {
 }
 
 // AddApp adds the app with version rooted in dir from the repository. An alias can be specified.
-func (o *GitOpsOptions) AddApp(app string, dir string, version string, repository string, alias string) error {
+func (o *GitOpsOptions) AddApp(app string, dir string, version string, repository string, alias string, autoMerge bool) error {
 	details := gits.PullRequestDetails{
 		BranchName: "add-app-" + app + "-" + version,
 		Title:      fmt.Sprintf("Add %s %s", app, version),
@@ -42,7 +42,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		GitProvider: o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "")
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", autoMerge)
 
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
@@ -56,7 +56,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 // If one app is being upgraded an alias can be specified.
 func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string, username string, password string,
 	alias string, interrogateChartFunc func(dir string, existing map[string]interface{}) (*ChartDetails,
-		error)) error {
+		error), autoMerge bool) error {
 	all := true
 	details := gits.PullRequestDetails{}
 
@@ -101,7 +101,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
 		GitProvider: o.GitProvider,
 	}
-	_, err = options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app)
+	_, err = options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app, autoMerge)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 }
 
 // DeleteApp deletes the app with alias
-func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
+func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) error {
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
 		templates map[string]string, dir string, details *gits.PullRequestDetails) error {
@@ -154,7 +154,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		GitProvider:   o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "")
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", autoMerge)
 	if err != nil {
 		return err
 	}

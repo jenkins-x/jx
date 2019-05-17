@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
@@ -46,7 +47,7 @@ func NewCmdStepSchedulerConfigApply(commonOpts *opts.CommonOptions) *cobra.Comma
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	options.AddCommonFlags(cmd)

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"time"
 
@@ -46,7 +47,7 @@ func NewCmdControllerTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.ControllerOptions.Cmd = cmd
 			options.ControllerOptions.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		Aliases: []string{"team"},
 	}
@@ -232,6 +233,9 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		provider := ""
 		if adminTeamSettings != nil {
 			provider = adminTeamSettings.KubeProvider
+			io.GitRepositoryOptions.Private = adminTeamSettings.GitPrivate
+			io.GitRepositoryOptions.ServerURL = adminTeamSettings.GitServer
+			io.GitRepositoryOptions.Username = adminTeamSettings.PipelineUsername
 		}
 		if provider == "" {
 			log.Warnf("No kube provider specified on admin team settings %s\n. Defaulting to gke", adminNs)

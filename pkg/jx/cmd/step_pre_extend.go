@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	jenkinsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -54,7 +55,7 @@ func NewCmdStepPreExtend(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	return cmd

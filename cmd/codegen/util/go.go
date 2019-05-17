@@ -6,12 +6,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
 
 const (
-	gopath = "GOPATH"
+	gopath                  = "GOPATH"
+	defaultWritePermissions = 0760
 )
 
 // GoPath returns the first element of the GOPATH.
@@ -26,18 +29,18 @@ func GoPath() string {
 }
 
 // GoPathSrc returns the src directory of the first GOPATH element.
-func GoPathSrc() string {
-	return filepath.Join(GoPath(), "src")
+func GoPathSrc(gopath string) string {
+	return filepath.Join(gopath, "src")
 }
 
 // GoPathBin returns the bin directory of the first GOPATH element.
-func GoPathBin() string {
-	return filepath.Join(GoPath(), "bin")
+func GoPathBin(gopath string) string {
+	return filepath.Join(gopath, "bin")
 }
 
 // GoPathMod returns the modules directory of the first GOPATH element.
-func GoPathMod() string {
-	return filepath.Join(GoPath(), "pkg", "mod")
+func GoPathMod(gopath string) string {
+	return filepath.Join(gopath, "pkg", "mod")
 }
 
 // EnsureGoPath ensures the GOPATH environment variable is set and points to a valid directory.
@@ -64,7 +67,7 @@ func EnsureGoPath() error {
 }
 
 // GoGet runs go get to install the specified binary.
-func GoGet(path string, version string, goModules bool) error {
+func GoGet(path string, version string, gopath string, goModules bool, sourceOnly bool) error {
 	modulesMode := "off"
 	if goModules {
 		modulesMode = "on"
@@ -72,31 +75,105 @@ func GoGet(path string, version string, goModules bool) error {
 
 	fullPath := path
 	if version != "" {
-		fullPath = fmt.Sprintf("%s@%s", path, version)
-	}
+		if goModules {
+			fullPath = fmt.Sprintf("%s@%s", path, version)
+		} else {
+			fullPath = fmt.Sprintf("%s/...", path)
+		}
 
+	}
+	args := []string{
+		"get",
+		"-u",
+	}
+	if sourceOnly {
+		args = append(args, "-d")
+	}
+	args = append(args, fullPath)
 	goGetCmd := util.Command{
 		Name: "go",
-		Args: []string{
-			"get",
-			fullPath,
-		},
+		Args: args,
 		Env: map[string]string{
 			"GO111MODULE": modulesMode,
+			"GOPATH":      gopath,
 		},
 	}
 	out, err := goGetCmd.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "error running %s, output %s", goGetCmd.String(), out)
 	}
-
+	if !goModules && version != "" {
+		parts := []string{
+			GoPathSrc(gopath),
+		}
+		parts = append(parts, strings.Split(path, "/")...)
+		dir := filepath.Join(parts...)
+		AppLogger().Infof("adding %s to %s\n", path, dir)
+		branchNameUUID, err := uuid.NewV4()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		branchName := branchNameUUID.String()
+		oldBranchName, err := branch(dir)
+		if err != nil {
+			return errors.Wrapf(err, "getting current branch name")
+		}
+		err = createBranchFrom(dir, branchName, version)
+		if err != nil {
+			return errors.Wrapf(err, "creating branch from %s", version)
+		}
+		err = checkout(dir, branchName)
+		defer func() {
+			err := checkout(dir, oldBranchName)
+			if err != nil {
+				AppLogger().Errorf("Error checking out original branch %s: %v", oldBranchName, err)
+			}
+		}()
+		if err != nil {
+			return errors.Wrapf(err, "checking out branch from %s", branchName)
+		}
+	}
 	return nil
+}
+
+func checkout(dir string, branch string) error {
+	return gitCmd(dir, "checkout", branch)
+}
+
+// branch returns the current branch of the repository located at the given directory
+func branch(dir string) (string, error) {
+	return gitCmdWithOutput(dir, "rev-parse", "--abbrev-ref", "HEAD")
+}
+
+// createBranchFrom creates a new branch called branchName from startPoint
+func createBranchFrom(dir string, branchName string, startPoint string) error {
+	return gitCmd(dir, "branch", branchName, startPoint)
+}
+
+func gitCmd(dir string, args ...string) error {
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "git",
+		Args: args,
+	}
+
+	output, err := cmd.RunWithoutRetry()
+	return errors.Wrapf(err, "git output: %s", output)
+}
+
+func gitCmdWithOutput(dir string, args ...string) (string, error) {
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "git",
+		Args: args,
+	}
+	return cmd.RunWithoutRetry()
 }
 
 // GetModuleDir determines the directory on disk of the specified module dependency.
 // Returns the empty string if the target requirement is not part of the module graph.
-func GetModuleDir(moduleDir string, targetRequirement string) (string, error) {
-	out, err := getModGraph(moduleDir)
+func GetModuleDir(moduleDir string, targetRequirement string, gopath string) (string, error) {
+	out, err := getModGraph(moduleDir, gopath)
 	if err != nil {
 		return "", err
 	}
@@ -109,7 +186,7 @@ func GetModuleDir(moduleDir string, targetRequirement string) (string, error) {
 		}
 		requirement := parts[1]
 		if strings.HasPrefix(requirement, targetRequirement) {
-			return filepath.Join(GoPathMod(), requirement), nil
+			return filepath.Join(GoPathMod(gopath), requirement), nil
 		}
 	}
 	return "", nil
@@ -117,8 +194,8 @@ func GetModuleDir(moduleDir string, targetRequirement string) (string, error) {
 
 // GetModuleRequirements returns the requirements for the GO module rooted in dir
 // It returns a map[<module name>]map[<requirement name>]<requirement version>
-func GetModuleRequirements(dir string) (map[string]map[string]string, error) {
-	out, err := getModGraph(dir)
+func GetModuleRequirements(dir string, gopath string) (map[string]map[string]string, error) {
+	out, err := getModGraph(dir, gopath)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +223,7 @@ func GetModuleRequirements(dir string) (map[string]map[string]string, error) {
 	return answer, nil
 }
 
-func getModGraph(dir string) (string, error) {
+func getModGraph(dir string, gopath string) (string, error) {
 	cmd := util.Command{
 		Dir:  dir,
 		Name: "go",
@@ -156,6 +233,7 @@ func getModGraph(dir string) (string, error) {
 		},
 		Env: map[string]string{
 			"GO111MODULE": "on",
+			"GOPATH":      gopath,
 		},
 	}
 	out, err := cmd.RunWithoutRetry()
@@ -167,4 +245,45 @@ func getModGraph(dir string) (string, error) {
 	out = strings.Replace(out, "\r\n", "\n", -1)
 
 	return out, nil
+}
+
+// IsolatedGoPath returns the isolated go path for codegen
+func IsolatedGoPath() (string, error) {
+	configDir, err := ConfigDir()
+	if err != nil {
+		return "", errors.Wrapf(err, "getting JX_HOME")
+	}
+	path := filepath.Join(configDir, "codegen", "go")
+	err = os.MkdirAll(path, defaultWritePermissions)
+	if err != nil {
+		return "", errors.Wrapf(err, "making %s", path)
+	}
+	return path, nil
+}
+
+// HomeDir returns the users home directory
+func HomeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	h := os.Getenv("USERPROFILE") // windows
+	if h == "" {
+		h = "."
+	}
+	return h
+}
+
+// ConfigDir returns the JX_HOME directory, creating it if missing
+func ConfigDir() (string, error) {
+	path := os.Getenv("JX_HOME")
+	if path != "" {
+		return path, nil
+	}
+	h := HomeDir()
+	path = filepath.Join(h, ".jx")
+	err := os.MkdirAll(path, defaultWritePermissions)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }

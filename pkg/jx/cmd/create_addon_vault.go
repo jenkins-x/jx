@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -59,7 +60,7 @@ func NewCmdCreateAddonVault(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -79,7 +80,7 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.AddHelmRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
+	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
 	if err != nil {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
 	}
