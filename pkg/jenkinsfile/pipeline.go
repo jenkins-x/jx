@@ -57,11 +57,12 @@ var (
 
 // Pipelines contains all the different kinds of pipeline for different branches
 type Pipelines struct {
-	PullRequest *PipelineLifecycles `json:"pullRequest,omitempty"`
-	Release     *PipelineLifecycles `json:"release,omitempty"`
-	Feature     *PipelineLifecycles `json:"feature,omitempty"`
-	Post        *PipelineLifecycle  `json:"post,omitempty"`
-	Overrides   []*PipelineOverride `json:"overrides,omitempty"`
+	PullRequest *PipelineLifecycles        `json:"pullRequest,omitempty"`
+	Release     *PipelineLifecycles        `json:"release,omitempty"`
+	Feature     *PipelineLifecycles        `json:"feature,omitempty"`
+	Post        *PipelineLifecycle         `json:"post,omitempty"`
+	Overrides   []*syntax.PipelineOverride `json:"overrides,omitempty"`
+	Default     *syntax.ParsedPipeline     `json:"default,omitempty"`
 }
 
 // PipelineLifecycles defines the steps of a lifecycle section
@@ -107,43 +108,6 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 		Import: x.Import,
 		File:   x.File,
 	}
-}
-
-// PipelineOverride allows for overriding named steps in the build pack
-type PipelineOverride struct {
-	Pipelines []string       `json:"pipelines,omitempty"`
-	Stages    []string       `json:"stages,omitempty"`
-	Name      string         `json:"name"`
-	Step      *syntax.Step   `json:"step,omitempty"`
-	Steps     []*syntax.Step `json:"steps,omitempty"`
-}
-
-// MatchesPipeline returns true if the pipeline name is specified in the override or no pipeline is specified at all in the override
-func (p *PipelineOverride) MatchesPipeline(name string) bool {
-	if len(p.Pipelines) == 0 {
-		return true
-	}
-	for _, pipeline := range p.Pipelines {
-		if pipeline == name {
-			return true
-		}
-	}
-
-	return false
-}
-
-// MatchesStage returns true if the stage/lifecycle name is specified in the override or no stage/lifecycle is specified at all in the override
-func (p *PipelineOverride) MatchesStage(name string) bool {
-	if len(p.Stages) == 0 {
-		return true
-	}
-	for _, stage := range p.Stages {
-		if stage == name {
-			return true
-		}
-	}
-
-	return false
 }
 
 // PipelineConfig defines the pipeline configuration
@@ -521,6 +485,7 @@ func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileReso
 		// lets force any agent for prow / jenkinsfile runner
 		config.Agent = clearContainerAndLabel(config.Agent)
 	}
+	config.PopulatePipelinesFromDefault()
 	if config.Extends == nil || config.Extends.File == "" {
 		config.defaultContainerAndDir()
 		return &config, nil
@@ -552,6 +517,30 @@ func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileReso
 	}
 	err = config.ExtendPipeline(basePipeline, clearContainer)
 	return &config, err
+}
+
+// PopulatePipelinesFromDefault sets the Release, PullRequest, and Feature pipelines, if unset, with the Default pipeline.
+func (c *PipelineConfig) PopulatePipelinesFromDefault() {
+	if c != nil && c.Pipelines.Default != nil {
+		if c.Pipelines.Default.Agent == nil && c.Agent != nil {
+			c.Pipelines.Default.Agent = c.Agent.DeepCopyForParsedPipeline()
+		}
+		if c.Pipelines.Release == nil {
+			c.Pipelines.Release = &PipelineLifecycles{
+				Pipeline: c.Pipelines.Default.DeepCopy(),
+			}
+		}
+		if c.Pipelines.PullRequest == nil {
+			c.Pipelines.PullRequest = &PipelineLifecycles{
+				Pipeline: c.Pipelines.Default.DeepCopy(),
+			}
+		}
+		if c.Pipelines.Feature == nil {
+			c.Pipelines.Feature = &PipelineLifecycles{
+				Pipeline: c.Pipelines.Default.DeepCopy(),
+			}
+		}
+	}
 }
 
 // clearContainerAndLabel wipes the label and container from an Agent, preserving the Dir if it exists.
@@ -642,27 +631,41 @@ func (c *PipelineConfig) GetAllEnvVars() map[string]string {
 }
 
 // ExtendPipelines extends the parent lifecycle with the base
-func ExtendPipelines(pipelineName string, parent *PipelineLifecycles, base *PipelineLifecycles, overrides []*PipelineOverride) *PipelineLifecycles {
+func ExtendPipelines(pipelineName string, parent, base *PipelineLifecycles, overrides []*syntax.PipelineOverride) *PipelineLifecycles {
 	if base == nil {
 		return parent
 	}
 	if parent == nil {
 		parent = &PipelineLifecycles{}
 	}
-	return &PipelineLifecycles{
+	l := &PipelineLifecycles{
 		Setup:      ExtendLifecycle(pipelineName, "setup", parent.Setup, base.Setup, overrides),
 		SetVersion: ExtendLifecycle(pipelineName, "setVersion", parent.SetVersion, base.SetVersion, overrides),
 		PreBuild:   ExtendLifecycle(pipelineName, "preBuild", parent.PreBuild, base.PreBuild, overrides),
 		Build:      ExtendLifecycle(pipelineName, "build", parent.Build, base.Build, overrides),
 		PostBuild:  ExtendLifecycle(pipelineName, "postBuild", parent.PostBuild, base.PostBuild, overrides),
 		Promote:    ExtendLifecycle(pipelineName, "promote", parent.Promote, base.Promote, overrides),
-		// TODO: Actually do extension for Pipeline rather than just copying it wholesale
-		Pipeline: parent.Pipeline,
 	}
+	if parent.Pipeline != nil {
+		l.Pipeline = parent.Pipeline
+	} else if base.Pipeline != nil {
+		l.Pipeline = base.Pipeline
+	}
+	for _, override := range overrides {
+		if override.MatchesPipeline(pipelineName) {
+			// If no name, stage, or agent is specified, remove the whole pipeline.
+			if override.Name == "" && override.Stage == "" && override.Agent == nil {
+				return &PipelineLifecycles{}
+			}
+
+			l.Pipeline = syntax.ExtendParsedPipeline(l.Pipeline, override)
+		}
+	}
+	return l
 }
 
 // ExtendLifecycle extends the lifecycle with the inherited base lifecycle
-func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, base *PipelineLifecycle, overrides []*PipelineOverride) *PipelineLifecycle {
+func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, base *PipelineLifecycle, overrides []*syntax.PipelineOverride) *PipelineLifecycle {
 	var lifecycle *PipelineLifecycle
 	if parent == nil {
 		lifecycle = base
@@ -685,38 +688,36 @@ func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, 
 			if override.MatchesPipeline(pipelineName) && override.MatchesStage(stageName) {
 				overriddenSteps := []*syntax.Step{}
 
-				for _, s := range lifecycle.Steps {
-					overriddenSteps = append(overriddenSteps, overrideStep(s, override)...)
+				// If a step name is specified on this override, override looking for that step.
+				if override.Name != "" {
+					for _, s := range lifecycle.Steps {
+						for _, o := range syntax.OverrideStep(*s, override) {
+							overriddenSteps = append(overriddenSteps, &o)
+						}
+					}
+				} else {
+					// If no step name was specified but there are steps, just replace all steps in the stage/lifecycle,
+					// or add the new steps before/after the existing steps in the stage/lifecycle
+					if steps := override.AsStepsSlice(); len(steps) > 0 {
+						if override.Type == nil || *override.Type == syntax.StepOverrideReplace {
+							overriddenSteps = append(overriddenSteps, steps...)
+						} else if *override.Type == syntax.StepOverrideBefore {
+							overriddenSteps = append(overriddenSteps, steps...)
+							overriddenSteps = append(overriddenSteps, lifecycle.Steps...)
+						} else if *override.Type == syntax.StepOverrideAfter {
+							overriddenSteps = append(overriddenSteps, lifecycle.Steps...)
+							overriddenSteps = append(overriddenSteps, override.Steps...)
+						}
+					}
+					// If there aren't any steps as well as no step name, then we're removing all steps from this stage/lifecycle,
+					// so do nothing. =)
 				}
-
 				lifecycle.Steps = overriddenSteps
 			}
 		}
 	}
 
 	return lifecycle
-}
-
-func overrideStep(step *syntax.Step, override *PipelineOverride) []*syntax.Step {
-	if step.Name == override.Name {
-		if override.Step != nil {
-			return []*syntax.Step{override.Step}
-		}
-		if override.Steps != nil {
-			return override.Steps
-		}
-		return []*syntax.Step{}
-	}
-
-	if len(step.Steps) > 0 {
-		newSteps := []*syntax.Step{}
-		for _, s := range step.Steps {
-			newSteps = append(newSteps, overrideStep(s, override)...)
-		}
-		step.Steps = newSteps
-	}
-
-	return []*syntax.Step{step}
 }
 
 // GenerateJenkinsfile generates the jenkinsfile

@@ -1453,13 +1453,6 @@ func TestFailedValidation(t *testing.T) {
 			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
-			name: "sh_field",
-			expectedError: (&apis.FieldError{
-				Message: "the sh field is deprecated - please use command instead",
-				Paths:   []string{"sh"},
-			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
-		},
-		{
 			name: "container_field",
 			expectedError: (&apis.FieldError{
 				Message: "the container field is deprecated - please use image instead",
@@ -1721,7 +1714,7 @@ func ParsedPipeline(ops ...PipelineOp) *syntax.ParsedPipeline {
 
 func PipelineAgent(image string) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Agent = syntax.Agent{
+		parsed.Agent = &syntax.Agent{
 			Image: image,
 		}
 	}
@@ -1729,10 +1722,10 @@ func PipelineAgent(image string) PipelineOp {
 
 func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Options = syntax.RootOptions{}
+		parsed.Options = &syntax.RootOptions{}
 
 		for _, op := range ops {
-			op(&parsed.Options)
+			op(parsed.Options)
 		}
 	}
 }
@@ -1749,6 +1742,9 @@ func PipelineContainerOptions(ops ...tb.ContainerOp) PipelineOptionsOp {
 
 func StageContainerOptions(ops ...tb.ContainerOp) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
 		options.ContainerOptions = &corev1.Container{}
 
 		for _, op := range ops {
@@ -1793,7 +1789,7 @@ func ContainerResourceRequests(cpus, memory string) tb.ContainerOp {
 
 func PipelineOptionsTimeout(time int64, unit syntax.TimeoutUnit) PipelineOptionsOp {
 	return func(options *syntax.RootOptions) {
-		options.Timeout = syntax.Timeout{
+		options.Timeout = &syntax.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -1854,7 +1850,7 @@ func PostAction(name string, options map[string]string) PipelinePostOp {
 
 func StageAgent(image string) StageOp {
 	return func(stage *syntax.Stage) {
-		stage.Agent = syntax.Agent{
+		stage.Agent = &syntax.Agent{
 			Image: image,
 		}
 	}
@@ -1862,17 +1858,20 @@ func StageAgent(image string) StageOp {
 
 func StageOptions(ops ...StageOptionsOp) StageOp {
 	return func(stage *syntax.Stage) {
-		stage.Options = syntax.StageOptions{}
+		stage.Options = &syntax.StageOptions{}
 
 		for _, op := range ops {
-			op(&stage.Options)
+			op(stage.Options)
 		}
 	}
 }
 
 func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
-		options.Timeout = syntax.Timeout{
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
+		options.Timeout = &syntax.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -1881,6 +1880,9 @@ func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
 
 func StageOptionsRetry(count int8) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
 		options.Retry = count
 	}
 }
@@ -1893,7 +1895,7 @@ func StageOptionsWorkspace(ws string) StageOptionsOp {
 
 func StageOptionsStash(name, files string) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
-		options.Stash = syntax.Stash{
+		options.Stash = &syntax.Stash{
 			Name:  name,
 			Files: files,
 		}
@@ -1902,7 +1904,7 @@ func StageOptionsStash(name, files string) StageOptionsOp {
 
 func StageOptionsUnstash(name, dir string) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
-		options.Unstash = syntax.Unstash{
+		options.Unstash = &syntax.Unstash{
 			Name: name,
 		}
 		if dir != "" {
@@ -2139,12 +2141,12 @@ func TestParsedPipelineHelpers(t *testing.T) {
 	)
 
 	expected := &syntax.ParsedPipeline{
-		Agent: syntax.Agent{
+		Agent: &syntax.Agent{
 			Image: "some-image",
 		},
-		Options: syntax.RootOptions{
+		Options: &syntax.RootOptions{
 			Retry: 5,
-			Timeout: syntax.Timeout{
+			Timeout: &syntax.Timeout{
 				Time: 30,
 				Unit: syntax.TimeoutUnitSeconds,
 			},
@@ -2185,17 +2187,17 @@ func TestParsedPipelineHelpers(t *testing.T) {
 		Stages: []syntax.Stage{
 			{
 				Name: "A Working Stage",
-				Options: syntax.StageOptions{
+				Options: &syntax.StageOptions{
 					Workspace: &customWorkspace,
-					Stash: syntax.Stash{
+					Stash: &syntax.Stash{
 						Name:  "some-name",
 						Files: "**/*",
 					},
-					Unstash: syntax.Unstash{
+					Unstash: &syntax.Unstash{
 						Name: "some-name",
 					},
-					RootOptions: syntax.RootOptions{
-						Timeout: syntax.Timeout{
+					RootOptions: &syntax.RootOptions{
+						Timeout: &syntax.Timeout{
 							Time: 15,
 							Unit: syntax.TimeoutUnitMinutes,
 						},
@@ -2212,7 +2214,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				Parallel: []syntax.Stage{
 					{
 						Name: "First Nested Stage",
-						Agent: syntax.Agent{
+						Agent: &syntax.Agent{
 							Image: "some-other-image",
 						},
 						Steps: []syntax.Step{{

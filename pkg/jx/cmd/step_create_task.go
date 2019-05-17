@@ -89,6 +89,7 @@ type StepCreateTaskOptions struct {
 	PullRequestNumber string
 	DeleteTempDir     bool
 	ViewSteps         bool
+	EffectivePipeline bool
 	NoReleasePrepare  bool
 	Duration          time.Duration
 	FromRepo          bool
@@ -160,6 +161,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file, without side effects")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
+	cmd.Flags().BoolVarP(&options.EffectivePipeline, "effective-pipeline", "", false, "Just view the effective pipeline definition that would be created")
 
 	options.AddCommonFlags(cmd)
 	return cmd
@@ -493,6 +495,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		if err != nil {
 			return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 		}
+
 		localPipelineConfig := projectConfig.PipelineConfig
 		if localPipelineConfig != nil {
 			err = localPipelineConfig.ExtendPipeline(pipelineConfig, false)
@@ -501,6 +504,8 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			}
 			pipelineConfig = localPipelineConfig
 		}
+	} else {
+		pipelineConfig.PopulatePipelinesFromDefault()
 	}
 
 	if pipelineConfig == nil {
@@ -566,6 +571,11 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 	if lifecycles != nil && lifecycles.Pipeline != nil {
 		parsed = lifecycles.Pipeline
+		for _, override := range pipelines.Overrides {
+			if override.MatchesPipeline(kind) {
+				parsed = syntax.ExtendParsedPipeline(parsed, override)
+			}
+		}
 	} else {
 		stage, err := o.CreateStageForBuildPack(name, projectConfig, pipelineConfig, lifecycles, kind, ns)
 		if err != nil {
@@ -590,6 +600,9 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 					container.WorkingDir = ""
 					container.Stdin = false
 					container.TTY = false
+					if parsed.Options == nil {
+						parsed.Options = &syntax.RootOptions{}
+					}
 					parsed.Options.ContainerOptions = &container
 				}
 			}
@@ -610,6 +623,16 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
 	if validateErr := parsed.Validate(ctx); validateErr != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for Pipeline")
+	}
+
+	if o.EffectivePipeline {
+		log.Success("Successfully generated effective pipeline:")
+		effective := &jenkinsfile.PipelineLifecycles{
+			Pipeline: parsed,
+		}
+		effectiveYaml, _ := yaml.Marshal(effective)
+		log.Infof("%s", effectiveYaml)
+		return nil, nil, nil, nil, nil, nil
 	}
 
 	pipeline, tasks, structure, err = parsed.GenerateCRDs(pipelineResourceName, o.BuildNumber, ns, o.PodTemplates, o.GetDefaultTaskInputs().Params, o.SourceName)
@@ -685,7 +708,7 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pro
 
 	stage := &syntax.Stage{
 		Name: syntax.DefaultStageNameForBuildPack,
-		Agent: syntax.Agent{
+		Agent: &syntax.Agent{
 			Image: container,
 		},
 		Steps: steps,
@@ -1543,7 +1566,7 @@ func getVersionFromFile(dir string) (string, error) {
 }
 
 func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jenkinsfile.PipelineConfig) error {
-	if o.NoReleasePrepare || o.ViewSteps {
+	if o.NoReleasePrepare || o.ViewSteps || o.EffectivePipeline {
 		return nil
 	}
 	version := ""
@@ -1690,7 +1713,7 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*syntax.Step) error {
 func (o *StepCreateTaskOptions) modifyStep(projectConfig *config.ProjectConfig, parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *syntax.Step, containerName string, dir string) syntax.Step {
 
 	if !o.NoKaniko {
-		if strings.HasPrefix(parsedStep.Command, "skaffold build") ||
+		if strings.HasPrefix(parsedStep.GetCommand(), "skaffold build") ||
 			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) {
 			sourceDir := o.getWorkspaceDir()
 			dockerfile := filepath.Join(sourceDir, "Dockerfile")

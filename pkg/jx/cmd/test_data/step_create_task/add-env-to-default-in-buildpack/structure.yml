@@ -1,0 +1,9 @@
+metadata:
+  creationTimestamp: null
+  name: abayer-golang-qs-test-master-1
+pipelineRef: null
+pipelineRunRef: null
+stages:
+- depth: 0
+  name: from-build-pack
+  taskRef: abayer-golang-qs-test-master-from-build-pack-1

@@ -34,12 +34,12 @@ const (
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
-	Agent      Agent       `json:"agent,omitempty"`
-	Env        []EnvVar    `json:"env,omitempty"`
-	Options    RootOptions `json:"options,omitempty"`
-	Stages     []Stage     `json:"stages"`
-	Post       []Post      `json:"post,omitempty"`
-	WorkingDir *string     `json:"dir,omitempty"`
+	Agent      *Agent       `json:"agent,omitempty"`
+	Env        []EnvVar     `json:"env,omitempty"`
+	Options    *RootOptions `json:"options,omitempty"`
+	Stages     []Stage      `json:"stages"`
+	Post       []Post       `json:"post,omitempty"`
+	WorkingDir *string      `json:"dir,omitempty"`
 
 	// Replaced by Env, retained for backwards compatibility
 	Environment []EnvVar `json:"environment,omitempty"`
@@ -111,7 +111,7 @@ func (t Timeout) toDuration() (*metav1.Duration, error) {
 
 // RootOptions contains options that can be configured on either a pipeline or a stage
 type RootOptions struct {
-	Timeout Timeout `json:"timeout,omitempty"`
+	Timeout *Timeout `json:"timeout,omitempty"`
 	// TODO: Not yet implemented in build-pipeline
 	Retry int8 `json:"retry,omitempty"`
 	// ContainerOptions allows for advanced configuration of containers for a single stage or the whole
@@ -137,11 +137,11 @@ type Unstash struct {
 // StageOptions contains both options that can be configured on either a pipeline or a stage, via
 // RootOptions, or stage-specific options.
 type StageOptions struct {
-	RootOptions `json:",inline"`
+	*RootOptions `json:",inline"`
 
 	// TODO: Not yet implemented in build-pipeline
-	Stash   Stash   `json:"stash,omitempty"`
-	Unstash Unstash `json:"unstash,omitempty"`
+	Stash   *Stash   `json:"stash,omitempty"`
+	Unstash *Unstash `json:"unstash,omitempty"`
 
 	Workspace *string `json:"workspace,omitempty"`
 }
@@ -199,15 +199,15 @@ type Loop struct {
 // Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
 // parallel with common configuration.
 type Stage struct {
-	Name       string       `json:"name"`
-	Agent      Agent        `json:"agent,omitempty"`
-	Env        []EnvVar     `json:"env,omitempty"`
-	Options    StageOptions `json:"options,omitempty"`
-	Steps      []Step       `json:"steps,omitempty"`
-	Stages     []Stage      `json:"stages,omitempty"`
-	Parallel   []Stage      `json:"parallel,omitempty"`
-	Post       []Post       `json:"post,omitempty"`
-	WorkingDir *string      `json:"dir,omitempty"`
+	Name       string        `json:"name"`
+	Agent      *Agent        `json:"agent,omitempty"`
+	Env        []EnvVar      `json:"env,omitempty"`
+	Options    *StageOptions `json:"options,omitempty"`
+	Steps      []Step        `json:"steps,omitempty"`
+	Stages     []Stage       `json:"stages,omitempty"`
+	Parallel   []Stage       `json:"parallel,omitempty"`
+	Post       []Post        `json:"post,omitempty"`
+	WorkingDir *string       `json:"dir,omitempty"`
 
 	// Replaced by Env, retained for backwards compatibility
 	Environment []EnvVar `json:"environment,omitempty"`
@@ -237,6 +237,31 @@ type PostAction struct {
 	// Also, we'll need to do some magic to do type verification during translation - i.e., this action wants a number
 	// for this option, so translate the string value for that option to a number.
 	Options map[string]string `json:"options,omitempty"`
+}
+
+// StepOverrideType is used to specify whether the existing step should be replaced (default), new step(s) should be
+// prepended before the existing step, or new step(s) should be appended after the existing step.
+type StepOverrideType string
+
+// The available override types
+const (
+	StepOverrideReplace StepOverrideType = "replace"
+	StepOverrideBefore  StepOverrideType = "before"
+	StepOverrideAfter   StepOverrideType = "after"
+)
+
+// All possible override types
+var allOverrideTypes = []StepOverrideType{StepOverrideReplace, StepOverrideBefore, StepOverrideAfter}
+
+// PipelineOverride allows for overriding named steps, stages, or pipelines in the build pack or default pipeline
+type PipelineOverride struct {
+	Pipeline string            `json:"pipeline,omitempty"`
+	Stage    string            `json:"stage,omitempty"`
+	Name     string            `json:"name,omitempty"`
+	Step     *Step             `json:"step,omitempty"`
+	Steps    []*Step           `json:"steps,omitempty"`
+	Type     *StepOverrideType `json:"type,omitempty"`
+	Agent    *Agent            `json:"agent,omitempty"`
 }
 
 var _ apis.Validatable = (*ParsedPipeline)(nil)
@@ -387,6 +412,18 @@ func (s *Step) GetImage() string {
 	return s.Container
 }
 
+// DeepCopyForParsedPipeline returns a copy of the Agent with deprecated fields migrated to current ones.
+func (a *Agent) DeepCopyForParsedPipeline() *Agent {
+	agent := a.DeepCopy()
+	if agent.Container != "" {
+		agent.Image = agent.GetImage()
+		agent.Container = ""
+		agent.Label = ""
+	}
+
+	return agent
+}
+
 // Groovy returns the agent groovy expression for the agent or `any` if its blank
 // Legacy code for Jenkinsfile generation
 func (a *Agent) Groovy() string {
@@ -463,11 +500,14 @@ func MangleToRfc1035Label(body string, suffix string) string {
 
 // GetEnv gets the environment for the ParsedPipeline, returning Env first and Environment if Env isn't populated.
 func (j *ParsedPipeline) GetEnv() []EnvVar {
-	if len(j.Env) > 0 {
-		return j.Env
-	}
+	if j != nil {
+		if len(j.Env) > 0 {
+			return j.Env
+		}
 
-	return j.Environment
+		return j.Environment
+	}
+	return []EnvVar{}
 }
 
 // GetEnv gets the environment for the Stage, returning Env first and Environment if Env isn't populated.
@@ -502,10 +542,10 @@ func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
 	return nil
 }
 
-func validateAgent(a Agent) *apis.FieldError {
+func validateAgent(a *Agent) *apis.FieldError {
 	// TODO: This is the same whether you specify an agent without label or image, or if you don't specify an agent
 	// at all, which is nonoptimal.
-	if !equality.Semantic.DeepEqual(a, Agent{}) {
+	if a != nil {
 		if a.Container != "" {
 			return &apis.FieldError{
 				Message: "the container field is deprecated - please use image instead",
@@ -533,7 +573,7 @@ func validateAgent(a Agent) *apis.FieldError {
 
 var containsASCIILetter = regexp.MustCompile(`[a-zA-Z]`).MatchString
 
-func validateStage(s Stage, parentAgent Agent) *apis.FieldError {
+func validateStage(s Stage, parentAgent *Agent) *apis.FieldError {
 	if len(s.Steps) == 0 && len(s.Stages) == 0 && len(s.Parallel) == 0 {
 		return apis.ErrMissingOneOf("steps", "stages", "parallel")
 	}
@@ -545,12 +585,12 @@ func validateStage(s Stage, parentAgent Agent) *apis.FieldError {
 		}
 	}
 
-	stageAgent := s.Agent
-	if equality.Semantic.DeepEqual(stageAgent, Agent{}) {
-		stageAgent = parentAgent
+	stageAgent := s.Agent.DeepCopy()
+	if stageAgent == nil {
+		stageAgent = parentAgent.DeepCopy()
 	}
 
-	if equality.Semantic.DeepEqual(stageAgent, Agent{}) {
+	if stageAgent == nil {
 		return &apis.FieldError{
 			Message: "No agent specified for stage or for its parent(s)",
 			Paths:   []string{"agent"},
@@ -627,12 +667,6 @@ func moreThanOneAreTrue(vals ...bool) bool {
 
 func validateStep(s Step) *apis.FieldError {
 	// Special cases for when you use legacy build pack syntax inside a pipeline definition
-	if s.Sh != "" {
-		return &apis.FieldError{
-			Message: "the sh field is deprecated - please use command instead",
-			Paths:   []string{"sh"},
-		}
-	}
 	if s.Container != "" {
 		return &apis.FieldError{
 			Message: "the container field is deprecated - please use image instead",
@@ -664,15 +698,15 @@ func validateStep(s Step) *apis.FieldError {
 		}
 	}
 
-	if s.Command == "" && s.Step == "" && s.Loop == nil {
+	if s.GetCommand() == "" && s.Step == "" && s.Loop == nil {
 		return apis.ErrMissingOneOf("command", "step", "loop")
 	}
 
-	if moreThanOneAreTrue(s.Command != "", s.Step != "", s.Loop != nil) {
+	if moreThanOneAreTrue(s.GetCommand() != "", s.Step != "", s.Loop != nil) {
 		return apis.ErrMultipleOneOf("command", "step", "loop")
 	}
 
-	if (s.Command != "" || s.Loop != nil) && len(s.Options) != 0 {
+	if (s.GetCommand() != "" || s.Loop != nil) && len(s.Options) != 0 {
 		return &apis.FieldError{
 			Message: "Cannot set options for a command or a loop",
 			Paths:   []string{"options"},
@@ -691,7 +725,7 @@ func validateStep(s Step) *apis.FieldError {
 	}
 
 	if s.Agent != nil {
-		return validateAgent(*s.Agent).ViaField("agent")
+		return validateAgent(s.Agent).ViaField("agent")
 	}
 	return nil
 }
@@ -720,7 +754,7 @@ func validateLoop(l *Loop) *apis.FieldError {
 	return nil
 }
 
-func validateStages(stages []Stage, parentAgent Agent) *apis.FieldError {
+func validateStages(stages []Stage, parentAgent *Agent) *apis.FieldError {
 	if len(stages) == 0 {
 		return apis.ErrMissingField("stages")
 	}
@@ -734,9 +768,9 @@ func validateStages(stages []Stage, parentAgent Agent) *apis.FieldError {
 	return nil
 }
 
-func validateRootOptions(o RootOptions) *apis.FieldError {
-	if !equality.Semantic.DeepEqual(o, RootOptions{}) {
-		if !equality.Semantic.DeepEqual(o.Timeout, Timeout{}) {
+func validateRootOptions(o *RootOptions) *apis.FieldError {
+	if o != nil {
+		if o.Timeout != nil {
 			if err := validateTimeout(o.Timeout); err != nil {
 				return err.ViaField("timeout")
 			}
@@ -805,30 +839,32 @@ func validateContainerOptions(c *corev1.Container) *apis.FieldError {
 	return nil
 }
 
-func validateStageOptions(o StageOptions) *apis.FieldError {
-	if !equality.Semantic.DeepEqual(o.Stash, Stash{}) {
+func validateStageOptions(o *StageOptions) *apis.FieldError {
+	if o != nil {
 		if err := validateStash(o.Stash); err != nil {
 			return err.ViaField("stash")
 		}
-	}
 
-	if !equality.Semantic.DeepEqual(o.Unstash, Unstash{}) {
-		if err := validateUnstash(o.Unstash); err != nil {
-			return err.ViaField("unstash")
+		if o.Unstash != nil {
+			if err := validateUnstash(o.Unstash); err != nil {
+				return err.ViaField("unstash")
+			}
 		}
-	}
 
-	if o.Workspace != nil {
-		if err := validateWorkspace(*o.Workspace); err != nil {
-			return err
+		if o.Workspace != nil {
+			if err := validateWorkspace(*o.Workspace); err != nil {
+				return err
+			}
 		}
+
+		return validateRootOptions(o.RootOptions)
 	}
 
-	return validateRootOptions(o.RootOptions)
+	return nil
 }
 
-func validateTimeout(t Timeout) *apis.FieldError {
-	if !equality.Semantic.DeepEqual(t, Timeout{}) {
+func validateTimeout(t *Timeout) *apis.FieldError {
+	if t != nil {
 		isAllowed := false
 		for _, allowed := range allTimeoutUnits {
 			if t.Unit == allowed {
@@ -855,8 +891,8 @@ func validateTimeout(t Timeout) *apis.FieldError {
 	return nil
 }
 
-func validateUnstash(u Unstash) *apis.FieldError {
-	if !equality.Semantic.DeepEqual(u, Unstash{}) {
+func validateUnstash(u *Unstash) *apis.FieldError {
+	if u != nil {
 		// TODO: Check to make sure the corresponding stash is defined somewhere
 		if u.Name == "" {
 			return &apis.FieldError{
@@ -869,8 +905,8 @@ func validateUnstash(u Unstash) *apis.FieldError {
 	return nil
 }
 
-func validateStash(s Stash) *apis.FieldError {
-	if !equality.Semantic.DeepEqual(s, Stash{}) {
+func validateStash(s *Stash) *apis.FieldError {
+	if s != nil {
 		if s.Name == "" {
 			return &apis.FieldError{
 				Message: "The stash name must be provided",
@@ -1094,34 +1130,42 @@ func (ts transformedStage) getLinearTasks() []*tektonv1alpha1.Task {
 
 // If the workspace is nil, sets it to the parent's workspace
 func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
+	if ts.Stage.Options == nil {
+		ts.Stage.Options = &StageOptions{
+			RootOptions: &RootOptions{},
+		}
+	}
 	if ts.Stage.Options.Workspace == nil {
 		ts.Stage.Options.Workspace = &parentWorkspace
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
 
 	stageContainer := &corev1.Container{}
 
-	if !equality.Semantic.DeepEqual(s.Options, StageOptions{}) {
+	if s.Options != nil {
 		o := s.Options
-		if !equality.Semantic.DeepEqual(o.Timeout, Timeout{}) {
-			return nil, errors.New("Timeout on stage not yet supported")
+		if o.RootOptions != nil {
+			if o.Timeout != nil {
+				return nil, errors.New("Timeout on stage not yet supported")
+			}
+			if o.Retry > 0 {
+				return nil, errors.New("Retry on stage not yet supported")
+			}
+			if o.ContainerOptions != nil {
+				stageContainer = o.ContainerOptions
+			}
 		}
-		if o.Retry != 0 {
-			return nil, errors.New("Retry on stage not yet supported")
-		}
-		if !equality.Semantic.DeepEqual(o.Stash, Stash{}) {
+		if o.Stash != nil {
 			return nil, errors.New("Stash on stage not yet supported")
 		}
-		if !equality.Semantic.DeepEqual(o.Unstash, Unstash{}) {
+		if o.Unstash != nil {
 			return nil, errors.New("Unstash on stage not yet supported")
 		}
-
-		stageContainer = o.ContainerOptions
 	}
 
 	// Don't overwrite the inherited working dir if we don't have one specified here.
@@ -1139,10 +1183,10 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 	env := scopedEnv(toContainerEnvVars(s.GetEnv()), parentEnv)
 
-	agent := s.Agent
+	agent := s.Agent.DeepCopy()
 
-	if equality.Semantic.DeepEqual(agent, Agent{}) {
-		agent = parentAgent
+	if agent == nil {
+		agent = parentAgent.DeepCopy()
 	}
 
 	stepCounter := 0
@@ -1349,7 +1393,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 		workingDir = filepath.Join(WorkingDirRoot, sourceDir, workingDir)
 	}
 
-	if step.Command != "" {
+	if step.GetCommand() != "" {
 		c := &corev1.Container{}
 		if parentContainer != nil {
 			c = parentContainer.DeepCopy()
@@ -1375,11 +1419,11 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 		}
 		// Special-casing for commands starting with /kaniko
 		// TODO: Should this be more general?
-		if strings.HasPrefix(step.Command, "/kaniko") {
-			c.Command = []string{step.Command}
+		if strings.HasPrefix(step.GetCommand(), "/kaniko") {
+			c.Command = []string{step.GetCommand()}
 			c.Args = step.Arguments
 		} else {
-			cmdStr := step.Command
+			cmdStr := step.GetCommand()
 			if len(step.Arguments) > 0 {
 				cmdStr += " " + strings.Join(step.Arguments, " ")
 			}
@@ -1441,9 +1485,9 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	var parentContainer *corev1.Container
 	baseWorkingDir := j.WorkingDir
 
-	if !equality.Semantic.DeepEqual(j.Options, RootOptions{}) {
+	if j.Options != nil {
 		o := j.Options
-		if o.Retry != 0 {
+		if o.Retry > 0 {
 			return nil, nil, nil, errors.New("Retry at top level not yet supported")
 		}
 		parentContainer = o.ContainerOptions
@@ -1755,4 +1799,169 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container)
 	return tektonv1alpha1.TaskSpec{
 		Steps: []corev1.Container{*childContainer},
 	}, nil
+}
+
+// AsStepsSlice returns a possibly empty slice of the step or steps in this override
+func (p *PipelineOverride) AsStepsSlice() []*Step {
+	if p.Step != nil {
+		return []*Step{p.Step}
+	}
+	if len(p.Steps) > 0 {
+		return p.Steps
+	}
+	return []*Step{}
+}
+
+// MatchesPipeline returns true if the pipeline name is specified in the override or no pipeline is specified at all in the override
+func (p *PipelineOverride) MatchesPipeline(name string) bool {
+	if p.Pipeline == "" || p.Pipeline == name {
+		return true
+	}
+	return false
+}
+
+// MatchesStage returns true if the stage/lifecycle name is specified in the override or no stage/lifecycle is specified at all in the override
+func (p *PipelineOverride) MatchesStage(name string) bool {
+	if p.Stage == "" || p.Stage == name {
+		return true
+	}
+	return false
+}
+
+// ExtendParsedPipeline applies an individual override to the pipeline, replacing named steps in specified stages (or all stages if
+// no stage name is specified).
+func ExtendParsedPipeline(pipeline *ParsedPipeline, override *PipelineOverride) *ParsedPipeline {
+	if pipeline == nil || override == nil {
+		return pipeline
+	}
+
+	if override.Agent != nil {
+		pipeline.Agent = override.Agent
+	}
+
+	var newStages []Stage
+	for _, s := range pipeline.Stages {
+		overriddenStage := ExtendStage(s, override)
+		if !equality.Semantic.DeepEqual(overriddenStage, Stage{}) {
+			newStages = append(newStages, overriddenStage)
+		}
+	}
+	pipeline.Stages = newStages
+
+	return pipeline
+}
+
+func stepPointerSliceToStepSlice(orig []*Step) []Step {
+	var newSteps []Step
+	for _, s := range orig {
+		if s != nil {
+			newSteps = append(newSteps, *s)
+		}
+	}
+
+	return newSteps
+}
+
+// ExtendStage applies a set of overrides to named steps in this stage and its children
+func ExtendStage(stage Stage, override *PipelineOverride) Stage {
+	if override == nil {
+		return stage
+	}
+
+	if override.MatchesStage(stage.Name) {
+		if override.Agent != nil {
+			stage.Agent = override.Agent
+		}
+		if len(stage.Steps) > 0 {
+			var newSteps []Step
+			if override.Name != "" {
+				for _, s := range stage.Steps {
+					newSteps = append(newSteps, OverrideStep(s, override)...)
+				}
+			} else {
+				// If no step name was specified but there are steps, just replace all steps in the stage/lifecycle,
+				// or add the new steps before/after the existing steps in the stage/lifecycle
+				if steps := override.AsStepsSlice(); len(steps) > 0 {
+					if override.Type == nil || *override.Type == StepOverrideReplace {
+						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
+					} else if *override.Type == StepOverrideBefore {
+						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
+						newSteps = append(newSteps, stage.Steps...)
+					} else if *override.Type == StepOverrideAfter {
+						newSteps = append(newSteps, stage.Steps...)
+						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
+					}
+				}
+				// If there aren't any steps as well as no step name, then we're removing all steps from this stage/lifecycle,
+				// so just don't add anything to newSteps, and we'll end up returning an empty stage
+			}
+
+			// If newSteps isn't empty, use it for the stage's steps list. Otherwise, if no agent override is specified,
+			// we're removing this stage, so return an empty stage.
+			if len(newSteps) > 0 {
+				stage.Steps = newSteps
+			} else if override.Agent == nil {
+				return Stage{}
+			}
+		}
+	}
+	if len(stage.Stages) > 0 {
+		var newStages []Stage
+		for _, s := range stage.Stages {
+			newStages = append(newStages, ExtendStage(s, override))
+		}
+		stage.Stages = newStages
+	}
+	if len(stage.Parallel) > 0 {
+		var newParallel []Stage
+		for _, s := range stage.Parallel {
+			newParallel = append(newParallel, ExtendStage(s, override))
+		}
+		stage.Parallel = newParallel
+	}
+
+	return stage
+}
+
+// OverrideStep overrides an existing step, if it matches the override's name, with the contents of the override. It also
+// recurses into child steps.
+func OverrideStep(step Step, override *PipelineOverride) []Step {
+	if override != nil {
+		if step.Name == override.Name {
+			var newSteps []Step
+
+			if override.Step != nil {
+				newSteps = append(newSteps, *override.Step)
+			}
+			if override.Steps != nil {
+				for _, s := range override.Steps {
+					newSteps = append(newSteps, *s)
+				}
+			}
+
+			if override.Type == nil || *override.Type == StepOverrideReplace {
+				return newSteps
+			} else if *override.Type == StepOverrideBefore {
+				return append(newSteps, step)
+			} else if *override.Type == StepOverrideAfter {
+				return append([]Step{step}, newSteps...)
+			}
+
+			// Fall back on just returning the original. We shouldn't ever get here.
+			return []Step{step}
+		}
+
+		if len(step.Steps) > 0 {
+			var newSteps []*Step
+			for _, s := range step.Steps {
+				for _, o := range OverrideStep(*s, override) {
+					stepCopy := o
+					newSteps = append(newSteps, &stepCopy)
+				}
+			}
+			step.Steps = newSteps
+		}
+	}
+
+	return []Step{step}
 }
