@@ -1,0 +1,15 @@
+branch-protection: {}
+deck:
+  spyglass: {}
+gerrit: {}
+owners_dir_blacklist:
+  default: null
+  repos: null
+plank: {}
+pod_namespace: jx
+prowjob_namespace: jx
+push_gateway: {}
+sinker: {}
+tide:
+  context_options:
+    required-if-present-contexts: null

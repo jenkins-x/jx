@@ -11,12 +11,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pborman/uuid"
@@ -61,8 +60,6 @@ const (
 	//RepoVaultPath is the path to the repo credentials in Vault
 	RepoVaultPath = "helm/repos"
 )
-
-var isNotFoundRegex = regexp.MustCompile(`^Error: chart "\S*" matching \S* not found in \S* index. \(try 'helm repo update'\). no chart name found$`)
 
 // copied from helm to minimise dependencies...
 

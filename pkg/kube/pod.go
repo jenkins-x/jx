@@ -236,19 +236,17 @@ func GetPodRestarts(pod *v1.Pod) int32 {
 // GetContainersWithStatusAndIsInit gets the containers in the pod, either init containers or non-init depending on whether
 // non-init containers are present, and a flag as to whether this list of containers are init containers or not.
 func GetContainersWithStatusAndIsInit(pod *v1.Pod) ([]v1.Container, []v1.ContainerStatus, bool) {
-	isInit := false
+	isInit := true
+	allContainers := pod.Spec.InitContainers
+	statuses := pod.Status.InitContainerStatuses
 	containers := pod.Spec.Containers
-	statuses := pod.Status.ContainerStatuses
 
-	// If there's only one "container" and it's named "nop", then the actual steps are on the init containers.
-	if len(containers) == 1 && containers[0].Name == "nop" {
-		isInit = true
-		containers = pod.Spec.InitContainers
-		statuses = pod.Status.InitContainerStatuses
-	} else if containers[len(containers)-1].Name == "nop" {
-		// Trim off the no-op container at the end of the list.
-		containers = containers[:len(containers)-1]
+	if len(containers) > 1 && len(pod.Status.ContainerStatuses) == len(containers) && containers[len(containers)-1].Name == "nop" {
+		isInit = false
+		// Add the non-init containers, and trim off the no-op container at the end of the list.
+		allContainers = append(allContainers, containers[:len(containers)-1]...)
+		statuses = append(statuses, pod.Status.ContainerStatuses[:len(containers)-1]...)
 	}
 
-	return containers, statuses, isInit
+	return allContainers, statuses, isInit
 }

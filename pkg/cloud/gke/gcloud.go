@@ -69,6 +69,23 @@ func parseClusterZone(clusterInfo string) (string, error) {
 	return ci.Zone, nil
 }
 
+type nodeConfig struct {
+	OauthScopes []string `json:"oauthScopes"`
+}
+
+func parseScopes(clusterInfo string) ([]string, error) {
+
+	ci := struct {
+		NodeConfig nodeConfig `json:"nodeConfig"`
+	}{}
+
+	err := yaml.Unmarshal([]byte(clusterInfo), &ci)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting cluster oauthScopes from cluster info")
+	}
+	return ci.NodeConfig.OauthScopes, nil
+}
+
 // BucketExists checks if a Google Storage bucket exists
 func BucketExists(projectID string, bucketName string) (bool, error) {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
@@ -715,4 +732,35 @@ func IsKmsKeyAvailable(keyName string, keyringName string, projectID string) boo
 		return false
 	}
 	return true
+}
+
+// IsGCSWriteRoleEnabled will check if the devstorage.full_control scope is enabled in the cluster in order to use GCS
+func IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error) {
+	args := []string{"container",
+		"clusters",
+		"describe",
+		cluster,
+		"--zone",
+		zone}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return false, err
+	}
+
+	oauthScopes, err := parseScopes(output)
+	if err != nil {
+		return false, err
+	}
+
+	for _, s := range oauthScopes {
+		if strings.Contains(s, "devstorage.full_control") {
+			return true, nil
+		}
+	}
+	return false, nil
 }

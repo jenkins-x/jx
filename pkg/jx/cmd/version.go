@@ -14,10 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	jxChartPrefix = "jenkins-x-platform-"
-)
-
 type VersionOptions struct {
 	*opts.CommonOptions
 

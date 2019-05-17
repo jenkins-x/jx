@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 ORG_REPOS=("jenkins-x/jx-ts-client")
+VERSION="$(cat VERSION)"
 for org_repo in "${ORG_REPOS[@]}"; do
-  OUTDIR="$(jx step git fork-and-clone -b --print-out-dir https://github.com/$org_repo)"
+  OUTDIR="$(jx step git fork-and-clone -b --print-out-dir --dir=$TMPDIR https://github.com/$org_repo)"
   echo "Forked repo to $OUTDIR"
-  VERSION="$(cat VERSION)"
   pushd $OUTDIR
   make all
   git add -N .
@@ -13,3 +13,5 @@ for org_repo in "${ORG_REPOS[@]}"; do
   fi
   popd
 done
+
+exit 0

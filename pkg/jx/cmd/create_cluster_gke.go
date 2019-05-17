@@ -310,24 +310,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		o.InstallOptions.Flags.Kaniko = true
 	}
 
-	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
-		// lets default the docker registry to GCR
-		if o.InstallOptions.Flags.DockerRegistry == "" {
-			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
-		}
-
-		// lets default the docker registry org to the project id
-		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
-			o.InstallOptions.Flags.DockerRegistryOrg = projectId
-		}
-	}
-
 	if !o.BatchMode {
 		// if scopes is empty &
 		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
 			prompt := &survey.Confirm{
 				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
-				Default: o.Flags.EnhancedScopes,
+				Default: o.InstallOptions.Flags.DockerRegistry == "",
 				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
 			}
 			err = survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
@@ -353,7 +341,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
-					Default: o.Flags.EnhancedApis,
+					Default: o.Flags.EnhancedScopes,
 					Help:    "Enables extra APIs on the GCP project",
 				}
 				err = survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
@@ -375,16 +363,28 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
-		if !o.InstallOptions.Flags.Kaniko {
+		if o.Flags.EnhancedScopes && !o.InstallOptions.Flags.Kaniko {
 			prompt := &survey.Confirm{
 				Message: "Would you like to enable Kaniko for building container images",
-				Default: o.InstallOptions.Flags.Kaniko,
+				Default: o.Flags.EnhancedScopes,
 				Help:    "Use Kaniko for docker images",
 			}
 			err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
+		// lets default the docker registry to GCR
+		if o.InstallOptions.Flags.DockerRegistry == "" {
+			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
+		}
+
+		// lets default the docker registry org to the project id
+		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
+			o.InstallOptions.Flags.DockerRegistryOrg = projectId
 		}
 	}
 

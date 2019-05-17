@@ -57,7 +57,10 @@ func NewVaultClient(apiclient *api.Client) Client {
 // Write writes a named secret to the vault with the data provided. Data can be a generic map of stuff, but at all points
 // in the map, keys _must_ be strings (not bool, int or even interface{}) otherwise you'll get an error
 func (v *client) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
-	secret, err := v.client.Logical().Write(secretPath(secretName), data)
+	payload := map[string]interface{}{
+		"data": data,
+	}
+	secret, err := v.client.Logical().Write(secretPath(secretName), payload)
 	if secret != nil {
 		return secret.Data, err
 	}
@@ -67,8 +70,12 @@ func (v *client) Write(secretName string, data map[string]interface{}) (map[stri
 // Read reads a named secret to the vault
 func (v *client) Read(secretName string) (map[string]interface{}, error) {
 	secret, err := v.client.Logical().Read(secretPath(secretName))
-	if secret != nil {
-		return secret.Data, err
+	if secret != nil && secret.Data != nil {
+		data, ok := secret.Data["data"].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("invalid secret data type")
+		}
+		return data, err
 	}
 	return nil, err
 }
@@ -93,6 +100,7 @@ func (v *client) ReadObject(secretName string, secret interface{}) error {
 	if err != nil {
 		return errors.Wrapf(err, "deserializing the secret %q from vault", secretName)
 	}
+
 	return nil
 }
 
@@ -113,7 +121,7 @@ func (v *client) ReadYaml(secretName string) (string, error) {
 	}
 	data, ok := secretMap[yamlDataKey]
 	if !ok {
-		return "", fmt.Errorf("no data found at secret key %s/%s", secretName, yamlDataKey)
+		return "", nil
 	}
 	strData, ok := data.(string)
 	if !ok {
@@ -128,7 +136,7 @@ func (v *client) ReadYaml(secretName string) (string, error) {
 
 // List lists the secrets under a given path
 func (v *client) List(path string) ([]string, error) {
-	secrets, err := v.client.Logical().List(secretPath(path))
+	secrets, err := v.client.Logical().List(secretMetadataPath(path))
 	if err != nil {
 		return nil, err
 	}
@@ -138,11 +146,16 @@ func (v *client) List(path string) ([]string, error) {
 		return secretNames, nil
 	}
 	
-	// Don't do type assertion on nil
+	data := secrets.Data
+	if data == nil {
+		return secretNames, nil
+	}
+  
+  // Don't do type assertion on nil
 	if secrets.Data["keys"] == nil {
 		return secretNames, nil
 	}
-	
+  
 	for _, s := range secrets.Data["keys"].([]interface{}) {
 		if orig, ok := s.(string); ok {
 			secretNames = append(secretNames, orig)

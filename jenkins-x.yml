@@ -29,13 +29,15 @@ pipelineConfig:
                 value: /workspace/go
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy
+              - name: MAVEN_OPTS
+                value: -Xmx3000m
             steps:
               - name: init-helm
                 image: alpine/helm:2.12.3
                 command: helm
                 args: ['init','--client-only']
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step
@@ -47,7 +49,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/git-token
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step
@@ -59,7 +61,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/feature-flag-token
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step
@@ -71,7 +73,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/basic-auth-user
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step

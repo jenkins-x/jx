@@ -3,6 +3,7 @@ package opts
 import (
 	"context"
 	"fmt"
+	"github.com/pborman/uuid"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -22,8 +23,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -351,7 +352,15 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 		valuesFiles.Items = append(valuesFiles.Items, fileName.Name())
 	}
 
-	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valuesFiles, gitOpsEnvDir, o.Verbose, o.Helm())
+	//Needed for generated Apps - Otherwise the main repo's Chart.yml is used and the Apps metadata is left empty
+	chartUntarDir, _ := ioutil.TempDir("", chart+uuid.NewUUID().String())
+	err := o.Helm().FetchChart(chart, version, true, chartUntarDir, repo, "", "")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Maybe modify the gitOpsEnvDir to after a fetch
+	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valuesFiles, filepath.Join(chartUntarDir, chart), o.Verbose, o.Helm())
 
 	if len(setSecrets) > 0 {
 		secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
@@ -579,18 +588,6 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 		}
 	}
 
-	return nil
-}
-
-func deleteDirectory(wrkDir string) error {
-	log.Infof("Delete previous Jenkins X version repo from %s\n", wrkDir)
-	// If it exists a this stage most likely its content is not consistent
-	if exists, err := util.DirExists(wrkDir); err == nil && exists {
-		err := util.DeleteDirContents(wrkDir)
-		if err != nil {
-			return errors.Wrapf(err, "cleaning the content of %q dir", wrkDir)
-		}
-	}
 	return nil
 }
 

@@ -5,27 +5,25 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-
+	vaultapi "github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
 	BankVaultsOperatorImage = "banzaicloud/vault-operator"
 	BankVaultsImage         = "banzaicloud/bank-vaults"
-	BankVaultsImageTag      = "0.4.7"
-	defaultNumVaults        = 1
-	vaultImage              = "vault"
-	vaultImageTag           = "0.11.6"
-	gcpServiceAccountEnv    = "GOOGLE_APPLICATION_CREDENTIALS"
-	gcpServiceAccountPath   = "/etc/gcp/service-account.json"
+	VaultImage              = "vault"
+
+	gcpServiceAccountEnv  = "GOOGLE_APPLICATION_CREDENTIALS"
+	gcpServiceAccountPath = "/etc/gcp/service-account.json"
 
 	awsServiceAccountEnv  = "AWS_SHARED_CREDENTIALS_FILE"
 	awsServiceAccountPath = "/etc/aws/credentials"
@@ -35,6 +33,9 @@ const (
 	vaultAuthTTL  = "1h"
 
 	vaultRoleName = "vault-auth"
+
+	vaultSecretEngines = "secrets"
+	defaultNumVaults   = 1
 )
 
 // Vault stores some details of a Vault resource
@@ -127,6 +128,36 @@ type Storage struct {
 	DynamoDB *DynamoDBConfig `json:"dynamodb,omitempty"`
 }
 
+// SecretEngine configuration for secret engine
+type SecretEngine struct {
+	vaultapi.MountInput
+	Path string `json:"path"`
+}
+
+// Seal configuration for Vault auto-unseal
+type Seal struct {
+	GcpCkms *GCPSealConfig `json:"gcpckms,omitempty"`
+	AWSKms  *AWSSealConig  `json:"awskms,omitempty"`
+}
+
+// GCPSealConfig Google Cloud KMS config for vault auto-unseal
+type GCPSealConfig struct {
+	Credentials string `json:"credentials,omitempty"`
+	Project     string `json:"project,omitempty"`
+	Region      string `json:"region,omitempty"`
+	KeyRing     string `json:"key_ring,omitempty"`
+	CryptoKey   string `json:"crypto_key,omitempty"`
+}
+
+// AWSSealConig AWS KMS config for vault auto-unseal
+type AWSSealConig struct {
+	Region    string `json:"region,omitempty"`
+	AccessKey string `json:"access_key,omitempty"`
+	SecretKey string `json:"secret_key,omitempty"`
+	KmsKeyID  string `json:"kms_key_id,omitempty"`
+	Endpoint  string `json:"endpoint,omitempty"`
+}
+
 // SystemVaultName returns the name of the system vault based on the cluster name
 func SystemVaultName(kuber kube.Kuber) (string, error) {
 	clusterName, err := cluster.ShortName(kuber)
@@ -145,10 +176,11 @@ func SystemVaultNameForCluster(clusterName string) string {
 
 // CreateGKEVault creates a new vault backed by GCP KMS and storage
 func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
-	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
+	images map[string]string, gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
 	authServiceAccountNamespace string, secretsPathPrefix string) error {
 
-	vault, err := InitializeVault(kubeClient, name, ns, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
+	vault, err := initializeVault(kubeClient, name, ns, images,
+		authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
 	if err != nil {
 		return err
 	}
@@ -157,6 +189,15 @@ func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 		GCS: &GCSConfig{
 			Bucket:    gcpConfig.GcsBucket,
 			HaEnabled: "true",
+		},
+	}
+	vault.Spec.Config["seal"] = Seal{
+		GcpCkms: &GCPSealConfig{
+			Credentials: gcpServiceAccountPath,
+			Project:     gcpConfig.ProjectId,
+			Region:      gcpConfig.KmsLocation,
+			KeyRing:     gcpConfig.KmsKeyring,
+			CryptoKey:   gcpConfig.KmsKey,
 		},
 	}
 	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
@@ -180,10 +221,10 @@ func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 
 // CreateAWSVault creates a new vault backed by AWS KMS and DynamoDB storage
 func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
-	awsServiceAccountSecretName string, awsConfig *AWSConfig, authServiceAccount string,
+	images map[string]string, awsServiceAccountSecretName string, awsConfig *AWSConfig, authServiceAccount string,
 	authServiceAccountNamespace string, secretsPathPrefix string) error {
 
-	vault, err := InitializeVault(kubeClient, name, ns, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
+	vault, err := initializeVault(kubeClient, name, ns, images, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
 	if err != nil {
 		return err
 	}
@@ -195,6 +236,14 @@ func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 			Table:           awsConfig.DynamoDBTable,
 			AccessKeyID:     awsConfig.AccessKeyID,
 			SecretAccessKey: awsConfig.SecretAccessKey,
+		},
+	}
+	vault.Spec.Config["seal"] = Seal{
+		AWSKms: &AWSSealConig{
+			Region:    awsConfig.KMSRegion,
+			AccessKey: awsConfig.AccessKeyID,
+			SecretKey: awsConfig.SecretAccessKey,
+			KmsKeyID:  awsConfig.KMSKeyID,
 		},
 	}
 	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
@@ -210,9 +259,9 @@ func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 	return err
 }
 
-// InitializeVault intializes and returns vault struct
-func InitializeVault(kubeClient kubernetes.Interface, name string, ns string, authServiceAccount string,
-	authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
+// initializeVault intializes and returns vault struct
+func initializeVault(kubeClient kubernetes.Interface, name string, ns string, images map[string]string,
+	authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
 
 	err := createVaultServiceAccount(kubeClient, ns, name)
 	if err != nil {
@@ -249,8 +298,8 @@ func InitializeVault(kubeClient kubernetes.Interface, name string, ns string, au
 		},
 		Spec: v1alpha1.VaultSpec{
 			Size:            defaultNumVaults,
-			Image:           vaultImage + ":" + vaultImageTag,
-			BankVaultsImage: BankVaultsImage + ":" + BankVaultsImageTag,
+			Image:           images[VaultImage],
+			BankVaultsImage: images[BankVaultsImage],
 			ServiceType:     string(v1.ServiceTypeClusterIP),
 			ServiceAccount:  name,
 			Config: map[string]interface{}{
@@ -287,6 +336,23 @@ func InitializeVault(kubeClient kubernetes.Interface, name string, ns string, au
 					{
 						Name:  vault.PathRulesName,
 						Rules: vaultRule,
+					},
+				},
+				vaultSecretEngines: []SecretEngine{
+					{
+						Path: vault.DefaultSecretsPath,
+						MountInput: vaultapi.MountInput{
+							Type:        "kv",
+							Description: "KV secret engine",
+							Local:       false,
+							SealWrap:    false,
+							Options: map[string]string{
+								"version": "2",
+							},
+							Config: vaultapi.MountConfigInput{
+								ForceNoCache: true,
+							},
+						},
 					},
 				},
 			},

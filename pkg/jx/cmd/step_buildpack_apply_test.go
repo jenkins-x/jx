@@ -90,7 +90,7 @@ func TestSavePipelineConfig(t *testing.T) {
 	file := filepath.Join(tempDir, "pipeline.yaml")
 
 	config := &jenkinsfile.PipelineConfig{
-		Agent: syntax.Agent{
+		Agent: &syntax.Agent{
 			Label: "jenkins-maven",
 		},
 		Pipelines: jenkinsfile.Pipelines{

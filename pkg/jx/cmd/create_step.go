@@ -101,33 +101,10 @@ func NewCmdCreateStep(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateStepOptions) Run() error {
-	dir := o.Dir
-	var err error
-	if dir == "" {
-		dir, _, err := o.Git().FindGitConfigDir(o.Dir)
-		if err != nil {
-			return err
-		}
-		if dir == "" {
-			dir = "."
-		}
-	}
-	projectConfig, fileName, err := config.LoadProjectConfig(dir)
+	projectConfig, fileName, err := o.AddStepToProjectConfig()
 	if err != nil {
 		return err
 	}
-
-	s := &o.NewStepDetails
-	err = o.configureNewStepDetails(s)
-	if err != nil {
-		return err
-	}
-
-	err = s.AddToPipeline(projectConfig)
-	if err != nil {
-		return err
-	}
-
 	err = projectConfig.SaveConfig(fileName)
 	if err != nil {
 		return err
@@ -135,6 +112,38 @@ func (o *CreateStepOptions) Run() error {
 	log.Infof("Updated Jenkins X Pipeline file: %s\n", util.ColorInfo(fileName))
 	return nil
 
+}
+
+// AddStepToProjectConfig creates the new step, adds it to the project config, and returns the modified project config.
+func (o *CreateStepOptions) AddStepToProjectConfig() (*config.ProjectConfig, string, error) {
+	dir := o.Dir
+	var err error
+	if dir == "" {
+		dir, _, err := o.Git().FindGitConfigDir(o.Dir)
+		if err != nil {
+			return nil, "", err
+		}
+		if dir == "" {
+			dir = "."
+		}
+	}
+	projectConfig, fileName, err := config.LoadProjectConfig(dir)
+	if err != nil {
+		return nil, "", err
+	}
+
+	s := &o.NewStepDetails
+	err = o.configureNewStepDetails(s)
+	if err != nil {
+		return nil, "", err
+	}
+
+	err = s.AddToPipeline(projectConfig)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return projectConfig, fileName, nil
 }
 
 func (o *CreateStepOptions) configureNewStepDetails(stepDetails *NewStepDetails) error {

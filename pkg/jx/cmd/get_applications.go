@@ -201,7 +201,7 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 
 					appEnvInfo := &ApplicationEnvironmentInfo{
 						Deployment:  &d,
-						Environment: &ea.Environment,
+						Environment: ea.Environment.DeepCopy(),
 						Version:     version,
 						URL:         url,
 					}

@@ -52,13 +52,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	}
 
 	cases := []struct {
-		name           string
-		language       string
-		repoName       string
-		organization   string
-		branch         string
-		kind           string
-		expectingError bool
+		name                string
+		language            string
+		repoName            string
+		organization        string
+		branch              string
+		kind                string
+		expectingError      bool
+		expectedActivityKey *kube.PromoteStepActivityKey
 	}{
 		{
 			name:         "js_build_pack",
@@ -67,6 +68,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "build-pack",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-js-test-repo-build-pack-1",
+					Pipeline: "abayer/js-test-repo/build-pack",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "maven_build_pack",
@@ -75,6 +83,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-jx-demo-qs-master-1",
+					Pipeline: "abayer/jx-demo-qs/master",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "from_yaml",
@@ -83,6 +98,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "really-long",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-js-test-repo-really-long-1",
+					Pipeline: "abayer/js-test-repo/really-long",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:           "no_pipeline_config",
@@ -92,6 +114,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:         "anything",
 			kind:           "release",
 			expectingError: true,
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "anything-anything-anything-1",
+					Pipeline: "anything/anything/anything",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "per_step_container_build_pack",
@@ -100,6 +129,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-golang-qs-test-master-1",
+					Pipeline: "abayer/golang-qs-test/master",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "kaniko_entrypoint",
@@ -108,6 +144,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "jenkins-x",
 			branch:       "fix-kaniko-special-casing",
 			kind:         "pullrequest",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "jenkins-x-jx-fix-kaniko-special-casing-1",
+					Pipeline: "jenkins-x/jx/fix-kaniko-special-casing",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "set-agent-container-with-agentless-build-pack",
@@ -116,6 +159,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "no-default-agent",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-js-test-repo-no-default-agent-1",
+					Pipeline: "abayer/js-test-repo/no-default-agent",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "override-agent-container-with-build-pack",
@@ -124,6 +174,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "override-default-agent",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-js-test-repo-override-default-agent-1",
+					Pipeline: "abayer/js-test-repo/override-default-agent",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "override-steps",
@@ -132,6 +189,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-jx-demo-qs-master-1",
+					Pipeline: "abayer/jx-demo-qs/master",
+					Build:    "1",
+				},
+			},
 		},
 		{
 			name:         "override_block_step",
@@ -140,6 +204,58 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-golang-qs-test-master-1",
+					Pipeline: "abayer/golang-qs-test/master",
+					Build:    "1",
+				},
+			},
+		},
+		{
+			name:         "loop-in-buildpack-syntax",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-jx-demo-qs-master-1",
+					Pipeline: "abayer/jx-demo-qs/master",
+					Build:    "1",
+				},
+			},
+		},
+		{
+			name:         "containeroptions-on-pipelineconfig",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-jx-demo-qs-master-1",
+					Pipeline: "abayer/jx-demo-qs/master",
+					Build:    "1",
+				},
+			},
+		},
+		{
+			name:         "command-as-multiline-script",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+			expectedActivityKey: &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     "abayer-js-test-repo-really-long-1",
+					Pipeline: "abayer/js-test-repo/really-long",
+					Build:    "1",
+				},
+			},
 		},
 	}
 
@@ -171,7 +287,9 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			assert.NoError(t, err)
 
 			projectConfig, projectConfigFile, err := config.LoadProjectConfig(caseDir)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
+			}
 
 			createTask := &cmd.StepCreateTaskOptions{
 				Pack:             tt.language,
@@ -235,6 +353,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
 					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 				}
+			}
+
+			pa := createTask.GeneratePipelineActivity("jx")
+
+			tt.expectedActivityKey.GitInfo = createTask.GitInfo
+			if d := cmp.Diff(pa, tt.expectedActivityKey); d != "" {
+				t.Errorf("not match expected: %s", d)
 			}
 		})
 	}

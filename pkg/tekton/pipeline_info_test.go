@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
@@ -160,7 +159,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			Stages: []*tekton.StageInfo{{
 				Name:           "Build",
 				CreatedTime:    *parseTime(t, "2019-03-05T15:06:13-05:00"),
-				FirstStepImage: "jenkinsxio/builder-nodejs:0.1.263",
+				FirstStepImage: "us.gcr.io/abayer-jx-experiment/entrypoint-fec85961206220d94e063e541ce30870@sha256:10e2a043d8fb52e6e05f633e7627aa9103d08330a97b9944b9b62a9c099e23d1",
 				PodName:        "abayer-js-test-repo-master-1-build-jmcbd-pod-a726d6",
 				Task:           "abayer-js-test-repo-master-build",
 				TaskRun:        "abayer-js-test-repo-master-1-build-jmcbd",
@@ -168,7 +167,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			}, {
 				Name:           "Second",
 				CreatedTime:    *parseTime(t, "2019-03-05T15:07:05-05:00"),
-				FirstStepImage: "us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c",
+				FirstStepImage: "us.gcr.io/abayer-jx-experiment/entrypoint-fec85961206220d94e063e541ce30870@sha256:10e2a043d8fb52e6e05f633e7627aa9103d08330a97b9944b9b62a9c099e23d1",
 				PodName:        "abayer-js-test-repo-master-1-second-wglk8-pod-762f8d",
 				Task:           "abayer-js-test-repo-master-second",
 				TaskRun:        "abayer-js-test-repo-master-1-second-wglk8",
@@ -217,12 +216,6 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 					t.Errorf("Nil PipelineRunInfo but expected one")
 				}
 			} else {
-
-				if tt.expected == nil {
-					ey, _ := yaml.Marshal(pri)
-					t.Logf("%s", ey)
-				}
-
 				for _, stage := range pri.Stages {
 					scrubPods(stage)
 				}
