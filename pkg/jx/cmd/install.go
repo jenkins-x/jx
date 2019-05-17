@@ -1769,7 +1769,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "registering environment %q", env.GetName()))
 			}
-			log.Infof("Registered environment %q\n", util.ColorInfo(env.GetName()))
+			log.Infof("Registered environment %s\n", util.ColorInfo(env.GetName()))
 		}
 		return util.CombineErrors(errs...)
 	}
