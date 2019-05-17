@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/tekton"
 	"io/ioutil"
 	"os"
 	"path"
@@ -342,7 +343,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			}
 			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
-			pipeline, tasks, resources, run, structure, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
+			crds, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
 			if tt.expectingError {
 				if err == nil {
 					t.Fatalf("Expected an error generating CRDs")
@@ -353,16 +354,16 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				}
 
 				taskList := &pipelineapi.TaskList{}
-				for _, task := range tasks {
+				for _, task := range crds.Tasks {
 					taskList.Items = append(taskList.Items, *task)
 				}
 
 				resourceList := &pipelineapi.PipelineResourceList{}
-				for _, resource := range resources {
+				for _, resource := range crds.Resources {
 					resourceList.Items = append(resourceList.Items, *resource)
 				}
 
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), crds.Pipeline); d != "" {
 					t.Errorf("Generated Pipeline did not match expected: \n%s", d)
 				}
 				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
@@ -371,14 +372,15 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
 					t.Errorf("Generated PipelineResources did not match expected: %s", d)
 				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), run); d != "" {
+
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), crds.PipelineRun); d != "" {
 					t.Errorf("Generated PipelineRun did not match expected: %s", d)
 				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), crds.Structure); d != "" {
 					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 				}
 
-				pa := createTask.GeneratePipelineActivity("jx")
+				pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo)
 
 				expectedActivityKey := &kube.PromoteStepActivityKey{
 					PipelineActivityKey: kube.PipelineActivityKey{
@@ -397,7 +399,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 }
 
 func assertLoadPodTemplates(t *testing.T) map[string]*corev1.Pod {
-	fileName := filepath.Join("test_data", "step_create_task", "podTemplates.yml")
+	fileName := filepath.Join("test_data", "step_create_task", "PodTemplates.yml")
 	if tests.AssertFileExists(t, fileName) {
 		configMap := &corev1.ConfigMap{}
 		data, err := ioutil.ReadFile(fileName)
