@@ -254,7 +254,11 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	}
 
 	if timeout != -1 {
-		args = append(args, "--timeout", fmt.Sprintf("%ss", strconv.Itoa(timeout)))
+		if h.BinVersion == V2 {
+			args = append(args, "--timeout", strconv.Itoa(timeout))
+		} else {
+			args = append(args, "--timeout", fmt.Sprintf("%ss", strconv.Itoa(timeout)))
+		}
 	}
 	if version != "" {
 		args = append(args, "--version", version)
@@ -364,7 +368,11 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 		args = append(args, "--force")
 	}
 	if timeout != -1 {
-		args = append(args, "--timeout", fmt.Sprintf("%ss", strconv.Itoa(timeout)))
+		if h.BinVersion == V2 {
+			args = append(args, "--timeout", strconv.Itoa(timeout))
+		} else {
+			args = append(args, "--timeout", fmt.Sprintf("%ss", strconv.Itoa(timeout)))
+		}
 	}
 	if version != "" {
 		args = append(args, "--version", version)
@@ -414,7 +422,7 @@ func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, 
 	result := make(map[string]ReleaseSummary, 0)
 	keys := make([]string, 0)
 	if len(lines) > 1 {
-		if len(lines) > 1 {
+		if h.BinVersion == V2 {
 			for _, line := range lines[1:] {
 				fields := strings.Fields(line)
 				if len(fields) == 10 || len(fields) == 11 {
@@ -435,6 +443,28 @@ func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, 
 					}
 				} else {
 					return nil, nil, errors.Errorf("Cannot parse %s as helm list output", line)
+				}
+			}
+		} else {
+			for _, line := range lines[1:] {
+				fields := strings.Fields(line)
+				if len(fields) == 9 {
+					chartFullName := fields[8]
+					lastDash := strings.LastIndex(chartFullName, "-")
+					releaseName := fields[0]
+					keys = append(keys, releaseName)
+					result[releaseName] = ReleaseSummary{
+						ReleaseName: fields[0],
+						Revision:    fields[2],
+						Updated: fmt.Sprintf("%s %s %s %s", fields[3], fields[4], fields[5], fields[6]),
+						Status:        strings.ToUpper(fields[7]),
+						ChartFullName: chartFullName,
+						Namespace:     ns,
+						Chart:         chartFullName[:lastDash],
+						ChartVersion:  chartFullName[lastDash+1:],
+					}
+				} else {
+					return nil, nil, errors.Errorf("Cannot parse %s as helm3 list output", line)
 				}
 			}
 		}
@@ -559,9 +589,9 @@ func addUsernamePasswordToURL(urlStr string, username string, password string) (
 }
 
 func getCurrentNamespace() (string, error) {
-
+	return "", nil
 }
 
 func setNamespace(string) error {
-
+	return nil
 }
