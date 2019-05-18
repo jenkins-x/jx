@@ -133,7 +133,7 @@ func Test_go_get(t *testing.T) {
 		assert.Fail(t, "unable to set env variable")
 	}
 
-	err = GoGet("github.com/golang/lint/golint", "", tmpGoDir, false, false)
+	err = GoGet("golang.org/x/lint/golint", "", tmpGoDir, false, false)
 	assert.NoError(t, err, "go get should be successful")
 	assert.FileExists(t, filepath.Join(tmpGoDir, "bin", "golint"))
 }
