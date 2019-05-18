@@ -96,11 +96,6 @@ pipelineConfig:
                   - -f
                   - /builder/home/basic-auth-pass
 
-              - name: update-clients
-                # Needs maven as openapi tools are written in Java!
-                image: gcr.io/jenkinsxio/builder-maven:0.1.448
-                command: ./jx/scripts/update-clients.sh
-
               - name: release
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
@@ -135,6 +130,14 @@ pipelineConfig:
               - name: update-docs
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/update-website.sh
+
+
+# Maven hanging at the moment, so commenting out
+#              - name: update-clients
+#                # Needs maven as openapi tools are written in Java!
+#                image: gcr.io/jenkinsxio/builder-maven:0.1.448
+#                command: ./jx/scripts/update-clients.sh
+
 
               - name: codecov-upload
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
