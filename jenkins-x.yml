@@ -96,6 +96,11 @@ pipelineConfig:
                   - -f
                   - /builder/home/basic-auth-pass
 
+              - name: update-clients
+                # Needs maven as openapi tools are written in Java!
+                image: gcr.io/jenkinsxio/builder-maven:0.1.448
+                command: ./jx/scripts/update-clients.sh
+
               - name: release
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
