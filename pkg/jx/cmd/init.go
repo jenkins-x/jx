@@ -150,6 +150,7 @@ func (o *InitOptions) addIngressFlags(cmd *cobra.Command) {
 func (o *InitOptions) checkOptions() error {
 	if o.Flags.Helm3 {
 		o.Flags.SkipTiller = true
+		o.Flags.NoTiller = true
 	}
 
 	if !o.Flags.SkipTiller {

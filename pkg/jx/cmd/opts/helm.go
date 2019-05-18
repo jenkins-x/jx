@@ -75,7 +75,7 @@ func (o *CommonOptions) defaultInitHelmConfig() InitHelmConfig {
 	}
 }
 
-// InitHelm initializes hlem client and server (tillter)
+// InitHelm initializes helm client and server (tiller)
 func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 	var err error
 

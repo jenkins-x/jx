@@ -24,7 +24,7 @@ type HelmCLI struct {
 	Debug      bool
 }
 
-// NewHelmCLIWithRunner creaets a new HelmCLI interface for the given runner
+// NewHelmCLIWithRunner creates a new HelmCLI interface for the given runner
 func NewHelmCLIWithRunner(runner util.Commander, binary string, version Version, cwd string, debug bool) *HelmCLI {
 	cli := &HelmCLI{
 		Binary:     binary,
@@ -245,6 +245,7 @@ func (h *HelmCLI) BuildDependency() error {
 // InstallChart installs a helm chart according with the given flags
 func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueFiles []string, repo string, username string, password string) error {
+
 	args := []string{}
 	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
 	repo, err := addUsernamePasswordToURL(repo, username, password)
@@ -253,7 +254,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	}
 
 	if timeout != -1 {
-		args = append(args, "--timeout", strconv.Itoa(timeout))
+		args = append(args, "--timeout", fmt.Sprintf("%ss", strconv.Itoa(timeout)))
 	}
 	if version != "" {
 		args = append(args, "--version", version)
@@ -363,7 +364,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 		args = append(args, "--force")
 	}
 	if timeout != -1 {
-		args = append(args, "--timeout", strconv.Itoa(timeout))
+		args = append(args, "--timeout", fmt.Sprintf("%ss", strconv.Itoa(timeout)))
 	}
 	if version != "" {
 		args = append(args, "--version", version)
@@ -555,4 +556,12 @@ func addUsernamePasswordToURL(urlStr string, username string, password string) (
 		return u.String(), nil
 	}
 	return urlStr, nil
+}
+
+func getCurrentNamespace() (string, error) {
+
+}
+
+func setNamespace(string) error {
+
 }

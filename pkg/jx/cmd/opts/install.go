@@ -821,19 +821,10 @@ func (o *CommonOptions) InstallHelm3() error {
 	if err != nil || !flag {
 		return err
 	}
-	/*
-	   latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
-	   	if err != nil {
-	   		return err
-	   	}
-	*/
-	/*
-		latestVersion := "3"
-		clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-dev-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
-	*/
-	// let use our patched version
-	latestVersion := "untagged-93375777c6644a452a64"
-	clientURL := fmt.Sprintf("https://github.com/jstrachan/helm/releases/download/%v/helm-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+
+	// https://get.helm.sh/helm-v3.0.0-alpha.1-darwin-amd64.tar.gz
+	latestVersion := "v3.0.0-alpha.1"
+	clientURL := fmt.Sprintf("https://get.helm.sh/helm-%v-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 
 	tmpDir := filepath.Join(binDir, "helm3.tmp")
 	err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
