@@ -982,6 +982,11 @@ func schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref common.ReferenceCallback) co
 							Format: "",
 						},
 					},
+					"ConfigMap": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec"),
+						},
+					},
 				},
 			},
 		},

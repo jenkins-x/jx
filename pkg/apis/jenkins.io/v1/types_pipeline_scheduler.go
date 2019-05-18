@@ -89,6 +89,8 @@ type ConfigUpdater struct {
 	Map        map[string]ConfigMapSpec `json:"map,omitempty" protobuf:"bytes,1,opt,name=map"`
 	ConfigFile string                   `json:"configFile,omitempty" protobuf:"bytes,2,opt,name=configFile"`
 	PluginFile string                   `json:"pluginFile,omitempty" protobuf:"bytes,3,opt,name=pluginFile"`
+	// +optional
+	ConfigMap ConfigMapSpec
 }
 
 // ExternalPlugin holds configuration for registering an external

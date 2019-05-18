@@ -333,6 +333,8 @@ definitions:
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigUpdater:
     description: ConfigUpdater holds configuration for the config updater plugin
     properties:
+      ConfigMap:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigMapSpec'
       configFile:
         type: string
       map:
