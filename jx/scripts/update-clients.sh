@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-sleep 5000
 ORG_REPOS=("jenkins-x/jx-ts-client")
 VERSION="$(cat VERSION)"
 for org_repo in "${ORG_REPOS[@]}"; do
