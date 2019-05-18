@@ -249,7 +249,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 	if username == "" {
 		return nil, fmt.Errorf("no git user name found")
 	}
-	if gitInfo.Organisation != username && fork {
+	if gitInfo.Organisation != username && gitInfo.Fork {
 		headPrefix = username + ":"
 	}
 
