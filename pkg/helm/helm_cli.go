@@ -422,7 +422,7 @@ func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, 
 	result := make(map[string]ReleaseSummary, 0)
 	keys := make([]string, 0)
 	if len(lines) > 1 {
-		if h.BinVersion == V2 {
+		if h.Binary == "helm" {
 			for _, line := range lines[1:] {
 				fields := strings.Fields(line)
 				if len(fields) == 10 || len(fields) == 11 {
