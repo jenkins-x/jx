@@ -6,4 +6,6 @@ coverage:
         target: auto
     patch:
       defualt:
-        target: 80%
+        target: 70%
+comment:
+  behavior: new
