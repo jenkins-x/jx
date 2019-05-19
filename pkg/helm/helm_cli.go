@@ -252,7 +252,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	var err error
 	currentNamespace := ""
 	if h.Binary == "helm3" {
-		log.Warnf("Manually switching namespace to for helm3 alpha - %s\n", ns)
+		log.Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented\n", ns)
 		currentNamespace, err = h.getCurrentNamespace()
 		if err != nil {
 			return err
@@ -383,7 +383,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	var err error
 	currentNamespace := ""
 	if h.Binary == "helm3" {
-		log.Warnf("Manually switching namespace to for helm3 alpha - %s\n", ns)
+		log.Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented\n", ns)
 		currentNamespace, err = h.getCurrentNamespace()
 		if err != nil {
 			return err
