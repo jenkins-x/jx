@@ -2,6 +2,7 @@ package helm_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/mocks"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -64,7 +65,8 @@ func createHelmWithCwdAndHelmVersion(t *testing.T, version helm.Version, dir str
 	if version == helm.V3 {
 		helmBinary = binaryV3
 	}
-	cli := helm.NewHelmCLIWithRunner(runner, helmBinary, version, dir, true)
+	mockKuber := kube_test.NewMockKuber()
+	cli := helm.NewHelmCLIWithRunner(runner, helmBinary, version, dir, true, mockKuber)
 	return cli, runner
 }
 
@@ -276,11 +278,10 @@ func TestStatusReleases(t *testing.T) {
 	}
 }
 
-
 func TestStatusReleasesForHelm3(t *testing.T) {
 	expectedArgs := []string{"list", "--all", "--namespace", "default"}
 	expectedStatusMap := map[string]string{
-		"jxing":      "DEPLOYED",
+		"jxing": "DEPLOYED",
 	}
 	helm, runner := createHelmWithVersion(t, helm.V3, nil, listReleasesOutputHelm3)
 	ns := "default"
