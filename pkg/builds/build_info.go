@@ -51,6 +51,7 @@ type BuildPodInfoFilter struct {
 	Filter     string
 	Pod        string
 	Pending    bool
+	Context    string
 }
 
 // CreateBuildPodInfo creates a BuildPodInfo from a Pod
@@ -207,6 +208,9 @@ func (o *BuildPodInfoFilter) BuildMatches(info *BuildPodInfo) bool {
 		return false
 	}
 	if o.Pod != "" && o.Pod != info.PodName {
+		return false
+	}
+	if o.Context != "" && o.Context != info.Context {
 		return false
 	}
 	if o.Filter != "" && !strings.Contains(info.Name, o.Filter) {
