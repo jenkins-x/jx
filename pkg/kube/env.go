@@ -37,7 +37,7 @@ type ResolveChartMuseumURLFn func() (string, error)
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
 func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment,
-	config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
+	config *v1.Environment, update bool, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
 	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
 	surveyOpts := survey.WithStdio(in, out, errOut)
 	name := data.Name
@@ -48,9 +48,11 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 			if err != nil {
 				return nil, err
 			}
-			err = ValidateEnvironmentDoesNotExist(jxClient, ns, config.Name)
-			if err != nil {
-				return nil, err
+			if !update {
+				err = ValidateEnvironmentDoesNotExist(jxClient, ns, config.Name)
+				if err != nil {
+					return nil, err
+				}
 			}
 			data.Name = config.Name
 		} else {

@@ -2568,21 +2568,8 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			options.CreateEnvOptions.GitOpsMode = true
 			options.CreateEnvOptions.ModifyDevEnvironmentFn = options.ModifyDevEnvironmentFn
 			options.CreateEnvOptions.ModifyEnvironmentFn = options.ModifyEnvironmentFn
-		} else {
-			createEnvironments = false
-
-			jxClient, _, err := options.JXClient()
-			if err != nil {
-				return errors.Wrap(err, "failed to create the jx client")
-			}
-
-			// lets only recreate the environments if its the first time we run this
-			_, envNames, err := kube.GetEnvironments(jxClient, namespace)
-			if err != nil || len(envNames) <= 1 {
-				createEnvironments = true
-			}
-
 		}
+
 		if createEnvironments {
 			log.Info("Creating default staging and production environments\n")
 			_, devNamespace, err := options.KubeClientAndDevNamespace()
@@ -2594,6 +2581,8 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 				return errors.Wrap(err, "building the Git repository options for environments")
 			}
 			options.CreateEnvOptions.GitRepositoryOptions = *gitRepoOptions
+			// lets not fail if environments already exist
+			options.CreateEnvOptions.Update = true
 
 			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
 			options.CreateEnvOptions.Prow = options.Flags.Prow
