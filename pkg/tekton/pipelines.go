@@ -2,7 +2,8 @@ package tekton
 
 import (
 	"fmt"
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"reflect"
 	"strconv"
 	"time"
@@ -22,7 +23,7 @@ import (
 )
 
 // GeneratePipelineActivity generates a initial PipelineActivity CRD so UI/get act can get an earlier notification that the jobs have been scheduled
-func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository) *kube.PromoteStepActivityKey {
+func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, pr *prow.PullRefs) *kube.PromoteStepActivityKey {
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
 	log.Infof("PipelineActivity for %s", name)
@@ -32,6 +33,7 @@ func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.G
 			Pipeline: pipeline,
 			Build:    buildNumber,
 			GitInfo:  gitInfo,
+			PullRefs: pr.ToMerge,
 		},
 	}
 }
