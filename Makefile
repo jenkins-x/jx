@@ -22,7 +22,8 @@ NAME := jx
 GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
-ROOT_PACKAGE := github.com/jenkins-x/jx
+ORG_REPO := jenkins-x/jx
+ROOT_PACKAGE := github.com/$(ORG_REPO)
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 
@@ -52,6 +53,49 @@ TESTFLAGS := -p $(PARALLEL_BUILDS)
 else
 TESTFLAGS := -p 8
 endif
+
+# Various codecov.io variables that are set from the CI envrionment if present, otherwise from locally computed values
+
+CODECOV_NAME := integration
+
+#ARGS is extra args added to the codecov uploader
+CODECOV_ARGS := "-n $(CODECOV_NAME)"
+
+
+ifdef ($(andd $(REPO_NAME), $(REPO_OWNER)),)
+CODECOV_SLUG := $(REPO_OWNER)/$(REPO_NAME)
+else
+CODECOV_SLUG := $(ORG_REPO)
+endif
+
+ifdef PULL_PULL_SHA
+CODECOV_SHA := $(PULL_PULL_SHA)
+else ifdef $(PULL_BASE_SHA)
+CODECOV_SHA := $(PULL_BASE_SHA)
+else
+CODECOV_SHA := $(REV)
+endif
+
+ifdef BRANCH_NAME
+CODECOV_BRANCH := $(BRANCH_NAME)
+else
+CODECOV_BRANCH := $(BRANCH)
+endif
+
+
+ifdef BUILD_NUMBER
+CODECOV_ARGS += "-b $(BUILD_NUMBER)"
+endif
+
+ifdef PULL_NUMBER
+CODECOV_ARGS += "-P $(PULL_NUMBER)"
+endif
+
+ifeq ($(JOB_TYPE),postsubmit)
+CODECOV_ARGS +="-T $(VERSION)"
+endif
+
+#End Codecov
 
 TEST_PACKAGE ?= ./...
 
@@ -219,7 +263,10 @@ richgo:
 	go get -u github.com/kyoh86/richgo
 
 codecov-upload:
-	bash <(curl -s https://codecov.io/bash) -B ${BRANCH_NAME} -C ${PULL_PULL_SHA} -P ${PULL_NUMBER} -B ${BUILD_NUMBER}
+	DOCKER_REPO="$(CODECOV_SLUG)" \
+	SOURCE_COMMIT="$(CODECOV_SHA)" \
+	SOURCE_BRANCH="$(CODECOV_BRANCH)" \
+	bash <(curl -s https://codecov.io/bash) $(CODECOV_ARGS)
 
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
