@@ -46,14 +46,14 @@ pipelineConfig:
                 command: helm
                 args: ['init','--client-only']
 
-              - name: check
+              - name: build
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
-                args: ['check']
+                args: ['build']
 
-              - name: build-binary
+              - name: test-integration
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
