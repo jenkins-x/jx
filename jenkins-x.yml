@@ -131,12 +131,12 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/update-website.sh
 
-              - name: update-clients
-                # Needs maven as openapi tools are written in Java!
-                image: gcr.io/jenkinsxio/builder-maven:0.1.461
-                command: ./jx/scripts/update-clients.sh
-
               - name: codecov-upload
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['codecov-upload']
+
+              - name: update-clients
+                # Needs maven as openapi tools are written in Java!
+                image: gcr.io/jenkinsxio/builder-maven:0.1.462
+                command: ./jx/scripts/update-clients.sh
