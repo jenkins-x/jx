@@ -220,6 +220,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		&devEnv,
 		&data,
 		&conf,
+		true,
 		forkEnvGitURL,
 		ns,
 		versiondInterface,
