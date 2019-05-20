@@ -23,7 +23,7 @@ type CloudBeesOptions struct {
 
 var (
 	core_long = templates.LongDesc(`
-		Opens the CloudBees app for Kubernetes in a browser.
+		Opens the CloudBees UI in a browser.
 
 		Which helps you visualise your CI/CD pipelines, apps, environments and teams.
 
@@ -46,7 +46,7 @@ func NewCmdCloudBees(commonOpts *opts.CommonOptions) *cobra.Command {
 		Short:   "Opens the CloudBees app for Kubernetes for visualising CI/CD and your environments",
 		Long:    core_long,
 		Example: core_example,
-		Aliases: []string{"cloudbee", "cb", "core"},
+		Aliases: []string{"cloudbee", "cb", "ui", "jxui"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
