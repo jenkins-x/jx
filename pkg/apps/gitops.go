@@ -171,7 +171,7 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 		ModifyChartFn: nil,
 		GitProvider:   o.GitProvider,
 	}
-	dir, _, _, _, err := gits.ForkAndPullPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, options.ConfigGitFn)
+	dir, _, _, err := gits.ForkAndPullPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, options.ConfigGitFn)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't pull the environment repository from %s", o.DevEnv.Name)
 	}
