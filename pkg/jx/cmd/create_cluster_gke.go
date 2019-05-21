@@ -377,18 +377,6 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
-		// lets default the docker registry to GCR
-		if o.InstallOptions.Flags.DockerRegistry == "" {
-			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
-		}
-
-		// lets default the docker registry org to the project id
-		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
-			o.InstallOptions.Flags.DockerRegistryOrg = projectId
-		}
-	}
-
 	// mandatory flags are machine type, num-nodes, zone or region
 	args := []string{"container", "clusters", "create",
 		o.Flags.ClusterName,

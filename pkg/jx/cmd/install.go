@@ -515,6 +515,20 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring minikube from kubectl context")
 	}
 
+	if options.Flags.DockerRegistryOrg == "" {
+		if options.Flags.Provider == cloud.GKE && (options.Flags.NextGeneration || options.Flags.Tekton || options.Flags.Kaniko) {
+			// lets default the docker registry org to the project id
+			projectId := options.installValues[kube.ProjectID]
+			if projectId == "" {
+				projectId, err = options.GetGoogleProjectId()
+				if err != nil {
+					return err
+				}
+			}
+			options.Flags.DockerRegistryOrg = projectId
+		}
+	}
+
 	err = options.configureTeamSettings()
 	if err != nil {
 		return errors.Wrap(err, "configuring the team settings in the dev environment")
@@ -3080,6 +3094,9 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	}
 	if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
 		return amazon.GetContainerRegistryHost()
+	}
+	if options.Flags.Provider == cloud.GKE && (options.Flags.NextGeneration || options.Flags.Tekton || options.Flags.Kaniko) {
+		return "gcr.io", nil
 	}
 	if options.Flags.Provider == cloud.OPENSHIFT || options.Flags.Provider == cloud.MINISHIFT {
 		return "docker-registry.default.svc:5000", nil
