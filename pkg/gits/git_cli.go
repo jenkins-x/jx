@@ -66,12 +66,12 @@ func (g *GitCLI) FindGitConfigDir(dir string) (string, string, error) {
 
 // Clone clones the given git URL into the given directory
 func (g *GitCLI) Clone(url string, dir string) error {
-	return g.clone(dir, url, "", false, false, "", "", "")
+	return g.gitCmd(dir, "clone", url, ".")
 }
 
 // Clone clones a single branch of the given git URL into the given directory
 func (g *GitCLI) ShallowCloneBranch(url string, branch string, dir string) error {
-	return g.clone(dir, url, "", true, false, branch, "", "")
+	return g.gitCmd(dir, "clone", "--depth", "1", "--single-branch", "--branch", branch, url, ".")
 }
 
 // ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
