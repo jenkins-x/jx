@@ -689,6 +689,30 @@ func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
 }
 
+// GetCurrentGitTagRev return the Tag Refname of the current git tag from the repository at the given directory
+func (g *GitCLI) GetCurrentGitTagRev(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "for-each-ref", "--sort=-creatordate", "--format=%(refname:lstrip=-1)", "--count=1", "refs/tags")
+}
+
+// GetPreviousGitTagRev return the Previous Tag Refname of the current git tag from the repository at the given directory
+func (g *GitCLI) GetPreviousGitTagRev(dir string) (string, error) {
+	revstring, err := g.gitCmdWithOutput(dir, "for-each-ref", "--sort=-creatordate", "--format=%(refname:lstrip=-1)", "--count=2", "refs/tags")
+	if err != nil {
+		return "", err
+	}
+	revs := strings.Split(revstring, "\n")
+	// if the repo has no previous tag, return current tag
+	if len(revs) == 1 {
+		return revs[0], err
+	}
+	return revs[1], err
+}
+
+// FindGitCommitShaByRev dereference the tag recursively until a non-tag object is found
+func (g *GitCLI) FindGitCommitShaByRev(dir string, rev string) (string, error) {
+	return g.gitCmdWithOutput(dir, "rev-parse", rev+"^{}")
+}
+
 // GetLatestCommitMessage returns the latest git commit message
 func (g *GitCLI) GetLatestCommitMessage(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "log", "-1", "--pretty=%B")

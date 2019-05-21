@@ -81,13 +81,22 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		}
 		new := r.GitUserToUser(gitUser)
 		id = gitUser.Login
+
+		// // ensure id is not empty string to avoid "user with login -0" error
+		// if id == "" {
+		// 	id = gitUser.Name
+		// }
+
 		// Check if the user id is available, if not append "-<n>" where <n> is some integer
-		for i := 0; true; i++ {
-			_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
-			if errors.IsNotFound(err) {
-				break
+		// skip if user id is empty to avoid invalid label ("-0") issue
+		if id != "" {
+			for i := 0; true; i++ {
+				_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
+				if errors.IsNotFound(err) {
+					break
+				}
+				id = fmt.Sprintf("%s-%d", gitUser.Login, i)
 			}
-			id = fmt.Sprintf("%s-%d", gitUser.Login, i)
 		}
 		new.Name = kube.ToValidName(id)
 		return id, possibles, new, nil

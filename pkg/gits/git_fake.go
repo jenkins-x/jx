@@ -449,6 +449,33 @@ func (g *GitFake) GetCurrentGitTagSHA(dir string) (string, error) {
 	return g.Commits[len-1].SHA, nil
 }
 
+// GetCurrentGitTagRev return the current git tag ref
+func (g *GitFake) GetCurrentGitTagRev(dir string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no current commit found")
+	}
+	return g.Commits[len-1].SHA, nil
+}
+
+// GetPreviousGitTagRev return the previous git tag ref
+func (g *GitFake) GetPreviousGitTagRev(dir string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no previous commit found")
+	}
+	return g.Commits[len-1].SHA, nil
+}
+
+// FindGitCommitShaByRev return the SHA by git tag ref
+func (g *GitFake) FindGitCommitShaByRev(dir string, rev string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no commit found")
+	}
+	return g.Commits[len-1].SHA, nil
+}
+
 // GetLatestCommitMessage returns the last commit message
 func (g *GitFake) GetLatestCommitMessage(dir string) (string, error) {
 	len := len(g.Commits)

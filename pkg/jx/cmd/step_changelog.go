@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/users"
@@ -230,6 +230,7 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "error unshallowing git repo in %s", dir)
 	}
+
 	previousRev := o.PreviousRevision
 	if previousRev == "" {
 		previousDate := o.PreviousDate
@@ -241,7 +242,7 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 	if previousRev == "" {
-		previousRev, err = o.Git().GetPreviousGitTagSHA(dir)
+		previousRev, err = o.Git().GetPreviousGitTagRev(dir)
 		if err != nil {
 			return err
 		}
@@ -250,13 +251,19 @@ func (o *StepChangelogOptions) Run() error {
 			return nil
 		}
 	}
+
+	previousRevCommitSha, err := o.Git().FindGitCommitShaByRev(dir, previousRev)
+
+	//Get the current revision
 	currentRev := o.CurrentRevision
 	if currentRev == "" {
-		currentRev, err = o.Git().GetCurrentGitTagSHA(dir)
+		currentRev, err = o.Git().GetCurrentGitTagRev(dir)
 		if err != nil {
 			return err
 		}
 	}
+
+	currentRevCommitSha, err := o.Git().FindGitCommitShaByRev(dir, currentRev)
 
 	templatesDir := o.TemplatesDir
 	if templatesDir == "" {
@@ -272,7 +279,7 @@ func (o *StepChangelogOptions) Run() error {
 		return fmt.Errorf("Failed to create the templates directory %s due to %s", templatesDir, err)
 	}
 
-	log.Infof("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
+	log.Infof("Generating change log from git ref %s(%s) => %s(%s)\n", util.ColorInfo(previousRev), util.ColorInfo(previousRevCommitSha), util.ColorInfo(currentRev), util.ColorInfo(currentRevCommitSha))
 
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
@@ -318,12 +325,12 @@ func (o *StepChangelogOptions) Run() error {
 	o.State.GitProvider = gitProvider
 	o.State.FoundIssueNames = map[string]bool{}
 
-	commits, err := chgit.FetchCommits(gitDir, previousRev, currentRev)
+	commits, err := chgit.FetchCommits(gitDir, previousRevCommitSha, currentRevCommitSha)
 	if err != nil {
 		if o.FailIfFindCommits {
 			return err
 		}
-		log.Warnf("failed to find git commits between revision %s and %s due to: %s\n", previousRev, currentRev, err.Error())
+		log.Warnf("failed to find git commits between revision %s(%s) and %s(%s) due to: %s\n", previousRev, previousRevCommitSha, currentRev, currentRevCommitSha, err.Error())
 	}
 	version := o.Version
 	if version == "" {

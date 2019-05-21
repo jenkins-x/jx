@@ -418,3 +418,18 @@ func (g *GitLocal) RemoteUpdate(dir string) error {
 func (g *GitLocal) LocalBranches(dir string) ([]string, error) {
 	return g.GitCLI.LocalBranches(dir)
 }
+
+// GetCurrentGitTagRev return the Tag Refname of the current git tag from the repository at the given directory
+func (g *GitLocal) GetCurrentGitTagRev(dir string) (string, error) {
+	return g.GitCLI.GetCurrentGitTagRev(dir)
+}
+
+// GetPreviousGitTagRev return the Previous Tag Refname of the current git tag from the repository at the given directory
+func (g *GitLocal) GetPreviousGitTagRev(dir string) (string, error) {
+	return g.GitCLI.GetPreviousGitTagRev(dir)
+}
+
+// FindGitCommitShaByRev dereference the tag recursively until a non-tag object is found
+func (g *GitLocal) FindGitCommitShaByRev(dir string, rev string) (string, error) {
+	return g.GitCLI.FindGitCommitShaByRev(dir, rev)
+}
