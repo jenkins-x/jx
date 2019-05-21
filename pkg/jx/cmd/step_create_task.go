@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/ghodss/yaml"
@@ -103,27 +102,17 @@ type StepCreateTaskOptions struct {
 	DockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
-	MissingPodTemplates map[string]bool
+	missingPodTemplates map[string]bool
 
 	stepCounter          int
 	GitInfo              *gits.GitRepository
 	BuildNumber          string
 	labels               map[string]string
 	envVars              []corev1.EnvVar
-	Results              StepCreateTaskResults
+	Results              tekton.CRDWrapper
 	version              string
 	previewVersionPrefix string
 	VersionResolver      *opts.VersionResolver
-}
-
-// StepCreateTaskResults stores the generated results
-type StepCreateTaskResults struct {
-	Pipeline       *pipelineapi.Pipeline
-	Tasks          []*pipelineapi.Task
-	Resources      []*pipelineapi.PipelineResource
-	PipelineRun    *pipelineapi.PipelineRun
-	Structure      *v1.PipelineStructure
-	PipelineParams []pipelineapi.Param
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -136,7 +125,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "task",
-		Short:   "Creates a Tekton Pipeline Run for the current folder or given build pack",
+		Short:   "Creates a Tekton PipelineRun for the current folder or given build pack",
 		Long:    createTaskLong,
 		Example: createTaskExample,
 		Aliases: []string{"bt"},
@@ -197,7 +186,16 @@ func (o *StepCreateTaskOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
 	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
+	tektonClient, _, err := o.TektonClient()
 	if err != nil {
 		return err
 	}
@@ -294,7 +292,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.DockerRegistry == "" {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
-			return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
+			return fmt.Errorf("could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
 		}
 		o.DockerRegistry = data["docker.registry"]
 		if o.DockerRegistry == "" {
@@ -323,15 +321,6 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.NoApply || o.DryRun {
 		o.BuildNumber = "1"
 	} else {
-		jxClient, _, err := o.JXClient()
-		if err != nil {
-			return err
-		}
-		tektonClient, _, err := o.TektonClient()
-		if err != nil {
-			return err
-		}
-
 		if o.Verbose {
 			log.Infof("generating build number...\n")
 		}
@@ -390,7 +379,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.MissingPodTemplates = map[string]bool{}
+	o.missingPodTemplates = map[string]bool{}
 
 	packsDir, err := gitresolver.InitBuildPack(o.Git(), o.BuildPackURL, o.BuildPackRef)
 	if err != nil {
@@ -405,78 +394,52 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.Verbose {
 		log.Infof("about to create the tekton CRDs\n")
 	}
-	pipeline, tasks, resources, run, structure, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
+	crds, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRD")
 	}
 
 	if o.ViewSteps {
-		o.viewSteps(tasks...)
+		o.viewSteps(crds.Tasks...)
 		return nil
 	}
 
 	if o.Verbose {
-		log.Infof("created tekton CRDs for %s\n", run.Name)
+		log.Infof("created tekton CRDs for %s\n", crds.PipelineRun.Name)
 	}
 
-	activityKey := o.GeneratePipelineActivity(ns)
+	activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo)
 
 	if o.Verbose {
-		log.Infof(" PipelineActivity for %s created successfully", pipeline.Name)
+		log.Infof(" PipelineActivity for %s created successfully", crds.Pipeline.Name)
 	}
 
-	//output results for invokers of this command like the pipelinerunner
-	o.Results.Pipeline = pipeline
-	o.Results.Tasks = tasks
-	o.Results.Resources = resources
-	o.Results.PipelineRun = run
-	o.Results.Structure = structure
+	o.Results = *crds
 
 	if o.NoApply || o.DryRun {
 		log.Infof("Writing output ")
-		err := o.writeOutput(o.OutDir, pipeline, tasks, run, resources, structure, activityKey)
+		err := tekton.WriteOutput(o.OutDir, crds, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
 	} else {
 		log.Infof("Applying changes ")
-		err := o.applyPipeline(pipeline, tasks, resources, structure, run, o.GitInfo, o.Branch, activityKey)
+		err := tekton.ApplyPipeline(jxClient, tektonClient, ns, crds, o.GitInfo, o.Branch, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}
 		// only include labels on PipelineRuns because they're unique, Task and Pipeline are static resources so we'd overwrite existing labels if applied to them too
-		run.Labels = util.MergeMaps(run.Labels, o.labels)
+		crds.PipelineRun.Labels = util.MergeMaps(crds.PipelineRun.Labels, o.labels)
 
 		if o.Verbose {
-			log.Infof(" for %s\n", run.Name)
+			log.Infof(" for %s\n", crds.PipelineRun.Name)
 		}
 	}
 	return nil
 }
 
-// GeneratePipelineActivity generates a initial PipelineActivity CRD so UI/get act can get an earlier notification that the jobs have been scheduled
-func (o *StepCreateTaskOptions) GeneratePipelineActivity(ns string) *kube.PromoteStepActivityKey {
-
-	build := o.BuildNumber
-	org := o.GitInfo.Organisation
-	repo := o.GitInfo.Name
-	branch := o.Branch
-
-	name := org + "-" + repo + "-" + branch + "-" + build
-	pipeline := org + "/" + repo + "/" + branch
-	log.Infof("PipelineActivity for %s", name)
-	return &kube.PromoteStepActivityKey{
-		PipelineActivityKey: kube.PipelineActivityKey{
-			Name:     name,
-			Pipeline: pipeline,
-			Build:    build,
-			GitInfo:  o.GitInfo,
-		},
-	}
-}
-
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline
-func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*pipelineapi.Pipeline, []*pipelineapi.Task, []*pipelineapi.PipelineResource, *pipelineapi.PipelineRun, *v1.PipelineStructure, error) {
+func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*tekton.CRDWrapper, error) {
 	name := o.Pack
 	packDir := filepath.Join(packsDir, name)
 
@@ -486,21 +449,21 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		pipelineFile := filepath.Join(packDir, jenkinsfile.PipelineConfigFileName)
 		exists, err := util.FileExists(pipelineFile)
 		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to find build pack pipeline YAML: %s", pipelineFile)
+			return nil, errors.Wrapf(err, "failed to find build pack pipeline YAML: %s", pipelineFile)
 		}
 		if !exists {
-			return nil, nil, nil, nil, nil, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
+			return nil, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
 		}
 		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
 		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
+			return nil, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 		}
 
 		localPipelineConfig := projectConfig.PipelineConfig
 		if localPipelineConfig != nil {
 			err = localPipelineConfig.ExtendPipeline(pipelineConfig, false)
 			if err != nil {
-				return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)
+				return nil, errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)
 			}
 			pipelineConfig = localPipelineConfig
 		}
@@ -509,12 +472,12 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	}
 
 	if pipelineConfig == nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
+		return nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
 	}
 
 	err := o.combineEnvVars(pipelineConfig)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to combine env vars")
+		return nil, errors.Wrapf(err, "failed to combine env vars")
 	}
 
 	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
@@ -524,7 +487,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	}
 	err = o.setVersionOnReleasePipelines(pipelineConfig)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to set the version on release pipelines")
+		return nil, errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
 
 	var lifecycles *jenkinsfile.PipelineLifecycles
@@ -551,7 +514,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	case jenkinsfile.PipelineKindFeature:
 		lifecycles = pipelines.Feature
 	default:
-		return nil, nil, nil, nil, nil, fmt.Errorf("Unknown pipeline kind %s. Supported values are %s", kind, strings.Join(jenkinsfile.PipelineKinds, ", "))
+		return nil, fmt.Errorf("unknown pipeline kind %s. Supported values are %s", kind, strings.Join(jenkinsfile.PipelineKinds, ", "))
 	}
 
 	var tasks []*pipelineapi.Task
@@ -564,7 +527,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 	err = o.setBuildValues()
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	var parsed *syntax.ParsedPipeline
@@ -579,7 +542,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	} else {
 		stage, err := o.CreateStageForBuildPack(name, projectConfig, pipelineConfig, lifecycles, kind, ns)
 		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Failed to generate stage from build pack")
+			return nil, errors.Wrapf(err, "Failed to generate stage from build pack")
 		}
 
 		parsed = &syntax.ParsedPipeline{
@@ -614,7 +577,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	if pipelineConfig.ContainerOptions != nil {
 		mergedContainer, err := syntax.MergeContainers(pipelineConfig.ContainerOptions, parsed.Options.ContainerOptions)
 		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Could not merge containerOptions from parent")
+			return nil, errors.Wrapf(err, "Could not merge containerOptions from parent")
 		}
 		parsed.Options.ContainerOptions = mergedContainer
 	}
@@ -622,7 +585,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
 	if validateErr := parsed.Validate(ctx); validateErr != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for Pipeline")
+		return nil, errors.Wrapf(validateErr, "Validation failed for Pipeline")
 	}
 
 	if o.EffectivePipeline {
@@ -632,12 +595,12 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		}
 		effectiveYaml, _ := yaml.Marshal(effective)
 		log.Infof("%s", effectiveYaml)
-		return nil, nil, nil, nil, nil, nil
+		return nil, nil
 	}
 
 	pipeline, tasks, structure, err = parsed.GenerateCRDs(pipelineResourceName, o.BuildNumber, ns, o.PodTemplates, o.GetDefaultTaskInputs().Params, o.SourceName)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generation failed for Pipeline")
+		return nil, errors.Wrapf(err, "Generation failed for Pipeline")
 	}
 
 	resources = append(resources, o.generateSourceRepoResource(pipelineResourceName))
@@ -645,19 +608,25 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	run = o.CreatePipelineRun(pipeline, resources)
 
 	if validateErr := pipeline.Spec.Validate(ctx); validateErr != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Pipeline")
+		return nil, errors.Wrapf(validateErr, "Validation failed for generated Pipeline")
 	}
 	for _, task := range tasks {
 		if validateErr := task.Spec.Validate(ctx); validateErr != nil {
 			data, _ := yaml.Marshal(task)
-			return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Task: %s %s", task.Name, string(data))
+			return nil, errors.Wrapf(validateErr, "Validation failed for generated Task: %s %s", task.Name, string(data))
 		}
 	}
 	if validateErr := run.Spec.Validate(ctx); validateErr != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated PipelineRun")
+		return nil, errors.Wrapf(validateErr, "Validation failed for generated PipelineRun")
 	}
 
-	return pipeline, tasks, resources, run, structure, nil
+	tektonCRDs := &tekton.CRDWrapper{}
+	tektonCRDs.Pipeline = pipeline
+	tektonCRDs.Tasks = tasks
+	tektonCRDs.Resources = resources
+	tektonCRDs.PipelineRun = run
+	tektonCRDs.Structure = structure
+	return tektonCRDs, nil
 }
 
 func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, string, error) {
@@ -934,207 +903,6 @@ func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.Pipeli
 		envMap[e.Name] = e
 	}
 	projectConfig.Env = syntax.EnvMapToSlice(envMap)
-	return nil
-}
-
-// TODO: Use the same YAML lib here as in buildpipeline/pipeline.go
-// TODO: Use interface{} with a helper function to reduce code repetition?
-// TODO: Take no arguments and use o.Results internally?
-func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, pipelineActivity *kube.PromoteStepActivityKey) error {
-	if err := os.Mkdir(folder, os.ModePerm); err != nil {
-		if !os.IsExist(err) {
-			return err
-		}
-	}
-	data, err := yaml.Marshal(pipeline)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal Pipeline YAML")
-	}
-	fileName := filepath.Join(folder, "pipeline.yml")
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save Pipeline file %s", fileName)
-	}
-	log.Infof("generated Pipeline at %s\n", util.ColorInfo(fileName))
-
-	data, err = yaml.Marshal(pipelineRun)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal PipelineRun YAML")
-	}
-	fileName = filepath.Join(folder, "pipeline-run.yml")
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save PipelineRun file %s", fileName)
-	}
-	log.Infof("generated PipelineRun at %s\n", util.ColorInfo(fileName))
-
-	if structure != nil {
-		data, err = yaml.Marshal(structure)
-		if err != nil {
-			return errors.Wrapf(err, "failed to marshal PipelineStructure YAML")
-		}
-		fileName = filepath.Join(folder, "structure.yml")
-		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
-		}
-		log.Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
-	}
-
-	taskList := &pipelineapi.TaskList{}
-	for _, task := range tasks {
-		taskList.Items = append(taskList.Items, *task)
-	}
-
-	resourceList := &pipelineapi.PipelineResourceList{}
-	for _, resource := range resources {
-		resourceList.Items = append(resourceList.Items, *resource)
-	}
-
-	data, err = yaml.Marshal(taskList)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal Task YAML")
-	}
-	fileName = filepath.Join(folder, "tasks.yml")
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save Task file %s", fileName)
-	}
-	log.Infof("generated Tasks at %s\n", util.ColorInfo(fileName))
-
-	data, err = yaml.Marshal(resourceList)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal PipelineResource YAML")
-	}
-	fileName = filepath.Join(folder, "resources.yml")
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save PipelineResource file %s", fileName)
-	}
-	log.Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
-
-	data, err = yaml.Marshal(pipelineActivity)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal PipelineActivity YAML")
-	}
-	fileName = filepath.Join(folder, "pipelineActivity.yml")
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save PipelineActivity file %s", fileName)
-	}
-	log.Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
-
-	return nil
-}
-
-// Given a Pipeline and its Tasks, applies the Tasks and Pipeline to the cluster
-// and creates and applies a PipelineResource for their source repo and a PipelineRun
-// to execute them.
-func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, run *pipelineapi.PipelineRun, gitInfo *gits.GitRepository, branch string, activityKey *kube.PromoteStepActivityKey) error {
-	_, ns, err := o.KubeClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	tektonClient, _, err := o.TektonClient()
-	if err != nil {
-		return err
-	}
-
-	info := util.ColorInfo
-
-	var activityOwnerReference *metav1.OwnerReference
-
-	if activityKey != nil {
-
-		jxClient, _, jxErr := o.JXClientAndDevNamespace()
-		if jxErr != nil {
-			return jxErr
-		}
-		activity, _, err := activityKey.GetOrCreate(jxClient, pipeline.Namespace)
-		if err != nil {
-			return err
-		}
-
-		activityOwnerReference = &metav1.OwnerReference{
-			APIVersion: jenkinsio.GroupAndVersion,
-			Kind:       "PipelineActivity",
-			Name:       activity.Name,
-			UID:        activity.UID,
-		}
-	}
-
-	for _, resource := range resources {
-		_, err := tekton.CreateOrUpdateSourceResource(tektonClient, ns, resource)
-		if err != nil {
-			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
-		}
-		if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
-			gitURL := gitInfo.HttpCloneURL()
-			log.Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
-		} else {
-			log.Infof("upserted PipelineResource %s\n", info(resource.Name))
-		}
-	}
-
-	for _, task := range tasks {
-		if activityOwnerReference != nil {
-			task.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
-		}
-		_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
-		if err != nil {
-			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
-		}
-		log.Infof("upserted Task %s\n", info(task.Name))
-	}
-
-	if activityOwnerReference != nil {
-		pipeline.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
-	}
-
-	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
-	}
-	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
-
-	pipelineOwnerReference := metav1.OwnerReference{
-		APIVersion: syntax.TektonAPIVersion,
-		Kind:       "Pipeline",
-		Name:       pipeline.Name,
-		UID:        pipeline.UID,
-	}
-
-	structure.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
-	run.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
-
-	_, err = tekton.CreatePipelineRun(tektonClient, ns, run)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
-	}
-	log.Infof("created PipelineRun %s\n", info(run.Name))
-
-	if structure != nil {
-		structure.PipelineRunRef = &run.Name
-
-		jxClient, _, err := o.JXClientAndDevNamespace()
-		if err != nil {
-			return err
-		}
-		structuresClient := jxClient.JenkinsV1().PipelineStructures(ns)
-
-		// Reset the structure name to be the run's name and set the PipelineRef and PipelineRunRef
-		if structure.PipelineRef == nil {
-			structure.PipelineRef = &pipeline.Name
-		}
-		structure.Name = run.Name
-		structure.PipelineRunRef = &run.Name
-
-		if _, structErr := structuresClient.Create(structure); structErr != nil {
-			return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
-		}
-		log.Infof("created PipelineStructure %s\n", info(structure.Name))
-	}
-
 	return nil
 }
 
@@ -1763,36 +1531,4 @@ func (o *StepCreateTaskOptions) getDockerRegistry(projectConfig *config.ProjectC
 		dockerRegistry = o.GetDockerRegistry(projectConfig)
 	}
 	return dockerRegistry
-}
-
-// ObjectReferences creates a list of object references created
-func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
-	resources := []kube.ObjectReference{}
-	for _, task := range r.Tasks {
-		if task.ObjectMeta.Name == "" {
-			log.Warnf("created Task has no name: %#v\n", task)
-
-		} else {
-			resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
-		}
-	}
-	if r.Pipeline != nil {
-		if r.Pipeline.ObjectMeta.Name == "" {
-			log.Warnf("created Pipeline has no name: %#v\n", r.Pipeline)
-
-		} else {
-			resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
-		}
-	}
-	if r.PipelineRun != nil {
-		if r.PipelineRun.ObjectMeta.Name == "" {
-			log.Warnf("created PipelineRun has no name: %#v\n", r.PipelineRun)
-		} else {
-			resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
-		}
-	}
-	if len(resources) == 0 {
-		log.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
-	}
-	return resources
 }
