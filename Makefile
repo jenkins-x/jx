@@ -22,6 +22,7 @@ NAME := jx
 GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
+REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 ORG_REPO := jenkins-x/jx
 ROOT_PACKAGE := github.com/$(ORG_REPO)
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
@@ -73,7 +74,7 @@ CODECOV_SHA := $(PULL_PULL_SHA)
 else ifdef $(PULL_BASE_SHA)
 CODECOV_SHA := $(PULL_BASE_SHA)
 else
-CODECOV_SHA := $(REV)
+CODECOV_SHA := $(shell git rev-parse HEAD 2> /dev/null || echo '')
 endif
 
 ifdef BRANCH_NAME
@@ -92,7 +93,7 @@ CODECOV_ARGS += "-P $(PULL_NUMBER)"
 endif
 
 ifeq ($(JOB_TYPE),postsubmit)
-CODECOV_ARGS +="-T $(VERSION)"
+CODECOV_ARGS +="-T v$(VERSION)"
 endif
 
 #End Codecov
