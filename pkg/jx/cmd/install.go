@@ -2314,7 +2314,7 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 				return errors.Wrap(err, "filling install values with cluster information")
 			}
 			bucketURL, err = gkeStorage.EnableLongTermStorage(options.installValues,
-				options.Flags.LongTermStorageBucketName, options.doCreateBucket)
+				options.Flags.LongTermStorageBucketName)
 			if err != nil {
 				return errors.Wrap(err, "enabling long term storage on GKE")
 			}
@@ -2388,29 +2388,6 @@ func (options *InstallOptions) ensureGKEInstallValuesAreFilled() error {
 	}
 
 	return nil
-}
-
-// this method should work for any bucket kind even if the properties are called GKE*
-func (options *InstallOptions) doCreateBucket(bucketName string, bucketKind string) (string, error) {
-	cbv := &opts.CreateBucketValues{
-		Bucket:       bucketName,
-		BucketKind:   bucketKind,
-		GKEProjectID: options.installValues[kube.ProjectID],
-		GKEZone:      options.installValues[kube.Zone],
-	}
-
-	teamSettings, err := options.TeamSettings()
-	if err != nil {
-		return "", errors.Wrap(err, "there was a problem obtaining the default team settings")
-	}
-
-	bucketURL, err := options.CreateBucket(cbv, teamSettings)
-	if err != nil {
-		return "", errors.Wrapf(err, "there was a problem creating the bucket %s in the GKE Project %s",
-			cbv.Bucket, cbv.GKEProjectID)
-	}
-
-	return bucketURL, err
 }
 
 func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
