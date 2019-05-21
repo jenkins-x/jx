@@ -2,6 +2,7 @@ package amazon
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
@@ -24,8 +25,10 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 	listZonesInput := &route53.ListHostedZonesInput{}
 	err = svc.ListHostedZonesPages(listZonesInput, func(page *route53.ListHostedZonesOutput, hasNext bool) bool {
 		if page != nil {
+			customDomainParts := strings.Split(customDomain, ".")
 			for _, r := range page.HostedZones {
-				if r != nil && r.Name != nil && (*r.Name == customDomain || *r.Name == customDomain+".") {
+				strings.Split(customDomain, ".")
+				if r != nil && r.Name != nil && (*r.Name == customDomain || *r.Name == customDomain+"." || *r.Name == strings.Join(customDomainParts[1:], ".")+".") {
 					hostedZoneId = r.Id
 					return false
 				}

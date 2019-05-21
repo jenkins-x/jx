@@ -68,7 +68,7 @@ func (o *deleteEksOptions) Run() error {
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = opts.BinaryShouldBeInstalled("heptio-authenticator-aws")
+	d = opts.BinaryShouldBeInstalled("aws-iam-authenticator")
 	if d != "" {
 		deps = append(deps, d)
 	}

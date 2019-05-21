@@ -15,8 +15,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// IBMCloudVersion ibm cloud binary version
 const IBMCloudVersion = "0.10.1"
-const HeptioAuthenticatorAwsVersion = "1.10.3"
+
+// IamAuthenticatorAwsVersion authenticator binary version to use
+const IamAuthenticatorAwsVersion = "1.12.7"
+
+// KubectlVersion binary version to use
 const KubectlVersion = "1.13.2"
 
 func BinaryWithExtension(binary string) string {
