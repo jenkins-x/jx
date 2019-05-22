@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 ORG_REPOS=("jenkins-x/jx-ts-client")
-VERSION="$(cat VERSION)"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 pushd $DIR
 pushd ../../docs/apidocs/openapi-spec
