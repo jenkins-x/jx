@@ -3079,17 +3079,25 @@ func (options *InstallOptions) configureTeamSettings() error {
 			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
 			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
 		}
-		if initOpts.Flags.NoTiller {
+
+		if initOpts.Flags.Helm3 {
+			env.Spec.TeamSettings.HelmTemplate = false
+			env.Spec.TeamSettings.HelmBinary = "helm3"
+			log.Info("Enabling helm3 / non template mode in the TeamSettings\n")
+		} else if initOpts.Flags.NoTiller {
 			env.Spec.TeamSettings.HelmTemplate = true
 			log.Info("Enabling helm template mode in the TeamSettings\n")
 		}
+
 		if options.Flags.DockerRegistryOrg != "" {
 			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
 			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
 		}
+
 		if options.Flags.VersionsRepository != "" {
 			env.Spec.TeamSettings.VersionStreamURL = options.Flags.VersionsRepository
 		}
+
 		if options.Flags.VersionsGitRef != "" {
 			env.Spec.TeamSettings.VersionStreamRef = options.Flags.VersionsGitRef
 		}
