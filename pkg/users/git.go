@@ -3,8 +3,10 @@ package users
 import (
 	"fmt"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/jenkins-x/jx/pkg/kube"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/pkg/errors"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -27,6 +29,10 @@ type GitUserResolver struct {
 
 // GitSignatureAsUser resolves the signature to a Jenkins X User
 func (r *GitUserResolver) GitSignatureAsUser(signature *object.Signature) (*jenkinsv1.User, error) {
+	// We can't resolve no info so shortcircuit
+	if signature.Name == "" && signature.Email == "" {
+		return nil, errors.Errorf("both name and email are empty")
+	}
 	gitUser := &gits.GitUser{
 		Email: signature.Email,
 		Name:  signature.Name,
@@ -84,7 +90,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		// Check if the user id is available, if not append "-<n>" where <n> is some integer
 		for i := 0; true; i++ {
 			_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
-			if errors.IsNotFound(err) {
+			if k8serrors.IsNotFound(err) {
 				break
 			}
 			id = fmt.Sprintf("%s-%d", gitUser.Login, i)
