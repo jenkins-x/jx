@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
 
@@ -76,7 +77,7 @@ func NewCmdUpgradeIngress(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	options.addFlags(cmd)
@@ -659,6 +660,10 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 	updateWebHook.Username = ReturnUserNameIfPicked(organisation, username)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
+	}
+
+	if o.CommonOptions.Verbose {
+		log.Infof("Updating all webHooks for org %s and/or username %s\n", organisation, updateWebHook.Username)
 	}
 
 	updateWebHook.PreviousHookUrl = oldHookEndpoint

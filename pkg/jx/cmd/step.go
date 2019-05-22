@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -53,12 +54,15 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepPost(commonOpts))
 	cmd.AddCommand(NewCmdStepRelease(commonOpts))
 	cmd.AddCommand(NewCmdStepSplitMonorepo(commonOpts))
+	cmd.AddCommand(NewCmdStepSyntax(commonOpts))
 	cmd.AddCommand(NewCmdStepTag(commonOpts))
 	cmd.AddCommand(NewCmdStepValidate(commonOpts))
 	cmd.AddCommand(NewCmdStepVerify(commonOpts))
 	cmd.AddCommand(NewCmdStepWaitForArtifact(commonOpts))
 	cmd.AddCommand(NewCmdStepStash(commonOpts))
 	cmd.AddCommand(NewCmdStepUnstash(commonOpts))
+	cmd.AddCommand(NewCmdStepValuesSchemaTemplate(commonOpts))
+	cmd.AddCommand(NewCmdStepScheduler(commonOpts))
 
 	return cmd
 }

@@ -29,13 +29,32 @@ pipelineConfig:
                 value: /workspace/go
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy
+              - name: MAVEN_OPTS
+                value: -Xmx4g
+              - name: _JAVA_OPTIONS
+                value: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms1G -Xmx4G
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
+                env:
+                - name: CODECOV_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: token
+                      name: codecov-token
             steps:
               - name: init-helm
                 image: alpine/helm:2.12.3
                 command: helm
                 args: ['init','--client-only']
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step
@@ -47,7 +66,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/git-token
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step
@@ -59,7 +78,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/feature-flag-token
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step
@@ -71,7 +90,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/basic-auth-user
 
-              - image: jenkinsxio/jx:1.3.963
+              - image: jenkinsxio/jx:2.0.128
                 command: jx
                 args:
                   - step
@@ -114,7 +133,16 @@ pipelineConfig:
                 command: make
                 args: ['release-distro']
 
-              - name: update-downstream
+              - name: update-docs
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/update-website.sh
 
+              - name: codecov-upload
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args: ['codecov-upload']
+
+              - name: update-clients
+                # Needs maven as openapi tools are written in Java!
+                image: gcr.io/jenkinsxio/builder-maven:0.1.462
+                command: ./jx/scripts/update-clients.sh

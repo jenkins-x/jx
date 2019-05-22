@@ -3,11 +3,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -36,8 +38,10 @@ type StepTagOptions struct {
 type StepTagFlags struct {
 	Version              string
 	VersionFile          string
+	Dir                  string
 	ChartsDir            string
 	ChartValueRepository string
+	NoApply              bool
 }
 
 var (
@@ -75,7 +79,7 @@ func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -83,7 +87,10 @@ func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.VersionFile, "version-file", "", defaultVersionFile, "The file name used to load the version number from if no '--version' option is specified")
 
 	cmd.Flags().StringVarP(&options.Flags.ChartsDir, "charts-dir", "d", "", "the directory of the chart to update the version")
+	cmd.Flags().StringVarP(&options.Flags.Dir, "dir", "", "", "the directory which may contain a 'jenkins-x.yml'")
 	cmd.Flags().StringVarP(&options.Flags.ChartValueRepository, "charts-value-repository", "r", "", "the fully qualified image name without the version tag. e.g. 'dockerregistry/myorg/myapp'")
+
+	cmd.Flags().BoolVarP(&options.Flags.NoApply, "no-apply", "", false, "Do not push the tag to the server, this is used for example in dry runs")
 
 	return cmd
 }
@@ -148,15 +155,20 @@ func (o *StepTagOptions) Run() error {
 		return err
 	}
 
-	if o.Verbose {
-		log.Infof("pushing git tag %s\n", tag)
-	}
-	err = o.Git().PushTag("", tag)
-	if err != nil {
-		return err
-	}
+	if o.Flags.NoApply {
+		log.Infof("NoApply: no push tag to git server")
+	} else {
 
-	log.Successf("Tag %s created and pushed to remote origin", tag)
+		if o.Verbose {
+			log.Infof("pushing git tag %s\n", tag)
+		}
+		err = o.Git().PushTag("", tag)
+		if err != nil {
+			return err
+		}
+
+		log.Successf("Tag %s created and pushed to remote origin", tag)
+	}
 	return nil
 }
 
@@ -204,16 +216,20 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 		chartValueRepository = o.defaultChartValueRepository()
 	}
 	updated := false
+	changedRepository := false
+	changedTag := false
 	for idx, line := range lines {
-		if chartValueRepository != "" && strings.HasPrefix(line, ValuesYamlRepositoryPrefix) {
+		if chartValueRepository != "" && strings.HasPrefix(line, ValuesYamlRepositoryPrefix) && !changedRepository {
 			// lets ensure we use a valid docker image name
 			chartValueRepository = kube.ToValidImageName(chartValueRepository)
 			updated = true
+			changedRepository = true
 			log.Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
 			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
-		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) {
+		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) && !changedTag {
 			version = kube.ToValidImageVersion(version)
 			updated = true
+			changedTag = true
 			log.Infof("Updating tag in %s to %s\n", valuesFile, version)
 			lines[idx] = ValuesYamlTagPrefix + " " + version
 		}
@@ -233,8 +249,9 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 		log.Warnf("failed to find git repository: %s\n", err.Error())
 	}
 
-	dockerRegistry := o.GetDockerRegistry()
-	dockerRegistryOrg := o.GetDockerRegistryOrg(gitInfo)
+	projectConfig, _, _ := config.LoadProjectConfig(o.Flags.Dir)
+	dockerRegistry := o.GetDockerRegistry(projectConfig)
+	dockerRegistryOrg := o.GetDockerRegistryOrg(projectConfig, gitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
 	}

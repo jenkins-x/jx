@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"strings"
 	"text/template"
@@ -47,15 +48,15 @@ func NewCmdStepValuesSchemaTemplate(commonOpts *opts.CommonOptions) *cobra.Comma
 	}
 
 	cmd := &cobra.Command{
-		Use:     "Creates a JSON schema from a template",
-		Short:   "Applies a te",
+		Use:     "values schema template",
+		Short:   "Creates a JSON schema from a template",
 		Long:    valuesSchemaTemplateLong,
 		Example: valuesSchemaTemplateExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

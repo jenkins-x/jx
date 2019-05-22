@@ -16,7 +16,7 @@ import (
 
 	"github.com/iancoleman/orderedmap"
 
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -228,11 +228,22 @@ func (o *JSONSchemaOptions) handleIf(prefixes []string, requiredFields []string,
 		if len(parentType.If.Properties.Keys()) > 1 {
 			return fmt.Errorf("Please specify a single property condition when using If in your schema")
 		}
-		_, conditionFound := parentType.If.Properties.Get(propertyName)
+		detypedCondition, conditionFound := parentType.If.Properties.Get(propertyName)
 		selectedValue, selectedValueFound := output.Get(propertyName)
 		if conditionFound && selectedValueFound {
+			desiredState := true
+			if detypedCondition != nil {
+				condition := detypedCondition.(*Type)
+				if condition.Const != nil {
+					var err error
+					desiredState, err = util.AsBool(*condition.Const)
+					if err != nil {
+						return errors.Wrapf(err, "const %v must be of type bool", condition.Const)
+					}
+				}
+			}
 			result := orderedmap.New()
-			if selectedValue == true {
+			if selectedValue == desiredState {
 				if parentType.Then != nil {
 					parentType.Then.Type = "object"
 					err := o.processThenElse(result, output, requiredFields, parentType.Then, parentType, existingValues)
@@ -496,9 +507,9 @@ func (o *JSONSchemaOptions) handleArrayProperty(name string, t *Type, output *or
 		MinItemsValidator(t.MinItems, results),
 		EnumValidator(t.Enum),
 	}
-	// Normally arrays are used to create a multi-select list
-	// Note that this only supports basic types at the moment
 	if t.Items.Type != nil && t.Items.Type.Enum != nil {
+		// Arrays can used to create a multi-select list
+		// Note that this only supports basic types at the moment
 		if t.Items.Type.Type == "null" {
 			output.Set(name, nil)
 			return nil

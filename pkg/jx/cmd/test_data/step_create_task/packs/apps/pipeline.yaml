@@ -18,8 +18,9 @@ pipelines:
       steps:
         - sh: make build
           name: build
-          container: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
+          image: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
         - dir: charts/REPLACE_ME_APP_NAME
+          name: dir-block
           steps:
             - sh: make tag
               name: tag
@@ -35,6 +36,7 @@ pipelines:
           name: release
           container: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
         - dir: charts/REPLACE_ME_APP_NAME
+          name: dir-block
           steps:
             - comment: Let's release the helm chart
               sh: jx step helm release

@@ -1,7 +1,6 @@
 package jenkinsfile
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -56,31 +55,14 @@ var (
 	CreateStepModes = []string{CreateStepModePre, CreateStepModePost, CreateStepModeReplace}
 )
 
-// PipelineAgent contains the agent definition metadata
-type PipelineAgent struct {
-	Label     string `json:"label,omitempty"`
-	Container string `json:"container,omitempty"`
-	Dir       string `json:"dir,omitempty"`
-}
-
 // Pipelines contains all the different kinds of pipeline for different branches
 type Pipelines struct {
-	PullRequest *PipelineLifecycles `json:"pullRequest,omitempty"`
-	Release     *PipelineLifecycles `json:"release,omitempty"`
-	Feature     *PipelineLifecycles `json:"feature,omitempty"`
-	Post        *PipelineLifecycle  `json:"post,omitempty"`
-}
-
-// PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block
-type PipelineStep struct {
-	Name      string          `json:"name,omitempty"`
-	Comment   string          `json:"comment,omitempty"`
-	Container string          `json:"container,omitempty"`
-	Dir       string          `json:"dir,omitempty"`
-	Command   string          `json:"sh,omitempty"`
-	Groovy    string          `json:"groovy,omitempty"`
-	Steps     []*PipelineStep `json:"steps,omitempty"`
-	When      string          `json:"when,omitempty"`
+	PullRequest *PipelineLifecycles        `json:"pullRequest,omitempty"`
+	Release     *PipelineLifecycles        `json:"release,omitempty"`
+	Feature     *PipelineLifecycles        `json:"feature,omitempty"`
+	Post        *PipelineLifecycle         `json:"post,omitempty"`
+	Overrides   []*syntax.PipelineOverride `json:"overrides,omitempty"`
+	Default     *syntax.ParsedPipeline     `json:"default,omitempty"`
 }
 
 // PipelineLifecycles defines the steps of a lifecycle section
@@ -96,10 +78,10 @@ type PipelineLifecycles struct {
 
 // PipelineLifecycle defines the steps of a lifecycle section
 type PipelineLifecycle struct {
-	Steps []*PipelineStep `json:"steps,omitempty"`
+	Steps []*syntax.Step `json:"steps,omitempty"`
 
 	// PreSteps if using inheritance then invoke these steps before the base steps
-	PreSteps []*PipelineStep `json:"preSteps,omitempty"`
+	PreSteps []*syntax.Step `json:"preSteps,omitempty"`
 
 	// Replace if using inheritance then replace steps from the base pipeline
 	Replace bool `json:"replace,omitempty"`
@@ -130,11 +112,12 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Extends     *PipelineExtends `json:"extends,omitempty"`
-	Agent       PipelineAgent    `json:"agent,omitempty"`
-	Env         []corev1.EnvVar  `json:"env,omitempty"`
-	Environment string           `json:"environment,omitempty"`
-	Pipelines   Pipelines        `json:"pipelines,omitempty"`
+	Extends          *PipelineExtends  `json:"extends,omitempty"`
+	Agent            *syntax.Agent     `json:"agent,omitempty"`
+	Env              []corev1.EnvVar   `json:"env,omitempty"`
+	Environment      string            `json:"environment,omitempty"`
+	Pipelines        Pipelines         `json:"pipelines,omitempty"`
+	ContainerOptions *corev1.Container `json:"containerOptions,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
@@ -158,17 +141,6 @@ func (a *CreateJenkinsfileArguments) Validate() error {
 		return fmt.Errorf("Missing argument: OutputFile")
 	}
 	return nil
-}
-
-// Groovy returns the agent groovy expression for the agent or `any` if its black
-func (a *PipelineAgent) Groovy() string {
-	if a.Label != "" {
-		return fmt.Sprintf(`{
-    label "%s"
-  }`, a.Label)
-	}
-	// lets use any for Prow
-	return "any"
 }
 
 // Groovy returns the groovy expression for all of the lifecycles
@@ -250,14 +222,14 @@ func (a *PipelineLifecycles) GetLifecycle(name string, lazyCreate bool) (*Pipeli
 
 // Groovy returns the groovy string for the lifecycles
 func (s PipelineLifecycleArray) Groovy() string {
-	statements := []*Statement{}
+	statements := []*util.Statement{}
 	for _, n := range s {
 		l := n.Lifecycle
 		if l != nil {
 			statements = append(statements, l.ToJenkinsfileStatements()...)
 		}
 	}
-	text := WriteJenkinsfileStatements(4, statements)
+	text := util.WriteJenkinsfileStatements(4, statements)
 	// lets remove the very last newline so its easier to compose in templates
 	text = strings.TrimSuffix(text, "\n")
 	return text
@@ -285,8 +257,8 @@ func (l *PipelineLifecycle) Groovy() string {
 }
 
 // ToJenkinsfileStatements converts the lifecycle to one or more jenkinsfile statements
-func (l *PipelineLifecycle) ToJenkinsfileStatements() []*Statement {
-	statements := []*Statement{}
+func (l *PipelineLifecycle) ToJenkinsfileStatements() []*util.Statement {
+	statements := []*util.Statement{}
 	for _, step := range l.Steps {
 		statements = append(statements, step.ToJenkinsfileStatements()...)
 	}
@@ -300,7 +272,7 @@ func (l *PipelineLifecycle) RemoveWhenStatements(prow bool) {
 }
 
 // CreateStep creates the given step using the mode
-func (l *PipelineLifecycle) CreateStep(mode string, step *PipelineStep) error {
+func (l *PipelineLifecycle) CreateStep(mode string, step *syntax.Step) error {
 	err := step.Validate()
 	if err != nil {
 		return err
@@ -311,7 +283,7 @@ func (l *PipelineLifecycle) CreateStep(mode string, step *PipelineStep) error {
 	case CreateStepModePost:
 		l.Steps = append(l.Steps, step)
 	case CreateStepModeReplace:
-		l.Steps = []*PipelineStep{step}
+		l.Steps = []*syntax.Step{step}
 		l.Replace = true
 	default:
 		return fmt.Errorf("uknown create mode: %s", mode)
@@ -319,8 +291,8 @@ func (l *PipelineLifecycle) CreateStep(mode string, step *PipelineStep) error {
 	return nil
 }
 
-func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
-	answer := []*PipelineStep{}
+func removeWhenSteps(prow bool, steps []*syntax.Step) []*syntax.Step {
+	answer := []*syntax.Step{}
 	for _, step := range steps {
 		when := strings.TrimSpace(step.When)
 		if prow && when == "!prow" {
@@ -337,10 +309,10 @@ func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
 
 // Extend extends these pipelines with the base pipeline
 func (p *Pipelines) Extend(base *Pipelines) error {
-	p.PullRequest = ExtendPipelines(p.PullRequest, base.PullRequest)
-	p.Release = ExtendPipelines(p.Release, base.Release)
-	p.Feature = ExtendPipelines(p.Feature, base.Feature)
-	p.Post = ExtendLifecycle(p.Post, base.Post)
+	p.PullRequest = ExtendPipelines("pullRequest", p.PullRequest, base.PullRequest, p.Overrides)
+	p.Release = ExtendPipelines("release", p.Release, base.Release, p.Overrides)
+	p.Feature = ExtendPipelines("feature", p.Feature, base.Feature, p.Overrides)
+	p.Post = ExtendLifecycle("", "post", p.Post, base.Post, p.Overrides)
 	return nil
 }
 
@@ -431,19 +403,19 @@ func defaultLifecycleContainerAndDir(container string, dir string, lifecycles Pi
 	}
 }
 
-func defaultContainerAroundSteps(container string, steps []*PipelineStep) []*PipelineStep {
+func defaultContainerAroundSteps(container string, steps []*syntax.Step) []*syntax.Step {
 	if container == "" {
 		return steps
 	}
-	var containerStep *PipelineStep
-	result := []*PipelineStep{}
+	var containerStep *syntax.Step
+	result := []*syntax.Step{}
 	for _, step := range steps {
-		if step.Container != "" {
+		if step.GetImage() != "" {
 			result = append(result, step)
 		} else {
 			if containerStep == nil {
-				containerStep = &PipelineStep{
-					Container: container,
+				containerStep = &syntax.Step{
+					Image: container,
 				}
 				result = append(result, containerStep)
 			}
@@ -453,21 +425,21 @@ func defaultContainerAroundSteps(container string, steps []*PipelineStep) []*Pip
 	return result
 }
 
-func defaultDirAroundSteps(dir string, steps []*PipelineStep) []*PipelineStep {
+func defaultDirAroundSteps(dir string, steps []*syntax.Step) []*syntax.Step {
 	if dir == "" {
 		return steps
 	}
-	var dirStep *PipelineStep
-	result := []*PipelineStep{}
+	var dirStep *syntax.Step
+	result := []*syntax.Step{}
 	for _, step := range steps {
-		if step.Container != "" {
+		if step.GetImage() != "" {
 			step.Steps = defaultDirAroundSteps(dir, step.Steps)
 			result = append(result, step)
 		} else if step.Dir != "" {
 			result = append(result, step)
 		} else {
 			if dirStep == nil {
-				dirStep = &PipelineStep{
+				dirStep = &syntax.Step{
 					Dir: dir,
 				}
 				result = append(result, dirStep)
@@ -478,108 +450,13 @@ func defaultDirAroundSteps(dir string, steps []*PipelineStep) []*PipelineStep {
 	return result
 }
 
-// GroovyBlock returns the groovy expression for this step
-func (s *PipelineStep) GroovyBlock(parentIndent string) string {
-	var buffer bytes.Buffer
-	indent := parentIndent
-	if s.Comment != "" {
-		buffer.WriteString(indent)
-		buffer.WriteString("// ")
-		buffer.WriteString(s.Comment)
-		buffer.WriteString("\n")
-	}
-	if s.Container != "" {
-		buffer.WriteString(indent)
-		buffer.WriteString("container('")
-		buffer.WriteString(s.Container)
-		buffer.WriteString("') {\n")
-	} else if s.Dir != "" {
-		buffer.WriteString(indent)
-		buffer.WriteString("dir('")
-		buffer.WriteString(s.Dir)
-		buffer.WriteString("') {\n")
-	} else if s.Command != "" {
-		buffer.WriteString(indent)
-		buffer.WriteString("sh \"")
-		buffer.WriteString(s.Command)
-		buffer.WriteString("\"\n")
-	} else if s.Groovy != "" {
-		lines := strings.Split(s.Groovy, "\n")
-		lastIdx := len(lines) - 1
-		for i, line := range lines {
-			buffer.WriteString(indent)
-			buffer.WriteString(line)
-			if i >= lastIdx && len(s.Steps) > 0 {
-				buffer.WriteString(" {")
-			}
-			buffer.WriteString("\n")
-		}
-	}
-	childIndent := indent + "  "
-	for _, child := range s.Steps {
-		buffer.WriteString(child.GroovyBlock(childIndent))
-	}
-	return buffer.String()
-}
-
-// ToJenkinsfileStatements converts the step to one or more jenkinsfile statements
-func (s *PipelineStep) ToJenkinsfileStatements() []*Statement {
-	statements := []*Statement{}
-	if s.Comment != "" {
-		statements = append(statements, &Statement{
-			Statement: "",
-		}, &Statement{
-			Statement: "// " + s.Comment,
-		})
-	}
-	if s.Container != "" {
-		statements = append(statements, &Statement{
-			Function:  "container",
-			Arguments: []string{s.Container},
-		})
-	} else if s.Dir != "" {
-		statements = append(statements, &Statement{
-			Function:  "dir",
-			Arguments: []string{s.Dir},
-		})
-	} else if s.Command != "" {
-		statements = append(statements, &Statement{
-			Statement: "sh \"" + s.Command + "\"",
-		})
-	} else if s.Groovy != "" {
-		lines := strings.Split(s.Groovy, "\n")
-		for _, line := range lines {
-			statements = append(statements, &Statement{
-				Statement: line,
-			})
-		}
-	}
-	if len(statements) > 0 {
-		last := statements[len(statements)-1]
-		for _, c := range s.Steps {
-			last.Children = append(last.Children, c.ToJenkinsfileStatements()...)
-		}
-	}
-	return statements
-}
-
-// Validate validates the step is populated correctly
-func (s *PipelineStep) Validate() error {
-	if len(s.Steps) > 0 || s.Command != "" {
-		return nil
-	}
-	return fmt.Errorf("invalid step %#v as no child steps or command", s)
-}
-
-// PutAllEnvVars puts all the defined environment variables in the given map
-func (s *PipelineStep) PutAllEnvVars(m map[string]string) {
-	for _, step := range s.Steps {
-		step.PutAllEnvVars(m)
-	}
-}
-
 // LoadPipelineConfig returns the pipeline configuration
 func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool) (*PipelineConfig, error) {
+	return LoadPipelineConfigAndMaybeValidate(fileName, resolver, jenkinsfileRunner, clearContainer, true)
+}
+
+// LoadPipelineConfigAndMaybeValidate returns the pipeline configuration, optionally after validating the YAML.
+func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool, skipYamlValidation bool) (*PipelineConfig, error) {
 	config := PipelineConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
@@ -589,6 +466,15 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	if err != nil {
 		return &config, errors.Wrapf(err, "Failed to load file %s", fileName)
 	}
+	if !skipYamlValidation {
+		validationErrors, err := util.ValidateYaml(&config, data)
+		if err != nil {
+			return &config, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)
+		}
+		if len(validationErrors) > 0 {
+			return &config, fmt.Errorf("Validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
+		}
+	}
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		return &config, errors.Wrapf(err, "Failed to unmarshal file %s", fileName)
@@ -597,9 +483,9 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	pipelines.RemoveWhenStatements(jenkinsfileRunner)
 	if clearContainer {
 		// lets force any agent for prow / jenkinsfile runner
-		config.Agent.Label = ""
-		config.Agent.Container = ""
+		config.Agent = clearContainerAndLabel(config.Agent)
 	}
+	config.PopulatePipelinesFromDefault()
 	if config.Extends == nil || config.Extends.File == "" {
 		config.defaultContainerAndDir()
 		return &config, nil
@@ -633,6 +519,42 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	return &config, err
 }
 
+// PopulatePipelinesFromDefault sets the Release, PullRequest, and Feature pipelines, if unset, with the Default pipeline.
+func (c *PipelineConfig) PopulatePipelinesFromDefault() {
+	if c != nil && c.Pipelines.Default != nil {
+		if c.Pipelines.Default.Agent == nil && c.Agent != nil {
+			c.Pipelines.Default.Agent = c.Agent.DeepCopyForParsedPipeline()
+		}
+		if c.Pipelines.Release == nil {
+			c.Pipelines.Release = &PipelineLifecycles{
+				Pipeline: c.Pipelines.Default.DeepCopy(),
+			}
+		}
+		if c.Pipelines.PullRequest == nil {
+			c.Pipelines.PullRequest = &PipelineLifecycles{
+				Pipeline: c.Pipelines.Default.DeepCopy(),
+			}
+		}
+		if c.Pipelines.Feature == nil {
+			c.Pipelines.Feature = &PipelineLifecycles{
+				Pipeline: c.Pipelines.Default.DeepCopy(),
+			}
+		}
+	}
+}
+
+// clearContainerAndLabel wipes the label and container from an Agent, preserving the Dir if it exists.
+func clearContainerAndLabel(agent *syntax.Agent) *syntax.Agent {
+	if agent != nil {
+		agent.Container = ""
+		agent.Image = ""
+		agent.Label = ""
+
+		return agent
+	}
+	return &syntax.Agent{}
+}
+
 // IsEmpty returns true if this configuration is empty
 func (c *PipelineConfig) IsEmpty() bool {
 	empty := &PipelineConfig{}
@@ -651,20 +573,24 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 // ExtendPipeline inherits this pipeline from the given base pipeline
 func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer bool) error {
 	if clearContainer {
-		c.Agent.Container = ""
-		c.Agent.Label = ""
-		base.Agent.Container = ""
-		base.Agent.Label = ""
+		c.Agent = clearContainerAndLabel(c.Agent)
+		base.Agent = clearContainerAndLabel(base.Agent)
 	} else {
+		if c.Agent == nil {
+			c.Agent = &syntax.Agent{}
+		}
+		if base.Agent == nil {
+			base.Agent = &syntax.Agent{}
+		}
 		if c.Agent.Label == "" {
 			c.Agent.Label = base.Agent.Label
 		} else if base.Agent.Label == "" && c.Agent.Label != "" {
 			base.Agent.Label = c.Agent.Label
 		}
-		if c.Agent.Container == "" {
-			c.Agent.Container = base.Agent.Container
-		} else if base.Agent.Container == "" && c.Agent.Container != "" {
-			base.Agent.Container = c.Agent.Container
+		if c.Agent.GetImage() == "" {
+			c.Agent.Image = base.Agent.GetImage()
+		} else if base.Agent.GetImage() == "" && c.Agent.GetImage() != "" {
+			base.Agent.Image = c.Agent.GetImage()
 		}
 	}
 	if c.Agent.Dir == "" {
@@ -679,7 +605,9 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 }
 
 func (c *PipelineConfig) defaultContainerAndDir() {
-	c.Pipelines.defaultContainerAndDir(c.Agent.Container, c.Agent.Dir)
+	if c.Agent != nil {
+		c.Pipelines.defaultContainerAndDir(c.Agent.GetImage(), c.Agent.Dir)
+	}
 }
 
 // GetAllEnvVars finds all the environment variables defined in all pipelines + steps with the first value we find
@@ -703,43 +631,93 @@ func (c *PipelineConfig) GetAllEnvVars() map[string]string {
 }
 
 // ExtendPipelines extends the parent lifecycle with the base
-func ExtendPipelines(parent *PipelineLifecycles, base *PipelineLifecycles) *PipelineLifecycles {
-	if parent == nil {
-		return base
-	}
+func ExtendPipelines(pipelineName string, parent, base *PipelineLifecycles, overrides []*syntax.PipelineOverride) *PipelineLifecycles {
 	if base == nil {
 		return parent
 	}
-	return &PipelineLifecycles{
-		Setup:      ExtendLifecycle(parent.Setup, base.Setup),
-		SetVersion: ExtendLifecycle(parent.SetVersion, base.SetVersion),
-		PreBuild:   ExtendLifecycle(parent.PreBuild, base.PreBuild),
-		Build:      ExtendLifecycle(parent.Build, base.Build),
-		PostBuild:  ExtendLifecycle(parent.PostBuild, base.PostBuild),
-		Promote:    ExtendLifecycle(parent.Promote, base.Promote),
-		// TODO: Actually do extension for Pipeline rather than just copying it wholesale
-		Pipeline: parent.Pipeline,
+	if parent == nil {
+		parent = &PipelineLifecycles{}
 	}
+	l := &PipelineLifecycles{
+		Setup:      ExtendLifecycle(pipelineName, "setup", parent.Setup, base.Setup, overrides),
+		SetVersion: ExtendLifecycle(pipelineName, "setVersion", parent.SetVersion, base.SetVersion, overrides),
+		PreBuild:   ExtendLifecycle(pipelineName, "preBuild", parent.PreBuild, base.PreBuild, overrides),
+		Build:      ExtendLifecycle(pipelineName, "build", parent.Build, base.Build, overrides),
+		PostBuild:  ExtendLifecycle(pipelineName, "postBuild", parent.PostBuild, base.PostBuild, overrides),
+		Promote:    ExtendLifecycle(pipelineName, "promote", parent.Promote, base.Promote, overrides),
+	}
+	if parent.Pipeline != nil {
+		l.Pipeline = parent.Pipeline
+	} else if base.Pipeline != nil {
+		l.Pipeline = base.Pipeline
+	}
+	for _, override := range overrides {
+		if override.MatchesPipeline(pipelineName) {
+			// If no name, stage, or agent is specified, remove the whole pipeline.
+			if override.Name == "" && override.Stage == "" && override.Agent == nil {
+				return &PipelineLifecycles{}
+			}
+
+			l.Pipeline = syntax.ExtendParsedPipeline(l.Pipeline, override)
+		}
+	}
+	return l
 }
 
 // ExtendLifecycle extends the lifecycle with the inherited base lifecycle
-func ExtendLifecycle(parent *PipelineLifecycle, base *PipelineLifecycle) *PipelineLifecycle {
+func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, base *PipelineLifecycle, overrides []*syntax.PipelineOverride) *PipelineLifecycle {
+	var lifecycle *PipelineLifecycle
 	if parent == nil {
-		return base
+		lifecycle = base
+	} else if base == nil {
+		lifecycle = parent
+	} else if parent.Replace {
+		lifecycle = parent
+	} else {
+		steps := []*syntax.Step{}
+		steps = append(steps, parent.PreSteps...)
+		steps = append(steps, base.Steps...)
+		steps = append(steps, parent.Steps...)
+		lifecycle = &PipelineLifecycle{
+			Steps: steps,
+		}
 	}
-	if base == nil {
-		return parent
+
+	if lifecycle != nil {
+		for _, override := range overrides {
+			if override.MatchesPipeline(pipelineName) && override.MatchesStage(stageName) {
+				overriddenSteps := []*syntax.Step{}
+
+				// If a step name is specified on this override, override looking for that step.
+				if override.Name != "" {
+					for _, s := range lifecycle.Steps {
+						for _, o := range syntax.OverrideStep(*s, override) {
+							overriddenSteps = append(overriddenSteps, &o)
+						}
+					}
+				} else {
+					// If no step name was specified but there are steps, just replace all steps in the stage/lifecycle,
+					// or add the new steps before/after the existing steps in the stage/lifecycle
+					if steps := override.AsStepsSlice(); len(steps) > 0 {
+						if override.Type == nil || *override.Type == syntax.StepOverrideReplace {
+							overriddenSteps = append(overriddenSteps, steps...)
+						} else if *override.Type == syntax.StepOverrideBefore {
+							overriddenSteps = append(overriddenSteps, steps...)
+							overriddenSteps = append(overriddenSteps, lifecycle.Steps...)
+						} else if *override.Type == syntax.StepOverrideAfter {
+							overriddenSteps = append(overriddenSteps, lifecycle.Steps...)
+							overriddenSteps = append(overriddenSteps, override.Steps...)
+						}
+					}
+					// If there aren't any steps as well as no step name, then we're removing all steps from this stage/lifecycle,
+					// so do nothing. =)
+				}
+				lifecycle.Steps = overriddenSteps
+			}
+		}
 	}
-	if parent.Replace {
-		return parent
-	}
-	steps := []*PipelineStep{}
-	steps = append(steps, parent.PreSteps...)
-	steps = append(steps, base.Steps...)
-	steps = append(steps, parent.Steps...)
-	return &PipelineLifecycle{
-		Steps: steps,
-	}
+
+	return lifecycle
 }
 
 // GenerateJenkinsfile generates the jenkinsfile

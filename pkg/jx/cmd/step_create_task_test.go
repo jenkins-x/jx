@@ -1,6 +1,8 @@
 package cmd_test
 
 import (
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/tekton"
 	"io/ioutil"
 	"os"
 	"path"
@@ -8,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -17,7 +20,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -125,6 +127,160 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "override-default-agent",
 			kind:         "release",
 		},
+		{
+			name:         "override-steps",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "override_block_step",
+			language:     "apps",
+			repoName:     "golang-qs-test",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "loop-in-buildpack-syntax",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "containeroptions-on-pipelineconfig",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "default-in-jenkins-x-yml",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
+		{
+			name:         "default-in-buildpack",
+			language:     "default-pipeline",
+			repoName:     "golang-qs-test",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "add-env-to-default-in-buildpack",
+			language:     "default-pipeline",
+			repoName:     "golang-qs-test",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "override-default-in-buildpack",
+			language:     "default-pipeline",
+			repoName:     "golang-qs-test",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "override-default-in-jenkins-x-yml",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
+		{
+			name:         "remove-stage",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:           "remove-pipeline",
+			language:       "none",
+			repoName:       "anything",
+			organization:   "anything",
+			branch:         "anything",
+			kind:           "pullRequest",
+			expectingError: true,
+		},
+		{
+			name:         "remove-stage-from-jenkins-x-yml",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
+		{
+			name:           "remove-pipeline-from-jenkins-x-yml",
+			language:       "none",
+			repoName:       "anything",
+			organization:   "anything",
+			branch:         "anything",
+			kind:           "pullRequest",
+			expectingError: true,
+		},
+		{
+			name:         "replace-stage-steps",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "append-and-prepend-stage-steps",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "replace-stage-steps-in-jenkins-x-yml",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
+		{
+			name:         "append-and-prepend-stage-steps-in-jenkins-x-yml",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
+		{
+			name:         "correct-pipeline-stage-is-removed",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
+		{
+			name:         "command-as-multiline-script",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
@@ -150,18 +306,21 @@ func TestGenerateTektonCRDs(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
+
 			caseDir := path.Join(testData, tt.name)
 			_, err = os.Stat(caseDir)
 			assert.NoError(t, err)
 
 			projectConfig, projectConfigFile, err := config.LoadProjectConfig(caseDir)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
+			}
 
 			createTask := &cmd.StepCreateTaskOptions{
-				Pack:             tt.language,
-				NoReleasePrepare: true,
-				SourceName:       "source",
-				PodTemplates:     assertLoadPodTemplates(t),
+				Pack:         tt.language,
+				DryRun:       true,
+				SourceName:   "source",
+				PodTemplates: assertLoadPodTemplates(t),
 				GitInfo: &gits.GitRepository{
 					Host:         "github.com",
 					Name:         tt.repoName,
@@ -184,7 +343,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			}
 			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
-			pipeline, tasks, resources, run, structure, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
+			crds, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
 			if tt.expectingError {
 				if err == nil {
 					t.Fatalf("Expected an error generating CRDs")
@@ -195,29 +354,44 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				}
 
 				taskList := &pipelineapi.TaskList{}
-				for _, task := range tasks {
+				for _, task := range crds.Tasks {
 					taskList.Items = append(taskList.Items, *task)
 				}
 
 				resourceList := &pipelineapi.PipelineResourceList{}
-				for _, resource := range resources {
+				for _, resource := range crds.Resources {
 					resourceList.Items = append(resourceList.Items, *resource)
 				}
 
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
-					t.Errorf("Generated Pipeline did not match expected: %s", d)
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), crds.Pipeline); d != "" {
+					t.Errorf("Generated Pipeline did not match expected: \n%s", d)
 				}
 				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
-					t.Errorf("Generated Tasks did not match expected: %s", d)
+					t.Errorf("Generated Tasks did not match expected: \n%s", d)
 				}
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
 					t.Errorf("Generated PipelineResources did not match expected: %s", d)
 				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), run); d != "" {
+
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), crds.PipelineRun); d != "" {
 					t.Errorf("Generated PipelineRun did not match expected: %s", d)
 				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), crds.Structure); d != "" {
 					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
+				}
+
+				pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo)
+
+				expectedActivityKey := &kube.PromoteStepActivityKey{
+					PipelineActivityKey: kube.PipelineActivityKey{
+						Name:     fmt.Sprintf("%s-%s-%s-1", tt.organization, tt.repoName, tt.branch),
+						Pipeline: fmt.Sprintf("%s/%s/%s", tt.organization, tt.repoName, tt.branch),
+						Build:    "1",
+						GitInfo:  createTask.GitInfo,
+					},
+				}
+				if d := cmp.Diff(expectedActivityKey, pa); d != "" {
+					t.Errorf("not match expected: %s", d)
 				}
 			}
 		})
@@ -225,7 +399,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 }
 
 func assertLoadPodTemplates(t *testing.T) map[string]*corev1.Pod {
-	fileName := filepath.Join("test_data", "step_create_task", "podTemplates.yml")
+	fileName := filepath.Join("test_data", "step_create_task", "PodTemplates.yml")
 	if tests.AssertFileExists(t, fileName) {
 		configMap := &corev1.ConfigMap{}
 		data, err := ioutil.ReadFile(fileName)

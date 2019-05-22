@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -46,7 +46,7 @@ type ControllerWorkflowOptions struct {
 	pipelineMap             map[string]*v1.PipelineActivity
 
 	// Allow Git to be configured
-	ConfigureGitFn environments.ConfigureGitFn
+	ConfigureGitFn gits.ConfigureGitFn
 }
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
@@ -65,7 +65,7 @@ func NewCmdControllerWorkflow(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		Aliases: []string{"workflows"},
 	}

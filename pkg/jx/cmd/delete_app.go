@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apps"
-
-	"github.com/jenkins-x/jx/pkg/environments"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/pkg/errors"
 
@@ -47,7 +47,7 @@ type DeleteAppOptions struct {
 	Alias       string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback environments.ConfigureGitFn
+	ConfigureGitCallback gits.ConfigureGitFn
 }
 
 // NewCmdDeleteApp creates a command object for this command
@@ -65,7 +65,7 @@ func NewCmdDeleteApp(commonOpts *opts.CommonOptions) *cobra.Command {
 			o.Cmd = cmd
 			o.Args = args
 			err := o.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 

@@ -3,6 +3,8 @@ package util
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/pkg/errors"
 )
 
 var floatType = reflect.TypeOf(float64(0))
@@ -48,6 +50,15 @@ func AsBool(unk interface{}) (bool, error) {
 	v := reflect.ValueOf(unk)
 	v = reflect.Indirect(v)
 	if !v.Type().ConvertibleTo(boolType) {
+		// See if it's a string we can parse
+		str, err := AsString(unk)
+		if err == nil {
+			result, err := ParseBool(str)
+			if err != nil {
+				return false, errors.Wrapf(err, "cannot parse string %v as bool", str)
+			}
+			return result, nil
+		}
 		return false, fmt.Errorf("cannot convert %v (%v) to bool", v.Type(), v)
 	}
 	bv := v.Convert(boolType)

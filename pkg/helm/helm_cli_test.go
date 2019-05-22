@@ -2,6 +2,7 @@ package helm_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/mocks"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 )
 
 const binary = "helm"
+const binaryV3 = "helm3"
 const cwd = "test"
 const repo = "test-repo"
 const repoURL = "http://test-repo"
@@ -43,15 +45,28 @@ jxing                           1               Wed Jun  6 14:24:42 2018        
 vault-operator                  1               Mon Jun 25 16:09:28 2018        DEPLOYED        vault-operator-0.1.0            jx
 `
 
+const listReleasesOutputHelm3 = `
+NAME 	NAMESPACE	REVISION	UPDATED                             	STATUS  	CHART
+jxing	jx       	2       	2019-05-17 15:30:07.629472 +0100 BST	deployed	nginx-ingress-1.3.1`
+
 func createHelm(t *testing.T, expectedError error, expectedOutput string) (*helm.HelmCLI, *mocks.MockCommander) {
-	return createHelmWithCwd(t, cwd, expectedError, expectedOutput)
+	return createHelmWithCwdAndHelmVersion(t, helm.V2, cwd, expectedError, expectedOutput)
 }
 
-func createHelmWithCwd(t *testing.T, dir string, expectedError error, expectedOutput string) (*helm.HelmCLI, *mocks.MockCommander) {
+func createHelmWithVersion(t *testing.T, version helm.Version, expectedError error, expectedOutput string) (*helm.HelmCLI, *mocks.MockCommander) {
+	return createHelmWithCwdAndHelmVersion(t, version, cwd, expectedError, expectedOutput)
+}
+
+func createHelmWithCwdAndHelmVersion(t *testing.T, version helm.Version, dir string, expectedError error, expectedOutput string) (*helm.HelmCLI, *mocks.MockCommander) {
 	RegisterMockTestingT(t)
 	runner := mocks.NewMockCommander()
 	When(runner.RunWithoutRetry()).ThenReturn(expectedOutput, expectedError)
-	cli := helm.NewHelmCLIWithRunner(runner, binary, helm.V2, dir, true)
+	helmBinary := binary
+	if version == helm.V3 {
+		helmBinary = binaryV3
+	}
+	mockKuber := kube_test.NewMockKuber()
+	cli := helm.NewHelmCLIWithRunner(runner, helmBinary, version, dir, true, mockKuber)
 	return cli, runner
 }
 
@@ -125,14 +140,14 @@ func TestIsRepoMissing(t *testing.T) {
 	helm, runner := createHelm(t, nil, listRepoOutput)
 
 	url := "http://chartmuseum.jenkins-x.io"
-	missing, err := helm.IsRepoMissing(url)
+	missing, _, err := helm.IsRepoMissing(url)
 
 	assert.NoError(t, err, "should search missing repos without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
 	assert.False(t, missing, "should find url '%s'", url)
 
 	url = "https://test"
-	missing, err = helm.IsRepoMissing(url)
+	missing, _, err = helm.IsRepoMissing(url)
 
 	assert.NoError(t, err, "search missing repos should not return an error")
 	assert.True(t, missing, "should not find url '%s'", url)
@@ -161,7 +176,7 @@ func TestRemoveRequirementsLock(t *testing.T) {
 	path := filepath.Join(dir, "requirements.lock")
 	ioutil.WriteFile(path, []byte("test"), 0644)
 
-	helm, _ := createHelmWithCwd(t, dir, nil, "")
+	helm, _ := createHelmWithCwdAndHelmVersion(t, helm.V2, dir, nil, "")
 
 	err = helm.RemoveRequirementsLock()
 	assert.NoError(t, err, "should remove requirements.lock file")
@@ -249,7 +264,7 @@ func TestStatusReleaseWithOutputWithFormat(t *testing.T) {
 
 func TestStatusReleases(t *testing.T) {
 	expectedArgs := []string{"list", "--all", "--namespace", "default"}
-	expectedSatusMap := map[string]string{
+	expectedStatusMap := map[string]string{
 		"jenkins-x":      "DEPLOYED",
 		"jx-production":  "DEPLOYED",
 		"jx-staging":     "DEPLOYED",
@@ -264,8 +279,26 @@ func TestStatusReleases(t *testing.T) {
 	assert.NoError(t, err, "should list the release statuses without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
 	for release, details := range releaseMap {
-		assert.Equal(t, expectedSatusMap[release], details.Status, "expected details '%s', got '%s'",
-			expectedSatusMap[release], details)
+		assert.Equal(t, expectedStatusMap[release], details.Status, "expected details '%s', got '%s'",
+			expectedStatusMap[release], details)
+	}
+}
+
+func TestStatusReleasesForHelm3(t *testing.T) {
+	expectedArgs := []string{"list", "--all", "--namespace", "default"}
+	expectedStatusMap := map[string]string{
+		"jxing": "DEPLOYED",
+	}
+	helm, runner := createHelmWithVersion(t, helm.V3, nil, listReleasesOutputHelm3)
+	ns := "default"
+
+	releaseMap, _, err := helm.ListReleases(ns)
+
+	assert.NoError(t, err, "should list the release statuses without any error")
+	verifyArgs(t, helm, runner, expectedArgs...)
+	for release, details := range releaseMap {
+		assert.Equal(t, expectedStatusMap[release], details.Status, "expected details '%s', got '%s'",
+			expectedStatusMap[release], details)
 	}
 }
 
@@ -314,7 +347,7 @@ func TestFindChart(t *testing.T) {
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, helm.ChartFileName)
 	ioutil.WriteFile(path, []byte("test"), 0644)
-	helm, _ := createHelmWithCwd(t, dir, nil, "")
+	helm, _ := createHelmWithCwdAndHelmVersion(t, helm.V2, dir, nil, "")
 
 	chartFile, err := helm.FindChart()
 

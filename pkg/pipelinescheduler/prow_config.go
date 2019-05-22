@@ -2,7 +2,9 @@ package pipelinescheduler
 
 import "time"
 
-// ProwConfig is the Scheduler config that relates explicitly to Prow
+// TODO wire in this file
+
+// ProwConfig is the SchedulerSpec config that relates explicitly to Prow
 type ProwConfig struct {
 	Reviewers Reviewers `yaml:"blunderbuss,omitempty"`
 	Owners    Owners    `json:"owners,omitempty"`

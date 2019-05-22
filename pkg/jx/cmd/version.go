@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"github.com/blang/semver"
@@ -12,10 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-)
-
-const (
-	jxChartPrefix = "jenkins-x-platform-"
 )
 
 type VersionOptions struct {
@@ -39,7 +36,7 @@ func NewCmdVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	/*

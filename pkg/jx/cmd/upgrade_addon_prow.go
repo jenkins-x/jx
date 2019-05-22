@@ -2,6 +2,7 @@ package cmd
 
 import (
 	version "github.com/hashicorp/go-version"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 
@@ -52,7 +53,7 @@ func NewCmdUpgradeAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -158,5 +159,5 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	return o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName)
+	return o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName, nil)
 }

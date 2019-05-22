@@ -2,6 +2,7 @@ package syntax_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -521,6 +522,12 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				PipelineStage("A stage with environment",
 					StageEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("${SOME_OTHER_VAR}")),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("goodbye"), StepArg("${SOME_VAR} and ${ANOTHER_VAR}"),
+						StepEnvVar("SOME_VAR", "An overriding value"),
+						StepEnvVar("ANOTHER_VAR", "Yet another variable"),
+					),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -539,6 +546,11 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
 						tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello ${SOME_OTHER_VAR}"), workingDir("/workspace/source"),
 							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
+						tb.Step("step3", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo goodbye ${SOME_VAR} and ${ANOTHER_VAR}"), workingDir("/workspace/source"),
+							tb.EnvVar("ANOTHER_VAR", "Yet another variable"),
+							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+							tb.EnvVar("SOME_VAR", "An overriding value"),
+						),
 					)),
 			},
 			structure: PipelineStructure("somepipeline-1",
@@ -1054,10 +1066,62 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
+		{
+			name: "dir_on_pipeline_and_stage",
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineDir("a-relative-dir"),
+				PipelineStage("A Working Stage",
+					StageStep(
+						StepCmd("echo"),
+						StepArg("hello"), StepArg("world")),
+				),
+				PipelineStage("Another stage",
+					StageDir("/an/absolute/dir"),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("again")),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("in another dir"),
+						StepDir("another-relative-dir/with/a/subdir"))),
+			),
+			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineTask("another-stage", "somepipeline-another-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline",
+						tb.From("a-working-stage")),
+					tb.RunAfter("a-working-stage")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"), tb.TaskSpec(
+					tb.TaskInputs(
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+							tb.ResourceTargetPath("source"))),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source/a-relative-dir")),
+				)),
+				tb.Task("somepipeline-another-stage-1", "jx", TaskStageLabel("Another stage"), tb.TaskSpec(
+					tb.TaskInputs(
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+							tb.ResourceTargetPath("source"))),
+					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo again"), workingDir("/an/absolute/dir")),
+					tb.Step("step3", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo in another dir"),
+						workingDir("/workspace/source/another-relative-dir/with/a/subdir")),
+				)),
+			},
+			structure: PipelineStructure("somepipeline-1",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
+				StructureStage("Another stage", StructureStageTaskRef("somepipeline-another-stage-1"),
+					StructureStagePrevious("A Working Stage")),
+			),
+		},
 	}
 
 	for _, tt := range tests {
-
 		t.Run(tt.name, func(t *testing.T) {
 			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", tt.name))
 			if err != nil {
@@ -1142,7 +1206,7 @@ func TestFailedValidation(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		name          string
-		expectedError *apis.FieldError
+		expectedError error
 	}{
 		/* TODO: Once we figure out how to differentiate between an empty agent and no agent specified...
 		{
@@ -1363,41 +1427,100 @@ func TestFailedValidation(t *testing.T) {
 				Paths:   []string{"command"},
 			}).ViaField("containerOptions").ViaField("options"),
 		},
+		{
+			name:          "unknown_field",
+			expectedError: errors.New("Validation failures in YAML file test_data/validation_failures/unknown_field/jenkins-x.yml:\npipelineConfig: Additional property banana is not allowed"),
+		},
+		{
+			name: "comment_field",
+			expectedError: (&apis.FieldError{
+				Message: "the comment field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"comment"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "groovy_field",
+			expectedError: (&apis.FieldError{
+				Message: "the groovy field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"groovy"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "when_field",
+			expectedError: (&apis.FieldError{
+				Message: "the when field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"when"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "container_field",
+			expectedError: (&apis.FieldError{
+				Message: "the container field is deprecated - please use image instead",
+				Paths:   []string{"container"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "legacy_steps_field",
+			expectedError: (&apis.FieldError{
+				Message: "the steps field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it and list the nested stages sequentially instead.",
+				Paths:   []string{"steps"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "agent_dir_field",
+			expectedError: (&apis.FieldError{
+				Message: "the dir field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"dir"},
+			}).ViaField("agent"),
+		},
+		{
+			name: "agent_container_field",
+			expectedError: (&apis.FieldError{
+				Message: "the container field is deprecated - please use image instead",
+				Paths:   []string{"container"},
+			}).ViaField("agent"),
+		},
+		{
+			name: "duplicate_step_names",
+			expectedError: (&apis.FieldError{
+				Message: "step names within a stage must be unique",
+				Details: "The following step names in the stage A Working Stage are used more than once: A Step With Spaces And Such, Another Step Name",
+				Paths:   []string{"steps"},
+			}).ViaFieldIndex("stages", 0),
+		},
 	}
 
 	for _, tt := range tests {
-		if tt.name != "multiple_stages" {
-			return
-		}
-
 		t.Run(tt.name, func(t *testing.T) {
 			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", "validation_failures", tt.name))
-			if err != nil {
+			if err != nil && err.Error() != tt.expectedError.Error() {
 				t.Fatalf("Failed to parse YAML for %s: %q", tt.name, err)
 			}
+			if _, ok := tt.expectedError.(*apis.FieldError); ok {
 
-			if projectConfig.PipelineConfig == nil {
-				t.Fatalf("PipelineConfig at %s is nil: %+v", fn, projectConfig)
-			}
-			if &projectConfig.PipelineConfig.Pipelines == nil {
-				t.Fatalf("Pipelines at %s is nil: %+v", fn, projectConfig.PipelineConfig)
-			}
-			if projectConfig.PipelineConfig.Pipelines.Release == nil {
-				t.Fatalf("Release at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines)
-			}
-			if projectConfig.PipelineConfig.Pipelines.Release.Pipeline == nil {
-				t.Fatalf("Pipeline at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines.Release)
-			}
-			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
+				if projectConfig.PipelineConfig == nil {
+					t.Fatalf("PipelineConfig at %s is nil: %+v", fn, projectConfig)
+				}
+				if &projectConfig.PipelineConfig.Pipelines == nil {
+					t.Fatalf("Pipelines at %s is nil: %+v", fn, projectConfig.PipelineConfig)
+				}
+				if projectConfig.PipelineConfig.Pipelines.Release == nil {
+					t.Fatalf("Release at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines)
+				}
+				if projectConfig.PipelineConfig.Pipelines.Release.Pipeline == nil {
+					t.Fatalf("Pipeline at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines.Release)
+				}
+				parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
 
-			err = parsed.Validate(ctx)
+				err = parsed.Validate(ctx)
 
-			if err == nil {
-				t.Fatalf("Expected a validation failure but none occurred")
-			}
+				if err == nil {
+					t.Fatalf("Expected a validation failure but none occurred")
+				}
 
-			if d := cmp.Diff(tt.expectedError, err, cmp.AllowUnexported(apis.FieldError{})); d != "" {
-				t.Fatalf("Validation error did not meet expectation: %s", d)
+				if d := cmp.Diff(tt.expectedError, err, cmp.AllowUnexported(apis.FieldError{})); d != "" {
+					t.Fatalf("Validation error did not meet expectation: %s", d)
+				}
 			}
 		})
 	}
@@ -1591,7 +1714,7 @@ func ParsedPipeline(ops ...PipelineOp) *syntax.ParsedPipeline {
 
 func PipelineAgent(image string) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Agent = syntax.Agent{
+		parsed.Agent = &syntax.Agent{
 			Image: image,
 		}
 	}
@@ -1599,10 +1722,10 @@ func PipelineAgent(image string) PipelineOp {
 
 func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Options = syntax.RootOptions{}
+		parsed.Options = &syntax.RootOptions{}
 
 		for _, op := range ops {
-			op(&parsed.Options)
+			op(parsed.Options)
 		}
 	}
 }
@@ -1619,11 +1742,26 @@ func PipelineContainerOptions(ops ...tb.ContainerOp) PipelineOptionsOp {
 
 func StageContainerOptions(ops ...tb.ContainerOp) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
 		options.ContainerOptions = &corev1.Container{}
 
 		for _, op := range ops {
 			op(options.ContainerOptions)
 		}
+	}
+}
+
+func PipelineDir(dir string) PipelineOp {
+	return func(pipeline *syntax.ParsedPipeline) {
+		pipeline.WorkingDir = &dir
+	}
+}
+
+func StageDir(dir string) StageOp {
+	return func(stage *syntax.Stage) {
+		stage.WorkingDir = &dir
 	}
 }
 
@@ -1651,7 +1789,7 @@ func ContainerResourceRequests(cpus, memory string) tb.ContainerOp {
 
 func PipelineOptionsTimeout(time int64, unit syntax.TimeoutUnit) PipelineOptionsOp {
 	return func(options *syntax.RootOptions) {
-		options.Timeout = syntax.Timeout{
+		options.Timeout = &syntax.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -1667,7 +1805,7 @@ func PipelineOptionsRetry(count int8) PipelineOptionsOp {
 // PipelineEnvVar add an environment variable, with specified name and value, to the pipeline.
 func PipelineEnvVar(name, value string) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Environment = append(parsed.Environment, syntax.EnvVar{
+		parsed.Env = append(parsed.GetEnv(), syntax.EnvVar{
 			Name:  name,
 			Value: value,
 		})
@@ -1712,7 +1850,7 @@ func PostAction(name string, options map[string]string) PipelinePostOp {
 
 func StageAgent(image string) StageOp {
 	return func(stage *syntax.Stage) {
-		stage.Agent = syntax.Agent{
+		stage.Agent = &syntax.Agent{
 			Image: image,
 		}
 	}
@@ -1720,17 +1858,20 @@ func StageAgent(image string) StageOp {
 
 func StageOptions(ops ...StageOptionsOp) StageOp {
 	return func(stage *syntax.Stage) {
-		stage.Options = syntax.StageOptions{}
+		stage.Options = &syntax.StageOptions{}
 
 		for _, op := range ops {
-			op(&stage.Options)
+			op(stage.Options)
 		}
 	}
 }
 
 func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
-		options.Timeout = syntax.Timeout{
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
+		options.Timeout = &syntax.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -1739,6 +1880,9 @@ func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
 
 func StageOptionsRetry(count int8) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
 		options.Retry = count
 	}
 }
@@ -1751,7 +1895,7 @@ func StageOptionsWorkspace(ws string) StageOptionsOp {
 
 func StageOptionsStash(name, files string) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
-		options.Stash = syntax.Stash{
+		options.Stash = &syntax.Stash{
 			Name:  name,
 			Files: files,
 		}
@@ -1760,7 +1904,7 @@ func StageOptionsStash(name, files string) StageOptionsOp {
 
 func StageOptionsUnstash(name, dir string) StageOptionsOp {
 	return func(options *syntax.StageOptions) {
-		options.Unstash = syntax.Unstash{
+		options.Unstash = &syntax.Unstash{
 			Name: name,
 		}
 		if dir != "" {
@@ -1769,10 +1913,10 @@ func StageOptionsUnstash(name, dir string) StageOptionsOp {
 	}
 }
 
-// AgentEnvVar add an environment variable, with specified name and value, to the stage.
+// StageEnvVar add an environment variable, with specified name and value, to the stage.
 func StageEnvVar(name, value string) StageOp {
 	return func(stage *syntax.Stage) {
-		stage.Environment = append(stage.Environment, syntax.EnvVar{
+		stage.Env = append(stage.GetEnv(), syntax.EnvVar{
 			Name:  name,
 			Value: value,
 		})
@@ -1795,7 +1939,7 @@ func StagePost(condition syntax.PostCondition, ops ...PipelinePostOp) StageOp {
 
 func StepAgent(image string) StepOp {
 	return func(step *syntax.Step) {
-		step.Agent = syntax.Agent{
+		step.Agent = &syntax.Agent{
 			Image: image,
 		}
 	}
@@ -1839,16 +1983,26 @@ func StepDir(dir string) StepOp {
 
 func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
 	return func(step *syntax.Step) {
-		loop := syntax.Loop{
+		loop := &syntax.Loop{
 			Variable: variable,
 			Values:   values,
 		}
 
 		for _, op := range ops {
-			op(&loop)
+			op(loop)
 		}
 
 		step.Loop = loop
+	}
+}
+
+// StepEnvVar add an environment variable, with specified name and value, to the step.
+func StepEnvVar(name, value string) StepOp {
+	return func(step *syntax.Step) {
+		step.Env = append(step.Env, syntax.EnvVar{
+			Name:  name,
+			Value: value,
+		})
 	}
 }
 
@@ -1987,17 +2141,17 @@ func TestParsedPipelineHelpers(t *testing.T) {
 	)
 
 	expected := &syntax.ParsedPipeline{
-		Agent: syntax.Agent{
+		Agent: &syntax.Agent{
 			Image: "some-image",
 		},
-		Options: syntax.RootOptions{
+		Options: &syntax.RootOptions{
 			Retry: 5,
-			Timeout: syntax.Timeout{
+			Timeout: &syntax.Timeout{
 				Time: 30,
 				Unit: syntax.TimeoutUnitSeconds,
 			},
 		},
-		Environment: []syntax.EnvVar{
+		Env: []syntax.EnvVar{
 			{
 				Name:  "ANIMAL",
 				Value: "MONKEY",
@@ -2033,17 +2187,17 @@ func TestParsedPipelineHelpers(t *testing.T) {
 		Stages: []syntax.Stage{
 			{
 				Name: "A Working Stage",
-				Options: syntax.StageOptions{
+				Options: &syntax.StageOptions{
 					Workspace: &customWorkspace,
-					Stash: syntax.Stash{
+					Stash: &syntax.Stash{
 						Name:  "some-name",
 						Files: "**/*",
 					},
-					Unstash: syntax.Unstash{
+					Unstash: &syntax.Unstash{
 						Name: "some-name",
 					},
-					RootOptions: syntax.RootOptions{
-						Timeout: syntax.Timeout{
+					RootOptions: &syntax.RootOptions{
+						Timeout: &syntax.Timeout{
 							Time: 15,
 							Unit: syntax.TimeoutUnitMinutes,
 						},
@@ -2060,17 +2214,17 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				Parallel: []syntax.Stage{
 					{
 						Name: "First Nested Stage",
-						Agent: syntax.Agent{
+						Agent: &syntax.Agent{
 							Image: "some-other-image",
 						},
 						Steps: []syntax.Step{{
 							Command:   "echo",
 							Arguments: []string{"hello", "world"},
-							Agent: syntax.Agent{
+							Agent: &syntax.Agent{
 								Image: "some-other-image",
 							},
 						}},
-						Environment: []syntax.EnvVar{
+						Env: []syntax.EnvVar{
 							{
 								Name:  "STAGE_VAR_ONE",
 								Value: "some value",
@@ -2096,7 +2250,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 							{
 								Name: "Another stage",
 								Steps: []syntax.Step{{
-									Loop: syntax.Loop{
+									Loop: &syntax.Loop{
 										Variable: "SOME_VAR",
 										Values:   []string{"a", "b", "c"},
 										Steps: []syntax.Step{{

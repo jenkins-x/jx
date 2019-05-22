@@ -44,6 +44,8 @@ type GitProvider interface {
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
 
+	AddLabelsToIssue(owner, repo string, number int, labels []string) error
+
 	GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error)
 
 	ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error)
@@ -241,4 +243,14 @@ type Gitter interface {
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
 	DeleteRemoteBranch(dir string, remoteName string, branch string) error
+}
+
+// ConfigureGitFn callback to optionally configure git before its used for creating commits and PRs
+type ConfigureGitFn func(dir string, gitInfo *GitRepository, gitAdapter Gitter) error
+
+// PullRequestDetails is the details for creating a pull request
+type PullRequestDetails struct {
+	Message    string
+	BranchName string
+	Title      string
 }

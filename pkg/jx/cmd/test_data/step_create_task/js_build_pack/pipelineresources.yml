@@ -1,15 +1,16 @@
 items:
-- apiVersion: tekton.dev/v1alpha1
-  kind: PipelineResource
-  metadata:
-    creationTimestamp: null
-    name: abayer-js-test-repo-build-pack
-  spec:
-    params:
-    - name: revision
-      value: ""
-    - name: url
-      value: https://github.com/abayer/js-test-repo
-    type: git
-  status: {}
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      creationTimestamp: null
+      name: abayer-js-test-repo-build-pack
+    spec:
+      params:
+        - name: revision
+          value: v0.0.1
+        - name: url
+          value: https://github.com/abayer/js-test-repo
+      type: git
+    status: {}
 metadata: {}
+

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"fmt"
@@ -301,7 +302,7 @@ func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -926,7 +927,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 			if !options.Flags.GKEUseEnhancedApis {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
-					Default: false,
+					Default: options.Flags.GKEUseEnhancedScopes,
 					Help:    "Enables extra APIs on the GCP project",
 				}
 				survey.AskOne(prompt, &options.Flags.GKEUseEnhancedApis, nil, surveyOpts)
@@ -944,15 +945,27 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 
 	if !options.BatchMode {
 		// only provide the option if enhanced scopes are enabled
-		if options.InstallOptions.Flags.Kaniko {
+		if options.Flags.GKEUseEnhancedScopes && options.InstallOptions.Flags.Kaniko {
 			if !options.InstallOptions.Flags.Kaniko {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Kaniko for building container images",
-					Default: false,
+					Default: options.Flags.GKEUseEnhancedScopes,
 					Help:    "Use Kaniko for docker images",
 				}
 				survey.AskOne(prompt, &options.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 			}
+		}
+	}
+
+	if options.InstallOptions.Flags.NextGeneration || options.InstallOptions.Flags.Tekton || options.InstallOptions.Flags.Kaniko {
+		// lets default the docker registry to GCR
+		if options.InstallOptions.Flags.DockerRegistry == "" {
+			options.InstallOptions.Flags.DockerRegistry = "gcr.io"
+		}
+
+		// lets default the docker registry org to the project id
+		if options.InstallOptions.Flags.DockerRegistryOrg == "" {
+			options.InstallOptions.Flags.DockerRegistryOrg = g.ProjectID
 		}
 	}
 

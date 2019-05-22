@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -81,7 +82,7 @@ func NewCmdLogin(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -149,6 +150,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 		m["user-data-dir"] = userDataDir
 		m["log-net-log"] = netLogFile
 		m["net-log-capture-mode"] = "IncludeCookiesAndCredentials"
+		m["disable-features"] = "NetworkService"
 		m["v"] = 1
 		return nil
 	}

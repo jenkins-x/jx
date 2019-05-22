@@ -136,7 +136,7 @@ func (h *HelmTemplate) SearchCharts(filter string) ([]ChartSummary, error) {
 }
 
 // IsRepoMissing checks if the repository with the given URL is missing from helm
-func (h *HelmTemplate) IsRepoMissing(URL string) (bool, error) {
+func (h *HelmTemplate) IsRepoMissing(URL string) (bool, string, error) {
 	return h.Client.IsRepoMissing(URL)
 }
 
@@ -546,11 +546,13 @@ func (h *HelmTemplate) clearOutputDir(releaseName string) error {
 
 func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo string, username string,
 	password string) (string, error) {
-	exists, err := util.FileExists(chart)
+	chartDir := filepath.Join(dir, chart)
+	exists, err := util.FileExists(chartDir)
 	if err != nil {
 		return "", err
 	}
 	if exists {
+		log.Infof("Chart dir already exists: %s\n", chartDir)
 		return chart, nil
 	}
 	if dir == "" {

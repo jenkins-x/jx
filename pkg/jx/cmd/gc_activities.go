@@ -1,14 +1,18 @@
 package cmd
 
 import (
-	"fmt"
-	"sort"
-	"strconv"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tv1alpha1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -21,22 +25,55 @@ import (
 type GCActivitiesOptions struct {
 	*opts.CommonOptions
 
-	RevisionHistoryLimit int
-	PullRequestHours     int
-	jclient              gojenkins.JenkinsClient
+	DryRun                  bool
+	ReleaseHistoryLimit     int
+	PullRequestHistoryLimit int
+	ReleaseAgeLimit         time.Duration
+	PullRequestAgeLimit     time.Duration
+	jclient                 gojenkins.JenkinsClient
 }
 
 var (
 	GCActivitiesLong = templates.LongDesc(`
-		Garbage collect the Jenkins X Activity Custom Resource Definitions
+		Garbage collect the Jenkins X PipelineActivity and PipelineRun resources
 
 `)
 
 	GCActivitiesExample = templates.Examples(`
-		jx garbage collect activities
+		# garbage collect PipelineActivity and PipelineRun resources
 		jx gc activities
+
+		# dry run mode
+		jx gc pa --dry-run
 `)
 )
+
+type buildCounter struct {
+	ReleaseCount int
+	PRCount      int
+}
+
+type buildsCount struct {
+	cache map[string]*buildCounter
+}
+
+// AddBuild adds the build and returns the number of builds for this repo and branch
+func (c *buildsCount) AddBuild(repoAndBranch string, isPR bool) int {
+	if c.cache == nil {
+		c.cache = map[string]*buildCounter{}
+	}
+	bc := c.cache[repoAndBranch]
+	if bc == nil {
+		bc = &buildCounter{}
+		c.cache[repoAndBranch] = bc
+	}
+	if isPR {
+		bc.PRCount++
+		return bc.PRCount
+	}
+	bc.ReleaseCount++
+	return bc.ReleaseCount
+}
 
 // NewCmd s a command object for the "step" command
 func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
@@ -46,18 +83,22 @@ func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "activities",
-		Short:   "garbage collection for activities",
+		Aliases: []string{"pa", "act", "pr"},
+		Short:   "garbage collection for PipelineActivities and PipelineRun resources",
 		Long:    GCActivitiesLong,
 		Example: GCActivitiesExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
-	cmd.Flags().IntVarP(&options.PullRequestHours, "pull-request-hours", "p", 48, "Number of hours to keep pull request activities for")
+	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Dry run mode. If enabled just list the resources that would be removed")
+	cmd.Flags().IntVarP(&options.ReleaseHistoryLimit, "release-history-limit", "l", 5, "Maximum number of PipelineActivities and PipelineRuns to keep around per repository release")
+	cmd.Flags().IntVarP(&options.PullRequestHistoryLimit, "pr-history-limit", "", 2, "Minimum number of PipelineActivities and PipelineRuns to keep around per repository Pull Request")
+	cmd.Flags().DurationVarP(&options.ReleaseAgeLimit, "pull-request-age", "p", time.Hour*48, "Maximum age to keep PipelineActivities and PipelineRun's for Pull Requests")
+	cmd.Flags().DurationVarP(&options.PullRequestAgeLimit, "release-age", "r", time.Hour*24*30, "Maximum age to keep PipelineActivities and PipelineRun's for Releases")
 	return cmd
 }
 
@@ -68,8 +109,14 @@ func (o *GCActivitiesOptions) Run() error {
 		return err
 	}
 
+	err = o.gcPipelineRuns(client, currentNs)
+	if err != nil {
+		return err
+	}
+
 	// cannot use field selectors like `spec.kind=Preview` on CRDs so list all environments
-	activities, err := client.JenkinsV1().PipelineActivities(currentNs).List(metav1.ListOptions{})
+	activityInterface := client.JenkinsV1().PipelineActivities(currentNs)
+	activities, err := activityInterface.List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -105,18 +152,32 @@ func (o *GCActivitiesOptions) Run() error {
 		}
 	}
 
-	activityBuilds := make(map[string][]int)
+	now := time.Now()
+	counters := &buildsCount{}
 
-	for _, a := range activities.Items {
-		// if the activity is a PR and has completed over a week ago lets GC it
-		if strings.Contains(a.Name, "-pr-") {
-			if a.Spec.CompletedTimestamp != nil && a.Spec.CompletedTimestamp.Add(time.Duration(o.PullRequestHours)*time.Hour).Before(time.Now()) {
-				err = client.JenkinsV1().PipelineActivities(currentNs).Delete(a.Name, metav1.NewDeleteOptions(0))
-				if err != nil {
-					return err
-				}
-				continue
+	// use reverse order so we remove the oldest ones
+	for i := len(activities.Items) - 1; i >= 0; i-- {
+		a := activities.Items[i]
+		branchName := a.BranchName()
+		isPR := o.isPullRequestBranch(branchName)
+		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR)
+		// lets remove activities that are too old
+		if a.Spec.CompletedTimestamp != nil && a.Spec.CompletedTimestamp.Add(maxAge).Before(now) {
+			err = o.deleteActivity(activityInterface, &a)
+			if err != nil {
+				return err
 			}
+			continue
+		}
+
+		repoAndBranchName := a.RepositoryOwner() + "/" + a.RepositoryName() + "/" + a.BranchName()
+		c := counters.AddBuild(repoAndBranchName, isPR)
+		if c > revisionHistory {
+			err = o.deleteActivity(activityInterface, &a)
+			if err != nil {
+				return err
+			}
+			continue
 		}
 
 		if !prowEnabled {
@@ -129,42 +190,105 @@ func (o *GCActivitiesOptions) Run() error {
 				}
 			}
 			if !matched {
-				err = client.JenkinsV1().PipelineActivities(currentNs).Delete(a.Name, metav1.NewDeleteOptions(0))
+				err = o.deleteActivity(activityInterface, &a)
 				if err != nil {
 					return err
 				}
 			}
 		}
-
-		buildNumber, err := strconv.Atoi(a.Spec.Build)
-		if err != nil {
-			return err
-		}
-
-		// collect all activities for a pipeline
-		activityBuilds[a.Spec.Pipeline] = append(activityBuilds[a.Spec.Pipeline], buildNumber)
 	}
-
-	for pipeline, builds := range activityBuilds {
-
-		sort.Ints(builds)
-
-		// iterate over the build numbers and delete any while the activity is under the RevisionHistoryLimit
-		i := 0
-		for i < len(builds)-o.RevisionHistoryLimit {
-			activityName := fmt.Sprintf("%s-%v", pipeline, builds[i])
-			activityName = strings.Replace(activityName, "/", "-", -1)
-			activityName = strings.Replace(activityName, "_", "-", -1)
-			activityName = strings.ToLower(activityName)
-
-			err = client.JenkinsV1().PipelineActivities(currentNs).Delete(activityName, metav1.NewDeleteOptions(0))
-			if err != nil {
-				return fmt.Errorf("failed to delete activity %s: %v\n", activityName, err)
-			}
-
-			i++
-		}
-	}
-
 	return nil
+}
+
+func (o *GCActivitiesOptions) gcPipelineRuns(jxClient versioned.Interface, ns string) error {
+	tektonkClient, _, err := o.TektonClient()
+	if err != nil {
+		return err
+	}
+	pipelineRunInterface := tektonkClient.TektonV1alpha1().PipelineRuns(ns)
+	activities, err := pipelineRunInterface.List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("no PipelineRun instances found: %s\n", err.Error())
+		return nil
+	}
+
+	now := time.Now()
+	counters := &buildsCount{}
+
+	// lets go in reverse order so we delete the oldest first
+	for i := len(activities.Items) - 1; i >= 0; i-- {
+		a := activities.Items[i]
+		isPR := a.Labels != nil && o.isPullRequestBranch(a.Labels["branch"])
+		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR)
+
+		completionTime := a.Status.CompletionTime
+		if completionTime != nil && completionTime.Add(maxAge).Before(now) {
+			err = o.deletePipelineRun(pipelineRunInterface, &a)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		labels := a.Labels
+		if labels != nil {
+			owner := labels[v1.LabelOwner]
+			repo := labels[v1.LabelRepository]
+			if repo == "" {
+				repo = labels["repo"]
+			}
+			branch := labels[v1.LabelBranch]
+
+			// TODO another way to uniquely find the git repo + branch?
+			if owner != "" && repo != "" && branch != "" {
+				repoAndBranchName := owner + "/" + repo + "/" + branch
+				c := counters.AddBuild(repoAndBranchName, isPR)
+				if c > revisionHistory {
+					err = o.deletePipelineRun(pipelineRunInterface, &a)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (o *GCActivitiesOptions) deleteActivity(activityInterface jv1.PipelineActivityInterface, a *v1.PipelineActivity) error {
+	prefix := ""
+	if o.DryRun {
+		prefix = "not "
+	}
+	log.Infof("%sdeleting PipelineActivity %s\n", prefix, util.ColorInfo(a.Name))
+	if o.DryRun {
+		return nil
+	}
+	return activityInterface.Delete(a.Name, metav1.NewDeleteOptions(0))
+}
+
+func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tv1alpha1.PipelineRunInterface, a *v1alpha1.PipelineRun) error {
+	prefix := ""
+	if o.DryRun {
+		prefix = "not "
+	}
+	log.Infof("%sdeleting PipelineRun %s\n", prefix, util.ColorInfo(a.Name))
+	if o.DryRun {
+		return nil
+	}
+	return pipelineRunInterface.Delete(a.Name, metav1.NewDeleteOptions(0))
+}
+
+func (o *GCActivitiesOptions) ageAndHistoryLimits(isPR bool) (time.Duration, int) {
+	maxAge := o.ReleaseAgeLimit
+	revisionLimit := o.ReleaseHistoryLimit
+	if isPR {
+		maxAge = o.PullRequestAgeLimit
+		revisionLimit = o.PullRequestHistoryLimit
+	}
+	return maxAge, revisionLimit
+}
+
+func (o *GCActivitiesOptions) isPullRequestBranch(branchName string) bool {
+	return strings.HasPrefix(branchName, "PR-")
 }

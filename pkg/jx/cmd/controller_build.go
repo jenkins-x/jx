@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -65,7 +66,7 @@ func NewCmdControllerBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		Aliases: []string{"builds"},
 	}
@@ -118,6 +119,16 @@ func (o *ControllerBuildOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	err = o.ensureSourceRepositoryHasLabels(jxClient, ns)
+	if err != nil {
+		return errors.Wrap(err, "failed to label the PipelineActivity resources")
+	}
+
+	err = o.ensurePipelineActivityHasLabels(jxClient, ns)
+	if err != nil {
+		return errors.Wrap(err, "failed to label the PipelineActivity resources")
 	}
 
 	if tektonEnabled {
@@ -545,15 +556,12 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
-			var location *v1.StorageLocation
+			location := v1.StorageLocation{}
 			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
 				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
-			}
-			if location == nil {
-				location = &v1.StorageLocation{}
 			}
 			if location.IsEmpty() {
 				location.GitURL = activity.Spec.GitURL
@@ -657,15 +665,12 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
-			var location *v1.StorageLocation
+			location := v1.StorageLocation{}
 			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
 				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
-			}
-			if location == nil {
-				location = &v1.StorageLocation{}
 			}
 			if location.IsEmpty() {
 				location.GitURL = activity.Spec.GitURL
@@ -902,7 +907,7 @@ func toYamlString(resource interface{}) string {
 }
 
 // generates the build log URL and returns the URL
-func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
+func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
 	coll, err := collector.NewCollector(location, settings, o.Git())
 	if err != nil {
@@ -934,7 +939,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		}
 	}
 
-	owner := activity.Spec.GitOwner
+	owner := activity.RepositoryOwner()
 	repository := activity.RepositoryName()
 	branch := activity.BranchName()
 	buildNumber := activity.Spec.Build
@@ -950,6 +955,110 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		return url, errors.Wrapf(err, "failed to collect build log for pod %s in namespace %s", pod.Name, ns)
 	}
 	return url, nil
+}
+
+// ensurePipelineActivityHasLabels older versions of controller build did not add labels properly
+// so lets enrich PipelineActivity on startup
+func (o *ControllerBuildOptions) ensurePipelineActivityHasLabels(jxClient versioned.Interface, ns string) error {
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	actList, err := activities.List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, act := range actList.Items {
+		updated := false
+		if act.Labels == nil {
+			act.Labels = map[string]string{}
+		}
+		provider := kube.ToProviderName(act.Spec.GitURL)
+		owner := act.RepositoryOwner()
+		repository := act.RepositoryName()
+		branch := act.BranchName()
+		build := act.Spec.Build
+
+		if act.Labels[v1.LabelProvider] != provider && provider != "" {
+			act.Labels[v1.LabelProvider] = provider
+			updated = true
+		}
+		if act.Labels[v1.LabelOwner] != owner && owner != "" {
+			act.Labels[v1.LabelOwner] = owner
+			updated = true
+		}
+		if act.Labels[v1.LabelRepository] != repository && repository != "" {
+			act.Labels[v1.LabelRepository] = repository
+			updated = true
+		}
+		if act.Labels[v1.LabelBranch] != branch && branch != "" {
+			act.Labels[v1.LabelBranch] = branch
+			updated = true
+		}
+		if act.Labels[v1.LabelBuild] != build && build != "" {
+			act.Labels[v1.LabelBuild] = build
+			updated = true
+		}
+		if updated {
+			err = o.Retry(3, time.Second*3, func() error {
+				resource, err := activities.Get(act.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				resource.Labels = act.Labels
+				_, err = activities.Update(resource)
+				return err
+			})
+			if err != nil {
+				return errors.Wrapf(err, "failed to modify labels on PipelineActivity %s", act.Name)
+			}
+			log.Infof("updated labels on PipelineActivity %s\n", util.ColorInfo(act.Name))
+		}
+	}
+	return nil
+}
+
+func (o *ControllerBuildOptions) ensureSourceRepositoryHasLabels(jxClient versioned.Interface, ns string) error {
+	sourceRepositoryInterface := jxClient.JenkinsV1().SourceRepositories(ns)
+	srList, err := sourceRepositoryInterface.List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, sr := range srList.Items {
+		updated := false
+		if sr.Labels == nil {
+			sr.Labels = map[string]string{}
+		}
+		provider := kube.ToProviderName(sr.Spec.Provider)
+		owner := sr.Spec.Org
+		repository := sr.Spec.Repo
+
+		if sr.Labels[v1.LabelProvider] != provider && provider != "" {
+			sr.Labels[v1.LabelProvider] = provider
+			updated = true
+		}
+		if sr.Labels[v1.LabelOwner] != owner && owner != "" {
+			sr.Labels[v1.LabelOwner] = owner
+			updated = true
+		}
+		if sr.Labels[v1.LabelRepository] != repository && repository != "" {
+			sr.Labels[v1.LabelRepository] = repository
+			updated = true
+		}
+		if updated {
+			err = o.Retry(3, time.Second*3, func() error {
+				resource, err := sourceRepositoryInterface.Get(sr.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				resource.Labels = sr.Labels
+				_, err = sourceRepositoryInterface.Update(resource)
+				return err
+			})
+			if err != nil {
+				return errors.Wrapf(err, "failed to modify labels on SourceRepository %s", sr.Name)
+			}
+			log.Infof("updated labels on SourceRepository %s\n", util.ColorInfo(sr.Name))
+		}
+	}
+	return nil
 }
 
 // createStepDescription uses the spec of the container to return a description

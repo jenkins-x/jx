@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
 	"strings"
@@ -89,7 +90,7 @@ func NewCmdStepStash(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -126,7 +127,7 @@ func (o *StepStashOptions) Run() error {
 	}
 	if o.StorageLocation.IsEmpty() {
 		// lets try get the location from the team settings
-		o.StorageLocation = *settings.StorageLocationOrDefault(classifier)
+		o.StorageLocation = settings.StorageLocationOrDefault(classifier)
 
 		if o.StorageLocation.IsEmpty() {
 			// we have no team settings so lets try detect the git repository using an env var or local file system
@@ -149,7 +150,7 @@ func (o *StepStashOptions) Run() error {
 		return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
 	}
 
-	coll, err := collector.NewCollector(&o.StorageLocation, settings, o.Git())
+	coll, err := collector.NewCollector(o.StorageLocation, settings, o.Git())
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the collector for storage settings %s", o.StorageLocation.Description())
 	}

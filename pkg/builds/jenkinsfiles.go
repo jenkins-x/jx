@@ -81,7 +81,7 @@ func (j *JenkinsConverter) ToJenkinsfile() (string, error) {
 				j.startBlock("step")
 				j.startContainer()
 				for _, step := range build.Steps {
-					cmd := step.Command
+					cmd := step.GetFullCommand()
 					j.println(fmt.Sprintf(`sh "%s"`, cmd))
 				}
 				j.endContainer()

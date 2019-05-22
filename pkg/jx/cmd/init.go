@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -106,7 +107,7 @@ func NewCmdInit(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -149,6 +150,7 @@ func (o *InitOptions) addIngressFlags(cmd *cobra.Command) {
 func (o *InitOptions) checkOptions() error {
 	if o.Flags.Helm3 {
 		o.Flags.SkipTiller = true
+		o.Flags.NoTiller = true
 	}
 
 	if !o.Flags.SkipTiller {
@@ -453,6 +455,15 @@ func (o *InitOptions) initIngress() error {
 	if isOpenShiftProvider(o.Flags.Provider) {
 		log.Info("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
+	}
+
+	if o.Flags.Provider == cloud.ALIBABA {
+		if o.Flags.IngressDeployment == defaultIngressServiceName {
+			o.Flags.IngressDeployment = "nginx-ingress-controller"
+		}
+		if o.Flags.IngressService == defaultIngressServiceName {
+			o.Flags.IngressService = "nginx-ingress-lb"
+		}
 	}
 
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	jxutil "github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -15,36 +14,42 @@ const (
 )
 
 // InstallGenAPIDocs installs the gen-apidocs tool from the kubernetes-incubator/reference-docs repository.
-// Returns the base directory of reference-docs within the GOPATH.
-func InstallGenAPIDocs() (string, error) {
-	util.AppLogger().Infof("installing %s via 'go get'", genAPIDocsBin)
-	err := util.GoGet(genAPIDocsBin, "", false)
+func InstallGenAPIDocs(version string, gopath string) error {
+	util.AppLogger().Infof("installing %s in version %s via 'go get'", genAPIDocsBin, version)
+	err := util.GoGet(genAPIDocsBin, version, gopath, true, false)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return filepath.Join(util.GoPathSrc(), genAPIDocsRepo), nil
+	return nil
+}
+
+// DetermineSourceLocation determines the source location for the installed kubernetes-incubator/reference-docs/
+// The location is based on GOPATH/pkd/mod and the current version.
+func DetermineSourceLocation(moduleDir string, gopath string) (string, error) {
+	moduleDir, err := util.GetModuleDir(moduleDir, genAPIDocsRepo, gopath)
+	if err != nil {
+		return "", errors.Wrapf(err, "Unable to determine source directory for %s", genAPIDocsRepo)
+	}
+	return moduleDir, nil
 }
 
 // GenerateAPIDocs runs the apidocs-gen tool against configDirectory which includes the openapi-spec dir,
 // the config.yaml file, static content and the static_includes
-func GenerateAPIDocs(configDir string) error {
+func GenerateAPIDocs(configDir string, gopath string) error {
 	includesDir := filepath.Join(configDir, "includes")
-	err := jxutil.DeleteDirContents(includesDir)
+	err := util.DeleteDirContents(includesDir)
 	if err != nil {
 		return errors.Wrapf(err, "deleting contents of %s", includesDir)
 	}
 	buildDir := filepath.Join(configDir, "build")
-	err = jxutil.DeleteDirContents(buildDir)
+	err = util.DeleteDirContents(buildDir)
 	if err != nil {
 		return errors.Wrapf(err, "deleting contents of %s", buildDir)
 	}
-	if err != nil {
-		return errors.Wrapf(err, "getting codegen dir")
-	}
-	cmd := jxutil.Command{
+	cmd := util.Command{
 		Dir:  configDir,
-		Name: "gen-apidocs",
+		Name: filepath.Join(util.GoPathBin(gopath), "gen-apidocs"),
 		Args: []string{
 			"--config-dir",
 			configDir,
@@ -67,15 +72,15 @@ func AssembleAPIDocsStatic(referenceDocsRepo string, outputDir string) error {
 	srcDir := filepath.Join(referenceDocsRepo, "gen-apidocs", "generators", "static")
 	outDir := filepath.Join(outputDir, "static")
 	util.AppLogger().Infof("copying static files from %s to %s\n", srcDir, outDir)
-	err := jxutil.CopyDirPreserve(srcDir, outDir)
+	err := util.CopyDirPreserve(srcDir, outDir)
 	if err != nil {
 		return errors.Wrapf(err, "copying %s to %s", srcDir, outDir)
 	}
-	err = jxutil.DownloadFile(filepath.Join(outDir, bootstrapJsFileName), bootstrapJsUrl)
+	err = util.DownloadFile(filepath.Join(outDir, bootstrapJsFileName), bootstrapJsUrl)
 	if err != nil {
 		return err
 	}
-	err = jxutil.DownloadFile(filepath.Join(outDir, jqueryFileName), jqueryUrl)
+	err = util.DownloadFile(filepath.Join(outDir, jqueryFileName), jqueryUrl)
 	if err != nil {
 		return err
 	}
@@ -85,7 +90,7 @@ func AssembleAPIDocsStatic(referenceDocsRepo string, outputDir string) error {
 // AssembleAPIDocs copies the generated html files and the static files from srcDir into outputDir
 func AssembleAPIDocs(srcDir string, outputDir string) error {
 	// Clean the dir
-	err := jxutil.DeleteDirContents(outputDir)
+	err := util.DeleteDirContents(outputDir)
 	if err != nil {
 		return errors.Wrapf(err, "deleting contents of %s", outputDir)
 	}
@@ -126,7 +131,7 @@ func copyStaticFiles(srcDir string, outputDir string, resources []string) error 
 	for _, resource := range resources {
 		srcPath := filepath.Join(srcDir, resource)
 		dstPath := filepath.Join(outputDir, resource)
-		err := jxutil.CopyFile(srcPath, dstPath)
+		err := util.CopyFile(srcPath, dstPath)
 		if err != nil {
 			return errors.Wrapf(err, "copying %s to %s", srcPath, dstPath)
 		}

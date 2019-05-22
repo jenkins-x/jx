@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -156,7 +157,7 @@ func NewCmdImport(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
@@ -658,7 +659,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
-	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer.URL == options.PipelineServer {
+	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer != nil && options.GitServer.URL == options.PipelineServer {
 		// Make the invitation
 		err := options.GitProvider.AddCollaborator(options.PipelineUserName, details.Organisation, details.RepoName)
 		if err != nil {
@@ -900,9 +901,16 @@ func (options *ImportOptions) doImport() error {
 		jenkinsfile = defaultJenkinsfileName
 	}
 
-	err = options.ensureDockerRepositoryExists()
+	dockerfileExists, err := util.FileExists("Dockerfile")
 	if err != nil {
 		return err
+	}
+
+	if dockerfileExists {
+		err = options.ensureDockerRepositoryExists()
+		if err != nil {
+			return err
+		}
 	}
 
 	isProw, err := options.IsProw()
@@ -989,7 +997,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		dockerRegistry := cm.Data["docker.registry"]
 		if dockerRegistry != "" {
 			if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-				return amazon.LazyCreateRegistry(kubeClient, ns, region, dockerRegistry, orgName, appName)
+				return amazon.LazyCreateRegistry(kubeClient, ns, region, dockerRegistry, options.getDockerRegistryOrg(), appName)
 			}
 		}
 	}

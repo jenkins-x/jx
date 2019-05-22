@@ -24,11 +24,21 @@ const (
 
 	// healthReadyTimeout define the maximum duration to wait for vault to become initialized and unsealed
 	healthhRetyTimeout = 2 * time.Minute
+
 	// healthInitialRetryDelay define the initial delay before starting the retries
 	healthInitialRetryDelay = 10 * time.Second
 
 	// authRetryTimeout define the maximum duration to wait for vault to authenticate
 	authRetryTimeout = 1 * time.Minute
+
+	// kvEngineConfigPath config path for KV secrets engine V2
+	kvEngineConfigPath = "secret/config"
+
+	// kvEngineInitialRetyDelay define the initial delay before checking the kv engine configuration
+	kvEngineInitialRetyDelay = 1 * time.Second
+
+	// kvEngineRetryTimeout define the maximum duration to wait for KV engine to be properly configured
+	kvEngineRetryTimeout = 1 * time.Minute
 )
 
 // OptionsInterface is an interface to allow passing around of a CommonOptions object without dependencies on the whole of the cmd package
@@ -91,6 +101,8 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 	if err != nil {
 		return nil, errors.Wrap(err, "crating vault client")
 	}
+
+	// Wait for vault to be ready
 	err = waitForVault(vaultClient, healthInitialRetryDelay, healthhRetyTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "wait for vault to be initialized and unsealed")
@@ -100,6 +112,13 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 		return nil, errors.Wrapf(err, "getting Vault authentication token")
 	}
 	vaultClient.SetToken(token)
+
+	// Wait for KV secret engine V2 to be configured
+	err = waitForKVEngine(vaultClient, kvEngineInitialRetyDelay, kvEngineRetryTimeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "wait for vault kv engine to be configured")
+	}
+
 	return vaultClient, nil
 }
 
@@ -141,6 +160,15 @@ func waitForVault(vaultClient *api.Client, initialDelay, timeout time.Duration) 
 			return fmt.Errorf("vault health: initialized=%t, sealed=%t", hr.Initialized, hr.Sealed)
 		}
 		return errors.New("failed to read vault health")
+	})
+}
+
+func waitForKVEngine(vaultClient *api.Client, initialDelay, timeout time.Duration) error {
+	return util.RetryWithInitialDelaySlower(initialDelay, timeout, func() error {
+		if _, err := vaultClient.Logical().Read(kvEngineConfigPath); err != nil {
+			return errors.Wrap(err, "checking KV engine config")
+		}
+		return nil
 	})
 }
 

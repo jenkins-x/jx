@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"sort"
 	"strings"
 
@@ -69,7 +70,7 @@ func NewCmdCreateAddonSSO(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -126,7 +127,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.AddHelmRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
+	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
 	if err != nil {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}

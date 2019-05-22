@@ -3,12 +3,12 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/rest"
 )
 
 // colorStatus returns a new function that returns status-colorized (cyan) strings for the
@@ -45,6 +45,25 @@ func init() {
 	} else {
 		SetFormatter(FormatLayoutText)
 	}
+}
+
+// SetLevel sets the logging level
+func SetLevel(s string) error {
+	level, err := logrus.ParseLevel(s)
+	if err != nil {
+		return errors.Errorf("Invalid log level '%s'", s)
+	}
+	logrus.SetLevel(level)
+	return nil
+}
+
+// GetLevels returns the list of valid log levels
+func GetLevels() []string {
+	var levels []string
+	for _, level := range logrus.AllLevels {
+		levels = append(levels, level.String())
+	}
+	return levels
 }
 
 // SetFormatter sets the logrus format to use either text or JSON formatting
@@ -196,11 +215,11 @@ func Failure(msg string) {
 	logrus.Info(colorError(msg))
 }
 
-// function to tell if we are running incluster
-func isInCluster() bool {
-	_, err := rest.InClusterConfig()
-	if err != nil {
-		return false
-	}
-	return true
+// CaptureOutput calls the specified function capturing and returning all logged messages.
+func CaptureOutput(f func()) string {
+	var buf bytes.Buffer
+	logrus.SetOutput(&buf)
+	f()
+	logrus.SetOutput(os.Stderr)
+	return buf.String()
 }

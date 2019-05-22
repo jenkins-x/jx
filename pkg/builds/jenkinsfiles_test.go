@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +29,7 @@ func TestJenkinsfileGenerator(t *testing.T) {
 			Pipelines: jenkinsfile.Pipelines{
 				PullRequest: &jenkinsfile.PipelineLifecycles{
 					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*jenkinsfile.PipelineStep{
+						Steps: []*syntax.Step{
 							{
 								Command: "mvn test",
 							},
@@ -37,7 +38,7 @@ func TestJenkinsfileGenerator(t *testing.T) {
 				},
 				Release: &jenkinsfile.PipelineLifecycles{
 					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*jenkinsfile.PipelineStep{
+						Steps: []*syntax.Step{
 							{
 								Command: "mvn test",
 							},

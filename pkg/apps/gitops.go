@@ -2,16 +2,23 @@ package apps
 
 import (
 	"fmt"
+
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
+	"io/ioutil"
 )
 
 // GitOpsOptions is the options used for Git Operations for apps
@@ -20,8 +27,8 @@ type GitOpsOptions struct {
 }
 
 // AddApp adds the app with version rooted in dir from the repository. An alias can be specified.
-func (o *GitOpsOptions) AddApp(app string, dir string, version string, repository string, alias string) error {
-	details := environments.PullRequestDetails{
+func (o *GitOpsOptions) AddApp(app string, dir string, version string, repository string, alias string, autoMerge bool) error {
+	details := gits.PullRequestDetails{
 		BranchName: "add-app-" + app + "-" + version,
 		Title:      fmt.Sprintf("Add %s %s", app, version),
 		Message:    fmt.Sprintf("Add app %s %s", app, version),
@@ -35,7 +42,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		GitProvider: o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "")
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", autoMerge)
 
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
@@ -49,9 +56,15 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 // If one app is being upgraded an alias can be specified.
 func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string, username string, password string,
 	alias string, interrogateChartFunc func(dir string, existing map[string]interface{}) (*ChartDetails,
-		error)) error {
+		error), autoMerge bool) error {
 	all := true
-	details := environments.PullRequestDetails{}
+	details := gits.PullRequestDetails{}
+
+	// use a random string in the branch name to ensure we use a unique git branch and fail to push
+	rand, err := util.RandStringBytesMaskImprSrc(5)
+	if err != nil {
+		return errors.Wrapf(err, "failed to generate a random string")
+	}
 
 	if app != "" {
 		all = false
@@ -59,9 +72,9 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 		if versionBranchName == "" {
 			versionBranchName = "latest"
 		}
-		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s", app, versionBranchName)
+		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s-%s", app, versionBranchName, rand)
 	} else {
-		details.BranchName = fmt.Sprintf("upgrade-all-apps")
+		details.BranchName = fmt.Sprintf("upgrade-all-apps-%s", rand)
 		details.Title = fmt.Sprintf("Upgrade all apps")
 		details.Message = fmt.Sprintf("Upgrade all apps:\n")
 	}
@@ -88,7 +101,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
 		GitProvider: o.GitProvider,
 	}
-	_, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app)
+	_, err = options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app, autoMerge)
 	if err != nil {
 		return err
 	}
@@ -96,10 +109,10 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 }
 
 // DeleteApp deletes the app with alias
-func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
+func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) error {
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string, details *environments.PullRequestDetails) error {
+		templates map[string]string, dir string, details *gits.PullRequestDetails) error {
 		// See if the app already exists in requirements
 		found := false
 		for i, d := range requirements.Dependencies {
@@ -128,7 +141,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		}
 		return nil
 	}
-	details := environments.PullRequestDetails{
+	details := gits.PullRequestDetails{
 		BranchName: "delete-app-" + app,
 		Title:      fmt.Sprintf("Delete %s", app),
 		Message:    fmt.Sprintf("Delete app %s", app),
@@ -141,10 +154,74 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		GitProvider:   o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "")
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", autoMerge)
 	if err != nil {
 		return err
 	}
 	log.Infof("Delete app via Pull Request %s\n", info.PullRequest.URL)
 	return nil
+}
+
+// GetApps retrieves all the apps information for the given appNames from the repository and / or the CRD API
+func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string) (*v1.AppList, error)) (*v1.AppList, error) {
+
+	options := environments.EnvironmentPullRequestOptions{
+		ConfigGitFn:   o.ConfigureGitFn,
+		Gitter:        o.Gitter,
+		ModifyChartFn: nil,
+		GitProvider:   o.GitProvider,
+	}
+	dir, _, _, err := gits.ForkAndPullPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, options.ConfigGitFn)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't pull the environment repository from %s", o.DevEnv.Name)
+	}
+
+	envDir := filepath.Join(dir, helm.DefaultEnvironmentChartDir)
+	if err != nil {
+		return nil, err
+	}
+	exists, err := util.DirExists(envDir)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exists {
+		envDir = dir
+	}
+
+	requirementsFile, err := ioutil.ReadFile(filepath.Join(envDir, helm.RequirementsFileName))
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't read the environment's requirements.yaml file")
+	}
+	reqs := helm.Requirements{}
+	err = yaml.Unmarshal(requirementsFile, &reqs)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't unmarshal the environment's requirements.yaml file")
+	}
+
+	appsList := v1.AppList{}
+	for _, d := range reqs.Dependencies {
+		if appNames[d.Name] == true || len(appNames) == 0 {
+			//Make sure we ignore the jenkins-x-platform requirement
+			if d.Name != "jenkins-x-platform" {
+				resourcesInCRD, _ := expandFn([]string{d.Name})
+				if len(resourcesInCRD.Items) != 0 {
+					appsList.Items = append(appsList.Items, resourcesInCRD.Items...)
+				} else {
+					appPath := filepath.Join(envDir, d.Name, "templates", "app.yaml")
+					appFile, err := ioutil.ReadFile(appPath)
+					if err != nil {
+						return nil, errors.Wrapf(err, "there was a problem reading the app.yaml file of %s", d.Name)
+					}
+					app := v1.App{}
+					err = yaml.Unmarshal(appFile, &app)
+					if err != nil {
+						return nil, errors.Wrapf(err, "there was a problem unmarshalling the app.yaml file of %s", d.Name)
+					}
+					appsList.Items = append(appsList.Items, app)
+				}
+			}
+		}
+	}
+	return &appsList, nil
 }

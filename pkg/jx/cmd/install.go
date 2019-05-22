@@ -3,12 +3,18 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -18,7 +24,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -43,8 +49,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -117,6 +123,8 @@ type InstallFlags struct {
 	NoGitOpsVault               bool
 	NextGeneration              bool
 	StaticJenkins               bool
+	LongTermStorage             bool
+	LongTermStorageBucketName   string
 }
 
 // Secrets struct for secrets
@@ -218,6 +226,7 @@ This repository contains the source code for the Jenkins X Development Environme
   }
 }
 `
+	longTermStorageFlagName = "long-term-storage"
 )
 
 var (
@@ -264,7 +273,7 @@ func NewCmdInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -356,6 +365,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
+	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
+	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, "lts-bucket", "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
 
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -422,6 +433,11 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 
+	// If we're using external-dns then remove the namespace subdomain from the URLTemplate
+	if flags.ExternalDNS {
+		flags.ExposeControllerURLTemplate = "{{.Service}}-{{.Namespace}}.{{.Domain}}"
+	}
+
 	return nil
 }
 
@@ -442,6 +458,11 @@ func (options *InstallOptions) Run() error {
 	err := options.checkFlags()
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
+	}
+
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
 	configStore := configio.NewFileStore()
@@ -519,6 +540,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
 	}
 
+	err = options.configureLongTermStorageBucket()
+	if err != nil {
+		return errors.Wrap(err, "configuring Long Term Storage")
+	}
+
 	err = options.createSystemVault(client, ns, ic)
 	if err != nil {
 		return errors.Wrap(err, "creating the system vault")
@@ -547,11 +573,6 @@ func (options *InstallOptions) Run() error {
 	cloudEnvDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
-	}
-
-	err = options.selectJenkinsInstallation()
-	if err != nil {
-		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
 	err = options.configureKaniko()
@@ -585,7 +606,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring Prow in team settings")
 	}
 
-	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir)
+	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir, valuesFiles)
 	if err != nil {
 		return errors.Wrap(err, "configuring and installing Prow")
 	}
@@ -1000,15 +1021,15 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	return nil
 }
 
-func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsDir string, gitOpsEnvDir string) error {
+func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsDir string, gitOpsEnvDir string, valuesFiles []string) error {
 	options.SetCurrentNamespace(namespace)
 	if options.Flags.Prow {
 		_, pipelineUser, err := options.GetPipelineGitAuth()
-		if err != nil {
+		if err != nil || pipelineUser == nil {
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
+		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username, valuesFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing Prow")
 		}
@@ -1055,7 +1076,7 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 }
 
 func (options *InstallOptions) configureHelmRepo() error {
-	err := options.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, "jenkins-x", "", "")
+	_, err := options.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, "jenkins-x", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
 	}
@@ -1527,7 +1548,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 	if options.Flags.GitOpsMode {
 		var err error
 		if options.Flags.Dir == "" {
-			options.Flags.Dir, err = os.Getwd()
+			options.Flags.Dir, err = util.ConfigDir()
 			if err != nil {
 				return "", "", err
 			}
@@ -1698,7 +1719,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 
 			err := envApplyOptions.Run()
 			if err != nil {
-				return errors.Wrap(err, "appyting the dev environment configuration")
+				return errors.Wrap(err, "applying the dev environment configuration")
 			}
 		}
 	}
@@ -1748,7 +1769,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "registering environment %q", env.GetName()))
 			}
-			log.Infof("Registered environment %q\n", util.ColorInfo(env.GetName()))
+			log.Infof("Registered environment %s\n", util.ColorInfo(env.GetName()))
 		}
 		return util.CombineErrors(errs...)
 	}
@@ -1856,7 +1877,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
 	case cloud.IKS:
-		err := options.AddHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
+		_, err := options.AddHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add the IBM helm repo")
 		}
@@ -2263,6 +2284,112 @@ func (options *InstallOptions) configureBuildPackMode() error {
 	return ebp.Run()
 }
 
+func (options *InstallOptions) configureLongTermStorageBucket() error {
+
+	if options.IsFlagExplicitlySet(longTermStorageFlagName) && !options.Flags.LongTermStorage {
+		return nil
+	}
+
+	if !options.BatchMode && !options.Flags.LongTermStorage {
+		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+		confirm := &survey.Confirm{
+			Message: fmt.Sprintf("Would you like to enable Long Term Storage?"+
+				" A bucket for provider %s will be created", options.Flags.Provider),
+			Default: true,
+		}
+
+		err := survey.AskOne(confirm, &options.Flags.LongTermStorage, nil, surveyOpts)
+		if err != nil {
+			return errors.Wrap(err, "asking to enable Long Term Storage")
+		}
+	}
+
+	if options.Flags.LongTermStorage {
+
+		var bucketURL string
+		switch strings.ToUpper(options.Flags.Provider) {
+		case "GKE":
+			err := options.ensureGKEInstallValuesAreFilled()
+			if err != nil {
+				return errors.Wrap(err, "filling install values with cluster information")
+			}
+			bucketURL, err = gkeStorage.EnableLongTermStorage(options.installValues,
+				options.Flags.LongTermStorageBucketName)
+			if err != nil {
+				return errors.Wrap(err, "enabling long term storage on GKE")
+			}
+			break
+		default:
+			return errors.Errorf("long term storage is not yet supported for provider %s", options.Flags.Provider)
+		}
+		return options.assignBucketToTeamStorage(bucketURL)
+	}
+	return nil
+}
+
+func (options *InstallOptions) assignBucketToTeamStorage(bucketURL string) error {
+	//Enable storage of logs into the bucketURL
+	eso := EditStorageOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: options.CommonOptions,
+		},
+		StorageLocation: v1.StorageLocation{
+			Classifier: "default",
+			BucketURL:  bucketURL,
+		},
+	}
+	infoBucketURL := util.ColorInfo(bucketURL)
+	log.Infof("Enabling default storage for current team in the bucket %s", infoBucketURL)
+	err := eso.Run()
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem executing `jx edit -c default --bucket-url=%s",
+			infoBucketURL)
+	}
+
+	eso.StorageLocation.Classifier = "logs"
+	log.Infof("Enabling logs storage for current team in the bucket %s", infoBucketURL)
+	//Only GCS seems to be supported atm
+	err = eso.Run()
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem executing `jx edit -c logs --bucket-url=%s",
+			infoBucketURL)
+	}
+
+	return nil
+}
+
+func (options *InstallOptions) ensureGKEInstallValuesAreFilled() error {
+	if options.installValues == nil {
+		options.installValues = make(map[string]string)
+	}
+
+	if options.installValues[kube.ProjectID] == "" {
+		currentProjectID, err := gke.GetCurrentProject()
+		if err != nil {
+			return errors.Wrap(err, "obtaining the current project from GKE context")
+		}
+		options.installValues[kube.ProjectID] = currentProjectID
+	}
+
+	if options.installValues[kube.Zone] == "" {
+		gcpCurrentZone, err := options.GetGoogleZone(options.installValues[kube.ProjectID])
+		if err != nil {
+			return errors.Wrap(err, "asking for the zone to create the bucket into")
+		}
+		options.installValues[kube.Zone] = gcpCurrentZone
+	}
+
+	if options.installValues[kube.ClusterName] == "" {
+		clusterName, err := cluster.Name(options.Kube())
+		if err != nil {
+			return errors.Wrap(err, "obtaining the current cluster name")
+		}
+		options.installValues[kube.ClusterName] = clusterName
+	}
+
+	return nil
+}
+
 func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
@@ -2418,21 +2545,8 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			options.CreateEnvOptions.GitOpsMode = true
 			options.CreateEnvOptions.ModifyDevEnvironmentFn = options.ModifyDevEnvironmentFn
 			options.CreateEnvOptions.ModifyEnvironmentFn = options.ModifyEnvironmentFn
-		} else {
-			createEnvironments = false
-
-			jxClient, _, err := options.JXClient()
-			if err != nil {
-				return errors.Wrap(err, "failed to create the jx client")
-			}
-
-			// lets only recreate the environments if its the first time we run this
-			_, envNames, err := kube.GetEnvironments(jxClient, namespace)
-			if err != nil || len(envNames) <= 1 {
-				createEnvironments = true
-			}
-
 		}
+
 		if createEnvironments {
 			log.Info("Creating default staging and production environments\n")
 			_, devNamespace, err := options.KubeClientAndDevNamespace()
@@ -2444,6 +2558,8 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 				return errors.Wrap(err, "building the Git repository options for environments")
 			}
 			options.CreateEnvOptions.GitRepositoryOptions = *gitRepoOptions
+			// lets not fail if environments already exist
+			options.CreateEnvOptions.Update = true
 
 			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
 			options.CreateEnvOptions.Prow = options.Flags.Prow
@@ -2963,17 +3079,25 @@ func (options *InstallOptions) configureTeamSettings() error {
 			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
 			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
 		}
-		if initOpts.Flags.NoTiller {
+
+		if initOpts.Flags.Helm3 {
+			env.Spec.TeamSettings.HelmTemplate = false
+			env.Spec.TeamSettings.HelmBinary = "helm3"
+			log.Info("Enabling helm3 / non template mode in the TeamSettings\n")
+		} else if initOpts.Flags.NoTiller {
 			env.Spec.TeamSettings.HelmTemplate = true
 			log.Info("Enabling helm template mode in the TeamSettings\n")
 		}
+
 		if options.Flags.DockerRegistryOrg != "" {
 			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
 			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
 		}
+
 		if options.Flags.VersionsRepository != "" {
 			env.Spec.TeamSettings.VersionStreamURL = options.Flags.VersionsRepository
 		}
+
 		if options.Flags.VersionsGitRef != "" {
 			env.Spec.TeamSettings.VersionStreamRef = options.Flags.VersionsGitRef
 		}

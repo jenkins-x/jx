@@ -8,7 +8,9 @@ pipelines:
   pullRequest:
     build:
       steps:
-      - sh: skaffold version
+      - command: skaffold
+        args:
+          - version
         name: skaffold-version
       - sh: export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml
         name: container-build
@@ -28,7 +30,9 @@ pipelines:
   release:
     build:
       steps:
-      - sh: skaffold version
+      - command: skaffold
+        args:
+          - version
         name: skaffold-version
       - sh: export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml
         name: container-build

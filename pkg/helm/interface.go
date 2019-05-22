@@ -11,7 +11,7 @@ type Helmer interface {
 	RemoveRepo(repo string) error
 	ListRepos() (map[string]string, error)
 	UpdateRepo() error
-	IsRepoMissing(URL string) (bool, error)
+	IsRepoMissing(URL string) (bool, string, error)
 	RemoveRequirementsLock() error
 	BuildDependency() error
 	InstallChart(chart string, releaseName string, ns string, version string, timeout int,

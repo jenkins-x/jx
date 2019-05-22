@@ -2,19 +2,19 @@ package generator
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
-	jxutil "github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/pkg/errors"
 )
 
 func defaultGenerate(generator string, name string, groupsWithVersions []string, inputPackage string,
-	outputPackage string, outputBase string, boilerplateFile string, args ...string) error {
+	outputPackage string, outputBase string, boilerplateFile string, gopath string, args ...string) error {
 	util.AppLogger().Infof("generating %s structs for %s at %s\n", name, groupsWithVersions, outputPackage)
 
-	generateCommand := jxutil.Command{
-		Name: filepath.Join(util.GoPathBin(), generator),
+	generateCommand := util.Command{
+		Name: filepath.Join(util.GoPathBin(gopath), generator),
 		Args: []string{
 			"--output-base",
 			outputBase,
@@ -52,7 +52,7 @@ func defaultGenerate(generator string, name string, groupsWithVersions []string,
 		generateCommand.Args = append(generateCommand.Args, arg)
 	}
 
-	util.AppLogger().Debugf("running %s\n", generateCommand.String())
+	util.AppLogger().Infof("running %s\n", generateCommand.String())
 	out, err := generateCommand.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "running %s, output %s", generateCommand.String(), out)

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -71,7 +72,7 @@ func NewCmdCompletion(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		ValidArgs: shells,
 	}
@@ -103,7 +104,7 @@ func (o *CompletionOptions) Run() error {
 
 	}
 	if len(args) > 1 {
-		return UsageError(cmd, "Too many arguments. Expected only the shell type.")
+		return helper.UsageError(cmd, "Too many arguments. Expected only the shell type.")
 	}
 	if ShellName == "" {
 		ShellName = args[0]
@@ -112,7 +113,7 @@ func (o *CompletionOptions) Run() error {
 	run, found := completion_shells[ShellName]
 
 	if !found {
-		return UsageError(cmd, "Unsupported shell type %q.", args[0])
+		return helper.UsageError(cmd, "Unsupported shell type %q.", args[0])
 	}
 
 	return run(o.Out, cmd.Parent())

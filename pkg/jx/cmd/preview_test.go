@@ -13,10 +13,7 @@ import (
 
 // Constants for some test data to be used.
 const (
-	application = "test-app"
-	releaseName = "test-app-release-name"
-	name        = "test-app-name"
-	namespace   = "jx"
+	namespace = "jx"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {
@@ -86,7 +83,7 @@ preview:
 		}
 
 		test.opts.CommonOptions = co
-		config, err := test.opts.GetPreviewValuesConfig(test.domain)
+		config, err := test.opts.GetPreviewValuesConfig(nil, test.domain)
 		if err != nil {
 			t.Errorf("[%d] got unexpected err: %v", i, err)
 			continue

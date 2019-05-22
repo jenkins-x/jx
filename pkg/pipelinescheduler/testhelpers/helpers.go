@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
-	"github.com/jenkins-x/jx/pkg/pipelinescheduler/prow"
 
 	"k8s.io/test-infra/prow/plugins"
 
@@ -21,15 +22,15 @@ import (
 	"github.com/pborman/uuid"
 )
 
-// CompleteScheduler returns a Scheduler completely filled with dummy data
-func CompleteScheduler() *pipelinescheduler.Scheduler {
-	return &pipelinescheduler.Scheduler{
+// CompleteScheduler returns a SchedulerSpec completely filled with dummy data
+func CompleteScheduler() *v1.SchedulerSpec {
+	return &v1.SchedulerSpec{
 		Policy: pointerToGlobalProtectionPolicy(),
-		Merger: &pipelinescheduler.Merger{
-			ContextPolicy: &pipelinescheduler.ContextPolicy{
-				OptionalContexts:          pointerToReplaceableSliceOfStrings(),
-				RequiredContexts:          pointerToReplaceableSliceOfStrings(),
-				RequiredIfPresentContexts: pointerToReplaceableSliceOfStrings(),
+		Merger: &v1.Merger{
+			ContextPolicy: &v1.ContextPolicy{
+				OptionalContexts:          PointerToReplaceableSliceOfStrings(),
+				RequiredContexts:          PointerToReplaceableSliceOfStrings(),
+				RequiredIfPresentContexts: PointerToReplaceableSliceOfStrings(),
 			},
 			MergeType:          pointerToUUID(),
 			TargetURL:          pointerToUUID(),
@@ -40,35 +41,35 @@ func CompleteScheduler() *pipelinescheduler.Scheduler {
 			StatusUpdatePeriod: pointerToRandomDuration(),
 			SyncPeriod:         pointerToRandomDuration(),
 		},
-		Presubmits: &pipelinescheduler.Presubmits{
-			Items: []*pipelinescheduler.Presubmit{
+		Presubmits: &v1.Presubmits{
+			Items: []*v1.Presubmit{
 				{
 					MergeType: pointerToUUID(),
 					Context:   pointerToUUID(),
 					Report:    pointerToTrue(),
 					AlwaysRun: pointerToTrue(),
 					Optional:  pointerToTrue(),
-					ContextPolicy: &pipelinescheduler.RepoContextPolicy{
+					ContextPolicy: &v1.RepoContextPolicy{
 						ContextPolicy: pointerToContextPolicy(),
-						Branches: &pipelinescheduler.ReplaceableMapOfStringContextPolicy{
-							Items: map[string]*pipelinescheduler.ContextPolicy{
+						Branches: &v1.ReplaceableMapOfStringContextPolicy{
+							Items: map[string]*v1.ContextPolicy{
 								uuid.New(): pointerToContextPolicy(),
 							},
 						},
 					},
-					Query: &pipelinescheduler.Query{
-						Labels:                 pointerToReplaceableSliceOfStrings(),
-						ExcludedBranches:       pointerToReplaceableSliceOfStrings(),
-						IncludedBranches:       pointerToReplaceableSliceOfStrings(),
-						MissingLabels:          pointerToReplaceableSliceOfStrings(),
+					Query: &v1.Query{
+						Labels:                 PointerToReplaceableSliceOfStrings(),
+						ExcludedBranches:       PointerToReplaceableSliceOfStrings(),
+						IncludedBranches:       PointerToReplaceableSliceOfStrings(),
+						MissingLabels:          PointerToReplaceableSliceOfStrings(),
 						Milestone:              pointerToUUID(),
 						ReviewApprovedRequired: pointerToTrue(),
 					},
 					Brancher:     pointerToBrancher(),
 					RerunCommand: pointerToUUID(),
 					Trigger:      pointerToUUID(),
-					Policy: &pipelinescheduler.ProtectionPolicies{
-						Items: map[string]*pipelinescheduler.ProtectionPolicy{
+					Policy: &v1.ProtectionPolicies{
+						Items: map[string]*v1.ProtectionPolicy{
 							uuid.New(): pointerToProtectionPolicy(),
 						},
 					},
@@ -77,8 +78,8 @@ func CompleteScheduler() *pipelinescheduler.Scheduler {
 				},
 			},
 		},
-		Postsubmits: &pipelinescheduler.Postsubmits{
-			Items: []*pipelinescheduler.Postsubmit{
+		Postsubmits: &v1.Postsubmits{
+			Items: []*v1.Postsubmit{
 				{
 					Report:              pointerToTrue(),
 					Context:             pointerToUUID(),
@@ -88,36 +89,36 @@ func CompleteScheduler() *pipelinescheduler.Scheduler {
 				},
 			},
 		},
-		Trigger: &pipelinescheduler.Trigger{
+		Trigger: &v1.Trigger{
 			IgnoreOkToTest: pointerToTrue(),
 			JoinOrgURL:     pointerToUUID(),
 			OnlyOrgMembers: pointerToTrue(),
 			TrustedOrg:     pointerToUUID(),
 		},
-		ScehdulerAgent: &pipelinescheduler.SchedulerAgent{
+		ScehdulerAgent: &v1.SchedulerAgent{
 			Agent: pointerToUUID(),
 		},
-		Approve: &pipelinescheduler.Approve{
+		Approve: &v1.Approve{
 			RequireSelfApproval: pointerToTrue(),
 			LgtmActsAsApprove:   pointerToTrue(),
 			IssueRequired:       pointerToTrue(),
 			IgnoreReviewState:   pointerToTrue(),
 		},
-		ExternalPlugins: &pipelinescheduler.ReplaceableSliceOfExternalPlugins{
-			Items: []*pipelinescheduler.ExternalPlugin{
+		ExternalPlugins: &v1.ReplaceableSliceOfExternalPlugins{
+			Items: []*v1.ExternalPlugin{
 				{
 					Name:     pointerToUUID(),
-					Events:   pointerToReplaceableSliceOfStrings(),
+					Events:   PointerToReplaceableSliceOfStrings(),
 					Endpoint: pointerToUUID(),
 				},
 			},
 		},
-		LGTM: &pipelinescheduler.Lgtm{
+		LGTM: &v1.Lgtm{
 			StoreTreeHash:    pointerToTrue(),
 			ReviewActsAsLgtm: pointerToTrue(),
 			StickyLgtmTeam:   pointerToUUID(),
 		},
-		Plugins: pointerToReplaceableSliceOfStrings(),
+		Plugins: PointerToReplaceableSliceOfStrings(),
 	}
 }
 
@@ -142,63 +143,65 @@ func pointerToRandomDuration() *time.Duration {
 	return &duration
 }
 
-func pointerToReplaceableSliceOfStrings() *pipelinescheduler.ReplaceableSliceOfStrings {
-	return &pipelinescheduler.ReplaceableSliceOfStrings{
+// PointerToReplaceableSliceOfStrings creaters a ReplaceableSliceOfStrings and returns its pointer
+func PointerToReplaceableSliceOfStrings() *v1.ReplaceableSliceOfStrings {
+	return &v1.ReplaceableSliceOfStrings{
 		Items: []string{
 			uuid.New(),
 		},
 	}
 }
 
-func pointerToReplaceableMapOfStringString() *pipelinescheduler.ReplaceableMapOfStringString {
-	return &pipelinescheduler.ReplaceableMapOfStringString{
+// PointerToReplaceableMapOfStringString returns a ReplaceableMapOfStringString pointer
+func PointerToReplaceableMapOfStringString() *v1.ReplaceableMapOfStringString {
+	return &v1.ReplaceableMapOfStringString{
 		Items: map[string]string{
 			uuid.New(): uuid.New(),
 		},
 	}
 }
 
-func pointerToContextPolicy() *pipelinescheduler.ContextPolicy {
-	return &pipelinescheduler.ContextPolicy{
+func pointerToContextPolicy() *v1.ContextPolicy {
+	return &v1.ContextPolicy{
 		SkipUnknownContexts:       pointerToTrue(),
 		FromBranchProtection:      pointerToTrue(),
-		RequiredIfPresentContexts: pointerToReplaceableSliceOfStrings(),
-		RequiredContexts:          pointerToReplaceableSliceOfStrings(),
-		OptionalContexts:          pointerToReplaceableSliceOfStrings(),
+		RequiredIfPresentContexts: PointerToReplaceableSliceOfStrings(),
+		RequiredContexts:          PointerToReplaceableSliceOfStrings(),
+		OptionalContexts:          PointerToReplaceableSliceOfStrings(),
 	}
 }
 
-func pointerToGlobalProtectionPolicy() *pipelinescheduler.GlobalProtectionPolicy {
-	return &pipelinescheduler.GlobalProtectionPolicy{
+func pointerToGlobalProtectionPolicy() *v1.GlobalProtectionPolicy {
+	return &v1.GlobalProtectionPolicy{
 		ProtectTested:    pointerToTrue(),
 		ProtectionPolicy: pointerToProtectionPolicy(),
 	}
 }
 
-func pointerToProtectionPolicy() *pipelinescheduler.ProtectionPolicy {
-	return &pipelinescheduler.ProtectionPolicy{
-		Restrictions: &pipelinescheduler.Restrictions{
-			Users: pointerToReplaceableSliceOfStrings(),
-			Teams: pointerToReplaceableSliceOfStrings(),
+func pointerToProtectionPolicy() *v1.ProtectionPolicy {
+	return &v1.ProtectionPolicy{
+		Restrictions: &v1.Restrictions{
+			Users: PointerToReplaceableSliceOfStrings(),
+			Teams: PointerToReplaceableSliceOfStrings(),
 		},
 		Admins: pointerToTrue(),
-		RequiredPullRequestReviews: &pipelinescheduler.ReviewPolicy{
-			DismissalRestrictions: &pipelinescheduler.Restrictions{
-				Users: pointerToReplaceableSliceOfStrings(),
-				Teams: pointerToReplaceableSliceOfStrings(),
+		RequiredPullRequestReviews: &v1.ReviewPolicy{
+			DismissalRestrictions: &v1.Restrictions{
+				Users: PointerToReplaceableSliceOfStrings(),
+				Teams: PointerToReplaceableSliceOfStrings(),
 			},
 		},
-		RequiredStatusChecks: &pipelinescheduler.BranchProtectionContextPolicy{
+		RequiredStatusChecks: &v1.BranchProtectionContextPolicy{
 			Strict:   pointerToTrue(),
-			Contexts: pointerToReplaceableSliceOfStrings(),
+			Contexts: PointerToReplaceableSliceOfStrings(),
 		},
 		Protect: pointerToTrue(),
 	}
 }
 
-func pointerToJobBase() *pipelinescheduler.JobBase {
-	return &pipelinescheduler.JobBase{
-		Labels:         pointerToReplaceableMapOfStringString(),
+func pointerToJobBase() *v1.JobBase {
+	return &v1.JobBase{
+		Labels:         PointerToReplaceableMapOfStringString(),
 		Namespace:      pointerToUUID(),
 		Cluster:        pointerToUUID(),
 		MaxConcurrency: pointerToRandomNumber(),
@@ -207,16 +210,16 @@ func pointerToJobBase() *pipelinescheduler.JobBase {
 	}
 }
 
-func pointerToRegexpChangeMatcher() *pipelinescheduler.RegexpChangeMatcher {
-	return &pipelinescheduler.RegexpChangeMatcher{
+func pointerToRegexpChangeMatcher() *v1.RegexpChangeMatcher {
+	return &v1.RegexpChangeMatcher{
 		RunIfChanged: pointerToUUID(),
 	}
 }
 
-func pointerToBrancher() *pipelinescheduler.Brancher {
-	return &pipelinescheduler.Brancher{
-		Branches:     pointerToReplaceableSliceOfStrings(),
-		SkipBranches: pointerToReplaceableSliceOfStrings(),
+func pointerToBrancher() *v1.Brancher {
+	return &v1.Brancher{
+		Branches:     PointerToReplaceableSliceOfStrings(),
+		SkipBranches: PointerToReplaceableSliceOfStrings(),
 	}
 }
 
@@ -251,11 +254,11 @@ func BuildAndValidateProwConfig(t *testing.T, baseDir string, expectedConfigFile
 
 	schedulerLeaves := make([]*pipelinescheduler.SchedulerLeaf, 0)
 	for _, sfs := range schedulerFiles {
-		schedulers := make([]*pipelinescheduler.Scheduler, 0)
+		schedulers := make([]*v1.SchedulerSpec, 0)
 		for _, f := range sfs.Filenames {
 			bytes, err := ioutil.ReadFile(filepath.Join(baseDir, f))
 			assert.NoError(t, err)
-			s := pipelinescheduler.Scheduler{}
+			s := v1.SchedulerSpec{}
 			err = yaml.Unmarshal(bytes, &s)
 			assert.NoError(t, err)
 			schedulers = append(schedulers, &s)
@@ -263,18 +266,22 @@ func BuildAndValidateProwConfig(t *testing.T, baseDir string, expectedConfigFile
 		s, err := pipelinescheduler.Build(schedulers)
 		assert.NoError(t, err)
 		schedulerLeaves = append(schedulerLeaves, &pipelinescheduler.SchedulerLeaf{
-			Repo:      sfs.Repo,
-			Org:       sfs.Org,
-			Scheduler: s,
+			Repo:          sfs.Repo,
+			Org:           sfs.Org,
+			SchedulerSpec: s,
 		})
 	}
 
-	cfg, plugs, err := prow.Build(schedulerLeaves)
+	cfg, plugs, err := pipelinescheduler.BuildProwConfig(schedulerLeaves)
 	assert.NoError(t, err)
 	if expectedConfigFilename != "" {
 		assert.Equal(t, &expectedConfig, cfg)
 	}
 	if expectedPluginsFilename != "" {
-		assert.Equal(t, &expectedPlugins, plugs)
+		expected, err := yaml.Marshal(&expectedPlugins)
+		assert.NoError(t, err)
+		actual, err := yaml.Marshal(plugs)
+		assert.NoError(t, err)
+		assert.Equal(t, string(expected), string(actual))
 	}
 }

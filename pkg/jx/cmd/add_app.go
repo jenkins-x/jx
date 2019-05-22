@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/jenkins-x/jx/pkg/apps"
-
-	"github.com/jenkins-x/jx/pkg/environments"
 
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 
@@ -35,7 +36,7 @@ type AddAppOptions struct {
 	Prefixes []string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback environments.ConfigureGitFn
+	ConfigureGitCallback gits.ConfigureGitFn
 
 	Namespace   string
 	Version     string
@@ -43,6 +44,7 @@ type AddAppOptions struct {
 	SetValues   []string
 	ValuesFiles []string
 	HelmUpdate  bool
+	AutoMerge   bool
 }
 
 const (
@@ -81,7 +83,7 @@ func NewCmdAddApp(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -110,7 +112,7 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string) {
 		"can be local files or URLs (available when NOT using GitOps for your dev environment)")
 	cmd.Flags().StringArrayVarP(&o.SetValues, optionSet, "s", []string{},
 		"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2) (available when NOT using GitOps for your dev environment)")
-
+	cmd.Flags().BoolVarP(&o.AutoMerge, "auto-merge", "", false, "Automatically merge GitOps pull requests that pass CI")
 }
 
 // Run implements this command
@@ -142,6 +144,7 @@ func (o *AddAppOptions) Run() error {
 		Out:       o.Out,
 		GitOps:    o.GitOps,
 		BatchMode: o.BatchMode,
+		AutoMerge: o.AutoMerge,
 
 		Helmer:         o.Helm(),
 		Namespace:      o.Namespace,

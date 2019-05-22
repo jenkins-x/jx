@@ -3,7 +3,7 @@ package prow
 import (
 	"encoding/json"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	//"encoding/json"
@@ -55,6 +55,7 @@ type Options struct {
 	EnvironmentNamespace string
 	Context              string
 	Agent                string
+	IgnoreBranch         bool
 }
 
 type ExternalPlugins struct {
@@ -62,7 +63,6 @@ type ExternalPlugins struct {
 }
 
 func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind, draftPack, environmentNamespace string, context string, teamSettings *v1.TeamSettings) error {
-
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
@@ -80,13 +80,13 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowco
 		Context:              context,
 		Agent:                agent,
 	}
-
-	err := o.AddProwConfig()
-	if err != nil {
-		return err
+	if err := o.AddProwConfig(); err != nil {
+		return errors.Wrap(err, "adding prow config")
 	}
-
-	return o.AddProwPlugins()
+	if err := o.AddProwPlugins(); err != nil {
+		return errors.Wrap(err, "adding prow plugins")
+	}
+	return nil
 }
 
 func remove(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind) error {
@@ -99,7 +99,6 @@ func remove(kubeClient kubernetes.Interface, repos []string, ns string, kind pro
 		NS:         ns,
 		Kind:       kind,
 	}
-
 	return o.RemoveProwConfig()
 }
 
@@ -135,11 +134,13 @@ func AddExternalPlugins(kubeClient kubernetes.Interface, repos []string, ns stri
 		KubeClient: kubeClient,
 		NS:         ns,
 	}
-	err := o.AddExternalProwPlugins(add)
-	if err != nil {
-		return err
+	if err := o.AddExternalProwPlugins(add); err != nil {
+		return errors.Wrap(err, "add external prow plugins")
 	}
-	return o.AddProwPlugins()
+	if err := o.AddProwPlugins(); err != nil {
+		return errors.Wrap(err, "add prow plugins")
+	}
+	return nil
 }
 
 // create Git repo?
@@ -265,7 +266,7 @@ func (o *Options) AddProwConfig() error {
 
 	prowConfig, create, err := o.GetProwConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting prow config")
 	}
 
 	prowConfig.PodNamespace = o.NS
@@ -274,11 +275,11 @@ func (o *Options) AddProwConfig() error {
 	for _, r := range o.Repos {
 		err = prowconfig.AddRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "adding repo %q to tide config", r)
 		}
 		err = prowconfig.AddRepoToBranchProtection(&prowConfig.BranchProtection, r, o.Context, o.Kind)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "adding repo %q to branch protection", r)
 		}
 	}
 
@@ -317,7 +318,10 @@ func (o *Options) AddProwConfig() error {
 		}
 	}
 
-	return o.saveProwConfig(prowConfig, create)
+	if err := o.saveProwConfig(prowConfig, create); err != nil {
+		return errors.Wrap(err, "saving prow config")
+	}
+	return nil
 }
 
 // RemoveProwConfig deletes a config (normally a repository integration) from Prow
@@ -344,13 +348,16 @@ func (o *Options) RemoveProwConfig() error {
 		delete(prowConfig.Postsubmits, repo)
 	}
 
-	return o.saveProwConfig(prowConfig, created)
+	if err := o.saveProwConfig(prowConfig, created); err != nil {
+		return errors.Wrap(err, "saving prow config")
+	}
+	return nil
 }
 
 func (o *Options) saveProwConfig(prowConfig *config.Config, create bool) error {
 	configYAML, err := yaml.Marshal(prowConfig)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "marshaling the prow config")
 	}
 
 	data := make(map[string]string)
@@ -365,8 +372,10 @@ func (o *Options) saveProwConfig(prowConfig *config.Config, create bool) error {
 	if create {
 		// replace with git repository version of a configmap
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+		err = errors.Wrapf(err, "creating the config map %q", ProwConfigMapName)
 	} else {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
+		err = errors.Wrapf(err, "updating the config map %q", ProwConfigMapName)
 	}
 	return err
 }
@@ -384,7 +393,7 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 		// calculate the tide url from the ingress config
 		ingressConfigMap, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(kube.IngressConfigConfigmap, metav1.GetOptions{})
 		if err != nil {
-			return prowConfig, create, err
+			return prowConfig, create, errors.Wrapf(err, "get %q config map from namespace %q", kube.IngressConfigConfigmap, o.NS)
 		}
 		domain := ingressConfigMap.Data["domain"]
 		tls := ingressConfigMap.Data["tls"]
@@ -400,7 +409,7 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 		create = false
 		err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
 		if err != nil {
-			return prowConfig, create, err
+			return prowConfig, create, errors.Wrap(err, "unmarshaling prow config")
 		}
 		if len(prowConfig.Presubmits) == 0 {
 			prowConfig.Presubmits = make(map[string][]config.Presubmit)
@@ -425,11 +434,11 @@ func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configur
 		create = false
 		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), pluginConfig)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unmarshaling plugins")
 		}
 		err = yaml.Unmarshal([]byte(cm.Data[ProwExternalPluginsFilename]), externalPlugins)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unmarshaling external plugins")
 		}
 	}
 
@@ -459,17 +468,17 @@ func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configur
 
 	err = closure(pluginConfig, externalPlugins)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "transforming the plugins and external plugins config")
 	}
 
 	pluginYAML, err := yaml.Marshal(pluginConfig)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "marshaling plugins config")
 	}
 
 	externalPluginsYAML, err := yaml.Marshal(externalPlugins)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "marshaling external plguins config")
 	}
 
 	data := make(map[string]string)
@@ -483,8 +492,10 @@ func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configur
 	}
 	if create {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+		err = errors.Wrapf(err, "createing the %q config map in namespace %q", ProwPluginsConfigMapName, o.NS)
 	} else {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
+		err = errors.Wrapf(err, "updating the %q config map in namespace %q", ProwPluginsConfigMapName, o.NS)
 	}
 	return err
 }
@@ -523,7 +534,10 @@ func (o *Options) AddProwPlugins() error {
 		}
 		return nil
 	}
-	return o.upsertPluginConfig(closure)
+	if err := o.upsertPluginConfig(closure); err != nil {
+		return errors.Wrap(err, "upserting the plugins config")
+	}
+	return nil
 }
 
 func (o *Options) AddExternalProwPlugins(adds []plugins.ExternalPlugin) error {
@@ -544,19 +558,22 @@ func (o *Options) AddExternalProwPlugins(adds []plugins.ExternalPlugin) error {
 		}
 		return nil
 	}
-	return o.upsertPluginConfig(closure)
+	if err := o.upsertPluginConfig(closure); err != nil {
+		return errors.Wrap(err, "upserting the external plugins config")
+	}
+	return nil
 }
 
 func (o *Options) GetReleaseJobs() ([]string, error) {
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting the release jobs from %q config map in namespace %q", ProwConfigMapName, o.NS)
 	}
 
 	prowConfig := &config.Config{}
 	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unmarshaling prow config")
 	}
 	var jobs []string
 
@@ -565,6 +582,9 @@ func (o *Options) GetReleaseJobs() ([]string, error) {
 			for _, b := range q.Branches {
 				repo = strings.Replace(repo, ":", "", -1)
 				jobName := fmt.Sprintf("%s/%s", repo, b)
+				if o.IgnoreBranch {
+					jobName = repo
+				}
 				jobs = append(jobs, jobName)
 			}
 		}
@@ -573,17 +593,16 @@ func (o *Options) GetReleaseJobs() ([]string, error) {
 }
 
 func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit, error) {
-
 	p := config.Postsubmit{}
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return p, err
+		return p, errors.Wrapf(err, "getting the presubmit jobs from %q config map in namespace %q", ProwConfigMapName, o.NS)
 	}
 
 	prowConfig := &config.Config{}
 	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
 	if err != nil {
-		return p, err
+		return p, errors.Wrap(err, "unmarshaling prow config")
 	}
 
 	key := fmt.Sprintf("%s/%s", org, repo)
@@ -603,11 +622,11 @@ func CreateProwJob(client kubernetes.Interface, ns string, j prowapi.ProwJob) (p
 	retJob := prowapi.ProwJob{}
 	body, err := json.Marshal(j)
 	if err != nil {
-		return retJob, err
+		return retJob, errors.Wrap(err, "marshalling the prow job")
 	}
 	resp, err := client.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/prow.k8s.io/v1/namespaces/%s/prowjobs", ns)).Body(body).DoRaw()
 	if err != nil {
-		return retJob, fmt.Errorf("failed to create prowjob %v: %s", err, string(resp))
+		return retJob, fmt.Errorf("creating prowjob %v: %s", err, string(resp))
 	}
 	return retJob, err
 }

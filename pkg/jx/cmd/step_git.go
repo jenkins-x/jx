@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/spf13/cobra"
 
 	"fmt"
@@ -33,12 +34,13 @@ func NewCmdStepGit(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 	cmd.AddCommand(NewCmdStepGitCredentials(commonOpts))
 	cmd.AddCommand(NewCmdStepGitEnvs(commonOpts))
 	cmd.AddCommand(NewCmdStepGitMerge(commonOpts))
+	cmd.AddCommand(NewCmdStepGitForkAndClone(commonOpts))
 	return cmd
 }
 

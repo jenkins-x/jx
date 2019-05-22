@@ -20,65 +20,47 @@ pipelineConfig:
                 value: /workspace/source
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy:80
-            steps:
-              - name: init-jx
-                image: jenkinsxio/jx:1.3.938
-                command: jx
-                args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
+            options:
+              containerOptions:
                 resources:
                   limits:
-                    cpu: 0.2
-                    memory: 128Mi
+                    cpu: 4
+                    memory: 6144Mi
                   requests:
-                    cpu: 0.1
-                    memory: 64Mi
+                    cpu: 3
+                    memory: 3072Mi
+                env:
+                - name: CODECOV_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: token
+                      name: codecov-token
+            steps:
+              - name: init-jx
+                image: jenkinsxio/jx:2.0.128
+                command: jx
+                args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
 
               - name: init-helm
                 image: alpine/helm:2.12.3
                 command: helm
                 args: ['init','--client-only']
-                resources:
-                  limits:
-                    cpu: 0.2
-                    memory: 128Mi
-                  requests:
-                    cpu: 0.1
-                    memory: 64Mi
 
-              - name: check
+              - name: build
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
-                args: ['check']
-                env:
-                  - name: GOPATH
-                    value: /workspace/go
-                  - name: HELM_HOME
-                    value: /builder/home/.helm
-                resources:
-                  limits:
-                    cpu: 4
-                    memory: 6144Mi
-                  requests:
-                    cpu: 3
-                    memory: 3072Mi
+                args: ['build']
 
-              - name: build-binary
+              - name: test-integration
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['test-slow-integration']
-                env:
-                  - name: GOPATH
-                    value: /workspace/go
-                  - name: HELM_HOME
-                    value: /builder/home/.helm
-                resources:
-                  limits:
-                    cpu: 4
-                    memory: 6144Mi
-                  requests:
-                    cpu: 3
-                    memory: 3072Mi
+
+              - name: codecov-upload
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args: ['codecov-upload']

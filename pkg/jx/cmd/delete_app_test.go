@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/petergtz/pegomock"
 
@@ -18,13 +19,16 @@ import (
 )
 
 func TestDeleteAppForGitOps(t *testing.T) {
-	t.Parallel()
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, name, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(nil, "")
+	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(name, nil, "jx-app")
 	assert.NoError(t, err)
 
 	commonOpts := *testOptions.CommonOptions
@@ -60,15 +64,15 @@ func TestDeleteAppForGitOps(t *testing.T) {
 }
 
 func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
-	// TODO re-enable once short names are supported
-	t.SkipNow()
-	t.Parallel()
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, name, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(nil, "jx-app-")
+	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(name, nil, "jx-app")
 	assert.NoError(t, err)
 	shortName := strings.TrimPrefix(name, "jx-app-")
 	// We also need to add the app CRD to Kubernetes -
@@ -107,7 +111,7 @@ func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
 
 func TestDeleteApp(t *testing.T) {
 
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	name, _, _, err := testOptions.AddApp(make(map[string]interface{}), "")
 	assert.NoError(t, err)
 	pegomock.RegisterMockTestingT(t)
@@ -133,7 +137,7 @@ func TestDeleteApp(t *testing.T) {
 
 func TestDeleteAppWithShortName(t *testing.T) {
 
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	name, _, _, err := testOptions.AddApp(make(map[string]interface{}), "")
 	assert.NoError(t, err)
 	shortName := strings.TrimPrefix(name, "jx-app-")

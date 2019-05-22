@@ -22,7 +22,9 @@ NAME := jx
 GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
-ROOT_PACKAGE := github.com/jenkins-x/jx
+REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
+ORG_REPO := jenkins-x/jx
+ROOT_PACKAGE := github.com/$(ORG_REPO)
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 
@@ -53,6 +55,49 @@ else
 TESTFLAGS := -p 8
 endif
 
+# Various codecov.io variables that are set from the CI envrionment if present, otherwise from locally computed values
+
+CODECOV_NAME := integration
+
+#ARGS is extra args added to the codecov uploader
+CODECOV_ARGS := "-n $(CODECOV_NAME)"
+
+
+ifdef ($(andd $(REPO_NAME), $(REPO_OWNER)),)
+CODECOV_SLUG := $(REPO_OWNER)/$(REPO_NAME)
+else
+CODECOV_SLUG := $(ORG_REPO)
+endif
+
+ifdef PULL_PULL_SHA
+CODECOV_SHA := $(PULL_PULL_SHA)
+else ifdef $(PULL_BASE_SHA)
+CODECOV_SHA := $(PULL_BASE_SHA)
+else
+CODECOV_SHA := $(shell git rev-parse HEAD 2> /dev/null || echo '')
+endif
+
+ifdef BRANCH_NAME
+CODECOV_BRANCH := $(BRANCH_NAME)
+else
+CODECOV_BRANCH := $(BRANCH)
+endif
+
+
+ifdef BUILD_NUMBER
+CODECOV_ARGS += "-b $(BUILD_NUMBER)"
+endif
+
+ifdef PULL_NUMBER
+CODECOV_ARGS += "-P $(PULL_NUMBER)"
+endif
+
+ifeq ($(JOB_TYPE),postsubmit)
+CODECOV_ARGS +="-T v$(VERSION)"
+endif
+
+#End Codecov
+
 TEST_PACKAGE ?= ./...
 
 .PHONY: list
@@ -77,6 +122,11 @@ build: $(GO_DEPENDENCIES) ## Build jx binary for current OS
 get-test-deps: ## Install test dependencies
 	$(GO_NOMOD) get github.com/axw/gocov/gocov
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
+
+tidy-deps: ## Cleans up dependencies
+	$(GO) mod tidy
+	# mod tidy only takes compile dependencies into account, let's make sure we capture tooling dependencies as well
+	@$(MAKE) install-generate-deps
 
 test: ## Run the unit tests
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out -failfast -short ./...
@@ -166,7 +216,7 @@ darwin: ## Build for OSX
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
 
 .PHONY: release
-release: check ## Release the binary
+release: build test-slow-integration ## Release the binary
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
 		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
@@ -212,6 +262,12 @@ clean: ## Clean the generated artifacts
 
 richgo:
 	go get -u github.com/kyoh86/richgo
+
+codecov-upload:
+	DOCKER_REPO="$(CODECOV_SLUG)" \
+	SOURCE_COMMIT="$(CODECOV_SHA)" \
+	SOURCE_BRANCH="$(CODECOV_BRANCH)" \
+	bash <(curl -s https://codecov.io/bash) $(CODECOV_ARGS)
 
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))

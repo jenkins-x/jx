@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/petergtz/pegomock"
 
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
@@ -28,17 +28,15 @@ import (
 )
 
 func TestUpgradeAppForGitOps(t *testing.T) {
-	t.Parallel()
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil, "")
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", nil, "")
 	assert.NoError(t, err)
 
 	// Now let's upgrade
-
 	newVersion, err := semver.Parse(version)
 	assert.NoError(t, err)
 	newVersion.Patch++
@@ -78,7 +76,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
@@ -93,13 +91,12 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
-	//t.Parallel()
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil, "jx-app-")
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", nil, "")
 	shortName := strings.TrimPrefix(name, "jx-app-")
 	assert.NoError(t, err)
 
@@ -158,7 +155,7 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
@@ -173,7 +170,7 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -185,7 +182,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
 		"name": "testing",
 	}, "")
 	assert.NoError(t, err)
@@ -260,7 +257,7 @@ species: human
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -272,7 +269,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
 		"name": "testing",
 	}, "")
 	assert.NoError(t, err)
@@ -360,7 +357,7 @@ species: martian
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -372,7 +369,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
 		"name": "testing",
 	}, "")
 	assert.NoError(t, err)
@@ -462,7 +459,7 @@ species: martian
 }
 
 func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -474,7 +471,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{}, "")
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{}, "")
 	assert.NoError(t, err)
 
 	// Now let's upgrade
@@ -532,12 +529,12 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 }
 
 func TestUpgradeAppToLatestForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil, "")
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", nil, "")
 	assert.NoError(t, err)
 
 	// Now let's upgrade
@@ -581,7 +578,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
@@ -596,14 +593,14 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAllAppsForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name1, alias1, version1, err := testOptions.DirectlyAddAppToGitOps(nil, "")
+	name1, alias1, version1, err := testOptions.DirectlyAddAppToGitOps("", nil, "")
 	assert.NoError(t, err)
-	name2, alias2, version2, err := testOptions.DirectlyAddAppToGitOps(nil, "")
+	name2, alias2, version2, err := testOptions.DirectlyAddAppToGitOps("", nil, "")
 	assert.NoError(t, err)
 
 	newVersion1, err := semver.Parse(version1)
@@ -659,7 +656,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-all-apps"), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-all-apps"), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)

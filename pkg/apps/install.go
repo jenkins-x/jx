@@ -46,7 +46,7 @@ type InstallOptions struct {
 	Namespace       string
 	EnvironmentsDir string
 	GitProvider     gits.GitProvider
-	ConfigureGitFn  environments.ConfigureGitFn
+	ConfigureGitFn  gits.ConfigureGitFn
 	Gitter          gits.Gitter
 	Verbose         bool
 	DevEnv          *jenkinsv1.Environment
@@ -57,12 +57,9 @@ type InstallOptions struct {
 	GitOps          bool
 	TeamName        string
 	VaultClient     vault.Client
+	AutoMerge       bool
 
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
-}
-
-var defaultPrefixes = []string{
-	"jx-app-",
 }
 
 // AddApp adds the app at a particular version (
@@ -112,7 +109,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := GitOpsOptions{
 				InstallOptions: o,
 			}
-			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias)
+			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias, o.AutoMerge)
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", chartName, version, alias)
 			}
@@ -153,29 +150,28 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 
 //GetApps gets a list of installed apps
 func (o *InstallOptions) GetApps(appNames []string) (apps *jenkinsv1.AppList, err error) {
-	if err != nil {
-		return nil, errors.Wrap(err, "getting jx client")
-	}
-	listOptions := metav1.ListOptions{}
-	if len(appNames) > 0 {
-		in := appNames
-		if !o.GitOps {
-			prefixes := o.getPrefixes()
-			in := make([]string, 0)
-			for _, prefix := range prefixes {
-				for _, appName := range appNames {
-					in = append(in, fmt.Sprintf("%s%s", prefix, appName))
-				}
-			}
+	prefixes := o.getPrefixes()
+	in := make([]string, 0)
+	appsMap := make(map[string]bool)
+	for _, prefix := range prefixes {
+		for _, appName := range appNames {
+			completeAppName := fmt.Sprintf("%s%s", prefix, appName)
+			in = append(in, completeAppName)
+			appsMap[completeAppName] = true
 		}
-		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(in, ", "))
-		listOptions.LabelSelector = selector
 	}
-	apps, err = o.JxClient.JenkinsV1().Apps(o.Namespace).List(listOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "listing apps")
+
+	helmOpts := HelmOpsOptions{
+		InstallOptions: o,
 	}
-	return apps, nil
+	if o.GitOps {
+		opts := GitOpsOptions{
+			InstallOptions: o,
+		}
+		return opts.GetApps(appsMap, helmOpts.getAppsFromCRDAPI)
+	}
+	return helmOpts.getAppsFromCRDAPI(in)
+
 }
 
 //DeleteApp deletes the app. An alias and releaseName can be specified. GitOps or HelmOps will be automatically chosen based on the o.GitOps flag
@@ -184,33 +180,24 @@ func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string,
 		Items: make([]string, 0),
 	}
 
-	chartName := app
+	apps, err := o.GetApps([]string{app})
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if len(apps.Items) == 0 {
+		return errors.Errorf("No app found for %s", app)
+	}
+	chartName := apps.Items[0].Labels[helm.LabelAppName]
+
 	if o.GitOps {
 		opts := GitOpsOptions{
 			InstallOptions: o,
 		}
-		err := opts.DeleteApp(chartName, alias)
+		err := opts.DeleteApp(chartName, alias, o.AutoMerge)
 		if err != nil {
 			return err
 		}
-		// TODO support prefixed name (requires get apps to support gitops see
 	} else {
-		apps, err := o.GetApps([]string{app})
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		if len(apps.Items) == 0 {
-			return errors.Errorf("No app found for %s", app)
-		}
-		if len(apps.Items) > 1 {
-			appNames := make([]string, 0)
-			for _, app := range apps.Items {
-				appNames = append(appNames, app.Labels[helm.LabelAppName])
-			}
-			return errors.Errorf("Found more than one app for %s (%v)", app, appNames)
-		}
-		chartName := apps.Items[0].Labels[helm.LabelAppName]
-
 		opts := HelmOpsOptions{
 			InstallOptions: o,
 		}
@@ -270,7 +257,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		}
 		// Asking questions is a bit more complex in this case as the existing values file is in the environment
 		// repo, so we need to ask questions once we have that repo available
-		err := opts.UpgradeApp(chartName, version, repository, username, password, alias, interrogateChartFunc)
+		err := opts.UpgradeApp(chartName, version, repository, username, password, alias, interrogateChartFunc, o.AutoMerge)
 		if err != nil {
 			return err
 		}
@@ -389,10 +376,13 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 			}
 
-			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, chartName)
+			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, chartDetails.Name)
+			if err != nil {
+				return &chartDetails, errors.Wrapf(err, "locating app resource in %s", chartDir)
+			}
 			if appResource.Spec.SchemaPreprocessor != nil {
 				id := uuid.New()
-				cmName := toValidName(chartName, "schema", id)
+				cmName := toValidName(chartDetails.Name, "schema", id)
 				cm := corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: cmName,
@@ -520,10 +510,18 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						RestartPolicy:      corev1.RestartPolicyNever,
 					},
 				}
-				log.Infof("Preparing questions to configure %s."+
-					"\n If this is the first time you have installed the app, this may take a couple of minutes.",
-					chartName)
+				log.Infof("Preparing questions to configure %s.\n"+
+					"If this is the first time you have installed the app, this may take a couple of minutes.",
+					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
+				defer func() {
+					err := o.KubeClient.CoreV1().Pods(o.Namespace).Delete(pod.Name,
+						&metav1.DeleteOptions{})
+					if err != nil {
+						log.Errorf("Error deleting pod %s for values.schema.json preprocessing: %v",
+							pod.Name, err)
+					}
+				}()
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "creating pod %s for values.schema.json proprocessing",
 						pod.Name)
@@ -538,7 +536,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						"json preprocessing",
 						pod.Name)
 				}
-				completePod, err := o.KubeClient.Core().Pods(o.Namespace).Get(pod.Name, metav1.GetOptions{})
+				completePod, err := o.KubeClient.CoreV1().Pods(o.Namespace).Get(pod.Name, metav1.GetOptions{})
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "getting pod %s", pod.Name)
 				}
@@ -612,7 +610,11 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 
 func toValidName(appName string, name string, id string) string {
 	base := fmt.Sprintf("%s-%s", name, appName)
-	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:20], id))
+	l := len(base)
+	if l > 20 {
+		l = 20
+	}
+	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:l], id))
 }
 
 func (o *InstallOptions) handleValues(dir string, chartName string, values []byte) (func(), error) {

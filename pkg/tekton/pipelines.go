@@ -2,20 +2,226 @@ package tekton
 
 import (
 	"fmt"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"time"
 
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxClient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// ApplyPipeline applies the Tasks and Pipeline to the cluster
+// and creates and applies a PipelineResource for their source repo and a PipelineRun
+// to execute them.
+func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Interface, ns string, crds *CRDWrapper, gitInfo *gits.GitRepository, branch string, activityKey *kube.PromoteStepActivityKey) error {
+	info := util.ColorInfo
+
+	var activityOwnerReference *metav1.OwnerReference
+
+	if activityKey != nil {
+		activity, _, err := activityKey.GetOrCreate(jxClient, crds.Pipeline.Namespace)
+		if err != nil {
+			return err
+		}
+
+		activityOwnerReference = &metav1.OwnerReference{
+			APIVersion: jenkinsio.GroupAndVersion,
+			Kind:       "PipelineActivity",
+			Name:       activity.Name,
+			UID:        activity.UID,
+		}
+	}
+
+	for _, resource := range crds.Resources {
+		_, err := CreateOrUpdateSourceResource(tektonClient, ns, resource)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
+		}
+		if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
+			gitURL := gitInfo.HttpCloneURL()
+			log.Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
+		} else {
+			log.Infof("upserted PipelineResource %s\n", info(resource.Name))
+		}
+	}
+
+	for _, task := range crds.Tasks {
+		if activityOwnerReference != nil {
+			task.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
+		}
+		_, err := CreateOrUpdateTask(tektonClient, ns, task)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
+		}
+		log.Infof("upserted Task %s\n", info(task.Name))
+	}
+
+	if activityOwnerReference != nil {
+		crds.Pipeline.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
+	}
+
+	pipeline, err := CreateOrUpdatePipeline(tektonClient, ns, crds.Pipeline)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
+	}
+	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
+
+	pipelineOwnerReference := metav1.OwnerReference{
+		APIVersion: syntax.TektonAPIVersion,
+		Kind:       "Pipeline",
+		Name:       pipeline.Name,
+		UID:        pipeline.UID,
+	}
+
+	crds.Structure.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
+	crds.PipelineRun.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
+
+	_, err = CreatePipelineRun(tektonClient, ns, crds.PipelineRun)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
+	}
+	log.Infof("created PipelineRun %s\n", info(crds.PipelineRun.Name))
+
+	if crds.Structure != nil {
+		crds.Structure.PipelineRunRef = &crds.PipelineRun.Name
+
+		structuresClient := jxClient.JenkinsV1().PipelineStructures(ns)
+
+		// Reset the structure name to be the run's name and set the PipelineRef and PipelineRunRef
+		if crds.Structure.PipelineRef == nil {
+			crds.Structure.PipelineRef = &pipeline.Name
+		}
+		crds.Structure.Name = crds.PipelineRun.Name
+		crds.Structure.PipelineRunRef = &crds.PipelineRun.Name
+
+		if _, structErr := structuresClient.Create(crds.Structure); structErr != nil {
+			return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
+		}
+		log.Infof("created PipelineStructure %s\n", info(crds.Structure.Name))
+	}
+
+	return nil
+}
+
+// TODO: Use the same YAML lib here as in buildpipeline/pipeline.go
+// TODO: Use interface{} with a helper function to reduce code repetition?
+// TODO: Take no arguments and use o.Results internally?
+func WriteOutput(folder string, crds *CRDWrapper, pipelineActivity *kube.PromoteStepActivityKey) error {
+	if err := os.Mkdir(folder, os.ModePerm); err != nil {
+		if !os.IsExist(err) {
+			return err
+		}
+	}
+	data, err := yaml.Marshal(crds.Pipeline)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal Pipeline YAML")
+	}
+	fileName := filepath.Join(folder, "pipeline.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save Pipeline file %s", fileName)
+	}
+	log.Infof("generated Pipeline at %s\n", util.ColorInfo(fileName))
+
+	data, err = yaml.Marshal(crds.PipelineRun)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal PipelineRun YAML")
+	}
+	fileName = filepath.Join(folder, "pipeline-run.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save PipelineRun file %s", fileName)
+	}
+	log.Infof("generated PipelineRun at %s\n", util.ColorInfo(fileName))
+
+	if crds.Structure != nil {
+		data, err = yaml.Marshal(crds.Structure)
+		if err != nil {
+			return errors.Wrapf(err, "failed to marshal PipelineStructure YAML")
+		}
+		fileName = filepath.Join(folder, "structure.yml")
+		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
+		}
+		log.Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
+	}
+
+	taskList := &pipelineapi.TaskList{}
+	for _, task := range crds.Tasks {
+		taskList.Items = append(taskList.Items, *task)
+	}
+
+	resourceList := &pipelineapi.PipelineResourceList{}
+	for _, resource := range crds.Resources {
+		resourceList.Items = append(resourceList.Items, *resource)
+	}
+
+	data, err = yaml.Marshal(taskList)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal Task YAML")
+	}
+	fileName = filepath.Join(folder, "tasks.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save Task file %s", fileName)
+	}
+	log.Infof("generated Tasks at %s\n", util.ColorInfo(fileName))
+
+	data, err = yaml.Marshal(resourceList)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal PipelineResource YAML")
+	}
+	fileName = filepath.Join(folder, "resources.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save PipelineResource file %s", fileName)
+	}
+	log.Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
+
+	data, err = yaml.Marshal(pipelineActivity)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal PipelineActivity YAML")
+	}
+	fileName = filepath.Join(folder, "pipelineActivity.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save PipelineActivity file %s", fileName)
+	}
+	log.Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
+
+	return nil
+}
+
+// GeneratePipelineActivity generates a initial PipelineActivity CRD so UI/get act can get an earlier notification that the jobs have been scheduled
+func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository) *kube.PromoteStepActivityKey {
+	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
+	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
+	log.Infof("PipelineActivity for %s", name)
+	return &kube.PromoteStepActivityKey{
+		PipelineActivityKey: kube.PipelineActivityKey{
+			Name:     name,
+			Pipeline: pipeline,
+			Build:    buildNumber,
+			GitInfo:  gitInfo,
+		},
+	}
+}
 
 // CreateOrUpdateSourceResource lazily creates a Tekton Pipeline PipelineResource for the given git repository
 func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string, created *v1alpha1.PipelineResource) (*v1alpha1.PipelineResource, error) {
@@ -27,9 +233,9 @@ func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string
 		return created, nil
 	}
 
-	answer, err := resourceInterface.Get(resourceName, metav1.GetOptions{})
-	if err != nil {
-		return answer, errors.Wrapf(err, "failed to get PipelineResource %s after failing to create a new one", resourceName)
+	answer, err2 := resourceInterface.Get(resourceName, metav1.GetOptions{})
+	if err2 != nil {
+		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2)
 	}
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) {
 		answer.Spec = created.Spec
@@ -56,7 +262,7 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 
 	answer, err2 := resourceInterface.Get(resourceName, metav1.GetOptions{})
 	if err2 != nil {
-		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2)
+		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2.Error())
 	}
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Annotations, answer.Annotations) || !reflect.DeepEqual(created.Labels, answer.Labels) {
 		answer.Spec = created.Spec

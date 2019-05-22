@@ -3,9 +3,10 @@ package cluster
 import (
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // Name gets the cluster name from the current context
@@ -43,24 +44,7 @@ func ShortName(kuber kube.Kuber) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "retrieving the cluster name")
 	}
-	return ShortClusterName(clusterName), nil
-}
-
-// ShortClusterName shrinks the cluster name
-func ShortClusterName(clusterName string) string {
-	return ShortNameN(clusterName, 16)
-}
-
-// ShortNameN shrinks the name to a max length
-func ShortNameN(clusterName string, maxLen int) string {
-	shortClusterName := clusterName
-	if len(clusterName) > maxLen {
-		shortClusterName = clusterName[0:maxLen]
-	}
-	if strings.HasSuffix(shortClusterName, "_") || strings.HasSuffix(shortClusterName, "-") {
-		shortClusterName = shortClusterName[0 : len(shortClusterName)-1]
-	}
-	return shortClusterName
+	return kube.ToValidNameTruncated(clusterName, 16), nil
 }
 
 // SimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated

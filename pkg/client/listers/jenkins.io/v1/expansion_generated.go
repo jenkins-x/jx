@@ -98,6 +98,14 @@ type ReleaseListerExpansion interface{}
 // ReleaseNamespaceLister.
 type ReleaseNamespaceListerExpansion interface{}
 
+// SchedulerListerExpansion allows custom methods to be added to
+// SchedulerLister.
+type SchedulerListerExpansion interface{}
+
+// SchedulerNamespaceListerExpansion allows custom methods to be added to
+// SchedulerNamespaceLister.
+type SchedulerNamespaceListerExpansion interface{}
+
 // SourceRepositoryListerExpansion allows custom methods to be added to
 // SourceRepositoryLister.
 type SourceRepositoryListerExpansion interface{}
@@ -105,6 +113,14 @@ type SourceRepositoryListerExpansion interface{}
 // SourceRepositoryNamespaceListerExpansion allows custom methods to be added to
 // SourceRepositoryNamespaceLister.
 type SourceRepositoryNamespaceListerExpansion interface{}
+
+// SourceRepositoryGroupListerExpansion allows custom methods to be added to
+// SourceRepositoryGroupLister.
+type SourceRepositoryGroupListerExpansion interface{}
+
+// SourceRepositoryGroupNamespaceListerExpansion allows custom methods to be added to
+// SourceRepositoryGroupNamespaceLister.
+type SourceRepositoryGroupNamespaceListerExpansion interface{}
 
 // TeamListerExpansion allows custom methods to be added to
 // TeamLister.

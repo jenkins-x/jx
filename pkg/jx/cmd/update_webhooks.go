@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -54,7 +55,7 @@ func NewCmdUpdateWebhooks(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -120,9 +121,17 @@ func (options *UpdateWebhooksOptions) Run() error {
 	}
 	owner := GetOrgOrUserFromOptions(options)
 
+	if options.Verbose {
+		log.Infof("Updating webhooks for Owner %v and Repo %v\n", owner, options.Repo)
+	}
+
 	if options.Repo != "" {
 		options.updateRepoHook(git, options.Repo, webhookURL, isProwEnabled, hmacToken)
 	} else {
+		if owner == "" {
+			return errors.Wrap(err, "unable to list repositories - no repo owner")
+		}
+
 		repositories, err := git.ListRepositories(owner)
 		if err != nil {
 			return errors.Wrap(err, "unable to list repositories")
@@ -143,8 +152,8 @@ func (options *UpdateWebhooksOptions) Run() error {
 // or "" if neither is set
 func GetOrgOrUserFromOptions(options *UpdateWebhooksOptions) string {
 	owner := options.Org
-	if owner == "" && options.User != "" {
-		owner = options.User
+	if owner == "" && options.Username != "" {
+		owner = options.Username
 	}
 	return owner
 }
@@ -157,30 +166,36 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 		return errors.Wrap(err, "unable to list webhooks")
 	}
 
+	webHookArgs := &gits.GitWebHookArguments{
+		Owner: options.Org,
+		Repo: &gits.GitRepository{
+			Name: repoName,
+		},
+		URL: webhookURL,
+	}
+	if isProwEnabled {
+		webHookArgs.Secret = hmacToken
+	}
 	if len(webhooks) > 0 {
 		// find matching hook
 		for _, webHook := range webhooks {
 			if options.matches(webhookURL, webHook) {
 				log.Infof("Found matching hook for url %s\n", util.ColorInfo(webHook.URL))
-
-				// update
-				webHookArgs := &gits.GitWebHookArguments{
-					ID:    webHook.ID,
-					Owner: options.Org,
-					Repo: &gits.GitRepository{
-						Name: repoName,
-					},
-					URL:         webhookURL,
-					ExistingURL: options.PreviousHookUrl,
-				}
-
-				if isProwEnabled {
-					webHookArgs.Secret = hmacToken
-				}
-
+				webHookArgs.ID = webHook.ID
+				webHookArgs.ExistingURL = options.PreviousHookUrl
 				if !options.DryRun {
-					git.UpdateWebHook(webHookArgs)
+					if err := git.UpdateWebHook(webHookArgs); err != nil {
+						return errors.Wrapf(err, "updating the webhook %q on repository '%s/%s'",
+							webhookURL, options.Org, repoName)
+					}
 				}
+			}
+		}
+	} else {
+		if !options.DryRun {
+			if err := git.CreateWebHook(webHookArgs); err != nil {
+				return errors.Wrapf(err, "creating the webhook %q on repository '%s/%s'",
+					webhookURL, options.Org, repoName)
 			}
 		}
 	}

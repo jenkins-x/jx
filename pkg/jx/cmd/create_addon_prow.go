@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/spf13/cobra"
 
 	"fmt"
@@ -56,7 +57,7 @@ func NewCmdCreateAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -102,7 +103,7 @@ func (o *CreateAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	err = o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName)
+	err = o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName, nil)
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}

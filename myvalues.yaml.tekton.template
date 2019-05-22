@@ -1,0 +1,5 @@
+pipelinerunner:
+  enabled: "true"
+  image:
+    repository: jenkinsxio/builder-maven
+    tag: $VERSION

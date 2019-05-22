@@ -2,14 +2,14 @@ pipelineConfig:
   pipelines:
     release:
       pipeline:
-        environment:
+        env:
           - name: LANGUAGE
             value: rust
         agent:
           image: some-image
         stages:
           - name: A Working Stage
-            environment:
+            env:
               - name: DISTRO
                 value: gentoo
             steps:

@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
 
@@ -98,15 +99,15 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 		Example: createClusterGKEExample,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := features.IsEnabled(cmd)
-			CheckErr(err)
+			helper.CheckErr(err)
 			err = options.InstallOptions.CheckFeatures()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			CheckErr(err)
+			helper.CheckErr(err)
 		},
 	}
 
@@ -122,6 +123,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "Compute region (e.g. us-central1) for the cluster")
@@ -309,24 +311,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		o.InstallOptions.Flags.Kaniko = true
 	}
 
-	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
-		// lets default the docker registry to GCR
-		if o.InstallOptions.Flags.DockerRegistry == "" {
-			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
-		}
-
-		// lets default the docker registry org to the project id
-		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
-			o.InstallOptions.Flags.DockerRegistryOrg = projectId
-		}
-	}
-
 	if !o.BatchMode {
 		// if scopes is empty &
 		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
 			prompt := &survey.Confirm{
 				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
-				Default: false,
+				Default: o.InstallOptions.Flags.DockerRegistry == "",
 				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
 			}
 			err = survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
@@ -352,7 +342,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
-					Default: false,
+					Default: o.Flags.EnhancedScopes,
 					Help:    "Enables extra APIs on the GCP project",
 				}
 				err = survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
@@ -364,6 +354,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if o.Flags.EnhancedApis {
+		log.Infof("checking if we need to enable APIs for GCB and GCR\n")
+
 		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
@@ -372,16 +364,28 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
-		if !o.InstallOptions.Flags.Kaniko {
+		if o.Flags.EnhancedScopes && !o.InstallOptions.Flags.Kaniko {
 			prompt := &survey.Confirm{
 				Message: "Would you like to enable Kaniko for building container images",
-				Default: false,
+				Default: o.Flags.EnhancedScopes,
 				Help:    "Use Kaniko for docker images",
 			}
 			err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
+		// lets default the docker registry to GCR
+		if o.InstallOptions.Flags.DockerRegistry == "" {
+			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
+		}
+
+		// lets default the docker registry org to the project id
+		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
+			o.InstallOptions.Flags.DockerRegistryOrg = projectId
 		}
 	}
 
@@ -429,6 +433,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if len(o.Flags.Scopes) > 0 {
+		log.Infof("using cluster scopes: %s\n", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
+
 		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
 	}
 
