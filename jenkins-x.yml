@@ -42,6 +42,12 @@ pipelineConfig:
                   requests:
                     cpu: 3
                     memory: 3072Mi
+                env:
+                - name: CODECOV_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: token
+                      name: codecov-token
             steps:
               - name: init-helm
                 image: alpine/helm:2.12.3
