@@ -10,6 +10,7 @@ git clone https://github.com/jenkins-x/jx-docs.git
 pushd jx-docs/content/commands
   ../../../build/linux/jx create docs
   git config credential.helper store
+  git fetch origin && git rebase origin/master
   git add *
   git commit --allow-empty -a -m "updated jx commands & API docs from $VERSION"
   git push origin
@@ -21,6 +22,7 @@ pushd jx-docs/content
   mkdir -p schemas
   cd schemas
   ../../../build/linux/jx step syntax schema -o jx-schema.json
+  git fetch origin && git rebase origin/master
   git add *
   git commit --allow-empty -a -m "updated jx Json Schema from $VERSION"
   git push origin
@@ -31,6 +33,7 @@ make generate-docs
 cp -r docs/apidocs/site jx-docs/static/apidocs
 
 pushd jx-docs/static/apidocs
+  git fetch origin && git rebase origin/master
   git add *
   git commit --allow-empty -a -m "updated jx API docs from $VERSION"
   git push origin
