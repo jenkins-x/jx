@@ -145,11 +145,19 @@ func (v *client) List(path string) ([]string, error) {
 	if secrets == nil {
 		return secretNames, nil
 	}
+
 	data := secrets.Data
 	if data == nil {
 		return secretNames, nil
 	}
-	for _, s := range secrets.Data["keys"].([]interface{}) {
+
+	// Don't do type assertion on nil
+	keys := secrets.Data["keys"]
+	if keys == nil {
+		return secretNames, nil
+	}
+
+	for _, s := range keys.([]interface{}) {
 		if orig, ok := s.(string); ok {
 			secretNames = append(secretNames, orig)
 		}
