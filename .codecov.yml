@@ -5,7 +5,5 @@ coverage:
         # basic
         target: auto
     patch:
-      defualt:
+      default:
         target: 70%
-comment:
-  behavior: new

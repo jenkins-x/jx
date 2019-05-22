@@ -109,6 +109,11 @@ pipelineConfig:
                 command: make
                 args: ['release']
 
+              - name: codecov-upload
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args: ['codecov-upload']
+
               - name: build-and-push-image
                 image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
                 command: /kaniko/executor
@@ -136,11 +141,6 @@ pipelineConfig:
               - name: update-docs
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/update-website.sh
-
-              - name: codecov-upload
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
-                command: make
-                args: ['codecov-upload']
 
               - name: update-clients
                 # Needs maven as openapi tools are written in Java!
