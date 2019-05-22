@@ -2,8 +2,10 @@ package cmd_test
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton"
+
 	"io/ioutil"
 	"os"
 	"path"
@@ -35,7 +37,6 @@ import (
 )
 
 func TestGenerateTektonCRDs(t *testing.T) {
-	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 
 	log.SetOutput(ioutil.Discard)

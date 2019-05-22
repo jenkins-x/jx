@@ -169,7 +169,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
 
 	console := tests.NewTerminal(t)
-	defer console.Close()
+	defer console.Cleanup()
 
 	donec := make(chan struct{})
 	go func() {
@@ -235,15 +235,13 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		console.Out,
 		console.Err,
 	)
-
-	// Close the slave end of the pty, and read the remaining bytes from the master end.
-	console.Close()
-	<-donec
-
 	assert.NoError(t, err, "Should not error")
 
+	// Close the slave end of the pty, and read the remaining bytes from the master end.
 	// Dump the terminal's screen.
 	t.Log(expect.StripTrailingEmptyLines(console.CurrentState()))
+	console.Close()
+	<-donec
 }
 
 func TestGetPreviewEnvironmentReleaseName(t *testing.T) {

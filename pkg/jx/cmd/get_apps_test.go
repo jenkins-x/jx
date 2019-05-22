@@ -2,20 +2,20 @@ package cmd_test
 
 import (
 	"errors"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	"github.com/jenkins-x/jx/pkg/helm"
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/acarl005/stripansi"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/petergtz/pegomock"
-	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,18 +40,12 @@ func TestGetAppsGitops(t *testing.T) {
 		},
 	}
 	getAppOptions.ConfigureGitFn = testOptions.ConfigureGitFn
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	getAppOptions.Args = []string{}
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
-	err = console.Close()
 
-	assert.NoError(t, err)
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 	// check output
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)
@@ -80,18 +74,12 @@ func TestGetApps(t *testing.T) {
 		},
 		Namespace: namespace,
 	}
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	getAppOptions.Args = []string{}
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
-	err = console.Close()
 
-	assert.NoError(t, err)
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 	// check output
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)
@@ -124,18 +112,11 @@ func TestGetAppsWithErrorGettingStatus(t *testing.T) {
 	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
 		ThenReturn(nil, nil, errors.New("this is an error"))
 
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	getAppOptions.Args = []string{}
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
-	err = console.Close()
-
-	assert.NoError(t, err)
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	// check output
 	fakeStdout.Close()
@@ -170,18 +151,11 @@ func TestGetAppsWithErrorGettingStatusWithOutput(t *testing.T) {
 	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
 		ThenReturn(nil, nil, errors.New("this is an error"))
 
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	getAppOptions.Args = []string{}
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
-	err = console.Close()
-
-	assert.NoError(t, err)
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	// check output
 	fakeStdout.Close()
@@ -212,11 +186,8 @@ func TestGetApp(t *testing.T) {
 		Namespace: namespace,
 	}
 	getAppOptions.Args = []string{name1}
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
 
@@ -250,11 +221,8 @@ func TestGetAppWithShortName(t *testing.T) {
 		Namespace: namespace,
 	}
 	getAppOptions.Args = []string{name1}
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
 
@@ -291,11 +259,8 @@ func TestGetAppsHasStatus(t *testing.T) {
 		}, nil, nil)
 
 	getAppOptions.Args = []string{name1}
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
 
@@ -333,11 +298,8 @@ func TestGetAppsAsJson(t *testing.T) {
 		}, nil, nil)
 
 	getAppOptions.Args = []string{name1}
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
 
@@ -380,11 +342,8 @@ func TestGetAppsAsYaml(t *testing.T) {
 		}, nil, nil)
 
 	getAppOptions.Args = []string{name1}
-	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
-	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
-	getAppOptions.CommonOptions.Err = console.Err
 	err = getAppOptions.Run()
 	assert.NoError(t, err)
 

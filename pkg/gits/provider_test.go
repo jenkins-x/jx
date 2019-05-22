@@ -227,9 +227,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitHub)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
+
 			},
 			"GitHub",
 			gits.KindGitHub,
@@ -277,9 +278,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"GitHub",
 			gits.KindGitHub,
@@ -340,9 +341,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitlab)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitlab",
 			gits.KindGitlab,
@@ -390,9 +391,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitlab",
 			gits.KindGitlab,
@@ -453,9 +454,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitea)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitea",
 			gits.KindGitea,
@@ -503,9 +504,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitea",
 			gits.KindGitea,
@@ -566,9 +567,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindBitBucketServer)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"BitbucketServer",
 			gits.KindBitBucketServer,
@@ -616,8 +617,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
+				c.Cleanup()
 				<-donech
 			},
 			"BitbucketServer",
@@ -679,9 +680,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindBitBucketCloud)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,
@@ -729,9 +730,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,

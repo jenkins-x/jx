@@ -54,6 +54,7 @@ func TestNonVerboseOutput(t *testing.T) {
 	t.Parallel()
 	console := tests.NewTerminal(t)
 	defer console.Close()
+	defer console.Cleanup()
 	o := opts.CommonOptions{Out: console.Out}
 	err := o.RunCommand("echo", "foo")
 	assert.NoError(t, err, "Should not error")

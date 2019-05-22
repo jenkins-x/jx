@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/satori/go.uuid"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -211,6 +211,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 
 	// Needs console input to create secrets
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -322,9 +323,8 @@ func TestAddAppWithSecrets(t *testing.T) {
 
 	err = o.Run()
 	assert.NoError(t, err)
-	err = console.Close()
+	console.Close()
 	<-donec
-	assert.NoError(t, err)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	// Validate that the secret reference is generated and the secret is in the chart
@@ -358,6 +358,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 
 	// Needs console input to create secrets
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -453,9 +454,8 @@ func TestAddAppWithDefaults(t *testing.T) {
 
 	err = o.Run()
 	assert.NoError(t, err)
-	err = console.Close()
+	console.Close()
 	<-donec
-	assert.NoError(t, err)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	testOptions.MockHelmer.VerifyWasCalledOnce().
@@ -491,6 +491,7 @@ func TestStashValues(t *testing.T) {
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
+	defer console.Cleanup()
 
 	nameUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
@@ -565,6 +566,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 
 	// Needs console input to create secrets
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -627,9 +629,8 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	}()
 	err = o.Run()
 	assert.NoError(t, err)
-	err = console.Close()
+	console.Close()
 	<-donec
-	assert.NoError(t, err)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	// Validate that the secret reference is generated
@@ -1186,6 +1187,7 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 	}()
 
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -1257,9 +1259,8 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 	}()
 	err = o.Run()
 	assert.NoError(t, err)
-	err = console.Close()
+	console.Close()
 	<-donec
-	assert.NoError(t, err)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	envDir, err := o.CommonOptions.EnvironmentsDir()
@@ -1296,6 +1297,7 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 	}()
 
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -1358,9 +1360,8 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 	}()
 	err = o.Run()
 	assert.NoError(t, err)
-	err = console.Close()
+	console.Close()
 	<-donec
-	assert.NoError(t, err)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	envDir, err := o.CommonOptions.EnvironmentsDir()
