@@ -33,10 +33,10 @@ const (
 // ControllerPipelineRunnerOptions holds the command line arguments
 type ControllerPipelineRunnerOptions struct {
 	*opts.CommonOptions
-	BindAddress           string
-	Path                  string
-	Port                  int
-	NoGitCredeentialsInit bool
+	BindAddress          string
+	Path                 string
+	Port                 int
+	NoGitCredentialsInit bool
 }
 
 // PipelineRunRequest the request to trigger a pipeline run
@@ -94,13 +94,13 @@ func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Comma
 	cmd.Flags().StringVarP(&options.Path, "path", "p", "/",
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
-	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
+	cmd.Flags().BoolVarP(&options.NoGitCredentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
 	return cmd
 }
 
 // Run will implement this command
 func (o *ControllerPipelineRunnerOptions) Run() error {
-	if !o.NoGitCredeentialsInit {
+	if !o.NoGitCredentialsInit {
 		err := o.InitGitConfigAndUser()
 		if err != nil {
 			return err
@@ -299,7 +299,7 @@ func (o *ControllerPipelineRunnerOptions) returnError(err error, message string,
 }
 
 func (o *ControllerPipelineRunnerOptions) stepGitCredentials() error {
-	if !o.NoGitCredeentialsInit {
+	if !o.NoGitCredentialsInit {
 		copy := *o.CommonOptions
 		copy.BatchMode = true
 		gsc := &StepGitCredentialsOptions{

@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"io/ioutil"
 	"os"
@@ -36,6 +37,9 @@ import (
 func TestGenerateTektonCRDs(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
+
+	log.SetOutput(ioutil.Discard)
+	defer log.SetOutput(os.Stderr)
 
 	testVersionsDir := path.Join("test_data", "cmmon_versions")
 	testData := path.Join("test_data", "step_create_task")
@@ -354,16 +358,16 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				}
 
 				taskList := &pipelineapi.TaskList{}
-				for _, task := range crds.Tasks {
+				for _, task := range crds.Tasks() {
 					taskList.Items = append(taskList.Items, *task)
 				}
 
 				resourceList := &pipelineapi.PipelineResourceList{}
-				for _, resource := range crds.Resources {
+				for _, resource := range crds.Resources() {
 					resourceList.Items = append(resourceList.Items, *resource)
 				}
 
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), crds.Pipeline); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), crds.Pipeline()); d != "" {
 					t.Errorf("Generated Pipeline did not match expected: \n%s", d)
 				}
 				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
@@ -373,10 +377,10 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					t.Errorf("Generated PipelineResources did not match expected: %s", d)
 				}
 
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), crds.PipelineRun); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), crds.PipelineRun()); d != "" {
 					t.Errorf("Generated PipelineRun did not match expected: %s", d)
 				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), crds.Structure); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), crds.Structure()); d != "" {
 					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 				}
 

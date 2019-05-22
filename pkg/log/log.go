@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
+	"io"
 	"os"
 	"strings"
 
@@ -222,4 +223,9 @@ func CaptureOutput(f func()) string {
 	f()
 	logrus.SetOutput(os.Stderr)
 	return buf.String()
+}
+
+// SetOutput sets the outputs for the default logger.
+func SetOutput(out io.Writer) {
+	logrus.SetOutput(out)
 }
