@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/pkg/errors"
 
@@ -528,14 +529,20 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	url := ""
 	branch := "master"
 
+	var author, committer *v1.User
+	var err error
 	sha := commit.Hash.String()
-	author, err := resolver.GitSignatureAsUser(&commit.Author)
-	if err != nil {
-		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+	if commit.Author.Email != "" && commit.Author.Name == "" {
+		author, err = resolver.GitSignatureAsUser(&commit.Author)
+		if err != nil {
+			log.Warnf("Failed to enrich commit %s with issues: %v\n", sha, err)
+		}
 	}
-	committer, err := resolver.GitSignatureAsUser(&commit.Committer)
-	if err != nil {
-		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+	if commit.Committer.Email != "" && commit.Committer.Name == "" {
+		committer, err = resolver.GitSignatureAsUser(&commit.Committer)
+		if err != nil {
+			log.Warnf("Failed to enrich commit %s with issues: %v\n", sha, err)
+		}
 	}
 	var authorDetails, committerDetails v1.UserDetails
 	if author != nil {
@@ -553,11 +560,11 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 		Committer: &committerDetails,
 	}
 	err = o.addIssuesAndPullRequests(spec, &commitSummary, commit)
-
-	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
-		log.Warnf("Failed to enrich commits with issues: %s\n", err)
+		log.Warnf("Failed to enrich commit %s with issues: %s\n", sha, err)
 	}
+	spec.Commits = append(spec.Commits, commitSummary)
+
 }
 
 func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, commit *v1.CommitSummary, rawCommit *object.Commit) error {
