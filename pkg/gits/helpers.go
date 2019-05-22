@@ -492,3 +492,8 @@ func computeBranchName(baseRef string, branchName string, dir string, gitter Git
 	}
 	return validBranchName, nil
 }
+
+//IsUnadvertisedObjectError returns true if the reason for the error is that the request was for an object that is unadvertised (i.e. doesn't exist)
+func IsUnadvertisedObjectError(err error) bool {
+	return strings.Contains(err.Error(), "Server does not allow request for unadvertised object")
+}
