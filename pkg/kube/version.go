@@ -133,6 +133,12 @@ func GetAppName(name string, namespaces ...string) string {
 				}
 			}
 		}
+		// The applications seems to be prefixed with jx regardless of the namespace
+		// where they are deployed. Let's remove this prefix.
+		prefix := "jx-"
+		if strings.HasPrefix(name, prefix) {
+			name = strings.TrimPrefix(name, prefix)
+		}
 	}
 	return name
 }
