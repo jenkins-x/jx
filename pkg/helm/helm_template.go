@@ -546,11 +546,13 @@ func (h *HelmTemplate) clearOutputDir(releaseName string) error {
 
 func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo string, username string,
 	password string) (string, error) {
-	exists, err := util.FileExists(chart)
+	chartDir := filepath.Join(dir, chart)
+	exists, err := util.FileExists(chartDir)
 	if err != nil {
 		return "", err
 	}
 	if exists {
+		log.Infof("Chart dir already exists: %s\n", chartDir)
 		return chart, nil
 	}
 	if dir == "" {
