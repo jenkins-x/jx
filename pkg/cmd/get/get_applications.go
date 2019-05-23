@@ -154,6 +154,19 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
 	for _, appName := range apps {
 		row := []string{appName}
+		jxClient, ns, err := o.JXClientAndDevNamespace()
+		if err != nil {
+			log.Warnf("Error getting jx client and dev namespace: %s", err)
+		}
+		sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
+		sourceRepository, err := getSourceRepositoryForApplication(appName, sourceRepositories)
+		gitURL := "None Found"
+		if err != nil {
+			log.Warnf("Could not get Source Repository for application: %s", err)
+		} else {
+			gitURL = buildGitURL(sourceRepository)
+		}
+		row = append(row, gitURL)
 		for _, ea := range envApps {
 			version := ""
 			d, ok := ea.Apps[appName]
@@ -171,20 +184,9 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 						if d.Name != appName {
 							names = append(names, d.Name)
 						}
-						jxClient, ns, err := o.JXClientAndDevNamespace()
-						if err != nil {
-							log.Warnf("Error getting jx client and dev namespace: %s", err)
-						}
-						sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
+
 						for _, name := range names {
-							sourceRepository, err := getSourceRepositoryForApplication(name, sourceRepositories)
-							gitURL := "None Found"
-							if err != nil {
-								log.Warnf("Could not get Source Repository for application: %s", err)
-							} else {
-								gitURL = buildGitURL(sourceRepository)
-							}
-							row = append(row, gitURL)
+
 							url, _ = services.FindServiceURL(kubeClient, d.Namespace, name)
 							if url != "" {
 								break
@@ -367,10 +369,10 @@ func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.T
 		title = "PULL REQUESTS"
 	}
 	titles := []string{title}
+	titles = append(titles, "GIT REPO")
 	for _, ea := range envApps {
 		envName := ea.Environment.Name
 		if len(ea.Apps) > 0 {
-			titles = append(titles, "GIT REPO")
 			if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
 				envName = "Edit"
 			}
