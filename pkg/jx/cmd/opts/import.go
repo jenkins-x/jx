@@ -211,7 +211,6 @@ func (o *CommonOptions) LogImportedProject(isEnvironment bool, gitInfo *gits.Git
 	if !isEnvironment {
 		log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
 		log.Infof("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
-		log.Infof("Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
 		log.Infof("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
 		log.Infof("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
 		log.Blank()
