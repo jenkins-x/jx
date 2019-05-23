@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/vault"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -71,7 +72,8 @@ func (o *GetVaultOptions) Run() error {
 
 	vaults, err := vault.GetVaults(client, vaultOperatorClient, o.Namespace)
 	if err != nil {
-		return err
+		log.Infof("No vault found.")
+		return nil
 	}
 
 	table := o.CreateTable()
