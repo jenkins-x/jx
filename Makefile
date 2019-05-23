@@ -99,6 +99,7 @@ endif
 #End Codecov
 
 TEST_PACKAGE ?= ./...
+COVERFLAGS=-coverprofile=cover.out --covermode=count --coverpkg=./...
 
 .PHONY: list
 list: ## List all make targets
@@ -129,10 +130,10 @@ tidy-deps: ## Cleans up dependencies
 	@$(MAKE) install-generate-deps
 
 test: ## Run the unit tests
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out -failfast -short ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 $(COVERFLAGS) -failfast -short ./...
 
 test-verbose: ## Run the unit tests in verbose mode
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v -coverprofile=cover.out -failfast ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v $(COVERFLAGS) -failfast ./...
 
 test-report: get-test-deps test ## Create the test report
 	@gocov convert cover.out | gocov report
@@ -141,7 +142,7 @@ test-report-html: get-test-deps test ## Create the test report in HTML format
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow: ## Run unit tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(TESTFLAGS) -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(TESTFLAGS) $(COVERFLAGS) ./...
 
 test-slow-report: get-test-deps test-slow
 	@gocov convert cover.out | gocov report
@@ -150,13 +151,13 @@ test-slow-report-html: get-test-deps test-slow
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-integration: ## Run the integration tests 
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration  -short ./...
 
 test-integration1:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./... -test.v -run $(TEST)
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration $(COVERFLAGS) -short ./... -test.v -run $(TEST)
 
 test-rich-integration1:
-	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration -coverprofile=cover.out -short -test.v $(TEST_PACKAGE) -run $(TEST)
+	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration $(COVERFLAGS) -short -test.v $(TEST_PACKAGE) -run $(TEST)
 
 test-integration-report: get-test-deps test-integration ## Create the integration tests report
 	@gocov convert cover.out | gocov report
@@ -165,7 +166,7 @@ test-integration-report-html: get-test-deps test-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow-integration: ## Run the integration tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags=integration -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -tags=integration  $(COVERFLAGS) ./...
 
 test-slow-integration-report: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov report
@@ -174,7 +175,7 @@ test-slow-integration-report-html: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-soak:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags soak -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags soak $(COVERFLAGS) ./...
 
 test1:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -test.v -run $(TEST)
