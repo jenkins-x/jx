@@ -432,6 +432,12 @@ func (options *InstallOptions) checkFlags() error {
 		flags.ExposeControllerURLTemplate = "{{.Service}}-{{.Namespace}}.{{.Domain}}"
 	}
 
+	// Make sure that the default environment prefix is configured. Typically it is the cluster
+	// name when the install command is called from create cluster.
+	if options.Flags.DefaultEnvironmentPrefix == "" {
+		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+	}
+
 	return nil
 }
 
@@ -1548,9 +1554,6 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 			}
 		}
 
-		if options.Flags.DefaultEnvironmentPrefix == "" {
-			options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
-		}
 		envName := fmt.Sprintf("environment-%s-dev", options.Flags.DefaultEnvironmentPrefix)
 		gitOpsDir = filepath.Join(options.Flags.Dir, envName)
 		gitOpsEnvDir = filepath.Join(gitOpsDir, "env")
@@ -2539,10 +2542,6 @@ func (options *InstallOptions) installAddons() error {
 }
 
 func (options *InstallOptions) createEnvironments(namespace string) error {
-	if options.Flags.DefaultEnvironmentPrefix == "" {
-		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
-	}
-
 	if !options.Flags.NoDefaultEnvironments {
 		createEnvironments := true
 		if options.Flags.GitOpsMode {
