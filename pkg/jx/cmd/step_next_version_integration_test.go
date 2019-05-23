@@ -45,7 +45,7 @@ func TestSetVersionJavascript(t *testing.T) {
 	assert.NoError(t, err)
 
 	o := cmd.StepNextVersionOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}
@@ -92,7 +92,7 @@ func TestSetVersionChart(t *testing.T) {
 	assert.NoError(t, err)
 
 	o := cmd.StepNextVersionOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}

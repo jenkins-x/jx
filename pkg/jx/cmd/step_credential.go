@@ -18,7 +18,7 @@ import (
 
 // StepCredentialOptions contains the command line arguments for this command
 type StepCredentialOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Namespace string
 	Secret    string
@@ -58,7 +58,7 @@ var (
 // NewCmdStepCredential creates the command
 func NewCmdStepCredential(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepCredentialOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

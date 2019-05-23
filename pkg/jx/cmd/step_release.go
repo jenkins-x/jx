@@ -18,7 +18,7 @@ import (
 
 // StepReleaseOptions contains the CLI arguments
 type StepReleaseOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	DockerRegistry string
 	Organisation   string
@@ -41,7 +41,7 @@ type StepReleaseOptions struct {
 // NewCmdStep Steps a command object for the "step" command
 func NewCmdStepRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepReleaseOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -16,13 +16,13 @@ import (
 
 // StepGitOptions contains the command line flags
 type StepGitOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 // NewCmdStepGit Steps a command object for the "step" command
 func NewCmdStepGit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepGitOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

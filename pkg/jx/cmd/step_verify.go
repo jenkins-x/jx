@@ -8,12 +8,12 @@ import (
 
 // StepVerifyOptions contains the command line flags
 type StepVerifyOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 func NewCmdStepVerify(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepVerifyOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

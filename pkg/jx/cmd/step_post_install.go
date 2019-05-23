@@ -22,7 +22,7 @@ import (
 
 // StepPostInstallOptions contains the command line flags
 type StepPostInstallOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	EnvJobCredentials string
 
@@ -50,7 +50,7 @@ var (
 // NewCmdStepPostInstall creates the command object
 func NewCmdStepPostInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPostInstallOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

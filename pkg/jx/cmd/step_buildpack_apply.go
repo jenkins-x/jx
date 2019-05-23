@@ -29,7 +29,7 @@ var (
 
 // StepBuildPackApplyOptions contains the command line flags
 type StepBuildPackApplyOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Dir                     string
 	Jenkinsfile             string
@@ -40,7 +40,7 @@ type StepBuildPackApplyOptions struct {
 // NewCmdStepBuildPackApply Creates a new Command object
 func NewCmdStepBuildPackApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBuildPackApplyOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -37,7 +37,7 @@ type StepNextVersionOptions struct {
 	Tag           bool
 	UseGitTagOnly bool
 	NewVersion    string
-	StepOptions
+	opts.StepOptions
 }
 
 type Project struct {
@@ -63,7 +63,7 @@ var (
 
 func NewCmdStepNextVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNextVersionOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

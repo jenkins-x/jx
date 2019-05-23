@@ -8,14 +8,14 @@ import (
 
 // StepVerifyPodOptions contains the command line flags
 type StepVerifyPodOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 // NewCmdStepVerifyPod creates the `jx step verify pod` command
 func NewCmdStepVerifyPod(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := &StepVerifyPodOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

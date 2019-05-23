@@ -21,7 +21,7 @@ const appLabel = "app"
 
 // StepVerifyPodCountOptions contains the command line flags
 type StepVerifyPodCountOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	After    int32
 	Pods     int32
@@ -41,7 +41,7 @@ var (
 // NewCmdStepVerifyPodCount performs deployment verification
 func NewCmdStepVerifyPodCount(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepVerifyPodCountOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

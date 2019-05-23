@@ -36,7 +36,7 @@ var (
 
 // StepSplitMonorepoOptions contains the command line flags
 type StepSplitMonorepoOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Glob          string
 	Organisation  string
@@ -50,7 +50,7 @@ type StepSplitMonorepoOptions struct {
 // NewCmdStepSplitMonorepo Creates a new Command object
 func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSplitMonorepoOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

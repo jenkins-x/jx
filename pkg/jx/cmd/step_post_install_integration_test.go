@@ -43,7 +43,7 @@ func TestStepPostInstall(t *testing.T) {
 	staging := kube.NewPermanentEnvironmentWithGit("staging", stagingGitURL)
 
 	o := cmd.StepPostInstallOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,

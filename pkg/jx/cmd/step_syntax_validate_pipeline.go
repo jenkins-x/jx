@@ -31,7 +31,7 @@ var (
 
 // StepSyntaxValidatePipelineOptions contains the command line flags
 type StepSyntaxValidatePipelineOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Context string
 	Dir     string
@@ -40,7 +40,7 @@ type StepSyntaxValidatePipelineOptions struct {
 // NewCmdStepSyntaxValidatePipeline Creates a new Command object
 func NewCmdStepSyntaxValidatePipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSyntaxValidatePipelineOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -30,7 +30,7 @@ const (
 
 // CreateClusterOptions the flags for running create cluster
 type StepTagOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Flags StepTagFlags
 }
@@ -66,7 +66,7 @@ var (
 
 func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepTagOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

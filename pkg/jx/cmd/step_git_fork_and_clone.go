@@ -17,7 +17,7 @@ import (
 
 // StepGitForkAndCloneOptions contains the command line flags
 type StepGitForkAndCloneOptions struct {
-	StepOptions
+	opts.StepOptions
 	Dir         string
 	BaseRef     string
 	PrintOutDir bool
@@ -43,7 +43,7 @@ var (
 // NewCmdStepGitForkAndClone create the 'step git envs' command
 func NewCmdStepGitForkAndClone(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitForkAndCloneOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

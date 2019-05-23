@@ -47,7 +47,7 @@ var (
 
 // StepCreateVersionPullRequestOptions contains the command line flags
 type StepCreateVersionPullRequestOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Kind               string
 	Name               string
@@ -72,7 +72,7 @@ type StepCreateVersionPullRequestResults struct {
 // NewCmdStepCreateVersionPullRequest Creates a new Command object
 func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateVersionPullRequestOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -22,13 +22,13 @@ const (
 
 // StepNexusOptions contains the command line flags
 type StepNexusOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 // NewCmdStepNexus Steps a command object for the "step" command
 func NewCmdStepNexus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepNexusOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

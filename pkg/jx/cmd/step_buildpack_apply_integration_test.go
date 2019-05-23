@@ -55,7 +55,7 @@ func TestStepBuildPackApply(t *testing.T) {
 	require.NoError(t, err)
 
 	o := &cmd.StepBuildPackApplyOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,

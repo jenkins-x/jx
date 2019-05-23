@@ -36,7 +36,7 @@ var (
 func NewCmdStepHelmVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmVersionOptions{
 		StepHelmOptions: StepHelmOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

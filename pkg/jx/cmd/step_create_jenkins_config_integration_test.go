@@ -67,7 +67,7 @@ func TestCreateJenkinsConfig(t *testing.T) {
 	}
 
 	o := &cmd.StepCreateJenkinsConfigOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,

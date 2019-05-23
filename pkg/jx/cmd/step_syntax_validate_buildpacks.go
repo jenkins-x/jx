@@ -24,13 +24,13 @@ var (
 
 // StepSyntaxValidateBuildPacksOptions contains the command line flags
 type StepSyntaxValidateBuildPacksOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 // NewCmdStepSyntaxValidateBuildPacks Creates a new Command object
 func NewCmdStepSyntaxValidateBuildPacks(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSyntaxValidateBuildPacksOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -21,7 +21,7 @@ const (
 
 // StepNextBuildNumberOptions contains the command line flags
 type StepNextBuildNumberOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Owner      string
 	Repository string
@@ -40,7 +40,7 @@ var (
 
 func NewCmdStepNextBuildNumber(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNextBuildNumberOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

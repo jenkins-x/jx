@@ -25,7 +25,7 @@ const (
 
 // StepWaitForArtifactOptions contains the command line flags
 type StepWaitForArtifactOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	ArtifactURL string
 	RepoURL     string
@@ -59,7 +59,7 @@ var (
 
 func NewCmdStepWaitForArtifact(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepWaitForArtifactOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -36,7 +36,7 @@ func TestStepStash(t *testing.T) {
 	testData := "test_data/step_collect/junit.xml"
 
 	o := &cmd.StepStashOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}

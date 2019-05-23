@@ -45,7 +45,7 @@ var (
 
 // StepBlogOptions contains the command line flags
 type StepBlogOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	FromDate                    string
 	ToDate                      string
@@ -78,7 +78,7 @@ type StepBlogState struct {
 // NewCmdStepBlog Creates a new Command object
 func NewCmdStepBlog(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBlogOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

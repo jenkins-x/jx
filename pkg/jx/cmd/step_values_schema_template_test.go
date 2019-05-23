@@ -18,7 +18,7 @@ import (
 func TestStepValuesSchemaTemplate(t *testing.T) {
 	cmName := uuid.New()
 	o := StepValuesSchemaTemplateOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		ConfigMapName: cmName,

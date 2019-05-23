@@ -11,7 +11,7 @@ import (
 func TestMakefile(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepNextVersionOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/make",
@@ -28,7 +28,7 @@ func TestMakefile(t *testing.T) {
 func TestPomXML(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepNextVersionOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/java",
@@ -45,7 +45,7 @@ func TestPomXML(t *testing.T) {
 func TestChart(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepNextVersionOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/helm",

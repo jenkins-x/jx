@@ -37,7 +37,7 @@ import (
 
 // StepChangelogOptions contains the command line flags
 type StepChangelogOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	PreviousRevision    string
 	PreviousDate        string
@@ -146,7 +146,7 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 
 func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepChangelogOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

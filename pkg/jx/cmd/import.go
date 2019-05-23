@@ -37,33 +37,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 )
 
-const (
-	// PlaceHolderPrefix is prefix for placeholders
-	PlaceHolderPrefix = "REPLACE_ME"
-	// PlaceHolderAppName placeholder for app name
-	PlaceHolderAppName = PlaceHolderPrefix + "_APP_NAME"
-	// PlaceHolderGitProvider placeholder for git provider
-	PlaceHolderGitProvider = PlaceHolderPrefix + "_GIT_PROVIDER"
-	// PlaceHolderOrg placeholder for org
-	PlaceHolderOrg = PlaceHolderPrefix + "_ORG"
-	// PlaceHolderDockerRegistryOrg placeholder for docker registry
-	PlaceHolderDockerRegistryOrg = PlaceHolderPrefix + "_DOCKER_REGISTRY_ORG"
-
-	minimumMavenDeployVersion = "2.8.2"
-
-	masterBranch         = "master"
-	defaultGitIgnoreFile = `
-.project
-.classpath
-.idea
-.cache
-.DS_Store
-*.im?
-target
-work
-`
-)
-
 // CallbackFn callback function
 type CallbackFn func() error
 
@@ -834,7 +807,7 @@ func (options *ImportOptions) DefaultGitIgnore() error {
 		return err
 	}
 	if !exists {
-		data := []byte(defaultGitIgnoreFile)
+		data := []byte(opts.DefaultGitIgnoreFile)
 		err = ioutil.WriteFile(name, data, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("failed to write %s due to %s", name, err)
@@ -957,7 +930,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 			CommonOptions: options.CommonOptions,
 		},
 	}
-	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, masterBranch)}
+	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
 	err = startBuildOptions.Run()
 	if err != nil {
 		return fmt.Errorf("failed to start pipeline build")
@@ -1016,17 +989,17 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryO
 	}
 
 	replacer := strings.NewReplacer(
-		PlaceHolderAppName, strings.ToLower(options.AppName),
-		PlaceHolderGitProvider, strings.ToLower(gitServerName),
-		PlaceHolderOrg, strings.ToLower(options.Organisation),
-		PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
+		opts.PlaceHolderAppName, strings.ToLower(options.AppName),
+		opts.PlaceHolderGitProvider, strings.ToLower(gitServerName),
+		opts.PlaceHolderOrg, strings.ToLower(options.Organisation),
+		opts.PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
 
 	pathsToRename := []string{} // Renaming must be done post-Walk
 	if err := filepath.Walk(options.Dir, func(f string, fi os.FileInfo, err error) error {
 		if skip, err := options.skipPathForReplacement(f, fi, ignore); skip {
 			return err
 		}
-		if strings.Contains(filepath.Base(f), PlaceHolderPrefix) {
+		if strings.Contains(filepath.Base(f), opts.PlaceHolderPrefix) {
 			// Prepend so children are renamed before their parents
 			pathsToRename = append([]string{f}, pathsToRename...)
 		}
@@ -1078,7 +1051,7 @@ func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
 	}
 
 	lines := string(input)
-	if strings.Contains(lines, PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
+	if strings.Contains(lines, opts.PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
 		output := replacer.Replace(lines)
 		err = ioutil.WriteFile(file, []byte(output), 0644)
 		if err != nil {
@@ -1317,7 +1290,7 @@ func (options *ImportOptions) fixMaven() error {
 		}
 
 		// lets ensure the mvn plugins are ok
-		out, err := options.GetCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
+		out, err := options.GetCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+opts.MinimumMavenDeployVersion)
 		if err != nil {
 			return fmt.Errorf("Failed to update maven deploy plugin: %s output: %s", err, out)
 		}

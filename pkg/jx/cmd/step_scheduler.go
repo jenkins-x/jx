@@ -9,7 +9,7 @@ import (
 
 // StepSchedulerOptions contains the command line flags
 type StepSchedulerOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 var (
@@ -25,7 +25,7 @@ var (
 // NewCmdStepScheduler Steps a command object for the "step" command
 func NewCmdStepScheduler(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSchedulerOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

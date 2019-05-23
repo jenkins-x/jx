@@ -39,7 +39,7 @@ var (
 
 // StepLinkServicesOptions contains the command line flags
 type StepLinkServicesOptions struct {
-	StepOptions
+	opts.StepOptions
 	FromNamespace string
 	ToNamespace   string
 	Includes      []string
@@ -49,7 +49,7 @@ type StepLinkServicesOptions struct {
 // NewCmdStepLinkServices Creates a new Command object
 func NewCmdStepLinkServices(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepLinkServicesOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

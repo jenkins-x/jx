@@ -20,7 +20,7 @@ func TestStepSplitMonorepo(t *testing.T) {
 	assert.NoError(t, err)
 
 	options := &cmd.StepSplitMonorepoOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Organisation: "dummy",
@@ -52,7 +52,7 @@ func TestStepSplitMonorepoGetLastGitCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	options := &cmd.StepSplitMonorepoOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Organisation: "dummy",

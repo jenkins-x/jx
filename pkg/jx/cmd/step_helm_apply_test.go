@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"io/ioutil"
 	"os"
 	"path"
@@ -50,7 +51,7 @@ func TestApplyAppsTemplateOverrides(t *testing.T) {
 	sto := cmd.StepHelmApplyOptions{
 		StepHelmOptions: cmd.StepHelmOptions{
 			Dir: absoluteRepoPath,
-			StepOptions: cmd.StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
 		},

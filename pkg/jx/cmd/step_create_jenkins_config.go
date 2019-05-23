@@ -29,7 +29,7 @@ var (
 
 // StepCreateJenkinsConfigOptions contains the command line flags
 type StepCreateJenkinsConfigOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Output string
 }
@@ -37,7 +37,7 @@ type StepCreateJenkinsConfigOptions struct {
 // NewCmdStepCreateJenkinsConfig Creates a new Command object
 func NewCmdStepCreateJenkinsConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateJenkinsConfigOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

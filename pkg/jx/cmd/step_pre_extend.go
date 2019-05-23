@@ -25,7 +25,7 @@ import (
 
 // StepPreBuildOptions contains the command line flags
 type StepPreExtendOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 var (
@@ -42,7 +42,7 @@ const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
 func NewCmdStepPreExtend(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPreExtendOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
