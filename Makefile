@@ -71,7 +71,7 @@ endif
 
 ifdef PULL_PULL_SHA
 CODECOV_SHA := $(PULL_PULL_SHA)
-else ifdef $(PULL_BASE_SHA)
+else ifdef PULL_BASE_SHA
 CODECOV_SHA := $(PULL_BASE_SHA)
 else
 CODECOV_SHA := $(shell git rev-parse HEAD 2> /dev/null || echo '')
