@@ -53,6 +53,8 @@ definitions:
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AppSpec:
     description: AppSpec provides details of the metadata for an App
     properties:
+      pipelineExtension:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineExtension'
       schemaPreprocessor:
         $ref: '#/definitions/io.k8s.api.core.v1.Container'
       schemaPreprocessorRole:
@@ -1276,6 +1278,27 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteActivityStep'
       stage:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep'
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineExtension:
+    description: PipelineExtension defines the image and command of an app which wants
+      to modify/extend the pipeline
+    properties:
+      args:
+        description: Arguments to the entrypoint.
+        items:
+          type: string
+        type: array
+      command:
+        description: Entrypoint array. Not executed within a shell.
+        type: string
+      image:
+        description: Docker image name.
+        type: string
+      name:
+        description: Name of the container specified as a DNS_LABEL.
+        type: string
+    required:
+    - name
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure:
     description: PipelineStructure contains references to the Pipeline and PipelineRun,

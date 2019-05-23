@@ -81,3 +81,35 @@ func assertDiffSlice(t *testing.T, originalSlice, newSlice, removed, added []str
 	assert.Equal(t, toDelete, removed, fmt.Sprintf("removal incorrect - original [%s] new [%s]", strings.Join(originalSlice, ", "), strings.Join(newSlice, ", ")))
 	assert.Equal(t, toInsert, added, fmt.Sprintf("insert incorrect - original [%s] new [%s]", strings.Join(originalSlice, ", "), strings.Join(newSlice, ", ")))
 }
+
+func TestExtractKeyValuePairs(t *testing.T) {
+	type testData struct {
+		keyValueArray []string
+		keyValueMap   map[string]string
+		expectError   bool
+	}
+
+	testCases := []testData{
+		{
+			[]string{}, map[string]string{}, false,
+		},
+		{
+			[]string{"foo=bar"}, map[string]string{"foo": "bar"}, false,
+		},
+		{
+			[]string{"foo=bar", "snafu=tarfu"}, map[string]string{"foo": "bar", "snafu": "tarfu"}, false,
+		},
+		{
+			[]string{"foo=bar", "snafu"}, map[string]string{}, true,
+		},
+	}
+	for _, data := range testCases {
+		actual, err := util.ExtractKeyValuePairs(data.keyValueArray, "=")
+		if data.expectError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+		assert.Equal(t, data.keyValueMap, actual)
+	}
+}

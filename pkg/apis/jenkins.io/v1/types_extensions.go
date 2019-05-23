@@ -514,6 +514,20 @@ type SourceRepositorySpec struct {
 type AppSpec struct {
 	SchemaPreprocessor     *corev1.Container `json:"schemaPreprocessor,omitempty" protobuf:"bytes,1,opt,name=schemaPreprocessor"`
 	SchemaPreprocessorRole *v1.Role          `json:"schemaPreprocessorRole,omitempty" protobuf:"bytes,2,opt,name=schemaPreprocessorRole"`
+
+	PipelineExtension *PipelineExtension `json:"pipelineExtension,omitempty" protobuf:"bytes,3,opt,name=pipelineExtension"`
+}
+
+// PipelineExtension defines the image and command of an app which wants to modify/extend the pipeline
+type PipelineExtension struct {
+	// Name of the container specified as a DNS_LABEL.
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// Docker image name.
+	Image string `json:"image,omitempty" protobuf:"bytes,2,opt,name=image"`
+	// Entrypoint array. Not executed within a shell.
+	Command string `json:"command,omitempty" protobuf:"bytes,3,rep,name=command"`
+	// Arguments to the entrypoint.
+	Args []string `json:"args,omitempty" protobuf:"bytes,4,rep,name=args"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -744,14 +744,11 @@ func (o *StepCreateTaskOptions) setBuildValues() error {
 
 func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 	// add any custom labels
-	for _, customLabel := range o.CustomLabels {
-		parts := strings.Split(customLabel, "=")
-		if len(parts) != 2 {
-			return errors.Errorf("expected 2 parts to label but got %v", len(parts))
-		}
-		labels[parts[0]] = parts[1]
+	customLabels, err := util.ExtractKeyValuePairs(o.CustomLabels, "=")
+	if err != nil {
+		return err
 	}
-	o.labels = labels
+	o.labels = util.MergeMaps(labels, customLabels)
 	return nil
 }
 

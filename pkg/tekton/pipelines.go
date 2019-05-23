@@ -27,13 +27,17 @@ func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.G
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
 	log.Infof("PipelineActivity for %s", name)
+	var toMerge map[string]string
+	if pr != nil {
+		toMerge = util.MergeMaps(toMerge, pr.ToMerge)
+	}
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     name,
 			Pipeline: pipeline,
 			Build:    buildNumber,
 			GitInfo:  gitInfo,
-			PullRefs: pr.ToMerge,
+			PullRefs: toMerge,
 		},
 	}
 }

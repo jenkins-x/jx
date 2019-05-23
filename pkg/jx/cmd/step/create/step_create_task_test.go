@@ -394,6 +394,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 						Pipeline: fmt.Sprintf("%s/%s/%s", tt.organization, tt.repoName, tt.branch),
 						Build:    "1",
 						GitInfo:  createTask.GitInfo,
+						PullRefs: map[string]string{},
 					},
 				}
 				if d := cmp.Diff(expectedActivityKey, pa); d != "" {

@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/hex"
+	"github.com/pkg/errors"
 	"math/rand"
 	"regexp"
 	"sort"
@@ -209,4 +210,18 @@ func RemoveStringFromSlice(strings []string, toRemove string) []string {
 		}
 	}
 	return strings
+}
+
+// ExtractKeyValuePairs creates a map of an string array assuming that each array element is of the form <key><sep><value>.
+// An error is returned is a array element cannot be split into a key/value pair using the specified separator.
+func ExtractKeyValuePairs(values []string, sep string) (map[string]string, error) {
+	pairs := make(map[string]string)
+	for _, value := range values {
+		parts := strings.Split(value, sep)
+		if len(parts) != 2 {
+			return map[string]string{}, errors.Errorf("expected 2 parts for key value pair '%s', but got %v", value, len(parts))
+		}
+		pairs[parts[0]] = parts[1]
+	}
+	return pairs, nil
 }
