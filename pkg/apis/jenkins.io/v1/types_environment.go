@@ -39,6 +39,17 @@ type EnvironmentSpec struct {
 
 	// RemoteCluster flag indicates if the Environment is deployed in a separate cluster to the Development Environment
 	RemoteCluster bool `json:"remoteCluster,omitempty" protobuf:"bytes,12,opt,name=remoteCluster"`
+
+	// CloudFoundry cluster information
+	CloudFoundry CloudFoundryType `json:"cloudFoundry,omitempty" protobuf:"bytes,13,opt,name=cloudFoundry"`
+}
+
+// CloudFoundryType contains cloud foundry endpoint information
+type CloudFoundryType struct {
+	ApiEndpoint  string `json:"apiEndpoint,omitempty" protobuf:"bytes,1,opt,name=apiEndpoint"`
+	Organisation string `json:"organisation,omitempty" protobuf:"bytes,2,opt,name=organisation"`
+	Space        string `json:"space,omitempty" protobuf:"bytes,3,opt,name=space"`
+	Secret       string `json:"secret,omitempty" protobuf:"bytes,4,opt,name=secret"`
 }
 
 // EnvironmentStatus is the status for an Environment resource
