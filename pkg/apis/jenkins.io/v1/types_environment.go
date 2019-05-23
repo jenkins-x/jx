@@ -46,7 +46,7 @@ type EnvironmentSpec struct {
 
 // CloudFoundryType contains cloud foundry endpoint information
 type CloudFoundryType struct {
-	ApiEndpoint  string `json:"apiEndpoint,omitempty" protobuf:"bytes,1,opt,name=apiEndpoint"`
+	APIEndpoint  string `json:"apiEndpoint,omitempty" protobuf:"bytes,1,opt,name=apiEndpoint"`
 	Organisation string `json:"organisation,omitempty" protobuf:"bytes,2,opt,name=organisation"`
 	Space        string `json:"space,omitempty" protobuf:"bytes,3,opt,name=space"`
 	Secret       string `json:"secret,omitempty" protobuf:"bytes,4,opt,name=secret"`
