@@ -1,6 +1,7 @@
 package gits_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -178,4 +179,12 @@ func prepareFetchAndMergeTests(t *testing.T) FetchAndMergeTestEnv {
 			assert.NoError(t, err)
 		},
 	}
+}
+
+func TestIsUnadvertisedObjectError(t *testing.T) {
+	// Text copied from an error log
+	err := errors.New("failed to clone three times it's likely things wont recover so lets kill the process after 3 attempts, last error: failed to fetch [pull/4042/head:PR-4042 3e1a943c00186c8aa364498201974c9ab734b353] from https://github.com/jenkins-x/jx.git in directory /tmp/git599291101: git output: error: Server does not allow request for unadvertised object 3e1a943c00186c8aa364498201974c9ab734b353: failed to run 'git fetch origin --depth=1 pull/4042/head:PR-4042 3e1a943c00186c8aa364498201974c9ab734b353' command in directory '/tmp/git599291101', output: 'error: Server does not allow request for unadvertised object 3e1a943c00186c8aa364498201974c9ab734b353'")
+	assert.True(t, gits.IsUnadvertisedObjectError(err))
+	err1 := errors.New("ipsum lorem")
+	assert.False(t, gits.IsUnadvertisedObjectError(err1))
 }

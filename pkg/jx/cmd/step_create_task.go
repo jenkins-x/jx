@@ -3,8 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/prow"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +11,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/ghodss/yaml"
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -1147,10 +1149,15 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 	})
 
 	// if we have failed to clone three times it's likely things wont recover so lets kill the process and let
-	// kubernetes reschedule a new pod
+	// kubernetes reschedule a new pod, however if it's because the revision didn't exist, then it's more likely it's
+	// because that object is already deleted by a force-push
 	if err != nil {
-		log.Fatalf("failed to clone three times it's likely things wont recover so lets kill the process %v", err)
-		panic(err)
+		if gits.IsUnadvertisedObjectError(err) {
+			log.Warnf("Commit most likely overwritten by force-push, so ignorning underlying error %v", err)
+		} else {
+			log.Fatalf("failed to clone three times it's likely things wont recover so lets kill the process; %v", err)
+			panic(err)
+		}
 	}
 
 	return tmpDir
