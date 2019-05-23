@@ -32,7 +32,7 @@ var (
 	StepGitMergeLong = templates.LongDesc(`
 		This pipeline step merges any SHAs specified into the HEAD of master. 
 
-If no SHAs are specified then the PULL_REFS environment variable will be prased for a branch:sha comma separated list of
+If no SHAs are specified then the PULL_REFS environment variable will be parsed for a branch:sha comma separated list of
 shas to merge. For example:
 
 master:ef08a6cd194c2687d4bc12df6bb8a86f53c348ba,2739:5b351f4eae3c4afbb90dd7787f8bf2f8c454723f,2822:bac2a1f34fd54811fb767f69543f59eb3949b2a5
