@@ -1,6 +1,7 @@
 package get
 
 import (
+	"fmt"
 	"os/user"
 	"sort"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	altv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/flagger"
@@ -169,7 +171,20 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 						if d.Name != appName {
 							names = append(names, d.Name)
 						}
+						jxClient, ns, err := o.JXClientAndDevNamespace()
+						if err != nil {
+							log.Warnf("Error getting jx client and dev namespace: %s", err)
+						}
+						sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
 						for _, name := range names {
+							sourceRepository, err := getSourceRepositoryForApplication(name, sourceRepositories)
+							gitUrl := "None Found"
+							if err != nil {
+								log.Warnf("Could not get Source Repository for application: %s", err)
+							} else {
+								gitUrl = buildGitURL(sourceRepository)
+							}
+							row = append(row, gitUrl)
 							url, _ = services.FindServiceURL(kubeClient, d.Namespace, name)
 							if url != "" {
 								break
@@ -242,6 +257,26 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 	}
 	o.Results.Applications = appEnvMap
 	return table
+}
+
+func buildGitURL(sourceRepository *v1.SourceRepository) string {
+	return sourceRepository.Spec.Provider + "/" + sourceRepository.Spec.Org + "/" + sourceRepository.Spec.Repo + ".git"
+}
+
+// We can't pull the SourceRepository by name because we don't know the org, so we iterate over all of them and match the application name to the repo.
+func getSourceRepositoryForApplication(application string, sourceRepositories altv1.SourceRepositoryInterface) (*v1.SourceRepository, error) {
+	repoList, err := sourceRepositories.List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, repo := range repoList.Items {
+		if repo.Spec.Repo == application {
+			return &repo, nil
+		}
+	}
+
+	return nil, fmt.Errorf("No Source Repository found")
 }
 
 func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (namespaces []string, envApps []EnvApps, envNames, apps []string, err error) {
@@ -335,6 +370,7 @@ func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.T
 	for _, ea := range envApps {
 		envName := ea.Environment.Name
 		if len(ea.Apps) > 0 {
+			titles = append(titles, "GIT REPO")
 			if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
 				envName = "Edit"
 			}
