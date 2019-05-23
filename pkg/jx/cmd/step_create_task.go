@@ -1107,7 +1107,7 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 		if o.Verbose {
 			log.Infof("ran git init in %s", tmpDir)
 		}
-		err = o.Git().AddRemote(tmpDir, "origin", tmpDir)
+		err = o.Git().AddRemote(tmpDir, "origin", gitURL)
 		if err != nil {
 			return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, tmpDir)
 		}
