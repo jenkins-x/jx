@@ -18,14 +18,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"syscall"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -64,6 +65,10 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		Run:              runHelp,
 	}
 
+	if len(args) == 0 {
+		args = os.Args
+	}
+	cmds.SetArgs(args)
 	features.Init()
 
 	commonOpts := opts.NewCommonOptionsWithTerm(f, in, out, err)
@@ -221,9 +226,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	}
 	localPlugins := &localPluginHandler{}
 
-	if len(args) == 0 {
-		args = os.Args
-	}
 	if len(args) > 1 {
 		cmdPathPieces := args[1:]
 

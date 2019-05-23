@@ -11,7 +11,10 @@ import (
 )
 
 // Run runs the command
-func Run() error {
+func Run(args []string) error {
+	if len(args) > 0 {
+		args = args[1:]
+	}
 	configureTerminalForAnsiEscapes()
 	cmd := cmd.NewJXCommand(clients.NewFactory(), os.Stdin, os.Stdout, os.Stderr, nil)
 	return cmd.Execute()
