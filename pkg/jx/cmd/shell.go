@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"path/filepath"
 	"runtime"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/spf13/cobra"
 
@@ -20,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 const (
@@ -216,13 +217,13 @@ func (o *ShellOptions) PickContext(names []string, defaultValue string) (string,
 
 func (o *ShellOptions) createNewBashPrompt(prompt string) string {
 	if prompt == "" {
-		return "'[\\u@\\h \\W \\$(jx prompt) ]\\$ '"
+		return "'[\\u@\\h \\W $(jx prompt) ]\\$ '"
 	}
 	if strings.Contains(prompt, "jx prompt") {
 		return prompt
 	}
 	if prompt[0] == '"' {
-		return prompt[0:1] + "\\$(jx prompt) " + prompt[1:]
+		return prompt[0:1] + "$(jx prompt) " + prompt[1:]
 	}
 	if prompt[0] == '\'' {
 		return prompt[0:1] + "$(jx prompt) " + prompt[1:]
