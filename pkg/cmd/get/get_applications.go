@@ -178,13 +178,13 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 						sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
 						for _, name := range names {
 							sourceRepository, err := getSourceRepositoryForApplication(name, sourceRepositories)
-							gitUrl := "None Found"
+							gitURL := "None Found"
 							if err != nil {
 								log.Warnf("Could not get Source Repository for application: %s", err)
 							} else {
-								gitUrl = buildGitURL(sourceRepository)
+								gitURL = buildGitURL(sourceRepository)
 							}
-							row = append(row, gitUrl)
+							row = append(row, gitURL)
 							url, _ = services.FindServiceURL(kubeClient, d.Namespace, name)
 							if url != "" {
 								break
