@@ -253,7 +253,7 @@ release: clean build test-slow-integration linux darwin win arm ## Release the b
 	cd ./build/linux; tar -zcvf ../../release/jx-linux-amd64.tar.gz jx
 	# Don't build the ARM zip for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
-		cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx \
+		cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx; \
 	fi
 
 	go get -u github.com/progrium/gh-release
@@ -262,7 +262,7 @@ release: clean build test-slow-integration linux darwin win arm ## Release the b
 
 	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
-		./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
+		./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION); \
 	fi
 
 .PHONY: release-distro
