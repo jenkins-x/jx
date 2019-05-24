@@ -246,7 +246,7 @@ darwin: ## Build for OSX
 
 .PHONY: release
 release: clean build test-slow-integration linux darwin win arm ## Release the binary
-	mkdir build release
+	mkdir release
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/win/$(NAME)-windows-amd64.exe README.md LICENSE
 
 	cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
