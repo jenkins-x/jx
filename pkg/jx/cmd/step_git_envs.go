@@ -15,7 +15,7 @@ import (
 
 // StepGitEnvsOptions contains the command line flags
 type StepGitEnvsOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	ServiceKind string
 }
@@ -39,7 +39,7 @@ var (
 // NewCmdStepGitEnvs create the 'step git envs' command
 func NewCmdStepGitEnvs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitEnvsOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

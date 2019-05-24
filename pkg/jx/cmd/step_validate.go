@@ -37,7 +37,7 @@ var (
 
 // StepValidateOptions contains the command line flags
 type StepValidateOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	MinimumJxVersion string
 	Dir              string
@@ -46,7 +46,7 @@ type StepValidateOptions struct {
 // NewCmdStepValidate Creates a new Command object
 func NewCmdStepValidate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepValidateOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

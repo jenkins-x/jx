@@ -25,7 +25,7 @@ const (
 
 // StepHelmOptions contains the command line flags
 type StepHelmOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Dir         string
 	https       bool
@@ -35,7 +35,7 @@ type StepHelmOptions struct {
 // NewCmdStepHelm Steps a command object for the "step" command
 func NewCmdStepHelm(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepHelmOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -152,7 +152,7 @@ func (o *StepHelmOptions) releaseRepository(repoId string) error {
 
 func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string, error) {
 
-	stepOpts := StepOptions{
+	stepOpts := opts.StepOptions{
 		CommonOptions: o.CommonOptions,
 	}
 	gitOpts := StepGitCredentialsOptions{

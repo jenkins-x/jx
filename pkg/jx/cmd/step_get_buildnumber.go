@@ -22,7 +22,7 @@ var (
 
 // StepGetBuildNumberOptions contains the command line flags
 type StepGetBuildNumberOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Dir string
 }
@@ -30,7 +30,7 @@ type StepGetBuildNumberOptions struct {
 // NewCmdStepGetBuildNumber Creates a new Command object
 func NewCmdStepGetBuildNumber(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepGetBuildNumberOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

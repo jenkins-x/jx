@@ -27,7 +27,7 @@ var (
 
 // StepVerifyPodReadyOptions contains the command line flags
 type StepVerifyPodReadyOptions struct {
-	StepOptions
+	opts.StepOptions
 	Debug bool
 }
 
@@ -35,7 +35,7 @@ type StepVerifyPodReadyOptions struct {
 func NewCmdStepVerifyPodReady(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := StepVerifyPodReadyOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

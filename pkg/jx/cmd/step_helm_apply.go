@@ -55,7 +55,7 @@ var (
 func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -110,7 +110,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if !o.DisableHelmVersion {
 		(&StepHelmVersionOptions{
 			StepHelmOptions: StepHelmOptions{
-				StepOptions: StepOptions{
+				StepOptions: opts.StepOptions{
 					CommonOptions: &opts.CommonOptions{},
 				},
 			},

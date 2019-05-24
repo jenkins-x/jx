@@ -29,7 +29,7 @@ var (
 func NewCmdStepNexusDrop(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNexusDropOptions{
 		StepNexusOptions: StepNexusOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

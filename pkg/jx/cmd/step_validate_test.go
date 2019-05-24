@@ -13,10 +13,10 @@ import (
 
 func TestStepValidate(t *testing.T) {
 	t.Parallel()
-	AssertValidateWorks(t, &cmd.StepValidateOptions{StepOptions: cmd.StepOptions{CommonOptions: &opts.CommonOptions{}}})
-	AssertValidateWorks(t, &cmd.StepValidateOptions{StepOptions: cmd.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "0.0.1"})
+	AssertValidateWorks(t, &cmd.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}})
+	AssertValidateWorks(t, &cmd.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "0.0.1"})
 
-	AssertValidateFails(t, &cmd.StepValidateOptions{StepOptions: cmd.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "100.0.1"})
+	AssertValidateFails(t, &cmd.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "100.0.1"})
 
 	// lets check the test data has a valid addon
 	projectDir := "test_data/project_with_kubeless"
@@ -24,7 +24,7 @@ func TestStepValidate(t *testing.T) {
 	assert.Nil(t, err, "Failed to load project config %s", fileName)
 	assert.NotEmpty(t, cfg.Addons, "Failed to find addons in project config %s", fileName)
 
-	AssertValidateFails(t, &cmd.StepValidateOptions{StepOptions: cmd.StepOptions{CommonOptions: &opts.CommonOptions{}}, Dir: projectDir})
+	AssertValidateFails(t, &cmd.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}, Dir: projectDir})
 }
 
 func AssertValidateWorks(t *testing.T, options *cmd.StepValidateOptions) error {

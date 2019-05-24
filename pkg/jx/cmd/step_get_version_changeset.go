@@ -19,7 +19,7 @@ const (
 
 // StepGetVersionChangeSetOptions contains the command line flags
 type StepGetVersionChangeSetOptions struct {
-	StepOptions
+	opts.StepOptions
 	VersionsDir        string
 	VersionsRepository string
 	VersionsGitRef     string
@@ -47,7 +47,7 @@ var (
 // NewCmdStepGetVersionChangeSet create the 'step git envs' command
 func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGetVersionChangeSetOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

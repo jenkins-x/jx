@@ -8,13 +8,13 @@ import (
 
 // StepSyntaxOptions contains the command line flags
 type StepSyntaxOptions struct {
-	StepOptions
+	opts.StepOptions
 }
 
 // NewCmdStepSyntax Steps a command object for the "step" command
 func NewCmdStepSyntax(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSyntaxOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

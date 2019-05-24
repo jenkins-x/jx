@@ -36,7 +36,7 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	stableBranch := "master"
 	r, fakeStdout, _ := os.Pipe()
 	options := &cmd.StepGetVersionChangeSetOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		VersionsDir:   testDir,
@@ -101,7 +101,7 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	stableBranch := "master"
 	r, fakeStdout, _ := os.Pipe()
 	options := &cmd.StepGetVersionChangeSetOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		VersionsDir:  testDir,

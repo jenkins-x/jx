@@ -21,7 +21,7 @@ import (
 
 // StepCustomPipelineOptions contains the command line arguments for this command
 type StepCustomPipelineOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	MultiBranchProject bool
 	Dir                string
@@ -45,7 +45,7 @@ var (
 // NewCmdStepCustomPipeline creates the new command
 func NewCmdStepCustomPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepCustomPipelineOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 		JenkinsSelector: opts.JenkinsSelectorOptions{

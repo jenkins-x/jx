@@ -16,7 +16,7 @@ import (
 
 // StepPreBuildOptions contains the command line flags
 type StepPreBuildOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Image string
 }
@@ -33,7 +33,7 @@ var (
 
 func NewCmdStepPreBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPreBuildOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

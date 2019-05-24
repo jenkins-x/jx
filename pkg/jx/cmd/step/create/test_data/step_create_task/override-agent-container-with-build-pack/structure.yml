@@ -1,0 +1,9 @@
+metadata:
+  creationTimestamp: null
+  name: abayer-js-test-repo-override-de-1
+pipelineRef: null
+pipelineRunRef: null
+stages:
+  - depth: 0
+    name: from-build-pack
+    taskRef: abayer-js-test-repo-override-de-from-build-pack-1

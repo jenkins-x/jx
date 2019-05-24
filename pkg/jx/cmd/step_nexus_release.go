@@ -32,7 +32,7 @@ var (
 func NewCmdStepNexusRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNexusReleaseOptions{
 		StepNexusOptions: StepNexusOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

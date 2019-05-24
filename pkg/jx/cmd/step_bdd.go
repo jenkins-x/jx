@@ -30,7 +30,7 @@ const (
 
 // StepBDDOptions contains the command line arguments for this command
 type StepBDDOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	InstallOptions InstallOptions
 	Flags          StepBDDFlags
@@ -78,7 +78,7 @@ var (
 
 func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepBDDOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 		InstallOptions: CreateInstallOptions(commonOpts),

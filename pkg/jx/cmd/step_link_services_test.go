@@ -25,7 +25,7 @@ const (
 func TestServiceLinking(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepLinkServicesOptions{
-		StepOptions: cmd.StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		FromNamespace: fromNs,

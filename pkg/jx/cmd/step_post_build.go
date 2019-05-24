@@ -25,7 +25,7 @@ import (
 
 // StepPostBuildOptions contains the command line flags
 type StepPostBuildOptions struct {
-	StepOptions
+	opts.StepOptions
 	FullImageName string
 	OutputFile    string
 }
@@ -53,7 +53,7 @@ podAnnotations:
 
 func NewCmdStepPostBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPostBuildOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

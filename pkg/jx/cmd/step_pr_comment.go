@@ -31,7 +31,7 @@ type StepPRCommentFlags struct {
 func NewCmdStepPRComment(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

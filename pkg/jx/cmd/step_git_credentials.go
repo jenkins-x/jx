@@ -24,7 +24,7 @@ const (
 
 // StepGitCredentialsOptions contains the command line flags
 type StepGitCredentialsOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	OutputFile string
 }
@@ -47,7 +47,7 @@ var (
 
 func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitCredentialsOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

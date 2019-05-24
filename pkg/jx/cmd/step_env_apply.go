@@ -52,7 +52,7 @@ var (
 func NewCmdStepEnvApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepEnvApplyOptions{
 		StepEnvOptions: StepEnvOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -200,7 +200,7 @@ func (o *StepEnvApplyOptions) Run() error {
 
 	stepHelmBuild := &StepHelmBuildOptions{
 		StepHelmOptions: StepHelmOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: o.CommonOptions,
 			},
 			Dir: dir,

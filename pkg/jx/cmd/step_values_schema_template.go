@@ -32,7 +32,7 @@ const (
 
 // StepValuesSchemaTemplateOptions contains the command line flags
 type StepValuesSchemaTemplateOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	ConfigMapName string
 	ConfigMapKey  string
@@ -42,7 +42,7 @@ type StepValuesSchemaTemplateOptions struct {
 // NewCmdStepValuesSchemaTemplate Creates a new Command object
 func NewCmdStepValuesSchemaTemplate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepValuesSchemaTemplateOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

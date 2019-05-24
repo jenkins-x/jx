@@ -96,7 +96,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 			CommonOptions: commonOpts,
 		},
 		GitCredentials: StepGitCredentialsOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

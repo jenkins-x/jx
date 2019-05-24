@@ -1706,7 +1706,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 
 			envApplyOptions := &StepEnvApplyOptions{
 				StepEnvOptions: StepEnvOptions{
-					StepOptions: StepOptions{
+					StepOptions: opts.StepOptions{
 						CommonOptions: options.CommonOptions,
 					},
 				},

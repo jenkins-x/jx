@@ -24,7 +24,7 @@ import (
 
 // StepStashOptions contains the command line flags
 type StepStashOptions struct {
-	StepOptions
+	opts.StepOptions
 	Pattern         []string
 	Dir             string
 	ToPath          string
@@ -76,7 +76,7 @@ var (
 // NewCmdStepStash creates the CLI command
 func NewCmdStepStash(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepStashOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

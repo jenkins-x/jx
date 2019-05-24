@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -202,7 +203,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		revision = "master"
 	}
 
-	pr := &StepCreateTaskOptions{}
+	pr := &create.StepCreateTaskOptions{}
 	if pj.Type == prowapi.PostsubmitJob {
 		pr.PipelineKind = jenkinsfile.PipelineKindRelease
 	} else {
@@ -303,7 +304,7 @@ func (o *ControllerPipelineRunnerOptions) stepGitCredentials() error {
 		copy := *o.CommonOptions
 		copy.BatchMode = true
 		gsc := &StepGitCredentialsOptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: &copy,
 			},
 		}

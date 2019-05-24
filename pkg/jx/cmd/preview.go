@@ -589,7 +589,7 @@ func (o *PreviewOptions) Run() error {
 			PR:         o.PullRequestName,
 		},
 		StepPROptions: StepPROptions{
-			StepOptions: StepOptions{
+			StepOptions: opts.StepOptions{
 				CommonOptions: o.CommonOptions,
 			},
 		},

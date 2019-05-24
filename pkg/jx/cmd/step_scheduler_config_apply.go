@@ -12,7 +12,7 @@ import (
 
 // StepSchedulerConfigApplyOptions contains the command line flags
 type StepSchedulerConfigApplyOptions struct {
-	StepOptions
+	opts.StepOptions
 	Agent string
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback gits.ConfigureGitFn
@@ -33,7 +33,7 @@ var (
 // NewCmdStepSchedulerConfigApply Steps a command object for the "step" command
 func NewCmdStepSchedulerConfigApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSchedulerConfigApplyOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

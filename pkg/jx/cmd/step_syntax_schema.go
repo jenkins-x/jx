@@ -18,7 +18,7 @@ import (
 
 // StepSyntaxSchemaOptions contains the command line flags
 type StepSyntaxSchemaOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	Pipeline  bool
 	BuildPack bool
@@ -28,7 +28,7 @@ type StepSyntaxSchemaOptions struct {
 // NewCmdStepSyntaxSchema Steps a command object for the "step" command
 func NewCmdStepSyntaxSchema(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSyntaxSchemaOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

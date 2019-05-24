@@ -19,7 +19,7 @@ import (
 
 // StepGpgCredentialsOptions contains the command line flags
 type StepGpgCredentialsOptions struct {
-	StepOptions
+	opts.StepOptions
 
 	OutputDir string
 }
@@ -42,7 +42,7 @@ var (
 
 func NewCmdStepGpgCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGpgCredentialsOptions{
-		StepOptions: StepOptions{
+		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
