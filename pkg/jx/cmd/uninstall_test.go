@@ -3,7 +3,7 @@ package cmd_test
 import (
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -122,6 +122,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 
 	// mock terminal
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 
 	// Test interactive IO
 	donec := make(chan struct{})
@@ -146,7 +147,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 	err = o.Run()
 	assert.EqualError(t, err, "The context 'target-context' must match the current context to uninstall")
 
-	assert.NoError(t, console.Close())
+	console.Close()
 	<-donec
 
 	// Dump the terminal's screen.
@@ -165,6 +166,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 
 	// mock terminal
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 
 	// Test interactive IO
 	donec := make(chan struct{})
@@ -202,7 +204,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	_, err = client.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
 	assert.Error(t, err)
 
-	assert.NoError(t, console.Close())
+	console.Close()
 	<-donec
 
 	// Dump the terminal's screen.

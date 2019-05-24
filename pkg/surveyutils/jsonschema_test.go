@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Netflix/go-expect"
-
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
+	expect "github.com/Netflix/go-expect"
 	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -851,9 +850,10 @@ func GenerateValuesAsYaml(t *testing.T, schemaName string, existingValues map[st
 		console *tests.
 			ConsoleWrapper, donec chan struct{})) (string, []*GeneratedSecret, error) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
-	t.Parallel()
+	//t.Parallel()
 	secrets := make([]*GeneratedSecret, 0)
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	options := surveyutils.JSONSchemaOptions{
 		Out:                 console.Out,
 		In:                  console.In,
@@ -885,9 +885,8 @@ func GenerateValuesAsYaml(t *testing.T, schemaName string, existingValues map[st
 	result, runErr := options.GenerateValues(
 		data,
 		existingValues)
-	err = console.Close()
+	console.Close()
 	<-donec
-	assert.NoError(t, err)
 	yaml, err := yaml.JSONToYAML(result)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 	assert.NoError(t, err)

@@ -178,6 +178,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 
 	// Needs console
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -265,6 +266,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 
 	// Needs console
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -365,6 +367,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 
 	// Needs console
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -467,6 +470,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 
 	// Needs console
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err

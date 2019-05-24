@@ -115,6 +115,7 @@ func TestPreprocessSchema(t *testing.T) {
 
 	// Needs console output
 	console := tests.NewTerminal(t)
+	defer console.Cleanup()
 	o.In = console.In
 	o.Out = console.Out
 	o.Err = console.Err
