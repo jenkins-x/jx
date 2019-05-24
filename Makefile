@@ -73,10 +73,10 @@ endif
 
 # Various codecov.io variables that are set from the CI envrionment if present, otherwise from locally computed values
 
-CODECOV_NAME := integration
+CODECOV_NAME ?= integration
 
 #ARGS is extra args added to the codecov uploader
-CODECOV_ARGS := "-n $(CODECOV_NAME)"
+CODECOV_ARGS := -n $(CODECOV_NAME) -F $(CODECOV_NAME) -s $(REPORTS_DIR)
 
 
 ifdef ($(andd $(REPO_NAME), $(REPO_OWNER)),)
@@ -133,7 +133,8 @@ RELEASE_ORG_REPO := cloudbees/cloudbees-jenkins-x-distro
 endif
 
 TEST_PACKAGE ?= ./...
-COVERFLAGS=-coverprofile=cover.out --covermode=count --coverpkg=./...
+COVER_OUT:=$(REPORTS_DIR)/cover.out
+COVERFLAGS=-coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./...
 
 .PHONY: list
 list: ## List all make targets
@@ -175,22 +176,22 @@ test: make-reports-dir ## Run the unit tests
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
 
 test-report: make-reports-dir get-test-deps test ## Create the test report
-	@gocov convert cover.out | gocov report
+	@gocov convert $(COVER_OUT) | gocov report
 
 test-report-html: make-reports-dir get-test-deps test ## Create the test report in HTML format
-	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
+	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-verbose: make-reports-dir ## Run the unit tests in verbose mode
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -v $(COVERFLAGS) -failfast ./...
 
-test-slow-report: get-test-deps test-slow
-	@gocov convert cover.out | gocov report
+test-slow-report: get-test-deps test-slow make-reports-dir
+	@gocov convert $(COVER_OUT) | gocov report
 
 test-slow: make-reports-dir ## Run unit tests sequentially
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) ./...
 
 test-slow-report-html: make-reports-dir get-test-deps test-slow
-	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
+	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-integration: get-test-deps## Run the integration tests
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration  -short ./...
@@ -201,20 +202,21 @@ test-integration1: make-reports-dir
 test-rich-integration1: make-reports-dir
 	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration $(COVERFLAGS) -short -test.v $(TEST_PACKAGE) -run $(TEST)
 
-test-integration-report: get-test-deps test-integration ## Create the integration tests report
-	@gocov convert cover.out | gocov report
+test-integration-report: make-reports-dir get-test-deps test-integration ## Create the integration tests report
+	@gocov convert $(COVER_OUT) | gocov report
 
 test-integration-report-html: make-reports-dir get-test-deps test-integration
-	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
+	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
-test-slow-integration-report: get-test-deps test-slow-integration
-	@gocov convert cover.out | gocov report
-
-test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-integration
-	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open cover.html
 
 test-slow-integration: make-reports-dir ## Run the integration tests sequentially
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration $(COVERFLAGS) ./...
+
+test-slow-integration-report: make-reports-dir get-test-deps test-slow-integration
+	@gocov convert $(COVER_OUT) | gocov report
+
+test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-integration
+	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-soak: make-reports-dir get-test-deps
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags soak $(COVERFLAGS) ./...
@@ -286,7 +288,7 @@ release-distro:
 
 .PHONY: clean
 clean: ## Clean the generated artifacts
-	rm -rf build release cover.out
+	rm -rf build release
 
 .PHONY: codecov-upload
 codecov-upload:
