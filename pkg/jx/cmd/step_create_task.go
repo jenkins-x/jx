@@ -71,7 +71,6 @@ type StepCreateTaskOptions struct {
 	StepOptions
 
 	Pack              string
-	Dir               string
 	BuildPackURL      string
 	BuildPackRef      string
 	PipelineKind      string
@@ -117,6 +116,7 @@ type StepCreateTaskOptions struct {
 	version              string
 	previewVersionPrefix string
 	VersionResolver      *opts.VersionResolver
+	cloneDir             string
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -141,7 +141,6 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "out", "The directory to write the output to as YAML. Defaults to 'out'")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
@@ -227,19 +226,19 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 	if o.CloneGitURL != "" {
-		cloneDir := o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
+		o.cloneDir = o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
 		if o.DeleteTempDir {
 			defer func() {
-				log.Infof("removing the temp directory %s\n", cloneDir)
-				err := os.RemoveAll(cloneDir)
+				log.Infof("removing the temp directory %s\n", o.cloneDir)
+				err := os.RemoveAll(o.cloneDir)
 				if err != nil {
-					log.Warnf("failed to delete dir %s: %s\n", cloneDir, err.Error())
+					log.Warnf("failed to delete dir %s: %s\n", o.cloneDir, err.Error())
 				}
 			}()
 		}
-		err := o.mergePullRefs(cloneDir)
+		err := o.mergePullRefs(o.cloneDir)
 		if err != nil {
-			return errors.Wrapf(err, "Unable to merge PULL_REFS in %s", cloneDir)
+			return errors.Wrapf(err, "Unable to merge PULL_REFS in %s", o.cloneDir)
 		}
 	}
 
@@ -258,21 +257,21 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
-	if o.Dir == "" {
-		o.Dir, err = os.Getwd()
+	if o.cloneDir == "" {
+		o.cloneDir, err = os.Getwd()
 		if err != nil {
 			return err
 		}
 	}
 
-	o.GitInfo, err = o.FindGitInfo(o.Dir)
+	o.GitInfo, err = o.FindGitInfo(o.cloneDir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
+		return errors.Wrapf(err, "failed to find git information from dir %s", o.cloneDir)
 	}
 	if o.Branch == "" {
-		o.Branch, err = o.Git().Branch(o.Dir)
+		o.Branch, err = o.Git().Branch(o.cloneDir)
 		if err != nil {
-			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+			return errors.Wrapf(err, "failed to find git branch from dir %s", o.cloneDir)
 		}
 	}
 
@@ -295,7 +294,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	projectConfig, projectConfigFile, err := o.loadProjectConfig()
 	if err != nil {
-		return errors.Wrapf(err, "failed to load project config in dir %s", o.Dir)
+		return errors.Wrapf(err, "failed to load project config in dir %s", o.cloneDir)
 	}
 	if o.BuildPackURL == "" || o.BuildPackRef == "" {
 		if projectConfig.BuildPackGitURL != "" {
@@ -323,7 +322,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.Pack = projectConfig.BuildPack
 	}
 	if o.Pack == "" {
-		o.Pack, err = o.DiscoverBuildPack(o.Dir, projectConfig, o.Pack)
+		o.Pack, err = o.DiscoverBuildPack(o.cloneDir, projectConfig, o.Pack)
 		if err != nil {
 			return errors.Wrapf(err, "failed to discover the build pack")
 		}
@@ -570,7 +569,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, string, error) {
 	if o.Context != "" {
-		fileName := filepath.Join(o.Dir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
+		fileName := filepath.Join(o.cloneDir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
 		exists, err := util.FileExists(fileName)
 		if err != nil {
 			return nil, fileName, errors.Wrapf(err, "failed to check if file exists %s", fileName)
@@ -580,7 +579,7 @@ func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, stri
 			return config, fileName, err
 		}
 	}
-	return config.LoadProjectConfig(o.Dir)
+	return config.LoadProjectConfig(o.cloneDir)
 }
 
 // CreateStageForBuildPack generates the Task for a build pack
@@ -1259,7 +1258,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 	version := ""
 
 	if o.DryRun {
-		version, err := getVersionFromFile(o.Dir)
+		version, err := getVersionFromFile(o.cloneDir)
 		if err != nil {
 			log.Warn("No version file or incorrect content; using 0.0.1 as version")
 			version = "0.0.1"
@@ -1296,7 +1295,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		if err != nil {
 			return err
 		}
-		version, err = getVersionFromFile(o.Dir)
+		version, err = getVersionFromFile(o.cloneDir)
 		if err != nil {
 			return err
 		}
@@ -1363,7 +1362,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 		Args: []string{"-c", commandText},
 		Out:  o.Out,
 		Err:  o.Err,
-		Dir:  o.Dir,
+		Dir:  o.cloneDir,
 	}
 	result, err := cmd.RunWithoutRetry()
 	if err != nil {
