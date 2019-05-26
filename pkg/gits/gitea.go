@@ -175,17 +175,18 @@ func (p *GiteaProvider) ForkRepository(originalOrg string, name string, destinat
 		if strings.Contains(err.Error(), "try again later") {
 			log.Warnf("Waiting for the fork of %s/%s to appear...\n", owner, name)
 			// lets wait for the fork to occur...
-			start := time.Now()
-			deadline := start.Add(time.Minute)
+			timer := time.NewTimer(time.Minute)
+			defer timer.Stop()
 			for {
-				time.Sleep(5 * time.Second)
-				repo, err = p.Client.GetRepo(owner, name)
-				if repo != nil && err == nil {
-					break
-				}
-				t := time.Now()
-				if t.After(deadline) {
+				select {
+				case <-timer.C:
 					return nil, fmt.Errorf("Gave up waiting for Repository %s/%s to appear: %s", owner, name, err)
+				default:
+					time.Sleep(5 * time.Second)
+					repo, err = p.Client.GetRepo(owner, name)
+					if repo != nil && err == nil {
+						break
+					}
 				}
 			}
 		} else {
