@@ -3,6 +3,7 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -20,16 +21,16 @@ func TestCreateQuickstartProjects(t *testing.T) {
 	// TODO lets skip this test for now as it often fails with rate limits
 	t.SkipNow()
 
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -50,7 +51,7 @@ func TestCreateQuickstartProjects(t *testing.T) {
 			ProjectName: appName,
 		},
 	}
-	cmd.ConfigureTestOptions(o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir, true))
+	cmd_test_helpers.ConfigureTestOptions(o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir, true))
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true

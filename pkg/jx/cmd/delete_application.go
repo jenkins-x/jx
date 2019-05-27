@@ -32,6 +32,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+const (
+	optionPullRequestPollTime = "pull-request-poll-time"
+)
+
 var (
 	deleteApplicationLong = templates.LongDesc(`
 		Deletes one or more Applications

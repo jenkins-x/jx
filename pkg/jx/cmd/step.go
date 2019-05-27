@@ -3,6 +3,20 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/buildpack"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/env"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/get"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/nexus"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/post"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/pr"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/pre"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/scheduler"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/syntax"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/verify"
 	"github.com/spf13/cobra"
 )
 
@@ -24,36 +38,36 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCmdStepBuildPack(commonOpts))
+	cmd.AddCommand(buildpack.NewCmdStepBuildPack(commonOpts))
 	cmd.AddCommand(NewCmdStepBDD(commonOpts))
-	cmd.AddCommand(NewCmdStepBlog(commonOpts))
-	cmd.AddCommand(NewCmdStepChangelog(commonOpts))
-	cmd.AddCommand(NewCmdStepCredential(commonOpts))
-	cmd.AddCommand(NewCmdStepCreate(commonOpts))
-	cmd.AddCommand(NewCmdStepCustomPipeline(commonOpts))
-	cmd.AddCommand(NewCmdStepEnv(commonOpts))
-	cmd.AddCommand(NewCmdStepGet(commonOpts))
-	cmd.AddCommand(NewCmdStepGit(commonOpts))
-	cmd.AddCommand(NewCmdStepGpgCredentials(commonOpts))
-	cmd.AddCommand(NewCmdStepHelm(commonOpts))
-	cmd.AddCommand(NewCmdStepLinkServices(commonOpts))
-	cmd.AddCommand(NewCmdStepNexus(commonOpts))
-	cmd.AddCommand(NewCmdStepNextVersion(commonOpts))
-	cmd.AddCommand(NewCmdStepNextBuildNumber(commonOpts))
-	cmd.AddCommand(NewCmdStepPre(commonOpts))
-	cmd.AddCommand(NewCmdStepPR(commonOpts))
-	cmd.AddCommand(NewCmdStepPost(commonOpts))
-	cmd.AddCommand(NewCmdStepRelease(commonOpts))
-	cmd.AddCommand(NewCmdStepSplitMonorepo(commonOpts))
-	cmd.AddCommand(NewCmdStepSyntax(commonOpts))
-	cmd.AddCommand(NewCmdStepTag(commonOpts))
-	cmd.AddCommand(NewCmdStepValidate(commonOpts))
-	cmd.AddCommand(NewCmdStepVerify(commonOpts))
-	cmd.AddCommand(NewCmdStepWaitForArtifact(commonOpts))
-	cmd.AddCommand(NewCmdStepStash(commonOpts))
-	cmd.AddCommand(NewCmdStepUnstash(commonOpts))
-	cmd.AddCommand(NewCmdStepValuesSchemaTemplate(commonOpts))
-	cmd.AddCommand(NewCmdStepScheduler(commonOpts))
+	cmd.AddCommand(step.NewCmdStepBlog(commonOpts))
+	cmd.AddCommand(step.NewCmdStepChangelog(commonOpts))
+	cmd.AddCommand(step.NewCmdStepCredential(commonOpts))
+	cmd.AddCommand(create.NewCmdStepCreate(commonOpts))
+	cmd.AddCommand(step.NewCmdStepCustomPipeline(commonOpts))
+	cmd.AddCommand(env.NewCmdStepEnv(commonOpts))
+	cmd.AddCommand(get.NewCmdStepGet(commonOpts))
+	cmd.AddCommand(git.NewCmdStepGit(commonOpts))
+	cmd.AddCommand(step.NewCmdStepGpgCredentials(commonOpts))
+	cmd.AddCommand(helm.NewCmdStepHelm(commonOpts))
+	cmd.AddCommand(step.NewCmdStepLinkServices(commonOpts))
+	cmd.AddCommand(nexus.NewCmdStepNexus(commonOpts))
+	cmd.AddCommand(step.NewCmdStepNextVersion(commonOpts))
+	cmd.AddCommand(step.NewCmdStepNextBuildNumber(commonOpts))
+	cmd.AddCommand(pre.NewCmdStepPre(commonOpts))
+	cmd.AddCommand(pr.NewCmdStepPR(commonOpts))
+	cmd.AddCommand(post.NewCmdStepPost(commonOpts))
+	cmd.AddCommand(step.NewCmdStepRelease(commonOpts))
+	cmd.AddCommand(step.NewCmdStepSplitMonorepo(commonOpts))
+	cmd.AddCommand(syntax.NewCmdStepSyntax(commonOpts))
+	cmd.AddCommand(step.NewCmdStepTag(commonOpts))
+	cmd.AddCommand(step.NewCmdStepValidate(commonOpts))
+	cmd.AddCommand(verify.NewCmdStepVerify(commonOpts))
+	cmd.AddCommand(step.NewCmdStepWaitForArtifact(commonOpts))
+	cmd.AddCommand(step.NewCmdStepStash(commonOpts))
+	cmd.AddCommand(step.NewCmdStepUnstash(commonOpts))
+	cmd.AddCommand(step.NewCmdStepValuesSchemaTemplate(commonOpts))
+	cmd.AddCommand(scheduler.NewCmdStepScheduler(commonOpts))
 
 	return cmd
 }

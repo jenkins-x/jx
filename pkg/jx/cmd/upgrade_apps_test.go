@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -42,7 +43,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	newVersion.Patch++
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
 		Version:              newVersion.String(),
@@ -107,7 +108,7 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 	newVersion.Patch++
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
 		Version:              newVersion.String(),
@@ -203,7 +204,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 	assert.NoError(t, err)
 	newVersion.Patch++
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: testOptions.CommonOptions,
 		},
 		Version:              newVersion.String(),
@@ -291,7 +292,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 	assert.NoError(t, err)
 	newVersion.Patch++
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: testOptions.CommonOptions,
 		},
 		Version:              newVersion.String(),
@@ -392,7 +393,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 	assert.NoError(t, err)
 	newVersion.Patch++
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: testOptions.CommonOptions,
 		},
 		Version:              newVersion.String(),
@@ -484,7 +485,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 	assert.NoError(t, err)
 	newVersion.Patch++
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: testOptions.CommonOptions,
 		},
 		Version:              newVersion.String(),
@@ -548,7 +549,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	newVersion.Patch++
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
 		Version:              newVersion.String(),
@@ -618,7 +619,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 	// Now let's upgrade
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.UpgradeAppsOptions{
-		AddOptions: cmd.AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
 		Repo:                 helm.FakeChartmusuem,

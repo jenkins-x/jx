@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -21,7 +22,7 @@ type DeletePreviewOptions struct {
 func NewCmdDeletePreview(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeletePreviewOptions{
 		PreviewOptions: PreviewOptions{
-			PromoteOptions: PromoteOptions{
+			PromoteOptions: promote.PromoteOptions{
 				CommonOptions: commonOpts,
 			},
 		},

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -84,7 +85,7 @@ type CreateDevPodOptions struct {
 	ServiceAccount  string
 	PullSecrets     string
 
-	GitCredentials StepGitCredentialsOptions
+	GitCredentials git.StepGitCredentialsOptions
 
 	Results CreateDevPodResults
 }
@@ -95,7 +96,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
 		},
-		GitCredentials: StepGitCredentialsOptions{
+		GitCredentials: git.StepGitCredentialsOptions{
 			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},

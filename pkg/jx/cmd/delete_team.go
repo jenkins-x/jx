@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -180,15 +181,15 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	return err
 }
 
-func (o *DeleteTeamOptions) changeNamespace(namespace string) {
-	nsOptions := &NamespaceOptions{
+func (o *DeleteTeamOptions) changeNamespace(ns string) {
+	nsOptions := &namespace.NamespaceOptions{
 		CommonOptions: o.CommonOptions,
 	}
 	nsOptions.BatchMode = true
-	nsOptions.Args = []string{namespace}
+	nsOptions.Args = []string{ns}
 	err := nsOptions.Run()
 	if err != nil {
-		log.Warnf("Failed to set context to namespace %s: %s", namespace, err)
+		log.Warnf("Failed to set context to namespace %s: %s", ns, err)
 	}
 	o.ResetClientsAndNamespaces()
 }

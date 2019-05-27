@@ -3,6 +3,7 @@ package cmd_test_helpers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +23,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_test "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -71,8 +71,8 @@ func (o *AppTestOptions) AddApp(values map[string]interface{}, prefix string) (s
 	name := fmt.Sprintf("%s%s", prefix, nameUUID.String())
 	alias := fmt.Sprintf("%s-alias", name)
 	version := "0.0.1"
-	installOpts := &cmd.AddAppOptions{
-		AddOptions: cmd.AddOptions{
+	installOpts := &add.AddAppOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: o.CommonOptions,
 		},
 		Version:              version,
@@ -174,15 +174,15 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(appName string, values map[strin
 
 // Cleanup must be run in a defer statement whenever CreateAppTestOptions is run
 func (o *AppTestOptions) Cleanup() error {
-	err := cmd.CleanupTestEnvironmentDir(o.CommonOptions)
+	err := CleanupTestEnvironmentDir(o.CommonOptions)
 	if err != nil {
 		return err
 	}
-	err = cmd.CleanupTestKubeConfigDir(o.OriginalKubeCfg, o.TempKubeCfg)
+	err = CleanupTestKubeConfigDir(o.OriginalKubeCfg, o.TempKubeCfg)
 	if err != nil {
 		return err
 	}
-	err = cmd.CleanupTestJxHomeDir(o.OriginalJxHome, o.TempJxHome)
+	err = CleanupTestJxHomeDir(o.OriginalJxHome, o.TempJxHome)
 	if err != nil {
 		return err
 	}
@@ -198,11 +198,11 @@ func CreateAppTestOptions(gitOps bool, appName string, t *testing.T) *AppTestOpt
 		CommonOptions: &commonOpts,
 		MockFactory:   mockFactory,
 	}
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	o.OriginalJxHome = originalJxHome
 	o.TempJxHome = tempJxHome
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	o.OriginalKubeCfg = originalKubeCfg
 	o.TempKubeCfg = tempKubeCfg
@@ -235,7 +235,7 @@ func CreateAppTestOptions(gitOps bool, appName string, t *testing.T) *AppTestOpt
 	}
 	o.MockHelmer = helm_test.NewMockHelmer()
 	installerMock := resources_test.NewMockInstaller()
-	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
+	ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			devEnv,
@@ -246,7 +246,7 @@ func CreateAppTestOptions(gitOps bool, appName string, t *testing.T) *AppTestOpt
 		installerMock,
 	)
 
-	err = cmd.CreateTestEnvironmentDir(o.CommonOptions)
+	err = CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 	o.ConfigureGitFn = func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
 		err := gitter.Init(dir)

@@ -18,6 +18,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 	"io"
 	"os"
 	"os/exec"
@@ -76,7 +79,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	// commonOpts holds the global flags that will be shared/inherited by all sub-commands created bellow
 	commonOpts.AddCommonFlags(cmds)
 
-	addCommands := NewCmdAdd(commonOpts)
+	addCommands := add.NewCmdAdd(commonOpts)
 	createCommands := NewCmdCreate(commonOpts)
 	deleteCommands := NewCmdDelete(commonOpts)
 	getCommands := NewCmdGet(commonOpts)
@@ -113,7 +116,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 
 	environmentsCommands := []*cobra.Command{
 		NewCmdPreview(commonOpts),
-		NewCmdPromote(commonOpts),
+		promote.NewCmdPromote(commonOpts),
 	}
 	environmentsCommands = append(environmentsCommands, findCommands("environment", createCommands, deleteCommands, editCommands, getCommands)...)
 
@@ -142,7 +145,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 				NewCmdContext(commonOpts),
 				NewCmdEnvironment(commonOpts),
 				NewCmdTeam(commonOpts),
-				NewCmdNamespace(commonOpts),
+				namespace.NewCmdNamespace(commonOpts),
 				NewCmdPrompt(commonOpts),
 				NewCmdScan(commonOpts),
 				NewCmdShell(commonOpts),

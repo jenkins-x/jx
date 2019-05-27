@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -93,7 +94,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 		},
 	}
 
-	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
+	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			role,
 			roleWithLabel,

@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 type TeamOptions struct {
@@ -93,7 +94,7 @@ func (o *TeamOptions) Run() error {
 		newConfig := *config
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
-			return errNoContextDefined
+			return errors.New("there is no context defined in your Kubernetes configuration")
 		}
 		if ctx.Namespace == team {
 			return nil
