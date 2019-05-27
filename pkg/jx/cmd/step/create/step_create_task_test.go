@@ -42,11 +42,11 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	log.SetOutput(ioutil.Discard)
 	defer log.SetOutput(os.Stderr)
 
-	testVersionsDir := path.Join("test_data", "cmmon_versions")
 	testData := path.Join("test_data", "step_create_task")
 	_, err := os.Stat(testData)
 	assert.NoError(t, err)
 
+	testVersionsDir := path.Join(testData, "stable_versions")
 	packsDir := path.Join(testData, "packs")
 	_, err = os.Stat(packsDir)
 	assert.NoError(t, err)
