@@ -1,6 +1,7 @@
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,6 +64,9 @@ type SchedulerSpec struct {
 	// Plugins is a list of plugin names enabled for a repo
 	Plugins       *ReplaceableSliceOfStrings `json:"plugins,omitempty" protobuf:"bytes,10,opt,name=plugins"`
 	ConfigUpdater *ConfigUpdater             `json:"configUpdater,omitempty" protobuf:"bytes,11,opt,name=configUpdater"`
+	Welcome       []*Welcome                 `json:"welcome,omitempty" protobuf:"bytes,12,opt,name=welcome"`
+	Periodics     *Periodics                 `json:"periodics,omitempty" protobuf:"bytes,13,opt,name=periodics"`
+	Attachments   []*Attachment              `json:"attachments,omitempty" protobuf:"bytes,13,opt,name=attachments"`
 }
 
 // ConfigMapSpec contains configuration options for the configMap being updated
@@ -216,6 +220,8 @@ type JobBase struct {
 	// Namespace is the namespace in which pods schedule.
 	//   empty: results in scheduler.DefaultNamespace
 	Namespace *string `json:"namespace,omitempty" protobuf:"bytes,6,opt,name=namespace"`
+	// Spec is the Kubernetes pod spec used if Agent is kubernetes.
+	Spec *v1.PodSpec `json:"spec,omitempty"`
 }
 
 // ReplaceableMapOfStringString is a map of strings that can optionally completely replace the map of strings in the
@@ -266,7 +272,7 @@ type Presubmit struct {
 	// Override the default method of merge. Valid options are squash, rebase, and merge.
 	MergeType *string `json:"mergeMethod,omitempty" protobuf:"bytes,7,opt,name=mergeMethod"`
 
-	Query *Query `json:"query,omitempty" protobuf:"bytes,8,opt,name=query"`
+	Queries []*Query `json:"queries,omitempty" protobuf:"bytes,8,opt,name=query"`
 
 	Policy *ProtectionPolicies `json:"policy,omitempty" protobuf:"bytes,9,opt,name=policy"`
 	// ContextOptions defines the merge options. If not set it will infer
@@ -274,6 +280,26 @@ type Presubmit struct {
 	// combined status; otherwise it may apply the branch protection setting or let user
 	// define their own options in case branch protection is not used.
 	ContextPolicy *RepoContextPolicy `json:"context_options,omitempty" protobuf:"bytes,10,opt,name=contextPolicy"`
+}
+
+// Periodics is a list of jobs to be run periodically
+type Periodics struct {
+	// Items are the post submit configurations
+	Items []*Periodic `json:"entries,omitempty" protobuf:"bytes,1,opt,name=entries"`
+	// Replace the existing entries
+	Replace bool `json:"replace,omitempty" protobuf:"bytes,2,opt,name=replace"`
+}
+
+// Periodic defines a job to be run periodically
+type Periodic struct {
+	// +optional
+	*JobBase
+	// Interval to wait between two runs of the job.
+	Interval *string `json:"interval"`
+	// Cron representation of job trigger time
+	Cron *string `json:"cron"`
+	// Tags for config entries
+	Tags *ReplaceableSliceOfStrings `json:"tags,omitempty"`
 }
 
 // Query is turned into a Git Provider search query. See the docs for details:
@@ -361,6 +387,11 @@ type ContextPolicy struct {
 	OptionalContexts          *ReplaceableSliceOfStrings `json:"optionalContexts,omitempty"`
 	// Infer required and optional jobs from Branch Protection configuration
 	FromBranchProtection *bool `json:"fromBranchProtection,omitempty"`
+}
+
+// Welcome welcome plugin config
+type Welcome struct {
+	MessageTemplate *string `json:"message_template,omitempty"`
 }
 
 // Brancher is for shared code between jobs that only run against certain

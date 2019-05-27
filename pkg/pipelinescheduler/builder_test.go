@@ -247,7 +247,7 @@ func TestPreSubmitWithEmptyChildPreSubmit(t *testing.T) {
 	assert.NotNil(t, preSubmit.Branches)
 	assert.NotNil(t, preSubmit.AlwaysRun)
 	assert.NotNil(t, preSubmit.ContextPolicy)
-	assert.NotNil(t, preSubmit.Query)
+	assert.NotNil(t, preSubmit.Queries)
 }
 
 func TestPreSubmitApplyToQueryWithEmptyChildQuery(t *testing.T) {
@@ -261,7 +261,7 @@ func TestPreSubmitApplyToQueryWithEmptyChildQuery(t *testing.T) {
 					Name: parent.Presubmits.Items[0].Name,
 				},
 				RegexpChangeMatcher: &v1.RegexpChangeMatcher{},
-				Query:               &v1.Query{},
+				Queries:             []*v1.Query{{}},
 			},
 		},
 	}
@@ -269,13 +269,7 @@ func TestPreSubmitApplyToQueryWithEmptyChildQuery(t *testing.T) {
 	merged, err := pipelinescheduler.Build([]*v1.SchedulerSpec{parent, child})
 	assert.NoError(t, err)
 	preSubmit := merged.Presubmits.Items[0]
-	// TODO: Extract these asserts to method
-	assert.NotNil(t, preSubmit.Query.Labels)
-	assert.NotNil(t, preSubmit.Query.ExcludedBranches)
-	assert.NotNil(t, preSubmit.Query.IncludedBranches)
-	assert.NotNil(t, preSubmit.Query.Milestone)
-	assert.NotNil(t, preSubmit.Query.MissingLabels)
-	assert.NotNil(t, preSubmit.Query.ReviewApprovedRequired)
+	assert.True(t, len(preSubmit.Queries) == 1)
 }
 
 func TestPreSubmitApplyToProtectionPolicyWithAppendingChildPolicy(t *testing.T) {
