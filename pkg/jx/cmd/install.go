@@ -1687,9 +1687,14 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			}
 			log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
-			dir = filepath.Join(envDir, gitRepoOptions.Owner, repo.Name)
-			err = os.Rename(gitOpsDir, dir)
-			if err != nil {
+			dir = filepath.Join(envDir, gitRepoOptions.Owner)
+			if _, err := os.Stat(dir); os.IsNotExist(err) {
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					return "", errors.Wrapf(err, "creating directory %q", dir)
+				}
+			}
+			dir = filepath.Join(dir, repo.Name)
+			if err := os.Rename(gitOpsDir, dir); err != nil {
 				return "", errors.Wrap(err, "renaming dev environment")
 			}
 			return filepath.Join(dir, "env"), nil
