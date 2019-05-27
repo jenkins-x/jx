@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/pr"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -56,6 +58,8 @@ const (
 	JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST = "JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST"
 	JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT = "JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
 	ORG                                    = "ORG"
+	REPO_OWNER                             = "REPO_OWNER"
+	REPO_NAME                              = "REPO_NAME"
 	APP_NAME                               = "APP_NAME"
 	DOCKER_REGISTRY_ORG                    = "DOCKER_REGISTRY_ORG"
 	PREVIEW_VERSION                        = "PREVIEW_VERSION"
@@ -66,7 +70,7 @@ const (
 
 // PreviewOptions the options for viewing running PRs
 type PreviewOptions struct {
-	PromoteOptions
+	promote.PromoteOptions
 
 	Name                   string
 	Label                  string
@@ -100,7 +104,7 @@ func NewCmdPreview(commonOpts *opts.CommonOptions) *cobra.Command {
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
-		PromoteOptions: PromoteOptions{
+		PromoteOptions: promote.PromoteOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -126,7 +130,7 @@ func NewCmdPreview(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options.addPreviewOptions(cmd)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
-	options.PromoteOptions.addPromoteOptions(cmd)
+	options.PromoteOptions.AddPromoteOptions(cmd)
 
 	return cmd
 }
@@ -581,14 +585,14 @@ func (o *PreviewOptions) Run() error {
 		log.Infof("Preview application is now available at: %s\n\n", util.ColorInfo(url))
 	}
 
-	stepPRCommentOptions := StepPRCommentOptions{
-		Flags: StepPRCommentFlags{
+	stepPRCommentOptions := pr.StepPRCommentOptions{
+		Flags: pr.StepPRCommentFlags{
 			Owner:      o.GitInfo.Organisation,
 			Repository: o.GitInfo.Name,
 			Comment:    comment,
 			PR:         o.PullRequestName,
 		},
-		StepPROptions: StepPROptions{
+		StepPROptions: pr.StepPROptions{
 			StepOptions: opts.StepOptions{
 				CommonOptions: o.CommonOptions,
 			},

@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -70,7 +71,7 @@ func mockProwConfig(o *cmd.GetPipelineOptions, t *testing.T) {
 		Data: data,
 	}
 
-	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
+	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			cm,
 		},

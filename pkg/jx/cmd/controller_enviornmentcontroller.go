@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -450,7 +451,7 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 	if !o.NoGitCredeentialsInit {
 		copy := *o.CommonOptions
 		copy.BatchMode = true
-		gsc := &StepGitCredentialsOptions{
+		gsc := &git.StepGitCredentialsOptions{
 			StepOptions: opts.StepOptions{
 				CommonOptions: &copy,
 			},

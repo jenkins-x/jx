@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/controller"
 	"testing"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -23,7 +25,7 @@ func TestDigitSuffix(t *testing.T) {
 	}
 
 	for input, expected := range testData {
-		actual := DigitSuffix(input)
+		actual := controller.DigitSuffix(input)
 		assert.Equal(t, expected, actual, "digitSuffix for %s", input)
 	}
 }
@@ -38,7 +40,7 @@ func TestCompleteBuildSourceInfo(t *testing.T) {
 		},
 	}
 
-	ConfigureTestOptionsWithResources(o.CommonOptions,
+	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			getGitHubSecret(),
 		},

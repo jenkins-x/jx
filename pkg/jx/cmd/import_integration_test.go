@@ -3,6 +3,7 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"io/ioutil"
 	"os"
 	"path"
@@ -30,27 +31,25 @@ import (
 )
 
 const (
-	gitSuffix                      = "_with_git"
-	mavenKeepOldJenkinsfile        = "maven_keep_old_jenkinsfile"
-	mavenKeepOldJenkinsfilewithGit = mavenKeepOldJenkinsfile + gitSuffix
-	mavenOldJenkinsfile            = "maven_old_jenkinsfile"
-	mavenOldJenkinsfilewithGit     = mavenOldJenkinsfile + gitSuffix
-	mavenCamel                     = "maven_camel"
-	mavenSpringBoot                = "maven_springboot"
-	probePrefix                    = "probePath:"
+	gitSuffix               = "_with_git"
+	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
+	mavenOldJenkinsfile     = "maven_old_jenkinsfile"
+	mavenCamel              = "maven_camel"
+	mavenSpringBoot         = "maven_springboot"
+	probePrefix             = "probePath:"
 )
 
 func TestImportProjects(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -75,16 +74,16 @@ func TestImportProjects(t *testing.T) {
 }
 
 func TestImportProjectNextGenPipeline(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -171,7 +170,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	k8sObjects := []runtime.Object{}
 	jxObjects := []runtime.Object{}
 	helmer := helm.NewHelmCLI("helm", helm.V2, dirName, true)
-	cmd.ConfigureTestOptionsWithResources(o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), nil, helmer, resources_test.NewMockInstaller())
+	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), nil, helmer, resources_test.NewMockInstaller())
 	if o.Out == nil {
 		o.Out = tests.Output()
 	}

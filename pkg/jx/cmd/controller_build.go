@@ -2,15 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
-
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/collector"
@@ -928,7 +927,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 	}
 
 	if initGitCredentials {
-		gc := &StepGitCredentialsOptions{}
+		gc := &git.StepGitCredentialsOptions{}
 		copy := *o.CommonOptions
 		gc.CommonOptions = &copy
 		gc.BatchMode = true
@@ -1074,24 +1073,4 @@ func createStepDescription(containerName string, pod *corev1.Pod) string {
 		}
 	}
 	return ""
-}
-
-// DigitSuffix outputs digital suffix
-func DigitSuffix(text string) string {
-	answer := ""
-	for {
-		l := len(text)
-		if l == 0 {
-			return answer
-		}
-		lastChar := text[l-1:]
-		for _, rune := range lastChar {
-			if !unicode.IsDigit(rune) {
-				return answer
-			}
-			break
-		}
-		answer = lastChar + answer
-		text = text[0 : l-1]
-	}
 }

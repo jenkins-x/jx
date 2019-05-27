@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/env"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
@@ -136,13 +137,6 @@ type Secrets struct {
 const (
 	JX_GIT_TOKEN = "JX_GIT_TOKEN"
 	JX_GIT_USER  = "JX_GIT_USER"
-
-	// JenkinsXPlatformChartName default chart name for Jenkins X platform
-	JenkinsXPlatformChartName = "jenkins-x-platform"
-
-	// JenkinsXPlatformChart the default full chart name with the default repository prefix
-	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
-	JenkinsXPlatformRelease = "jenkins-x"
 
 	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekton"
 	StaticMasterJenkins = "Static Jenkins Server and Jenkinsfiles"
@@ -632,12 +626,12 @@ func (options *InstallOptions) Run() error {
 
 	if options.Flags.GitOpsMode {
 		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, kube.DefaultChartMuseumURL,
-			JenkinsXPlatformChartName, ns, version, valuesFiles, secretsFiles)
+			opts.JenkinsXPlatformChartName, ns, version, valuesFiles, secretsFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing the Jenkins X platform in GitOps mode")
 		}
 	} else {
-		err := options.installPlatform(providerEnvDir, JenkinsXPlatformChart, JenkinsXPlatformRelease,
+		err := options.installPlatform(providerEnvDir, opts.JenkinsXPlatformChart, opts.JenkinsXPlatformRelease,
 			ns, version, valuesFiles, secretsFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing the Jenkins X platform")
@@ -913,7 +907,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
 
 	platformDep := &helm.Dependency{
-		Name:       JenkinsXPlatformChartName,
+		Name:       opts.JenkinsXPlatformChartName,
 		Version:    version,
 		Repository: kube.DefaultChartMuseumURL,
 	}
@@ -943,7 +937,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		return errors.Wrapf(err, "failed to save file %s", chartFile)
 	}
 
-	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, nil)
+	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, opts.JenkinsXPlatformChartName, nil)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretsFiles, ", "))
 	}
@@ -990,7 +984,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		util.CombineMapTrees(extraValues, currentValues)
 	}
 
-	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, JenkinsXPlatformChartName, extraValues)
+	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, opts.JenkinsXPlatformChartName, extraValues)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(valuesFiles, ", "))
 	}
@@ -1704,8 +1698,8 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 			// environment. The location might have been changed in the cluster configuration.
 			options.ResetSecretsLocation()
 
-			envApplyOptions := &StepEnvApplyOptions{
-				StepEnvOptions: StepEnvOptions{
+			envApplyOptions := &env.StepEnvApplyOptions{
+				StepEnvOptions: env.StepEnvOptions{
 					StepOptions: opts.StepOptions{
 						CommonOptions: options.CommonOptions,
 					},
@@ -2816,9 +2810,9 @@ func (options *InstallOptions) logAdminPassword() {
 
 // LoadVersionFromCloudEnvironmentsDir lets load the jenkins-x-platform version
 func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.ConfigStore) (string, error) {
-	version, err := version2.LoadStableVersionNumber(wrkDir, version2.KindChart, JenkinsXPlatformChart)
+	version, err := version2.LoadStableVersionNumber(wrkDir, version2.KindChart, opts.JenkinsXPlatformChart)
 	if err != nil {
-		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", JenkinsXPlatformChart, wrkDir)
+		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", opts.JenkinsXPlatformChart, wrkDir)
 	}
 	return version, nil
 }

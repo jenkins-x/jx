@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -199,4 +200,29 @@ func JobName(prefix string, j *gojenkins.Job) string {
 // IsPipeline checks if the job is a pipeline job
 func IsPipeline(j *gojenkins.Job) bool {
 	return strings.Contains(j.Class, "Job")
+}
+
+// SwitchJenkinsBaseURL sometimes a Jenkins server does not know its external URL so lets switch the base URL of the job
+// URL to use the known working baseURL of the jenkins server
+func SwitchJenkinsBaseURL(jobURL string, baseURL string) string {
+	if jobURL == "" {
+		return baseURL
+	}
+	if baseURL == "" {
+		return jobURL
+	}
+	u, err := url.Parse(jobURL)
+	if err != nil {
+		log.Warnf("failed to parse Jenkins Job URL %s due to: %s\n", jobURL, err)
+		return jobURL
+	}
+
+	u2, err := url.Parse(baseURL)
+	if err != nil {
+		log.Warnf("failed to parse Jenkins base URL %s due to: %s\n", baseURL, err)
+		return jobURL
+	}
+	u.Host = u2.Host
+	u.Scheme = u2.Scheme
+	return u.String()
 }

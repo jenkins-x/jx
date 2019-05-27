@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"io/ioutil"
 	"time"
 
@@ -92,7 +93,7 @@ func (o *ControllerTeamOptions) Run() error {
 
 	// now lets setup the git secrets
 	if co.InCluster() {
-		sgc := &StepGitCredentialsOptions{}
+		sgc := &git.StepGitCredentialsOptions{}
 		sgc.CommonOptions = co.CommonOptions
 		log.Info("Setting up git credentials\n")
 		err = sgc.Run()

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,7 +121,7 @@ func (o *GCPreviewsOptions) Run() error {
 				// lets delete the preview environment
 				deleteOpts := DeletePreviewOptions{
 					PreviewOptions: PreviewOptions{
-						PromoteOptions: PromoteOptions{
+						PromoteOptions: promote.PromoteOptions{
 							CommonOptions: o.CommonOptions,
 						},
 					},

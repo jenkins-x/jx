@@ -2,8 +2,8 @@ package cmd_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	cmd_namespace "github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	kuber_mocks "github.com/jenkins-x/jx/pkg/kube/mocks"
 	. "github.com/petergtz/pegomock"
@@ -27,7 +27,7 @@ func Test_display_current_namespace(t *testing.T) {
 		_ = os.Remove(kubeConfig)
 	}()
 
-	namespace := &cmd.NamespaceOptions{
+	namespace := &cmd_namespace.NamespaceOptions{
 		CommonOptions: commonOpts,
 	}
 
@@ -56,7 +56,7 @@ func Test_change_current_namespace(t *testing.T) {
 	}
 	_, err := kubeClient.CoreV1().Namespaces().Create(&ns)
 
-	namespace := &cmd.NamespaceOptions{
+	namespace := &cmd_namespace.NamespaceOptions{
 		CommonOptions: commonOpts,
 	}
 
@@ -80,7 +80,7 @@ func Test_change_to_new_namespace_with_create(t *testing.T) {
 		_ = os.Remove(kubeConfig)
 	}()
 
-	namespace := &cmd.NamespaceOptions{
+	namespace := &cmd_namespace.NamespaceOptions{
 		CommonOptions: commonOpts,
 		Create:        true,
 	}
@@ -111,7 +111,7 @@ func Test_change_to_unknown_namespace_creates_error(t *testing.T) {
 		_ = os.Remove(kubeConfig)
 	}()
 
-	namespace := &cmd.NamespaceOptions{
+	namespace := &cmd_namespace.NamespaceOptions{
 		CommonOptions: commonOpts,
 	}
 

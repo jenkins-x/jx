@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/controller"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/spf13/cobra"
 
@@ -49,7 +50,7 @@ func NewCmdController(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdControllerPipelineRunner(commonOpts))
 	cmd.AddCommand(NewCmdControllerRole(commonOpts))
 	cmd.AddCommand(NewCmdControllerTeam(commonOpts))
-	cmd.AddCommand(NewCmdControllerWorkflow(commonOpts))
+	cmd.AddCommand(controller.NewCmdControllerWorkflow(commonOpts))
 	cmd.AddCommand(NewCmdControllerCommitStatus(commonOpts))
 	return cmd
 }

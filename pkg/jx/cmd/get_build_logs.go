@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"sort"
@@ -199,7 +200,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 		if job.Url == "" {
 			return fmt.Errorf("No Job exists yet called %s", name)
 		}
-		job.Url = switchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
+		job.Url = jenkins.SwitchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
 
 		if buildNumber > 0 {
 			last, err = jenkinsClient.GetBuild(job, buildNumber)
@@ -216,7 +217,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 				return fmt.Errorf("No build found for name %s", name)
 			}
 		}
-		last.Url = switchJenkinsBaseURL(last.Url, jenkinsClient.BaseURL())
+		last.Url = jenkins.SwitchJenkinsBaseURL(last.Url, jenkinsClient.BaseURL())
 		return err
 	}
 

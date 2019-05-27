@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -31,9 +32,16 @@ var (
 	`)
 )
 
+const (
+	optionVersion    = "version"
+	optionHelmUpdate = "helm-update"
+	optionSet        = "set"
+	optionAlias      = "alias"
+)
+
 // UpgradeAppsOptions the options for the create spring command
 type UpgradeAppsOptions struct {
-	AddOptions
+	add.AddOptions
 
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
@@ -61,7 +69,7 @@ type UpgradeAppsOptions struct {
 // NewCmdUpgradeApps defines the command
 func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	o := &UpgradeAppsOptions{
-		AddOptions: AddOptions{
+		AddOptions: add.AddOptions{
 			CommonOptions: commonOpts,
 		},
 	}

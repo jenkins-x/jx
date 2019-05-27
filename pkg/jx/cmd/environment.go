@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 
@@ -109,7 +110,7 @@ func (o *EnvironmentOptions) Run() error {
 		newConfig := *config
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
-			return errNoContextDefined
+			return errors.New("there is no context defined in your Kubernetes configuration")
 		}
 		if ctx.Namespace == ns {
 			return nil

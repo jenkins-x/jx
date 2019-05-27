@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -33,7 +34,7 @@ func TestStartProtection(t *testing.T) {
 		CommonOptions: &opts.CommonOptions{},
 	}
 
-	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
+	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{},
 		&gits.GitFake{},
