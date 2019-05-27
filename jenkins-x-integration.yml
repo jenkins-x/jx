@@ -20,6 +20,8 @@ pipelineConfig:
                 value: /workspace/source
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy:80
+              - name: JX_HOME
+                value: /tmp
             options:
               containerOptions:
                 resources:
