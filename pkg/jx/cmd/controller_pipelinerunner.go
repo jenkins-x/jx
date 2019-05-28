@@ -181,11 +181,12 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		return
 	}
 
-	// lets change this to support new pipelineresource type that handles batches
-	if len(pj.Refs.Pulls) > 0 {
+	// Only if there is one Pull in Refs, it's a PR build so we are going to pass it
+	if len(pj.Refs.Pulls) == 1 {
 		revision = pj.Refs.Pulls[0].SHA
 		prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
 	} else {
+		//Otherwise it's a Master / Batch build, and we handle it later
 		revision = pj.Refs.BaseSHA
 	}
 

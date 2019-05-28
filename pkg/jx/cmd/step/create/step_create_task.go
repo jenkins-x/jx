@@ -225,6 +225,7 @@ func (o *StepCreateTaskOptions) Run() error {
 			return err
 		}
 	}
+	var pr *prow.PullRefs
 	if o.CloneGitURL != "" {
 		o.cloneDir = o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
 		if o.DeleteTempDir {
@@ -236,7 +237,7 @@ func (o *StepCreateTaskOptions) Run() error {
 				}
 			}()
 		}
-		err := o.mergePullRefs(o.cloneDir)
+		pr, err = o.mergePullRefs(o.cloneDir)
 		if err != nil {
 			return errors.Wrapf(err, "Unable to merge PULL_REFS in %s", o.cloneDir)
 		}
@@ -368,7 +369,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("created tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
 	}
 
-	activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo)
+	activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr)
 
 	if o.Verbose {
 		log.Infof(" PipelineActivity for %s created successfully", tektonCRDs.Name())
@@ -1163,7 +1164,7 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 }
 
 // mergePullRefs merges the pull refs specified via the PULL_REFS environment variables.
-func (o *StepCreateTaskOptions) mergePullRefs(cloneDir string) error {
+func (o *StepCreateTaskOptions) mergePullRefs(cloneDir string) (*prow.PullRefs, error) {
 	var pr *prow.PullRefs
 	var err error
 
@@ -1172,7 +1173,7 @@ func (o *StepCreateTaskOptions) mergePullRefs(cloneDir string) error {
 		if parts[0] == "PULL_REFS" {
 			pr, err = prow.ParsePullRefs(parts[1])
 			if err != nil {
-				return err
+				return pr, err
 			}
 		}
 	}
@@ -1195,11 +1196,11 @@ func (o *StepCreateTaskOptions) mergePullRefs(cloneDir string) error {
 		mergeOpts.Verbose = true
 		err := mergeOpts.Run()
 		if err != nil {
-			return errors.Wrapf(err, "failed to merge git shas %s with base sha %s", shas, pr.BaseSha)
+			return pr, errors.Wrapf(err, "failed to merge git shas %s with base sha %s", shas, pr.BaseSha)
 		}
 	}
 
-	return nil
+	return pr, nil
 }
 
 func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {

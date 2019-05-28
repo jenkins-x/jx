@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
 
 	"io/ioutil"
@@ -15,11 +16,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/gits/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/knative/pkg/kmp"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/ghodss/yaml"
@@ -385,7 +386,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 				}
 
-				pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo)
+				pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, &prow.PullRefs{})
 
 				expectedActivityKey := &kube.PromoteStepActivityKey{
 					PipelineActivityKey: kube.PipelineActivityKey{
