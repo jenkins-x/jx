@@ -715,6 +715,9 @@ func register(apiClient apiextensionsclientset.Interface, name string, crd *v1be
 		}
 
 		_, err = crdResources.Create(crd)
+		if err != nil {
+			log.Infof("Error creating %s: %v", crd.Name, err)
+		}
 		return err
 	}
 
