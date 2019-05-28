@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/env"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
@@ -1694,8 +1695,8 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				}
 			}
 			dir = filepath.Join(dir, repo.Name)
-			if err := os.Rename(gitOpsDir, dir); err != nil {
-				return "", errors.Wrap(err, "renaming dev environment")
+			if err := util.RenameDir(gitOpsDir, dir, true); err != nil {
+				return "", errors.Wrap(err, "renaming dev environment dir")
 			}
 			return filepath.Join(dir, "env"), nil
 		}
