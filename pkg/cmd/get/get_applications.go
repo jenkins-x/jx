@@ -159,12 +159,12 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 			log.Warnf("Error getting jx client and dev namespace: %s", err)
 		}
 		sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
-		sourceRepository, err := getSourceRepositoryForApplication(appName, sourceRepositories)
+		sourceRepository, err := GetSourceRepositoryForApplication(appName, sourceRepositories)
 		gitURL := "None Found"
 		if err != nil {
 			log.Warnf("Could not get Source Repository for application: %s", err)
 		} else {
-			gitURL = buildGitURL(sourceRepository)
+			gitURL = BuildGitURL(sourceRepository)
 		}
 		row = append(row, gitURL)
 		for _, ea := range envApps {
@@ -261,12 +261,17 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 	return table
 }
 
-func buildGitURL(sourceRepository *v1.SourceRepository) string {
+// BuildGitURL concatenates various fields of a SourceRepository CRD into a valid URL.
+func BuildGitURL(sourceRepository *v1.SourceRepository) string {
+	if sourceRepository.Spec.Provider == "" || sourceRepository.Spec.Org == "" || sourceRepository.Spec.Repo == "" {
+		return "None Found"
+	}
 	return sourceRepository.Spec.Provider + "/" + sourceRepository.Spec.Org + "/" + sourceRepository.Spec.Repo + ".git"
 }
 
-// We can't pull the SourceRepository by name because we don't know the org, so we iterate over all of them and match the application name to the repo.
-func getSourceRepositoryForApplication(application string, sourceRepositories altv1.SourceRepositoryInterface) (*v1.SourceRepository, error) {
+// GetSourceRepositoryForApplication fetches a SourceRepository CRD for a particular application by trying to match its name to a repo.
+func GetSourceRepositoryForApplication(application string, sourceRepositories altv1.SourceRepositoryInterface) (*v1.SourceRepository, error) {
+	// We can't pull the SourceRepository by name because we don't know the org, so we iterate over all of them and match the application name to the repo.
 	repoList, err := sourceRepositories.List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
