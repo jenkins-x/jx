@@ -19,7 +19,8 @@ import (
 type CloudBeesOptions struct {
 	*opts.CommonOptions
 
-	OnlyViewURL bool
+	OnlyViewURL  bool
+	HideURLLabel bool
 }
 
 var (
@@ -56,7 +57,9 @@ func NewCmdCloudBees(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdCloudBeesPipeline(commonOpts))
-	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
+	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays the label and the URL and does not open the browser")
+	cmd.Flags().BoolVarP(&options.HideURLLabel, "hide-label", "l", false, "Hides the URL label from display")
+
 	return cmd
 }
 
@@ -97,7 +100,11 @@ func (o *CloudBeesOptions) Open(name string, label string) error {
 
 func (o *CloudBeesOptions) OpenURL(url string, label string) error {
 	// TODO Logger
-	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
+	if o.HideURLLabel {
+		fmt.Fprintf(o.Out, "%s\n", util.ColorInfo(url))
+	} else {
+		fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
+	}
 	if !o.OnlyViewURL {
 		browser.OpenURL(url)
 	}
