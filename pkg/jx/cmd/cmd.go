@@ -68,10 +68,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		Run:              runHelp,
 	}
 
-	if len(args) == 0 {
-		args = os.Args
-	}
-	cmds.SetArgs(args)
 	features.Init()
 
 	commonOpts := opts.NewCommonOptionsWithTerm(f, in, out, err)
@@ -229,6 +225,9 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	}
 	localPlugins := &localPluginHandler{}
 
+	if len(args) == 0 {
+		args = os.Args
+	}
 	if len(args) > 1 {
 		cmdPathPieces := args[1:]
 
