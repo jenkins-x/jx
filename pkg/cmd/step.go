@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/config"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step"
@@ -68,6 +69,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(step.NewCmdStepUnstash(commonOpts))
 	cmd.AddCommand(step.NewCmdStepValuesSchemaTemplate(commonOpts))
 	cmd.AddCommand(scheduler.NewCmdStepScheduler(commonOpts))
+	cmd.AddCommand(config.NewCmdStepPatchConfigMap(commonOpts))
 
 	return cmd
 }

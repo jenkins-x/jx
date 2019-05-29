@@ -36,6 +36,7 @@ require (
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/emirpasic/gods v1.9.0 // indirect
+	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
