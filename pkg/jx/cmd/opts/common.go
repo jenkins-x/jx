@@ -198,13 +198,13 @@ func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	var err error
 	if o.apiExtensionsClient == nil {
-		log.Infof("Creating new API Extensions Client")
+		log.Debugf("Creating new API Extensions Client")
 		o.apiExtensionsClient, err = o.factory.CreateApiExtensionsClient()
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		log.Infof("Using existing API Extensions Client")
+		log.Debugf("Using existing API Extensions Client")
 	}
 	return o.apiExtensionsClient, nil
 }
@@ -264,7 +264,7 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	}
 
 	if o.jxClient == nil {
-		log.Infof("Creating new JX Client")
+		log.Debugf("Creating new JX Client")
 		jxClient, ns, err := o.factory.CreateJXClient()
 		if err != nil {
 			return nil, ns, err
@@ -274,7 +274,7 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 			o.currentNamespace = ns
 		}
 	} else {
-		log.Infof("Using existing JX Client")
+		log.Debugf("Using existing JX Client")
 	}
 	return o.jxClient, o.currentNamespace, nil
 }
