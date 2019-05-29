@@ -18,6 +18,8 @@ pipelineConfig:
           image: nodejs
         stages:
           - name: Build-a-really-long-stage-name-please-but-not-too-long-thanks
+            options:
+              retry: 5
             steps:
               - command: |
                   echo hello world
