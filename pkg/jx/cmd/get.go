@@ -79,6 +79,7 @@ func NewCmdGet(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdGetIssue(commonOpts))
 	cmd.AddCommand(NewCmdGetIssues(commonOpts))
 	cmd.AddCommand(NewCmdGetLimits(commonOpts))
+	cmd.AddCommand(NewCmdGetLang(commonOpts))
 	cmd.AddCommand(NewCmdGetPipeline(commonOpts))
 	cmd.AddCommand(NewCmdGetPostPreviewJob(commonOpts))
 	cmd.AddCommand(NewCmdGetPreview(commonOpts))
