@@ -32,5 +32,10 @@ func TestSystem(t *testing.T) {
 		// Purposefully ignore errors from app.Run as we are checking coverage
 		err := app.Run(args)
 		assert.NoError(t, err, "error executing jx")
+	} else {
+		if err := app.Run(nil); err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
 	}
 }
