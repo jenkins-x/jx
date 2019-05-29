@@ -54,7 +54,7 @@ var (
 		"oci",
 		"aws",
 		"eksctl",
-		"heptio-authenticator-aws",
+		"aws-iam-authenticator",
 		"kustomize",
 	}
 )

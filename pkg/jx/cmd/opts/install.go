@@ -144,8 +144,8 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 			err = o.InstallAws()
 		case "eksctl":
 			err = o.InstallEksCtl(false)
-		case "heptio-authenticator-aws":
-			err = o.InstallHeptioAuthenticatorAws(false)
+		case "aws-iam-authenticator":
+			err = o.InstallAwsIamAuthenticator(false)
 		case "kustomize":
 			err = o.InstallKustomize()
 		default:
@@ -1329,17 +1329,17 @@ func (o *CommonOptions) InstallEksCtlWithVersion(version string, skipPathScan bo
 	})
 }
 
-// InstallHeptioAuthenticatorAws install heptio authenticator for AWS
-func (o *CommonOptions) InstallHeptioAuthenticatorAws(skipPathScan bool) error {
-	return o.InstallHeptioAuthenticatorAwsWithVersion(packages.HeptioAuthenticatorAwsVersion, skipPathScan)
+// InstallAwsIamAuthenticator install iam authenticator for AWS
+func (o *CommonOptions) InstallAwsIamAuthenticator(skipPathScan bool) error {
+	return o.InstallAwsIamAuthenticatorWithVersion(packages.IamAuthenticatorAwsVersion, skipPathScan)
 }
 
-// InstallHeptioAuthenticatorAwsWithVersion install a specific version of heptio authenticator for AWS
-func (o *CommonOptions) InstallHeptioAuthenticatorAwsWithVersion(version string, skipPathScan bool) error {
+// InstallAwsIamAuthenticatorWithVersion install a specific version of iam authenticator for AWS
+func (o *CommonOptions) InstallAwsIamAuthenticatorWithVersion(version string, skipPathScan bool) error {
 	return o.InstallOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary:              "heptio-authenticator-aws",
+		Binary:              "aws-iam-authenticator",
 		GitHubOrganization:  "",
-		DownloadUrlTemplate: "https://amazon-eks.s3-us-west-2.amazonaws.com/{{.version}}/2018-06-05/bin/{{.os}}/{{.arch}}/heptio-authenticator-aws",
+		DownloadUrlTemplate: "https://amazon-eks.s3-us-west-2.amazonaws.com/{{.version}}/2019-03-27/bin/{{.os}}/{{.arch}}/aws-iam-authenticator",
 		Version:             version,
 		SkipPathScan:        skipPathScan,
 		VersionExtractor:    nil,
@@ -1450,7 +1450,7 @@ func (o *CommonOptions) InstallRequirements(cloudProvider string, extraDependenc
 		deps = o.AddRequiredBinary("kops", deps)
 	case cloud.EKS:
 		deps = o.AddRequiredBinary("eksctl", deps)
-		deps = o.AddRequiredBinary("heptio-authenticator-aws", deps)
+		deps = o.AddRequiredBinary("aws-iam-authenticator", deps)
 	case cloud.AKS:
 		deps = o.AddRequiredBinary("az", deps)
 	case cloud.GKE:

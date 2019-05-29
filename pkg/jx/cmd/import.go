@@ -874,7 +874,13 @@ func (options *ImportOptions) doImport() error {
 		jenkinsfile = defaultJenkinsfileName
 	}
 
-	dockerfileExists, err := util.FileExists("Dockerfile")
+	dockerfileLocation := ""
+	if options.Dir != "" {
+		dockerfileLocation = filepath.Join(options.Dir, "Dockerfile")
+	} else {
+		dockerfileLocation = "Dockerfile"
+	}
+	dockerfileExists, err := util.FileExists(dockerfileLocation)
 	if err != nil {
 		return err
 	}

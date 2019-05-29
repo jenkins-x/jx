@@ -65,9 +65,14 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			err := amazon.RegisterAwsCustomDomain(domain, address)
 			return domain, err
 		}
+
 		log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones\n")
 		log.Infof("If you do not have a custom DNS name you can use yet, then you can register a new one here: %s\n\n",
 			util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
+
+		if o.BatchMode {
+			return "", fmt.Errorf("Please specify a custom DNS name via --domain when installing on AWS in batch mode")
+		}
 
 		for {
 			if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
