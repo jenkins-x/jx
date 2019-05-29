@@ -152,18 +152,16 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 	table := o.generateTableHeaders(envApps)
 
 	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		log.Fatalf("Error getting jx client and dev namespace: %s", err)
+	}
+	sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
 	for _, appName := range apps {
 		row := []string{appName}
-		jxClient, ns, err := o.JXClientAndDevNamespace()
-		if err != nil {
-			log.Warnf("Error getting jx client and dev namespace: %s", err)
-		}
-		sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
 		sourceRepository, err := GetSourceRepositoryForApplication(appName, sourceRepositories)
 		gitURL := "None Found"
-		if err != nil {
-			log.Warnf("Could not get Source Repository for application: %s", err)
-		} else {
+		if err == nil {
 			gitURL = BuildGitURL(sourceRepository)
 		}
 		row = append(row, gitURL)
@@ -274,7 +272,7 @@ func GetSourceRepositoryForApplication(application string, sourceRepositories al
 	// We can't pull the SourceRepository by name because we don't know the org, so we iterate over all of them and match the application name to the repo.
 	repoList, err := sourceRepositories.List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to list SourceRepositories: %s", err)
 	}
 
 	for _, repo := range repoList.Items {
