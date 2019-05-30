@@ -284,10 +284,9 @@ release: clean build test-slow-integration linux darwin win arm ## Release the b
 		cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx; \
 	fi
 
-	go get -u github.com/progrium/gh-release
-	gh-release checksums sha256
-	GITHUB_ACCESS_TOKEN=$(GITHUB_ACCESS_TOKEN) gh-release create $(RELEASE_ORG_REPO) $(VERSION) master $(VERSION)
-
+	go get -u github.com/goreleaser/goreleaser
+	GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) goreleaser release --config=.goreleaser.yml --rm-dist
+	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
 		./build/linux/jx step changelog  --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA); \
 	fi
@@ -315,11 +314,11 @@ codecov-validate:
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
 	@if [ "$(FORMATTED)" == "" ]; \
-      	then \
-      	    echo "All Go files properly formatted"; \
-      	else \
-      		echo "Fixed formatting for: $(FORMATTED)"; \
-      	fi
+	then \
+		echo "All Go files properly formatted"; \
+	else \
+		echo "Fixed formatting for: $(FORMATTED)"; \
+	fi
 
 .PHONY: lint
 lint: ## Lint the code
