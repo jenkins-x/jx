@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"fmt"
 
@@ -163,8 +164,16 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	}
 
 	if o.Flags.ClusterName == "" {
-		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		clusterName := strings.ToLower(randomdata.SillyName())
+		prompt := &survey.Input{
+			Message: "What cluster name would you like to use",
+			Default: clusterName,
+		}
+
+		err = survey.AskOne(prompt, &o.Flags.ClusterName, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	zone := o.Flags.Zone

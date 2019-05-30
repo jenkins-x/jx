@@ -3,9 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -190,8 +191,16 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if o.Flags.ClusterName == "" {
-		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		clusterName := strings.ToLower(randomdata.SillyName())
+		prompt := &survey.Input{
+			Message: "What cluster name would you like to use",
+			Default: clusterName,
+		}
+
+		err = survey.AskOne(prompt, &o.Flags.ClusterName, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	region := o.Flags.Region
