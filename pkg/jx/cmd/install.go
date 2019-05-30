@@ -127,6 +127,7 @@ type InstallFlags struct {
 	StaticJenkins               bool
 	LongTermStorage             bool
 	LongTermStorageBucketName   string
+	Advanced                    bool
 }
 
 // Secrets struct for secrets
@@ -362,6 +363,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, "lts-bucket", "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
+	cmd.Flags().BoolVarP(&flags.Advanced, "advanced", "", false, "Advanced install options. This will prompt for advanced install options")
 
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
