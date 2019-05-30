@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-// GetUserOptions containers the CLI options
+// GetLangOptions containers the CLI options
 type GetLangOptions struct {
 	GetOptions
 	StepOptions opts.StepOptions
