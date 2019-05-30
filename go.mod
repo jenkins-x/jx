@@ -15,7 +15,6 @@ require (
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
-	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/antham/chyle v1.4.0
 	github.com/aws/aws-sdk-go v1.17.10
 	github.com/banzaicloud/bank-vaults v0.0.0-00010101000000-000000000000
@@ -38,7 +37,6 @@ require (
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
-	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20190216152406-3a732135aa4d
 	github.com/ghodss/yaml v1.0.0
 	github.com/gliderlabs/ssh v0.1.1 // indirect
