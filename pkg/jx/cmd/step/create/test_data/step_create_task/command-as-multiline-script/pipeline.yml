@@ -25,7 +25,7 @@ spec:
         outputs:
           - name: workspace
             resource: abayer-js-test-repo-really-long
-      retries: 0
+      retries: 5
       taskRef:
         name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
     - name: second
