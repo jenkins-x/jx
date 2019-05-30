@@ -131,7 +131,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		return err
 	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "provider", g.provider)
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "cloud_provider", g.provider)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 func (g *GKECluster) ParseTfVarsFile(path string) {
 	g.Zone, _ = terraform.ReadValueFromFile(path, "gcp_zone")
 	g.Organisation, _ = terraform.ReadValueFromFile(path, "organisation")
-	g.provider, _ = terraform.ReadValueFromFile(path, "provider")
+	g.provider, _ = terraform.ReadValueFromFile(path, "cloud_provider")
 	g.ProjectID, _ = terraform.ReadValueFromFile(path, "gcp_project")
 	g.MinNumOfNodes, _ = terraform.ReadValueFromFile(path, "min_node_count")
 	g.MaxNumOfNodes, _ = terraform.ReadValueFromFile(path, "max_node_count")
