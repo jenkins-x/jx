@@ -81,23 +81,24 @@ else
 CODECOV_SHA := $(shell git rev-parse HEAD 2> /dev/null || echo '')
 endif
 
+
+ifdef BUILD_NUMBER
+CODECOV_ARGS += -b $(BUILD_NUMBER)
+endif
+
 ifdef BRANCH_NAME
 CODECOV_BRANCH := $(BRANCH_NAME)
 else
 CODECOV_BRANCH := $(BRANCH)
 endif
 
-
-ifdef BUILD_NUMBER
-CODECOV_ARGS += "-b $(BUILD_NUMBER)"
-endif
-
 ifdef PULL_NUMBER
-CODECOV_ARGS += "-P $(PULL_NUMBER)"
+CODECOV_ARGS += -P $(PULL_NUMBER)
+CODECOV_BRANCH := $(PULL_BASE_REF)
 endif
 
 ifeq ($(JOB_TYPE),postsubmit)
-CODECOV_ARGS +="-T v$(VERSION)"
+CODECOV_ARGS += -T v$(VERSION)
 endif
 
 #End Codecov
