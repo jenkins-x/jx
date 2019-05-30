@@ -190,16 +190,24 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	if o.Flags.ClusterName == "" {
-		clusterName := strings.ToLower(randomdata.SillyName())
-		prompt := &survey.Input{
-			Message: "What cluster name would you like to use",
-			Default: clusterName,
-		}
+	advanced := o.InstallOptions.Flags.Advanced
 
-		err = survey.AskOne(prompt, &o.Flags.ClusterName, nil, surveyOpts)
-		if err != nil {
-			return err
+	clusterName := o.Flags.ClusterName
+	if clusterName == "" {
+		defaultClusterName := strings.ToLower(randomdata.SillyName())
+		if advanced {
+			prompt := &survey.Input{
+				Message: "What cluster name would you like to use",
+				Default: defaultClusterName,
+			}
+
+			err = survey.AskOne(prompt, &clusterName, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			clusterName = defaultClusterName
+			log.Infof("No cluster name provided so using a generated one: %s", util.ColorPrompt(clusterName))
 		}
 	}
 
@@ -250,17 +258,23 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	machineType := o.Flags.MachineType
 	if machineType == "" {
-		prompts := &survey.Select{
-			Message:  "Google Cloud Machine Type:",
-			Options:  gke.GetGoogleMachineTypes(),
-			Help:     "We recommend a minimum of n1-standard-2 for Jenkins X,  a table of machine descriptions can be found here https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture",
-			PageSize: 10,
-			Default:  "n1-standard-2",
-		}
+		defaultMachineType := "n1-standard-2"
+		if advanced {
+			prompts := &survey.Select{
+				Message:  "Google Cloud Machine Type:",
+				Options:  gke.GetGoogleMachineTypes(),
+				Help:     "We recommend a minimum of n1-standard-2 for Jenkins X,  a table of machine descriptions can be found here https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture",
+				PageSize: 10,
+				Default:  defaultMachineType,
+			}
+			err := survey.AskOne(prompts, &machineType, nil, surveyOpts)
 
-		err := survey.AskOne(prompts, &machineType, nil, surveyOpts)
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
+		} else {
+			machineType = defaultMachineType
+			log.Infof("Defaulting to machine type: %s", util.ColorPrompt(machineType))
 		}
 	}
 
@@ -270,15 +284,20 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if region != "" {
 			defaultNodes = "1"
 		}
-		prompt := &survey.Input{
-			Message: "Minimum number of Nodes (per zone)",
-			Default: defaultNodes,
-			Help:    "We recommend a minimum of " + defaultNodes + " for Jenkins X, the minimum number of nodes to be created in each of the cluster's zones",
-		}
+		if advanced {
+			prompt := &survey.Input{
+				Message: "Minimum number of Nodes (per zone)",
+				Default: defaultNodes,
+				Help:    "We recommend a minimum of " + defaultNodes + " for Jenkins X, the minimum number of nodes to be created in each of the cluster's zones",
+			}
 
-		err = survey.AskOne(prompt, &minNumOfNodes, nil, surveyOpts)
-		if err != nil {
-			return err
+			err = survey.AskOne(prompt, &minNumOfNodes, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			minNumOfNodes = defaultNodes
+			log.Infof("Defaulting to minimum number of nodes: %s", util.ColorPrompt(minNumOfNodes))
 		}
 	}
 
@@ -288,15 +307,20 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if region != "" {
 			defaultNodes = "2"
 		}
-		prompt := &survey.Input{
-			Message: "Maximum number of Nodes",
-			Default: defaultNodes,
-			Help:    "We recommend at least " + defaultNodes + " for Jenkins X, the maximum number of nodes to be created in each of the cluster's zones",
-		}
+		if advanced {
+			prompt := &survey.Input{
+				Message: "Maximum number of Nodes",
+				Default: defaultNodes,
+				Help:    "We recommend at least " + defaultNodes + " for Jenkins X, the maximum number of nodes to be created in each of the cluster's zones",
+			}
 
-		err = survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
-		if err != nil {
-			return err
+			err = survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			maxNumOfNodes = defaultNodes
+			log.Infof("Defaulting to maxiumum number of nodes: %s", util.ColorPrompt(maxNumOfNodes))
 		}
 	}
 
