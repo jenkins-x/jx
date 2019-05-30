@@ -22,6 +22,8 @@ pipelineConfig:
                 value: http://jenkins-x-athens-proxy:80
               - name: JUNIT_REPORT
                 value: "true"
+              - name: PARALLEL_BUILDS
+                value: "2"
             options:
               containerOptions:
                 resources:

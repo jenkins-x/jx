@@ -64,10 +64,11 @@ BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
 endif
 
 ifdef PARALLEL_BUILDS
-BUILDFLAGS := -p $(PARALLEL_BUILDS) $(BUILDFLAGS)
-TESTFLAGS := -p $(PARALLEL_BUILDS)
+BUILDFLAGS += -p $(PARALLEL_BUILDS)
+GOTEST += -p $(PARALLEL_BUILDS)
 else
-TESTFLAGS := -p 8
+# -p 4 seems to work well for people
+GOTEST += -p 4
 endif
 
 # Various codecov.io variables that are set from the CI envrionment if present, otherwise from locally computed values
@@ -171,7 +172,7 @@ make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
 test: make-reports-dir ## Run the unit tests
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -p 1 -count=1 $(COVERFLAGS) -failfast -short ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
 
 test-report: make-reports-dir get-test-deps test ## Create the test report
 	@gocov convert cover.out | gocov report
@@ -186,7 +187,7 @@ test-slow-report: get-test-deps test-slow
 	@gocov convert cover.out | gocov report
 
 test-slow: make-reports-dir ## Run unit tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(TESTFLAGS) $(COVERFLAGS) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) ./...
 
 test-slow-report-html: make-reports-dir get-test-deps test-slow
 	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
@@ -213,10 +214,10 @@ test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-inte
 	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open cover.html
 
 test-slow-integration: make-reports-dir ## Run the integration tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -p 1 -count=1 -tags=integration $(COVERFLAGS) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration $(COVERFLAGS) ./...
 
 test-soak: make-reports-dir get-test-deps
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -p 2 -count=1 -tags soak $(COVERFLAGS) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags soak $(COVERFLAGS) ./...
 
 test1: get-test-deps make-reports-dir
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) ./... -test.v -run $(TEST)
