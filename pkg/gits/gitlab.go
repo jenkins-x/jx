@@ -54,7 +54,7 @@ func WithGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitl
 }
 
 func (g *GitlabProvider) ListRepositories(org string) ([]*GitRepository, error) {
-	result, _, err := getRepositories(g.Client, g.Username, org)
+	result, _, err := getRepositories(g.Client, g.Username, org, "")
 	if err != nil {
 		return nil, err
 	}
@@ -72,16 +72,25 @@ func (g *GitlabProvider) ListReleases(org string, name string) ([]*GitRelease, e
 	return answer, nil
 }
 
-func getRepositories(g *gitlab.Client, username string, org string) ([]*gitlab.Project, *gitlab.Response, error) {
+func getRepositories(g *gitlab.Client, username string, org string, searchFilter string) ([]*gitlab.Project, *gitlab.Response, error) {
+	// TODO: handle the case of more than "pageSize" results, similarly to ListOpenPullRequests().
+	gitlabSearchFilter := gitlab.String(searchFilter)
+	listOpts := gitlab.ListOptions{PerPage: pageSize}
+	listProjectOpts := &gitlab.ListProjectsOptions{
+		Owned:       gitlab.Bool(true),
+		Search:      gitlabSearchFilter,
+		ListOptions: listOpts,
+	}
+
 	if org != "" {
-		projects, resp, err := g.Groups.ListGroupProjects(org, nil)
+		projects, resp, err := g.Groups.ListGroupProjects(org, &gitlab.ListGroupProjectsOptions{Search: gitlabSearchFilter, ListOptions: listOpts})
 		if err != nil {
-			return g.Projects.ListUserProjects(org, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+			return g.Projects.ListUserProjects(org, listProjectOpts)
 		}
 		return projects, resp, err
 
 	}
-	return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+	return g.Projects.ListUserProjects(username, listProjectOpts)
 }
 
 func GetOwnerNamespaceID(g *gitlab.Client, owner string) (int, error) {
@@ -170,7 +179,7 @@ func (g *GitlabProvider) ListOrganisations() ([]GitOrganisation, error) {
 }
 
 func (g *GitlabProvider) projectId(org, username, name string) (string, error) {
-	repos, _, err := getRepositories(g.Client, username, org)
+	repos, _, err := getRepositories(g.Client, username, org, name)
 	if err != nil {
 		return "", err
 	}
