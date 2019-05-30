@@ -38,6 +38,17 @@ GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
 FEATURE_FLAG_TOKEN := $(shell cat /builder/home/feature-flag-token 2> /dev/null)
 CGO_ENABLED = 0
 
+REPORTS_DIR=$(BUILD_TARGET)/reports
+
+GOTEST := go test
+# If available, use gotestsum which provides more comprehensive output
+# This is used in the CI builds
+ifneq (, $(shell which gotestsum 2> /dev/null))
+GOTESTSUM_FORMAT ?= standard-quiet
+GOTEST := gotestsum --junitfile $(REPORTS_DIR)/integration.junit.xml --format $(GOTESTSUM_FORMAT) --
+endif
+
+
 # set dev version unless VERSION is explicitly set via environment
 VERSION ?= $(shell echo "$$(git describe --abbrev=0 --tags 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
 
@@ -135,6 +146,10 @@ help:
 all: build ## Build the binary
 full: check ## Build and run the tests
 check: build test ## Build and run the tests
+get-test-deps: ## Install test dependencies
+	$(GO_NOMOD) get github.com/axw/gocov/gocov
+	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
+
 
 print-version: ## Print version
 	@echo $(VERSION)
@@ -146,71 +161,71 @@ build: $(GO_DEPENDENCIES) ## Build jx binary for current OS
 build-covered: $(GO_DEPENDENCIES) ## Build jx binary for current OS with coverage instrumentation to build/$(NAME).covered
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) $(COVERAGE_BUILD_TARGET) $(BUILDFLAGS) $(COVERAGE_BUILDFLAGS) -o build/$(NAME).covered $(COVERED_MAIN_SRC_FILE)
 
-get-test-deps: ## Install test dependencies
-	$(GO_NOMOD) get github.com/axw/gocov/gocov
-	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
-
 tidy-deps: ## Cleans up dependencies
 	$(GO) mod tidy
 	# mod tidy only takes compile dependencies into account, let's make sure we capture tooling dependencies as well
 	@$(MAKE) install-generate-deps
 
-test: ## Run the unit tests
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 $(COVERFLAGS) -failfast -short ./...
+.PHONY: make-reports-dir
+make-reports-dir:
+	mkdir -p $(REPORTS_DIR)
 
-test-verbose: ## Run the unit tests in verbose mode
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v $(COVERFLAGS) -failfast ./...
+test: make-reports-dir ## Run the unit tests
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -p 1 -count=1 $(COVERFLAGS) -failfast -short ./...
 
-test-report: get-test-deps test ## Create the test report
+test-report: make-reports-dir get-test-deps test ## Create the test report
 	@gocov convert cover.out | gocov report
 
-test-report-html: get-test-deps test ## Create the test report in HTML format
-	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+test-report-html: make-reports-dir get-test-deps test ## Create the test report in HTML format
+	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
-test-slow: ## Run unit tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(TESTFLAGS) $(COVERFLAGS) ./...
+test-verbose: make-reports-dir ## Run the unit tests in verbose mode
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -v $(COVERFLAGS) -failfast ./...
 
 test-slow-report: get-test-deps test-slow
 	@gocov convert cover.out | gocov report
 
-test-slow-report-html: get-test-deps test-slow
-	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+test-slow: make-reports-dir ## Run unit tests sequentially
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(TESTFLAGS) $(COVERFLAGS) ./...
 
-test-integration: ## Run the integration tests 
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration  -short ./...
+test-slow-report-html: make-reports-dir get-test-deps test-slow
+	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
-test-integration1:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration $(COVERFLAGS) -short ./... -test.v -run $(TEST)
+test-integration: get-test-deps## Run the integration tests
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration  -short ./...
 
-test-rich-integration1:
+test-integration1: make-reports-dir
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration $(COVERFLAGS) -short ./... -test.v -run $(TEST)
+
+test-rich-integration1: make-reports-dir
 	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration $(COVERFLAGS) -short -test.v $(TEST_PACKAGE) -run $(TEST)
 
 test-integration-report: get-test-deps test-integration ## Create the integration tests report
 	@gocov convert cover.out | gocov report
 
-test-integration-report-html: get-test-deps test-integration
-	@gocov convert cover.out | gocov-html > cover.html && open cover.html
-
-test-slow-integration: ## Run the integration tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -tags=integration  $(COVERFLAGS) ./...
+test-integration-report-html: make-reports-dir get-test-deps test-integration
+	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-slow-integration-report: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov report
 
-test-slow-integration-report-html: get-test-deps test-slow-integration
-	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-integration
+	@gocov convert cover.out | gocov-html > $(REPORTS_DIR)/cover.html && open cover.html
 
-test-soak:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags soak $(COVERFLAGS) ./...
+test-slow-integration: make-reports-dir ## Run the integration tests sequentially
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -p 1 -count=1 -tags=integration $(COVERFLAGS) ./...
 
-test1:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -test.v -run $(TEST)
+test-soak: make-reports-dir get-test-deps
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -p 2 -count=1 -tags soak $(COVERFLAGS) ./...
 
-testbin:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
+test1: get-test-deps make-reports-dir
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) ./... -test.v -run $(TEST)
 
-testbin-gits:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/gits -o build/jx-test-gits
+testbin: get-test-deps make-reports-dir
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
+
+testbin-gits: get-test-deps make-reports-dir
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/gits -o build/jx-test-gits
 
 debugtest1: testbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- -test.run $(TEST)
@@ -218,8 +233,8 @@ debugtest1: testbin
 debugtest1gits: testbin-gits
 	cd pkg/gits && dlv --log --listen=:2345 --headless=true --api-version=2 exec ../../build/jx-test-gits -- -test.run $(TEST)
 
-inttestbin:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -tags=integration -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-inttest
+inttestbin: get-test-deps
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-inttest
 
 debuginttest1: inttestbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
@@ -252,7 +267,6 @@ release: clean build test-slow-integration linux darwin win arm ## Release the b
 
 	cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
 	cd ./build/linux; tar -zcvf ../../release/jx-linux-amd64.tar.gz jx
-	# Don't build the ARM zip for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
 		cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx; \
 	fi
@@ -261,7 +275,6 @@ release: clean build test-slow-integration linux darwin win arm ## Release the b
 	gh-release checksums sha256
 	GITHUB_ACCESS_TOKEN=$(GITHUB_ACCESS_TOKEN) gh-release create $(RELEASE_ORG_REPO) $(VERSION) master $(VERSION)
 
-	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
 		./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION); \
 	fi
@@ -272,7 +285,7 @@ release-distro:
 
 .PHONY: clean
 clean: ## Clean the generated artifacts
-	rm -rf build release cover.out cover.html
+	rm -rf build release cover.out
 
 .PHONY: codecov-upload
 codecov-upload:
