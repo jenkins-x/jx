@@ -191,7 +191,7 @@ test-integration-report-html: get-test-deps test-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow-integration: ## Run the integration tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -tags=integration  $(COVERFLAGS) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 4 -count=1 -tags=integration  $(COVERFLAGS) ./...
 
 test-slow-integration-report: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov report
