@@ -3,12 +3,9 @@ package create
 import (
 	"context"
 	"fmt"
-
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -33,7 +30,6 @@ import (
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 )
@@ -62,8 +58,6 @@ var (
 		jx step create task --view
 
 			`)
-
-	ipAddressRegistryRegex = regexp.MustCompile(`\d+\.\d+\.\d+\.\d+.\d+(:\d+)?`)
 )
 
 // StepCreateTaskOptions contains the command line flags
@@ -216,18 +210,22 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.DefaultImage == "" {
 		o.DefaultImage = defaultContainerImage
 	}
-	if o.KanikoImage == "" {
-		o.KanikoImage = kanikoDockerImage
-	}
-	if o.KanikoSecretMount == "" {
-		o.KanikoSecretMount = kanikoSecretMount
-	}
 	log.Logger().Debugf("cloning git for %s", o.CloneGitURL)
 	if o.VersionResolver == nil {
 		o.VersionResolver, err = o.CreateVersionResolver("", "")
 		if err != nil {
 			return err
 		}
+	}
+	if o.KanikoImage == "" {
+		o.KanikoImage = kanikoDockerImage
+	}
+	o.KanikoImage, err = o.VersionResolver.ResolveDockerImage(o.KanikoImage)
+	if err != nil {
+		return err
+	}
+	if o.KanikoSecretMount == "" {
+		o.KanikoSecretMount = kanikoSecretMount
 	}
 	var pr *prow.PullRefs
 	if o.CloneGitURL != "" {
@@ -487,35 +485,26 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			}
 		}
 	} else {
-		stage, err := o.CreateStageForBuildPack(name, projectConfig, pipelineConfig, lifecycles, kind, ns)
+		args := jenkinsfile.CreatePipelineArguments{
+			Lifecycles:        lifecycles,
+			PodTemplates:      o.PodTemplates,
+			CustomImage:       o.CustomImage,
+			DefaultImage:      o.DefaultImage,
+			WorkspaceDir:      o.getWorkspaceDir(),
+			GitHost:           o.GitInfo.Host,
+			GitName:           o.GitInfo.Name,
+			GitOrg:            o.GitInfo.Organisation,
+			ProjectID:         o.ProjectID,
+			DockerRegistry:    o.getDockerRegistry(projectConfig),
+			DockerRegistryOrg: o.GetDockerRegistryOrg(projectConfig, o.GitInfo),
+			KanikoImage:       o.KanikoImage,
+			NoKaniko:          o.NoKaniko,
+			NoReleasePrepare:  o.NoReleasePrepare,
+			StepCounter:       o.stepCounter,
+		}
+		parsed, o.stepCounter, err = pipelineConfig.CreatePipelineForBuildPack(args)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to generate stage from build pack")
-		}
-
-		parsed = &syntax.ParsedPipeline{
-			Stages: []syntax.Stage{*stage},
-		}
-
-		// If agent.container is specified, use that for default container configuration for step images.
-		containerName := pipelineConfig.Agent.GetImage()
-		if containerName != "" {
-			if o.PodTemplates != nil && o.PodTemplates[containerName] != nil {
-				podTemplate := o.PodTemplates[containerName]
-				container := podTemplate.Spec.Containers[0]
-				if !equality.Semantic.DeepEqual(container, corev1.Container{}) {
-					container.Name = ""
-					container.Command = []string{}
-					container.Args = []string{}
-					container.Image = ""
-					container.WorkingDir = ""
-					container.Stdin = false
-					container.TTY = false
-					if parsed.Options == nil {
-						parsed.Options = &syntax.RootOptions{}
-					}
-					parsed.Options.ContainerOptions = &container
-				}
-			}
+			return nil, errors.Wrapf(err, "Failed to generate pipeline from build pack")
 		}
 	}
 
@@ -585,48 +574,6 @@ func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, stri
 		}
 	}
 	return config.LoadProjectConfig(o.cloneDir)
-}
-
-// CreateStageForBuildPack generates the Task for a build pack
-func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) (*syntax.Stage, error) {
-	if lifecycles == nil {
-		return nil, errors.New("generatePipeline: no lifecycles")
-	}
-
-	// lets generate the pipeline using the build packs
-	container := pipelineConfig.Agent.GetImage()
-	if o.CustomImage != "" {
-		container = o.CustomImage
-	}
-	if container == "" {
-		container = o.DefaultImage
-	}
-	dir := o.getWorkspaceDir()
-
-	steps := []syntax.Step{}
-	for _, n := range lifecycles.All() {
-		l := n.Lifecycle
-		if l == nil {
-			continue
-		}
-		if !o.NoReleasePrepare && n.Name == "setversion" {
-			continue
-		}
-
-		for _, s := range l.Steps {
-			steps = append(steps, o.createSteps(languageName, projectConfig, pipelineConfig, templateKind, s, container, dir, n.Name)...)
-		}
-	}
-
-	stage := &syntax.Stage{
-		Name: syntax.DefaultStageNameForBuildPack,
-		Agent: &syntax.Agent{
-			Image: container,
-		},
-		Steps: steps,
-	}
-
-	return stage, nil
 }
 
 // GetDefaultTaskInputs gets the base, built-in task parameters as an Input.
@@ -778,103 +725,6 @@ func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.Pipeli
 	}
 	projectConfig.Env = syntax.EnvMapToSlice(envMap)
 	return nil
-}
-
-func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *syntax.Step, containerName string, dir string, prefixPath string) []syntax.Step {
-	steps := []syntax.Step{}
-
-	if step.GetImage() != "" {
-		containerName = step.GetImage()
-	} else {
-		containerName = pipelineConfig.Agent.GetImage()
-	}
-
-	if step.Dir != "" {
-		dir = step.Dir
-	}
-	dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", o.getWorkspaceDir(), -1)
-
-	gitInfo := o.GitInfo
-	if gitInfo != nil {
-		gitProviderHost := gitInfo.Host
-		dir = strings.Replace(dir, opts.PlaceHolderAppName, gitInfo.Name, -1)
-		dir = strings.Replace(dir, opts.PlaceHolderOrg, gitInfo.Organisation, -1)
-		dir = strings.Replace(dir, opts.PlaceHolderGitProvider, gitProviderHost, -1)
-		dir = strings.Replace(dir, opts.PlaceHolderDockerRegistryOrg, strings.ToLower(o.GetDockerRegistryOrg(projectConfig, gitInfo)), -1)
-	} else {
-		log.Logger().Warnf("No GitInfo available!")
-	}
-
-	if step.GetCommand() != "" {
-		if containerName == "" {
-			containerName = o.DefaultImage
-			log.Logger().Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s", containerName)
-		}
-
-		s := syntax.Step{}
-		o.stepCounter++
-		prefix := prefixPath
-		if prefix != "" {
-			prefix += "-"
-		}
-		stepName := step.Name
-		if stepName == "" {
-			stepName = "step" + strconv.Itoa(1+o.stepCounter)
-		}
-		s.Name = prefix + stepName
-		s.Command = o.replaceCommandText(step)
-		if o.CustomImage != "" {
-			s.Image = o.CustomImage
-		} else {
-			s.Image = containerName
-		}
-
-		workspaceDir := o.getWorkspaceDir()
-		if strings.HasPrefix(dir, "./") {
-			dir = workspaceDir + strings.TrimPrefix(dir, ".")
-		}
-		if !filepath.IsAbs(dir) {
-			dir = filepath.Join(workspaceDir, dir)
-		}
-		s.Dir = dir
-
-		modifyStep := o.modifyStep(projectConfig, s, gitInfo, pipelineConfig, templateKind, step, containerName, dir)
-
-		// let allow the docker images to have no actual version which is replaced via the version stream
-		image, err := o.VersionResolver.ResolveDockerImage(modifyStep.Image)
-		if err != nil {
-			log.Logger().Warnf("failed to resolve docker image version: %s due to %s", modifyStep.Image, err.Error())
-		} else {
-			modifyStep.Image = image
-		}
-
-		steps = append(steps, modifyStep)
-	} else if step.Loop != nil {
-		// Just copy in the loop step without altering it.
-		// TODO: We don't get magic around image resolution etc, but we avoid naming collisions that result otherwise.
-		steps = append(steps, *step)
-	}
-	for _, s := range step.Steps {
-		// TODO add child prefix?
-		childPrefixPath := prefixPath
-		steps = append(steps, o.createSteps(languageName, projectConfig, pipelineConfig, templateKind, s, containerName, dir, childPrefixPath)...)
-	}
-	return steps
-}
-
-// replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
-// and replace any use of the VERSION file with using the VERSION env var
-func (o *StepCreateTaskOptions) replaceCommandText(step *syntax.Step) string {
-	answer := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
-
-	// lets replace the old way of setting versions
-	answer = strings.Replace(answer, "export VERSION=`cat VERSION` && ", "", 1)
-	answer = strings.Replace(answer, "export VERSION=$PREVIEW_VERSION && ", "", 1)
-
-	for _, text := range []string{"$(cat VERSION)", "$(cat ../VERSION)", "$(cat ../../VERSION)"} {
-		answer = strings.Replace(answer, text, "${VERSION}", -1)
-	}
-	return answer
 }
 
 func (o *StepCreateTaskOptions) getWorkspaceDir() string {
@@ -1390,43 +1240,6 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*syntax.Step) error {
 		}
 	}
 	return nil
-}
-
-// modifyStep allows a container step to be modified to do something different
-func (o *StepCreateTaskOptions) modifyStep(projectConfig *config.ProjectConfig, parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *syntax.Step, containerName string, dir string) syntax.Step {
-
-	if !o.NoKaniko {
-		if strings.HasPrefix(parsedStep.GetCommand(), "skaffold build") ||
-			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) {
-			sourceDir := o.getWorkspaceDir()
-			dockerfile := filepath.Join(sourceDir, "Dockerfile")
-			localRepo := o.getDockerRegistry(projectConfig)
-			destination := o.dockerImage(projectConfig, gitInfo)
-
-			args := []string{"--cache=true", "--cache-dir=/workspace",
-				"--context=" + sourceDir,
-				"--dockerfile=" + dockerfile,
-				"--destination=" + destination + ":${inputs.params.version}",
-				"--cache-repo=" + localRepo + "/" + o.ProjectID + "/cache",
-			}
-			if localRepo != "gcr.io" {
-				args = append(args, "--skip-tls-verify-registry="+localRepo)
-			}
-
-			if ipAddressRegistryRegex.MatchString(localRepo) {
-				args = append(args, "--insecure")
-			}
-
-			parsedStep.Command = "/kaniko/executor"
-			parsedStep.Arguments = args
-
-			if o.KanikoImage == "" {
-				o.KanikoImage = kanikoDockerImage
-			}
-			parsedStep.Image = o.KanikoImage
-		}
-	}
-	return parsedStep
 }
 
 func (o *StepCreateTaskOptions) dockerImage(projectConfig *config.ProjectConfig, gitInfo *gits.GitRepository) string {

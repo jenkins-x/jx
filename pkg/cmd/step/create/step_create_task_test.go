@@ -67,6 +67,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 		branch         string
 		kind           string
 		expectingError bool
+		noKaniko       bool
 	}{
 		{
 			name:         "js_build_pack",
@@ -83,6 +84,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			noKaniko:     true,
 		},
 		{
 			name:         "from_yaml",
@@ -140,6 +142,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			noKaniko:     true,
 		},
 		{
 			name:         "override_block_step",
@@ -156,6 +159,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			noKaniko:     true,
 		},
 		{
 			name:         "containeroptions-on-pipelineconfig",
@@ -164,6 +168,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			noKaniko:     true,
 		},
 		{
 			name:         "default-in-jenkins-x-yml",
@@ -254,6 +259,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
+			noKaniko:     true,
 		},
 		{
 			name:         "replace-stage-steps-in-jenkins-x-yml",
@@ -304,7 +310,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				Namespace: "jx",
 			},
 			Data: map[string]string{
-				"docker.registry": "1.2.3.4:5000",
+				"docker.registry": "gcr.io",
 			},
 		},
 	}
@@ -342,7 +348,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				},
 				Branch:       tt.branch,
 				PipelineKind: tt.kind,
-				NoKaniko:     true,
+				NoKaniko:     tt.noKaniko,
 				Trigger:      string(pipelineapi.PipelineTriggerTypeManual),
 				StepOptions: opts.StepOptions{
 					CommonOptions: &opts.CommonOptions{
@@ -353,7 +359,11 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				VersionResolver: &opts.VersionResolver{
 					VersionsDir: testVersionsDir,
 				},
-				DefaultImage: "maven",
+				DefaultImage:      "maven",
+				KanikoImage:       "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6",
+				KanikoSecretMount: "/kaniko-secret/secret.json",
+				KanikoSecret:      "kaniko-secret",
+				KanikoSecretKey:   "kaniko-secret",
 			}
 			testhelpers.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 

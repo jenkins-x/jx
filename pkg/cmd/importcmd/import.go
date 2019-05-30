@@ -9,6 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	//_ "github.com/Azure/draft/pkg/linguist"
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -1007,17 +1011,17 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryO
 	}
 
 	replacer := strings.NewReplacer(
-		opts.PlaceHolderAppName, strings.ToLower(options.AppName),
-		opts.PlaceHolderGitProvider, strings.ToLower(gitServerName),
-		opts.PlaceHolderOrg, strings.ToLower(options.Organisation),
-		opts.PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
+		util.PlaceHolderAppName, strings.ToLower(options.AppName),
+		util.PlaceHolderGitProvider, strings.ToLower(gitServerName),
+		util.PlaceHolderOrg, strings.ToLower(options.Organisation),
+		util.PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
 
 	pathsToRename := []string{} // Renaming must be done post-Walk
 	if err := filepath.Walk(options.Dir, func(f string, fi os.FileInfo, err error) error {
 		if skip, err := options.skipPathForReplacement(f, fi, ignore); skip {
 			return err
 		}
-		if strings.Contains(filepath.Base(f), opts.PlaceHolderPrefix) {
+		if strings.Contains(filepath.Base(f), util.PlaceHolderPrefix) {
 			// Prepend so children are renamed before their parents
 			pathsToRename = append([]string{f}, pathsToRename...)
 		}
@@ -1069,7 +1073,7 @@ func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
 	}
 
 	lines := string(input)
-	if strings.Contains(lines, opts.PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
+	if strings.Contains(lines, util.PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
 		output := replacer.Replace(lines)
 		err = ioutil.WriteFile(file, []byte(output), 0644)
 		if err != nil {
