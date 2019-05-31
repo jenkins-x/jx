@@ -20,6 +20,8 @@ pipelineConfig:
                 value: /workspace/source
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy:80
+              - name: PARALLEL_BUILDS
+                value: "2"
 
             steps:
               - name: build-binary
