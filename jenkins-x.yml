@@ -131,12 +131,12 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-jx:0.1.332
                 command: ./jx/scripts/update-bot.sh
 
-              - name: distro
+              #- name: distro
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
-                command: make
-                args: ['release-distro']
+              #  image: gcr.io/jenkinsxio/builder-go:0.1.332
+              #  command: make
+              #  args: ['release-distro']
 
               - name: update-docs
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
