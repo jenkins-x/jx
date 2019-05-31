@@ -18,6 +18,7 @@ type CreateCluster struct {
 	Args     []string `json:"args,omitempty"`
 	NoLabels bool     `json:"noLabels,omitempty"`
 	Labels   string   `json:"labels,omitempty"`
+	Terraform bool    `json:"terraform,omitempty"`
 }
 
 // LoadBddClusters loads the cluster configuration from the given file
