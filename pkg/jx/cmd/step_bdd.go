@@ -555,11 +555,13 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
 	args := cluster.Args
-	args = append(args, "--cluster-name", cluster.Name)
 
 	if cluster.Terraform {
 		// use the cluster name as the organisation name
 		args = append(args, "--organisation-name", cluster.Name)
+		args = append(args, "--cluster-name", "dev")
+	} else {
+		args = append(args, "--cluster-name", cluster.Name)
 	}
 
 	if util.StringArrayIndex(args, "-b") < 0 && util.StringArrayIndex(args, "--batch-mode") < 0 {
