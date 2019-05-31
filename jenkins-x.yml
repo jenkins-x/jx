@@ -40,7 +40,7 @@ pipelineConfig:
                 resources:
                   limits:
                     cpu: 4
-                    memory: 6144Mi
+                    memory: 8Gi
                   requests:
                     cpu: 3
                     memory: 3072Mi
