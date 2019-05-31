@@ -4,6 +4,10 @@ metadata:
   creationTimestamp: null
   name: jenkins-x-jx-fix-kaniko-special-1
   namespace: jx
+  labels:
+    branch: fix-kaniko-special-casing
+    owner: jenkins-x
+    repo: jx
 spec:
   params:
     - default: 0.0.1

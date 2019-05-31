@@ -1,6 +1,10 @@
 metadata:
   creationTimestamp: null
   name: jenkins-x-jx-fix-kaniko-special-1
+  labels:
+    branch: fix-kaniko-special-casing
+    owner: jenkins-x
+    repo: jx
 pipelineRef: null
 pipelineRunRef: null
 stages:
