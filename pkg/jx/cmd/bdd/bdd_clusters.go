@@ -14,11 +14,11 @@ type CreateClusters struct {
 
 // CreateCluster defines how to create a cluster
 type CreateCluster struct {
-	Name     string   `json:"name,omitempty"`
-	Args     []string `json:"args,omitempty"`
-	NoLabels bool     `json:"noLabels,omitempty"`
-	Labels   string   `json:"labels,omitempty"`
-	Terraform bool    `json:"terraform,omitempty"`
+	Name      string   `json:"name,omitempty"`
+	Args      []string `json:"args,omitempty"`
+	NoLabels  bool     `json:"noLabels,omitempty"`
+	Labels    string   `json:"labels,omitempty"`
+	Terraform bool     `json:"terraform,omitempty"`
 }
 
 // LoadBddClusters loads the cluster configuration from the given file
