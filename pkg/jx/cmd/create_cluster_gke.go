@@ -424,7 +424,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	// mandatory flags are machine type, num-nodes, zone or region
 	args := []string{"container", "clusters", "create",
-		o.Flags.ClusterName,
+		clusterName,
 		"--num-nodes", minNumOfNodes,
 		"--machine-type", machineType,
 		"--enable-autoscaling",
