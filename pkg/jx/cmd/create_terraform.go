@@ -226,7 +226,6 @@ type Flags struct {
 	CloudProvider               string // cannot be used in conjunction with Cluster
 	OrganisationName            string
 	SkipLogin                   bool
-	Labels                      string
 	ForkOrganisationGitRepo     string
 	SkipTerraformApply          bool
 	NoActiveCluster             bool
@@ -330,7 +329,6 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	cmd.Flags().StringVarP(&options.Flags.JxEnvironment, "jx-environment", "", "dev", "The cluster name to install jx inside")
 	cmd.Flags().StringVarP(&options.Flags.LocalOrganisationRepository, "local-organisation-repository", "", "", "Rather than cloning from a remote Git server, the local directory to use for the organisational folder")
 	cmd.Flags().BoolVarP(&options.Flags.NoActiveCluster, "no-active-cluster", "", false, "Tells JX there's isn't currently an active cluster, so we cannot use it for configuration")
-	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 
 	// GKE specific overrides
 	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "gke-disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
