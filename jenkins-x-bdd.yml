@@ -77,7 +77,7 @@ pipelineConfig:
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
-              - name: preview
+              - name: e2e-tests
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/ci.sh
 
