@@ -25,9 +25,6 @@ pipelineConfig:
                 # Build a binary that can emit coverage
               - name: COVERED_BINARY
                 value: "true"
-                # Enable coverage reporting during BDD test run
-              - name: ENABLE_COVERAGE
-                value: "true"
               - name: CODECOV_NAME
                 value: e2e
             options:
@@ -56,6 +53,10 @@ pipelineConfig:
                 image: docker.io/golang:1.11.5
                 command: "./build/linux/jx"
                 args: ['help']
+                # Supported when we upgrade
+                #env:
+                #- name: COVER_JX_BINARY
+                #  value: false
 
               - name: build-and-push-image
                 image: rawlingsj/executor:dev40
@@ -80,8 +81,3 @@ pipelineConfig:
               - name: preview
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/ci.sh
-
-              - name: codecov-upload
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
-                command: make
-                args: ['codecov-upload']
