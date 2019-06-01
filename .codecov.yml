@@ -1,9 +1,17 @@
 coverage:
-  status:
-    project:
-      default:
-        # basic
-        target: auto
-    patch:
-      default:
-        target: 70%
+        status:
+          project:
+            default:
+              # basic
+              target: auto
+          patch:
+            default:
+              target: 70%
+      codecov:
+        ci:
+          - !DCO
+          - !Hound
+          - !lint
+          - !tide
+          - integration
+          - bdd
