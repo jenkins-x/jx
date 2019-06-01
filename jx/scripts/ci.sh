@@ -11,6 +11,8 @@ export GHE_CREDS_PSW="$(jx step credential -s jx-pipeline-git-github-ghe)"
 export JENKINS_CREDS_PSW="$(jx step credential -s  test-jenkins-user)"
 export GKE_SA="$(jx step credential -s gke-sa)"
 
+export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
+
 # for BDD tests
 export GIT_PROVIDER_URL="https://github.beescloud.com"
 export GHE_TOKEN="$GHE_CREDS_PSW"
