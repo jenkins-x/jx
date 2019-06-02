@@ -128,7 +128,7 @@ endif
 # support for building a covered jx binary (one with the coverage instrumentation compiled in). The `build-covered`
 # target also builds the covered binary explicitly
 COVERED_MAIN_SRC_FILE=./cmd/jx
-COVERAGE_BUILDFLAGS = -c -coverpkg=./... -covermode=count
+COVERAGE_BUILDFLAGS = -c -tags covered_binary -coverpkg=./... -covermode=count
 COVERAGE_BUILD_TARGET = test
 ifdef COVERED_BINARY
 BUILDFLAGS += $(COVERAGE_BUILDFLAGS)

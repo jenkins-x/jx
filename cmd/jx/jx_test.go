@@ -1,3 +1,5 @@
+// +build covered_binary
+
 package main
 
 import (
