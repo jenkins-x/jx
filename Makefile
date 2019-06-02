@@ -297,6 +297,11 @@ codecov-upload:
 	SOURCE_BRANCH="$(CODECOV_BRANCH)" \
 	bash <(curl -s https://codecov.io/bash) $(CODECOV_ARGS)
 
+.PHONY: codecov-validate
+codecov-validate:
+	./jx/scripts/codecov-validate.sh
+
+
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
 	@if [ "$(FORMATTED)" == "" ]; \
