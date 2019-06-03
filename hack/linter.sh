@@ -17,15 +17,13 @@ golangci-lint run \
     -E deadcode \
     -E unconvert \
     -E errcheck \
-    -E unused \
+    -E gosec \
     --skip-dirs vendor \
     --deadline 5m0s
 
 #    -E goimports \
 #    -E goconst \
-#    -D errcheck \
 #    -D ineffassign \
-#    -D deadcode \
 #    -D govet \
 #    -D varcheck \
 #    -D structcheck \
