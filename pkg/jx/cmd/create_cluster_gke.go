@@ -494,14 +494,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	log.Info("Initialising cluster ...\n")
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
-		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
+		o.InstallOptions.Flags.DefaultEnvironmentPrefix = clusterName
 	}
 
 	o.InstallOptions.setInstallValues(map[string]string{
 		kube.Zone:        zone,
 		kube.Region:      region,
 		kube.ProjectID:   projectId,
-		kube.ClusterName: o.Flags.ClusterName,
+		kube.ClusterName: clusterName,
 	})
 
 	err = o.initAndInstall(cloud.GKE)
@@ -509,7 +509,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	getCredsCommand := []string{"container", "clusters", "get-credentials", o.Flags.ClusterName}
+	getCredsCommand := []string{"container", "clusters", "get-credentials", clusterName}
 	if "" != zone {
 		getCredsCommand = append(getCredsCommand, "--zone", zone)
 	} else if "" != region {
