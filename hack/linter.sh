@@ -16,6 +16,7 @@ golangci-lint run \
 	-E unconvert \
     -E deadcode \
     -E unconvert \
+    -E errcheck \
     --skip-dirs vendor \
     --deadline 5m0s
 
