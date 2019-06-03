@@ -555,7 +555,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		remoteRepoExists := err == nil
 
 		if !remoteRepoExists {
-			log.Infof( "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+			log.Infof("Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 			repo, err = details.CreateRepository()
 			if err != nil {
@@ -584,7 +584,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 				return err
 			}
 		} else {
-			log.Infof( "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+			log.Infof("Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 			dir = path.Join(organisationDir, details.RepoName)
 			localDirExists, err := util.FileExists(dir)
@@ -594,14 +594,14 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 
 			if localDirExists {
 				// if remote repo does exist & local does exist, git pull the local repo
-				log.Infof( "local directory already exists\n")
+				log.Infof("local directory already exists\n")
 
 				err = options.Git().Pull(dir)
 				if err != nil {
 					return err
 				}
 			} else {
-				log.Infof( "cloning repository locally\n")
+				log.Infof("cloning repository locally\n")
 				err = os.MkdirAll(dir, os.FileMode(0755))
 				if err != nil {
 					return err
@@ -617,7 +617,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 					return err
 				}
 			}
-			log.Infof( "Remote repository %s\n\n", util.ColorInfo(repo.HTMLURL))
+			log.Infof("Remote repository %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 
 		options.InstallOptions.Flags.EnvironmentGitOwner = org
@@ -639,10 +639,10 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			return err
 		}
-		log.Infof( "Pushed Git repository %s\n", util.ColorInfo(dir))
+		log.Infof("Pushed Git repository %s\n", util.ColorInfo(dir))
 	}
 
-	log.Infof( "Creating Clusters...\n")
+	log.Infof("Creating Clusters...\n")
 	err = options.createClusters(dir, clusterDefinitions)
 	if err != nil {
 		return err
@@ -651,7 +651,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 	if !options.Flags.SkipTerraformApply {
 		devCluster, err := options.findDevCluster(clusterDefinitions)
 		if err != nil {
-			log.Infof( "Skipping jx install\n")
+			log.Infof("Skipping jx install\n")
 		} else {
 			err = options.installJx(devCluster, clusterDefinitions)
 			if err != nil {
@@ -659,7 +659,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 			}
 		}
 	} else {
-		log.Infof( "Skipping jx install\n")
+		log.Infof("Skipping jx install\n")
 	}
 
 	return nil
@@ -672,7 +672,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 	clusterDefinitions := []Cluster{}
 
 	for _, c := range options.Clusters {
-		log.Infof( "Creating config for cluster %s\n\n", util.ColorInfo(c.Name()))
+		log.Infof("Creating config for cluster %s\n\n", util.ColorInfo(c.Name()))
 
 		path := filepath.Join(dir, Clusters, c.Name(), Terraform)
 		exists, err := util.FileExists(path)
@@ -717,7 +717,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 				//g := &GKECluster{}
 				g := c.(*GKECluster)
 				terraformVars := filepath.Join(path, "terraform.tfvars")
-				log.Infof( "loading config from %s\n", util.ColorInfo(terraformVars))
+				log.Infof("loading config from %s\n", util.ColorInfo(terraformVars))
 
 				g.ParseTfVarsFile(terraformVars)
 				clusterDefinitions = append(clusterDefinitions, g)
@@ -743,7 +743,7 @@ func (options *CreateTerraformOptions) createClusters(dir string, clusterDefinit
 		switch v := c.(type) {
 		case *GKECluster:
 			path := filepath.Join(dir, Clusters, v.Name(), Terraform)
-			log.Infof( "\n\nCreating/Updating cluster %s\n", util.ColorInfo(c.Name()))
+			log.Infof("\n\nCreating/Updating cluster %s\n", util.ColorInfo(c.Name()))
 			err := options.applyTerraformGKE(v, path)
 			if err != nil {
 				return err
@@ -849,7 +849,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 		options.Debugf("generating a new name for cluster %s", g.Name())
 
 		g.name = strings.ToLower(randomdata.SillyName())
-		log.Infof( "No cluster name provided so using a generated one: %s\n", util.ColorInfo(g.Name()))
+		log.Infof("No cluster name provided so using a generated one: %s\n", util.ColorInfo(g.Name()))
 	}
 
 	if g.Zone == "" {
@@ -1053,17 +1053,17 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 	var serviceAccountPath string
 	if g.ServiceAccount == "" {
 		serviceAccountName := fmt.Sprintf("jx-%s-%s", options.Flags.OrganisationName, g.Name())
-		log.Infof( "No GCP service account provided, creating %s\n", util.ColorInfo(serviceAccountName))
+		log.Infof("No GCP service account provided, creating %s\n", util.ColorInfo(serviceAccountName))
 
 		_, err := gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectID, filepath.Dir(path), gke.RequiredServiceAccountRoles)
 		if err != nil {
 			return err
 		}
 		serviceAccountPath = filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
-		log.Infof( "Created GCP service account: %s\n", util.ColorInfo(serviceAccountPath))
+		log.Infof("Created GCP service account: %s\n", util.ColorInfo(serviceAccountPath))
 	} else {
 		serviceAccountPath = g.ServiceAccount
-		log.Infof( "Using provided GCP service account: %s\n", util.ColorInfo(serviceAccountPath))
+		log.Infof("Using provided GCP service account: %s\n", util.ColorInfo(serviceAccountPath))
 	}
 
 	// create the bucket
@@ -1078,7 +1078,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		if err != nil {
 			return err
 		}
-		log.Infof( "Created GCS bucket: %s in region %s\n", util.ColorInfo(bucketName), util.ColorInfo(g.Region()))
+		log.Infof("Created GCS bucket: %s in region %s\n", util.ColorInfo(bucketName), util.ColorInfo(g.Region()))
 	}
 
 	err = terraform.Init(path, serviceAccountPath)
@@ -1091,7 +1091,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		return err
 	}
 
-	log.Infof( plan)
+	log.Infof(plan)
 
 	if !options.BatchMode {
 		confirm := false
@@ -1108,8 +1108,8 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 
 	if !options.Flags.IgnoreTerraformWarnings {
 		if strings.Contains(plan, "forces new resource") {
-			log.Infof( "%s\n", util.ColorError("It looks like this plan is destructive, aborting."))
-			log.Infof( "Use --ignore-terraform-warnings to override\n")
+			log.Infof("%s\n", util.ColorError("It looks like this plan is destructive, aborting."))
+			log.Infof("Use --ignore-terraform-warnings to override\n")
 			return errors.New("aborting destructive plan")
 		}
 	}
@@ -1128,7 +1128,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		}
 		log.Info(output)
 	} else {
-		log.Infof( "Skipping Terraform apply\n")
+		log.Infof("Skipping Terraform apply\n")
 	}
 
 	options.InstallOptions.setInstallValues(map[string]string{
