@@ -351,7 +351,7 @@ func (c *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUse
 	var err error
 
 	if editUser || auth.Username == "" {
-		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true, "", in, out, outErr)
+		auth.Username, err = util.PickValue(serverLabel+" username:", auth.Username, true, "", in, out, outErr)
 		if err != nil {
 			return err
 		}
