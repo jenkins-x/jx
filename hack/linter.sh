@@ -24,7 +24,8 @@ golangci-lint run \
     -E govet \
     -E interfacer \
     --skip-dirs vendor \
-    --deadline 5m0s
+    --deadline 5m0s \
+    --verbose
 
 #    -E typecheck \
 #    -E ineffassign \
