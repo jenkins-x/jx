@@ -21,17 +21,17 @@ golangci-lint run \
     -E gofmt \
     -E structcheck \
     -E varcheck \
+    -E govet \
+    -E interfacer \
     --skip-dirs vendor \
     --deadline 5m0s
 
+#    -E typecheck \
 #    -E ineffassign \
 #    -E goimports \
 #    -E goconst \
-#    -D govet \
-#    -D typecheck \
 #    -E goimports
 #    -E golint
 #    -E unparam
 #    -E gocritic
-#    -E interfacer
 #    -E maligned
