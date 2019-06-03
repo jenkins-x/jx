@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -x
 
 echo "verifying Pull Request"
 JX=./build/linux/jx
@@ -7,9 +8,9 @@ export ORG="jenkinsxio"
 export APP_NAME="jx"
 export TEAM="$(echo ${BRANCH_NAME}-$BUILD_ID  | tr '[:upper:]' '[:lower:]')"
 
-export GHE_CREDS_PSW="$(${JX} step credential -s jx-pipeline-git-github-ghe)"
-export JENKINS_CREDS_PSW="$(${JX} step credential -s  test-jenkins-user)"
-export GKE_SA="$(${JX} step credential -s gke-sa)"
+export GHE_CREDS_PSW="$(${JX} step credential -s jx-pipeline-git-github-ghe | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
+export JENKINS_CREDS_PSW="$(${JX} step credential -s  test-jenkins-user | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
+export GKE_SA="$(${JX} step credential -s gke-sa | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
 
 export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 

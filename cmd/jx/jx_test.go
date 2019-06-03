@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -27,21 +26,6 @@ import (
 
 	"github.com/jenkins-x/jx/cmd/jx/app"
 )
-
-type TestSystemWriter struct {
-	wrapped io.Writer
-}
-
-var coverageOutputRegex = regexp.MustCompile(`(?m:^coverage: ([\d\.]*%) of statements in [\w\.\/]*$)`)
-var passOutputRegex = regexp.MustCompile(`(?m:^PASS$)`)
-
-func (t TestSystemWriter) Write(p []byte) (n int, err error) {
-	s := string(p)
-	s = coverageOutputRegex.ReplaceAllString(s, "")
-	s = passOutputRegex.ReplaceAllString(s, "")
-	_, err = t.wrapped.Write([]byte(s))
-	return len(p), err
-}
 
 func TestSystem(t *testing.T) {
 	disableCoverage := os.Getenv("COVER_JX_BINARY") == "false"
@@ -99,11 +83,9 @@ func TestSystem(t *testing.T) {
 				},
 				Args: args[1:],
 				Name: os.Args[0],
-				Out: TestSystemWriter{
-					wrapped: os.Stdout,
-				},
-				In:  os.Stdin,
-				Err: os.Stderr,
+				Out:  os.Stdout,
+				In:   os.Stdin,
+				Err:  os.Stderr,
 			}
 			_, err := cmd.RunWithoutRetry()
 			if !disableSelfUpload {
