@@ -224,7 +224,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 			if o.InstallOptions.Flags.NextGeneration {
 				log.Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
-			} else {
+			} else if advanced {
 				prompts := &survey.Select{
 					Message: "What type of cluster would you like to create",
 					Options: []string{"Regional", "Zonal"},
@@ -236,6 +236,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				if err != nil {
 					return err
 				}
+			} else {
+				log.Infof("Defaulting to cluster type: %s", util.ColorPrompt(clusterType))
 			}
 
 			if "Regional" == clusterType {
@@ -326,14 +328,19 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		if !o.IsFlagExplicitlySet(preemptibleFlagName) {
-			prompt := &survey.Confirm{
-				Message: "Would you like use preemptible VMs?",
-				Default: false,
-				Help:    "Preemptible VMs can significantly lower the cost of a cluster",
-			}
-			err = survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
-			if err != nil {
-				return err
+			if advanced {
+				prompt := &survey.Confirm{
+					Message: "Would you like to use preemptible VMs?",
+					Default: false,
+					Help:    "Preemptible VMs can significantly lower the cost of a cluster",
+				}
+				err = survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
+			} else {
+				o.Flags.Preemptible = false
+				log.Infof("Defaulting use of preemptible VMs: %v", util.ColorPrompt(util.YesNo(o.Flags.Preemptible)))
 			}
 		}
 	}
@@ -347,14 +354,19 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.BatchMode {
 		// if scopes is empty &
 		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
-			prompt := &survey.Confirm{
-				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
-				Default: o.InstallOptions.Flags.DockerRegistry == "",
-				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
-			}
-			err = survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
-			if err != nil {
-				return err
+			if advanced {
+				prompt := &survey.Confirm{
+					Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
+					Default: o.InstallOptions.Flags.DockerRegistry == "",
+					Help:    "Enables enhanced oauth scopes to allow access to storage based services",
+				}
+				err = survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
+			} else {
+				o.Flags.EnhancedScopes = true
+				log.Infof("Defaulting access to Google Cloud Storage / Google Container Registry: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedScopes)))
 			}
 		}
 	}
@@ -373,14 +385,19 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes {
 			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
-				prompt := &survey.Confirm{
-					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
-					Default: o.Flags.EnhancedScopes,
-					Help:    "Enables extra APIs on the GCP project",
-				}
-				err = survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
-				if err != nil {
-					return err
+				if advanced {
+					prompt := &survey.Confirm{
+						Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
+						Default: o.Flags.EnhancedScopes,
+						Help:    "Enables extra APIs on the GCP project",
+					}
+					err = survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
+					if err != nil {
+						return err
+					}
+				} else {
+					o.Flags.EnhancedApis = true
+					log.Infof("Defaulting enabling Cloud Build, Container Registry & Container Analysis API's: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedApis)))
 				}
 			}
 		}
@@ -398,14 +415,19 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes && !o.InstallOptions.Flags.Kaniko {
-			prompt := &survey.Confirm{
-				Message: "Would you like to enable Kaniko for building container images",
-				Default: o.Flags.EnhancedScopes,
-				Help:    "Use Kaniko for docker images",
-			}
-			err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
-			if err != nil {
-				return err
+			if advanced {
+				prompt := &survey.Confirm{
+					Message: "Would you like to enable Kaniko for building container images",
+					Default: o.Flags.EnhancedScopes,
+					Help:    "Use Kaniko for docker images",
+				}
+				err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
+			} else {
+				o.InstallOptions.Flags.Kaniko = false
+				log.Infof("Defaulting enabling Kaniko for building container images: %v", util.ColorPrompt(util.YesNo(o.InstallOptions.Flags.Kaniko)))
 			}
 		}
 	}
