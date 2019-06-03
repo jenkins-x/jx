@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -159,8 +159,8 @@ func (o *GCActivitiesOptions) Run() error {
 	for i := len(activities.Items) - 1; i >= 0; i-- {
 		a := activities.Items[i]
 		branchName := a.BranchName()
-		isPR := o.isPullRequestBranch(branchName)
-		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR)
+		isPR, isBatch := o.isPullRequestOrBatchBranch(branchName)
+		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR, isBatch)
 		// lets remove activities that are too old
 		if a.Spec.CompletedTimestamp != nil && a.Spec.CompletedTimestamp.Add(maxAge).Before(now) {
 			err = o.deleteActivity(activityInterface, &a)
@@ -218,8 +218,11 @@ func (o *GCActivitiesOptions) gcPipelineRuns(jxClient versioned.Interface, ns st
 	// lets go in reverse order so we delete the oldest first
 	for i := len(activities.Items) - 1; i >= 0; i-- {
 		a := activities.Items[i]
-		isPR := a.Labels != nil && o.isPullRequestBranch(a.Labels["branch"])
-		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR)
+		var isPR, isBatch bool
+		if a.Labels != nil {
+			isPR, isBatch = o.isPullRequestOrBatchBranch(a.Labels["branch"])
+		}
+		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR, isBatch)
 
 		completionTime := a.Status.CompletionTime
 		if completionTime != nil && completionTime.Add(maxAge).Before(now) {
@@ -279,16 +282,16 @@ func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tv1alpha1.P
 	return pipelineRunInterface.Delete(a.Name, metav1.NewDeleteOptions(0))
 }
 
-func (o *GCActivitiesOptions) ageAndHistoryLimits(isPR bool) (time.Duration, int) {
+func (o *GCActivitiesOptions) ageAndHistoryLimits(isPR, isBatch bool) (time.Duration, int) {
 	maxAge := o.ReleaseAgeLimit
 	revisionLimit := o.ReleaseHistoryLimit
-	if isPR {
+	if isPR || isBatch {
 		maxAge = o.PullRequestAgeLimit
 		revisionLimit = o.PullRequestHistoryLimit
 	}
 	return maxAge, revisionLimit
 }
 
-func (o *GCActivitiesOptions) isPullRequestBranch(branchName string) bool {
-	return strings.HasPrefix(branchName, "PR-")
+func (o *GCActivitiesOptions) isPullRequestOrBatchBranch(branchName string) (bool, bool) {
+	return strings.HasPrefix(branchName, "PR-"), branchName == "batch"
 }
