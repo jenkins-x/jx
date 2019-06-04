@@ -5,7 +5,7 @@ CHARTMUSEUM_CREDS_USR := $(shell cat /builder/home/basic-auth-user 2> /dev/null)
 CHARTMUSEUM_CREDS_PSW := $(shell cat /builder/home/basic-auth-pass 2> /dev/null)
 
 setup:
-	helm repo add jenkins-x http://chartmuseum.jenkins-x.io
+	helm repo add jenkins-x https://storage.googleapis.com/chartmuseum.jenkins-x.io
 
 build: setup clean
 	helm dependency build charts/jx
