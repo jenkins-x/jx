@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
@@ -65,6 +66,7 @@ type InitFlags struct {
 	Http                       bool
 	NoGitValidate              bool
 	ExternalDNS                bool
+	Advanced                   bool
 }
 
 const (
@@ -134,6 +136,8 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", opts.DefaultSkipClusterRole, "Don't enable cluster admin role for user")
 
 	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", opts.DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
+
+	cmd.Flags().BoolVarP(&o.Flags.Advanced, "advanced", "", false, "Advanced install options. This will prompt for advanced install options")
 }
 
 func (o *InitOptions) addIngressFlags(cmd *cobra.Command) {
@@ -471,13 +475,19 @@ func (o *InitOptions) initIngress() error {
 		installIngressController := false
 		if o.BatchMode {
 			installIngressController = true
-		} else {
+		} else if o.Flags.Advanced {
 			prompt := &survey.Confirm{
 				Message: "No existing ingress controller found in the " + ingressNamespace + " namespace, shall we install one?",
 				Default: true,
 				Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
 			}
-			survey.AskOne(prompt, &installIngressController, nil, surveyOpts)
+			err = survey.AskOne(prompt, &installIngressController, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			installIngressController = true
+			log.Infof("No existing ingress controller found in the "+ingressNamespace+" namespace, installing one: %v", util.ColorPrompt(util.YesNo(installIngressController)))
 		}
 
 		if !installIngressController {
