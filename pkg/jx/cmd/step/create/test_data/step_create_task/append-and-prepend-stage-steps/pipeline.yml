@@ -4,6 +4,10 @@ metadata:
   creationTimestamp: null
   name: abayer-jx-demo-qs-master-1
   namespace: jx
+  labels:
+    branch: master
+    owner: abayer
+    repo: jx-demo-qs
 spec:
   params:
     - default: 0.0.1

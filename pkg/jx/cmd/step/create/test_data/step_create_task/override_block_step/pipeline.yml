@@ -4,6 +4,10 @@ metadata:
   creationTimestamp: null
   name: abayer-golang-qs-test-master-1
   namespace: jx
+  labels:
+    branch: master
+    owner: abayer
+    repo: golang-qs-test
 spec:
   params:
     - default: 0.0.1

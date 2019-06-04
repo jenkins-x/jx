@@ -4,6 +4,10 @@ metadata:
   creationTimestamp: null
   name: abayer-js-test-repo-no-default-1
   namespace: jx
+  labels:
+    branch: no-default-agent
+    owner: abayer
+    repo: js-test-repo
 spec:
   params:
     - default: 0.0.1

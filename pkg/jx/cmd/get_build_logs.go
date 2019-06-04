@@ -509,22 +509,41 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 	buildMap := map[string]builds.BaseBuildInfo{}
 	pipelineMap := map[string]builds.BaseBuildInfo{}
 
-	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
+	labelSelectors := o.BuildFilter.LabelSelectorsForBuild()
+
+	listOptions := metav1.ListOptions{}
+	if len(labelSelectors) > 0 {
+		listOptions.LabelSelector = strings.Join(labelSelectors, ",")
+	}
+
+	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(listOptions)
 	if err != nil {
 		log.Warnf("Failed to query PipelineRuns %s\n", err)
 		return names, defaultName, buildMap, pipelineMap, err
 	}
 
-	structures, err := jxClient.JenkinsV1().PipelineStructures(ns).List(metav1.ListOptions{})
+	structures, err := jxClient.JenkinsV1().PipelineStructures(ns).List(listOptions)
 	if err != nil {
 		log.Warnf("Failed to query PipelineStructures %s\n", err)
 		return names, defaultName, buildMap, pipelineMap, err
 	}
+	// TODO: Remove this eventually - it's only here for structures created before we started applying labels to them.
+	if len(prList.Items) > len(structures.Items) && len(labelSelectors) != 0 {
+		structures, err = jxClient.JenkinsV1().PipelineStructures(ns).List(metav1.ListOptions{})
+		if err != nil {
+			log.Warnf("Failed to query PipelineStructures %s\n", err)
+			return names, defaultName, buildMap, pipelineMap, err
+		}
+	}
 
 	buildInfos := []*tekton.PipelineRunInfo{}
 
+	podLabelSelector := pipeline.GroupName + pipeline.PipelineRunLabelKey
+	if len(labelSelectors) > 0 {
+		podLabelSelector += "," + strings.Join(labelSelectors, ",")
+	}
 	podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
-		LabelSelector: pipeline.GroupName + pipeline.PipelineRunLabelKey,
+		LabelSelector: podLabelSelector,
 	})
 	if err != nil {
 		return names, defaultName, buildMap, pipelineMap, err

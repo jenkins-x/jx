@@ -193,6 +193,24 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	return answer
 }
 
+// LabelSelectorsForBuild returns a slice of label selectors corresponding to the filter
+func (o *BuildPodInfoFilter) LabelSelectorsForBuild() []string {
+	var labelSelectors []string
+	if o.Context != "" {
+		labelSelectors = append(labelSelectors, "context="+o.Context)
+	}
+	if o.Owner != "" {
+		labelSelectors = append(labelSelectors, "owner="+o.Owner)
+	}
+	if o.Repository != "" {
+		labelSelectors = append(labelSelectors, "repo="+o.Repository)
+	}
+	if o.Branch != "" {
+		labelSelectors = append(labelSelectors, "branch="+o.Branch)
+	}
+	return labelSelectors
+}
+
 // BuildMatches returns true if the build info matches the filter
 func (o *BuildPodInfoFilter) BuildMatches(info *BuildPodInfo) bool {
 	if o.Owner != "" && o.Owner != info.Organisation {

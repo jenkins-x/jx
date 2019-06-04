@@ -4,6 +4,10 @@ metadata:
   creationTimestamp: null
   name: abayer-js-test-repo-override-de-1
   namespace: jx
+  labels:
+    branch: override-default-agent
+    owner: abayer
+    repo: js-test-repo
 spec:
   params:
     - default: 0.0.1
