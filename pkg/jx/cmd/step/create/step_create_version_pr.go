@@ -174,11 +174,15 @@ func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
 	if o.builderImageVersion != "" {
 		err := o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go-maven:(.+)", "gcr.io/jenkinsxio/builder-go-maven:"+o.builderImageVersion)
 		if err != nil {
-			return errors.Wrap(err, "modifying the BDD test version YAMLs")
+			return errors.Wrap(err, "modifying the BDD test version YAMLs (builder-go-maven)")
 		}
 		err = o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go:(.+)", "gcr.io/jenkinsxio/builder-go:"+o.builderImageVersion)
 		if err != nil {
-			return errors.Wrap(err, "modifying the BDD test version YAMLs")
+			return errors.Wrap(err, "modifying the BDD test version YAMLs (builder-go)")
+		}
+		err = o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-terraform:(.+)", "gcr.io/jenkinsxio/builder-terraform:"+o.builderImageVersion)
+		if err != nil {
+			return errors.Wrap(err, "modifying the BDD test version YAMLs (builder-terraform)")
 		}
 
 		pattern := filepath.Join(dir, string(version.KindDocker), "gcr.io", "jenkinsxio", "builder-*.yml")
