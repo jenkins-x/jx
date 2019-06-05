@@ -38,10 +38,10 @@ COVER_JX_BINARY=false ${JX} version
 ${JX} step git credentials
 
 # lets create a team for this PR and run the BDD tests
-gcloud auth activate-service-account --key-file $GKE_SA
+gcloud auth activate-service-account --key-file ${GKE_SA}
 gcloud container clusters get-credentials jx-bdd-tests --zone europe-west1-c --project jenkins-x-infra
 
-sed -e s/\$VERSION/${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_TOKEN}/g myvalues.yaml.template > myvalues.yaml
+sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_TOKEN}/g myvalues.yaml.template > myvalues.yaml
 
 #echo the myvalues.yaml file is:
 #cat myvalues.yaml
