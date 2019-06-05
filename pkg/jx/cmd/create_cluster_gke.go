@@ -349,6 +349,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		o.Flags.EnhancedApis = true
 		o.Flags.EnhancedScopes = true
 		o.InstallOptions.Flags.Kaniko = true
+		o.InstallOptions.Flags.StaticJenkins = false
 	}
 
 	if !o.BatchMode {
