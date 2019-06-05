@@ -378,7 +378,7 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
-func (options *InstallOptions) checkFlags() error {
+func (options *InstallOptions) CheckFlags() error {
 	flags := &options.Flags
 
 	if flags.NextGeneration && flags.StaticJenkins {
@@ -403,9 +403,10 @@ func (options *InstallOptions) checkFlags() error {
 	if flags.Tekton {
 		flags.Prow = true
 		if !options.InitOptions.Flags.NoTiller {
-			log.Infof("note that if using Serverless Jenkins with Tekton we recommend the extra flag: %s\n", util.ColorInfo("--no-tiller"))
+			log.Warnf("note that if using Serverless Jenkins with Tekton we recommend the extra flag: %s\n", util.ColorInfo("--no-tiller"))
 		}
 	}
+
 	if flags.NextGeneration {
 		flags.StaticJenkins = false
 		flags.KnativeBuild = false
@@ -416,6 +417,11 @@ func (options *InstallOptions) checkFlags() error {
 		flags.Kaniko = true
 		options.InitOptions.Flags.NoTiller = true
 	}
+
+	if !flags.NextGeneration && !flags.Prow && !flags.Tekton {
+		flags.StaticJenkins = true
+	}
+
 	// check some flags combination for GitOps mode
 	if flags.GitOpsMode {
 		options.SkipAuthSecretsMerge = true
@@ -458,7 +464,7 @@ func (options *InstallOptions) CheckFeatures() error {
 // Run implements this command
 func (options *InstallOptions) Run() error {
 	// Check the provided flags before starting any installation
-	err := options.checkFlags()
+	err := options.CheckFlags()
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
 	}
