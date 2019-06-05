@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -e
-set -x
 
 echo "verifying Pull Request"
 JX=./build/linux/jx
