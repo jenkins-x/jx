@@ -109,9 +109,16 @@ func (o *GCActivitiesOptions) Run() error {
 		return err
 	}
 
-	err = o.gcPipelineRuns(client, currentNs)
+	prowEnabled, err := o.IsProw()
 	if err != nil {
 		return err
+	}
+
+	if prowEnabled {
+		err = o.gcPipelineRuns(client, currentNs)
+		if err != nil {
+			return err
+		}
 	}
 
 	// cannot use field selectors like `spec.kind=Preview` on CRDs so list all environments
@@ -126,11 +133,6 @@ func (o *GCActivitiesOptions) Run() error {
 			log.Info("no activities found\n")
 		}
 		return nil
-	}
-
-	prowEnabled, err := o.IsProw()
-	if err != nil {
-		return err
 	}
 
 	var jobNames []string
