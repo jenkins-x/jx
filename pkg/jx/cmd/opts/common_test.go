@@ -49,6 +49,23 @@ func Test_FlagExplicitlySet_returns_false_if_flag_is_unkown(t *testing.T) {
 	assert.False(t, explicit, "the flag should be unknown")
 }
 
+func Test_NotifyProgress(t *testing.T) {
+	setupTestCommand()
+
+	commonOptsUnderTest.NotifyProgress(LogInfo, "hello %s", "world\n")
+
+	actual := ""
+	expectedText := "hello again\n"
+
+	commonOptsUnderTest.NotifyCallback = func(level LogLevel, text string) {
+		actual = text
+	}
+
+	commonOptsUnderTest.NotifyProgress(LogInfo, expectedText)
+
+	assert.Equal(t, expectedText, actual, "callback receives the log message")
+}
+
 func setupTestCommand() {
 	var flag bool
 	cmdUnderTest = &cobra.Command{
