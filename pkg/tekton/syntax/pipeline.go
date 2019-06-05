@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,7 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"

@@ -2,10 +2,11 @@ package gits
 
 import (
 	"bytes"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/util"
 	"strconv"
 	"strings"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type CommitInfo struct {

@@ -3,14 +3,15 @@ package v1
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
 	"io"
 	"io/ioutil"
+	"net/http"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	fakerest "k8s.io/client-go/rest/fake"
-	"net/http"
 )
 
 var (
