@@ -247,7 +247,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	if create {
-		if importURL != "" {
+		if o.TempDir && importURL != "" {
 			o.NotifyProgress(opts.LogInfo, "cloning git URL: %s\n", importURL)
 
 			err = o.Git().ShallowClone(dir, importURL, "master", "")
