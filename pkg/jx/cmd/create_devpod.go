@@ -567,7 +567,9 @@ func (o *CreateDevPodOptions) Run() error {
 				if gitLabelKey != "" && gitLabelValue != "" && pod.Labels[gitLabelKey] != gitLabelValue {
 					pod.Labels[gitLabelKey] = gitLabelValue
 					_, err = podResources.Update(pod)
-					log.Warnf("failed to update label of pod %s: %s\n", pod.Name, err.Error())
+					if err != nil {
+						log.Warnf("failed to update label of pod %s: %s\n", pod.Name, err.Error())
+					}
 				}
 			}
 		}
