@@ -132,7 +132,9 @@ func TestCheckFlags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opts := cmd.InstallOptions{
-				CommonOptions: &opts.CommonOptions{},
+				CommonOptions: &opts.CommonOptions{
+					BatchMode: true,
+				},
 				Flags:         *tt.in,
 				InitOptions:   cmd.InitOptions{},
 			}

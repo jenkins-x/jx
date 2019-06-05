@@ -419,7 +419,7 @@ func (options *InstallOptions) CheckFlags() error {
 		options.InitOptions.Flags.NoTiller = true
 	}
 
-	if !flags.NextGeneration && !flags.Prow && !flags.Tekton {
+	if options.BatchMode && !flags.NextGeneration && !flags.Prow && !flags.Tekton {
 		flags.StaticJenkins = true
 	}
 
