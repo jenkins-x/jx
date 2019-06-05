@@ -57,9 +57,8 @@ func TestCheckFlags(t *testing.T) {
 		err            error
 	}{
 		{
-			name: "default",
-			in: &cmd.InstallFlags{
-			},
+			name:           "default",
+			in:             &cmd.InstallFlags{},
 			nextGeneration: false,
 			tekton:         false,
 			prow:           false,
@@ -146,9 +145,9 @@ func TestCheckFlags(t *testing.T) {
 
 				assert.Equal(t, tt.nextGeneration, opts.Flags.NextGeneration, "NextGeneration flag is not as expected")
 				assert.Equal(t, tt.tekton, opts.Flags.Tekton, "Tekton flag is not as expected")
-				assert.Equal(t, tt.prow, opts.Flags.Prow,"Prow flag is not as expected")
-				assert.Equal(t, tt.staticJenkins, opts.Flags.StaticJenkins,"StaticJenkins flag is not as expected")
-				assert.Equal(t, tt.knativeBuild, opts.Flags.KnativeBuild,"KnativeBuild flag is not as expected")
+				assert.Equal(t, tt.prow, opts.Flags.Prow, "Prow flag is not as expected")
+				assert.Equal(t, tt.staticJenkins, opts.Flags.StaticJenkins, "StaticJenkins flag is not as expected")
+				assert.Equal(t, tt.knativeBuild, opts.Flags.KnativeBuild, "KnativeBuild flag is not as expected")
 			}
 		})
 	}
