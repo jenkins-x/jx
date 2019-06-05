@@ -18,11 +18,11 @@ golangci-lint run \
     -E unconvert \
     -E errcheck \
     -E gosec \
+    -E gofmt \
     --skip-dirs vendor \
     --deadline 5m0s \
     --verbose
 
-# -E gofmt \
 # -E structcheck \
 # -E varcheck \
 # -E govet \
