@@ -43,6 +43,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+type LogLevel string
+
 const (
 	OptionServerName       = "name"
 	OptionServerURL        = "url"
@@ -55,6 +57,10 @@ const (
 	OptionEnvironment      = "env"
 	OptionApplication      = "app"
 	OptionTimeout          = "timeout"
+
+	LogInfo    LogLevel = "INFO"
+	LogWarning LogLevel = "WARN"
+	LogError   LogLevel = "ERROR"
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
@@ -85,6 +91,7 @@ type CommonOptions struct {
 	SkipAuthSecretsMerge   bool
 	Username               string
 	Verbose                bool
+	NotifyCallback         func(LogLevel, string)
 
 	apiExtensionsClient    apiextensionsclientset.Interface
 	certManagerClient      certmngclient.Interface
@@ -137,6 +144,23 @@ func (o *CommonOptions) SetFactory(f clients.Factory) {
 // CreateTable creates a new Table
 func (o *CommonOptions) CreateTable() table.Table {
 	return o.factory.CreateTable(o.Out)
+}
+
+// notifyProgress by default logs info to the console but a custom callback can be added to send feedback to, say, a web UI
+func (o *CommonOptions) NotifyProgress(level LogLevel, format string, args ...interface{}) {
+	if o.NotifyCallback != nil {
+		text := fmt.Sprintf(format, args...)
+		o.NotifyCallback(level, text)
+		return
+	}
+	switch level {
+	case LogInfo:
+		log.Infof(format, args...)
+	case LogWarning:
+		log.Warnf(format, args...)
+	default:
+		log.Errorf(format, args...)
+	}
 }
 
 // NewCommonOptionsWithTerm creates a new CommonOptions instance with given terminal input, output and error

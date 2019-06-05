@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"fmt"
+
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
+	v12 "k8s.io/client-go/kubernetes/typed/core/v1"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -79,6 +83,7 @@ type CreateDevPodOptions struct {
 	Persist         bool
 	ImportUrl       string
 	Import          bool
+	TempDir         bool
 	ShellCmd        string
 	DockerRegistry  string
 	TillerNamespace string
@@ -128,6 +133,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Persist, "persist", "", false, "Persist changes made to the DevPod. Cannot be used with --sync")
 	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
+	cmd.Flags().BoolVarP(&options.TempDir, "temp-dir", "", false, "If enabled and --import-url is supplied then create a temporary directory to clone the source to detect what kind of DevPod to create")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
 	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
@@ -140,7 +146,6 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *CreateDevPodOptions) Run() error {
-
 	addedServices := false
 
 	if o.Persist && o.Sync {
@@ -159,234 +164,41 @@ func (o *CreateDevPodOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	dir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	devpodConfigYml, err := client.CoreV1().ConfigMaps(curNs).Get("jenkins-x-devpod-config", metav1.GetOptions{})
-	versions := &map[string]string{}
-	if devpodConfigYml != nil {
-		err = yaml.Unmarshal([]byte(devpodConfigYml.Data["versions"]), versions)
-		if err != nil {
-			return fmt.Errorf("Failed to parse versions from DevPod ConfigMap %s: %s", devpodConfigYml, err)
-		}
-	}
-
-	podTemplates, err := kube.LoadPodTemplates(client, ns)
-	if err != nil {
-		return err
-	}
-	podTemplateKeys := map[string]string{}
-	for k := range podTemplates {
-		podTemplateKeys[k] = k
-	}
-	labels := util.SortedMapKeys(podTemplateKeys)
-
-	label := o.Label
-	if label == "" {
-		label, err = o.guessDevPodLabel(dir, labels)
-		if err != nil {
-			return err
-		}
-
-		if label == "javascript" {
-			label = "nodejs"
-		}
-	}
-	if label == "" {
-		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", "", o.In, o.Out, o.Err)
-		if err != nil {
-			return err
-		}
-	}
-	pod := podTemplates[label]
-	if pod == nil {
-		return util.InvalidOption(optionLabel, label, labels)
-	}
-
-	editEnv, err := o.getOrCreateEditEnvironment()
-	if err != nil {
-		return err
-	}
-
-	// If the user passed in Image Pull Secrets, patch them in to the edit env's default service account
-	if o.PullSecrets != "" {
-		imagePullSecrets := strings.Fields(o.PullSecrets)
-		err = serviceaccount.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
-		if err != nil {
-			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, editEnv.Spec.Namespace, err)
-		}
-	}
-
-	if pod.Labels == nil {
-		pod.Labels = map[string]string{}
-	}
-	if pod.Annotations == nil {
-		pod.Annotations = map[string]string{}
-	}
 
 	userName, err := o.GetUsername(o.Username)
 	if err != nil {
 		return err
 	}
-	name := kube.ToValidName(userName + "-" + label)
-	if o.Suffix != "" {
-		name += "-" + o.Suffix
-	}
-	names, err := kube.GetPodNames(client, ns, "")
-	if err != nil {
-		return err
-	}
 
-	name = uniquePodName(names, name)
-	o.Results.PodName = name
-
-	pod.Name = name
-	pod.Labels[kube.LabelPodTemplate] = label
-	pod.Labels[kube.LabelDevPodName] = name
-	pod.Labels[kube.LabelDevPodUsername] = userName
-
-	if len(pod.Spec.Containers) == 0 {
-		return fmt.Errorf("No containers specified for label %s with pod: %#v", label, pod)
-	}
-	container1 := &pod.Spec.Containers[0]
-
-	workspaceVolumeName := "workspace-volume"
-	// lets remove the default workspace volume as we don't need it
-	for i, v := range pod.Spec.Volumes {
-		if v.Name == workspaceVolumeName {
-			pod.Spec.Volumes = append(pod.Spec.Volumes[:i], pod.Spec.Volumes[i+1:]...)
-			break
+	dir := o.Dir
+	importUrl := o.ImportUrl
+	if o.TempDir {
+		if dir != "" {
+			return fmt.Errorf("you cannot specify --dir and --temp-dir")
 		}
-	}
-	for ci, c := range pod.Spec.Containers {
-		for i, v := range c.VolumeMounts {
-			if v.Name == workspaceVolumeName {
-				pod.Spec.Containers[ci].VolumeMounts = append(c.VolumeMounts[:i], c.VolumeMounts[i+1:]...)
-				break
-			}
-		}
-	}
-
-	// Trying to reuse workspace-volume as a name seems to prevent us modifying the volumes!
-	workspaceVolumeName = "ws-volume"
-	var workspaceVolume corev1.Volume
-	workspaceClaimName := fmt.Sprintf("%s-pvc", pod.Name)
-	workspaceVolumeMount := corev1.VolumeMount{
-		Name:      workspaceVolumeName,
-		MountPath: "/workspace",
-	}
-	if o.Persist {
-		workspaceVolume = corev1.Volume{
-			Name: workspaceVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: workspaceClaimName,
-				},
-			},
-		}
-	} else {
-		workspaceVolume = corev1.Volume{
-			Name: workspaceVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		}
-	}
-
-	if pod.Spec.ServiceAccountName == "" {
-		sa := o.ServiceAccount
-		if sa == "" {
-			prow, err := o.IsProw()
-			if err != nil {
-				return err
-			}
-
-			settings, err := o.TeamSettings()
-			if err != nil {
-				return err
-			}
-
-			sa = "jenkins"
-			if settings.IsJenkinsXPipelines() {
-				sa = "tekton-bot"
-			} else if prow {
-				sa = "knative-build-bot"
-			}
-		}
-		pod.Spec.ServiceAccountName = sa
-	}
-
-	if !o.Sync {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, workspaceVolume)
-		container1.VolumeMounts = append(container1.VolumeMounts, workspaceVolumeMount)
-
-		cpuLimit, _ := resource.ParseQuantity("400m")
-		cpuRequest, _ := resource.ParseQuantity("200m")
-		memoryLimit, _ := resource.ParseQuantity("1Gi")
-		memoryRequest, _ := resource.ParseQuantity("128Mi")
-
-		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
-
-		theiaVersion := "latest"
-		if val, ok := (*versions)["theia"]; ok {
-			theiaVersion = val
-		}
-		theiaContainer := corev1.Container{
-			Name:  "theia",
-			Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
-			Ports: []corev1.ContainerPort{
-				{
-					ContainerPort: 3000,
-				},
-			},
-			Resources: corev1.ResourceRequirements{
-				Limits: corev1.ResourceList{
-					"cpu":    cpuLimit,
-					"memory": memoryLimit,
-				},
-				Requests: corev1.ResourceList{
-					"cpu":    cpuRequest,
-					"memory": memoryRequest,
-				},
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				workspaceVolumeMount,
-			},
-			LivenessProbe: &corev1.Probe{
-				InitialDelaySeconds: 60,
-				PeriodSeconds:       10,
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Port: intstr.FromInt(3000),
-					},
-				},
-			},
-			SecurityContext: &corev1.SecurityContext{
-				RunAsUser: func(i int64) *int64 { return &i }(0),
-			},
-			Command: []string{"yarn", "theia", "start", "/workspace", "--hostname=0.0.0.0"},
-		}
-
-		pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
-
-	}
-
-	if o.RequestCpu != "" {
-		q, err := resource.ParseQuantity(o.RequestCpu)
+		dir, err = ioutil.TempDir("", username+"-")
 		if err != nil {
-			return util.InvalidOptionError(optionRequestCpu, o.RequestCpu, err)
+			return errors.Wrapf(err, "failed to create a temp dir")
 		}
-		container1.Resources.Requests[corev1.ResourceCPU] = q
+		defer os.RemoveAll(dir)
+		o.Dir = dir
 	}
-
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+	if importUrl == "" {
+		gitInfo, err := o.FindGitInfo(dir)
+		if err != nil {
+			log.Warnf("could not find git URL in dir %s due to: %s\n", dir, err.Error())
+		} else {
+			importUrl = gitInfo.HttpCloneURL()
+		}
+	}
+	label := o.Label
 	workingDir := o.WorkingDir
-	//Set the devpods gopath properly
-	container1.Env = append(container1.Env, corev1.EnvVar{
-		Name:  "GOPATH",
-		Value: devPodGoPath,
-	})
 	if workingDir == "" {
 		workingDir = "/workspace"
 
@@ -401,108 +213,369 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 	}
-	pod.Annotations[kube.AnnotationWorkingDir] = workingDir
-	if o.Sync {
-		pod.Annotations[kube.AnnotationLocalDir] = dir
-	}
-	container1.Env = append(container1.Env, corev1.EnvVar{
-		Name:  "WORK_DIR",
-		Value: workingDir,
-	})
-	container1.Stdin = true
-
-	// If a Docker registry override was passed in, set it as an env var.
-	if o.DockerRegistry != "" {
-		container1.Env = append(container1.Env, corev1.EnvVar{
-			Name:  "DOCKER_REGISTRY",
-			Value: o.DockerRegistry,
-		})
-	}
-
-	// If a tiller namespace was passed in, set it as an env var.
-	if o.TillerNamespace != "" {
-		container1.Env = append(container1.Env, corev1.EnvVar{
-			Name:  "TILLER_NAMESPACE",
-			Value: o.TillerNamespace,
-		})
-	}
-
-	if editEnv != nil {
-		container1.Env = append(container1.Env, corev1.EnvVar{
-			Name:  "SKAFFOLD_DEPLOY_NAMESPACE",
-			Value: editEnv.Spec.Namespace,
-		})
-	}
-	// Assign the container the ports provided as input
-	var exposeServicePorts []int
-
-	for _, port := range o.Ports {
-		cp := corev1.ContainerPort{
-			Name:          fmt.Sprintf("port-%d", port),
-			ContainerPort: int32(port),
-		}
-		container1.Ports = append(container1.Ports, cp)
-	}
-
-	// Assign the container the ports provided automatically
-	if o.AutoExpose {
-		exposeServicePorts = o.Ports
-		if portsStr, ok := pod.Annotations["jenkins-x.io/devpodPorts"]; ok {
-			ports := strings.Split(portsStr, ", ")
-			for _, portStr := range ports {
-				port, _ := strconv.Atoi(portStr)
-				exposeServicePorts = append(exposeServicePorts, port)
-				cp := corev1.ContainerPort{
-					Name:          fmt.Sprintf("port-%d", port),
-					ContainerPort: int32(port),
-				}
-				container1.Ports = append(container1.Ports, cp)
-			}
-		}
-	}
-
-	podResources := client.CoreV1().Pods(ns)
 
 	create := true
-	if o.Reuse {
-		matchLabels := map[string]string{
-			kube.LabelPodTemplate:    label,
-			kube.LabelDevPodUsername: userName,
-		}
-		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: matchLabels})
+	var pod *corev1.Pod
+	var editEnv *v1.Environment
+	name := ""
+	podResources := client.CoreV1().Pods(ns)
+	var exposeServicePorts []int
+
+	gitLabelKey := ""
+	gitLabelValue := ""
+	if importUrl != "" && o.Reuse {
+		gitInfo, err := gits.ParseGitURL(importUrl)
 		if err != nil {
-			return err
-		}
-		options := metav1.ListOptions{
-			LabelSelector: selector.String(),
-		}
-		podsList, err := podResources.List(options)
-		if err != nil {
-			return err
-		}
-		for _, p := range podsList.Items {
-			ann := p.Annotations
-			if ann == nil {
-				ann = map[string]string{}
+			log.Warnf("could not parse the git URL %s: %s\n", importUrl, err.Error())
+		} else {
+			gitLabelKey = fmt.Sprintf("%s-%s-%s-%s", kube.LabelDevPodGitPrefix, gitInfo.Host, gitInfo.Organisation, gitInfo.Name)
+			gitLabelValue = kube.ToValidNameWithDots(importUrl)
+			// lets query to see if there is a DevPod already for t
+			// his URL
+			matchLabels := map[string]string{
+				kube.LabelDevPodUsername: userName,
+				gitLabelKey:              gitLabelValue,
 			}
-			// if syncing only match DevPods using the same local dir otherwise ignore any devpods with a local dir sync
-			matchDir := dir
-			if !o.Sync {
-				matchDir = ""
+			pod, err = o.findDevPodBySelector(podResources, matchLabels, dir)
+			if err != nil {
+				return err
 			}
-			if p.DeletionTimestamp == nil && ann[kube.AnnotationLocalDir] == matchDir {
-				create = false
-				pod = &p
+			if pod != nil {
 				name = pod.Name
-				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
+				create = false
+			}
+		}
+	}
+	if create {
+		if importUrl != "" {
+			o.NotifyProgress(opts.LogInfo, "cloning git URL: %s\n", importUrl)
+
+			err = o.Git().ShallowClone(dir, importUrl, "master", "")
+			if err != nil {
+				return errors.Wrapf(err, "failed to git clone: %s into dir %s", importUrl, dir)
+			}
+		}
+
+		devpodConfigYml, err := client.CoreV1().ConfigMaps(curNs).Get("jenkins-x-devpod-config", metav1.GetOptions{})
+		versions := &map[string]string{}
+		if devpodConfigYml != nil {
+			err = yaml.Unmarshal([]byte(devpodConfigYml.Data["versions"]), versions)
+			if err != nil {
+				return fmt.Errorf("Failed to parse versions from DevPod ConfigMap %s: %s", devpodConfigYml, err)
+			}
+		}
+
+		podTemplates, err := kube.LoadPodTemplates(client, ns)
+		if err != nil {
+			return err
+		}
+		podTemplateKeys := map[string]string{}
+		for k := range podTemplates {
+			podTemplateKeys[k] = k
+		}
+		labels := util.SortedMapKeys(podTemplateKeys)
+
+		if label == "" {
+			label, err = o.guessDevPodLabel(dir, labels)
+			if err != nil {
+				return err
+			}
+
+			if label == "javascript" {
+				label = "nodejs"
+			}
+		}
+		if label == "" {
+			label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", "", o.In, o.Out, o.Err)
+			if err != nil {
+				return err
+			}
+		}
+		pod = podTemplates[label]
+		if pod == nil {
+			return util.InvalidOption(optionLabel, label, labels)
+		}
+
+		editEnv, err = o.getOrCreateEditEnvironment()
+		if err != nil {
+			return err
+		}
+
+		// If the user passed in Image Pull Secrets, patch them in to the edit env's default service account
+		if o.PullSecrets != "" {
+			imagePullSecrets := strings.Fields(o.PullSecrets)
+			err = serviceaccount.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
+			if err != nil {
+				return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, editEnv.Spec.Namespace, err)
+			}
+		}
+
+		if pod.Labels == nil {
+			pod.Labels = map[string]string{}
+		}
+		if pod.Annotations == nil {
+			pod.Annotations = map[string]string{}
+		}
+
+		name = kube.ToValidName(userName + "-" + label)
+		if o.Suffix != "" {
+			name += "-" + o.Suffix
+		}
+		names, err := kube.GetPodNames(client, ns, "")
+		if err != nil {
+			return err
+		}
+
+		name = uniquePodName(names, name)
+		o.Results.PodName = name
+
+		pod.Name = name
+		pod.Labels[kube.LabelPodTemplate] = label
+		pod.Labels[kube.LabelDevPodName] = name
+		pod.Labels[kube.LabelDevPodUsername] = userName
+		if gitLabelKey != "" && gitLabelValue != "" {
+			pod.Labels[gitLabelKey] = gitLabelValue
+		}
+
+		if len(pod.Spec.Containers) == 0 {
+			return fmt.Errorf("No containers specified for label %s with pod: %#v", label, pod)
+		}
+		container1 := &pod.Spec.Containers[0]
+
+		workspaceVolumeName := "workspace-volume"
+		// lets remove the default workspace volume as we don't need it
+		for i, v := range pod.Spec.Volumes {
+			if v.Name == workspaceVolumeName {
+				pod.Spec.Volumes = append(pod.Spec.Volumes[:i], pod.Spec.Volumes[i+1:]...)
 				break
+			}
+		}
+		for ci, c := range pod.Spec.Containers {
+			for i, v := range c.VolumeMounts {
+				if v.Name == workspaceVolumeName {
+					pod.Spec.Containers[ci].VolumeMounts = append(c.VolumeMounts[:i], c.VolumeMounts[i+1:]...)
+					break
+				}
+			}
+		}
+
+		// Trying to reuse workspace-volume as a name seems to prevent us modifying the volumes!
+		workspaceVolumeName = "ws-volume"
+		var workspaceVolume corev1.Volume
+		workspaceClaimName := fmt.Sprintf("%s-pvc", pod.Name)
+		workspaceVolumeMount := corev1.VolumeMount{
+			Name:      workspaceVolumeName,
+			MountPath: "/workspace",
+		}
+		if o.Persist {
+			workspaceVolume = corev1.Volume{
+				Name: workspaceVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: workspaceClaimName,
+					},
+				},
+			}
+		} else {
+			workspaceVolume = corev1.Volume{
+				Name: workspaceVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			}
+		}
+
+		if pod.Spec.ServiceAccountName == "" {
+			sa := o.ServiceAccount
+			if sa == "" {
+				prow, err := o.IsProw()
+				if err != nil {
+					return err
+				}
+
+				settings, err := o.TeamSettings()
+				if err != nil {
+					return err
+				}
+
+				sa = "jenkins"
+				if settings.IsJenkinsXPipelines() {
+					sa = "tekton-bot"
+				} else if prow {
+					sa = "knative-build-bot"
+				}
+			}
+			pod.Spec.ServiceAccountName = sa
+		}
+
+		if !o.Sync {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, workspaceVolume)
+			container1.VolumeMounts = append(container1.VolumeMounts, workspaceVolumeMount)
+
+			cpuLimit, _ := resource.ParseQuantity("400m")
+			cpuRequest, _ := resource.ParseQuantity("200m")
+			memoryLimit, _ := resource.ParseQuantity("1Gi")
+			memoryRequest, _ := resource.ParseQuantity("128Mi")
+
+			// Add Theia - note Theia won't work in --sync mode as we can't share a volume
+
+			theiaVersion := "latest"
+			if val, ok := (*versions)["theia"]; ok {
+				theiaVersion = val
+			}
+			theiaContainer := corev1.Container{
+				Name:  "theia",
+				Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
+				Ports: []corev1.ContainerPort{
+					{
+						ContainerPort: 3000,
+					},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						"cpu":    cpuLimit,
+						"memory": memoryLimit,
+					},
+					Requests: corev1.ResourceList{
+						"cpu":    cpuRequest,
+						"memory": memoryRequest,
+					},
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					workspaceVolumeMount,
+				},
+				LivenessProbe: &corev1.Probe{
+					InitialDelaySeconds: 60,
+					PeriodSeconds:       10,
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Port: intstr.FromInt(3000),
+						},
+					},
+				},
+				SecurityContext: &corev1.SecurityContext{
+					RunAsUser: func(i int64) *int64 { return &i }(0),
+				},
+				Command: []string{"yarn", "theia", "start", "/workspace", "--hostname=0.0.0.0"},
+			}
+
+			pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
+
+		}
+
+		if o.RequestCpu != "" {
+			q, err := resource.ParseQuantity(o.RequestCpu)
+			if err != nil {
+				return util.InvalidOptionError(optionRequestCpu, o.RequestCpu, err)
+			}
+			container1.Resources.Requests[corev1.ResourceCPU] = q
+		}
+
+		//Set the devpods gopath properly
+		container1.Env = append(container1.Env, corev1.EnvVar{
+			Name:  "GOPATH",
+			Value: devPodGoPath,
+		})
+		pod.Annotations[kube.AnnotationWorkingDir] = workingDir
+		if importUrl != "" {
+			gitURLs := pod.Annotations[kube.AnnotationGitURLs]
+			if gitURLs == "" {
+				gitURLs = importUrl
+			} else {
+				const separator = "\n"
+				slice := strings.Split(gitURLs, separator)
+				if util.StringArrayIndex(slice, importUrl) < 0 {
+					slice = append(slice, importUrl)
+					gitURLs = strings.Join(slice, separator)
+				}
+			}
+			pod.Annotations[kube.AnnotationGitURLs] = gitURLs
+		}
+		if o.Sync {
+			pod.Annotations[kube.AnnotationLocalDir] = dir
+		}
+
+		container1.Env = append(container1.Env, corev1.EnvVar{
+			Name:  "WORK_DIR",
+			Value: workingDir,
+		})
+		container1.Stdin = true
+
+		// If a Docker registry override was passed in, set it as an env var.
+		if o.DockerRegistry != "" {
+			container1.Env = append(container1.Env, corev1.EnvVar{
+				Name:  "DOCKER_REGISTRY",
+				Value: o.DockerRegistry,
+			})
+		}
+
+		// If a tiller namespace was passed in, set it as an env var.
+		if o.TillerNamespace != "" {
+			container1.Env = append(container1.Env, corev1.EnvVar{
+				Name:  "TILLER_NAMESPACE",
+				Value: o.TillerNamespace,
+			})
+		}
+
+		if editEnv != nil {
+			container1.Env = append(container1.Env, corev1.EnvVar{
+				Name:  "SKAFFOLD_DEPLOY_NAMESPACE",
+				Value: editEnv.Spec.Namespace,
+			})
+		}
+
+		// Assign the container the ports provided as input
+		for _, port := range o.Ports {
+			cp := corev1.ContainerPort{
+				Name:          fmt.Sprintf("port-%d", port),
+				ContainerPort: int32(port),
+			}
+			container1.Ports = append(container1.Ports, cp)
+		}
+
+		// Assign the container the ports provided automatically
+		if o.AutoExpose {
+			exposeServicePorts = o.Ports
+			if portsStr, ok := pod.Annotations["jenkins-x.io/devpodPorts"]; ok {
+				ports := strings.Split(portsStr, ", ")
+				for _, portStr := range ports {
+					port, _ := strconv.Atoi(portStr)
+					exposeServicePorts = append(exposeServicePorts, port)
+					cp := corev1.ContainerPort{
+						Name:          fmt.Sprintf("port-%d", port),
+						ContainerPort: int32(port),
+					}
+					container1.Ports = append(container1.Ports, cp)
+				}
+			}
+		}
+		if o.Reuse {
+			matchLabels := map[string]string{
+				kube.LabelPodTemplate:    label,
+				kube.LabelDevPodUsername: userName,
+			}
+			foundPod, err := o.findDevPodBySelector(podResources, matchLabels, dir)
+			if err != nil {
+				return err
+			}
+			if foundPod != nil {
+				pod = foundPod
+				name = pod.Name
+				create = false
+
+				// lets add the label if its not already
+				if gitLabelKey != "" && gitLabelValue != "" && pod.Labels[gitLabelKey] != gitLabelValue {
+					pod.Labels[gitLabelKey] = gitLabelValue
+					_, err = podResources.Update(pod)
+					log.Warnf("failed to update label of pod %s: %s\n", pod.Name, err.Error())
+				}
 			}
 		}
 	}
 
 	theiaServiceName := name + "-theia"
 	if create {
-		log.Infof("Creating a DevPod of label: %s\n", util.ColorInfo(label))
+		o.NotifyProgress(opts.LogInfo, "Creating a DevPod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
 		if err != nil {
 			if o.Verbose {
@@ -512,7 +585,12 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 
-		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+		err := o.ensureEditEnvironmentHasExposeController(editEnv)
+		if err != nil {
+			return err
+		}
+
+		o.NotifyProgress(opts.LogInfo, "Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 
 		err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
 		if err != nil {
@@ -528,6 +606,7 @@ func (o *CreateDevPodOptions) Run() error {
 		// Create PVC if needed
 		if o.Persist {
 			storageRequest, _ := resource.ParseQuantity("2Gi")
+			workspaceClaimName := fmt.Sprintf("%s-pvc", pod.Name)
 			pvc := corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: workspaceClaimName,
@@ -635,7 +714,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 	}
 
-	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
+	o.NotifyProgress(opts.LogInfo, "Pod %s is now ready!\n", util.ColorInfo(pod.Name))
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
 	if !o.Sync {
@@ -653,7 +732,7 @@ func (o *CreateDevPodOptions) Run() error {
 			log.Infof("\nYou can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 			o.Results.TheaServiceURL = theiaServiceURL
 		} else {
-			log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
+			o.NotifyProgress(opts.LogWarning, "Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
 		}
 	}
 
@@ -696,7 +775,7 @@ func (o *CreateDevPodOptions) Run() error {
 	var rshExec []string
 	if create {
 		//  Let install bash-completion to make life better
-		log.Infof("Attempting to install Bash Completion into DevPod\n")
+		o.NotifyProgress(opts.LogInfo, "Attempting to install Bash Completion into DevPod\n")
 
 		rshExec = append(rshExec,
 			"if which yum &> /dev/null; then yum install -q -y bash-completion bash-completion-extra; fi",
@@ -747,6 +826,7 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 	}
+
 	if !o.Sync {
 		// Try to clone the right Git repo into the DevPod
 
@@ -755,16 +835,6 @@ func (o *CreateDevPodOptions) Run() error {
 
 		// We only honor --import if --sync is not specified
 		if o.Import {
-			var importUrl string
-			if o.ImportUrl == "" {
-				gitInfo, err := o.FindGitInfo(dir)
-				if err != nil {
-					return err
-				}
-				importUrl = gitInfo.HttpCloneURL()
-			} else {
-				importUrl = o.ImportUrl
-			}
 			if importUrl != "" {
 				dir := regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importUrl)[1]
 				rshExec = append(rshExec, fmt.Sprintf("if ! [ -d \"%s\" ]; then git clone %s; fi", dir, importUrl))
@@ -815,12 +885,20 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
+	return env, err
+}
+
+func (o *CreateDevPodOptions) ensureEditEnvironmentHasExposeController(env *v1.Environment) error {
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	// lets ensure that we've installed the exposecontroller service in the namespace
 	var flag bool
 	editNs := env.Spec.Namespace
 	flag, err = kube.IsDeploymentRunning(kubeClient, kube.DeploymentExposecontrollerService, editNs)
 	if !flag || err != nil {
-		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
+		o.NotifyProgress(opts.LogInfo, "Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
 		err = o.InstallChartWithOptions(helm.InstallChartOptions{
 			ReleaseName: releaseName,
@@ -831,7 +909,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 			SetValues:   nil,
 		})
 	}
-	return env, err
+	return err
 }
 
 func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (string, error) {
@@ -880,6 +958,38 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
 	return o.RunExposecontroller(ns, ns, ingressConfig)
+}
+
+func (o *CreateDevPodOptions) findDevPodBySelector(podResources v12.PodInterface, matchLabels map[string]string, dir string) (*corev1.Pod, error) {
+	var pod *corev1.Pod
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: matchLabels})
+	if err != nil {
+		return pod, err
+	}
+	options := metav1.ListOptions{
+		LabelSelector: selector.String(),
+	}
+	podsList, err := podResources.List(options)
+	if err != nil {
+		return pod, err
+	}
+	for _, p := range podsList.Items {
+		ann := p.Annotations
+		if ann == nil {
+			ann = map[string]string{}
+		}
+		// if syncing only match DevPods using the same local dir otherwise ignore any devpods with a local dir sync
+		matchDir := dir
+		if !o.Sync {
+			matchDir = ""
+		}
+		if p.DeletionTimestamp == nil && ann[kube.AnnotationLocalDir] == matchDir {
+			pod = &p
+			o.NotifyProgress(opts.LogInfo, "Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
+			return pod, nil
+		}
+	}
+	return pod, nil
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile
