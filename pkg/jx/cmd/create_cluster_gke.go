@@ -190,7 +190,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	advanced := o.InstallOptions.Flags.Advanced
+	advanced := o.InstallOptions.InitOptions.Flags.Advanced
 
 	clusterName := o.Flags.ClusterName
 	if clusterName == "" {
