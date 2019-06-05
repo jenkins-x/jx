@@ -117,6 +117,7 @@ type CommonOptions struct {
 	SkipAuthSecretsMerge   bool
 	Username               string
 	Verbose                bool
+	NoTiller               bool
 	NotifyCallback         func(LogLevel, string)
 
 	apiExtensionsClient    apiextensionsclientset.Interface
@@ -540,7 +541,7 @@ func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		noTillerFlag := os.Getenv("JX_NO_TILLER")
-		if noTillerFlag == "true" {
+		if o.NoTiller || noTillerFlag == "true" {
 			o.EnableRemoteKubeCluster()
 			if o.helm != nil {
 				return o.helm
@@ -548,7 +549,7 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		}
 		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
-			if noTillerFlag == "true" {
+			if o.NoTiller || noTillerFlag == "true" {
 				helmTemplate = true
 			} else {
 				log.Logger().Warnf("Failed to retrieve team settings: %v - falling back to default settings...", err)

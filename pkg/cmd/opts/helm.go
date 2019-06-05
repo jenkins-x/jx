@@ -214,6 +214,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 		}
 	} else {
 		log.Logger().Debugf("Skipping %s", util.ColorInfo("tiller"))
+		o.NoTiller = true
 	}
 
 	if config.Helm3 {
