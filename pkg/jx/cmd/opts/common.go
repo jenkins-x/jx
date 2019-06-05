@@ -43,6 +43,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// LogLevel represents the logging level when reporting feedback
 type LogLevel string
 
 const (
@@ -58,9 +59,12 @@ const (
 	OptionApplication      = "app"
 	OptionTimeout          = "timeout"
 
-	LogInfo    LogLevel = "INFO"
+	// LogInfo info level logging
+	LogInfo LogLevel = "INFO"
+	// LogWarning warning level logging
 	LogWarning LogLevel = "WARN"
-	LogError   LogLevel = "ERROR"
+	// LogError error level logging
+	LogError LogLevel = "ERROR"
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
@@ -146,7 +150,7 @@ func (o *CommonOptions) CreateTable() table.Table {
 	return o.factory.CreateTable(o.Out)
 }
 
-// notifyProgress by default logs info to the console but a custom callback can be added to send feedback to, say, a web UI
+// NotifyProgress by default logs info to the console but a custom callback can be added to send feedback to, say, a web UI
 func (o *CommonOptions) NotifyProgress(level LogLevel, format string, args ...interface{}) {
 	if o.NotifyCallback != nil {
 		text := fmt.Sprintf(format, args...)

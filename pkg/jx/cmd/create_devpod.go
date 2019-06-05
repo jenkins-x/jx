@@ -81,7 +81,7 @@ type CreateDevPodOptions struct {
 	Ports           []int
 	AutoExpose      bool
 	Persist         bool
-	ImportUrl       string
+	ImportURL       string
 	Import          bool
 	TempDir         bool
 	ShellCmd        string
@@ -131,7 +131,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
 	cmd.Flags().BoolVarP(&options.AutoExpose, "auto-expose", "", true, "Automatically expose useful ports as services such as the debug port, as well as any ports specified using --ports")
 	cmd.Flags().BoolVarP(&options.Persist, "persist", "", false, "Persist changes made to the DevPod. Cannot be used with --sync")
-	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
+	cmd.Flags().StringVarP(&options.ImportURL, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().BoolVarP(&options.TempDir, "temp-dir", "", false, "If enabled and --import-url is supplied then create a temporary directory to clone the source to detect what kind of DevPod to create")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
@@ -152,7 +152,7 @@ func (o *CreateDevPodOptions) Run() error {
 		return errors.New("Cannot specify --persist and --sync")
 	}
 
-	if o.ImportUrl != "" && o.Sync {
+	if o.ImportURL != "" && o.Sync {
 		return errors.New("Cannot specify --import-url && --sync")
 	}
 
@@ -171,7 +171,7 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	dir := o.Dir
-	importUrl := o.ImportUrl
+	importURL := o.ImportURL
 	if o.TempDir {
 		if dir != "" {
 			return fmt.Errorf("you cannot specify --dir and --temp-dir")
@@ -189,12 +189,12 @@ func (o *CreateDevPodOptions) Run() error {
 			return err
 		}
 	}
-	if importUrl == "" {
+	if importURL == "" {
 		gitInfo, err := o.FindGitInfo(dir)
 		if err != nil {
 			log.Warnf("could not find git URL in dir %s due to: %s\n", dir, err.Error())
 		} else {
-			importUrl = gitInfo.HttpCloneURL()
+			importURL = gitInfo.HttpCloneURL()
 		}
 	}
 	label := o.Label
@@ -223,13 +223,13 @@ func (o *CreateDevPodOptions) Run() error {
 
 	gitLabelKey := ""
 	gitLabelValue := ""
-	if importUrl != "" && o.Reuse {
-		gitInfo, err := gits.ParseGitURL(importUrl)
+	if importURL != "" && o.Reuse {
+		gitInfo, err := gits.ParseGitURL(importURL)
 		if err != nil {
-			log.Warnf("could not parse the git URL %s: %s\n", importUrl, err.Error())
+			log.Warnf("could not parse the git URL %s: %s\n", importURL, err.Error())
 		} else {
 			gitLabelKey = fmt.Sprintf("%s-%s-%s-%s", kube.LabelDevPodGitPrefix, gitInfo.Host, gitInfo.Organisation, gitInfo.Name)
-			gitLabelValue = kube.ToValidNameWithDots(importUrl)
+			gitLabelValue = kube.ToValidNameWithDots(importURL)
 			// lets query to see if there is a DevPod already for t
 			// his URL
 			matchLabels := map[string]string{
@@ -247,12 +247,12 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	if create {
-		if importUrl != "" {
-			o.NotifyProgress(opts.LogInfo, "cloning git URL: %s\n", importUrl)
+		if importURL != "" {
+			o.NotifyProgress(opts.LogInfo, "cloning git URL: %s\n", importURL)
 
-			err = o.Git().ShallowClone(dir, importUrl, "master", "")
+			err = o.Git().ShallowClone(dir, importURL, "master", "")
 			if err != nil {
-				return errors.Wrapf(err, "failed to git clone: %s into dir %s", importUrl, dir)
+				return errors.Wrapf(err, "failed to git clone: %s into dir %s", importURL, dir)
 			}
 		}
 
@@ -477,15 +477,15 @@ func (o *CreateDevPodOptions) Run() error {
 			Value: devPodGoPath,
 		})
 		pod.Annotations[kube.AnnotationWorkingDir] = workingDir
-		if importUrl != "" {
+		if importURL != "" {
 			gitURLs := pod.Annotations[kube.AnnotationGitURLs]
 			if gitURLs == "" {
-				gitURLs = importUrl
+				gitURLs = importURL
 			} else {
 				const separator = "\n"
 				slice := strings.Split(gitURLs, separator)
-				if util.StringArrayIndex(slice, importUrl) < 0 {
-					slice = append(slice, importUrl)
+				if util.StringArrayIndex(slice, importURL) < 0 {
+					slice = append(slice, importURL)
 					gitURLs = strings.Join(slice, separator)
 				}
 			}
@@ -835,9 +835,9 @@ func (o *CreateDevPodOptions) Run() error {
 
 		// We only honor --import if --sync is not specified
 		if o.Import {
-			if importUrl != "" {
-				dir := regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importUrl)[1]
-				rshExec = append(rshExec, fmt.Sprintf("if ! [ -d \"%s\" ]; then git clone %s; fi", dir, importUrl))
+			if importURL != "" {
+				dir := regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importURL)[1]
+				rshExec = append(rshExec, fmt.Sprintf("if ! [ -d \"%s\" ]; then git clone %s; fi", dir, importURL))
 				rshExec = append(rshExec, fmt.Sprintf("cd %s", dir))
 			}
 		}
