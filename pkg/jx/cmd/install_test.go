@@ -135,8 +135,8 @@ func TestCheckFlags(t *testing.T) {
 				CommonOptions: &opts.CommonOptions{
 					BatchMode: true,
 				},
-				Flags:         *tt.in,
-				InitOptions:   cmd.InitOptions{},
+				Flags:       *tt.in,
+				InitOptions: cmd.InitOptions{},
 			}
 
 			err := opts.CheckFlags()
