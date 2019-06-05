@@ -378,6 +378,7 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
+// CheckFlags validates & configures install flags
 func (options *InstallOptions) CheckFlags() error {
 	flags := &options.Flags
 
