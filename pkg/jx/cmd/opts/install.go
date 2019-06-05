@@ -428,7 +428,7 @@ func (o *CommonOptions) InstallGlooctl() error {
 	if runtime.GOOS == "windows" {
 		suffix += ".exe"
 	}
-	clientURL := fmt.Sprintf("https://github.com/solo-io/gloo/releases/download/v%v/glooctl-%s-%s", latestVersion, latestVersion, suffix)
+	clientURL := fmt.Sprintf("https://github.com/solo-io/gloo/releases/download/v%v/glooctl-%s-%s", latestVersion, runtime.GOOS, suffix)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
 	err = packages.DownloadFile(clientURL, tmpFile)
