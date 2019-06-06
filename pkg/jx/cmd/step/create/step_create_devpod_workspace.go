@@ -80,9 +80,10 @@ func (o *StepCreateDevPodWorkpaceOptions) Run() error {
 	if outDir == "" {
 		outDir = "."
 	}
-	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
+	homeDir := filepath.Join(outDir, "home")
+	err = os.MkdirAll(homeDir, util.DefaultWritePermissions)
 	if err != nil {
-		return errors.Wrapf(err, "failed to ensure output directory is created %s", outDir)
+		return errors.Wrapf(err, "failed to ensure workpace home directory is created %s", homeDir)
 	}
 
 	destPath := filepath.Join(outDir, kubectl)
