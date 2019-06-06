@@ -36,9 +36,10 @@ import (
 )
 
 const (
-	optionLabel      = "label"
-	optionRequestCpu = "request-cpu"
-	devPodGoPath     = "/workspace"
+	optionLabel         = "label"
+	optionRequestCpu    = "request-cpu"
+	devPodGoPath        = "/workspace"
+	devPodContainerName = "devpod"
 )
 
 var (
@@ -335,6 +336,9 @@ func (o *CreateDevPodOptions) Run() error {
 			return fmt.Errorf("No containers specified for label %s with pod: %#v", label, pod)
 		}
 		container1 := &pod.Spec.Containers[0]
+
+		// lets use a canonical name for the devpod container
+		container1.Name = devPodContainerName
 
 		workspaceVolumeName := "workspace-volume"
 		// lets remove the default workspace volume as we don't need it
@@ -720,8 +724,8 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 		if !o.Sync {
 
-			// Create a service for theia
-			theiaService := corev1.Service{
+			// Create a service for the IDE
+			ideService := corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"fabric8.io/expose": "true",
@@ -744,7 +748,7 @@ func (o *CreateDevPodOptions) Run() error {
 					},
 				},
 			}
-			_, err = client.CoreV1().Services(curNs).Create(&theiaService)
+			_, err = client.CoreV1().Services(curNs).Create(&ideService)
 			if err != nil {
 				return err
 			}
@@ -904,6 +908,7 @@ func (o *CreateDevPodOptions) Run() error {
 		CommonOptions: o.CommonOptions,
 		Namespace:     ns,
 		Pod:           pod.Name,
+		Container:     devPodContainerName,
 		DevPod:        true,
 		ExecCmd:       strings.Join(rshExec, " && "),
 		Username:      userName,
