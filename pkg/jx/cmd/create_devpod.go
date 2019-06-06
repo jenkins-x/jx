@@ -486,7 +486,7 @@ func (o *CreateDevPodOptions) Run() error {
 					Env: []corev1.EnvVar{
 						{
 							Name:  "HOME",
-							Value: workingDir + "/home",
+							Value: workingDir + "/idehome",
 						},
 					},
 					Resources: corev1.ResourceRequirements{
@@ -890,7 +890,7 @@ func (o *CreateDevPodOptions) Run() error {
 		// Try to clone the right Git repo into the DevPod
 
 		// First configure git credentials
-		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store", setupWorkspaceCommand)
+		rshExec = append(rshExec, setupWorkspaceCommand, "jx step git credentials", "git config --global credential.helper store")
 
 		// We only honor --import if --sync is not specified
 		if o.Import {
