@@ -37,6 +37,7 @@ type StepCreateDevPodWorkpaceOptions struct {
 
 	Dir            string
 	VSCodeSettings string
+	VSCodeHome     string
 	VSCode         bool
 }
 
@@ -71,6 +72,7 @@ func NewCmdStepCreateDevPodWorkpace(commonOpts *opts.CommonOptions) *cobra.Comma
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "/workspace", "The workspace directory to write to")
 	cmd.Flags().BoolVarP(&options.VSCode, "vscode", "", false, "If enabled also setup the VS Code settings to enable the devpodsh Terminal script")
 	cmd.Flags().StringVarP(&options.VSCodeSettings, "vscode-settings", "", ".local/share/code-server/User/settings.json", "The VS Code settings file relative to the workspace home dir")
+	cmd.Flags().StringVarP(&options.VSCodeHome, "vscode-home", "", "/root", "The VS Code default home dir in the docker image")
 	return cmd
 }
 
@@ -91,9 +93,16 @@ func (o *StepCreateDevPodWorkpaceOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure workspace bin directory is created %s", outDir)
 	}
-	err = os.MkdirAll(homeDir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to ensure workspace home directory is created %s", homeDir)
+	if o.VSCode {
+		err = util.CopyDirPreserve(o.VSCodeHome, homeDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to copy the VS Code home dir %s to %s", o.VSCodeHome, homeDir)
+		}
+	} else {
+		err = os.MkdirAll(homeDir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to ensure workspace home directory is created %s", homeDir)
+		}
 	}
 
 	destPath := filepath.Join(outDir, kubectl)
