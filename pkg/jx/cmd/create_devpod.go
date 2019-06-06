@@ -481,6 +481,12 @@ func (o *CreateDevPodOptions) Run() error {
 							ContainerPort: idePort,
 						},
 					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SHELL",
+							Value: workingDir + "/bin/devpodsh",
+						},
+					},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							"cpu":    cpuLimit,
