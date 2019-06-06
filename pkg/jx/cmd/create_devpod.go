@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -84,6 +83,7 @@ type CreateDevPodOptions struct {
 	ImportURL       string
 	Import          bool
 	TempDir         bool
+	Theia           bool
 	ShellCmd        string
 	DockerRegistry  string
 	TillerNamespace string
@@ -134,6 +134,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.ImportURL, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().BoolVarP(&options.TempDir, "temp-dir", "", false, "If enabled and --import-url is supplied then create a temporary directory to clone the source to detect what kind of DevPod to create")
+	cmd.Flags().BoolVarP(&options.Theia, "theia", "", false, "If enabled use Eclipse Theia as the web based IDE")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
 	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
@@ -246,6 +247,8 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 	}
+	idePort := int32(3000)
+	ideContainerName := "ide"
 	if create {
 		if o.TempDir && importURL != "" {
 			o.NotifyProgress(opts.LogInfo, "cloning git URL: %s\n", importURL)
@@ -253,15 +256,6 @@ func (o *CreateDevPodOptions) Run() error {
 			err = o.Git().ShallowClone(dir, importURL, "master", "")
 			if err != nil {
 				return errors.Wrapf(err, "failed to git clone: %s into dir %s", importURL, dir)
-			}
-		}
-
-		devpodConfigYml, err := client.CoreV1().ConfigMaps(curNs).Get("jenkins-x-devpod-config", metav1.GetOptions{})
-		versions := &map[string]string{}
-		if devpodConfigYml != nil {
-			err = yaml.Unmarshal([]byte(devpodConfigYml.Data["versions"]), versions)
-			if err != nil {
-				return fmt.Errorf("Failed to parse versions from DevPod ConfigMap %s: %s", devpodConfigYml, err)
 			}
 		}
 
@@ -417,50 +411,101 @@ func (o *CreateDevPodOptions) Run() error {
 			memoryLimit, _ := resource.ParseQuantity("1Gi")
 			memoryRequest, _ := resource.ParseQuantity("128Mi")
 
-			// Add Theia - note Theia won't work in --sync mode as we can't share a volume
-
-			theiaVersion := "latest"
-			if val, ok := (*versions)["theia"]; ok {
-				theiaVersion = val
+			// disable input for replacing the version stream git repo
+			batch := o.BatchMode
+			o.BatchMode = true
+			resolver, err := o.CreateVersionResolver("", "")
+			if err != nil {
+				return err
 			}
-			theiaContainer := corev1.Container{
-				Name:  "theia",
-				Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
-				Ports: []corev1.ContainerPort{
-					{
-						ContainerPort: 3000,
-					},
-				},
-				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						"cpu":    cpuLimit,
-						"memory": memoryLimit,
-					},
-					Requests: corev1.ResourceList{
-						"cpu":    cpuRequest,
-						"memory": memoryRequest,
-					},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					workspaceVolumeMount,
-				},
-				LivenessProbe: &corev1.Probe{
-					InitialDelaySeconds: 60,
-					PeriodSeconds:       10,
-					Handler: corev1.Handler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Port: intstr.FromInt(3000),
+			o.BatchMode = batch
+
+			// web IDEs  won't work in --sync mode as we can't share a volume
+			if o.Theia {
+				image, err := resolver.ResolveDockerImage("theiaide/theia-full")
+				if err != nil {
+					return err
+				}
+				editorContainer := corev1.Container{
+					Name:  ideContainerName,
+					Image: image,
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: idePort,
 						},
 					},
-				},
-				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: func(i int64) *int64 { return &i }(0),
-				},
-				Command: []string{"yarn", "theia", "start", "/workspace", "--hostname=0.0.0.0"},
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"cpu":    cpuLimit,
+							"memory": memoryLimit,
+						},
+						Requests: corev1.ResourceList{
+							"cpu":    cpuRequest,
+							"memory": memoryRequest,
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						workspaceVolumeMount,
+					},
+					LivenessProbe: &corev1.Probe{
+						InitialDelaySeconds: 60,
+						PeriodSeconds:       10,
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Port: intstr.FromInt(int(idePort)),
+							},
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						RunAsUser: func(i int64) *int64 { return &i }(0),
+					},
+					Command: []string{"yarn", "theia", "start", "/workspace", "--hostname=0.0.0.0"},
+				}
+				pod.Spec.Containers = append(pod.Spec.Containers, editorContainer)
+
+			} else {
+				idePort = 8443
+				image, err := resolver.ResolveDockerImage("codercom/code-server")
+				if err != nil {
+					return err
+				}
+				editorContainer := corev1.Container{
+					Name:  ideContainerName,
+					Image: image,
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: idePort,
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"cpu":    cpuLimit,
+							"memory": memoryLimit,
+						},
+						Requests: corev1.ResourceList{
+							"cpu":    cpuRequest,
+							"memory": memoryRequest,
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						workspaceVolumeMount,
+					},
+					LivenessProbe: &corev1.Probe{
+						InitialDelaySeconds: 60,
+						PeriodSeconds:       10,
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Port: intstr.FromInt(int(idePort)),
+							},
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						RunAsUser: func(i int64) *int64 { return &i }(0),
+					},
+					Args: []string{"--allow-http", "--no-auth", workingDir},
+				}
+				pod.Spec.Containers = append(pod.Spec.Containers, editorContainer)
 			}
-
-			pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
-
 		}
 
 		if o.RequestCpu != "" {
@@ -575,7 +620,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	theiaServiceName := name + "-theia"
+	ideServiceName := name + "-ide"
 	if create {
 		o.NotifyProgress(opts.LogInfo, "Creating a DevPod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
@@ -681,7 +726,7 @@ func (o *CreateDevPodOptions) Run() error {
 					Annotations: map[string]string{
 						"fabric8.io/expose": "true",
 					},
-					Name: theiaServiceName,
+					Name: ideServiceName,
 					OwnerReferences: []metav1.OwnerReference{
 						kube.PodOwnerRef(pod),
 					},
@@ -689,9 +734,9 @@ func (o *CreateDevPodOptions) Run() error {
 				Spec: corev1.ServiceSpec{
 					Ports: []corev1.ServicePort{
 						{
-							Name:       theiaServiceName,
+							Name:       ideServiceName,
 							Port:       80,
-							TargetPort: intstr.FromInt(3000),
+							TargetPort: intstr.FromInt(int(idePort)),
 						},
 					},
 					Selector: map[string]string{
@@ -720,21 +765,21 @@ func (o *CreateDevPodOptions) Run() error {
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
 	if !o.Sync {
-		theiaServiceURL, err := services.FindServiceURL(client, curNs, theiaServiceName)
+		ideServiceURL, err := services.FindServiceURL(client, curNs, ideServiceName)
 		if err != nil {
 			return err
 		}
-		if theiaServiceURL != "" {
+		if ideServiceURL != "" {
 			pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
-			pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
+			pod.Annotations["jenkins-x.io/devpod_IDE_URL"] = ideServiceURL
 			pod, err = client.CoreV1().Pods(curNs).Update(pod)
 			if err != nil {
 				return err
 			}
-			log.Infof("\nYou can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
-			o.Results.TheaServiceURL = theiaServiceURL
+			log.Infof("\nYou can edit your app using the Web IDE at: %s\n", util.ColorInfo(ideServiceURL))
+			o.Results.TheaServiceURL = ideServiceURL
 		} else {
-			o.NotifyProgress(opts.LogWarning, "Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
+			o.NotifyProgress(opts.LogWarning, "Could not find service with name %s in namespace %s\n", ideServiceName, curNs)
 		}
 	}
 
@@ -819,7 +864,7 @@ func (o *CreateDevPodOptions) Run() error {
 				DevPod:        true,
 				ExecCmd:       strings.Join(theiaRshExec, "&&"),
 				Username:      userName,
-				Container:     "theia",
+				Container:     ideContainerName,
 			}
 			options.Args = []string{}
 			err = options.Run()
