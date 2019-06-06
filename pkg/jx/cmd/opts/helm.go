@@ -477,15 +477,18 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 			pullLatest := false
 			if o.BatchMode {
 				pullLatest = true
-			} else {
+			} else if o.AdvancedMode {
 				confirm := &survey.Confirm{
 					Message: "A local Jenkins X versions repository already exists, pull the latest?",
 					Default: true,
 				}
-				survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
+				err = survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
 				if err != nil {
 					log.Errorf("Error confirming if we should pull latest, skipping %s\n", wrkDir)
 				}
+			} else {
+				pullLatest = true
+				log.Infof("A local Jenkins X versions repository already exists, pulling the latest: %v", util.ColorPrompt(util.YesNo(pullLatest)))
 			}
 
 			if pullLatest {

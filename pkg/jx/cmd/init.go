@@ -66,7 +66,6 @@ type InitFlags struct {
 	Http                       bool
 	NoGitValidate              bool
 	ExternalDNS                bool
-	Advanced                   bool
 }
 
 const (
@@ -136,8 +135,6 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", opts.DefaultSkipClusterRole, "Don't enable cluster admin role for user")
 
 	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", opts.DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
-
-	cmd.Flags().BoolVarP(&o.Flags.Advanced, "advanced", "", false, "Advanced install options. This will prompt for advanced install options")
 }
 
 func (o *InitOptions) addIngressFlags(cmd *cobra.Command) {
@@ -475,7 +472,7 @@ func (o *InitOptions) initIngress() error {
 		installIngressController := false
 		if o.BatchMode {
 			installIngressController = true
-		} else if o.Flags.Advanced {
+		} else if o.AdvancedMode {
 			prompt := &survey.Confirm{
 				Message: "No existing ingress controller found in the " + ingressNamespace + " namespace, shall we install one?",
 				Default: true,
