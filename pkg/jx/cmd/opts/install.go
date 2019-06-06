@@ -1703,8 +1703,6 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	} else if useExternalDNS && o.Domain != "" {
 		log.Infof("Preparing to install ExternalDNS into namespace %s\n", util.ColorInfo(devNamespace))
 		log.Infof("External DNS for Jenkins X is currently only supoorted on GKE\n")
-		log.Infof("You will need to ensure that a sub-domain record is present for the %s namespace which delegates onto %s\n", util.ColorInfo(devNamespace), util.ColorInfo(o.Domain))
-		log.Infof("\ti.e. %s(CNAME) => %s\n", util.ColorInfo(devNamespace+"."+o.Domain), util.ColorInfo(o.Domain))
 
 		err = o.installExternalDNSGKE()
 		if err != nil {
