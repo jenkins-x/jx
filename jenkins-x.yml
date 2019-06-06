@@ -148,3 +148,86 @@ pipelineConfig:
                 # Needs maven as openapi tools are written in Java!
                 image: gcr.io/jenkinsxio/builder-maven:0.1.462
                 command: ./jx/scripts/update-clients.sh
+          - name: bdd-baseline
+            environment:
+            - name: GIT_COMMITTER_EMAIL
+              value: jenkins-x@googlegroups.com
+            - name: GIT_AUTHOR_EMAIL
+              value: jenkins-x@googlegroups.com
+            - name: GIT_AUTHOR_NAME
+              value: jenkins-x-bot
+            - name: GIT_COMMITTER_NAME
+              value: jenkins-x-bot
+            - name: BASE_WORKSPACE
+              value: /workspace/source
+            - name: GOPROXY
+              value: http://jenkins-x-athens-proxy:80
+            - name: PARALLEL_BUILDS
+              value: "2"
+              # Build a binary that can emit coverage
+            - name: COVERED_BINARY
+              value: "true"
+            - name: CODECOV_NAME
+              value: e2e
+            - name: VERSION_PREFIX
+              value: covered-
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
+                env:
+                - name: CODECOV_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: token
+                      name: codecov-token
+
+            steps:
+            - name: build-binary
+              image: docker.io/golang:1.11.5
+              command: make
+              args: ['linux']
+
+            - name: validate-binary
+              image: docker.io/golang:1.11.5
+              command: "./build/linux/jx"
+              args: ['help']
+              # Supported when we upgrade
+              #env:
+              #- name: COVER_JX_BINARY
+              #  value: false
+
+            - name: build-and-push-image
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/source/Dockerfile','--destination=docker.io/jenkinsxio/jx:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+
+            - name: build-and-push-nodejs
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/source/Dockerfile.builder-nodejs','--destination=docker.io/jenkinsxio/builder-nodejs:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+
+            - name: build-and-push-maven
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/source/Dockerfile.builder-maven','--destination=docker.io/jenkinsxio/builder-maven:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+
+            - name: build-and-push-go
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+
+            - name: e2e-tests
+              image: gcr.io/jenkinsxio/builder-go:0.1.332
+              command: ./jx/scripts/ci.sh
+
+            - name: stash-test-results
+              image: jenkinsxio/jx:2.0.128
+              command: jx
+              # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
+              args: ['step', 'stash', '-c', 'e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
