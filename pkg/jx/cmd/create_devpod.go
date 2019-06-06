@@ -882,7 +882,7 @@ func (o *CreateDevPodOptions) Run() error {
 		// Try to clone the right Git repo into the DevPod
 
 		// First configure git credentials
-		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store")
+		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store", "jx step create devpod workspace")
 
 		// We only honor --import if --sync is not specified
 		if o.Import {
