@@ -1,6 +1,7 @@
 package create
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -34,7 +35,9 @@ var (
 type StepCreateDevPodWorkpaceOptions struct {
 	opts.StepOptions
 
-	Dir string
+	Dir            string
+	VSCodeSettings string
+	VSCode         bool
 }
 
 // StepCreateDevPodWorkpaceResults stores the generated results
@@ -65,7 +68,9 @@ func NewCmdStepCreateDevPodWorkpace(commonOpts *opts.CommonOptions) *cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "/workspace/bin", "The bin directory in the workspace")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "/workspace", "The workspace directory to write to")
+	cmd.Flags().BoolVarP(&options.VSCode, "vscode", "", false, "If enabled also setup the VS Code settings to enable the devpodsh Terminal script")
+	cmd.Flags().StringVarP(&options.VSCodeSettings, "vscode-settings", "", ".local/share/code-server/User/settings.json", "The VS Code settings file relative to the workspace home dir")
 	return cmd
 }
 
@@ -76,14 +81,19 @@ func (o *StepCreateDevPodWorkpaceOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "could not find binary %s on the $PATH", kubectl)
 	}
-	outDir := o.Dir
-	if outDir == "" {
-		outDir = "."
+	workspaceDir := o.Dir
+	if workspaceDir == "" {
+		workspaceDir = "."
 	}
-	homeDir := filepath.Join(outDir, "home")
+	outDir := filepath.Join(workspaceDir, "bin")
+	homeDir := filepath.Join(workspaceDir, "home")
+	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to ensure workspace bin directory is created %s", outDir)
+	}
 	err = os.MkdirAll(homeDir, util.DefaultWritePermissions)
 	if err != nil {
-		return errors.Wrapf(err, "failed to ensure workpace home directory is created %s", homeDir)
+		return errors.Wrapf(err, "failed to ensure workspace home directory is created %s", homeDir)
 	}
 
 	destPath := filepath.Join(outDir, kubectl)
@@ -112,6 +122,55 @@ echo "opening shell inside DevPod with args: $* in dir $DIR"
 	err = ioutil.WriteFile(scriptPath, []byte(text), util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save script to %s", scriptPath)
+	}
+
+	if o.VSCode {
+		shell := filepath.Join(outDir, "devpodsh")
+		err = o.updateVSCodeSettings(homeDir, shell)
+		if err != nil {
+			return errors.Wrapf(err, "failed to modify the VS Code Settings")
+		}
+	}
+	return nil
+}
+
+func (o *StepCreateDevPodWorkpaceOptions) updateVSCodeSettings(homeDir string, devPodSh string) error {
+	jsonFile := filepath.Join(homeDir, o.VSCodeSettings)
+	dir, _ := filepath.Split(jsonFile)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to ensure the VS Code settings dir is created %s", dir)
+	}
+	exists, err := util.FileExists(jsonFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if file exists %s", jsonFile)
+	}
+	config := map[string]interface{}{}
+	if exists {
+		data, err := ioutil.ReadFile(jsonFile)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load VS Code settings file: %s", jsonFile)
+		}
+		err = json.Unmarshal(data, &config)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse VS Code settings JSON: %s", jsonFile)
+		}
+	}
+
+	const key = "terminal.integrated.shell.linux"
+
+	value := config[key]
+	shell, ok := value.(string)
+	if !ok || shell != devPodSh {
+		config[key] = devPodSh
+		data, err := json.Marshal(config)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal new VS Code settings to JSON")
+		}
+		err = ioutil.WriteFile(jsonFile, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save VS Code settings file: %s", jsonFile)
+		}
 	}
 	return nil
 }

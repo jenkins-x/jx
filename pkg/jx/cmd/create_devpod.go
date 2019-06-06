@@ -216,6 +216,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
+	setupWorkspaceCommand := "jx step create devpod workspace"
 	create := true
 	var pod *corev1.Pod
 	var editEnv *v1.Environment
@@ -468,6 +469,7 @@ func (o *CreateDevPodOptions) Run() error {
 				pod.Spec.Containers = append(pod.Spec.Containers, editorContainer)
 
 			} else {
+				setupWorkspaceCommand += " --vscode"
 				idePort = 8443
 				image, err := resolver.ResolveDockerImage("codercom/code-server")
 				if err != nil {
@@ -888,7 +890,7 @@ func (o *CreateDevPodOptions) Run() error {
 		// Try to clone the right Git repo into the DevPod
 
 		// First configure git credentials
-		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store", "jx step create devpod workspace")
+		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store", setupWorkspaceCommand)
 
 		// We only honor --import if --sync is not specified
 		if o.Import {
