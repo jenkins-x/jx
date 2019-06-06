@@ -124,7 +124,7 @@ func (o *StepCreateDevPodWorkpaceOptions) Run() error {
 	text := fmt.Sprintf(`#!/bin/sh
 
 DIR=$(pwd)
-echo "opening shell inside DevPod with args: $* in dir $DIR"
+echo "opening a shell inside the DevPod"
 %s/kubectl exec -it -c devpod $HOSTNAME bash -- -c "cd $DIR && bash"
 `, outDir)
 
