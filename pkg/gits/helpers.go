@@ -263,7 +263,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 
 	pr, err := provider.CreatePullRequest(gha)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrapf(err, "creating pull request with arguments %v", gha.String())
 	}
 	log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	if autoMerge {
