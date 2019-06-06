@@ -37,7 +37,7 @@ import (
 
 const (
 	optionLabel         = "label"
-	optionRequestCpu    = "request-cpu"
+	optionRequestCPU    = "request-cpu"
 	devPodGoPath        = "/workspace"
 	devPodContainerName = "devpod"
 )
@@ -126,7 +126,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
 	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the DevPod")
-	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the DevPod")
+	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCPU, "c", "1", "The request CPU of the DevPod")
 	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", true, "Reuse an existing DevPod if a suitable one exists. The DevPod will be selected based on the label (or current working directory)")
 	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
 	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
@@ -521,7 +521,7 @@ func (o *CreateDevPodOptions) Run() error {
 		if o.RequestCpu != "" {
 			q, err := resource.ParseQuantity(o.RequestCpu)
 			if err != nil {
-				return util.InvalidOptionError(optionRequestCpu, o.RequestCpu, err)
+				return util.InvalidOptionError(optionRequestCPU, o.RequestCpu, err)
 			}
 			container1.Resources.Requests[corev1.ResourceCPU] = q
 		}
