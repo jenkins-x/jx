@@ -103,9 +103,9 @@ func (o *StepCreateDevPodWorkpaceOptions) Run() error {
 
 	text := fmt.Sprintf(`#!/bin/sh
 
-DIR=${pwd}
-echo "opening shell inside DevPod with args: $0 in dir DIR"
-%s/kubectl exec -it -c devpod $HOSTNAME bash -- -i -c "cd %s && bash"
+DIR=$(pwd)
+echo "opening shell inside DevPod with args: $* in dir $DIR"
+%s/kubectl exec -it -c devpod $HOSTNAME bash -- -c "cd $DIR && bash"
 `, outDir)
 
 	err = ioutil.WriteFile(scriptPath, []byte(text), util.DefaultWritePermissions)

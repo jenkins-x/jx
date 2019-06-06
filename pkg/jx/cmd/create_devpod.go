@@ -483,8 +483,8 @@ func (o *CreateDevPodOptions) Run() error {
 					},
 					Env: []corev1.EnvVar{
 						{
-							Name:  "SHELL",
-							Value: workingDir + "/bin/devpodsh",
+							Name:  "HOME",
+							Value: workingDir + "/home",
 						},
 					},
 					Resources: corev1.ResourceRequirements{
