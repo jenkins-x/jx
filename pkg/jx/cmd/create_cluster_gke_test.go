@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,45 +53,4 @@ func Test_validateClusterName(t *testing.T) {
 			assert.Equal(t, nameIsValid, tt.want)
 		})
 	}
-}
-
-func TestVerifyDomainName(t *testing.T) {
-	t.Parallel()
-	invalidErr := "domain name %s contains invalid characters"
-	lengthErr := "domain name %s has fewer than 3 or greater than 63 characters"
-
-	domain := "wine.com"
-	assert.Equal(t, validateDomainName(domain), nil)
-	domain = "more-wine.com"
-	assert.Equal(t, validateDomainName(domain), nil)
-	domain = "wine-and-cheese.com"
-	assert.Equal(t, validateDomainName(domain), nil)
-	domain = "wine-and-cheese.tasting.com"
-	assert.Equal(t, validateDomainName(domain), nil)
-	domain = "wine123.com"
-	assert.Equal(t, validateDomainName(domain), nil)
-	domain = "wine.cheese.com"
-	assert.Equal(t, validateDomainName(domain), nil)
-	domain = "win_e.com"
-	assert.Equal(t, validateDomainName(domain), nil)
-
-	domain = "win?e.com"
-	assert.EqualError(t, validateDomainName(domain), fmt.Sprintf(invalidErr, domain))
-	domain = "win%e.com"
-	assert.EqualError(t, validateDomainName(domain), fmt.Sprintf(invalidErr, domain))
-	domain = "om"
-
-	assert.EqualError(t, validateDomainName(domain), fmt.Sprintf(lengthErr, domain))
-	domain = "some.really.long.domain.that.should.be.longer.than.the.maximum.63.characters.com"
-	assert.EqualError(t, validateDomainName(domain), fmt.Sprintf(lengthErr, domain))
-}
-
-func TestStripTrailingSlash(t *testing.T) {
-	t.Parallel()
-
-	url := "http://some.url.com/"
-	assert.Equal(t, stripTrailingSlash(url), "http://some.url.com")
-
-	url = "http://some.other.url.com"
-	assert.Equal(t, stripTrailingSlash(url), "http://some.other.url.com")
 }

@@ -3,6 +3,9 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"regexp"
+
+	"github.com/jenkins-x/jx/pkg/tenant"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/env"
 
@@ -127,6 +130,8 @@ type InstallFlags struct {
 	StaticJenkins               bool
 	LongTermStorage             bool
 	LongTermStorageBucketName   string
+	CloudBeesDomain             string
+	CloudBeesAuth               string
 }
 
 // Secrets struct for secrets
@@ -251,6 +256,12 @@ var (
 		# If you know the cloud provider you can pass this as a CLI argument. E.g. for AWS
 		jx install --provider=aws
 `)
+	allowedDomainRegex = regexp.MustCompile("^(([a-zA-Z]{1})|" +
+		"([a-zA-Z]{1}[a-zA-Z]{1})|" +
+		"([a-zA-Z]{1}[0-9]{1})|" +
+		"([0-9]{1}[a-zA-Z]{1})|" +
+		"([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9])).([a-zA-Z]{2,6}|" +
+		"[a-zA-Z0-9-]{2,30}.[a-zA-Z]{2,3})$")
 )
 
 // NewCmdInstall creates a command object for the generic "install" action, which
@@ -362,7 +373,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, "lts-bucket", "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
-
+	cmd.Flags().StringVarP(&options.Flags.CloudBeesDomain, "cloudbees-domain", "", "", "When setting up a letter/tenant cluster, this creates a tenant cluster on the cloudbees domain which is retrieved via the required URL")
+	cmd.Flags().StringVarP(&options.Flags.CloudBeesAuth, "cloudbees-auth", "", "", "Auth used when setting up a letter/tenant cluster, format: 'username:password'")
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
 	options.AdminSecretsService.AddAdminSecretsValues(cmd)
@@ -434,6 +446,9 @@ func (options *InstallOptions) CheckFlags() error {
 			initFlags.NoTiller = true
 		}
 	}
+	if flags.CloudBeesDomain != "" {
+		flags.ExternalDNS = true
+	}
 
 	// If we're using external-dns then remove the namespace subdomain from the URLTemplate
 	if flags.ExternalDNS {
@@ -467,7 +482,15 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
 	}
-
+	if options.Flags.CloudBeesDomain != "" {
+		cloudbeesDomain := StripTrailingSlash(options.Flags.CloudBeesDomain)
+		cloudbeesAuth := options.Flags.CloudBeesAuth
+		domain, err := options.enableTenantCluster(cloudbeesDomain, cloudbeesAuth)
+		if err != nil {
+			return errors.Wrap(err, "while configuring the tenant cluster")
+		}
+		options.Flags.Domain = domain
+	}
 	err = options.selectJenkinsInstallation()
 	if err != nil {
 		return errors.Wrap(err, "selecting the Jenkins installation type")
@@ -3160,4 +3183,99 @@ func (options *InstallOptions) setValuesFileValue(fileName string, key string, v
 		return errors.Wrapf(err, "Failed to save updated helm values YAML file %s", fileName)
 	}
 	return nil
+}
+
+// validateClusterName checks for compliance of a user supplied
+// cluster name against GKE's rules for these names.
+func validateClusterName(clustername string) error {
+	// Check for length greater than 40.
+	if len(clustername) > 40 {
+		err := fmt.Errorf("cluster name %v is greater than the maximum 40 characters", clustername)
+		return err
+	}
+	// Now we need only make sure that clustername is limited to
+	// lowercase alphanumerics and dashes.
+	if disallowedLabelCharacters.MatchString(clustername) {
+		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
+		return err
+	}
+	return nil
+}
+
+// enableTenantCluster creates a managed zone which is a sub-domain
+// of a parent domain.
+func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tenantServiceAuth string) (string, error) {
+
+	projectID := options.installValues[kube.ProjectID]
+
+	log.Infof("Configuring CloudBees Domain for %s project", projectID)
+	// Create a TenantClient
+	tCli := tenant.NewTenantClient()
+	var err error
+	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID)
+	if err != nil {
+		return "", errors.Wrap(err, "getting domain from tenant service")
+	}
+	err = ValidateDomainName(domain)
+	if err != nil {
+		return "", errors.Wrap(err, "domain name failed validation")
+	}
+
+	// Checking whether dns api is enabled
+	err = gke.EnableAPIs(projectID, "dns")
+	if err != nil {
+		return "", errors.Wrap(err, "enabling the dns api")
+	}
+
+	// Create domain if it doesn't exist and return name servers list
+	managedZone, nameServers, err := createTenantsSubDomainDNSZone(projectID, domain)
+	if err != nil {
+		return "", errors.Wrap(err, "while trying to create the tenants subdomain zone")
+	}
+
+	log.Infof("%s domain is operating on the following nameservers %v", domain, nameServers)
+	err = tCli.PostTenantZoneNameServers(tenantServiceURL, tenantServiceAuth, projectID, domain, managedZone, nameServers)
+	if err != nil {
+		return "", errors.Wrap(err, "posting the name service list to the tenant service")
+	}
+
+	return domain, nil
+}
+
+// ValidateDomainName checks for compliance in a supplied domain name
+func ValidateDomainName(domain string) error {
+	// Check whether the domain is greater than 3 and fewer than 63 characters in length
+	if len(domain) < 3 || len(domain) > 63 {
+		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 63 characters", domain)
+		return err
+	}
+	// Ensure each part of the domain name only contains lower/upper case characters, numbers and dashes
+	if !allowedDomainRegex.MatchString(domain) {
+		err := fmt.Errorf("domain name %v contains invalid characters", domain)
+		return err
+	}
+	return nil
+}
+
+// createTenantsSubDomainDNSZone creates the tenants DNS zone if it doesn't exist
+// and returns the list of name servers for the given domain and project
+func createTenantsSubDomainDNSZone(projectID string, domain string) (string, []string, error) {
+	var managedZone, nameServers = "", []string{}
+	err := gke.CreateManagedZone(projectID, domain)
+	if err != nil {
+		return "", []string{}, errors.Wrap(err, "while trying to creating a CloudDNS managed zone")
+	}
+	managedZone, nameServers, err = gke.GetManagedZoneNameServers(projectID, domain)
+	if err != nil {
+		return "", []string{}, errors.Wrap(err, "while trying to retrieve the managed zone name servers")
+	}
+	return managedZone, nameServers, nil
+}
+
+// StripTrailingSlash removes any trailing forward slashes on the URL
+func StripTrailingSlash(url string) string {
+	if url[len(url)-1:] == "/" {
+		return url[0 : len(url)-1]
+	}
+	return url
 }
