@@ -190,12 +190,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	advanced := o.InstallOptions.InitOptions.Flags.Advanced
+	advancedMode := o.AdvancedMode
 
 	clusterName := o.Flags.ClusterName
 	if clusterName == "" {
 		defaultClusterName := strings.ToLower(randomdata.SillyName())
-		if advanced {
+		if advancedMode {
 			prompt := &survey.Input{
 				Message: "What cluster name would you like to use",
 				Default: defaultClusterName,
@@ -224,7 +224,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 			if o.InstallOptions.Flags.NextGeneration {
 				log.Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
-			} else if advanced {
+			} else if advancedMode {
 				prompts := &survey.Select{
 					Message: "What type of cluster would you like to create",
 					Options: []string{"Regional", "Zonal"},
@@ -261,7 +261,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	machineType := o.Flags.MachineType
 	if machineType == "" {
 		defaultMachineType := "n1-standard-2"
-		if advanced {
+		if advancedMode {
 			prompts := &survey.Select{
 				Message:  "Google Cloud Machine Type:",
 				Options:  gke.GetGoogleMachineTypes(),
@@ -286,7 +286,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if region != "" {
 			defaultNodes = "1"
 		}
-		if advanced {
+		if advancedMode {
 			prompt := &survey.Input{
 				Message: "Minimum number of Nodes (per zone)",
 				Default: defaultNodes,
@@ -309,7 +309,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if region != "" {
 			defaultNodes = "2"
 		}
-		if advanced {
+		if advancedMode {
 			prompt := &survey.Input{
 				Message: "Maximum number of Nodes",
 				Default: defaultNodes,
@@ -328,7 +328,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		if !o.IsFlagExplicitlySet(preemptibleFlagName) {
-			if advanced {
+			if advancedMode {
 				prompt := &survey.Confirm{
 					Message: "Would you like to use preemptible VMs?",
 					Default: false,
@@ -355,7 +355,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.BatchMode {
 		// if scopes is empty &
 		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
-			if advanced {
+			if advancedMode {
 				prompt := &survey.Confirm{
 					Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
 					Default: o.InstallOptions.Flags.DockerRegistry == "",
@@ -386,7 +386,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes {
 			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
-				if advanced {
+				if advancedMode {
 					prompt := &survey.Confirm{
 						Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
 						Default: o.Flags.EnhancedScopes,
@@ -416,7 +416,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes && !o.InstallOptions.Flags.Kaniko {
-			if advanced {
+			if advancedMode {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Kaniko for building container images",
 					Default: o.Flags.EnhancedScopes,
