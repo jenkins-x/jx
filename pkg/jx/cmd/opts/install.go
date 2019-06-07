@@ -1665,7 +1665,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 
 		err = o.Retry(2, time.Second, func() (err error) {
 			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultTektonReleaseName,
-				kube.ChartTekton, "tekton", "", devNamespace, true, setValues, ksecretValues, nil, "")
+				kube.ChartTekton, "tekton", "", devNamespace, true, setValues, ksecretValues, valuesFiles, "")
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to install Tekton")
