@@ -720,8 +720,8 @@ func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServe
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
 	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
-	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))
-	fmt.Fprint(o, "Then COPY the token and enter in into the form below:\n\n")
+	fmt.Fprintf(o, "Please click this URL and generate a token \n%s\n\n", util.ColorInfo(tokenUrl))
+	fmt.Fprint(o, "Then COPY the token and enter it below:\n\n")
 }
 
 // IsFork indicates if the repository at the given directory is a fork
