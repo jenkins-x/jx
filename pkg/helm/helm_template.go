@@ -406,8 +406,12 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 				command = "create"
 			}
 			args := []string{command, "--recursive", "-f", fullPath, "-l", LabelReleaseName + "=" + releaseName}
-			if ns != "" {
-				args = append(args, "--namespace", namespace)
+			applyNs := namespace
+			if applyNs == "" {
+				applyNs = ns
+			}
+			if applyNs != "" {
+				args = append(args, "--namespace", applyNs)
 			}
 			if wait && !create {
 				args = append(args, "--wait")
