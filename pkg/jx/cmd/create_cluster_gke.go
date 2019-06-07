@@ -14,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/tenant"
 	"gopkg.in/AlecAivazis/survey.v1"
 
 	"regexp"
@@ -56,8 +55,6 @@ type CreateClusterGKEFlags struct {
 	Scopes          []string
 	Preemptible     bool
 	EnhancedApis    bool
-	CloudBeesDomain string
-	CloudBeesAuth   string
 }
 
 const (
@@ -88,12 +85,6 @@ var (
 
 `)
 	disallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
-	allowedDomainRegex        = regexp.MustCompile("^(([a-zA-Z]{1})|" +
-		"([a-zA-Z]{1}[a-zA-Z]{1})|" +
-		"([a-zA-Z]{1}[0-9]{1})|" +
-		"([0-9]{1}[a-zA-Z]{1})|" +
-		"([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9])).([a-zA-Z]{2,6}|" +
-		"[a-zA-Z0-9-]{2,30}.[a-zA-Z]{2,3})$")
 )
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
@@ -123,8 +114,6 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options.addCreateClusterFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.CloudBeesDomain, "cloudbees-domain", "", "", "When setting up a letter/tenant cluster, this creates a tenant cluster on the cloudbees domain which is retrieved via the required URL")
-	cmd.Flags().StringVarP(&options.Flags.CloudBeesAuth, "cloudbees-auth", "", "", "Auth used when setting up a letter/tenant cluster, format: 'username:password'")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
 	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "v", "", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
@@ -267,19 +256,6 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if zone == "" && region == "" {
 			return errors.New("in batchmode, either a region or a zone must be set")
 		}
-	}
-
-	if o.Flags.CloudBeesDomain != "" {
-		cloudbeesDomain := stripTrailingSlash(o.Flags.CloudBeesDomain)
-		cloudbeesAuth := o.Flags.CloudBeesAuth
-		o.InstallOptions.Flags.ExternalDNS = true
-		domain, err := enableTenantCluster(cloudbeesDomain, cloudbeesAuth, projectId)
-		if err != nil {
-			return errors.Wrap(err, "while configuring the tenant cluster")
-		}
-		o.InstallOptions.Flags.Domain = domain
-	} else {
-		return errors.New("A tenannt-service URL is required to use this option")
 	}
 
 	machineType := o.Flags.MachineType
@@ -612,97 +588,4 @@ func addLabel(labels string, name string, value string) string {
 func sanitizeLabel(username string) string {
 	sanitized := strings.ToLower(username)
 	return disallowedLabelCharacters.ReplaceAllString(sanitized, "-")
-}
-
-// validateClusterName checks for compliance of a user supplied
-// cluster name against GKE's rules for these names.
-func validateClusterName(clustername string) error {
-	// Check for length greater than 40.
-	if len(clustername) > 40 {
-		err := fmt.Errorf("cluster name %v is greater than the maximum 40 characters", clustername)
-		return err
-	}
-	// Now we need only make sure that clustername is limited to
-	// lowercase alphanumerics and dashes.
-	if disallowedLabelCharacters.MatchString(clustername) {
-		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
-		return err
-	}
-	return nil
-}
-
-// enableTenantCluster creates a managed zone which is a sub-domain
-// of a parent domain.
-func enableTenantCluster(tenantServiceURL string, tenantServiceAuth string, projectID string) (string, error) {
-
-	log.Infof("Configuring CloudBees Domain for %s project", projectID)
-	// Create a TenantClient
-	tCli := tenant.NewTenantClient()
-	var err error
-	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID)
-	if err != nil {
-		return "", errors.Wrap(err, "getting domain from tenant service")
-	}
-	err = validateDomainName(domain)
-	if err != nil {
-		return "", errors.Wrap(err, "domain name failed validation")
-	}
-
-	// Checking whether dns api is enabled
-	err = gke.EnableAPIs(projectID, "dns")
-	if err != nil {
-		return "", errors.Wrap(err, "enabling the dns api")
-	}
-
-	// Create domain if it doesn't exist and return name servers list
-	managedZone, nameServers, err := createTenantsSubDomainDNSZone(projectID, domain)
-	if err != nil {
-		return "", errors.Wrap(err, "while trying to create the tenants subdomain zone")
-	}
-
-	log.Infof("%s domain is operating on the following nameservers %v", domain, nameServers)
-	err = tCli.PostTenantZoneNameServers(tenantServiceURL, tenantServiceAuth, projectID, domain, managedZone, nameServers)
-	if err != nil {
-		return "", errors.Wrap(err, "posting the name service list to the tenant service")
-	}
-
-	return domain, nil
-}
-
-// validateDomainName checks for compliance in a supplied domain name
-func validateDomainName(domain string) error {
-	// Check whether the domain is greater than 3 and fewer than 63 characters in length
-	if len(domain) < 3 || len(domain) > 63 {
-		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 63 characters", domain)
-		return err
-	}
-	// Ensure each part of the domain name only contains lower/upper case characters, numbers and dashes
-	if !allowedDomainRegex.MatchString(domain) {
-		err := fmt.Errorf("domain name %v contains invalid characters", domain)
-		return err
-	}
-	return nil
-}
-
-// createTenantsSubDomainDNSZone creates the tenants DNS zone if it doesn't exist
-// and returns the list of name servers for the given domain and project
-func createTenantsSubDomainDNSZone(projectID string, domain string) (string, []string, error) {
-	var managedZone, nameServers = "", []string{}
-	err := gke.CreateManagedZone(projectID, domain)
-	if err != nil {
-		return "", []string{}, errors.Wrap(err, "while trying to creating a CloudDNS managed zone")
-	}
-	managedZone, nameServers, err = gke.GetManagedZoneNameServers(projectID, domain)
-	if err != nil {
-		return "", []string{}, errors.Wrap(err, "while trying to retrieve the managed zone name servers")
-	}
-	return managedZone, nameServers, nil
-}
-
-// stripTrailingSlash removes any trailing forward slashes on the URL
-func stripTrailingSlash(url string) string {
-	if url[len(url)-1:] == "/" {
-		return url[0 : len(url)-1]
-	}
-	return url
 }
