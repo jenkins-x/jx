@@ -168,7 +168,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 	// Override CreateApiExtensionsClient to return mock apiextensions interface
 	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
 
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, nil)
 	defer console.Cleanup()
 
 	donec := make(chan struct{})

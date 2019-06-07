@@ -382,7 +382,7 @@ func TestGetAppNotFound(t *testing.T) {
 		Namespace: namespace,
 	}
 	r, fakeStdout, _ := os.Pipe()
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, nil)
 	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
 	getAppOptions.CommonOptions.Err = console.Err
