@@ -3206,7 +3206,15 @@ func validateClusterName(clustername string) error {
 // of a parent domain.
 func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tenantServiceAuth string) (string, error) {
 
+
 	projectID := options.installValues[kube.ProjectID]
+	if projectID == "" {
+		var err error
+		projectID, err = gke.GetCurrentProject()
+		if err != nil {
+			return "", errors.Wrap(err, "Unable to retrieve project id")
+		}
+	}
 
 	log.Infof("Configuring CloudBees Domain for %s project", projectID)
 	// Create a TenantClient
