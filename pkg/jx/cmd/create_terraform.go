@@ -61,6 +61,8 @@ type GKECluster struct {
 	AutoUpgrade    bool
 	ServiceAccount string
 	DevStorageRole string
+	EnableKaniko   bool
+	EnableVault    bool
 }
 
 const (
@@ -191,6 +193,14 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		return err
 	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_kaniko", booleanAsInt(g.EnableKaniko))
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_vault", booleanAsInt(g.EnableVault))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -217,6 +227,14 @@ func (g *GKECluster) ParseTfVarsFile(path string) {
 	autoUpgrade, _ := terraform.ReadValueFromFile(path, "auto_upgrade")
 	b, _ = strconv.ParseBool(autoUpgrade)
 	g.AutoUpgrade = b
+
+	enableKaniko, _ := terraform.ReadValueFromFile(path, "enable_kaniko")
+	b, _ = strconv.ParseBool(enableKaniko)
+	g.EnableKaniko = b
+
+	enableVault, _ := terraform.ReadValueFromFile(path, "enable_vault")
+	b, _ = strconv.ParseBool(enableVault)
+	g.EnableVault = b
 }
 
 // Flags for a cluster
@@ -810,6 +828,8 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	g.MaxNumOfNodes = options.Flags.GKEMaxNumOfNodes
 	g.ServiceAccount = options.Flags.GKEServiceAccount
 	g.Organisation = options.Flags.OrganisationName
+	g.EnableKaniko = options.InstallOptions.Flags.Kaniko
+	g.EnableVault = options.InstallOptions.Flags.Vault
 
 	if options.Flags.GKEUseEnhancedScopes {
 		g.DevStorageRole = devStorageFullControl
@@ -1299,4 +1319,11 @@ func (options *CreateTerraformOptions) configureEnvironments(clusters []Cluster)
 		}
 	}
 	return nil
+}
+
+func booleanAsInt(input bool) string {
+	if input {
+		return "1"
+	}
+	return "0"
 }
