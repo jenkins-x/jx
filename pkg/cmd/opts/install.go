@@ -65,6 +65,7 @@ jenkinsLocationConfiguration.save()
 const (
 	AdminSecretsFile            = "adminSecrets.yaml"
 	ExtraValuesFile             = "extraValues.yaml"
+	ValuesFile                  = "values.yaml"
 	JXInstallConfig             = "jx-install-config"
 	CloudEnvValuesFile          = "myvalues.yaml"
 	CloudEnvSecretsFile         = "secrets.yaml"

@@ -490,6 +490,14 @@ func (o *PreviewOptions) Run() error {
 		ValueFiles:  []string{configFileName},
 		Wait:        true,
 	}
+
+	// if the preview chart has values.yaml then pass that so we can replace any secrets from vault
+	defaultValuesFileName := filepath.Join(dir, opts.ValuesFile)
+	_, err = ioutil.ReadFile(defaultValuesFileName)
+	if err == nil {
+		helmOptions.ValueFiles = append(helmOptions.ValueFiles, defaultValuesFileName)
+	}
+
 	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err

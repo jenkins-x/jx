@@ -403,7 +403,7 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 			return err
 		}
 	}
-	vaultClient, err := o.SystemVaultClient("")
+	vaultClient, err := o.SystemVaultClient(o.devNamespace)
 	if err != nil {
 		vaultClient = nil
 	}
