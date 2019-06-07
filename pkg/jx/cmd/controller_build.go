@@ -550,6 +550,10 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 		if !biggestFinishedAt.IsZero() {
 			spec.CompletedTimestamp = &biggestFinishedAt
 		}
+
+		// log that the build completed
+		logJobCompletedState(activity)
+
 		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
 		if spec.BuildLogsURL == "" || !strings.Contains(spec.BuildLogsURL, pod.Name) {
 			podInterface := kubeClient.CoreV1().Pods(ns)
@@ -658,6 +662,9 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		if !biggestFinishedAt.IsZero() {
 			spec.CompletedTimestamp = &biggestFinishedAt
 		}
+
+		// log that the build completed
+		logJobCompletedState(activity)
 
 		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
 		if spec.BuildLogsURL == "" {
@@ -1074,4 +1081,60 @@ func createStepDescription(containerName string, pod *corev1.Pod) string {
 		}
 	}
 	return ""
+}
+
+func logJobCompletedState(activity *v1.PipelineActivity) {
+	// log that the build completed
+	var gitProviderUrl string
+	if activity.Spec.GitURL != "" {
+		gitInfo, err := gits.ParseGitURL(activity.Spec.GitURL)
+		if err != nil {
+			log.Logger().Warnf("unable to parse %s as git url, %v", activity.Spec.GitURL, err)
+		}
+		gitProviderUrl = gitInfo.ProviderURL()
+	}
+
+	var prNumber string
+	// extract (org, repo, commit) or (org, repo, #PR) from key
+	if strings.HasPrefix(strings.ToUpper(activity.Spec.GitBranch), "PR-") {
+		// this is a PR build
+		prNumber = strings.Replace(strings.ToUpper(activity.Spec.GitBranch), "PR-", "", -1)
+	}
+
+	stages := make([]map[string]interface{}, 0)
+
+	for _, s := range activity.Spec.Steps {
+		if s.Kind == v1.ActivityStepKindTypeStage {
+			steps := make([]map[string]interface{}, 0)
+			for _, st := range s.Stage.Steps {
+				step := map[string]interface{}{
+					"name":     st.Name,
+					"status":   st.Status,
+					"duration": durationString(st.StartedTimestamp, st.CompletedTimestamp),
+				}
+				steps = append(steps, step)
+			}
+			stage := map[string]interface{}{
+				"name":     s.Stage.Name,
+				"status":   s.Stage.Status,
+				"duration": durationString(s.Stage.StartedTimestamp, s.Stage.CompletedTimestamp),
+				"steps":    steps,
+			}
+			stages = append(stages, stage)
+		}
+	}
+
+	fields := map[string]interface{}{
+		"name":              activity.Name,
+		"status":            activity.Spec.Status,
+		"gitOwner":          activity.Spec.GitOwner,
+		"gitRepo":           activity.Spec.GitRepository,
+		"gitProviderUrl":    gitProviderUrl,
+		"gitBranch":         activity.Spec.GitBranch,
+		"buildNumber":       activity.Spec.Build,
+		"pullRequestNumber": prNumber,
+		"duration":          durationString(activity.Spec.StartedTimestamp, activity.Spec.CompletedTimestamp),
+		"stages":            stages,
+	}
+	log.Logger().WithFields(fields).Infof("Build %s %s", activity.Name, activity.Spec.Status)
 }
