@@ -141,6 +141,10 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		return err
 	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_region", g.Region())
+	if err != nil {
+		return err
+	}
 	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_project", g.ProjectID)
 	if err != nil {
 		return err
@@ -207,6 +211,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 // ParseTfVarsFile Parse vars file
 func (g *GKECluster) ParseTfVarsFile(path string) {
 	g.Zone, _ = terraform.ReadValueFromFile(path, "gcp_zone")
+	// no need to read region as it can be calculated
 	g.Organisation, _ = terraform.ReadValueFromFile(path, "organisation")
 	g.provider, _ = terraform.ReadValueFromFile(path, "cloud_provider")
 	g.ProjectID, _ = terraform.ReadValueFromFile(path, "gcp_project")
