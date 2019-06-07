@@ -911,6 +911,9 @@ func (o *CommonOptions) DefaultReleaseCharts() []string {
 }
 
 func (o *CommonOptions) ReleaseChartMuseumUrl() string {
+	if o.RemoteCluster {
+		return ""
+	}
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
 		if o.factory.IsInCDPipeline() {
