@@ -85,6 +85,7 @@ func NewCmdCreatePullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Base, "base", "", "master", "The base branch to create the pull request into")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
 	cmd.Flags().BoolVarP(&options.Push, "push", "", false, "If true the contents of the source directory will be committed, pushed, and used to create the pull request")
+	cmd.Flags().BoolVarP(&options.Fork, "fork", "", false, "If true, and the username configured to push the repo is different from the org name a PR is being created against, assume that this is a fork")
 
 	return cmd
 }
@@ -102,6 +103,9 @@ func (o *CreatePullRequestOptions) Run() error {
 	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for directory %s", o.Dir)
+	}
+	if o.Fork {
+		gitInfo.Fork = true
 	}
 
 	details, err := o.createPullRequestDetails(gitInfo)
