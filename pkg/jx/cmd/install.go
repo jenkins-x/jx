@@ -1244,11 +1244,10 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 }
 
 func (options *InstallOptions) configureGitAuth() error {
-	log.Infof("Lets set up a Git user name and API token to be able to perform CI/CD\n\n")
+	log.Infof("Set up a Git username and API token to be able to perform CI/CD\n\n")
 	gitUsername := options.GitRepositoryOptions.Username
 	gitServer := options.GitRepositoryOptions.ServerURL
 	gitAPIToken := options.GitRepositoryOptions.ApiToken
-
 	if gitUsername == "" {
 		gitUsernameEnv := os.Getenv(JX_GIT_USER)
 		if gitUsernameEnv != "" {
@@ -2898,11 +2897,11 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		Progress:      options.Out,
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "repository already exists") {
+		if err == git.ErrRepositoryAlreadyExists {
 			flag := false
 			if options.BatchMode {
 				flag = true
-			} else {
+			} else if options.AdvancedMode {
 				confirm := &survey.Confirm{
 					Message: "A local Jenkins X cloud environments repository already exists, recreate with latest?",
 					Default: true,
@@ -2911,7 +2910,11 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 				if err != nil {
 					return wrkDir, err
 				}
+			} else {
+				flag = true
+				log.Infof("A local Jenkins X cloud environments repository already exists, recreating with latest: %v", util.ColorPrompt(util.YesNo(flag)))
 			}
+
 			if flag {
 				err := os.RemoveAll(wrkDir)
 				if err != nil {
