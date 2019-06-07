@@ -4,11 +4,13 @@ package add_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 
 	"github.com/docker/docker/builder/dockerfile/command"
 
@@ -40,6 +42,8 @@ import (
 	"github.com/pborman/uuid"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
+
+var timeout = 5 * time.Second
 
 func TestPreprocessSchema(t *testing.T) {
 	t.SkipNow()
@@ -114,7 +118,7 @@ func TestPreprocessSchema(t *testing.T) {
 	}
 
 	// Needs console output
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	o.In = console.In
 	o.Out = console.Out

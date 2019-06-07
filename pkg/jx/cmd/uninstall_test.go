@@ -1,8 +1,9 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 
 	expect "github.com/Netflix/go-expect"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
@@ -122,7 +123,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 	kubeMock := setupUninstall("current-context")
 
 	// mock terminal
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, nil)
 	defer console.Cleanup()
 
 	// Test interactive IO
@@ -166,7 +167,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	// mock terminal
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, nil)
 	defer console.Cleanup()
 
 	// Test interactive IO

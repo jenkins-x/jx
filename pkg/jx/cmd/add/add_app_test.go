@@ -9,14 +9,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
+
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	uuid "github.com/satori/go.uuid"
@@ -215,7 +216,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 	}()
 
 	// Needs console input to create secrets
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
@@ -362,7 +363,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 	}()
 
 	// Needs console input to create secrets
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
@@ -492,7 +493,7 @@ func TestStashValues(t *testing.T) {
 	}()
 
 	// Needs console input to create secrets
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
@@ -570,7 +571,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	}()
 
 	// Needs console input to create secrets
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
@@ -1191,7 +1192,7 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
@@ -1301,7 +1302,7 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
