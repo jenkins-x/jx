@@ -3205,8 +3205,6 @@ func validateClusterName(clustername string) error {
 // enableTenantCluster creates a managed zone which is a sub-domain
 // of a parent domain.
 func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tenantServiceAuth string) (string, error) {
-
-
 	projectID := options.installValues[kube.ProjectID]
 	if projectID == "" {
 		var err error
