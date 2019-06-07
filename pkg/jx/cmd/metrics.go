@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"time"
@@ -133,7 +134,7 @@ func (o *MetricsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("%s\n", string(data))
+		log.Logger().Infof("%s\n", string(data))
 		return nil
 	}
 

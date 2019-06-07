@@ -1,8 +1,9 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -25,7 +26,7 @@ func TestJXNamespace(t *testing.T) {
 		resource, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 		assert.NoError(t, err, "Failed to query namespace")
 		if err == nil {
-			log.Warnf("Found namespace %#v\n", resource)
+			log.Logger().Warnf("Found namespace %#v\n", resource)
 		}
 	}
 

@@ -72,7 +72,7 @@ func (o *GetVaultOptions) Run() error {
 
 	vaults, err := vault.GetVaults(client, vaultOperatorClient, o.Namespace)
 	if err != nil {
-		log.Infof("No vault found.")
+		log.Logger().Infof("No vault found.")
 		return nil
 	}
 

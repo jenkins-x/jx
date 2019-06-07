@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/spf13/cobra"
 
@@ -70,7 +71,7 @@ func NewCmdCreateMicro(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateMicroOptions) checkMicroInstalled() error {
 	_, err := o.GetCommandOutput("", "micro", "help")
 	if err != nil {
-		log.Info("Installing micro's dependencies...")
+		log.Logger().Info("Installing micro's dependencies...")
 		// lets install micro
 		err = o.InstallBrewIfRequired()
 		if err != nil {
@@ -82,21 +83,21 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 				return err
 			}
 		}
-		log.Info("Downloading and building micro dependencies...")
+		log.Logger().Info("Downloading and building micro dependencies...")
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
-			log.Infof("Installing %s\n", p)
+			log.Logger().Infof("Installing %s\n", p)
 			err = o.RunCommand("go", "get", "-u", p)
 			if err != nil {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
 			}
 		}
-		log.Info("Installed micro dependencies")
+		log.Logger().Info("Installed micro dependencies")
 
-		log.Info("Downloading and building micro - this can take a minute or so...")
+		log.Logger().Info("Downloading and building micro - this can take a minute or so...")
 		err = o.RunCommand("go", "get", "-u", "github.com/micro/micro")
 		if err == nil {
-			log.Info("Installed micro and its dependencies!")
+			log.Logger().Info("Installed micro and its dependencies!")
 		}
 	}
 	return err
@@ -111,7 +112,7 @@ func (o CreateMicroOptions) GenerateMicro(dir string) error {
 func (o *CreateMicroOptions) Run() error {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
-		log.Warnf(`No $GOPATH found. 
+		log.Logger().Warnf(`No $GOPATH found. 
 
 You need to have installed go on your machine to be able to create micro services. 
 
@@ -152,7 +153,7 @@ For instructions please see: %s
 	}
 
 	path := filepath.Join(gopath, "src", dir)
-	log.Infof("Created micro project at %s\n\n", util.ColorInfo(path))
+	log.Logger().Infof("Created micro project at %s\n\n", util.ColorInfo(path))
 
 	return o.ImportCreatedProject(path)
 }

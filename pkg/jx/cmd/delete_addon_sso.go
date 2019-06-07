@@ -72,7 +72,7 @@ func (o *DeleteAddonSSOOptions) Run() error {
 		}
 	}
 
-	log.Infof("%s was succesfully deleted.\n", util.ColorInfo("sso addon"))
+	log.Logger().Infof("%s was succesfully deleted.\n", util.ColorInfo("sso addon"))
 
 	return nil
 }

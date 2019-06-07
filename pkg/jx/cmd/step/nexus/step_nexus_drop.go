@@ -57,7 +57,7 @@ func (o *StepNexusDropOptions) Run() error {
 		return err
 	}
 	if len(repoIds) == 0 {
-		log.Infof("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
+		log.Logger().Infof("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
 		return nil
 	}
 	return o.dropRepositories(repoIds, "Dropping staging repositories")

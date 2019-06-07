@@ -66,8 +66,8 @@ func (o *GetConfigOptions) Run() error {
 		return err
 	}
 	if pc.IsEmpty() {
-		log.Info("No project configuration for this directory.")
-		log.Infof("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
+		log.Logger().Info("No project configuration for this directory.")
+		log.Logger().Infof("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
 		return nil
 	}
 	table := o.CreateTable()

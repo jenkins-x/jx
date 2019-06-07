@@ -122,7 +122,7 @@ func (o *GetLimitsOptions) GetLimits(server string, username string, apitoken st
 	// Build the request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Errorf("NewRequest: %s", err)
+		log.Logger().Errorf("NewRequest: %s", err)
 		return RateLimits{}, err
 	}
 
@@ -137,7 +137,7 @@ func (o *GetLimitsOptions) GetLimits(server string, username string, apitoken st
 	// returns an HTTP response
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Errorf("Do: %s", err)
+		log.Logger().Errorf("Do: %s", err)
 		return RateLimits{}, err
 	}
 
@@ -151,7 +151,7 @@ func (o *GetLimitsOptions) GetLimits(server string, username string, apitoken st
 
 	// Use json.Decode for reading streams of JSON data
 	if err := json.NewDecoder(resp.Body).Decode(&limits); err != nil {
-		log.Errorf("Decode: %s", err)
+		log.Logger().Errorf("Decode: %s", err)
 	}
 
 	return limits, nil

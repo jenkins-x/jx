@@ -56,7 +56,7 @@ func StubFetchChart(name string, version string, repo string, chartToCreate *cha
 					err,
 				}
 			}
-			log.Infof("Creating mock chart %s in %s\n", chartToCreate.Metadata.Name, dir)
+			log.Logger().Infof("Creating mock chart %s in %s\n", chartToCreate.Metadata.Name, dir)
 			err = helm.SaveFile(filepath.Join(dir, helm.ChartFileName), chartToCreate.Metadata)
 			if err != nil {
 				return pegomock.ReturnValues{

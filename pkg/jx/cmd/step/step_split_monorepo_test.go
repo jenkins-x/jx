@@ -1,10 +1,11 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/step"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -34,7 +35,7 @@ func TestStepSplitMonorepo(t *testing.T) {
 	assert.NoError(t, err, "Failed to run split monorepo on source %s output %s", testData, tempDir)
 
 	tests.Debugf("Generated split repos in: %s\n", tempDir)
-	log.Infof("Generated split repos in: %s\n", tempDir)
+	log.Logger().Infof("Generated split repos in: %s\n", tempDir)
 
 	tests.AssertFilesExist(t, true, filepath.Join(tempDir, "bar"), filepath.Join(tempDir, "foo"))
 	tests.AssertFilesExist(t, false, filepath.Join(tempDir, "kubernetes"))
@@ -67,7 +68,7 @@ func TestStepSplitMonorepoGetLastGitCommit(t *testing.T) {
 	assert.NoError(t, err, "Failed to run split monorepo on source %s output %s", testData, tempDir)
 
 	tests.Debugf("Generated split repos in: %s\n", tempDir)
-	log.Infof("Generated split repos in: %s\n", tempDir)
+	log.Logger().Infof("Generated split repos in: %s\n", tempDir)
 
 	tests.AssertFilesExist(t, true, filepath.Join(tempDir, "bar"), filepath.Join(tempDir, "foo"))
 	tests.AssertFilesExist(t, false, filepath.Join(tempDir, "kubernetes"))

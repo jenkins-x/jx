@@ -3,11 +3,12 @@ package cmd
 import (
 	"archive/tar"
 	"compress/gzip"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/client/results"
@@ -74,7 +75,7 @@ func (o *ComplianceResultsOptions) Run() error {
 	}
 
 	if status.Status != aggregation.CompleteStatus && status.Status != aggregation.FailedStatus {
-		log.Info("Compliance results not ready. Run `jx compliance status` for status.")
+		log.Logger().Info("Compliance results not ready. Run `jx compliance status` for status.")
 		return nil
 	}
 
@@ -112,8 +113,8 @@ func (o *ComplianceResultsOptions) Run() error {
 
 	err = eg.Wait()
 	if err != nil {
-		log.Infof("No compliance results found. Use %s command to start the compliance tests.\n", util.ColorInfo("jx compliance run"))
-		log.Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
+		log.Logger().Infof("No compliance results found. Use %s command to start the compliance tests.\n", util.ColorInfo("jx compliance run"))
+		log.Logger().Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
 	}
 	return nil
 }

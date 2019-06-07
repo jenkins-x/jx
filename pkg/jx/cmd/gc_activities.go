@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -130,7 +131,7 @@ func (o *GCActivitiesOptions) Run() error {
 	if len(activities.Items) == 0 {
 		// no preview environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no activities found\n")
+			log.Logger().Info("no activities found\n")
 		}
 		return nil
 	}
@@ -210,7 +211,7 @@ func (o *GCActivitiesOptions) gcPipelineRuns(jxClient versioned.Interface, ns st
 	pipelineRunInterface := tektonkClient.TektonV1alpha1().PipelineRuns(ns)
 	activities, err := pipelineRunInterface.List(metav1.ListOptions{})
 	if err != nil {
-		log.Warnf("no PipelineRun instances found: %s\n", err.Error())
+		log.Logger().Warnf("no PipelineRun instances found: %s\n", err.Error())
 		return nil
 	}
 
@@ -265,7 +266,7 @@ func (o *GCActivitiesOptions) deleteActivity(activityInterface jv1.PipelineActiv
 	if o.DryRun {
 		prefix = "not "
 	}
-	log.Infof("%sdeleting PipelineActivity %s\n", prefix, util.ColorInfo(a.Name))
+	log.Logger().Infof("%sdeleting PipelineActivity %s\n", prefix, util.ColorInfo(a.Name))
 	if o.DryRun {
 		return nil
 	}
@@ -277,7 +278,7 @@ func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tv1alpha1.P
 	if o.DryRun {
 		prefix = "not "
 	}
-	log.Infof("%sdeleting PipelineRun %s\n", prefix, util.ColorInfo(a.Name))
+	log.Logger().Infof("%sdeleting PipelineRun %s\n", prefix, util.ColorInfo(a.Name))
 	if o.DryRun {
 		return nil
 	}

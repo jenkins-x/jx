@@ -1,12 +1,13 @@
 package step
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
@@ -104,14 +105,14 @@ func (o *StepUnstashOptions) Run() error {
 		return err
 	}
 	if file == "" {
-		log.Infof("%s\n", string(data))
+		log.Logger().Infof("%s\n", string(data))
 		return nil
 	}
 	err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", file)
 	}
-	log.Infof("wrote: %s\n", util.ColorInfo(file))
+	log.Logger().Infof("wrote: %s\n", util.ColorInfo(file))
 	return nil
 }
 
@@ -120,7 +121,7 @@ func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, error)
 	return func(urlText string) (string, error) {
 		token, err := GetTokenForGitURL(authSvc, urlText)
 		if err != nil {
-			log.Warnf("Could not find the git token to access urlText %s due to: %s\n", urlText, err)
+			log.Logger().Warnf("Could not find the git token to access urlText %s due to: %s\n", urlText, err)
 		} else if token != "" {
 			idx := strings.Index(urlText, "://")
 			if idx > 0 {

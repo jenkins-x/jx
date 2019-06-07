@@ -2,6 +2,10 @@ package tekton
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -9,9 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
 // CRDWrapper is a wrapper around the various Tekton CRDs
@@ -90,7 +91,7 @@ func (crds *CRDWrapper) ObjectReferences() []kube.ObjectReference {
 	var resources []kube.ObjectReference
 	for _, task := range crds.tasks {
 		if task.ObjectMeta.Name == "" {
-			log.Warnf("created Task has no name: %#v\n", task)
+			log.Logger().Warnf("created Task has no name: %#v\n", task)
 
 		} else {
 			resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
@@ -98,7 +99,7 @@ func (crds *CRDWrapper) ObjectReferences() []kube.ObjectReference {
 	}
 	if crds.pipeline != nil {
 		if crds.pipeline.ObjectMeta.Name == "" {
-			log.Warnf("created pipeline has no name: %#v\n", crds.pipeline)
+			log.Logger().Warnf("created pipeline has no name: %#v\n", crds.pipeline)
 
 		} else {
 			resources = append(resources, kube.CreateObjectReference(crds.pipeline.TypeMeta, crds.pipeline.ObjectMeta))
@@ -106,13 +107,13 @@ func (crds *CRDWrapper) ObjectReferences() []kube.ObjectReference {
 	}
 	if crds.pipelineRun != nil {
 		if crds.pipelineRun.ObjectMeta.Name == "" {
-			log.Warnf("created pipelineRun has no name: %#v\n", crds.pipelineRun)
+			log.Logger().Warnf("created pipelineRun has no name: %#v\n", crds.pipelineRun)
 		} else {
 			resources = append(resources, kube.CreateObjectReference(crds.pipelineRun.TypeMeta, crds.pipelineRun.ObjectMeta))
 		}
 	}
 	if len(resources) == 0 {
-		log.Warnf("no tasks, pipeline or PipelineRuns created\n")
+		log.Logger().Warnf("no tasks, pipeline or PipelineRuns created\n")
 	}
 	return resources
 }
@@ -137,7 +138,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save pipeline file %s", fileName)
 	}
-	log.Infof("generated pipeline at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated pipeline at %s\n", util.ColorInfo(fileName))
 
 	data, err = yaml.Marshal(crds.pipelineRun)
 	if err != nil {
@@ -148,7 +149,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save pipelineRun file %s", fileName)
 	}
-	log.Infof("generated pipelineRun at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated pipelineRun at %s\n", util.ColorInfo(fileName))
 
 	if crds.structure != nil {
 		data, err = yaml.Marshal(crds.structure)
@@ -160,7 +161,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 		if err != nil {
 			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
 		}
-		log.Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
 	}
 
 	taskList := &pipelineapi.TaskList{}
@@ -182,7 +183,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save Task file %s", fileName)
 	}
-	log.Infof("generated Tasks at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated Tasks at %s\n", util.ColorInfo(fileName))
 
 	data, err = yaml.Marshal(resourceList)
 	if err != nil {
@@ -193,7 +194,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save PipelineResource file %s", fileName)
 	}
-	log.Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
 
 	data, err = yaml.Marshal(pipelineActivity)
 	if err != nil {
@@ -204,7 +205,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save PipelineActivity file %s", fileName)
 	}
-	log.Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
 
 	return nil
 }

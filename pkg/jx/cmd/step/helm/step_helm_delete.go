@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -83,6 +84,6 @@ func (o *StepHelmDeleteOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted release %s in namespace %s\n", util.ColorInfo(releaseName), util.ColorInfo(ns))
+	log.Logger().Infof("Deleted release %s in namespace %s\n", util.ColorInfo(releaseName), util.ColorInfo(ns))
 	return nil
 }

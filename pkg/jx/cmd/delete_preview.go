@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -67,7 +68,7 @@ func (o *DeletePreviewOptions) Run() error {
 				return err
 			}
 			if len(names) == 0 {
-				log.Infof("No preview environments available to delete\n")
+				log.Logger().Infof("No preview environments available to delete\n")
 				return nil
 			}
 			selected := []string{}
@@ -79,8 +80,8 @@ func (o *DeletePreviewOptions) Run() error {
 				if len(selected) > 0 {
 					break
 				}
-				log.Warn("\nYou did not select any preview environments to delete\n\n")
-				log.Infof("Press the %s to select a preview environment to delete\n\n", util.ColorInfo("[space bar]"))
+				log.Logger().Warn("\nYou did not select any preview environments to delete\n\n")
+				log.Logger().Infof("Press the %s to select a preview environment to delete\n\n", util.ColorInfo("[space bar]"))
 
 				if !util.Confirm("Do you want to pick a preview environment to delete?", true, "Use the space bar to select previews", o.In, o.Out, o.Err) {
 					return nil
@@ -120,14 +121,14 @@ func (o *DeletePreviewOptions) deletePreview(name string) error {
 	}
 	releaseName := kube.GetPreviewEnvironmentReleaseName(environment)
 	if len(releaseName) > 0 {
-		log.Infof("Deleting helm release: %s\n", util.ColorInfo(releaseName))
+		log.Logger().Infof("Deleting helm release: %s\n", util.ColorInfo(releaseName))
 		err = o.Helm().DeleteRelease(ns, releaseName, true)
 		if err != nil {
 			return err
 		}
 	}
 
-	log.Infof("Deleting preview environment: %s\n", util.ColorInfo(name))
+	log.Logger().Infof("Deleting preview environment: %s\n", util.ColorInfo(name))
 	deleteOptions := &DeleteEnvOptions{
 		CommonOptions:   o.CommonOptions,
 		DeleteNamespace: true,

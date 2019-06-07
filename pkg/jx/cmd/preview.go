@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/step/pr"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,6 +9,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/pr"
 
 	"github.com/pkg/errors"
 
@@ -167,7 +168,7 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 
-	log.Info("Creating a preview")
+	log.Logger().Info("Creating a preview")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -223,11 +224,11 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if o.GitInfo == nil {
-		log.Warnf("No GitInfo found\n")
+		log.Logger().Warnf("No GitInfo found\n")
 	} else if o.GitInfo.Organisation == "" {
-		log.Warnf("No GitInfo.Organisation found\n")
+		log.Logger().Warnf("No GitInfo.Organisation found\n")
 	} else if o.GitInfo.Name == "" {
-		log.Warnf("No GitInfo.Name found\n")
+		log.Logger().Warnf("No GitInfo.Name found\n")
 	}
 
 	// we need pull request info to include
@@ -238,7 +239,7 @@ func (o *PreviewOptions) Run() error {
 
 	prNum, err := strconv.Atoi(o.PullRequestName)
 	if err != nil {
-		log.Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
+		log.Logger().Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
 	}
 
 	var user *v1.UserSpec
@@ -267,11 +268,11 @@ func (o *PreviewOptions) Run() error {
 		if prNum > 0 {
 			pullRequest, err = gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
-				log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
+				log.Logger().Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
 			}
 			commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
-				log.Warn("Unable to get commits: " + err.Error() + "\n")
+				log.Logger().Warn("Unable to get commits: " + err.Error() + "\n")
 			}
 			if pullRequest != nil {
 				prAuthor := pullRequest.Author
@@ -283,7 +284,7 @@ func (o *PreviewOptions) Run() error {
 					author, err = resolver.UpdateUserFromPRAuthor(author, pullRequest, commits)
 					if err != nil {
 						// This isn't fatal, just nice to have!
-						log.Warnf("Unable to update user %s from %s because %v", prAuthor.Name, o.PullRequestName, err)
+						log.Logger().Warnf("Unable to update user %s from %s because %v", prAuthor.Name, o.PullRequestName, err)
 					}
 					if author != nil {
 						user = &v1.UserSpec{
@@ -299,7 +300,7 @@ func (o *PreviewOptions) Run() error {
 			statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
 
 			if err != nil {
-				log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
+				log.Logger().Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
 			}
 
 			if len(statuses) > 0 {
@@ -444,7 +445,7 @@ func (o *PreviewOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to create environment in namespace %s due to: %s", ns, err)
 		}
-		log.Infof("Created environment %s\n", util.ColorInfo(env.Name))
+		log.Logger().Infof("Created environment %s\n", util.ColorInfo(env.Name))
 	}
 
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
@@ -473,7 +474,7 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	configFileName := filepath.Join(dir, opts.ExtraValuesFile)
-	log.Infof("%s", config)
+	log.Logger().Infof("%s", config)
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
 		return err
@@ -494,7 +495,7 @@ func (o *PreviewOptions) Run() error {
 	url, appNames, err := o.findPreviewURL(kubeClient, kserveClient)
 
 	if url == "" {
-		log.Warnf("Could not find the service URL in namespace %s for names %s: %s\n", o.Namespace, strings.Join(appNames, ", "), err.Error())
+		log.Logger().Warnf("Could not find the service URL in namespace %s for names %s: %s\n", o.Namespace, strings.Join(appNames, ", "), err.Error())
 	} else {
 		writePreviewURL(o, url)
 	}
@@ -541,14 +542,14 @@ func (o *PreviewOptions) Run() error {
 				if updated {
 					_, err = activities.PatchUpdate(a)
 					if err != nil {
-						log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+						log.Logger().Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
 					} else {
-						log.Infof("Updating PipelineActivities %s which has status %s\n", name, string(a.Spec.Status))
+						log.Logger().Infof("Updating PipelineActivities %s which has status %s\n", name, string(a.Spec.Status))
 					}
 				}
 			}
 		} else {
-			log.Warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
+			log.Logger().Warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
 		}
 	}
 	if url != "" {
@@ -582,7 +583,7 @@ func (o *PreviewOptions) Run() error {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
 		}
-		log.Infof("Preview application is now available at: %s\n\n", util.ColorInfo(url))
+		log.Logger().Infof("Preview application is now available at: %s\n\n", util.ColorInfo(url))
 	}
 
 	stepPRCommentOptions := pr.StepPRCommentOptions{
@@ -603,7 +604,7 @@ func (o *PreviewOptions) Run() error {
 		err = stepPRCommentOptions.Run()
 	}
 	if err != nil {
-		log.Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s\n", o.GitInfo.Organisation, o.GitInfo.Name, err)
+		log.Logger().Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s\n", o.GitInfo.Organisation, o.GitInfo.Name, err)
 	}
 	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build)
 }
@@ -648,7 +649,7 @@ func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns
 	for _, job := range jobs {
 		// TODO lets modify the job name?
 		job2 := o.modifyJob(&job, envVars)
-		log.Infof("Triggering post preview Job %s in namespace %s\n", util.ColorInfo(job2.Name), util.ColorInfo(ns))
+		log.Logger().Infof("Triggering post preview Job %s in namespace %s\n", util.ColorInfo(job2.Name), util.ColorInfo(ns))
 
 		gracePeriod := int64(0)
 		propationPolicy := metav1.DeletePropagationForeground
@@ -689,7 +690,7 @@ func (o *PreviewOptions) waitForJobsToComplete(kubeClient kubernetes.Interface, 
 func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv1.Job) error {
 	name := job.Name
 	ns := job.Namespace
-	log.Infof("waiting for Job %s in namespace %s to complete...\n\n", util.ColorInfo(name), util.ColorInfo(ns))
+	log.Logger().Infof("waiting for Job %s in namespace %s to complete...\n\n", util.ColorInfo(name), util.ColorInfo(ns))
 
 	count := 0
 	fn := func() (bool, error) {
@@ -715,7 +716,7 @@ func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv
 	}
 	err := o.RetryUntilTrueOrTimeout(o.PostPreviewJobTimeoutDuration, o.PostPreviewJobPollDuration, fn)
 	if err != nil {
-		log.Warnf("\nFailed to complete post Preview Job %s in namespace %s: %s\n", name, ns, err)
+		log.Logger().Warnf("\nFailed to complete post Preview Job %s in namespace %s: %s\n", name, ns, err)
 	}
 	return err
 }
@@ -765,18 +766,18 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 				}
 				root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 				if err != nil {
-					log.Warnf("Could not find a .git directory: %s\n", err)
+					log.Logger().Warnf("Could not find a .git directory: %s\n", err)
 				} else {
 					if root != "" {
 						o.Dir = root
 						o.SourceURL, err = o.DiscoverGitURL(gitConf)
 						if err != nil {
-							log.Warnf("Could not find the remote git source URL:  %s\n", err)
+							log.Logger().Warnf("Could not find the remote git source URL:  %s\n", err)
 						} else {
 							if o.SourceRef == "" {
 								o.SourceRef, err = o.Git().Branch(root)
 								if err != nil {
-									log.Warnf("Could not find the remote git source ref:  %s\n", err)
+									log.Logger().Warnf("Could not find the remote git source ref:  %s\n", err)
 								}
 
 							}
@@ -800,13 +801,13 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	if o.SourceURL != "" {
 		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)
 		if err != nil {
-			log.Warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
+			log.Logger().Warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
 		} else {
 			o.SourceURL = o.GitInfo.HttpCloneURL()
 			if o.PullRequestURL == "" {
 				if o.PullRequest == "" {
 					if warnMissingName {
-						log.Warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+						log.Logger().Warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
 					}
 				} else {
 					o.PullRequestURL = o.GitInfo.PullRequestURL(o.PullRequestName)
@@ -836,7 +837,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 			size := len(o.Name)
 
 			o.Namespace = prefix + o.Name[size-max:]
-			log.Warnf("Due the name of the organsation and repository being too long (%s) we are going to trim it to make the preview namespace: %s", o.Name, o.Namespace)
+			log.Logger().Warnf("Due the name of the organsation and repository being too long (%s) we are going to trim it to make the preview namespace: %s", o.Name, o.Namespace)
 		}
 	}
 	if len(o.Namespace) > 63 {
@@ -847,7 +848,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		o.Label = o.Name
 	}
 	if o.GitInfo == nil {
-		log.Warnf("No GitInfo could be found!")
+		log.Logger().Warnf("No GitInfo could be found!")
 	}
 	return nil
 }
@@ -885,7 +886,7 @@ func writePreviewURL(o *PreviewOptions, url string) {
 	previewFileName := filepath.Join(o.Dir, ".previewUrl")
 	err := ioutil.WriteFile(previewFileName, []byte(url), 0644)
 	if err != nil {
-		log.Warn("Unable to write preview file")
+		log.Logger().Warn("Unable to write preview file")
 	}
 }
 

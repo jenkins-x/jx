@@ -2,12 +2,13 @@ package storage
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // EnableLongTermStorage will take the cluster install values and a provided bucket name and use it / create a new one for gs
@@ -15,7 +16,7 @@ func EnableLongTermStorage(installValues map[string]string, providedBucketName s
 	if providedBucketName != "" {
 		return ensureProvidedBucketExists(installValues, providedBucketName)
 	} else {
-		log.Info("No bucket name provided for long term storage, creating a new one")
+		log.Logger().Info("No bucket name provided for long term storage, creating a new one")
 		return createBucket(createUniqueBucketName(installValues))
 	}
 }
@@ -33,7 +34,7 @@ func ensureProvidedBucketExists(installValues map[string]string, providedBucketN
 	if err == nil {
 		return bucketURL, nil
 	}
-	log.Warnf("Attempted to create the bucket %s in the project %s but failed, will now create a "+
+	log.Logger().Warnf("Attempted to create the bucket %s in the project %s but failed, will now create a "+
 		"random bucket", providedBucketName, installValues[kube.ProjectID])
 
 	return createBucket(createUniqueBucketName(installValues))
@@ -51,7 +52,7 @@ func createUniqueBucketName(installValues map[string]string) (string, map[string
 func createBucket(bucketName string, installValues map[string]string) (string, error) {
 	bucketURL := fmt.Sprintf("gs://%s", bucketName)
 	infoBucketURL := util.ColorInfo(bucketURL)
-	log.Infof("The bucket %s does not exist so lets create it", infoBucketURL)
+	log.Logger().Infof("The bucket %s does not exist so lets create it", infoBucketURL)
 	region := gke.GetRegionFromZone(installValues[kube.Zone])
 	err := gke.CreateBucket(installValues[kube.ProjectID], bucketName, region)
 	if err != nil {

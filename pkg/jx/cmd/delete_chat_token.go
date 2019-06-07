@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"strings"
@@ -82,7 +83,7 @@ func (o *DeleteChatTokenOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted API tokens for users: %s for chat server server %s at %s from local settings\n",
+	log.Logger().Infof("Deleted API tokens for users: %s for chat server server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

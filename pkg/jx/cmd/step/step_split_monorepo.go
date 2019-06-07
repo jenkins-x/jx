@@ -1,11 +1,12 @@
 package step
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -146,7 +147,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						log.Infof("Cloning %s into directory %s\n", util.ColorInfo(repo.CloneURL), util.ColorInfo(outPath))
+						log.Logger().Infof("Cloning %s into directory %s\n", util.ColorInfo(repo.CloneURL), util.ColorInfo(outPath))
 						err = o.Git().CloneOrPull(gitUrl, outPath)
 						if err != nil {
 							return err
@@ -190,7 +191,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						log.Infof("Created Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+						log.Logger().Infof("Created Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 						userAuth := gitProvider.UserAuth()
 						gitUrl, err = o.Git().CreatePushURL(repo.CloneURL, &userAuth)
@@ -233,7 +234,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					if err != nil {
 						return err
 					}
-					log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+					log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 				}
 			}
 		}

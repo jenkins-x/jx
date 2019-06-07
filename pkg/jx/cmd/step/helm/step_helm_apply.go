@@ -3,12 +3,13 @@ package helm
 import (
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
@@ -136,7 +137,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 	if ns == "" {
 		ns = curNs
-		log.Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s\n", ns)
+		log.Logger().Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s\n", ns)
 	}
 
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
@@ -162,7 +163,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	info := util.ColorInfo
-	log.Infof("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
+	log.Logger().Infof("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
 
 	o.Helm().SetCWD(dir)
 
@@ -183,7 +184,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 		for _, sf := range secretsFiles {
 			if util.StringArrayIndex(valueFiles, sf) < 0 {
-				log.Infof("adding secret file %s\n", sf)
+				log.Logger().Infof("adding secret file %s\n", sf)
 				valueFiles = append(valueFiles, sf)
 			}
 		}
@@ -191,7 +192,7 @@ func (o *StepHelmApplyOptions) Run() error {
 			for _, secretsFile := range secretsFiles {
 				err := util.DestroyFile(secretsFile)
 				if err != nil {
-					log.Warnf("Failed to cleanup the secrets files (%s): %v",
+					log.Logger().Warnf("Failed to cleanup the secrets files (%s): %v",
 						strings.Join(secretsFiles, ", "), err)
 				}
 			}
@@ -207,17 +208,17 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "writing values.yaml for tree to %s", chartValuesFile)
 	}
-	log.Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
+	log.Logger().Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
 
 	data, err := ioutil.ReadFile(chartValuesFile)
 	if err != nil {
-		log.Warnf("failed to load file %s: %s\n", chartValuesFile, err.Error())
+		log.Logger().Warnf("failed to load file %s: %s\n", chartValuesFile, err.Error())
 	} else {
-		log.Infof("generated helm %s\n", chartValuesFile)
-		log.Infof("\n%s\n\n", util.ColorStatus(string(data)))
+		log.Logger().Infof("generated helm %s\n", chartValuesFile)
+		log.Logger().Infof("\n%s\n\n", util.ColorStatus(string(data)))
 	}
 
-	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
+	log.Logger().Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 
 	err = o.applyAppsTemplateOverrides(chartName)
 	if err != nil {
@@ -248,7 +249,7 @@ func (o *StepHelmApplyOptions) Run() error {
 }
 
 func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
-	log.Infof("Applying chart overrides\n")
+	log.Logger().Infof("Applying chart overrides\n")
 	templateOverrides, err := filepath.Glob(chartName + "/../*/templates/*.yaml")
 	for _, overrideSrc := range templateOverrides {
 		if !strings.Contains(overrideSrc, "/env/") {
@@ -263,17 +264,17 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
 					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 					if len(chartArchives) == 1 {
-						log.Infof("Exploding chart %s\n", chartArchives[0])
+						log.Logger().Infof("Exploding chart %s\n", chartArchives[0])
 						archiver.Unarchive(chartArchives[0], depChartsDir)
 						// Remove the unexploded chart
 						os.Remove(chartArchives[0])
 					}
 				}
 				overrideDst := filepath.Join(depChartDir, "templates", templateName)
-				log.Infof("Copying chart override %s\n", overrideSrc)
+				log.Logger().Infof("Copying chart override %s\n", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
-					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
+					log.Logger().Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
 				}
 
 			}
@@ -283,7 +284,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 }
 
 func (o *StepHelmApplyOptions) applyAppsTemplateOverrides(chartName string) error {
-	log.Infof("Applying Apps chart overrides\n")
+	log.Logger().Infof("Applying Apps chart overrides\n")
 	templateOverrides, err := filepath.Glob(chartName + "/../*/*/templates/app.yaml")
 	for _, overrideSrc := range templateOverrides {
 		data, err := ioutil.ReadFile(overrideSrc)
@@ -296,16 +297,16 @@ func (o *StepHelmApplyOptions) applyAppsTemplateOverrides(chartName string) erro
 			chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 			if len(chartArchives) == 1 {
 				uuid, _ := uuid.NewUUID()
-				log.Infof("Exploding App chart %s\n", chartArchives[0])
+				log.Logger().Infof("Exploding App chart %s\n", chartArchives[0])
 				explodedChartTempDir := filepath.Join(os.TempDir(), uuid.String())
 				if err = archiver.Unarchive(chartArchives[0], explodedChartTempDir); err != nil {
 					return defineAppsChartOverridingError(chartName, err)
 				}
 				overrideDst := filepath.Join(explodedChartTempDir, depChartName, "templates", templateName)
-				log.Infof("Copying chart override %s\n", overrideSrc)
+				log.Logger().Infof("Copying chart override %s\n", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
-					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
+					log.Logger().Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
 				}
 				if err = os.Remove(chartArchives[0]); err != nil {
 					return defineAppsChartOverridingError(chartName, err)
@@ -314,7 +315,7 @@ func (o *StepHelmApplyOptions) applyAppsTemplateOverrides(chartName string) erro
 					return defineAppsChartOverridingError(chartName, err)
 				}
 				if err = os.RemoveAll(explodedChartTempDir); err != nil {
-					log.Warnf("There was a problem deleting the temp folder %s", depChartDir)
+					log.Logger().Warnf("There was a problem deleting the temp folder %s", depChartDir)
 				}
 			}
 		}
@@ -327,7 +328,7 @@ func defineAppsChartOverridingError(chartName string, err error) error {
 }
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
-	log.Infof("Fetching secrets from vault into directory %q\n", dir)
+	log.Logger().Infof("Fetching secrets from vault into directory %q\n", dir)
 	files := []string{}
 	client, err := o.SystemVaultClient(kube.DefaultNamespace)
 	if err != nil {
@@ -367,7 +368,7 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 		if err != nil {
 			return files, errors.Wrapf(err, "saving the secret file %q", secretFile)
 		}
-		log.Infof("Saved secrets file %s\n", util.ColorInfo(secretFile))
+		log.Logger().Infof("Saved secrets file %s\n", util.ColorInfo(secretFile))
 		files = append(files, secretFile)
 	}
 	return files, nil

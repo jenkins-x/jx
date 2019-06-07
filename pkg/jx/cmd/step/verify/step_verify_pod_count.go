@@ -2,8 +2,9 @@ package verify
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -105,7 +106,7 @@ func (o *StepVerifyPodCountOptions) Run() error {
 		return errors.Wrap(err, "failed to determine the application name and namespace from pipeline activity")
 	}
 
-	log.Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
+	log.Logger().Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
 
 	pods, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{})
 	if err != nil {

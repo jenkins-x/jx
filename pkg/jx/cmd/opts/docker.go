@@ -19,7 +19,7 @@ func (o *CommonOptions) GetDockerRegistryOrg(projectConfig *config.ProjectConfig
 	if answer == "" {
 		teamSettings, err := o.TeamSettings()
 		if err != nil {
-			log.Warnf("Could not load team settings %s\n", err.Error())
+			log.Logger().Warnf("Could not load team settings %s\n", err.Error())
 		} else {
 			answer = teamSettings.DockerRegistryOrg
 		}
@@ -45,12 +45,12 @@ func (o *CommonOptions) GetDockerRegistry(projectConfig *config.ProjectConfig) s
 	if dockerRegistry == "" {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
-			log.Warnf("failed to create kube client: %s\n", err.Error())
+			log.Logger().Warnf("failed to create kube client: %s\n", err.Error())
 		} else {
 			name := kube.ConfigMapJenkinsDockerRegistry
 			data, err := kube.GetConfigMapData(kubeClient, name, ns)
 			if err != nil {
-				log.Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
+				log.Logger().Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
 			} else {
 				dockerRegistry = data["docker.registry"]
 			}

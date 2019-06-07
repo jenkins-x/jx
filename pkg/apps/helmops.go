@@ -2,9 +2,9 @@ package apps
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"strings"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -54,7 +54,7 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, name string, version s
 	if err != nil {
 		return errors.Wrapf(err, "creating the app %s in the Apps CRD", appCRDName)
 	}
-	log.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
+	log.Logger().Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
 	return nil
 }
 
@@ -109,7 +109,7 @@ func (o *HelmOpsOptions) UpgradeApp(app string, version string, repository strin
 					return err
 				}
 				if o.Verbose {
-					log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+					log.Logger().Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
 				}
 			}
 			// Do the upgrade
@@ -125,7 +125,7 @@ func (o *HelmOpsOptions) UpgradeApp(app string, version string, repository strin
 	}
 
 	if !upgraded {
-		log.Infof("No upgrades available\n")
+		log.Logger().Infof("No upgrades available\n")
 	}*/
 	return nil
 }

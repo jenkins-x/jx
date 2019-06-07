@@ -62,7 +62,7 @@ func (o *GetTokenAddonOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 	if len(config.Servers) == 0 {
-		log.Warnf("No addon servers registered. To register a new token for an addon server use: %s\n", util.ColorInfo("jx create token addon"))
+		log.Logger().Warnf("No addon servers registered. To register a new token for an addon server use: %s\n", util.ColorInfo("jx create token addon"))
 		return nil
 	}
 	return o.displayUsersWithTokens(authConfigSvc)

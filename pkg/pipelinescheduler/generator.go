@@ -104,7 +104,7 @@ func addTeamScheduler(defaultSchedulerName string, defaultScheduler *jenkinsv1.S
 		if defaultScheduler != nil {
 			applicableSchedulers = append([]*jenkinsv1.SchedulerSpec{&defaultScheduler.Spec}, applicableSchedulers...)
 		} else {
-			log.Warnf("A team pipeline scheduler named %s was configured but could not be found", defaultSchedulerName)
+			log.Logger().Warnf("A team pipeline scheduler named %s was configured but could not be found", defaultSchedulerName)
 		}
 	}
 	return applicableSchedulers
@@ -116,7 +116,7 @@ func addRepositoryScheduler(sourceRepo jenkinsv1.SourceRepository, lookup map[st
 		if scheduler != nil {
 			applicableSchedulers = append([]*jenkinsv1.SchedulerSpec{&scheduler.Spec}, applicableSchedulers...)
 		} else {
-			log.Warnf("A scheduler named %s is referenced by repository(%s) but could not be found", sourceRepo.Spec.Scheduler.Name, sourceRepo.Name)
+			log.Logger().Warnf("A scheduler named %s is referenced by repository(%s) but could not be found", sourceRepo.Spec.Scheduler.Name, sourceRepo.Name)
 		}
 	}
 	return applicableSchedulers
@@ -131,7 +131,7 @@ func addProjectSchedulers(sourceRepoGroups *jenkinsv1.SourceRepositoryGroupList,
 					if scheduler != nil {
 						applicableSchedulers = append([]*jenkinsv1.SchedulerSpec{&scheduler.Spec}, applicableSchedulers...)
 					} else {
-						log.Warnf("A scheduler named %s is referenced by repository group(%s) but could not be found", sourceGroup.Spec.Scheduler.Name, sourceGroup.Name)
+						log.Logger().Warnf("A scheduler named %s is referenced by repository group(%s) but could not be found", sourceGroup.Spec.Scheduler.Name, sourceGroup.Name)
 					}
 				}
 			}
@@ -279,7 +279,7 @@ func (o *GitOpsOptions) AddToEnvironmentRepo(cfg *config.Config, plugs *plugins.
 		return errors.Wrapf(err, "creating pr for prow config")
 	}
 	if info != nil {
-		log.Infof("Added prow config via Pull Request %s\n", info.PullRequest.URL)
+		log.Logger().Infof("Added prow config via Pull Request %s\n", info.PullRequest.URL)
 	}
 	return nil
 }

@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
+	"runtime"
+
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/pkg/errors"
-	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -79,7 +80,7 @@ func (o *UpgradeCLIOptions) Run() error {
 		return errors.Wrap(err, "failed to determine version of currently install jx release")
 	}
 
-	log.Debugf("Current version of jx: %s", util.ColorInfo(currentVersion))
+	log.Logger().Debugf("Current version of jx: %s", util.ColorInfo(currentVersion))
 
 	if o.needsUpgrade(currentVersion, *candidateInstallVersion) {
 		return o.InstallJx(true, candidateInstallVersion.String())
@@ -112,7 +113,7 @@ func (o *UpgradeCLIOptions) candidateInstallVersion() (*semver.Version, error) {
 
 func (o *UpgradeCLIOptions) needsUpgrade(currentVersion semver.Version, latestVersion semver.Version) bool {
 	if latestVersion.EQ(currentVersion) {
-		log.Infof("You are already on the latest version of jx %s", util.ColorInfo(currentVersion.String()))
+		log.Logger().Infof("You are already on the latest version of jx %s", util.ColorInfo(currentVersion.String()))
 		return false
 	}
 	return true
@@ -135,14 +136,14 @@ func (o *UpgradeCLIOptions) latestAvailableJxVersion() (*semver.Version, error) 
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf("Found the latest Homebrew released version of jx: %s", util.ColorInfo(newVersion))
+		log.Logger().Debugf("Found the latest Homebrew released version of jx: %s", util.ColorInfo(newVersion))
 	} else {
 		v, err := o.GetLatestJXVersion()
 		if err != nil {
 			return nil, err
 		}
 		newVersion = &v
-		log.Debugf("Found the latest GitHub released version of jx: %s", util.ColorInfo(newVersion))
+		log.Logger().Debugf("Found the latest GitHub released version of jx: %s", util.ColorInfo(newVersion))
 	}
 	return newVersion, nil
 }

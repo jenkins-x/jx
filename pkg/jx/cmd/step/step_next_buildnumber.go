@@ -2,8 +2,9 @@ package step
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/buildnum"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -84,7 +85,7 @@ func (o *StepNextBuildNumberOptions) Run() error {
 	for i := 0; i < attempts; i++ {
 		buildNum, err := buildNumGen.NextBuildNumber(pID)
 		if err == nil {
-			log.Infof("%s\n", buildNum)
+			log.Logger().Infof("%s\n", buildNum)
 			return nil
 		}
 

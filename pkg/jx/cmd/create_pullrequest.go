@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/pkg/errors"
 
@@ -123,7 +124,7 @@ func (o *CreatePullRequestOptions) createPullRequestDetails(gitInfo *gits.GitRep
 		}
 		defaultValue, body, err := o.findLastCommitTitle()
 		if err != nil {
-			log.Warnf("Failed to find last git commit title: %s\n", err)
+			log.Logger().Warnf("Failed to find last git commit title: %s\n", err)
 		}
 		if o.Body == "" {
 			o.Body = body
@@ -157,7 +158,7 @@ func (o *CreatePullRequestOptions) findLastCommitTitle() (string, string, error)
 		return title, body, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		log.Warnf("No git directory could be found from dir %s\n", dir)
+		log.Logger().Warnf("No git directory could be found from dir %s\n", dir)
 		return title, body, err
 	}
 	message, err := o.Git().GetLatestCommitMessage(dir)

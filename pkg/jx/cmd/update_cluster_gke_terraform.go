@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"os"
 	"path/filepath"
@@ -14,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 // UpdateClusterGKETerraformOptions the flags for updating a cluster on GKE
@@ -90,7 +91,7 @@ func (o *UpdateClusterGKETerraformOptions) Run() error {
 
 	err = o.updateClusterGKETerraform()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		log.Logger().Errorf("error creating cluster %v", err)
 		return err
 	}
 
@@ -118,7 +119,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	}
 
 	if o.Flags.ClusterName == "" {
-		log.Info("No cluster name provided\n")
+		log.Logger().Info("No cluster name provided\n")
 		return nil
 	}
 
@@ -141,13 +142,13 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	}
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		log.Infof("Unable to find service account key %s\n", keyPath)
+		log.Logger().Infof("Unable to find service account key %s\n", keyPath)
 		return nil
 	}
 
 	terraformDir := filepath.Join(clusterHome, "terraform")
 	if _, err := os.Stat(terraformDir); os.IsNotExist(err) {
-		log.Infof("Unable to find Terraform plan dir %s\n", terraformDir)
+		log.Logger().Infof("Unable to find Terraform plan dir %s\n", terraformDir)
 		return nil
 	}
 
@@ -185,7 +186,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		}
 	}
 
-	log.Info("Applying plan...\n")
+	log.Logger().Info("Applying plan...\n")
 
 	args = []string{"apply",
 		"-auto-approve",

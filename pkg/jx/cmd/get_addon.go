@@ -72,7 +72,7 @@ func (o *GetAddonOptions) Run() error {
 	}
 	releases, sortedKeys, err := o.Helm().ListReleases(ns)
 	if err != nil {
-		log.Warnf("Failed to find Helm installs: %s\n", err)
+		log.Logger().Warnf("Failed to find Helm installs: %s\n", err)
 	}
 
 	table := o.CreateTable()

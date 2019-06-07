@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -86,7 +87,7 @@ func (o *GetStreamOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to resolve docker image %s", name)
 		}
-		log.Infof("resolved image %s to %s\n", util.ColorInfo(name), util.ColorInfo(result))
+		log.Logger().Infof("resolved image %s to %s\n", util.ColorInfo(name), util.ColorInfo(result))
 		return nil
 	}
 
@@ -95,6 +96,6 @@ func (o *GetStreamOptions) Run() error {
 		return errors.Wrapf(err, "failed to resolve %s version of %s", o.Kind, name)
 	}
 
-	log.Infof("resolved %s %s to version: %s\n", util.ColorInfo(name), util.ColorInfo(o.Kind), util.ColorInfo(n))
+	log.Logger().Infof("resolved %s %s to version: %s\n", util.ColorInfo(name), util.ColorInfo(o.Kind), util.ColorInfo(n))
 	return nil
 }

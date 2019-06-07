@@ -2,12 +2,13 @@ package step
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -145,7 +146,7 @@ func (o *StepCustomPipelineOptions) Run() error {
 				} else {
 					c := folder.Class
 					if c != "com.cloudbees.hudson.plugins.folder.Folder" {
-						log.Warnf("Warning the folder %s is of class %s", jobURL, c)
+						log.Logger().Warnf("Warning the folder %s is of class %s", jobURL, c)
 					}
 				}
 				return nil
@@ -155,7 +156,7 @@ func (o *StepCustomPipelineOptions) Run() error {
 			}
 		} else {
 			gitURL := gitInfo.HttpCloneURL()
-			log.Infof("Using git URL %s and branch %s\n", util.ColorInfo(gitURL), util.ColorInfo(branch))
+			log.Logger().Infof("Using git URL %s and branch %s\n", util.ColorInfo(gitURL), util.ColorInfo(branch))
 
 			err = o.Retry(3, time.Second*10, func() error {
 				if err != nil {
@@ -185,7 +186,7 @@ func (o *StepCustomPipelineOptions) Run() error {
 			}
 			job.Url = jenkins.SwitchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
 			jobPath := strings.Join(paths, "/")
-			log.Infof("triggering pipeline job %s\n", util.ColorInfo(jobPath))
+			log.Logger().Infof("triggering pipeline job %s\n", util.ColorInfo(jobPath))
 			err = jenkinsClient.Build(job, url.Values{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to trigger job %s", jobPath)

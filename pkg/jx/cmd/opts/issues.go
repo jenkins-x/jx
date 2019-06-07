@@ -17,7 +17,7 @@ import (
 func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindIssue, "")
 	if err != nil {
-		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
+		log.Logger().Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
 	}
 	_, namespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {

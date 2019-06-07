@@ -3,11 +3,12 @@ package step
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -115,7 +116,7 @@ func (o *StepTagOptions) Run() error {
 		return errors.New("No version flag")
 	}
 	if o.Verbose {
-		log.Infof("looking for charts folder...\n")
+		log.Logger().Infof("looking for charts folder...\n")
 	}
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir == "" {
@@ -129,7 +130,7 @@ func (o *StepTagOptions) Run() error {
 		}
 	}
 	if o.Verbose {
-		log.Infof("updating chart if it exists\n")
+		log.Logger().Infof("updating chart if it exists\n")
 	}
 	err := o.updateChart(o.Flags.Version, chartsDir)
 	if err != nil {
@@ -143,7 +144,7 @@ func (o *StepTagOptions) Run() error {
 	tag := "v" + o.Flags.Version
 
 	if o.Verbose {
-		log.Infof("performing git commit\n")
+		log.Logger().Infof("performing git commit\n")
 	}
 	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
@@ -156,18 +157,18 @@ func (o *StepTagOptions) Run() error {
 	}
 
 	if o.Flags.NoApply {
-		log.Infof("NoApply: no push tag to git server")
+		log.Logger().Infof("NoApply: no push tag to git server")
 	} else {
 
 		if o.Verbose {
-			log.Infof("pushing git tag %s\n", tag)
+			log.Logger().Infof("pushing git tag %s\n", tag)
 		}
 		err = o.Git().PushTag("", tag)
 		if err != nil {
 			return err
 		}
 
-		log.Successf("Tag %s created and pushed to remote origin", tag)
+		log.Logger().Infof("Tag %s created and pushed to remote origin", tag)
 	}
 	return nil
 }
@@ -191,7 +192,7 @@ func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
 	}
 	chart.Version = version
 	chart.AppVersion = version
-	log.Infof("Updating chart version in %s to %s\n", chartFile, version)
+	log.Logger().Infof("Updating chart version in %s to %s\n", chartFile, version)
 	err = chartutil.SaveChartfile(chartFile, chart)
 	if err != nil {
 		return fmt.Errorf("Failed to save chart %s: %s", chartFile, err)
@@ -224,13 +225,13 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 			chartValueRepository = kube.ToValidImageName(chartValueRepository)
 			updated = true
 			changedRepository = true
-			log.Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
+			log.Logger().Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
 			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
 		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) && !changedTag {
 			version = kube.ToValidImageVersion(version)
 			updated = true
 			changedTag = true
-			log.Infof("Updating tag in %s to %s\n", valuesFile, version)
+			log.Logger().Infof("Updating tag in %s to %s\n", valuesFile, version)
 			lines[idx] = ValuesYamlTagPrefix + " " + version
 		}
 	}
@@ -246,7 +247,7 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 func (o *StepTagOptions) defaultChartValueRepository() string {
 	gitInfo, err := o.FindGitInfo(o.Flags.ChartsDir)
 	if err != nil {
-		log.Warnf("failed to find git repository: %s\n", err.Error())
+		log.Logger().Warnf("failed to find git repository: %s\n", err.Error())
 	}
 
 	projectConfig, _, _ := config.LoadProjectConfig(o.Flags.Dir)
@@ -271,7 +272,7 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
 		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
 	}
-	log.Warnf("could not generate chart repository name for GetDockerRegistry %s, GetDockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
+	log.Logger().Warnf("could not generate chart repository name for GetDockerRegistry %s, GetDockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
 	return ""
 }
 

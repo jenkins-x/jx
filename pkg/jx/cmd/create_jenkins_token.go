@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -182,15 +183,15 @@ func (o *CreateJenkinsUserOptions) Run() error {
 			if o.BatchMode {
 				return errors.Wrapf(err, "generating the API token over REST API of server %q", server.URL)
 			}
-			log.Warnf("failed to generate API token over REST API of server %s due to: %s\n", server.URL, err.Error())
-			log.Info("So unfortunately you will have to provide this by hand...\n\n")
+			log.Logger().Warnf("failed to generate API token over REST API of server %s due to: %s\n", server.URL, err.Error())
+			log.Logger().Info("So unfortunately you will have to provide this by hand...\n\n")
 		}
 	}
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
 			jenkins.PrintGetTokenFromURL(o.Out, jenkins.JenkinsTokenURL(server.URL))
-			log.Infof("Then COPY the token and enter in into the form below:\n\n")
+			log.Logger().Infof("Then COPY the token and enter in into the form below:\n\n")
 			return nil
 		}
 
@@ -214,7 +215,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		return errors.Wrap(err, "saving the auth config in a Kubernetes secret")
 	}
 
-	log.Infof("Created user %s API Token for Jenkins server %s at %s\n",
+	log.Logger().Infof("Created user %s API Token for Jenkins server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }
@@ -269,7 +270,7 @@ func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes
 			secret.OwnerReferences = append(secret.OwnerReferences, kube.ServiceOwnerRef(svc))
 		}
 	} else {
-		log.Warnf("Could not find service %s in namespace %s: %v\n", serviceName, ns, err)
+		log.Logger().Warnf("Could not find service %s in namespace %s: %v\n", serviceName, ns, err)
 	}
 
 	secret.Data[kube.JenkinsAdminApiToken] = []byte(auth.ApiToken)
@@ -306,7 +307,7 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 	}
 	defer cancel()
 
-	log.Info("Generating the API token...")
+	log.Logger().Info("Generating the API token...")
 	decorator, err := loginLegacy(ctx, serverURL, o.Verbose, userAuth.Username, o.Password)
 	if err != nil {
 		// Might be a modern realm, which would normally support BasicHeaderRealPasswordAuthenticator.
@@ -316,10 +317,10 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 		err2 := verifyLogin(ctx, serverURL, o.Verbose, decorator)
 		if err2 != nil {
 			// That did not work either.
-			log.Warnf("Failed to log in via modern security realm: %s\n", err2)
+			log.Logger().Warnf("Failed to log in via modern security realm: %s\n", err2)
 			return errors.Wrap(err, "logging in")
 		}
-		log.Infof("Logged in %s to Jenkins server at %s via modern security realm\n",
+		log.Logger().Infof("Logged in %s to Jenkins server at %s via modern security realm\n",
 			util.ColorInfo(username), util.ColorInfo(serverURL))
 	}
 	decorator = checkForCrumb(ctx, serverURL, o.Verbose, decorator)
@@ -367,7 +368,7 @@ func loginLegacy(ctx context.Context, serverURL string, verbose bool, username s
 	if err != nil {
 		return nil, errors.Wrap(err, "cookies did not work; bad login or not using legacy security realm")
 	}
-	log.Infof("Logged in %s to Jenkins server at %s via legacy security realm\n",
+	log.Logger().Infof("Logged in %s to Jenkins server at %s via legacy security realm\n",
 		util.ColorInfo(username), util.ColorInfo(serverURL))
 	return decorator, nil
 }
@@ -403,7 +404,7 @@ func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorato
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"), nil)
 	if err != nil {
-		log.Warnf("Failed to build request to check for crumb: %s\n", err)
+		log.Logger().Warnf("Failed to build request to check for crumb: %s\n", err)
 		return decorator
 	}
 	req = req.WithContext(ctx)
@@ -413,28 +414,28 @@ func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorato
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Warnf("Failed to execute request to check for crumb: %s\n", err)
+		log.Logger().Warnf("Failed to execute request to check for crumb: %s\n", err)
 		return decorator
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == 404 {
-		log.Infof("Enable CSRF protection at: %s/configureSecurity/\n", serverURL)
+		log.Logger().Infof("Enable CSRF protection at: %s/configureSecurity/\n", serverURL)
 		return decorator
 	} else if resp.StatusCode != 200 {
-		log.Warnf("Could not find CSRF crumb: %d %s\n", resp.StatusCode, resp.Status)
+		log.Logger().Warnf("Could not find CSRF crumb: %d %s\n", resp.StatusCode, resp.Status)
 		return decorator
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Warnf("Failed to read crumb: %s\n", err)
+		log.Logger().Warnf("Failed to read crumb: %s\n", err)
 		return decorator
 	}
 	crumbPieces := strings.SplitN(string(body), ":", 2)
 	if len(crumbPieces) != 2 {
-		log.Warnf("Malformed crumb: %s\n", body)
+		log.Logger().Warnf("Malformed crumb: %s\n", body)
 		return decorator
 	}
-	log.Infof("Obtained crumb\n")
+	log.Logger().Infof("Obtained crumb\n")
 	return func(req *http.Request) {
 		decorator(req)
 		req.Header.Add(crumbPieces[0], crumbPieces[1])

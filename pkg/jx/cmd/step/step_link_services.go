@@ -2,6 +2,7 @@ package step
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -119,13 +120,13 @@ func (o *StepLinkServicesOptions) Run() error {
 					if create {
 						_, err := kubeClient.CoreV1().Services(targetNamespace).Create(targetService)
 						if err != nil {
-							log.Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
+							log.Logger().Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
 								name, targetNamespace, err)
 						}
 					} else {
 						_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
 						if err != nil {
-							log.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
+							log.Logger().Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
 								name, targetNamespace, err)
 						}
 					}

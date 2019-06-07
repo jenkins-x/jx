@@ -131,7 +131,7 @@ func CreateCertManagerResources(certclient certclient.Interface, targetNamespace
 func alreadyConfigured(certClient certclient.Interface, targetNamespace string, ingressConfig kube.IngressConfig) bool {
 	issuer, err := certClient.CertmanagerV1alpha1().Issuers(targetNamespace).Get(ingressConfig.Issuer, metav1.GetOptions{})
 	if err != nil {
-		log.Infof("Certificate issuer %s does not exist. Creating...\n", util.ColorInfo(ingressConfig.Issuer))
+		log.Logger().Infof("Certificate issuer %s does not exist. Creating...\n", util.ColorInfo(ingressConfig.Issuer))
 		return false
 	}
 	// ingress and issuer email must match
@@ -140,10 +140,10 @@ func alreadyConfigured(certClient certclient.Interface, targetNamespace string, 
 		_, err := certClient.CertmanagerV1alpha1().Issuers(targetNamespace).Update(issuer)
 		if err != nil {
 			// can not update the issuer, let's assume it needs recreation
-			log.Infof("Certificate issuer %s can not be updated. Recreating...\n", util.ColorInfo(ingressConfig.Issuer))
+			log.Logger().Infof("Certificate issuer %s can not be updated. Recreating...\n", util.ColorInfo(ingressConfig.Issuer))
 			return false
 		}
 	}
-	log.Infof("Certificate issuer %s already configured.\n", util.ColorInfo(ingressConfig.Issuer))
+	log.Logger().Infof("Certificate issuer %s already configured.\n", util.ColorInfo(ingressConfig.Issuer))
 	return true
 }

@@ -57,7 +57,7 @@ func (o *GetAWSInfoOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("AWS Account ID: %s\n", util.ColorInfo(id))
-	log.Infof("AWS Region:     %s\n", util.ColorInfo(region))
+	log.Logger().Infof("AWS Account ID: %s\n", util.ColorInfo(id))
+	log.Logger().Infof("AWS Region:     %s\n", util.ColorInfo(region))
 	return nil
 }

@@ -2,6 +2,7 @@ package post
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -98,7 +99,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 			return err
 		}
 		for _, pe := range a.Spec.PostExtensions {
-			log.Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", pe.Namespace, pe.Name)))
+			log.Logger().Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", pe.Namespace, pe.Name)))
 			err = pe.Execute(o.Verbose)
 			if err != nil {
 				return err

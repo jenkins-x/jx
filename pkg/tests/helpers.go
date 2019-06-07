@@ -36,7 +36,7 @@ func IsDebugLog() bool {
 // Debugf debug format
 func Debugf(message string, args ...interface{}) {
 	if IsDebugLog() {
-		log.Infof(message, args...)
+		log.Logger().Infof(message, args...)
 	}
 }
 

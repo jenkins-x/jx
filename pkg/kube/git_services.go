@@ -2,14 +2,15 @@ package kube
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"net/url"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"k8s.io/client-go/kubernetes"
@@ -40,7 +41,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 				}
 				return errors.Wrap(err, "failed to PatchUpdate")
 			} else {
-				log.Infof("already has GitService %s in namespace %s for URL %s\n", gs.Name, devNs, gitUrl)
+				log.Logger().Infof("already has GitService %s in namespace %s for URL %s\n", gs.Name, devNs, gitUrl)
 				return nil
 			}
 		}
@@ -70,7 +71,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 		if err != nil {
 			return errors.Wrapf(err, "failed to create GitService with name %s", gitSvc.Name)
 		}
-		log.Infof("GitService %s created in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
+		log.Logger().Infof("GitService %s created in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
 	} else if current != nil {
 		if current.Spec.URL != gitSvc.Spec.URL || current.Spec.GitKind != gitSvc.Spec.GitKind {
 			current.Spec.URL = gitSvc.Spec.URL
@@ -80,7 +81,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 			if err != nil {
 				return errors.Wrapf(err, "failed to PatchUpdate GitService with name %s", gitSvc.Name)
 			}
-			log.Infof("GitService %s updated in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
+			log.Logger().Infof("GitService %s updated in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
 		}
 	}
 	return nil

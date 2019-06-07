@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -92,7 +93,7 @@ func (o *UninstallOptions) Run() error {
 		}
 	}
 
-	log.Infof("Removing installation of Jenkins X in team namespace %s\n", util.ColorInfo(namespace))
+	log.Logger().Infof("Removing installation of Jenkins X in team namespace %s\n", util.ColorInfo(namespace))
 
 	err = o.cleanupConfig()
 	if err != nil {
@@ -100,7 +101,7 @@ func (o *UninstallOptions) Run() error {
 	}
 	envMap, envNames, err := kube.GetEnvironments(jxClient, namespace)
 	if err != nil {
-		log.Warnf("Failed to find Environments. Probably not installed yet?. Error: %s\n", err)
+		log.Logger().Warnf("Failed to find Environments. Probably not installed yet?. Error: %s\n", err)
 	}
 	if !o.KeepEnvironments {
 		for _, env := range envNames {
@@ -111,7 +112,7 @@ func (o *UninstallOptions) Run() error {
 			}
 			err = o.Helm().DeleteRelease(namespace, release, true)
 			if err != nil {
-				log.Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
+				log.Logger().Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
 			}
 		}
 	}
@@ -144,7 +145,7 @@ func (o *UninstallOptions) Run() error {
 	if len(errs) > 0 {
 		return util.CombineErrors(errs...)
 	}
-	log.Successf("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
+	log.Logger().Infof("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
 	return nil
 }
 
@@ -195,7 +196,7 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 		// There is nothing to delete if the namespace cannot be retrieved
 		return nil
 	}
-	log.Infof("deleting namespace %s\n", util.ColorInfo(namespace))
+	log.Logger().Infof("deleting namespace %s\n", util.ColorInfo(namespace))
 	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "deleting the namespace '%s' from Kubernetes cluster", namespace)

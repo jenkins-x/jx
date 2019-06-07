@@ -13,7 +13,7 @@ import (
 	certmng "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	certclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
@@ -45,7 +45,7 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 		if !isReady {
 			return false, nil
 		}
-		log.Infof("Ready Cert: %s\n", util.ColorInfo(name))
+		log.Logger().Infof("Ready Cert: %s\n", util.ColorInfo(name))
 		return true, nil
 	})
 	if err != nil {

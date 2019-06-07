@@ -2,10 +2,11 @@ package step
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -84,7 +85,7 @@ func (o *StepGpgCredentialsOptions) Run() error {
 				secret = secret2
 				err = nil
 			} else {
-				log.Warnf("Failed to find secret %s in namespace %s due to: %s", name, curNs, err2)
+				log.Logger().Warnf("Failed to find secret %s in namespace %s due to: %s", name, curNs, err2)
 			}
 		}
 	}
@@ -110,7 +111,7 @@ func (o *StepGpgCredentialsOptions) GenerateGpgFiles(secret *v1.Secret) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Generated file %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("Generated file %s\n", util.ColorInfo(fileName))
 	}
 	return nil
 }

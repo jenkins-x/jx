@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -60,7 +61,7 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 	if o.token == "" {
 		return fmt.Errorf("no pipeline git token provided")
 	}
-	log.Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
+	log.Logger().Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
 
 	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.token}, ",")
 
@@ -77,7 +78,7 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 		return err
 	}
 
-	log.Infof("\n%s installed\n", kube.DefaultKnativeBuildReleaseName)
-	log.Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -k"))
+	log.Logger().Infof("\n%s installed\n", kube.DefaultKnativeBuildReleaseName)
+	log.Logger().Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -k"))
 	return nil
 }

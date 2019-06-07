@@ -5,16 +5,16 @@ import (
 	"strings"
 	"time"
 
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/pkg/errors"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	osUser "os/user"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"gopkg.in/AlecAivazis/survey.v1"
 
 	"regexp"
 
@@ -154,7 +154,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 
 	err = o.createClusterGKE()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		log.Logger().Errorf("error creating cluster %v", err)
 		return err
 	}
 
@@ -184,7 +184,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	log.Infof("Let's ensure we have %s and %s enabled on your project\n", util.ColorInfo("container"), util.ColorInfo("compute"))
+	log.Logger().Infof("Let's ensure we have %s and %s enabled on your project\n", util.ColorInfo("container"), util.ColorInfo("compute"))
 	err = gke.EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
@@ -207,7 +207,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			clusterName = defaultClusterName
-			log.Infof("No cluster name provided so using a generated one: %s", util.ColorPrompt(clusterName))
+			log.Logger().Infof("No cluster name provided so using a generated one: %s", util.ColorPrompt(clusterName))
 		}
 	}
 
@@ -223,7 +223,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			clusterType := "Zonal"
 
 			if o.InstallOptions.Flags.NextGeneration {
-				log.Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
+				log.Logger().Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
 			} else if advancedMode {
 				prompts := &survey.Select{
 					Message: "What type of cluster would you like to create",
@@ -237,7 +237,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					return err
 				}
 			} else {
-				log.Infof("Defaulting to cluster type: %s", util.ColorPrompt(clusterType))
+				log.Logger().Infof("Defaulting to cluster type: %s", util.ColorPrompt(clusterType))
 			}
 
 			if "Regional" == clusterType {
@@ -276,7 +276,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			machineType = defaultMachineType
-			log.Infof("Defaulting to machine type: %s", util.ColorPrompt(machineType))
+			log.Logger().Infof("Defaulting to machine type: %s", util.ColorPrompt(machineType))
 		}
 	}
 
@@ -299,7 +299,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			minNumOfNodes = defaultNodes
-			log.Infof("Defaulting to minimum number of nodes: %s", util.ColorPrompt(minNumOfNodes))
+			log.Logger().Infof("Defaulting to minimum number of nodes: %s", util.ColorPrompt(minNumOfNodes))
 		}
 	}
 
@@ -322,7 +322,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			maxNumOfNodes = defaultNodes
-			log.Infof("Defaulting to maxiumum number of nodes: %s", util.ColorPrompt(maxNumOfNodes))
+			log.Logger().Infof("Defaulting to maxiumum number of nodes: %s", util.ColorPrompt(maxNumOfNodes))
 		}
 	}
 
@@ -340,7 +340,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			} else {
 				o.Flags.Preemptible = false
-				log.Infof("Defaulting use of preemptible VMs: %v", util.ColorPrompt(util.YesNo(o.Flags.Preemptible)))
+				log.Logger().Infof("Defaulting use of preemptible VMs: %v", util.ColorPrompt(util.YesNo(o.Flags.Preemptible)))
 			}
 		}
 	}
@@ -367,7 +367,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			} else {
 				o.Flags.EnhancedScopes = true
-				log.Infof("Defaulting access to Google Cloud Storage / Google Container Registry: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedScopes)))
+				log.Logger().Infof("Defaulting access to Google Cloud Storage / Google Container Registry: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedScopes)))
 			}
 		}
 	}
@@ -398,14 +398,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					}
 				} else {
 					o.Flags.EnhancedApis = true
-					log.Infof("Defaulting enabling Cloud Build, Container Registry & Container Analysis API's: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedApis)))
+					log.Logger().Infof("Defaulting enabling Cloud Build, Container Registry & Container Analysis API's: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedApis)))
 				}
 			}
 		}
 	}
 
 	if o.Flags.EnhancedApis {
-		log.Infof("checking if we need to enable APIs for GCB and GCR\n")
+		log.Logger().Infof("checking if we need to enable APIs for GCB and GCR\n")
 
 		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
@@ -428,7 +428,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			} else {
 				o.InstallOptions.Flags.Kaniko = false
-				log.Infof("Defaulting enabling Kaniko for building container images: %v", util.ColorPrompt(util.YesNo(o.InstallOptions.Flags.Kaniko)))
+				log.Logger().Infof("Defaulting enabling Kaniko for building container images: %v", util.ColorPrompt(util.YesNo(o.InstallOptions.Flags.Kaniko)))
 			}
 		}
 	}
@@ -489,7 +489,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if len(o.Flags.Scopes) > 0 {
-		log.Infof("using cluster scopes: %s\n", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
+		log.Logger().Infof("using cluster scopes: %s\n", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
 
 		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
 	}
@@ -509,13 +509,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--labels="+strings.ToLower(labels))
 	}
 
-	log.Info("Creating cluster...\n")
+	log.Logger().Info("Creating cluster...\n")
 	err = o.RunCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...\n")
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = clusterName
 	}

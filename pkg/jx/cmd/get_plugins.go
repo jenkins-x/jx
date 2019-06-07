@@ -18,8 +18,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
@@ -97,7 +98,7 @@ func (o *GetPluginsOptions) printExtensionPlugins() error {
 		return err
 	}
 	if !managedPluginsEnabled {
-		log.Warnf("Managed Plugins not available\n")
+		log.Logger().Warnf("Managed Plugins not available\n")
 	}
 	maxLength := 0
 	for _, pcg := range pcgs {
@@ -110,7 +111,7 @@ func (o *GetPluginsOptions) printExtensionPlugins() error {
 	}
 
 	for _, pcg := range pcgs {
-		log.Infof("%s\n", pcg.Message)
+		log.Logger().Infof("%s\n", pcg.Message)
 		for _, pc := range pcg.Commands {
 			var description string
 			url, err := extensions.FindPluginUrl(pc.PluginSpec)
@@ -123,14 +124,14 @@ func (o *GetPluginsOptions) printExtensionPlugins() error {
 			} else {
 				description = pc.Description
 			}
-			log.Infof("  %s %s%s\n", util.ColorInfo(pc.SubCommand), strings.Repeat(" ", maxLength-len(pc.SubCommand)), description)
+			log.Logger().Infof("  %s %s%s\n", util.ColorInfo(pc.SubCommand), strings.Repeat(" ", maxLength-len(pc.SubCommand)), description)
 		}
-		log.Info("")
+		log.Logger().Info("")
 	}
 
 	if len(pcgs) > 0 {
 		// Add a trailing line to make the output more readable
-		log.Info("")
+		log.Logger().Info("")
 	}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()

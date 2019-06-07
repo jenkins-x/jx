@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,7 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/oke"
 	"github.com/jenkins-x/jx/pkg/features"
@@ -21,7 +23,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -139,7 +140,7 @@ func (o *CreateClusterOKEOptions) Run() error {
 
 	err = o.createClusterOKE()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		log.Logger().Errorf("error creating cluster %v", err)
 		return err
 	}
 
@@ -169,7 +170,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 	if o.Flags.ClusterName == "" {
 		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		log.Logger().Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
 	}
 
 	compartmentId := o.Flags.CompartmentId
@@ -212,7 +213,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	//Get node pool settings
 	if o.Flags.NodePoolName == "" {
 		o.Flags.NodePoolName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No node pool name provided so using a generated one: " + o.Flags.NodePoolName + "\n")
+		log.Logger().Infof("No node pool name provided so using a generated one: " + o.Flags.NodePoolName + "\n")
 	}
 
 	nodeImageName := o.Flags.NodeImageName
@@ -346,7 +347,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	}
 
 	fmt.Printf("Args are: %s\n", args)
-	log.Info("Creating cluster...\n")
+	log.Logger().Info("Creating cluster...\n")
 	output, err := o.GetCommandOutput("", "oci", args...)
 	if err != nil {
 		return err
@@ -361,7 +362,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		fmt.Printf("Cluster id: %s\n", clusterId)
 
 		//setup the kube context
-		log.Info("Setup kube context ...\n")
+		log.Logger().Info("Setup kube context ...\n")
 		var kubeconfigFile = ""
 		if home := util.HomeDir(); home != "" {
 			kubeconfigFile = filepath.Join(util.HomeDir(), "kubeconfig")
@@ -380,13 +381,13 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		os.Setenv("KUBECONFIG", kubeconfigFile)
 
 		//create node pool
-		log.Info("Creating node pool ...\n")
+		log.Logger().Info("Creating node pool ...\n")
 
 		poolArgs := "ce node-pool create --name=" + o.Flags.NodePoolName + " --compartment-id=" + compartmentId + " --cluster-id=" + clusterId + " --kubernetes-version=" + kubernetesVersion + " --node-image-name=" + nodeImageName + " --node-shape=" + nodeShape + " --subnet-ids=file:///tmp/oke_pool_config.json" + " --wait-for-state=SUCCEEDED"
 
 		quantityPerSubnet := o.Flags.QuantityPerSubnet
 		quantityPerSubnet = (map[bool]string{true: quantityPerSubnet, false: "1"})[quantityPerSubnet != ""]
-		log.Info("Will create " + quantityPerSubnet + " node per subnet ...\n")
+		log.Logger().Info("Will create " + quantityPerSubnet + " node per subnet ...\n")
 		poolArgs = poolArgs + " --quantity-per-subnet=" + quantityPerSubnet
 
 		initialNodeLabels := o.Flags.InitialNodeLabels
@@ -410,7 +411,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			poolArgs = poolArgs + " --wait-interval-seconds=" + poolWaitIntervalSeconds
 		}
 
-		log.Info("Creating Node Pool...\n")
+		log.Logger().Info("Creating Node Pool...\n")
 		poolArgsArray := strings.Split(poolArgs, " ")
 
 		if sshPublicKeyValue != "" {
@@ -463,7 +464,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			if err != nil {
 				return err
 			}
-			log.Info("Initialising cluster ...\n")
+			log.Logger().Info("Initialising cluster ...\n")
 
 			return o.initAndInstall(cloud.OKE)
 		}

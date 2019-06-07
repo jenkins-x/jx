@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/stoewer/go-strcase"
+	strcase "github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -218,8 +218,8 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 		return err
 	}
 	if verbose {
-		log.Infof("Environment Variables:\n %s\n", e.EnvironmentVariables)
-		log.Infof("Script:\n %s\n", e.Script)
+		log.Logger().Infof("Environment Variables:\n %s\n", e.EnvironmentVariables)
+		log.Logger().Infof("Script:\n %s\n", e.Script)
 	}
 	envVars := make(map[string]string, 0)
 	for _, v := range e.EnvironmentVariables {
@@ -230,7 +230,7 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 		Env:  envVars,
 	}
 	out, err := cmd.RunWithoutRetry()
-	log.Info(out)
+	log.Logger().Info(out)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error executing script %s", e.Name))
 	}

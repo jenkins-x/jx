@@ -2,12 +2,13 @@ package promote
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -197,7 +198,7 @@ func (o *PromoteOptions) Run() error {
 	}
 	if prow {
 		o.prow = true
-		log.Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
+		log.Logger().Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
 			"statuses from the PR, see https://github.com/jenkins-x/jx/issues/2410")
 		o.NoWaitForUpdatePipeline = true
 	}
@@ -293,12 +294,12 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 	}
 	envs, err := jxClient.JenkinsV1().Environments(team).List(metav1.ListOptions{})
 	if err != nil {
-		log.Warnf("No Environments found: %s/n", err)
+		log.Logger().Warnf("No Environments found: %s/n", err)
 		return nil
 	}
 	environments := envs.Items
 	if len(environments) == 0 {
-		log.Warnf("No Environments have been created yet in team %s. Please create some via 'jx create env'\n", team)
+		log.Logger().Warnf("No Environments have been created yet in team %s. Please create some via 'jx create env'\n", team)
 		return nil
 	}
 	kube.SortEnvironments(environments)
@@ -330,15 +331,15 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	app := o.Application
 	if app == "" {
-		log.Warnf("No application name could be detected so cannot promote via Helm. If the detection of the helm chart name is not working consider adding it with the --%s argument on the 'jx promomote' command\n", opts.OptionApplication)
+		log.Logger().Warnf("No application name could be detected so cannot promote via Helm. If the detection of the helm chart name is not working consider adding it with the --%s argument on the 'jx promomote' command\n", opts.OptionApplication)
 		return nil, nil
 	}
 	version := o.Version
 	info := util.ColorInfo
 	if version == "" {
-		log.Infof("Promoting latest version of app %s to namespace %s\n", info(app), info(targetNS))
+		log.Logger().Infof("Promoting latest version of app %s to namespace %s\n", info(app), info(targetNS))
 	} else {
-		log.Infof("Promoting app %s version %s to namespace %s\n", info(app), info(version), info(targetNS))
+		log.Logger().Infof("Promoting app %s version %s to namespace %s\n", info(app), info(version), info(targetNS))
 	}
 	fullAppName := app
 	if o.LocalHelmRepoName != "" {
@@ -356,7 +357,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 
 	if warnIfAuto && env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && !o.BatchMode {
-		log.Infof("%s", util.ColorWarning(fmt.Sprintf("WARNING: The Environment %s is setup to promote automatically as part of the CI/CD Pipelines.\n\n", env.Name)))
+		log.Logger().Infof("%s", util.ColorWarning(fmt.Sprintf("WARNING: The Environment %s is setup to promote automatically as part of the CI/CD Pipelines.\n\n", env.Name)))
 
 		confirm := &survey.Confirm{
 			Message: "Do you wish to promote anyway? :",
@@ -395,7 +396,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 				}
 				err = promoteKey.OnPromotePullRequest(jxClient, o.Namespace, startPromotePR)
 				if err != nil {
-					log.Warnf("Failed to update PipelineActivity: %s\n", err)
+					log.Logger().Warnf("Failed to update PipelineActivity: %s\n", err)
 				}
 				// lets sleep a little before we try poll for the PR status
 				time.Sleep(waitAfterPullRequestCreated)
@@ -411,7 +412,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
-		log.Info("Updating the helm repositories to ensure we can find the latest versions...")
+		log.Logger().Info("Updating the helm repositories to ensure we can find the latest versions...")
 		err = o.Helm().UpdateRepo()
 		if err != nil {
 			return releaseInfo, err
@@ -439,7 +440,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if err == nil {
 		err = o.CommentOnIssues(targetNS, env, promoteKey)
 		if err != nil {
-			log.Warnf("Failed to comment on issues for release %s: %s\n", releaseName, err)
+			log.Logger().Warnf("Failed to comment on issues for release %s: %s\n", releaseName, err)
 		}
 		err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 	} else {
@@ -543,11 +544,11 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 
 func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releaseInfo *ReleaseInfo) error {
 	if o.TimeoutDuration == nil {
-		log.Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", opts.OptionTimeout)
+		log.Logger().Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", opts.OptionTimeout)
 		return nil
 	}
 	if o.PullRequestPollDuration == nil {
-		log.Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", optionPullRequestPollTime)
+		log.Logger().Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", optionPullRequestPollTime)
 		return nil
 	}
 	duration := *o.TimeoutDuration
@@ -593,19 +594,19 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 			gitProvider := pullRequestInfo.GitProvider
 			err := gitProvider.UpdatePullRequestStatus(pr)
 			if err != nil {
-				log.Warnf("Failed to query the Pull Request status for %s %s", pr.URL, err)
+				log.Logger().Warnf("Failed to query the Pull Request status for %s %s", pr.URL, err)
 			} else {
 				if pr.Merged != nil && *pr.Merged {
 					if pr.MergeCommitSHA == nil {
 						if !logNoMergeCommitSha {
 							logNoMergeCommitSha = true
-							log.Infof("Pull Request %s is merged but waiting for Merge SHA\n", util.ColorInfo(pr.URL))
+							log.Logger().Infof("Pull Request %s is merged but waiting for Merge SHA\n", util.ColorInfo(pr.URL))
 						}
 					} else {
 						mergeSha := *pr.MergeCommitSHA
 						if !logHasMergeSha {
 							logHasMergeSha = true
-							log.Infof("Pull Request %s is merged at sha %s\n", util.ColorInfo(pr.URL), util.ColorInfo(mergeSha))
+							log.Logger().Infof("Pull Request %s is merged at sha %s\n", util.ColorInfo(pr.URL), util.ColorInfo(mergeSha))
 
 							mergedPR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
 								kube.CompletePromotionPullRequest(a, s, ps, p)
@@ -615,7 +616,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
 
 							if o.NoWaitAfterMerge {
-								log.Infof("Pull requests are merged, No wait on promotion to complete")
+								log.Logger().Infof("Pull requests are merged, No wait on promotion to complete")
 								return err
 							}
 						}
@@ -623,7 +624,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
-							log.Info("Pull Request merged but we are not waiting for the update pipeline to complete!")
+							log.Logger().Info("Pull Request merged but we are not waiting for the update pipeline to complete!")
 							err = o.CommentOnIssues(ns, env, promoteKey)
 							if err == nil {
 								err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
@@ -635,18 +636,18 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						if err != nil {
 							if !logMergeStatusError {
 								logMergeStatusError = true
-								log.Warnf("Failed to query merge status of repo %s/%s with merge sha %s due to: %s\n", pr.Owner, pr.Repo, mergeSha, err)
+								log.Logger().Warnf("Failed to query merge status of repo %s/%s with merge sha %s due to: %s\n", pr.Owner, pr.Repo, mergeSha, err)
 							}
 						} else {
 							if len(statuses) == 0 {
 								if !logNoMergeStatuses {
 									logNoMergeStatuses = true
-									log.Infof("Merge commit has not yet any statuses on repo %s/%s merge sha %s\n", pr.Owner, pr.Repo, mergeSha)
+									log.Logger().Infof("Merge commit has not yet any statuses on repo %s/%s merge sha %s\n", pr.Owner, pr.Repo, mergeSha)
 								}
 							} else {
 								for _, status := range statuses {
 									if status.IsFailed() {
-										log.Warnf("merge status: %s URL: %s description: %s\n",
+										log.Logger().Warnf("merge status: %s URL: %s description: %s\n",
 											status.State, status.TargetURL, status.Description)
 										return fmt.Errorf("Status: %s URL: %s description: %s\n",
 											status.State, status.TargetURL, status.Description)
@@ -657,7 +658,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 										if urlStatusMap[url] != state {
 											urlStatusMap[url] = state
 											urlStatusTargetURLMap[url] = status.TargetURL
-											log.Infof("merge status: %s for URL %s with target: %s description: %s\n",
+											log.Logger().Infof("merge status: %s for URL %s with target: %s description: %s\n",
 												util.ColorInfo(state), util.ColorInfo(status.URL), util.ColorInfo(status.TargetURL), util.ColorInfo(status.Description))
 										}
 									}
@@ -688,7 +689,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									}
 								}
 								if succeeded {
-									log.Info("Merge status checks all passed so the promotion worked!")
+									log.Logger().Info("Merge status checks all passed so the promotion worked!")
 									err = o.CommentOnIssues(ns, env, promoteKey)
 									if err == nil {
 										err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
@@ -700,17 +701,17 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 					}
 				} else {
 					if pr.IsClosed() {
-						log.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+						log.Logger().Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
 						return fmt.Errorf("Promotion failed as Pull Request %s is closed without merging", pr.URL)
 					}
 
 					// lets try merge if the status is good
 					status, err := gitProvider.PullRequestLastCommitStatus(pr)
 					if err != nil {
-						log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+						log.Logger().Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 						//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 					} else if status == "in-progress" {
-						log.Info("The build for the Pull Request last commit is currently in progress.")
+						log.Logger().Info("The build for the Pull Request last commit is currently in progress.")
 					} else {
 						if status == "success" {
 							if !o.NoMergePullRequest {
@@ -718,7 +719,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 								if err != nil {
 									if !logMergeFailure {
 										logMergeFailure = true
-										log.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+										log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
 									}
 								}
 							}
@@ -728,7 +729,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 					}
 				}
 				if pr.Mergeable != nil && !*pr.Mergeable {
-					log.Info("Rebasing PullRequest due to conflict")
+					log.Logger().Info("Rebasing PullRequest due to conflict")
 
 					err = o.PromoteViaPullRequest(env, releaseInfo)
 					if releaseInfo.PullRequestInfo != nil {
@@ -756,7 +757,7 @@ func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
 	for _, version := range versions {
 		sv, err := semver.Parse(version)
 		if err != nil {
-			log.Warnf("Invalid semantic version: %s %s\n", version, err)
+			log.Logger().Warnf("Invalid semantic version: %s %s\n", version, err)
 			if maxString == "" || strings.Compare(version, maxString) > 0 {
 				maxString = version
 			}
@@ -783,7 +784,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 		return err
 	}
 	if !exists {
-		log.Warnf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
+		log.Logger().Warnf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
 
 		err = o.HelmInit("")
 		if err != nil {
@@ -827,7 +828,7 @@ func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStep
 			releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
 		}
 		if err != nil {
-			log.Warnf("Could not discover the Git repository info %s\n", err)
+			log.Logger().Warnf("Could not discover the Git repository info %s\n", err)
 		} else {
 			o.GitInfo = gitInfo
 		}
@@ -836,11 +837,11 @@ func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStep
 		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, o.Application)
 	}
 	if pipeline != "" && build == "" {
-		log.Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+		log.Logger().Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
 		var err error
 		build, err = o.GetLatestPipelineBuildByCRD(pipeline)
 		if err != nil {
-			log.Warnf("Could not discover the latest PipelineActivity build %s\n", err)
+			log.Logger().Warnf("Could not discover the latest PipelineActivity build %s\n", err)
 		}
 	}
 	name := pipeline
@@ -870,7 +871,7 @@ func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStep
 	}
 	name = kube.ToValidName(name)
 	if o.Verbose {
-		log.Infof("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
+		log.Logger().Infof("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
 	}
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
@@ -892,7 +893,7 @@ func (o *PromoteOptions) getAndUpdateJenkinsURL() string {
 	}
 	url, err := o.GetJenkinsURL()
 	if err != nil {
-		log.Warnf("Could not find Jenkins URL: %s", err)
+		log.Logger().Warnf("Could not find Jenkins URL: %s", err)
 	} else {
 		o.jenkinsURL = url
 	}
@@ -906,20 +907,20 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 	app := o.Application
 	version := o.Version
 	if ens == "" {
-		log.Warnf("Environment %s has no namespace\n", envName)
+		log.Logger().Warnf("Environment %s has no namespace\n", envName)
 		return nil
 	}
 	if app == "" {
-		log.Warnf("No application name so cannot comment on issues that they are now in %s\n", envName)
+		log.Logger().Warnf("No application name so cannot comment on issues that they are now in %s\n", envName)
 		return nil
 	}
 	if version == "" {
-		log.Warnf("No version name so cannot comment on issues that they are now in %s\n", envName)
+		log.Logger().Warnf("No version name so cannot comment on issues that they are now in %s\n", envName)
 		return nil
 	}
 	gitInfo := o.GitInfo
 	if gitInfo == nil {
-		log.Warnf("No GitInfo discovered so cannot comment on issues that they are now in %s\n", envName)
+		log.Logger().Warnf("No GitInfo discovered so cannot comment on issues that they are now in %s\n", envName)
 		return nil
 	}
 	authConfigSvc, err := o.CreateGitAuthConfigService()
@@ -954,7 +955,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		}
 	}
 	if url == "" {
-		log.Warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
+		log.Logger().Warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
 	}
 	available := ""
 	if url != "" {
@@ -981,7 +982,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 	if url != "" && promoteKey.ApplicationURL == "" {
 		promoteKey.ApplicationURL = url
 		if o.Verbose {
-			log.Infof("Application is available at: %s\n", util.ColorInfo(url))
+			log.Logger().Infof("Application is available at: %s\n", util.ColorInfo(url))
 		}
 	}
 
@@ -996,19 +997,19 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		}
 		for _, issue := range issues {
 			if issue.IsClosed() {
-				log.Infof("Commenting that issue %s is now in %s\n", util.ColorInfo(issue.URL), util.ColorInfo(envName))
+				log.Logger().Infof("Commenting that issue %s is now in %s\n", util.ColorInfo(issue.URL), util.ColorInfo(envName))
 
 				comment := fmt.Sprintf(":white_check_mark: the fix for this issue is now deployed to **%s** in version %s %s", envName, versionMessage, available)
 				id := issue.ID
 				if id != "" {
 					number, err := strconv.Atoi(id)
 					if err != nil {
-						log.Warnf("Could not parse issue id %s for URL %s\n", id, issue.URL)
+						log.Logger().Warnf("Could not parse issue id %s for URL %s\n", id, issue.URL)
 					} else {
 						if number > 0 {
 							err = provider.CreateIssueComment(gitInfo.Organisation, gitInfo.Name, number, comment)
 							if err != nil {
-								log.Warnf("Failed to add comment to issue %s: %s", issue.URL, err)
+								log.Logger().Warnf("Failed to add comment to issue %s: %s", issue.URL, err)
 							}
 						}
 					}
