@@ -196,17 +196,18 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	}
 	log.Logger().Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
 
-	data, err = yaml.Marshal(pipelineActivity)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal PipelineActivity YAML")
+	if pipelineActivity != nil {
+		data, err = yaml.Marshal(pipelineActivity)
+		if err != nil {
+			return errors.Wrapf(err, "failed to marshal PipelineActivity YAML")
+		}
+		fileName = filepath.Join(dir, "pipelineActivity.yml")
+		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save PipelineActivity file %s", fileName)
+		}
+		log.Logger().Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
 	}
-	fileName = filepath.Join(dir, "pipelineActivity.yml")
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save PipelineActivity file %s", fileName)
-	}
-	log.Logger().Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
-
 	return nil
 }
 

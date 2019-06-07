@@ -79,6 +79,7 @@ type StepCreateTaskOptions struct {
 	CustomEnvs        []string
 	NoApply           bool
 	DryRun            bool
+	InterpretMode     bool
 	Trigger           string
 	TargetPath        string
 	SourceName        string
@@ -152,6 +153,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.PullRequestNumber, "pr-number", "", "", "If a Pull Request this is it's number")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file, without side effects")
+	cmd.Flags().BoolVarP(&options.InterpretMode, "interpret", "", false, "Enable interpret mode. Rather than spinning up Tekton CRDs to create a Pod just invoke the commands in the current shell directly. Useful for bootstrapping installations of Jenkins X and tekton using a pipeline before you have installed Tekton.")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().BoolVarP(&options.EffectivePipeline, "effective-pipeline", "", false, "Just view the effective pipeline definition that would be created")
 
@@ -185,6 +187,10 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 
 // Run implements this command
 func (o *StepCreateTaskOptions) Run() error {
+	if o.InterpretMode {
+		// lets allow this command to run in an empty cluster
+		o.RemoteCluster = true
+	}
 	settings, err := o.TeamSettings()
 	if err != nil {
 		return err
@@ -247,7 +253,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Logger().Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
-	if o.DockerRegistry == "" {
+	if o.DockerRegistry == "" && !o.InterpretMode {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
 			return fmt.Errorf("could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
@@ -276,7 +282,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
-	if o.NoApply || o.DryRun {
+	if o.NoApply || o.DryRun || o.InterpretMode {
 		o.BuildNumber = "1"
 	} else {
 		if o.Verbose {
@@ -369,21 +375,25 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Logger().Infof("created tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
 	}
 
-	activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr)
-
-	if o.Verbose {
-		log.Logger().Infof(" PipelineActivity for %s created successfully", tektonCRDs.Name())
-	}
-
 	o.Results = *tektonCRDs
 
-	if o.NoApply || o.DryRun {
+	if o.NoApply || o.DryRun || o.InterpretMode {
+		if o.InterpretMode {
+			return o.interpretPipeline(ns, projectConfig, tektonCRDs)
+		}
+
 		log.Logger().Infof("Writing output ")
-		err := tektonCRDs.WriteToDisk(o.OutDir, activityKey)
+		err := tektonCRDs.WriteToDisk(o.OutDir, nil)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
 	} else {
+		activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr)
+
+		if o.Verbose {
+			log.Logger().Infof(" PipelineActivity for %s created successfully", tektonCRDs.Name())
+		}
+
 		log.Logger().Infof("Applying changes ")
 		err := tekton.ApplyPipeline(jxClient, tektonClient, tektonCRDs, ns, o.GitInfo, o.Branch, activityKey)
 		if err != nil {
@@ -457,16 +467,18 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		lifecycles = pipelines.Release
 
 		// lets add a pre-step to setup the credentials
-		if lifecycles.Setup == nil {
-			lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
+		if !o.InterpretMode {
+			if lifecycles.Setup == nil {
+				lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
+			}
+			steps := []*syntax.Step{
+				{
+					Command: "jx step git credentials",
+					Name:    "jx-git-credentials",
+				},
+			}
+			lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
 		}
-		steps := []*syntax.Step{
-			{
-				Command: "jx step git credentials",
-				Name:    "jx-git-credentials",
-			},
-		}
-		lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
 
 	case jenkinsfile.PipelineKindPullRequest:
 		lifecycles = pipelines.PullRequest
@@ -1469,4 +1481,70 @@ func (o *StepCreateTaskOptions) getClientsAndNamespace() (tektonclient.Interface
 	}
 
 	return tektonClient, jxClient, kubeClient, ns, nil
+}
+
+func (o *StepCreateTaskOptions) interpretPipeline(ns string, projectConfig *config.ProjectConfig, crds *tekton.CRDWrapper) error {
+	for _, task := range crds.Tasks() {
+		steps := task.Spec.Steps
+		for _, step := range steps {
+			err := o.interpretStep(ns, task, &step)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (o *StepCreateTaskOptions) interpretStep(ns string, task *pipelineapi.Task, step *corev1.Container) error {
+	command := step.Command
+	if len(command) == 0 {
+		return nil
+	}
+
+	// ignore some unnecessary commands
+	// TODO is there a nicer way to diable the git-merge step?
+	if step.Name == "git-merge" {
+		return nil
+	}
+	commandAndArgs := append(step.Command, step.Args...)
+	commandLine := strings.Join(commandAndArgs, " ")
+	dir := step.WorkingDir
+	if dir != "" {
+		workspaceDir := o.getWorkspaceDir()
+		if strings.HasPrefix(dir, workspaceDir) {
+			curDir, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			relPath, err := filepath.Rel(workspaceDir, dir)
+			if err != nil {
+				return err
+			}
+			dir = filepath.Join(curDir, relPath)
+		}
+	}
+	envMap := toEnvMap(step.Env)
+	log.Infof("running step %s command: %s in dir: %s with env: %s\n", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(dir), util.ColorInfo(fmt.Sprintf("%#s", envMap)))
+	cmd := util.Command{
+		Name: commandAndArgs[0],
+		Args: commandAndArgs[1:],
+		Dir:  dir,
+		Out:  os.Stdout,
+		Err:  os.Stdout,
+		Env:  envMap,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func toEnvMap(envVars []corev1.EnvVar) map[string]string {
+	m := map[string]string{}
+	for _, envVar := range envVars {
+		m[envVar.Name] = envVar.Value
+	}
+	return m
 }
