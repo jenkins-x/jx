@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
@@ -138,7 +139,7 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
+	log.Logger().Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
 	if details != nil {
 		o.ConfigureImportOptions(details)

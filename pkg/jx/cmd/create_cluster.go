@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -141,7 +142,7 @@ func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider st
 
 func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	if o.SkipInstallation {
-		log.Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
+		log.Logger().Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
 		return nil
 	}
 

@@ -12,11 +12,11 @@ import (
 
 	"github.com/petergtz/pegomock"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 	"github.com/acarl005/stripansi"
 	"github.com/hinshun/vt10x"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/auth/mocks"
+	auth_test "github.com/jenkins-x/jx/pkg/auth/mocks"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,7 +32,7 @@ func IsDebugLog() bool {
 // Debugf debug format
 func Debugf(message string, args ...interface{}) {
 	if IsDebugLog() {
-		log.Infof(message, args...)
+		log.Logger().Infof(message, args...)
 	}
 }
 

@@ -59,6 +59,6 @@ func (o *UpgradeCRDsOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register all CRDs")
 	}
-	log.Info("Jenkins X CRDs upgraded with success\n")
+	log.Logger().Info("Jenkins X CRDs upgraded with success\n")
 	return nil
 }

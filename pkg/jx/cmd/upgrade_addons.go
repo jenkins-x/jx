@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/ghodss/yaml"
@@ -108,7 +109,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 	}
 	releases, _, err := o.Helm().ListReleases(ns)
 	if err != nil {
-		log.Warnf("Failed to find Helm installs: %s\n", err)
+		log.Logger().Warnf("Failed to find Helm installs: %s\n", err)
 	}
 
 	charts := kube.AddonCharts
@@ -134,7 +135,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 		status := releases[k].Status
 		name := k
 		if status != "" {
-			log.Infof("Upgrading %s chart %s...\n", util.ColorInfo(name), util.ColorInfo(chart))
+			log.Logger().Infof("Upgrading %s chart %s...\n", util.ColorInfo(name), util.ColorInfo(chart))
 
 			valueFiles := []string{}
 			valueFiles, err = helm.AppendMyValues(valueFiles)
@@ -181,7 +182,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 				}
 			}
 
-			log.Infof("Upgraded %s chart %s\n", util.ColorInfo(name), util.ColorInfo(chart))
+			log.Logger().Infof("Upgraded %s chart %s\n", util.ColorInfo(name), util.ColorInfo(chart))
 		}
 	}
 	return nil

@@ -1,9 +1,10 @@
 package buildpack
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -80,7 +81,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("build pack is %s\n", settings.BuildPackURL)
+	log.Logger().Infof("build pack is %s\n", settings.BuildPackURL)
 
 	defaultJenkinsfile := filepath.Join(dir, jenkinsfile.Name)
 	jenkinsfile := jenkinsfile.Name

@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 
@@ -89,7 +90,7 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 	if releaseName == "" {
 		releaseName = kube.DefaultVaultOperatorReleaseName
 	}
-	log.Infof("Installing %s...\n", util.ColorInfo(releaseName))
+	log.Logger().Infof("Installing %s...\n", util.ColorInfo(releaseName))
 
 	resolver, err := o.CreateVersionResolver(opts.DefaultVersionsURL, "")
 	if err != nil {
@@ -120,6 +121,6 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}
 
-	log.Infof("%s addon succesfully installed.\n", util.ColorInfo(releaseName))
+	log.Logger().Infof("%s addon succesfully installed.\n", util.ColorInfo(releaseName))
 	return nil
 }

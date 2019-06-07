@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -107,7 +108,7 @@ func (o *CreateArchetypeOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
+	log.Logger().Infof("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
 
 	return o.CreateArchetype()
 }
@@ -178,7 +179,7 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 	}
 	outDir := filepath.Join(dir, form.ArtifactId)
 	o.Dir = outDir
-	log.Infof("Created project at %s\n\n", util.ColorInfo(outDir))
+	log.Logger().Infof("Created project at %s\n\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
 }

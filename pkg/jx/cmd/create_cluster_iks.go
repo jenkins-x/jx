@@ -1,13 +1,14 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"math"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	ibmcloud "github.com/IBM-Cloud/bluemix-go"
 	"github.com/IBM-Cloud/bluemix-go/api/container/containerv1"
@@ -159,13 +160,13 @@ func (o *CreateClusterIKSOptions) Run() error {
 	}
 	err := o.InstallMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+		log.Logger().Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
 	}
 
 	err = o.createClusterIKS()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		log.Logger().Errorf("error creating cluster %v", err)
 		os.Exit(-1)
 	}
 
@@ -283,7 +284,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	clusterMaxLength := 64 - (len(iKSSubDomain) + len(dockerRegistryhost) + len(c.Region) + 1)
 	if clusterName != "" {
 		if len(clusterName) > clusterMaxLength {
-			log.Infof("Cluster name too can only be %d bytes for %s\n", clusterMaxLength, c.Region)
+			log.Logger().Infof("Cluster name too can only be %d bytes for %s\n", clusterMaxLength, c.Region)
 		} else {
 			validClusterName = true
 		}
@@ -434,9 +435,9 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		privateVLAN = o.Flags.PrivateVLAN
 	}
 	if privateVLAN == "" {
-		log.Info("Creating Private VLAN.")
+		log.Logger().Info("Creating Private VLAN.")
 	} else {
-		log.Infof("Chosen Private VLAN is %s\n", util.ColorInfo(privateVLAN))
+		log.Logger().Infof("Chosen Private VLAN is %s\n", util.ColorInfo(privateVLAN))
 	}
 
 	publicarr, err := iks.GetPublicVLANs(*zone, *region, vLANs)
@@ -461,12 +462,12 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	}
 	if publicVLAN == "" {
 		if o.Flags.PrivateOnly {
-			log.Info("Private only -> No Public VLAN")
+			log.Logger().Info("Private only -> No Public VLAN")
 		} else {
-			log.Info("Creating Public VLAN.")
+			log.Logger().Info("Creating Public VLAN.")
 		}
 	} else {
-		log.Infof("Chosen Public VLAN is %s\n", util.ColorInfo(publicVLAN))
+		log.Logger().Infof("Chosen Public VLAN is %s\n", util.ColorInfo(publicVLAN))
 	}
 
 	var clusterInfo = containerv1.ClusterCreateRequest{
@@ -483,7 +484,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		EnableTrusted:  o.Flags.Trusted,
 	}
 
-	log.Infof("Creating cluster named %s\n", clusterName)
+	log.Logger().Infof("Creating cluster named %s\n", clusterName)
 	//	fmt.Println(clusterInfo)
 	createResponse, err := clusters.Create(clusterInfo, target)
 	if err != nil {
@@ -499,7 +500,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 			return err
 	}*/
 
-	log.Infof("Waiting for cluster named %s, can take around 15 minutes (time out in 1h) ...\n", cluster.Name)
+	log.Logger().Infof("Waiting for cluster named %s, can take around 15 minutes (time out in 1h) ...\n", cluster.Name)
 
 	timeout := time.After(time.Hour)
 	tick := time.Tick(time.Second)
@@ -522,7 +523,7 @@ L:
 				if len(secondsString) < 2 {
 					secondsString = "0" + secondsString
 				}
-				log.Infof("\rTime elapsed: %dm%ss", int(duration.Minutes()), secondsString)
+				log.Logger().Infof("\rTime elapsed: %dm%ss", int(duration.Minutes()), secondsString)
 			} else {
 				break L
 			}
@@ -531,17 +532,17 @@ L:
 
 	//setup the kube context
 
-	log.Infof("\nCreated cluster named %s\n", cluster.Name)
+	log.Logger().Infof("\nCreated cluster named %s\n", cluster.Name)
 
 	kubeconfig, err := config.GetClusterConfig(cluster.Name, target)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Setting kube config file\n")
-	log.Infof("export KUBECONFIG=\"%s\"\n", kubeconfig)
+	log.Logger().Info("Setting kube config file\n")
+	log.Logger().Infof("export KUBECONFIG=\"%s\"\n", kubeconfig)
 	os.Setenv("KUBECONFIG", kubeconfig)
-	log.Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...\n")
 
 	return o.initAndInstall(cloud.IKS)
 }

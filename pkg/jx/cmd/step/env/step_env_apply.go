@@ -2,11 +2,12 @@ package env
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -140,7 +141,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	exists, err = util.FileExists(chartFile)
 	if exists && err == nil {
 		// lets setup the Helmer based on the current settings
-		log.Infof("Loading the latest Dev Environment configuration from %s\n", devEnvFile)
+		log.Logger().Infof("Loading the latest Dev Environment configuration from %s\n", devEnvFile)
 
 		env := v1.Environment{}
 		data, err := ioutil.ReadFile(devEnvFile)
@@ -194,7 +195,7 @@ func (o *StepEnvApplyOptions) Run() error {
 			nsOptions.Args = []string{ns}
 			err := nsOptions.Run()
 			if err != nil {
-				log.Warnf("Failed to set context to namespace %s: %s", ns, err)
+				log.Logger().Warnf("Failed to set context to namespace %s: %s", ns, err)
 			}
 			o.ResetClientsAndNamespaces()
 		}
@@ -226,6 +227,6 @@ func (o *StepEnvApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "applying the helm chart in dir %s", dir)
 	}
-	log.Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
 	return nil
 }

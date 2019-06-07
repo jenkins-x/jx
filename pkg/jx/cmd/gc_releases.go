@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -76,7 +77,7 @@ func (o *GCReleasesOptions) Run() error {
 	if len(releases.Items) == 0 {
 		// no preview environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no releases found\n")
+			log.Logger().Info("no releases found\n")
 		}
 		return nil
 	}
@@ -119,7 +120,7 @@ func (o *GCReleasesOptions) Run() error {
 			if err != nil {
 				return err
 			} else {
-				log.Infof("Deleting Release %s as it no longer has a pipeline for %s\n", a.Name, pipeline)
+				log.Logger().Infof("Deleting Release %s as it no longer has a pipeline for %s\n", a.Name, pipeline)
 			}
 		}
 
@@ -137,7 +138,7 @@ func (o *GCReleasesOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("failed to delete Release %s in namespace %s: %v\n", name, ns, err)
 			} else {
-				log.Infof("Deleting old Release %s\n", name)
+				log.Logger().Infof("Deleting old Release %s\n", name)
 			}
 		}
 	}

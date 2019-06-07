@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"net/url"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
@@ -115,7 +116,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Updated file %s\n", util.ColorInfo(name))
+		log.Logger().Infof("Updated file %s\n", util.ColorInfo(name))
 	}
 	return nil
 }
@@ -124,7 +125,7 @@ func (o *CreateEtcHostsOptions) addUrl(serviceUrl services.ServiceURL, ipLine st
 	text := serviceUrl.URL
 	u, err := url.Parse(text)
 	if err != nil {
-		log.Warnf("Ignored invalid URL %s %s", text, err)
+		log.Logger().Warnf("Ignored invalid URL %s %s", text, err)
 		return ipLine
 	}
 	host := u.Host

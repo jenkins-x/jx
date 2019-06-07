@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os/user"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -134,7 +135,7 @@ func (o *DeleteApplicationOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "deleting application")
 	}
-	log.Infof("Deleted Application(s): %s\n", util.ColorInfo(strings.Join(deletedApplications, ",")))
+	log.Logger().Infof("Deleted Application(s): %s\n", util.ColorInfo(strings.Join(deletedApplications, ",")))
 	return nil
 }
 
@@ -146,7 +147,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 	envMap, _, err := kube.GetOrderedEnvironments(jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
-		log.Warnf("could not get the current user: %s\n", err.Error())
+		log.Logger().Warnf("could not get the current user: %s\n", err.Error())
 	}
 	username := "unknown"
 	if currentUser != nil {
@@ -230,19 +231,19 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 
 		err = prow.DeleteApplication(kubeClient, []string{repo}, ns)
 		if err != nil {
-			log.Warnf("Unable to delete application %s from prow: %s", repo, err.Error())
+			log.Logger().Warnf("Unable to delete application %s from prow: %s", repo, err.Error())
 		}
 		deletedApplications = append(deletedApplications, applicationName)
 
 		srName := kube.ToValidName(org + "-" + applicationName)
 		err := repoService.Delete(srName, nil)
 		if err != nil {
-			log.Warnf("Unable to find application metadata for %s to remove", applicationName)
+			log.Logger().Warnf("Unable to find application metadata for %s to remove", applicationName)
 		}
 
 		err = o.deletePipelineActivitiesForSourceRepository(jxClient, ns, srName)
 		if err != nil {
-			log.Warnf("failed to remove PipelineActivities in namespace %s: %s\n", ns, err.Error())
+			log.Logger().Warnf("failed to remove PipelineActivities in namespace %s: %s\n", ns, err.Error())
 		}
 
 		for _, env := range envMap {
@@ -362,7 +363,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	if env.Spec.Source.URL == "" {
 		return nil
 	}
-	log.Infof("Removing application %s from environment %s\n", applicationName, env.Spec.Label)
+	log.Logger().Infof("Removing application %s from environment %s\n", applicationName, env.Spec.Label)
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
 		templates map[string]string, dir string, info *gits.PullRequestDetails) error {
@@ -406,7 +407,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 	if pullRequestInfo != nil {
 		logMergeFailure := false
 		pr := pullRequestInfo.PullRequest
-		log.Infof("Waiting for pull request %s to merge\n", pr.URL)
+		log.Logger().Infof("Waiting for pull request %s to merge\n", pr.URL)
 
 		for {
 			err := gitProvider.UpdatePullRequestStatus(pr)
@@ -415,17 +416,17 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 			}
 
 			if pr.Merged != nil && *pr.Merged {
-				log.Infof("Request %s is merged!\n", util.ColorInfo(pr.URL))
+				log.Logger().Infof("Request %s is merged!\n", util.ColorInfo(pr.URL))
 				return nil
 			} else {
 				if pr.IsClosed() {
-					log.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+					log.Logger().Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
 					return fmt.Errorf("Promotion failed as Pull Request %s is closed without merging", pr.URL)
 				}
 				// lets try merge if the status is good
 				status, err := gitProvider.PullRequestLastCommitStatus(pr)
 				if err != nil {
-					log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+					log.Logger().Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 				} else {
 					if status == "success" {
 						if !o.NoMergePullRequest {
@@ -433,7 +434,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 							if err != nil {
 								if !logMergeFailure {
 									logMergeFailure = true
-									log.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+									log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
 								}
 							}
 						}

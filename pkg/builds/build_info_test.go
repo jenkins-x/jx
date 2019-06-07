@@ -1,14 +1,15 @@
 package builds_test
 
 import (
+	"io/ioutil"
+	"path/filepath"
+	"testing"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
-	"path/filepath"
-	"testing"
 )
 
 func TestCreateBuildPodInfo(t *testing.T) {
@@ -18,7 +19,7 @@ func TestCreateBuildPodInfo(t *testing.T) {
 	if pod1File != nil {
 		b := builds.CreateBuildPodInfo(pod1File)
 
-		//log.Infof("Found build info %#v\n", b)
+		//log.Logger().Infof("Found build info %#v\n", b)
 
 		assert.Equal(t, "jenkins-x-jenkins-x-serverless-PR-52-6", b.Name, "Name")
 		assert.Equal(t, "jenkins-x", b.Organisation, "Organisation")

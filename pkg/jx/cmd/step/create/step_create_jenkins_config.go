@@ -2,9 +2,10 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -117,6 +118,6 @@ func (o *StepCreateJenkinsConfigOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", o.Output)
 	}
-	log.Infof("generated Jenkins configuration file %s\n", util.ColorInfo(o.Output))
+	log.Logger().Infof("generated Jenkins configuration file %s\n", util.ColorInfo(o.Output))
 	return nil
 }

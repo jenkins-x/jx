@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -88,11 +89,11 @@ func (o *CreateAddonIngressControllerOptions) Run() error {
 	// now lets try update the domain
 	domain := o.InitOptions.Domain
 	if domain == "" {
-		log.Error("No domain could be discovered so we cannot update the domain entry in your GitOps repository\n")
+		log.Logger().Error("No domain could be discovered so we cannot update the domain entry in your GitOps repository\n")
 	}
-	log.Infof("domain is %s\n", util.ColorInfo(domain))
+	log.Logger().Infof("domain is %s\n", util.ColorInfo(domain))
 
-	log.Infof("\n\nLets create a Pull Request against %s to modify the domain...\n\n", util.ColorInfo(gitRepo))
+	log.Logger().Infof("\n\nLets create a Pull Request against %s to modify the domain...\n\n", util.ColorInfo(gitRepo))
 
 	// now lets make sure we have the latest domain in the git repository
 	return o.createPullRequestForDomain(gitRepo, domain)

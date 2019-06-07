@@ -2,13 +2,14 @@ package step
 
 import (
 	"fmt"
+	"os"
+	"os/user"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/post"
-	"os"
-	"os/user"
-	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -246,7 +247,7 @@ func (o *StepReleaseOptions) Run() error {
 			return fmt.Errorf("Failed to promote: %s", err)
 		}
 	} else {
-		log.Infof("No charts directory %s so not promoting\n", util.ColorInfo(chartsDir))
+		log.Logger().Infof("No charts directory %s so not promoting\n", util.ColorInfo(chartsDir))
 	}
 
 	return nil

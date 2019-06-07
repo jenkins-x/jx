@@ -1,8 +1,9 @@
 package pre
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -74,7 +75,7 @@ func (o *StepPreBuildOptions) Run() error {
 		orgName := paths[l-2]
 		appName := paths[l-1]
 
-		log.Infof("Docker registry host: %s app name %s/%s\n", util.ColorInfo(dockerRegistry), util.ColorInfo(orgName), util.ColorInfo(appName))
+		log.Logger().Infof("Docker registry host: %s app name %s/%s\n", util.ColorInfo(dockerRegistry), util.ColorInfo(orgName), util.ColorInfo(appName))
 
 		kubeClient, currentNamespace, err := o.KubeClientAndNamespace()
 		if err != nil {

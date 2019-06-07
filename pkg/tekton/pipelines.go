@@ -2,11 +2,12 @@ package tekton
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"reflect"
 	"strconv"
 	"time"
+
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxClient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -26,7 +27,7 @@ import (
 func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, pr *prow.PullRefs) *kube.PromoteStepActivityKey {
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
-	log.Infof("PipelineActivity for %s", name)
+	log.Logger().Infof("PipelineActivity for %s", name)
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     name,
@@ -305,9 +306,9 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 		}
 		if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
 			gitURL := gitInfo.HttpCloneURL()
-			log.Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
+			log.Logger().Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
 		} else {
-			log.Infof("upserted PipelineResource %s\n", info(resource.Name))
+			log.Logger().Infof("upserted PipelineResource %s\n", info(resource.Name))
 		}
 	}
 
@@ -319,7 +320,7 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 		}
-		log.Infof("upserted Task %s\n", info(task.Name))
+		log.Logger().Infof("upserted Task %s\n", info(task.Name))
 	}
 
 	if activityOwnerReference != nil {
@@ -330,7 +331,7 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 	if err != nil {
 		return errors.Wrapf(err, "failed to create/update the pipeline in namespace %s", ns)
 	}
-	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
+	log.Logger().Infof("upserted Pipeline %s\n", info(pipeline.Name))
 
 	pipelineOwnerReference := metav1.OwnerReference{
 		APIVersion: syntax.TektonAPIVersion,
@@ -346,7 +347,7 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the pipelineRun in namespace %s", ns)
 	}
-	log.Infof("created PipelineRun %s\n", info(crds.PipelineRun().Name))
+	log.Logger().Infof("created PipelineRun %s\n", info(crds.PipelineRun().Name))
 
 	if crds.Structure() != nil {
 		crds.Structure().PipelineRunRef = &crds.PipelineRun().Name
@@ -363,7 +364,7 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 		if _, structErr := structuresClient.Create(crds.Structure()); structErr != nil {
 			return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
 		}
-		log.Infof("created PipelineStructure %s\n", info(crds.Structure().Name))
+		log.Logger().Infof("created PipelineStructure %s\n", info(crds.Structure().Name))
 	}
 
 	return nil

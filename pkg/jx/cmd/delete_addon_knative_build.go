@@ -71,7 +71,7 @@ func (o *DeleteKnativeBuildOptions) Run() error {
 	for _, crd := range knativeCRDs {
 		err = apisClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crd, &metav1.DeleteOptions{})
 		if err != nil {
-			log.Warnf("cannot delete CRD %s: %v", crd, err)
+			log.Logger().Warnf("cannot delete CRD %s: %v", crd, err)
 			confirm := &survey.Confirm{
 				Message: "There are warnings, do you wish to continue?",
 				Default: false,

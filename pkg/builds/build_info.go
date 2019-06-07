@@ -1,16 +1,17 @@
 package builds
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	corev1 "k8s.io/api/core/v1"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // BaseBuildInfo is an interface that is implemented by both BuildPodInfo here and tekton.PipelineRunInfo
@@ -65,7 +66,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	build := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
-		log.Warnf("Failed to compile regexp because %s", err)
+		log.Logger().Warnf("Failed to compile regexp because %s", err)
 	}
 	gitURL := ""
 
@@ -175,7 +176,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	if gitURL != "" {
 		gitInfo, err := gits.ParseGitURL(gitURL)
 		if err != nil {
-			log.Warnf("Failed to parse Git URL %s: %s", gitURL, err)
+			log.Logger().Warnf("Failed to parse Git URL %s: %s", gitURL, err)
 			return nil
 		}
 		if owner == "" {

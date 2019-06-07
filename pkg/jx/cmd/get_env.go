@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -121,7 +122,7 @@ func (o *GetEnvOptions) Run() error {
 			return err
 		}
 		if len(envs.Items) == 0 {
-			log.Infof("No environments found.\nTo create an environment use: jx create env\n")
+			log.Logger().Infof("No environments found.\nTo create an environment use: jx create env\n")
 			return nil
 		}
 

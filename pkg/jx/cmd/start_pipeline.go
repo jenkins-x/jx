@@ -3,12 +3,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -289,8 +290,8 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 		if last.Number != previous.Number {
 			last.Url = jenkins.SwitchJenkinsBaseURL(last.Url, jenkinsClient.BaseURL())
 
-			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
-			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
+			log.Logger().Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
+			log.Logger().Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
 				return o.TailJenkinsBuildLog(&o.JenkinsSelector, name, &last)
 			}

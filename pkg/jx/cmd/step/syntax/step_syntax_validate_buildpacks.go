@@ -2,10 +2,11 @@ package syntax
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"path/filepath"
 	"sort"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -107,12 +108,12 @@ func (o *StepSyntaxValidateBuildPacksOptions) Run() error {
 	for _, k := range packNames {
 		v, exists := errorsByPack[k]
 		if !exists {
-			log.Successf("SUCCESS: %s", k)
+			log.Logger().Infof("SUCCESS: %s", k)
 		} else {
 			hasError = true
-			log.Errorf("FAILURE: %s", k)
+			log.Logger().Errorf("FAILURE: %s", k)
 			for _, e := range v {
-				log.Errorf("\t%s", e)
+				log.Logger().Errorf("\t%s", e)
 			}
 		}
 	}

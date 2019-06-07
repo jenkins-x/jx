@@ -3,13 +3,14 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -112,19 +113,19 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 	mux.Handle(o.Path, http.HandlerFunc(o.pipelineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
-	log.Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	log.Logger().Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
 // health returns either HTTP 204 if the service is healthy, otherwise nothing ('cos it's dead).
 func (o *ControllerPipelineRunnerOptions) health(w http.ResponseWriter, r *http.Request) {
-	log.Debug("Health check")
+	log.Logger().Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the service is ready to serve requests, otherwise HTTP 503.
 func (o *ControllerPipelineRunnerOptions) ready(w http.ResponseWriter, r *http.Request) {
-	log.Debug("Ready check")
+	log.Logger().Debug("Ready check")
 	if o.isReady() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
@@ -138,11 +139,11 @@ func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWrit
 	case http.MethodGet:
 		fmt.Fprintf(w, "Please POST JSON to this endpoint!\n")
 	case http.MethodHead:
-		log.Info("HEAD Todo...")
+		log.Logger().Info("HEAD Todo...")
 	case http.MethodPost:
 		o.startPipelineRun(w, r)
 	default:
-		log.Errorf("Unsupported method %s for %s", r.Method, o.Path)
+		log.Logger().Errorf("Unsupported method %s for %s", r.Method, o.Path)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
@@ -151,7 +152,7 @@ func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWrit
 func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
 	err := o.stepGitCredentials()
 	if err != nil {
-		log.Warn(err.Error())
+		log.Logger().Warn(err.Error())
 	}
 	arguments := &PipelineRunRequest{}
 	data, err := ioutil.ReadAll(r.Body)
@@ -169,7 +170,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		return
 	}
 	if o.Verbose {
-		log.Infof("got payload %#v", arguments)
+		log.Logger().Infof("got payload %#v", arguments)
 	}
 	pj := arguments.ProwJobSpec
 
@@ -242,7 +243,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		pr.CustomEnvs = append(pr.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	log.Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision, pj.Context)
+	log.Logger().Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision, pj.Context)
 
 	err = pr.Run()
 	if err != nil {
@@ -289,12 +290,12 @@ func (o *ControllerPipelineRunnerOptions) marshalPayload(w http.ResponseWriter, 
 
 func (o *ControllerPipelineRunnerOptions) onError(err error) {
 	if err != nil {
-		log.Errorf("%v", err)
+		log.Logger().Errorf("%v", err)
 	}
 }
 
 func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
-	log.Errorf("%v %s", err, message)
+	log.Logger().Errorf("%v %s", err, message)
 
 	o.onError(err)
 	w.WriteHeader(400)

@@ -2,16 +2,17 @@ package extensions_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/tests"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/tests"
+
 	"github.com/jenkins-x/jx/pkg/log"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
@@ -101,7 +102,7 @@ func serveTestScript(t *testing.T) (*http.Server, int) {
 	})
 	go func() {
 		if err := srv.Serve(listener); err != nil && err.Error() != "http: Server closed" {
-			log.Errorf("Error starting HTTP server \n%v", err)
+			log.Logger().Errorf("Error starting HTTP server \n%v", err)
 			assert.NoError(t, err, "Error starting HTTP server to serve test plugin script")
 		}
 	}()

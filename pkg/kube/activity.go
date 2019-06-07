@@ -2,16 +2,17 @@ package kube
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -202,7 +203,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	activitiesClient := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	if activitiesClient == nil {
-		log.Errorf("No PipelineActivities client available")
+		log.Logger().Errorf("No PipelineActivities client available")
 		return defaultActivity, create, fmt.Errorf("no PipelineActivities client available")
 	}
 	a, err := activitiesClient.Get(name, metav1.GetOptions{})
@@ -225,7 +226,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
 		err := createSourceRepositoryIfMissing(jxClient, ns, k)
 		if err != nil {
-			log.Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
+			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
 		}
 	}
 
@@ -255,7 +256,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 }
 
 func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient typev1.PipelineActivityInterface, currentActivity *v1.PipelineActivity) error {
-	log.Info("Checking if batch build reconciling is needed")
+	log.Logger().Info("Checking if batch build reconciling is needed")
 	//Create a selector for other runs of this PR with the same last commit SHA
 	labels := currentActivity.Labels
 	selector := fmt.Sprintf("lastCommitSha in (%s), branch in (%s), sourcerepository in (%s)",
@@ -265,14 +266,14 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 		LabelSelector: selector,
 	}
 
-	log.Debugf("looking for PipelineActivities with selector %s", selector)
+	log.Logger().Debugf("looking for PipelineActivities with selector %s", selector)
 	activities, err := activitiesClient.List(listOptions)
 	if err != nil {
 		return errors.Wrap(err, "there was a problem listing all activities to reconcile a batch build")
 	}
 
 	if len(activities.Items) == 0 {
-		log.Infof("No past executions with the same lastCommitSha found - reconciliation not needed")
+		log.Logger().Infof("No past executions with the same lastCommitSha found - reconciliation not needed")
 		return nil
 	}
 
@@ -288,7 +289,7 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 			if buildNumber, err := strconv.Atoi(v.Spec.Build); err == nil {
 				//Check if it's the previous build, then we can update the PRs and the batch build
 				if previousBuildNumber == buildNumber {
-					log.Infof("Found an earlier PipelineActivity for %s and equal lastCommitSha with batch information", labels[v1.LabelBranch])
+					log.Logger().Infof("Found an earlier PipelineActivity for %s and equal lastCommitSha with batch information", labels[v1.LabelBranch])
 					currentActivity.Spec.BatchPipelineActivity.BatchBuildNumber = v.Spec.BatchPipelineActivity.BatchBuildNumber
 					return updateBatchBuildComprisingPRs(activitiesClient, currentActivity, v.Spec.BatchPipelineActivity.BatchBuildNumber, &v)
 				}
@@ -301,21 +302,21 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 func updateBatchBuildComprisingPRs(activitiesClient typev1.PipelineActivityInterface, currentActivity *v1.PipelineActivity, batchBuild string, previousActivityForPR *v1.PipelineActivity) error {
 	labels := currentActivity.Labels
 	paName := fmt.Sprintf("%s-batch-%s", labels[v1.LabelSourceRepository], batchBuild)
-	log.Infof("Looking for batch pipeline activity with name %s", paName)
+	log.Logger().Infof("Looking for batch pipeline activity with name %s", paName)
 	batchPipelineActivity, err := activitiesClient.Get(paName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "there was a problem getting the PipelineActivity %s", paName)
 	}
 
 	if batchPipelineActivity == nil {
-		log.Warnf("No batch pipeline found for reconciliation")
+		log.Logger().Warnf("No batch pipeline found for reconciliation")
 		return nil
 	}
 
 	for i := range batchPipelineActivity.Spec.BatchPipelineActivity.ComprisingPulLRequests {
 		pr := &batchPipelineActivity.Spec.BatchPipelineActivity.ComprisingPulLRequests[i]
 		if pr.PullRequestNumber == labels[v1.LabelBranch] {
-			log.Infof("Updating the build reference for %s in %s with build number %s", pr.PullRequestNumber, paName, currentActivity.Spec.Build)
+			log.Logger().Infof("Updating the build reference for %s in %s with build number %s", pr.PullRequestNumber, paName, currentActivity.Spec.Build)
 			pr.LastBuildNumberForCommit = currentActivity.Spec.Build
 			break
 		}
@@ -326,7 +327,7 @@ func updateBatchBuildComprisingPRs(activitiesClient typev1.PipelineActivityInter
 		return errors.Wrapf(err, "there was a problem updating the batch PipelineActivity %s", paName)
 	}
 
-	log.Infof("Removing stale batch build information from %s", previousActivityForPR.Name)
+	log.Logger().Infof("Removing stale batch build information from %s", previousActivityForPR.Name)
 	previousActivityForPR.Spec.BatchPipelineActivity.BatchBuildNumber = ""
 	_, err = activitiesClient.Update(previousActivityForPR)
 	if err != nil {
@@ -686,7 +687,7 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interfa
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
-		log.Warn("Warning: no PipelineActivities client available!")
+		log.Logger().Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(jxClient, ns)
@@ -713,7 +714,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
-		log.Warn("Warning: no PipelineActivities client available!")
+		log.Logger().Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(jxClient, ns)
@@ -744,7 +745,7 @@ func asYaml(activity *v1.PipelineActivity) string {
 	if err == nil {
 		return string(data)
 	}
-	log.Warnf("Failed to marshal PipelineActivity to YAML %s: %s", activity.Name, err)
+	log.Logger().Warnf("Failed to marshal PipelineActivity to YAML %s: %s", activity.Name, err)
 	return ""
 }
 

@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"reflect"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"strings"
 
@@ -246,7 +247,7 @@ func (o *ControllerRoleOptions) onEnvironment(kubeClient kubernetes.Interface, n
 			if newEnv == nil || newEnv.Spec.Namespace != oldEnv.Spec.Namespace {
 				err := o.removeEnvironment(kubeClient, ns, oldEnv)
 				if err != nil {
-					log.Warnf("Failed to remove role bindings for environment %s: %s", oldEnv.Name, err)
+					log.Logger().Warnf("Failed to remove role bindings for environment %s: %s", oldEnv.Name, err)
 				}
 			}
 		}
@@ -254,7 +255,7 @@ func (o *ControllerRoleOptions) onEnvironment(kubeClient kubernetes.Interface, n
 	if newEnv != nil {
 		err := o.upsertEnvironment(kubeClient, ns, newEnv)
 		if err != nil {
-			log.Warnf("Failed to upsert role bindings for environment %s: %s", newEnv.Name, err)
+			log.Logger().Warnf("Failed to upsert role bindings for environment %s: %s", newEnv.Name, err)
 		}
 	}
 }
@@ -283,7 +284,7 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 			roleName := binding.Spec.RoleRef.Name
 			role := o.Roles[roleName]
 			if role == nil {
-				log.Warnf("Cannot find role %s in namespace %s", roleName, teamNs)
+				log.Logger().Warnf("Cannot find role %s in namespace %s", roleName, teamNs)
 			} else {
 				roles := kubeClient.RbacV1().Roles(ns)
 				var oldRole *rbacv1.Role
@@ -296,11 +297,11 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 						changed = true
 					}
 					if changed {
-						log.Infof("Updating Role %s in namespace %s\n", roleName, ns)
+						log.Logger().Infof("Updating Role %s in namespace %s\n", roleName, ns)
 						_, err = roles.Update(oldRole)
 					}
 				} else {
-					log.Infof("Creating Role %s in namespace %s\n", roleName, ns)
+					log.Logger().Infof("Creating Role %s in namespace %s\n", roleName, ns)
 					newRole := &rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: roleName,
@@ -316,7 +317,7 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 			}
 		}
 		if err != nil {
-			log.Warnf("Failed: %s\n", err)
+			log.Logger().Warnf("Failed: %s\n", err)
 			errors = append(errors, err)
 		}
 
@@ -337,11 +338,11 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 				changed = true
 			}
 			if changed {
-				log.Infof("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
+				log.Logger().Infof("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
 				_, err = roleBindings.Update(old)
 			}
 		} else {
-			log.Infof("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
+			log.Logger().Infof("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
 			newBinding := &rbacv1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: bindingName,
@@ -356,7 +357,7 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 			_, err = roleBindings.Create(newBinding)
 		}
 		if err != nil {
-			log.Warnf("Failed: %s\n", err)
+			log.Logger().Warnf("Failed: %s\n", err)
 			errors = append(errors, err)
 		}
 	}
@@ -503,11 +504,11 @@ func (o *ControllerRoleOptions) upsertRoleInEnvironments(env *v1.Environment, ro
 			changed = true
 		}
 		if changed {
-			log.Infof("Updating Role %s in namespace %s\n", roleName, ns)
+			log.Logger().Infof("Updating Role %s in namespace %s\n", roleName, ns)
 			_, err = roles.Update(oldRole)
 		}
 	} else {
-		log.Infof("Creating Role %s in namespace %s\n", roleName, ns)
+		log.Logger().Infof("Creating Role %s in namespace %s\n", roleName, ns)
 		newRole := &rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: roleName,
@@ -535,7 +536,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versio
 					}
 				}
 				if foundRole == 0 {
-					log.Infof("Environment binding doesn't exist for role %s , creating it.\n", util.ColorInfo(roleValue.GetName()))
+					log.Logger().Infof("Environment binding doesn't exist for role %s , creating it.\n", util.ColorInfo(roleValue.GetName()))
 					newSubject := rbacv1.Subject{
 						Name:      roleValue.GetName(),
 						Kind:      kube.ValueKindEnvironmentRole,

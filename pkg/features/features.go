@@ -4,11 +4,12 @@ import (
 	"errors"
 	"strings"
 
+	"reflect"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/rollout/rox-go/core/context"
 	"github.com/rollout/rox-go/server"
 	"github.com/spf13/cobra"
-	"reflect"
 )
 
 // API key, populated at build-time.
@@ -82,7 +83,7 @@ func IsFeatureEnabled() bool {
 // Init - initialise the feature flag mechanism
 func Init() {
 	if IsFeatureEnabled() {
-		log.Infof("Cloudbees Jenkins X distribution - only supported features enabled")
+		log.Logger().Infof("Cloudbees Jenkins X distribution - only supported features enabled")
 		oss = false
 		// todo probably want the cloudbees login here
 		ctx = context.NewContext(map[string]interface{}{"user": "N/A"})
@@ -92,7 +93,7 @@ func Init() {
 		roxOptions := server.NewRoxOptions(server.RoxOptionsBuilder{})
 		<-rox.Setup(FeatureFlagToken, roxOptions)
 	} else {
-		log.Debugf("OSS version - all features enabled")
+		log.Logger().Debugf("OSS version - all features enabled")
 		oss = true
 	}
 }
@@ -100,11 +101,11 @@ func Init() {
 // CheckTektonEnabled checks if tekton is enabled
 func CheckTektonEnabled() error {
 	if !oss {
-		log.Debug("Checking if Tekton enabled")
+		log.Logger().Debug("Checking if Tekton enabled")
 		if !features.Tekton.IsEnabled(ctx) {
 			return errors.New("tekton not supported in CloudBees Distribution of Jenkins X")
 		}
-		log.Debug("Tekton enabled")
+		log.Logger().Debug("Tekton enabled")
 	}
 	return nil
 }
@@ -112,11 +113,11 @@ func CheckTektonEnabled() error {
 // CheckStaticJenkins checks if static jenkins master is enabled
 func CheckStaticJenkins() error {
 	if !oss {
-		log.Debug("Checking if static jenkins master enabled")
+		log.Logger().Debug("Checking if static jenkins master enabled")
 		if !features.StaticJenkins.IsEnabled(ctx) {
 			return errors.New("static jenkins master not supported in CloudBees Distribution of Jenkins X")
 		}
-		log.Debug("Static Jenkins Master enabled")
+		log.Logger().Debug("Static Jenkins Master enabled")
 	}
 	return nil
 }
@@ -124,17 +125,17 @@ func CheckStaticJenkins() error {
 // CheckJenkinsFileRunner checks if jenkins file runner is enabled
 func CheckJenkinsFileRunner() error {
 	if !oss {
-		log.Debug("Checking if Jenkins File Runner enabled")
+		log.Logger().Debug("Checking if Jenkins File Runner enabled")
 		if !features.JenkinsFileRunner.IsEnabled(ctx) {
 			return errors.New("jenkins file runner not supported in CloudBees Distribution of Jenkins X")
 		}
-		log.Debug("Static Jenkins Master enabled")
+		log.Logger().Debug("Static Jenkins Master enabled")
 	}
 	return nil
 }
 
 func isProviderEnabled(provider string) bool {
-	log.Debugf("Is Provider enabled for %s", provider)
+	log.Logger().Debugf("Is Provider enabled for %s", provider)
 	v := reflect.ValueOf(features).Elem()
 	f := v.FieldByName(strings.ToUpper(provider))
 	original, ok := f.Interface().(server.RoxFlag)
@@ -142,7 +143,7 @@ func isProviderEnabled(provider string) bool {
 	if ok {
 		enabled = original.IsEnabled(ctx)
 	}
-	log.Debugf("Provider is enabled %t", enabled)
+	log.Logger().Debugf("Provider is enabled %t", enabled)
 	return enabled
 }
 
@@ -151,9 +152,9 @@ func IsEnabled(cmd *cobra.Command) error {
 	if !oss {
 		parent := cmd.Parent()
 		if parent.Name() == "cluster" {
-			log.Debug("Checking if provider is enabled")
+			log.Logger().Debug("Checking if provider is enabled")
 			provider := cmd.Name()
-			log.Debugf("Provider %s", provider)
+			log.Logger().Debugf("Provider %s", provider)
 			enabled := isProviderEnabled(provider)
 			if !enabled {
 				return errors.New("command not supported in CloudBees Distribution of Jenkins X")

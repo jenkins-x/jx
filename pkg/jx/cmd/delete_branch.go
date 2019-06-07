@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -15,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
@@ -164,7 +165,7 @@ func (o *DeleteBranchOptions) Run() error {
 			return fmt.Errorf("No branches selected!")
 		}
 		if !o.BatchMode {
-			log.Warnf("You are about to delete these branches '%s' on the Git provider. This operation CANNOT be undone!",
+			log.Logger().Warnf("You are about to delete these branches '%s' on the Git provider. This operation CANNOT be undone!",
 				strings.Join(branches, ","))
 
 			flag := false
@@ -187,7 +188,7 @@ func (o *DeleteBranchOptions) Run() error {
 			if err != nil {
 				return errors.Wrapf(err, "Failed to delete remote branche %s from %s/%s", branch, org, name)
 			}
-			log.Infof("Deleted branch in repo %s/%s branch: %s\n", info(org), info(name), info(branch))
+			log.Logger().Infof("Deleted branch in repo %s/%s branch: %s\n", info(org), info(name), info(branch))
 		}
 	}
 	return nil
@@ -220,7 +221,7 @@ func (o *DeleteBranchOptions) cloneOrPullRepository(org string, repo string, git
 			return dir, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
 		info := util.ColorInfo
-		log.Infof("Cloning repository %s/%s to %s\n", info(org), info(repo), info(dir))
+		log.Logger().Infof("Cloning repository %s/%s to %s\n", info(org), info(repo), info(dir))
 		err = o.Git().Clone(gitURL, dir)
 		if err != nil {
 			return dir, err

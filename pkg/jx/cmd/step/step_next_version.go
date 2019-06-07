@@ -4,19 +4,20 @@ import (
 	"bufio"
 	"encoding/xml"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"encoding/json"
 
 	"github.com/blang/semver"
-	"github.com/hashicorp/go-version"
+	version "github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -104,7 +105,7 @@ func (o *StepNextVersionOptions) Run() error {
 		return err
 	}
 
-	log.Infof("created new version: %s and written to file: ./VERSION\n", util.ColorInfo(o.NewVersion))
+	log.Logger().Infof("created new version: %s and written to file: ./VERSION\n", util.ColorInfo(o.NewVersion))
 
 	// if filename flag set and recognised then update version, commit
 	if o.Filename != "" {
@@ -149,7 +150,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 		}
 
 		if o.Verbose {
-			log.Infof("Found Chart.yaml\n")
+			log.Logger().Infof("Found Chart.yaml\n")
 		}
 		scanner := bufio.NewScanner(strings.NewReader(string(chart)))
 		for scanner.Scan() {
@@ -159,7 +160,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 				v := strings.TrimSpace(parts[1])
 				if v != "" {
 					if o.Verbose {
-						log.Infof("existing Chart version %v\n", v)
+						log.Logger().Infof("existing Chart version %v\n", v)
 					}
 					return v, nil
 				}
@@ -173,14 +174,14 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 		}
 
 		if o.Verbose {
-			log.Infof("found %s\n", packagejson)
+			log.Logger().Infof("found %s\n", packagejson)
 		}
 		var jsPackage PackageJSON
 		json.Unmarshal(p, &jsPackage)
 
 		if jsPackage.Version != "" {
 			if o.Verbose {
-				log.Infof("existing version %s\n", jsPackage.Version)
+				log.Logger().Infof("existing version %s\n", jsPackage.Version)
 			}
 			return jsPackage.Version, nil
 		}
@@ -193,13 +194,13 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 		}
 
 		if o.Verbose {
-			log.Infof("found pom.xml\n")
+			log.Logger().Infof("found pom.xml\n")
 		}
 		var project Project
 		xml.Unmarshal(p, &project)
 		if project.Version != "" {
 			if o.Verbose {
-				log.Infof("existing version %s\n", project.Version)
+				log.Logger().Infof("existing version %s\n", project.Version)
 			}
 			return project.Version, nil
 		}
@@ -212,7 +213,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 		}
 
 		if o.Verbose {
-			log.Infof("found Makefile\n")
+			log.Logger().Infof("found Makefile\n")
 		}
 		scanner := bufio.NewScanner(strings.NewReader(string(m)))
 		for scanner.Scan() {
@@ -222,7 +223,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 				v := strings.TrimSpace(parts[1])
 				if v != "" {
 					if o.Verbose {
-						log.Infof("existing Makefile version %s\n", v)
+						log.Logger().Infof("existing Makefile version %s\n", v)
 					}
 					return v, nil
 				}
@@ -256,7 +257,7 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	versionsRaw = make([]string, len(tags))
 	for i, tag := range tags {
 		if o.Verbose {
-			log.Infof("found tag %s\n", tag)
+			log.Logger().Infof("found tag %s\n", tag)
 		}
 		tag = strings.TrimPrefix(tag, "v")
 		if tag != "" {
@@ -281,7 +282,7 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	// return the latest tag
 	col := version.Collection(versions)
 	if o.Verbose {
-		log.Infof("version collection %v\n", col)
+		log.Logger().Infof("version collection %v\n", col)
 	}
 
 	sort.Sort(col)

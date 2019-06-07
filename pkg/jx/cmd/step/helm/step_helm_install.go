@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -103,6 +104,6 @@ func (o *StepHelmInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Installed chart %s with name %s into namespace %s\n", util.ColorInfo(chart), util.ColorInfo(releaseName), util.ColorInfo(ns))
+	log.Logger().Infof("Installed chart %s with name %s into namespace %s\n", util.ColorInfo(chart), util.ColorInfo(releaseName), util.ColorInfo(ns))
 	return nil
 }

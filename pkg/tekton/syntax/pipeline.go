@@ -1543,7 +1543,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		if o.RootOptions != nil {
 			if o.Retry > 0 {
 				stage.Stage.Options.Retry = s.Options.Retry
-				log.Infof("setting retries to %d for stage %s", stage.Stage.Options.Retry, stage.Stage.Name)
+				log.Logger().Infof("setting retries to %d for stage %s", stage.Stage.Options.Retry, stage.Stage.Name)
 			}
 		}
 		previousStage = stage

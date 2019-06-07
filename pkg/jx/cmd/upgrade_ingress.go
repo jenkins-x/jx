@@ -3,9 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
@@ -128,7 +129,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	// confirm values
 	if !o.BatchMode {
 		if !util.Confirm(fmt.Sprintf("Using config values %v, ok?", o.IngressConfig), true, "", o.In, o.Out, o.Err) {
-			log.Infof("Terminating\n")
+			log.Logger().Infof("Terminating\n")
 			return nil
 		}
 	}
@@ -164,7 +165,7 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	// remove the ingress resource in order to allow the ingress-controller to recreate them
 	for name, namespace := range ingressToDelete {
-		log.Infof("Deleting ingress %s/%s\n", namespace, name)
+		log.Logger().Infof("Deleting ingress %s/%s\n", namespace, name)
 		err := client.ExtensionsV1beta1().Ingresses(namespace).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("cannot delete ingress rule %s in namespace %s: %v", name, namespace, err)
@@ -189,32 +190,32 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "creating the ingress rules")
 	}
 
-	log.Success("Ingress rules recreated\n")
+	log.Logger().Info("Ingress rules recreated\n")
 
 	if o.IngressConfig.TLS {
 		if o.WaitForCerts {
-			log.Info("Waiting for TLS certificates to be issued...")
+			log.Logger().Info("Waiting for TLS certificates to be issued...")
 			select {
 			case certs := <-notReadyCertsCh:
 				cancel()
 				if len(certs) == 0 {
-					log.Success("All TLS certificates are ready\n")
+					log.Logger().Info("All TLS certificates are ready\n")
 				} else {
-					log.Warn("Following TLS certificates are not ready:\n")
+					log.Logger().Warn("Following TLS certificates are not ready:\n")
 					for cert := range certs {
-						log.Warnf("%s\n", cert)
+						log.Logger().Warnf("%s\n", cert)
 					}
 					return errors.New("not all TLS certificates are ready")
 				}
 			case <-ctx.Done():
-				log.Warn("Timeout reached while waiting for TLS certificates to be ready\n")
+				log.Logger().Warn("Timeout reached while waiting for TLS certificates to be ready\n")
 			}
 		} else {
-			log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
-			log.Info("Use the following commands to diagnose any issues:\n")
-			log.Infof("jx logs %s -n %s\n", pki.CertManagerDeployment, pki.CertManagerNamespace)
-			log.Info("kubectl describe certificates\n")
-			log.Info("kubectl describe issuers\n\n")
+			log.Logger().Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
+			log.Logger().Info("Use the following commands to diagnose any issues:\n")
+			log.Logger().Infof("jx logs %s -n %s\n", pki.CertManagerDeployment, pki.CertManagerNamespace)
+			log.Logger().Info("kubectl describe certificates\n")
+			log.Logger().Info("kubectl describe issuers\n\n")
 		}
 	}
 
@@ -254,12 +255,12 @@ func (o *UpgradeIngressOptions) startCollectingReadyCertificates(ctx context.Con
 			certsMap[cert] = true
 		}
 
-		log.Infof("Expecting certificates: %v\n", certs)
+		log.Logger().Infof("Expecting certificates: %v\n", certs)
 
 		for {
 			select {
 			case cert := <-certsCh:
-				log.Infof("Ready Cert: %s\n", util.ColorInfo(cert))
+				log.Logger().Infof("Ready Cert: %s\n", util.ColorInfo(cert))
 				delete(certsMap, cert)
 				// check if all expected certificates are received
 				if len(certsMap) == 0 {
@@ -300,8 +301,8 @@ func (o *UpgradeIngressOptions) updateResources(previousWebHookEndpoint string) 
 		return errors.Wrap(err, "retrieving the webhook endpoint")
 	}
 
-	log.Infof("Previous webhook endpoint %s\n", previousWebHookEndpoint)
-	log.Infof("Updated webhook endpoint %s\n", updatedWebHookEndpoint)
+	log.Logger().Infof("Previous webhook endpoint %s\n", previousWebHookEndpoint)
+	log.Logger().Infof("Updated webhook endpoint %s\n", updatedWebHookEndpoint)
 	updateWebHooks := true
 	if !o.BatchMode {
 		if !util.Confirm("Do you want to update all existing webhooks?", true, "", o.In, o.Out, o.Err) {
@@ -389,7 +390,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 	} else {
 		confirmMessage = "Existing ingress rules found in current namespace.  Confirm to delete and recreate them"
 		// fall back to current ns only
-		log.Infof("Looking for existing ingress rules in current namespace %s\n", currentNamespace)
+		log.Logger().Infof("Looking for existing ingress rules in current namespace %s\n", currentNamespace)
 
 		ings, err := client.ExtensionsV1beta1().Ingresses(currentNamespace).List(metav1.ListOptions{})
 		if err != nil {
@@ -495,7 +496,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 			}
 
 			if o.IngressConfig.TLS {
-				log.Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
+				log.Logger().Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
 				clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", "", o.In, o.Out, o.Err)
 				// if the cluster issuer is production the string needed by letsencrypt is prod
 				if clusterIssuer == "production" {
@@ -630,11 +631,11 @@ func (o *UpgradeIngressOptions) CleanServiceAnnotations(svcs ...string) error {
 
 func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEndpoint string) error {
 	if oldHookEndpoint == newHookEndpoint && !o.Force {
-		log.Infof("Webhook URL unchanged. Use %s to force updating\n", util.ColorInfo("--force"))
+		log.Logger().Infof("Webhook URL unchanged. Use %s to force updating\n", util.ColorInfo("--force"))
 		return nil
 	}
 
-	log.Infof("Updating all webHooks from %s to %s\n", util.ColorInfo(oldHookEndpoint), util.ColorInfo(newHookEndpoint))
+	log.Logger().Infof("Updating all webHooks from %s to %s\n", util.ColorInfo(oldHookEndpoint), util.ColorInfo(newHookEndpoint))
 
 	updateWebHook := UpdateWebhooksOptions{
 		CommonOptions: o.CommonOptions,
@@ -663,7 +664,7 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 	}
 
 	if o.CommonOptions.Verbose {
-		log.Infof("Updating all webHooks for org %s and/or username %s\n", organisation, updateWebHook.Username)
+		log.Logger().Infof("Updating all webHooks for org %s and/or username %s\n", organisation, updateWebHook.Username)
 	}
 
 	updateWebHook.PreviousHookUrl = oldHookEndpoint

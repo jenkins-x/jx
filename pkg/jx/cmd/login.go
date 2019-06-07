@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/chromedp/chromedp/runner"
 	"github.com/hpcloud/tail"
@@ -115,7 +116,7 @@ func (o *LoginOptions) Run() error {
 		return errors.Wrap(err, "updating the ~/kube/config file")
 	}
 
-	jxlog.Infof("You are %s. You credentials are stored in %s file.\n",
+	jxlog.Logger().Infof("You are %s. You credentials are stored in %s file.\n",
 		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
 
 	teamOptions := TeamOptions{

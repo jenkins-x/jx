@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
@@ -148,7 +149,7 @@ func (o *EditBuildPackOptions) Run() error {
 				return fmt.Errorf("No BuildPack found for label: %s", label)
 			}
 			if len(labels) == 1 {
-				log.Infof("Only one build pack %s so configuring this build pack for your team\n", util.ColorInfo(label))
+				log.Logger().Infof("Only one build pack %s so configuring this build pack for your team\n", util.ColorInfo(label))
 			}
 			buildPackURL = buildPack.Spec.GitURL
 			BuildPackRef = buildPack.Spec.GitRef
@@ -166,7 +167,7 @@ func (o *EditBuildPackOptions) Run() error {
 		}
 		teamSettings.BuildPackName = buildPackName
 
-		log.Infof("Setting the team build pack to %s repo: %s ref: %s\n", util.ColorInfo(buildPackName), util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
+		log.Logger().Infof("Setting the team build pack to %s repo: %s ref: %s\n", util.ColorInfo(buildPackName), util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

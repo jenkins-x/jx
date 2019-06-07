@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os/user"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kserving"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -131,7 +132,7 @@ func (o *GetApplicationsOptions) Run() error {
 	}
 
 	if len(apps) == 0 {
-		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
+		log.Logger().Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
 		return nil
 	}
 	sort.Strings(apps)
@@ -250,7 +251,7 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 	}
 	u, err := user.Current()
 	if err != nil {
-		log.Warnf("could not find the current user name %s\n", err.Error())
+		log.Logger().Warnf("could not find the current user name %s\n", err.Error())
 	}
 	username := "uknown"
 	if u != nil {

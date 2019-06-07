@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -99,7 +100,7 @@ func (o *DeleteNamespaceOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete the following namespaces '%s'. This operation CANNOT be undone!",
+		log.Logger().Warnf("You are about to delete the following namespaces '%s'. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
@@ -117,10 +118,10 @@ func (o *DeleteNamespaceOptions) Run() error {
 	}
 
 	for _, name := range names {
-		log.Infof("Deleting namespace: %s\n", util.ColorInfo(name))
+		log.Logger().Infof("Deleting namespace: %s\n", util.ColorInfo(name))
 		err = namespaceInterface.Delete(name, nil)
 		if err != nil {
-			log.Warnf("Failed to delete namespace %s: %s\n", name, err)
+			log.Logger().Warnf("Failed to delete namespace %s: %s\n", name, err)
 		}
 	}
 	return nil

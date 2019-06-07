@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -78,7 +79,7 @@ func (o *RepoOptions) Run() error {
 		fmt.Fprintln(o.Out, fullURL)
 		return nil
 	}
-	log.Infof("repository: %s\n", util.ColorInfo(fullURL))
+	log.Logger().Infof("repository: %s\n", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {
 		browser.OpenURL(fullURL)
 	}

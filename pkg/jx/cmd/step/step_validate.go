@@ -2,6 +2,7 @@ package step
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -92,8 +93,8 @@ func (o *StepValidateOptions) verifyJxVersion(minJxVersion string) error {
 	}
 	if require.GT(current) {
 		info := util.ColorInfo
-		log.Infof("\nThe current installation of the %s CLI is too old: %s.\nWe require an installation of %s or later.\n\n", info("jx"), info(current.String()), info(require.String()))
-		log.Infof(`To upgrade try these commands:
+		log.Logger().Infof("\nThe current installation of the %s CLI is too old: %s.\nWe require an installation of %s or later.\n\n", info("jx"), info(current.String()), info(require.String()))
+		log.Logger().Infof(`To upgrade try these commands:
 
 * to upgrade the platform:    %s
 * to upgrade the CLI locally: %s
@@ -141,7 +142,7 @@ func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileN
 	releases map[string]helm.ReleaseSummary) error {
 	name := addonConfig.Name
 	if name == "" {
-		log.Warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)
+		log.Logger().Warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)
 		return nil
 	}
 	ch := kube.AddonCharts[name]
@@ -154,7 +155,7 @@ func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileN
 	}
 	info := util.ColorInfo
 
-	log.Infof(`
+	log.Logger().Infof(`
 The Project Configuration %s requires the %s addon to be installed. To fix this please type:
 
     %s

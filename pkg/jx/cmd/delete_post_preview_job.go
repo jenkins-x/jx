@@ -75,9 +75,9 @@ func (o *DeletePostPreviewJobOptions) Run() error {
 		}
 		if idx >= 0 {
 			settings.PostPreviewJobs = append(settings.PostPreviewJobs[0:idx], settings.PostPreviewJobs[idx+1:]...)
-			log.Infof("Deleting the post Preview Job: %s\n", util.ColorInfo(name))
+			log.Logger().Infof("Deleting the post Preview Job: %s\n", util.ColorInfo(name))
 		} else {
-			log.Warnf("post Preview Job: %s does not exist in this team\n", name)
+			log.Logger().Warnf("post Preview Job: %s does not exist in this team\n", name)
 		}
 		return nil
 	}

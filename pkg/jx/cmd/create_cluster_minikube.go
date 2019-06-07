@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"bytes"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"time"
 
@@ -105,18 +106,18 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 
 	err := o.InstallMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+		log.Logger().Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 		os.Exit(-1)
 	}
 
 	if o.isExistingMinikubeRunning() {
-		log.Error("an existing Minikube cluster is already running, perhaps use `jx install`.\nNote existing Minikube must have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
+		log.Logger().Error("an existing Minikube cluster is already running, perhaps use `jx install`.\nNote existing Minikube must have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
 		os.Exit(-1)
 	}
 
 	err = o.createClusterMinikube()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		log.Logger().Errorf("error creating cluster %v", err)
 		os.Exit(-1)
 	}
 
@@ -126,7 +127,7 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 func (o *CreateClusterMinikubeOptions) defaultMacVMDriver() string {
 	_, err := o.GetCommandOutput("", "hyperkit", "-v")
 	if err != nil {
-		log.Warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
+		log.Logger().Warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
 		return "xhyve"
 	}
 	return "hyperkit"
@@ -223,7 +224,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	if vmDriverValue != "none" {
 		err := o.DoInstallMissingDependencies([]string{vmDriverValue})
 		if err != nil {
-			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+			log.Logger().Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 			os.Exit(-1)
 		}
 	}
@@ -268,7 +269,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		o.InstallOptions.Flags.Domain = o.CreateClusterOptions.InstallOptions.InitOptions.Flags.Domain
 	}
 
-	log.Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...\n")
 	err = o.initAndInstall(cloud.MINIKUBE)
 	if err != nil {
 		return err

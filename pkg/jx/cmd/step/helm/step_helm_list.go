@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -73,6 +74,6 @@ func (o *StepHelmListOptions) Run() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	log.Info(output)
+	log.Logger().Info(output)
 	return nil
 }

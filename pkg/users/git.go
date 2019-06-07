@@ -76,7 +76,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		possibles := make([]jenkinsv1.User, 0)
 		if gitUser == nil {
 			// annoyingly UserInfo swallows the error, so we recreate it!
-			log.Warnf("unable to find user with login %s from %s", user.Login, r.GitProvider.Kind())
+			log.Logger().Warnf("unable to find user with login %s from %s", user.Login, r.GitProvider.Kind())
 		} else if user.Email != "" {
 			// Don't do this if email is empty as otherwise we risk matching any users who have empty emails!
 			for _, u := range users {
@@ -114,7 +114,7 @@ func (r *GitUserResolver) UpdateUserFromPRAuthor(author *jenkinsv1.User, pullReq
 			}
 			for _, commit := range commits {
 				if commit.Author != nil && gitLogin == commit.Author.Login {
-					log.Info("Found commit author match for: " + author.
+					log.Logger().Info("Found commit author match for: " + author.
 						Spec.Login + " with email address: " + commit.Author.Email + "\n")
 					author.Spec.Email = commit.Author.Email
 					updated = true

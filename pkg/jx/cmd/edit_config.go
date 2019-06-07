@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -121,7 +122,7 @@ func (o *EditConfigOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Saved project configuration %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("Saved project configuration %s\n", util.ColorInfo(fileName))
 	}
 	return nil
 }

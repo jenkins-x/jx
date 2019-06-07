@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -79,7 +80,7 @@ func (o *GetDevPodOptions) Run() error {
 	var userName string
 	if o.AllUsernames {
 		if o.Username != "" {
-			log.Warn("getting devpods for all usernames. Explicit username will be ignored")
+			log.Logger().Warn("getting devpods for all usernames. Explicit username will be ignored")
 		}
 		// Leave userName blank
 	} else {

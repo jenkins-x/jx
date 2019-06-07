@@ -2,10 +2,11 @@ package step
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -137,16 +138,16 @@ func (o *StepWaitForArtifactOptions) Run() error {
 		}
 		o.ArtifactURL = util.UrlJoin(o.RepoURL, group, artifact, version, artifact+"-"+version+"."+o.Extension)
 	}
-	log.Infof("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+	log.Logger().Infof("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 
 	fn := func() error {
 		return o.getUrlStatusOK(o.ArtifactURL)
 	}
 	err = o.RetryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
 	if err == nil {
-		log.Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+		log.Logger().Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 		return nil
 	}
-	log.Warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
+	log.Logger().Warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
 	return err
 }

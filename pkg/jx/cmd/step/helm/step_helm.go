@@ -2,10 +2,11 @@ package helm
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"github.com/spf13/cobra"
-	"path/filepath"
 
 	"os"
 
@@ -75,7 +76,7 @@ func (o *StepHelmOptions) dropRepositories(repoIds []string, message string) err
 	for _, repoId := range repoIds {
 		err := o.dropRepository(repoId, message)
 		if err != nil {
-			log.Warnf("Failed to drop repository %s: %s\n", util.ColorInfo(repoIds), util.ColorError(err))
+			log.Logger().Warnf("Failed to drop repository %s: %s\n", util.ColorInfo(repoIds), util.ColorError(err))
 			if answer == nil {
 				answer = err
 			}
@@ -88,7 +89,7 @@ func (o *StepHelmOptions) dropRepository(repoId string, message string) error {
 	if repoId == "" {
 		return nil
 	}
-	log.Infof("Dropping helm release repository %s\n", util.ColorInfo(repoId))
+	log.Logger().Infof("Dropping helm release repository %s\n", util.ColorInfo(repoId))
 	err := o.RunCommand("mvn",
 		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-drop",
 		"-DserverId=oss-sonatype-staging",
@@ -96,9 +97,9 @@ func (o *StepHelmOptions) dropRepository(repoId string, message string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\""+message+"\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		log.Warnf("Failed to drop repository %s due to: %s\n", repoId, err)
+		log.Logger().Warnf("Failed to drop repository %s due to: %s\n", repoId, err)
 	} else {
-		log.Infof("Dropped repository %s\n", util.ColorInfo(repoId))
+		log.Logger().Infof("Dropped repository %s\n", util.ColorInfo(repoId))
 	}
 	return err
 }
@@ -107,7 +108,7 @@ func (o *StepHelmOptions) releaseRepository(repoId string) error {
 	if repoId == "" {
 		return nil
 	}
-	log.Infof("Releasing helm release repository %s\n", util.ColorInfo(repoId))
+	log.Logger().Infof("Releasing helm release repository %s\n", util.ColorInfo(repoId))
 	options := o
 	err := options.RunCommand("mvn",
 		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-release",
@@ -116,9 +117,9 @@ func (o *StepHelmOptions) releaseRepository(repoId string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\"Next release is ready\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		log.Infof("Failed to release repository %s due to: %s\n", repoId, err)
+		log.Logger().Infof("Failed to release repository %s due to: %s\n", repoId, err)
 	} else {
-		log.Infof("Released repository %s\n", util.ColorInfo(repoId))
+		log.Logger().Infof("Released repository %s\n", util.ColorInfo(repoId))
 	}
 	return err
 }

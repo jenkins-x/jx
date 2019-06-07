@@ -2,6 +2,7 @@ package post
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -125,14 +126,14 @@ func (o *StepPostInstallOptions) Run() (err error) {
 		}
 		gitInfo, err := gits.ParseGitURL(gitURL)
 		if err != nil {
-			log.Errorf("failed to parse git URL %s for Environment %s due to: %s\n", gitURL, name, err)
+			log.Logger().Errorf("failed to parse git URL %s for Environment %s due to: %s\n", gitURL, name, err)
 			errs = append(errs, errors.Wrapf(err, "failed to parse git URL %s for Environment %s", gitURL, name))
 			continue
 		}
 
 		gitProvider, err := o.GitProviderForURL(gitURL, fmt.Sprintf("Environment %s", name))
 		if err != nil {
-			log.Errorf("failed to create git provider for Environment %s with git URL %s due to: %s\n", name, gitURL, err)
+			log.Logger().Errorf("failed to create git provider for Environment %s with git URL %s due to: %s\n", name, gitURL, err)
 			errs = append(errs, errors.Wrapf(err, "failed to create git provider for Environment %s with git URL %s", name, gitURL))
 			continue
 		}
@@ -170,7 +171,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 
 		err = o.ImportProject(gitURL, envDir, jenkinsfile.Name, branchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 		if err != nil {
-			log.Errorf("failed to import Environment %s with git URL %s due to: %s\n", name, gitURL, err)
+			log.Logger().Errorf("failed to import Environment %s with git URL %s due to: %s\n", name, gitURL, err)
 			errs = append(errs, errors.Wrapf(err, "failed to import Environment %s with git URL %s", name, gitURL))
 		}
 	}

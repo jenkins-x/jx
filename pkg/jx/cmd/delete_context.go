@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -143,7 +144,7 @@ func (o *DeleteContextOptions) Run() error {
 		return fmt.Errorf("Failed to update the kube config %s", err)
 	}
 
-	log.Infof("Deleted Kubernetes contexts: %s\n", util.ColorInfo(strings.Join(selected, ", ")))
+	log.Logger().Infof("Deleted Kubernetes contexts: %s\n", util.ColorInfo(strings.Join(selected, ", ")))
 	return nil
 }
 

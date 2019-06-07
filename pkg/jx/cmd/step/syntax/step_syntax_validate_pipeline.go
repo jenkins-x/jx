@@ -3,10 +3,11 @@ package syntax
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -106,9 +107,9 @@ func (o *StepSyntaxValidatePipelineOptions) Run() error {
 		return errors.Wrapf(err, "failed to perform schema validation of pipeline YAML file %s", pipelineFile)
 	}
 	if len(validationErrors) > 0 {
-		log.Errorf("One or more schema validation errors for %s:", pipelineFile)
+		log.Logger().Errorf("One or more schema validation errors for %s:", pipelineFile)
 		for _, e := range validationErrors {
-			log.Errorf("\t%s", e)
+			log.Logger().Errorf("\t%s", e)
 		}
 		return errors.New("FAILURE")
 	}
@@ -128,19 +129,19 @@ func (o *StepSyntaxValidatePipelineOptions) Run() error {
 					validateErr := lifecycle.Pipeline.Validate(context.Background())
 					if validateErr != nil {
 						hasErrors = true
-						log.Failure(fmt.Sprintf("Validation errors in lifecycle %s:\n\t%s", name, validateErr))
+						log.Logger().Errorf("Validation errors in lifecycle %s:\n\t%s", name, validateErr)
 					}
 				}
 			}
 		} else {
-			log.Infof("No lifecycles defined in %s", pipelineFile)
+			log.Logger().Infof("No lifecycles defined in %s", pipelineFile)
 		}
 	}
 
 	if hasErrors {
 		return errors.New("FAILURE")
 	}
-	log.Successf("Successfully validated %s", pipelineFile)
+	log.Logger().Infof("Successfully validated %s", pipelineFile)
 
 	return nil
 }

@@ -2,9 +2,10 @@ package helm
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -89,6 +90,6 @@ func (o *StepHelmVersionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Modified file %s to set the chart to version %s\n", util.ColorInfo(chartFile), util.ColorInfo(version))
+	log.Logger().Infof("Modified file %s to set the chart to version %s\n", util.ColorInfo(chartFile), util.ColorInfo(version))
 	return nil
 }

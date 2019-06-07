@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
@@ -93,6 +94,6 @@ func (o *StartProtectionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("%s enabled for %s\n", util.ColorInfo(context), util.ColorInfo(orgrepo))
+	log.Logger().Infof("%s enabled for %s\n", util.ColorInfo(context), util.ColorInfo(orgrepo))
 	return nil
 }

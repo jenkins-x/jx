@@ -37,10 +37,10 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			address = ip
 		} else {
 			info := util.ColorInfo
-			log.Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n",
+			log.Logger().Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n",
 				info(ingressNamespace), info(ingressService))
 			if provider == cloud.KUBERNETES {
-				log.Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n",
+				log.Logger().Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n",
 					info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
 			}
 			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, metav1.GetOptions{})
@@ -66,8 +66,8 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return domain, err
 		}
 
-		log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones\n")
-		log.Infof("If you do not have a custom DNS name you can use yet, then you can register a new one here: %s\n\n",
+		log.Logger().Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones\n")
+		log.Logger().Infof("If you do not have a custom DNS name you can use yet, then you can register a new one here: %s\n\n",
 			util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
 
 		if o.BatchMode {
@@ -95,7 +95,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 
 	if provider == cloud.IKS {
 		if domain != "" {
-			log.Infof("\nIBM Kubernetes Service will use provided domain. Ensure name is registered with DNS (ex. CIS) and pointing the cluster ingress IP: %s\n",
+			log.Logger().Infof("\nIBM Kubernetes Service will use provided domain. Ensure name is registered with DNS (ex. CIS) and pointing the cluster ingress IP: %s\n",
 				util.ColorInfo(address))
 			return domain, nil
 		}
@@ -103,26 +103,26 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		clusterRegion, err := iks.GetKubeClusterRegion(client)
 		if err == nil && clusterName != "" && clusterRegion != "" {
 			customDomain := clusterName + "." + clusterRegion + ".containers.appdomain.cloud"
-			log.Infof("\nIBM Kubernetes Service will use the default cluster domain: ")
-			log.Infof("%s\n", util.ColorInfo(customDomain))
+			log.Logger().Infof("\nIBM Kubernetes Service will use the default cluster domain: ")
+			log.Logger().Infof("%s\n", util.ColorInfo(customDomain))
 			return customDomain, nil
 		}
-		log.Infof("ERROR getting IBM Kubernetes Service will use the default cluster domain:")
-		log.Infof(err.Error())
+		log.Logger().Infof("ERROR getting IBM Kubernetes Service will use the default cluster domain:")
+		log.Logger().Infof(err.Error())
 	}
 
 	if address != "" {
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
-			log.Infof("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n",
+			log.Logger().Infof("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n",
 				util.ColorInfo(address))
 
 			addressIP := ""
 			if util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
 				"Should we convert "+address+" to an IP address so we can access resources externally", o.In, o.Out, o.Err) {
 
-				log.Infof("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
+				log.Logger().Infof("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
 				f := func() error {
 					ips, err := net.LookupIP(address)
 					if err == nil {
@@ -140,9 +140,9 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			}
 			if addressIP == "" {
 				addNip = false
-				log.Infof("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
+				log.Logger().Infof("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
 			} else {
-				log.Infof("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
+				log.Logger().Infof("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
 				address = addressIP
 			}
 		}
@@ -153,14 +153,14 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 
 	if domain == "" {
 		if o.BatchMode {
-			log.Successf("No domain flag provided so using default %s to generate Ingress rules", defaultDomain)
+			log.Logger().Infof("No domain flag provided so using default %s to generate Ingress rules", defaultDomain)
 			return defaultDomain, nil
 		}
-		log.Successf("You can now configure a wildcard DNS pointing to the new Load Balancer address %s", address)
-		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic DNS nip.io.")
-		log.Infof("\nOnce you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
+		log.Logger().Infof("You can now configure a wildcard DNS pointing to the new Load Balancer address %s", address)
+		log.Logger().Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic DNS nip.io.")
+		log.Logger().Infof("\nOnce you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
 
-		log.Infof("\nIf you don't have a wildcard DNS setup then setup a DNS (A) record and point it at: %s then use the DNS domain in the next input...\n", address)
+		log.Logger().Infof("\nIf you don't have a wildcard DNS setup then setup a DNS (A) record and point it at: %s then use the DNS domain in the next input...\n", address)
 
 		if domain == "" {
 			prompt := &survey.Input{
@@ -176,7 +176,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 	} else {
 		if domain != defaultDomain {
-			log.Successf("You can now configure your wildcard DNS %s to point to %s\n", domain, address)
+			log.Logger().Infof("You can now configure your wildcard DNS %s to point to %s\n", domain, address)
 		}
 	}
 

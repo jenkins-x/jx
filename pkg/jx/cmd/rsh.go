@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
@@ -224,7 +225,7 @@ func (o *RshOptions) Run() error {
 		a = append(a, commandArguments...)
 	}
 	if o.Verbose {
-		log.Infof("Running command: kubectl %s\n", strings.Join(a, " "))
+		log.Logger().Infof("Running command: kubectl %s\n", strings.Join(a, " "))
 	}
 	return o.RunCommandInteractive(true, "kubectl", a...)
 }
