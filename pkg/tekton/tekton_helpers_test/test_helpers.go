@@ -35,6 +35,27 @@ func AssertLoadPods(t *testing.T, dir string) *corev1.PodList {
 	return &corev1.PodList{}
 }
 
+// AssertLoadSinglePod reads a file containing a Pod and returns that Pod
+func AssertLoadSinglePod(t *testing.T, dir string) *corev1.Pod {
+	fileName := filepath.Join(dir, "pod.yml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		t.Fatalf("Error checking if file %s exists: %s", fileName, err)
+	}
+	if exists {
+		pod := &corev1.Pod{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, pod)
+			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
+				return pod
+			}
+
+		}
+	}
+	return &corev1.Pod{}
+}
+
 // AssertLoadPipeline reads a file containing a Pipeline and returns that Pipeline
 func AssertLoadPipeline(t *testing.T, dir string) *v1alpha1.Pipeline {
 	fileName := filepath.Join(dir, "pipeline.yml")

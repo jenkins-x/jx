@@ -28,15 +28,20 @@ func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.G
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
 	log.Logger().Infof("PipelineActivity for %s", name)
-	return &kube.PromoteStepActivityKey{
+	key := &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     name,
 			Pipeline: pipeline,
 			Build:    buildNumber,
 			GitInfo:  gitInfo,
-			PullRefs: pr.ToMerge,
 		},
 	}
+
+	if pr != nil {
+		key.PullRefs = pr.ToMerge
+	}
+
+	return key
 }
 
 // CreateOrUpdateSourceResource lazily creates a Tekton Pipeline PipelineResource for the given git repository
