@@ -44,7 +44,8 @@ func TestAddYamlLabels(t *testing.T) {
 	helmHooks, err := addLabelsToChartYaml(outDir, hooksDir, expectedChartName, expectedChartRelease, expectedChartVersion, chartMetadata, expectedNamespace)
 	assert.NoError(t, err, "Failed to add labels to YAML")
 
-	err = filepath.Walk(outDir, func(path string, f os.FileInfo, err error) error {
+	namespacesDir := filepath.Join(outDir, "namespaces", "jx")
+	err = filepath.Walk(namespacesDir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
 		if ext == ".yaml" {
 			file := path
