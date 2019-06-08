@@ -802,13 +802,13 @@ func addLabelsToChartYaml(basedir string, hooksDir string, chart string, release
 				kind := getYamlValueString(&m, "kind")
 				helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
 				if helmHook != "" {
-					// lets move any helm hooks to the new path
+					// lets move any helm hooks to the new file
 					relPath, err := filepath.Rel(basedir, path)
 					if err != nil {
 						return err
 					}
 					if relPath == "" {
-						return fmt.Errorf("Failed to find relative path of basedir %s and path %s", basedir, path)
+						return fmt.Errorf("Failed to find relative path of basedir %s and path %s", basedir, file)
 					}
 					newPath := filepath.Join(hooksDir, relPath)
 					newDir, _ := filepath.Split(newPath)
@@ -816,9 +816,9 @@ func addLabelsToChartYaml(basedir string, hooksDir string, chart string, release
 					if err != nil {
 						return err
 					}
-					err = os.Rename(path, newPath)
+					err = os.Rename(file, newPath)
 					if err != nil {
-						log.Logger().Warnf("Failed to move helm hook template %s to %s: %s", path, newPath, err)
+						log.Logger().Warnf("Failed to move helm hook template %s to %s: %s", file, newPath, err)
 						return err
 					}
 					name := getYamlValueString(&m, "metadata", "name")
@@ -830,7 +830,7 @@ func addLabelsToChartYaml(basedir string, hooksDir string, chart string, release
 				if err != nil {
 					return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 				}
-				if isClusterKind(kind) {
+				if !isClusterKind(kind) {
 					err = setYamlValue(&m, ns, "metadata", "labels", LabelNamespace)
 					if err != nil {
 						return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
