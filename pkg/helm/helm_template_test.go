@@ -1,12 +1,14 @@
 package helm
 
 import (
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -27,7 +29,6 @@ func TestAddYamlLabels(t *testing.T) {
 	assert.NoError(t, err)
 
 	outDir := path.Join(baseDir, "output")
-	hooksDir := path.Join(baseDir, "hooks")
 	err = util.CopyDir(testData, outDir, true)
 	assert.NoError(t, err)
 
@@ -41,10 +42,12 @@ func TestAddYamlLabels(t *testing.T) {
 		Version: expectedChartVersion,
 	}
 
+	namespacesDir := filepath.Join(outDir, "namespaces", "jx")
+	hooksDir := path.Join(baseDir, "hooks", "namespaces", "jx")
+
 	helmHooks, err := addLabelsToChartYaml(outDir, hooksDir, expectedChartName, expectedChartRelease, expectedChartVersion, chartMetadata, expectedNamespace)
 	assert.NoError(t, err, "Failed to add labels to YAML")
 
-	namespacesDir := filepath.Join(outDir, "namespaces", "jx")
 	err = filepath.Walk(namespacesDir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
 		if ext == ".yaml" {
@@ -62,8 +65,7 @@ func TestAddYamlLabels(t *testing.T) {
 						assertLabelValue(t, expectedChartRelease, labels, LabelReleaseName, path)
 						assertLabelValue(t, expectedChartVersion, labels, LabelReleaseChartVersion, path)
 
-						_, fileName := filepath.Split(file)
-						if fileName == "clusterrole.yaml" {
+						if !strings.HasSuffix(file, "clusterrole.yaml") {
 							assertLabelValue(t, expectedNamespace, labels, LabelNamespace, path)
 						} else {
 							assertNoLabelValue(t, labels, LabelNamespace, path)
