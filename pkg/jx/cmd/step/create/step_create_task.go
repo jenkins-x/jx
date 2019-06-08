@@ -1525,7 +1525,7 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, task *pipelineapi.Task,
 		}
 	}
 	envMap := toEnvMap(step.Env)
-	log.Logger().Infof("running step %s command: %s in dir: %s with env: %s\n", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(dir), util.ColorInfo(fmt.Sprintf("%#s", envMap)))
+	log.Logger().Infof("running step %s command: %s in dir: %s with env: %s\n", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(dir), util.ColorInfo(fmt.Sprintf("%#v", envMap)))
 	cmd := util.Command{
 		Name: commandAndArgs[0],
 		Args: commandAndArgs[1:],
