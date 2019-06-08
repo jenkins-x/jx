@@ -662,7 +662,7 @@ func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
 		return "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
 	}
 
-	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--tags", "--always", latestTag+"^")
+	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--tags", "--always", latestTag+"^^")
 	if err != nil {
 		return "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
 	}
