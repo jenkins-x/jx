@@ -301,7 +301,7 @@ func TestLint(t *testing.T) {
 	expectedOutput := "test"
 	helm, runner := createHelm(t, nil, expectedOutput)
 
-	output, err := helm.Lint()
+	output, err := helm.Lint(nil)
 
 	assert.NoError(t, err, "should lint the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
