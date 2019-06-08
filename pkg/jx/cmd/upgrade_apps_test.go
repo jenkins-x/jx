@@ -175,62 +175,65 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		// Needs console
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
-		"name": "testing",
-	}, "")
-	assert.NoError(t, err)
+		name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
+			"name": "testing",
+		}, "")
+		assert.NoError(r, err)
 
-	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
+		envDir, err := testOptions.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
-	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, `name: testing
+		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		assert.NoError(r, err)
+		assert.Equal(r, `name: testing
 `, string(existingValues))
 
-	// Now let's upgrade
+		// Now let's upgrade
 
-	newVersion, err := semver.Parse(version)
-	assert.NoError(t, err)
-	newVersion.Patch++
-	o := &cmd.UpgradeAppsOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: testOptions.CommonOptions,
-		},
-		Version:              newVersion.String(),
-		Alias:                alias,
-		Repo:                 helm.FakeChartmusuem,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
-
-	helm_test.StubFetchChart(name, newVersion.String(),
-		helm.FakeChartmusuem, &chart.Chart{
-			Metadata: &chart.Metadata{
-				Name:    name,
-				Version: newVersion.String(),
+		newVersion, err := semver.Parse(version)
+		assert.NoError(r, err)
+		newVersion.Patch++
+		o := &cmd.UpgradeAppsOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: testOptions.CommonOptions,
 			},
-			Files: []*google_protobuf.Any{
-				{
-					TypeUrl: "values.schema.json",
-					Value: []byte(`{
+			Version:              newVersion.String(),
+			Alias:                alias,
+			Repo:                 helm.FakeChartmusuem,
+			GitOps:               true,
+			HelmUpdate:           true,
+			DevEnv:               testOptions.DevEnv,
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
+
+		helm_test.StubFetchChart(name, newVersion.String(),
+			helm.FakeChartmusuem, &chart.Chart{
+				Metadata: &chart.Metadata{
+					Name:    name,
+					Version: newVersion.String(),
+				},
+				Files: []*google_protobuf.Any{
+					{
+						TypeUrl: "values.schema.json",
+						Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -245,81 +248,85 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
     }
   }
 }`),
+					},
 				},
-			},
-		}, testOptions.MockHelmer)
+			}, testOptions.MockHelmer)
 
-	err = o.Run()
-	assert.NoError(t, err)
-	// Validate a PR was created
-	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
-	assert.NoError(t, err)
-	// Validate the updated values.yaml
-	existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, `name: testing
+		err = o.Run()
+		assert.NoError(r, err)
+		// Validate a PR was created
+		_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+		assert.NoError(r, err)
+		// Validate the updated values.yaml
+		existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		assert.NoError(r, err)
+		assert.Equal(r, `name: testing
 species: human
 `, string(existingValues))
+	})
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		// Needs console
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
-		"name": "testing",
-	}, "")
-	assert.NoError(t, err)
+		name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
+			"name": "testing",
+		}, "")
+		assert.NoError(r, err)
 
-	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
+		envDir, err := testOptions.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
-	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, `name: testing
+		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		assert.NoError(r, err)
+		assert.Equal(r, `name: testing
 `, string(existingValues))
 
-	// Now let's upgrade
+		// Now let's upgrade
 
-	newVersion, err := semver.Parse(version)
-	assert.NoError(t, err)
-	newVersion.Patch++
-	o := &cmd.UpgradeAppsOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: testOptions.CommonOptions,
-		},
-		Version:              newVersion.String(),
-		Alias:                alias,
-		Repo:                 helm.FakeChartmusuem,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
-	o.BatchMode = false
-
-	helm_test.StubFetchChart(name, newVersion.String(),
-		helm.FakeChartmusuem, &chart.Chart{
-			Metadata: &chart.Metadata{
-				Name:    name,
-				Version: newVersion.String(),
+		newVersion, err := semver.Parse(version)
+		assert.NoError(r, err)
+		newVersion.Patch++
+		o := &cmd.UpgradeAppsOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: testOptions.CommonOptions,
 			},
-			Files: []*google_protobuf.Any{
-				{
-					TypeUrl: "values.schema.json",
-					Value: []byte(`{
+			Version:              newVersion.String(),
+			Alias:                alias,
+			Repo:                 helm.FakeChartmusuem,
+			GitOps:               true,
+			HelmUpdate:           true,
+			DevEnv:               testOptions.DevEnv,
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
+		o.BatchMode = false
+
+		helm_test.StubFetchChart(name, newVersion.String(),
+			helm.FakeChartmusuem, &chart.Chart{
+				Metadata: &chart.Metadata{
+					Name:    name,
+					Version: newVersion.String(),
+				},
+				Files: []*google_protobuf.Any{
+					{
+						TypeUrl: "values.schema.json",
+						Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -334,94 +341,98 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
     }
   }
 }`),
+					},
 				},
-			},
-		}, testOptions.MockHelmer)
+			}, testOptions.MockHelmer)
 
-	// Test interactive IO
-	donec := make(chan struct{})
-	// TODO Answer questions
-	go func() {
-		defer close(donec)
-		// Test boolean type
-		console.ExpectString("Enter a value for name testing [Automatically accepted existing value]\r\n")
-		console.ExpectString("Enter a value for species (human)")
-		console.SendLine("martian")
-		console.ExpectString("martian? Enter a value for species martian")
-	}()
+		// Test interactive IO
+		donec := make(chan struct{})
+		// TODO Answer questions
+		go func() {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for name testing [Automatically accepted existing value]\r\n")
+			console.ExpectString("Enter a value for species (human)")
+			console.SendLine("martian")
+			console.ExpectString("martian? Enter a value for species martian")
+		}()
 
-	err = o.Run()
-	assert.NoError(t, err)
-	// Validate a PR was created
-	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
-	assert.NoError(t, err)
-	// Validate the updated values.yaml
-	existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, `name: testing
+		err = o.Run()
+		assert.NoError(r, err)
+		// Validate a PR was created
+		_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+		assert.NoError(r, err)
+		// Validate the updated values.yaml
+		existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		assert.NoError(r, err)
+		assert.Equal(r, `name: testing
 species: martian
 `, string(existingValues))
+	})
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		// Needs console
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
-		"name": "testing",
-	}, "")
-	assert.NoError(t, err)
+		name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{
+			"name": "testing",
+		}, "")
+		assert.NoError(r, err)
 
-	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
+		envDir, err := testOptions.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
-	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, `name: testing
+		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		assert.NoError(r, err)
+		assert.Equal(r, `name: testing
 `, string(existingValues))
 
-	// Now let's upgrade
+		// Now let's upgrade
 
-	newVersion, err := semver.Parse(version)
-	assert.NoError(t, err)
-	newVersion.Patch++
-	o := &cmd.UpgradeAppsOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: testOptions.CommonOptions,
-		},
-		Version:              newVersion.String(),
-		Alias:                alias,
-		Repo:                 helm.FakeChartmusuem,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		AskAll:               true,
-	}
-	o.Args = []string{name}
-	o.BatchMode = false
-
-	helm_test.StubFetchChart(name, newVersion.String(),
-		helm.FakeChartmusuem, &chart.Chart{
-			Metadata: &chart.Metadata{
-				Name:    name,
-				Version: newVersion.String(),
+		newVersion, err := semver.Parse(version)
+		assert.NoError(r, err)
+		newVersion.Patch++
+		o := &cmd.UpgradeAppsOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: testOptions.CommonOptions,
 			},
-			Files: []*google_protobuf.Any{
-				{
-					TypeUrl: "values.schema.json",
-					Value: []byte(`{
+			Version:              newVersion.String(),
+			Alias:                alias,
+			Repo:                 helm.FakeChartmusuem,
+			GitOps:               true,
+			HelmUpdate:           true,
+			DevEnv:               testOptions.DevEnv,
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			AskAll:               true,
+		}
+		o.Args = []string{name}
+		o.BatchMode = false
+
+		helm_test.StubFetchChart(name, newVersion.String(),
+			helm.FakeChartmusuem, &chart.Chart{
+				Metadata: &chart.Metadata{
+					Name:    name,
+					Version: newVersion.String(),
+				},
+				Files: []*google_protobuf.Any{
+					{
+						TypeUrl: "values.schema.json",
+						Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -436,82 +447,86 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
     }
   }
 }`),
+					},
 				},
-			},
-		}, testOptions.MockHelmer)
+			}, testOptions.MockHelmer)
 
-	// Test interactive IO
-	donec := make(chan struct{})
-	// TODO Answer questions
-	go func() {
-		defer close(donec)
-		// Test boolean type
-		console.ExpectString("Enter a value for name (testing)")
-		console.SendLine("mark")
-		console.ExpectString("Enter a value for species (human)")
-		console.SendLine("martian")
-		console.ExpectString("martian? Enter a value for species martian")
-	}()
+		// Test interactive IO
+		donec := make(chan struct{})
+		// TODO Answer questions
+		go func() {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for name (testing)")
+			console.SendLine("mark")
+			console.ExpectString("Enter a value for species (human)")
+			console.SendLine("martian")
+			console.ExpectString("martian? Enter a value for species martian")
+		}()
 
-	err = o.Run()
-	assert.NoError(t, err)
-	// Validate a PR was created
-	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
-	assert.NoError(t, err)
-	// Validate the updated values.yaml
-	existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, `name: mark
+		err = o.Run()
+		assert.NoError(r, err)
+		// Validate a PR was created
+		_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+		assert.NoError(r, err)
+		// Validate the updated values.yaml
+		existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		assert.NoError(r, err)
+		assert.Equal(r, `name: mark
 species: martian
 `, string(existingValues))
+	})
 }
 
 func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		// Needs console
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{}, "")
-	assert.NoError(t, err)
+		name, alias, version, err := testOptions.DirectlyAddAppToGitOps("", map[string]interface{}{}, "")
+		assert.NoError(r, err)
 
-	// Now let's upgrade
+		// Now let's upgrade
 
-	newVersion, err := semver.Parse(version)
-	assert.NoError(t, err)
-	newVersion.Patch++
-	o := &cmd.UpgradeAppsOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: testOptions.CommonOptions,
-		},
-		Version:              newVersion.String(),
-		Alias:                alias,
-		Repo:                 helm.FakeChartmusuem,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
-
-	helm_test.StubFetchChart(name, newVersion.String(),
-		helm.FakeChartmusuem, &chart.Chart{
-			Metadata: &chart.Metadata{
-				Name:    name,
-				Version: newVersion.String(),
+		newVersion, err := semver.Parse(version)
+		assert.NoError(r, err)
+		newVersion.Patch++
+		o := &cmd.UpgradeAppsOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: testOptions.CommonOptions,
 			},
-			Files: []*google_protobuf.Any{
-				{
-					TypeUrl: "values.schema.json",
-					Value: []byte(`{
+			Version:              newVersion.String(),
+			Alias:                alias,
+			Repo:                 helm.FakeChartmusuem,
+			GitOps:               true,
+			HelmUpdate:           true,
+			DevEnv:               testOptions.DevEnv,
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
+
+		helm_test.StubFetchChart(name, newVersion.String(),
+			helm.FakeChartmusuem, &chart.Chart{
+				Metadata: &chart.Metadata{
+					Name:    name,
+					Version: newVersion.String(),
+				},
+				Files: []*google_protobuf.Any{
+					{
+						TypeUrl: "values.schema.json",
+						Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -526,15 +541,16 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
     }
   }
 }`),
+					},
 				},
-			},
-		}, testOptions.MockHelmer)
+			}, testOptions.MockHelmer)
 
-	err = o.Run()
-	assert.Error(t, err)
-	// Validate a PR was not created
-	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
-	assert.Error(t, err)
+		err = o.Run()
+		assert.Error(r, err)
+		// Validate a PR was not created
+		_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+		assert.Error(r, err)
+	})
 }
 
 func TestUpgradeAppToLatestForGitOps(t *testing.T) {

@@ -97,7 +97,7 @@ func newTerminal(c *expect.Console) *terminal.Stdio {
 }
 
 // NewTerminal mock terminal to control stdin and stdout
-func NewTerminal(t *testing.T, timeout *time.Duration) *ConsoleWrapper {
+func NewTerminal(t assert.TestingT, timeout *time.Duration) *ConsoleWrapper {
 	buf := new(bytes.Buffer)
 	if timeout == nil {
 		timeout = &defaultConsoleTimeout
@@ -128,14 +128,14 @@ func TestCloser(t *testing.T, closer io.Closer) {
 	}
 }
 
-func sendNoError(t *testing.T) expect.ConsoleOpt {
+func sendNoError(t assert.TestingT) expect.ConsoleOpt {
 	return expect.WithSendObserver(
 		func(msg string, n int, err error) {
 			if err != nil {
-				t.Fatalf("Failed to send %q: %s\n%s", msg, err, string(debug.Stack()))
+				t.Errorf("Failed to send %q: %s\n%s", msg, err, string(debug.Stack()))
 			}
 			if len(msg) != n {
-				t.Fatalf("Only sent %d of %d bytes for %q\n%s", n, len(msg), msg, string(debug.Stack()))
+				t.Errorf("Only sent %d of %d bytes for %q\n%s", n, len(msg), msg, string(debug.Stack()))
 			}
 		},
 	)

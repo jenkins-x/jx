@@ -3,12 +3,11 @@ package cmd_test_helpers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -191,7 +190,7 @@ func (o *AppTestOptions) Cleanup() error {
 
 // CreateAppTestOptions configures the mock environment for running apps related tests
 // If you use this function, then don't use t.Parallel
-func CreateAppTestOptions(gitOps bool, appName string, t *testing.T) *AppTestOptions {
+func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTestOptions {
 	mockFactory := cmd_test.NewMockFactory()
 	commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)
 	o := AppTestOptions{

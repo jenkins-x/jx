@@ -3,7 +3,6 @@ package tests
 import (
 	"bytes"
 	"strings"
-	"testing"
 
 	expect "github.com/Netflix/go-expect"
 	"github.com/acarl005/stripansi"
@@ -15,7 +14,7 @@ import (
 // ConsoleWrapper is a wrapper around the go-expect Console that takes a test object and will report failures
 // This prevents users having to manually detect and report errors during the tests
 type ConsoleWrapper struct {
-	tester  *testing.T
+	tester  assert.TestingT
 	console *expect.Console
 	state   *vt10x.State
 	terminal.Stdio

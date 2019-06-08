@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 
@@ -51,205 +52,206 @@ const (
 )
 
 func TestAddAppForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name := nameUUID.String()
-	version := "0.0.1"
-	alias := fmt.Sprintf("%s-alias", name)
-	repo := "https://storage.googleapis.com/chartmuseum.jenkins-x.io"
-	description := "My test chart description"
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 repo,
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:        name,
-			Version:     version,
-			Description: description,
-		},
-	}, testOptions.MockHelmer)
-	o.Args = []string{name}
-	err = o.Run()
-	assert.NoError(t, err)
-	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
-	assert.NoError(t, err)
-	// Validate the PR has the right title, message
-	assert.Equal(t, fmt.Sprintf("Add %s %s", name, version), pr.Title)
-	assert.Equal(t, fmt.Sprintf("Add app %s %s", name, version), pr.Body)
-	// Validate the branch name
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
-	branchName, err := o.Git().Branch(devEnvDir)
-	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("add-app-%s-%s", name, version), branchName)
-	// Validate the updated Requirements.yaml
-	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
-	assert.NoError(t, err)
-	found := make([]*helm.Dependency, 0)
-	for _, d := range requirements.Dependencies {
-		if d.Name == name && d.Alias == alias {
-			found = append(found, d)
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		name := nameUUID.String()
+		version := "0.0.1"
+		alias := fmt.Sprintf("%s-alias", name)
+		repo := "https://storage.googleapis.com/chartmuseum.jenkins-x.io"
+		description := "My test chart description"
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:              version,
+			Alias:                alias,
+			Repo:                 repo,
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true, // Flag default when run on CLI
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
 		}
-	}
-	assert.Len(t, found, 1)
-	assert.Equal(t, version, found[0].Version)
-	app := &jenkinsv1.App{}
-	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
-	_ = yaml.Unmarshal(appBytes, app)
-	assert.Equal(t, name, app.Labels[helm.LabelAppName])
-	assert.Equal(t, version, app.Labels[helm.LabelAppVersion])
-	assert.Equal(t, repo, app.Annotations[helm.AnnotationAppRepository])
-	assert.Equal(t, description, app.Annotations[helm.AnnotationAppDescription])
-
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:        name,
+				Version:     version,
+				Description: description,
+			},
+		}, testOptions.MockHelmer)
+		o.Args = []string{name}
+		err = o.Run()
+		assert.NoError(r, err)
+		pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+		assert.NoError(r, err)
+		// Validate the PR has the right title, message
+		assert.Equal(r, fmt.Sprintf("Add %s %s", name, version), pr.Title)
+		assert.Equal(r, fmt.Sprintf("Add app %s %s", name, version), pr.Body)
+		// Validate the branch name
+		envDir, err := o.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+		branchName, err := o.Git().Branch(devEnvDir)
+		assert.NoError(r, err)
+		assert.Equal(r, fmt.Sprintf("add-app-%s-%s", name, version), branchName)
+		// Validate the updated Requirements.yaml
+		requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
+		assert.NoError(r, err)
+		found := make([]*helm.Dependency, 0)
+		for _, d := range requirements.Dependencies {
+			if d.Name == name && d.Alias == alias {
+				found = append(found, d)
+			}
+		}
+		assert.Len(r, found, 1)
+		assert.Equal(r, version, found[0].Version)
+		app := &jenkinsv1.App{}
+		appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
+		_ = yaml.Unmarshal(appBytes, app)
+		assert.Equal(r, name, app.Labels[helm.LabelAppName])
+		assert.Equal(r, version, app.Labels[helm.LabelAppVersion])
+		assert.Equal(r, repo, app.Annotations[helm.AnnotationAppRepository])
+		assert.Equal(r, description, app.Annotations[helm.AnnotationAppDescription])
+	})
 }
 
 func TestAddAppForGitOpsWithShortName(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	shortName := nameUUID.String()
-	name := fmt.Sprintf("jx-app-%s", shortName)
-	version := "0.0.1"
-	alias := fmt.Sprintf("%s-alias", name)
-	repo := kube.DefaultChartMuseumURL
-	description := "My test chart description"
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 repo,
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
-		map[string]string{
-			"repo1": kube.DefaultChartMuseumURL,
-		}, nil)
-	pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString())).ThenReturn(
-		[]helm.ChartSummary{
-			{
-				Name:         fmt.Sprintf("repo1/%s", name),
-				ChartVersion: version,
-				AppVersion:   version,
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		shortName := nameUUID.String()
+		name := fmt.Sprintf("jx-app-%s", shortName)
+		version := "0.0.1"
+		alias := fmt.Sprintf("%s-alias", name)
+		repo := kube.DefaultChartMuseumURL
+		description := "My test chart description"
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
 			},
-		}, nil)
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:        name,
-			Version:     version,
-			Description: description,
-		},
-	}, testOptions.MockHelmer)
-	o.Args = []string{shortName}
-	err = o.Run()
-	assert.NoError(t, err)
-	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
-	assert.NoError(t, err)
-	// Validate the PR has the right title, message
-	assert.Equal(t, fmt.Sprintf("Add %s %s", name, version), pr.Title)
-	assert.Equal(t, fmt.Sprintf("Add app %s %s", name, version), pr.Body)
-	// Validate the branch name
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
-	branchName, err := o.Git().Branch(devEnvDir)
-	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("add-app-%s-%s", name, version), branchName)
-	// Validate the updated Requirements.yaml
-	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
-	assert.NoError(t, err)
-	found := make([]*helm.Dependency, 0)
-	for _, d := range requirements.Dependencies {
-		if d.Name == name && d.Alias == alias {
-			found = append(found, d)
+			Version:              version,
+			Alias:                alias,
+			Repo:                 repo,
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true, // Flag default when run on CLI
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
 		}
-	}
-	assert.Len(t, found, 1)
-	assert.Equal(t, version, found[0].Version)
-	app := &jenkinsv1.App{}
-	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
-	_ = yaml.Unmarshal(appBytes, app)
-	assert.Equal(t, name, app.Labels[helm.LabelAppName])
-	assert.Equal(t, version, app.Labels[helm.LabelAppVersion])
-	assert.Equal(t, repo, app.Annotations[helm.AnnotationAppRepository])
-	assert.Equal(t, description, app.Annotations[helm.AnnotationAppDescription])
-
+		pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
+			map[string]string{
+				"repo1": kube.DefaultChartMuseumURL,
+			}, nil)
+		pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString())).ThenReturn(
+			[]helm.ChartSummary{
+				{
+					Name:         fmt.Sprintf("repo1/%s", name),
+					ChartVersion: version,
+					AppVersion:   version,
+				},
+			}, nil)
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:        name,
+				Version:     version,
+				Description: description,
+			},
+		}, testOptions.MockHelmer)
+		o.Args = []string{shortName}
+		err = o.Run()
+		assert.NoError(r, err)
+		pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+		assert.NoError(r, err)
+		// Validate the PR has the right title, message
+		assert.Equal(r, fmt.Sprintf("Add %s %s", name, version), pr.Title)
+		assert.Equal(r, fmt.Sprintf("Add app %s %s", name, version), pr.Body)
+		// Validate the branch name
+		envDir, err := o.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+		branchName, err := o.Git().Branch(devEnvDir)
+		assert.NoError(r, err)
+		assert.Equal(r, fmt.Sprintf("add-app-%s-%s", name, version), branchName)
+		// Validate the updated Requirements.yaml
+		requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
+		assert.NoError(r, err)
+		found := make([]*helm.Dependency, 0)
+		for _, d := range requirements.Dependencies {
+			if d.Name == name && d.Alias == alias {
+				found = append(found, d)
+			}
+		}
+		assert.Len(r, found, 1)
+		assert.Equal(r, version, found[0].Version)
+		app := &jenkinsv1.App{}
+		appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
+		_ = yaml.Unmarshal(appBytes, app)
+		assert.Equal(r, name, app.Labels[helm.LabelAppName])
+		assert.Equal(r, version, app.Labels[helm.LabelAppVersion])
+		assert.Equal(r, repo, app.Annotations[helm.AnnotationAppRepository])
+		assert.Equal(r, description, app.Annotations[helm.AnnotationAppDescription])
+		assert.Equal(r, description, app.Annotations[helm.AnnotationAppDescription])
+	})
 }
 
 func TestAddAppWithSecrets(t *testing.T) {
-	// TODO enable this test again when is passing
-	t.SkipNow()
-
-	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console input to create secrets
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		// Needs console input to create secrets
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name := nameUUID.String()
-	version := "0.0.1"
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
-	o.BatchMode = false
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		name := nameUUID.String()
+		version := "0.0.1"
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:              version,
+			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true, // Flag default when run on CLI
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
+		o.BatchMode = false
 
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:    name,
-			Version: version,
-		},
-		Files: []*google_protobuf.Any{
-			{
-				TypeUrl: "values.schema.json",
-				Value: []byte(`{
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: version,
+			},
+			Files: []*google_protobuf.Any{
+				{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -261,82 +263,23 @@ func TestAddAppWithSecrets(t *testing.T) {
     }
   }
 }`),
+				},
 			},
-		},
-	}, testOptions.MockHelmer)
+		}, testOptions.MockHelmer)
 
-	// Test interactive IO
-	donec := make(chan struct{})
-	// TODO Answer questions
-	go func() {
-		defer close(donec)
-		// Test boolean type
-		console.ExpectString("Enter a value for tokenValue")
-		console.SendLine("abc")
-		console.ExpectString(" ***")
-		console.ExpectEOF()
-	}()
+		// Test interactive IO
+		donec := make(chan struct{})
+		// TODO Answer questions
+		go func() {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for tokenValue")
+			console.SendLine("abc")
+			console.ExpectString(" ***")
+			console.ExpectEOF()
+		}()
 
-	pegomock.When(testOptions.MockHelmer.UpgradeChart(
-		pegomock.AnyString(),
-		pegomock.EqString(name),
-		pegomock.AnyString(),
-		pegomock.EqString(version),
-		pegomock.AnyBool(),
-		pegomock.AnyInt(),
-		pegomock.AnyBool(),
-		pegomock.AnyBool(),
-		pegomock.AnyStringSlice(),
-		pegomock.AnyStringSlice(),
-		pegomock.EqString(kube.DefaultChartMuseumURL),
-		pegomock.AnyString(),
-		pegomock.AnyString())).
-		Then(func(params []pegomock.Param) pegomock.ReturnValues {
-			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
-			// deleted
-			assert.IsType(t, "", params[0])
-			assert.IsType(t, make([]string, 0), params[9])
-			chart := params[0].(string)
-			valuesFiles := params[9].([]string)
-			isChartDir, err := chartutil.IsChartDir(chart)
-			assert.NoError(t, err)
-			assert.True(t, isChartDir)
-			assert.Len(t, valuesFiles, 2)
-			_, valuesFileName := filepath.Split(valuesFiles[0])
-			assert.Contains(t, valuesFileName, "values.yaml")
-			bytes, err := ioutil.ReadFile(valuesFiles[0])
-			assert.NoError(t, err)
-			assert.Equal(t, `tokenValue:
-  kind: Secret
-  name: tokenvalue-secret
-`, string(bytes))
-			_, secretsFileName := filepath.Split(valuesFiles[1])
-			assert.Contains(t, secretsFileName, "generatedSecrets.yaml")
-			bytes, err = ioutil.ReadFile(valuesFiles[1])
-			assert.NoError(t, err)
-			assert.Equal(t, `appsGeneratedSecrets:
-- Name: tokenvalue-secret
-  key: token
-  value: abc
-`, string(bytes))
-			// Check the template is in place
-			_, err = os.Stat(filepath.Join(chart, "templates", "app-generated-secret-template.yaml"))
-			assert.NoError(t, err)
-			return []pegomock.ReturnValue{
-				nil,
-			}
-		})
-
-	err = o.Run()
-	assert.NoError(t, err)
-	console.Close()
-	<-donec
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
-
-	// Validate that the secret reference is generated and the secret is in the chart
-	// chart, _, _, _, _, _, _, _, _, valueFiles, _, _, _ :=
-	testOptions.MockHelmer.VerifyWasCalledOnce().
-		UpgradeChart(
+		pegomock.When(testOptions.MockHelmer.UpgradeChart(
 			pegomock.AnyString(),
 			pegomock.EqString(name),
 			pegomock.AnyString(),
@@ -349,53 +292,114 @@ func TestAddAppWithSecrets(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString())
+			pegomock.AnyString())).
+			Then(func(params []pegomock.Param) pegomock.ReturnValues {
+				// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
+				// deleted
+				assert.IsType(r, "", params[0])
+				assert.IsType(r, make([]string, 0), params[9])
+				chart := params[0].(string)
+				valuesFiles := params[9].([]string)
+				isChartDir, err := chartutil.IsChartDir(chart)
+				assert.NoError(r, err)
+				assert.True(r, isChartDir)
+				assert.Len(r, valuesFiles, 2)
+				_, valuesFileName := filepath.Split(valuesFiles[0])
+				assert.Contains(r, valuesFileName, "values.yaml")
+				bytes, err := ioutil.ReadFile(valuesFiles[0])
+				assert.NoError(r, err)
+				assert.Equal(r, `tokenValue:
+  kind: Secret
+  name: tokenvalue-secret
+`, string(bytes))
+				_, secretsFileName := filepath.Split(valuesFiles[1])
+				assert.Contains(r, secretsFileName, "generatedSecrets.yaml")
+				bytes, err = ioutil.ReadFile(valuesFiles[1])
+				assert.NoError(r, err)
+				assert.Equal(r, `appsGeneratedSecrets:
+- Name: tokenvalue-secret
+  key: token
+  value: abc
+`, string(bytes))
+				// Check the template is in place
+				_, err = os.Stat(filepath.Join(chart, "templates", "app-generated-secret-template.yaml"))
+				assert.NoError(r, err)
+				return []pegomock.ReturnValue{
+					nil,
+				}
+			})
+
+		err = o.Run()
+		assert.NoError(r, err)
+		console.Close()
+		<-donec
+		r.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+
+		// Validate that the secret reference is generated and the secret is in the chart
+		// chart, _, _, _, _, _, _, _, _, valueFiles, _, _, _ :=
+		testOptions.MockHelmer.VerifyWasCalledOnce().
+			UpgradeChart(
+				pegomock.AnyString(),
+				pegomock.EqString(fmt.Sprintf("jx-%s", name)),
+				pegomock.AnyString(),
+				pegomock.EqString(version),
+				pegomock.AnyBool(),
+				pegomock.AnyInt(),
+				pegomock.AnyBool(),
+				pegomock.AnyBool(),
+				pegomock.AnyStringSlice(),
+				pegomock.AnyStringSlice(),
+				pegomock.EqString(kube.DefaultChartMuseumURL),
+				pegomock.AnyString(),
+				pegomock.AnyString())
+	})
 }
 
 func TestAddAppWithDefaults(t *testing.T) {
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console input to create secrets
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		// Needs console input to create secrets
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name := nameUUID.String()
-	version := "0.0.1"
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		name := nameUUID.String()
+		version := "0.0.1"
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:              version,
+			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true, // Flag default when run on CLI
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:    name,
-			Version: version,
-		},
-		Files: []*google_protobuf.Any{
-			{
-				TypeUrl: "values.schema.json",
-				Value: []byte(`{
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: version,
+			},
+			Files: []*google_protobuf.Any{
+				{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -407,67 +411,23 @@ func TestAddAppWithDefaults(t *testing.T) {
     }
   }
 }`),
+				},
 			},
-		},
-	}, testOptions.MockHelmer)
+		}, testOptions.MockHelmer)
 
-	// Test interactive IO
-	donec := make(chan struct{})
-	// TODO Answer questions
-	go func() {
-		defer close(donec)
-		// Test boolean type
-		console.ExpectString("Enter a value for name testing [Automatically accepted default value]")
-		console.ExpectEOF()
-	}()
+		// Test interactive IO
+		donec := make(chan struct{})
+		// TODO Answer questions
+		go func() {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for name testing [Automatically accepted default value]")
+			console.ExpectEOF()
+		}()
 
-	pegomock.When(testOptions.MockHelmer.UpgradeChart(
-		pegomock.AnyString(),
-		pegomock.EqString(name),
-		pegomock.AnyString(),
-		pegomock.EqString(version),
-		pegomock.AnyBool(),
-		pegomock.AnyInt(),
-		pegomock.AnyBool(),
-		pegomock.AnyBool(),
-		pegomock.AnyStringSlice(),
-		pegomock.AnyStringSlice(),
-		pegomock.EqString(kube.DefaultChartMuseumURL),
-		pegomock.AnyString(),
-		pegomock.AnyString())).
-		Then(func(params []pegomock.Param) pegomock.ReturnValues {
-			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
-			// deleted
-			assert.IsType(t, "", params[0])
-			assert.IsType(t, make([]string, 0), params[9])
-			chart := params[0].(string)
-			valuesFiles := params[9].([]string)
-			isChartDir, err := chartutil.IsChartDir(chart)
-			assert.NoError(t, err)
-			assert.True(t, isChartDir)
-			assert.Len(t, valuesFiles, 1)
-			_, valuesFileName := filepath.Split(valuesFiles[0])
-			assert.Contains(t, valuesFileName, "values.yaml")
-			bytes, err := ioutil.ReadFile(valuesFiles[0])
-			assert.NoError(t, err)
-			assert.Equal(t, `name: testing
-`, string(bytes))
-
-			return []pegomock.ReturnValue{
-				nil,
-			}
-		})
-
-	err = o.Run()
-	assert.NoError(t, err)
-	console.Close()
-	<-donec
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
-
-	testOptions.MockHelmer.VerifyWasCalledOnce().
-		UpgradeChart(
+		pegomock.When(testOptions.MockHelmer.UpgradeChart(
 			pegomock.AnyString(),
-			pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)),
+			pegomock.EqString(name),
 			pegomock.AnyString(),
 			pegomock.EqString(version),
 			pegomock.AnyBool(),
@@ -478,7 +438,53 @@ func TestAddAppWithDefaults(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString())
+			pegomock.AnyString())).
+			Then(func(params []pegomock.Param) pegomock.ReturnValues {
+				// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
+				// deleted
+				assert.IsType(r, "", params[0])
+				assert.IsType(r, make([]string, 0), params[9])
+				chart := params[0].(string)
+				valuesFiles := params[9].([]string)
+				isChartDir, err := chartutil.IsChartDir(chart)
+				assert.NoError(r, err)
+				assert.True(r, isChartDir)
+				assert.Len(r, valuesFiles, 1)
+				_, valuesFileName := filepath.Split(valuesFiles[0])
+				assert.Contains(r, valuesFileName, "values.yaml")
+				bytes, err := ioutil.ReadFile(valuesFiles[0])
+				assert.NoError(r, err)
+				assert.Equal(r, `name: testing
+`, string(bytes))
+
+				return []pegomock.ReturnValue{
+					nil,
+				}
+			})
+
+		err = o.Run()
+		assert.NoError(r, err)
+		console.Close()
+		<-donec
+		r.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+
+		testOptions.MockHelmer.VerifyWasCalledOnce().
+			UpgradeChart(
+				pegomock.AnyString(),
+				pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)),
+				pegomock.AnyString(),
+				pegomock.EqString(version),
+				pegomock.AnyBool(),
+				pegomock.AnyInt(),
+				pegomock.AnyBool(),
+				pegomock.AnyBool(),
+				pegomock.AnyStringSlice(),
+				pegomock.AnyStringSlice(),
+				pegomock.EqString(kube.DefaultChartMuseumURL),
+				pegomock.AnyString(),
+				pegomock.AnyString())
+	})
+
 }
 
 func TestStashValues(t *testing.T) {
@@ -486,47 +492,48 @@ func TestStashValues(t *testing.T) {
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console input to create secrets
-	console := tests.NewTerminal(t, &timeout)
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
-	defer console.Cleanup()
+		// Needs console input to create secrets
+		console := tests.NewTerminal(r, &timeout)
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
+		defer console.Cleanup()
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name := nameUUID.String()
-	version := "0.0.1"
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		Namespace:            namespace,
-	}
-	o.Args = []string{name}
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		name := nameUUID.String()
+		version := "0.0.1"
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:              version,
+			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true, // Flag default when run on CLI
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Namespace:            namespace,
+		}
+		o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:    name,
-			Version: version,
-		},
-		Files: []*google_protobuf.Any{
-			{
-				TypeUrl: "values.schema.json",
-				Value: []byte(`{
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: version,
+			},
+			Files: []*google_protobuf.Any{
+				{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -538,75 +545,76 @@ func TestStashValues(t *testing.T) {
     }
   }
 }`),
+				},
 			},
-		},
-	}, testOptions.MockHelmer)
+		}, testOptions.MockHelmer)
 
-	err = o.Run()
-	assert.NoError(t, err)
-	appCRDName := fmt.Sprintf("%s-%s", name, name)
-	jxClient, ns, err := testOptions.CommonOptions.JXClientAndDevNamespace()
-	assert.NoError(t, err)
-	appList, err := jxClient.JenkinsV1().Apps(ns).List(metav1.ListOptions{})
-	assert.Equal(t, namespace, ns)
-	assert.NoError(t, err)
-	assert.Len(t, appList.Items, 1)
-	app, err := jxClient.JenkinsV1().Apps(ns).Get(fmt.Sprintf("%s-%s", namespace, appCRDName), metav1.GetOptions{})
-	assert.NoError(t, err)
-	val, ok := app.Annotations[apps.ValuesAnnotation]
-	assert.True(t, ok)
-	dst, err := base64.StdEncoding.DecodeString(val)
-	assert.NoError(t, err)
-	assert.Equal(t, `{"name":"testing"}`, string(dst))
-
+		err = o.Run()
+		assert.NoError(r, err)
+		appCRDName := fmt.Sprintf("%s-%s", name, name)
+		jxClient, ns, err := testOptions.CommonOptions.JXClientAndDevNamespace()
+		assert.NoError(r, err)
+		appList, err := jxClient.JenkinsV1().Apps(ns).List(metav1.ListOptions{})
+		assert.Equal(r, namespace, ns)
+		assert.NoError(r, err)
+		assert.Len(r, appList.Items, 1)
+		app, err := jxClient.JenkinsV1().Apps(ns).Get(fmt.Sprintf("%s-%s", namespace, appCRDName), metav1.GetOptions{})
+		assert.NoError(r, err)
+		val, ok := app.Annotations[apps.ValuesAnnotation]
+		assert.True(r, ok)
+		dst, err := base64.StdEncoding.DecodeString(val)
+		assert.NoError(r, err)
+		assert.Equal(r, `{"name":"testing"}`, string(dst))
+	})
 }
 
 func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	// Needs console input to create secrets
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		// Needs console input to create secrets
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name := nameUUID.String()
-	version := "0.0.1"
-	alias := fmt.Sprintf("%s-alias", name)
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
-	o.BatchMode = false
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		name := nameUUID.String()
+		version := "0.0.1"
+		alias := fmt.Sprintf("%s-alias", name)
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:              version,
+			Alias:                alias,
+			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true, // Flag default when run on CLI
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
+		o.BatchMode = false
 
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:    name,
-			Version: version,
-		},
-		Files: []*google_protobuf.Any{
-			{
-				TypeUrl: "values.schema.json",
-				Value: []byte(`{
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: version,
+			},
+			Files: []*google_protobuf.Any{
+				{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -618,46 +626,47 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
     }
   }
 }`),
+				},
 			},
-		},
-	}, testOptions.MockHelmer)
+		}, testOptions.MockHelmer)
 
-	// Test interactive IO
-	donec := make(chan struct{})
-	// TODO Answer questions
-	go func() {
-		defer close(donec)
-		// Test boolean type
-		console.ExpectString("Enter a value for tokenValue")
-		console.SendLine("abc")
-		console.ExpectString(" ***")
-		console.ExpectEOF()
-	}()
-	err = o.Run()
-	assert.NoError(t, err)
-	console.Close()
-	<-donec
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+		// Test interactive IO
+		donec := make(chan struct{})
+		// TODO Answer questions
+		go func() {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for tokenValue")
+			console.SendLine("abc")
+			console.ExpectString(" ***")
+			console.ExpectEOF()
+		}()
+		err = o.Run()
+		assert.NoError(r, err)
+		console.Close()
+		<-donec
+		r.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
-	// Validate that the secret reference is generated
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
-	_, err = os.Stat(valuesFromPrPath)
-	assert.NoError(t, err)
-	data, err := ioutil.ReadFile(valuesFromPrPath)
-	assert.NoError(t, err)
-	assert.Equal(t, `tokenValue:
+		// Validate that the secret reference is generated
+		envDir, err := o.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
+		_, err = os.Stat(valuesFromPrPath)
+		assert.NoError(r, err)
+		data, err := ioutil.ReadFile(valuesFromPrPath)
+		assert.NoError(r, err)
+		assert.Equal(r, `tokenValue:
   Kind: Secret
   Name: tokenvalue-secret
 `, string(data))
-	// Validate that vault has had the secret added
-	path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "tokenvalue-secret"},
-		"/")
-	value := map[string]interface{}{
-		"token": "abc",
-	}
-	testOptions.MockVaultClient.VerifyWasCalledOnce().Write(path, value)
+		// Validate that vault has had the secret added
+		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "tokenvalue-secret"},
+			"/")
+		value := map[string]interface{}{
+			"token": "abc",
+		}
+		testOptions.MockVaultClient.VerifyWasCalledOnce().Write(path, value)
+	})
 }
 
 func TestAddApp(t *testing.T) {
@@ -1186,48 +1195,49 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name := nameUUID.String()
-	version := "0.0.1"
-	alias := fmt.Sprintf("%s-alias", name)
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
-	o.BatchMode = false
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		name := nameUUID.String()
+		version := "0.0.1"
+		alias := fmt.Sprintf("%s-alias", name)
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:              version,
+			Alias:                alias,
+			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true,
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
+		o.BatchMode = false
 
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:    name,
-			Version: version,
-		},
-		Files: []*google_protobuf.Any{
-			{
-				TypeUrl: "values.schema.json",
-				Value: []byte(`{
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: version,
+			},
+			Files: []*google_protobuf.Any{
+				{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -1245,38 +1255,38 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
                       "databaseUsername": { "type": "string"}, 
                       "databasePassword": { "type": "string", "format" : "password"} }
     }}`),
+				},
 			},
-		},
-	}, testOptions.MockHelmer)
+		}, testOptions.MockHelmer)
 
-	donec := make(chan struct{})
-	go func() {
-		defer close(donec)
-		console.ExpectString("Enter a value for enablePersistentStorage")
-		console.SendLine("Y")
-		console.ExpectString("Enter a value for databaseConnectionUrl")
-		console.SendLine("abc")
-		console.ExpectString("Enter a value for databaseUsername")
-		console.SendLine("wensleydale")
-		console.ExpectString("Enter a value for databasePassword")
-		console.SendLine("cranberries")
-		console.ExpectString(" ***********")
-		console.ExpectEOF()
-	}()
-	err = o.Run()
-	assert.NoError(t, err)
-	console.Close()
-	<-donec
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+		donec := make(chan struct{})
+		go func() {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("Y")
+			console.ExpectString("Enter a value for databaseConnectionUrl")
+			console.SendLine("abc")
+			console.ExpectString("Enter a value for databaseUsername")
+			console.SendLine("wensleydale")
+			console.ExpectString("Enter a value for databasePassword")
+			console.SendLine("cranberries")
+			console.ExpectString(" ***********")
+			console.ExpectEOF()
+		}()
+		err = o.Run()
+		assert.NoError(r, err)
+		console.Close()
+		<-donec
+		r.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
-	_, err = os.Stat(valuesFromPrPath)
-	assert.NoError(t, err)
-	data, err := ioutil.ReadFile(valuesFromPrPath)
-	assert.NoError(t, err)
-	assert.Equal(t, `databaseConnectionUrl: abc
+		envDir, err := o.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
+		_, err = os.Stat(valuesFromPrPath)
+		assert.NoError(r, err)
+		data, err := ioutil.ReadFile(valuesFromPrPath)
+		assert.NoError(r, err)
+		assert.Equal(r, `databaseConnectionUrl: abc
 databasePassword:
   Kind: Secret
   Name: databasepassword-secret
@@ -1284,60 +1294,62 @@ databaseUsername: wensleydale
 enablePersistentStorage: true
 `, string(data))
 
-	// Validate that vault has had the secret added
-	path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasepassword-secret"},
-		"/")
-	value := map[string]interface{}{
-		"password": "cranberries",
-	}
-	testOptions.MockVaultClient.VerifyWasCalledOnce().Write(path, value)
+		// Validate that vault has had the secret added
+		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasepassword-secret"},
+			"/")
+		value := map[string]interface{}{
+			"password": "cranberries",
+		}
+		testOptions.MockVaultClient.VerifyWasCalledOnce().Write(path, value)
+	})
 }
 
 func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
-	defer func() {
-		err := testOptions.Cleanup()
-		assert.NoError(t, err)
-	}()
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
 
-	console := tests.NewTerminal(t, &timeout)
-	defer console.Cleanup()
-	testOptions.CommonOptions.In = console.In
-	testOptions.CommonOptions.Out = console.Out
-	testOptions.CommonOptions.Err = console.Err
+		console := tests.NewTerminal(r, &timeout)
+		defer console.Cleanup()
+		testOptions.CommonOptions.In = console.In
+		testOptions.CommonOptions.Out = console.Out
+		testOptions.CommonOptions.Err = console.Err
 
-	nameUUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name := nameUUID.String()
-	version := "0.0.1"
-	alias := fmt.Sprintf("%s-alias", name)
-	commonOpts := *testOptions.CommonOptions
-	o := &add.AddAppOptions{
-		AddOptions: add.AddOptions{
-			CommonOptions: &commonOpts,
-		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-	}
-	o.Args = []string{name}
-	o.BatchMode = false
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		name := nameUUID.String()
+		version := "0.0.1"
+		alias := fmt.Sprintf("%s-alias", name)
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:              version,
+			Alias:                alias,
+			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:               true,
+			DevEnv:               testOptions.DevEnv,
+			HelmUpdate:           true,
+			ConfigureGitCallback: testOptions.ConfigureGitFn,
+		}
+		o.Args = []string{name}
+		o.BatchMode = false
 
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:    name,
-			Version: version,
-		},
-		Files: []*google_protobuf.Any{
-			{
-				TypeUrl: "values.schema.json",
-				Value: []byte(`{
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: version,
+			},
+			Files: []*google_protobuf.Any{
+				{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
@@ -1353,30 +1365,31 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
     "then": {
       "properties": { "databaseConnectionUrl": { "type": "string" } }
     }}`),
+				},
 			},
-		},
-	}, testOptions.MockHelmer)
+		}, testOptions.MockHelmer)
 
-	donec := make(chan struct{})
-	go func() {
-		defer close(donec)
-		console.ExpectString("Enter a value for enablePersistentStorage")
-		console.SendLine("N")
-		console.ExpectEOF()
-	}()
-	err = o.Run()
-	assert.NoError(t, err)
-	console.Close()
-	<-donec
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+		donec := make(chan struct{})
+		go func() {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("N")
+			console.ExpectEOF()
+		}()
+		err = o.Run()
+		assert.NoError(r, err)
+		console.Close()
+		<-donec
+		r.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
-	_, err = os.Stat(valuesFromPrPath)
-	assert.NoError(t, err)
-	data, err := ioutil.ReadFile(valuesFromPrPath)
-	assert.NoError(t, err)
-	assert.Equal(t, `enablePersistentStorage: false
+		envDir, err := o.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
+		_, err = os.Stat(valuesFromPrPath)
+		assert.NoError(r, err)
+		data, err := ioutil.ReadFile(valuesFromPrPath)
+		assert.NoError(r, err)
+		assert.Equal(r, `enablePersistentStorage: false
 `, string(data))
+	})
 }

@@ -46,6 +46,7 @@ import (
 var timeout = 5 * time.Second
 
 func TestPreprocessSchema(t *testing.T) {
+	// Make this a bdd test
 	t.SkipNow()
 	pegomock.RegisterMockTestingT(t)
 	helmer := helm_test.NewMockHelmer()
