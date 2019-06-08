@@ -428,7 +428,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 		return err
 	}
 
-	log.Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s\n", releaseName, dir, ns)
+	log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s\n", releaseName, dir, ns)
 	command := "apply"
 	if create {
 		command = "create"
@@ -448,13 +448,13 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 		return err
 	}
 
-	log.Info("\n")
+	log.Logger().Info("\n")
 	return nil
 
 }
 
 func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
-	log.Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
+	log.Logger().Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
 
 	command := "apply"
 	if create {
@@ -748,7 +748,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 
 	absFileDir := filepath.Dir(absFile)
 
-	log.Infof("creating file: %s\n", absFile)
+	log.Logger().Infof("creating file: %s\n", absFile)
 
 	err := os.MkdirAll(absFileDir, os.ModePerm)
 	if err != nil {
@@ -759,7 +759,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 		return "", errors.Wrapf(err, "creating file %q", absFile)
 	}
 
-	log.Debugf("writing data to %s\n", absFile)
+	log.Logger().Debugf("writing data to %s\n", absFile)
 
 	defer file.Close()
 	_, err = buf.WriteTo(file)
@@ -772,7 +772,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 func addLabelsToChartYaml(basedir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
-	log.Debugf("Searching for yaml files from basedir %s\n", basedir)
+	log.Logger().Debugf("Searching for yaml files from basedir %s\n", basedir)
 
 	err := filepath.Walk(basedir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
