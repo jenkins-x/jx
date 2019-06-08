@@ -106,9 +106,9 @@ func TestSplitObjectsInFiles(t *testing.T) {
 
 	dataDir := filepath.Join("test_data", "multi_objects")
 	testDir, err := ioutil.TempDir("", "test_multi_objects")
-	assert.NoError(t, err, "should crate a temp dir for tests")
+	assert.NoError(t, err, "should create a temp dir for tests")
 	err = util.CopyDir(dataDir, testDir, true)
-	assert.NoError(t, err, "shold copy the test data into a temporary folder")
+	assert.NoError(t, err, "should copy the test data into a temporary folder")
 	defer os.RemoveAll(testDir)
 
 	tests := map[string]struct {
@@ -117,32 +117,37 @@ func TestSplitObjectsInFiles(t *testing.T) {
 		wantErr bool
 	}{
 		"single object": {
-			file:    filepath.Join(testDir, "single_object.yaml"),
+			file:    "single_object.yaml",
 			want:    1,
 			wantErr: false,
 		},
 		"single object with separator": {
-			file:    filepath.Join(testDir, "single_object_separator.yaml"),
+			file:    "single_object_separator.yaml",
 			want:    1,
 			wantErr: false,
 		},
 		"single object with separator and comment": {
-			file:    filepath.Join(testDir, "single_object_comment.yaml"),
+			file:    "single_object_comment.yaml",
 			want:    1,
 			wantErr: false,
 		},
 		"single object with separator and whitespace": {
-			file:    filepath.Join(testDir, "single_object_newlines.yaml"),
+			file:    "single_object_newlines.yaml",
 			want:    1,
 			wantErr: false,
 		},
 		"multiple objects": {
-			file:    filepath.Join(testDir, "objects.yaml"),
+			file:    "objects.yaml",
 			want:    2,
 			wantErr: false,
 		},
 		"multiple objects with separator": {
-			file:    filepath.Join(testDir, "objects_separator.yaml"),
+			file:    "objects_separator.yaml",
+			want:    2,
+			wantErr: false,
+		},
+		"multiple objects with separator and different namespaces": {
+			file:    "objects_separator_namespace.yaml",
 			want:    2,
 			wantErr: false,
 		},
@@ -150,7 +155,8 @@ func TestSplitObjectsInFiles(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			parts, err := splitObjectsInFiles(tc.file)
+			// baseDir string, relativePath, defaultNamespace string
+			parts, err := splitObjectsInFiles(filepath.Join(testDir, tc.file), testDir, tc.file, "jx")
 			if tc.wantErr {
 				assert.Error(t, err, "should fail")
 			} else {
