@@ -117,11 +117,6 @@ func (o *StepHelmApplyOptions) Run() error {
 			},
 		}).Run()
 	}
-	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
-	if err != nil {
-		return err
-	}
-
 	helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 	if err != nil {
 		return err
@@ -219,6 +214,11 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	log.Logger().Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
+
+	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts(), valueFiles)
+	if err != nil {
+		return err
+	}
 
 	err = o.applyAppsTemplateOverrides(chartName)
 	if err != nil {

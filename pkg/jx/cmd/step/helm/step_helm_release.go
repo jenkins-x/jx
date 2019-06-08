@@ -64,7 +64,11 @@ func NewCmdStepHelmRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func (o *StepHelmReleaseOptions) Run() error {
 	dir := o.Dir
-	_, err := o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
+	valuesFiles, err := o.discoverValuesFiles(dir)
+	if err != nil {
+		return err
+	}
+	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts(), valuesFiles)
 	if err != nil {
 		return errors.Wrapf(err, "failed to build dependencies for chart from directory '%s'", dir)
 	}

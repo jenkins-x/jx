@@ -797,7 +797,7 @@ func (o *CommonOptions) HelmInitDependency(dir string, chartRepos []string) (str
 }
 
 // HelmInitDependencyBuild initialises the dependencies an run the build
-func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos []string) (string, error) {
+func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos []string, valuesFiles []string) (string, error) {
 	helmBin, err := o.HelmInitDependency(dir, chartRepos)
 	if err != nil {
 		return helmBin, err
@@ -814,7 +814,7 @@ func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos []string)
 	}
 
 	o.Helm().SetHelmBinary(helmBinary)
-	_, err = o.Helm().Lint()
+	_, err = o.Helm().Lint(valuesFiles)
 	if err != nil {
 		return helmBinary, errors.Wrapf(err, "failed to lint the chart '%s'", dir)
 	}
@@ -822,7 +822,7 @@ func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos []string)
 }
 
 // HelmInitRecursiveDependencyBuild helm initialises the dependencies recursively
-func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos []string) error {
+func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos []string, valuesFiles []string) error {
 	_, err := o.HelmInitDependency(dir, chartRepos)
 	if err != nil {
 		return errors.Wrap(err, "initializing Helm")
@@ -890,7 +890,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 	}
 
 	o.Helm().SetHelmBinary(helmBinary)
-	_, err = o.Helm().Lint()
+	_, err = o.Helm().Lint(valuesFiles)
 	if err != nil {
 		return errors.Wrapf(err, "linting the chart '%s'", dir)
 	}

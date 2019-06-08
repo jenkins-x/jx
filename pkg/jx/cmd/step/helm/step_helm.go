@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/git"
 	"github.com/spf13/cobra"
@@ -198,4 +199,19 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 		dir = filepath.Join(dir, "env")
 	}
 	return dir, nil
+}
+
+func (o *StepHelmOptions) discoverValuesFiles(dir string) ([]string, error) {
+	valuesFiles := []string{}
+	for _, name := range []string{"values.yaml", helm.SecretsFileName, "myvalues.yaml"} {
+		path := filepath.Join(dir, name)
+		exists, err := util.FileExists(path)
+		if err != nil {
+			return valuesFiles, err
+		}
+		if exists {
+			valuesFiles = append(valuesFiles, path)
+		}
+	}
+	return valuesFiles, nil
 }
