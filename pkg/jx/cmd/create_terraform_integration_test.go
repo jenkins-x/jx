@@ -113,6 +113,7 @@ func TestCanCreateTerraformVarsFile(t *testing.T) {
 		DiskSize:      "100",
 		AutoRepair:    true,
 		AutoUpgrade:   false,
+		EnableVault:   true,
 	}
 
 	file, err := ioutil.TempFile("", "terraform-tf-vars")
@@ -139,5 +140,6 @@ func TestCanCreateTerraformVarsFile(t *testing.T) {
 	assert.Equal(t, "n1-standard-2", c2.MachineType)
 	assert.Equal(t, true, c2.AutoRepair)
 	assert.Equal(t, false, c2.AutoUpgrade)
+	assert.Equal(t, true, c2.EnableVault)
 
 }
