@@ -599,7 +599,7 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 		return "", err
 	}
 	if exists {
-		log.Logger().Infof("Chart dir already exists: %s\n", chartDir)
+		log.Logger().Infof("Chart dir already exists: %s\n", dir)
 		return chart, nil
 	}
 	if dir == "" {
