@@ -186,6 +186,7 @@ func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.Footer, "footer", "", "", "The changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.FooterFile, "footer-file", "", "", "The file name of the changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
+	cmd.Flags().BoolVarP(&options.Verbose, opts.OptionVerbose, "", false, "Enable verbose output")
 
 	return cmd
 }
@@ -326,6 +327,25 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		log.Logger().Warnf("failed to find git commits between revision %s and %s due to: %s\n", previousRev, currentRev, err.Error())
 	}
+	if commits != nil {
+		commits1 := *commits
+		if len(commits1) > 0 {
+			if strings.HasPrefix(commits1[0].Message, "release ") {
+				// remove the release commit from the log
+				tmp := commits1[1:]
+				commits = &tmp
+			}
+		}
+		if o.Verbose {
+			log.Logger().Infof("Found commits:")
+			for _, commit := range *commits {
+				log.Logger().Infof("  commit %s", commit.Hash)
+				log.Logger().Infof("  Author: %s <%s>", commit.Author.Name, commit.Author.Email)
+				log.Logger().Infof("  Date: %s", commit.Committer.When.Format("Wed Sep 26 12:57:08 2018 +0100"))
+				log.Logger().Infof("\n      %s\n", commit.Message)
+			}
+		}
+	}
 	version := o.Version
 	if version == "" {
 		version = SpecVersion
@@ -385,13 +405,17 @@ func (o *StepChangelogOptions) Run() error {
 		return err
 	}
 	markdown = header + markdown + footer
+
+	if o.Verbose {
+		log.Logger().Infof("Generated release notes:\n\n%s\n\n", markdown)
+	}
+
 	if version != "" && o.UpdateRelease && foundGitProvider {
 		releaseInfo := &gits.GitRelease{
 			Name:    version,
 			TagName: version,
 			Body:    markdown,
 		}
-		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
 		url := releaseInfo.HTMLURL
 		if url == "" {
 			url = releaseInfo.URL
@@ -399,11 +423,12 @@ func (o *StepChangelogOptions) Run() error {
 		if url == "" {
 			url = util.UrlJoin(gitInfo.HttpsURL(), "releases/tag", version)
 		}
-		release.Spec.ReleaseNotesURL = url
+		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
 		if err != nil {
 			log.Logger().Warnf("Failed to update the release at %s: %s\n", url, err)
 			return nil
 		}
+		release.Spec.ReleaseNotesURL = url
 		log.Logger().Infof("Updated the release information at %s\n", util.ColorInfo(url))
 	} else if o.OutputMarkdownFile != "" {
 		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), util.DefaultWritePermissions)

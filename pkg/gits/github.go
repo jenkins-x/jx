@@ -970,9 +970,10 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	if release.TagName == nil && releaseInfo.TagName != "" {
 		release.TagName = &releaseInfo.TagName
 	}
-	if release.Body == nil && releaseInfo.Body != "" {
+	if (release.Body == nil || *release.Body == "") && releaseInfo.Body != "" {
 		release.Body = &releaseInfo.Body
 	}
+
 	if r != nil && r.StatusCode == 404 {
 		log.Logger().Warnf("No release found for %s/%s and tag %s so creating a new release\n", owner, repo, tag)
 		_, _, err = p.Client.Repositories.CreateRelease(p.Context, owner, repo, release)
