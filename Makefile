@@ -290,7 +290,7 @@ release: clean build test-slow-integration linux darwin win arm ## Release the b
 	GITHUB_ACCESS_TOKEN=$(GITHUB_ACCESS_TOKEN) gh-release create $(RELEASE_ORG_REPO) $(VERSION) master $(VERSION)
 
 	@if [[ -z "${DISTRO}" ]]; then \
-		./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION); \
+		./build/linux/jx step changelog  --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA); \
 	fi
 
 .PHONY: release-distro
