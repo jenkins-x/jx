@@ -96,7 +96,7 @@ func (o *CreateAddonOwaspOptions) Run() error {
 					container.Command = commands
 				}
 				job.Spec.BackoffLimit = &o.BackoffLimit
-				log.Infof("Updating the post Preview Job: %s\n", util.ColorInfo(name))
+				log.Logger().Infof("Updating the post Preview Job: %s\n", util.ColorInfo(name))
 				return nil
 			}
 		}
@@ -115,7 +115,7 @@ func (o *CreateAddonOwaspOptions) Run() error {
 				BackoffLimit: &o.BackoffLimit,
 			},
 		})
-		log.Infof("Added the post Preview Job: %s\n", util.ColorInfo(name))
+		log.Logger().Infof("Added the post Preview Job: %s\n", util.ColorInfo(name))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

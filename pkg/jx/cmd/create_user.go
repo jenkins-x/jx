@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/users"
 
@@ -124,8 +125,8 @@ func (o *CreateUserOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to create User %s: %s", login, err)
 	}
-	log.Infof("Created User: %s\n", util.ColorInfo(login))
-	log.Infof("You can configure the roles for the user via: %s\n", util.ColorInfo(fmt.Sprintf("jx edit userrole %s", login)))
+	log.Logger().Infof("Created User: %s\n", util.ColorInfo(login))
+	log.Logger().Infof("You can configure the roles for the user via: %s\n", util.ColorInfo(fmt.Sprintf("jx edit userrole %s", login)))
 	return nil
 
 }

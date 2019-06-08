@@ -217,7 +217,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.KanikoSecretMount = kanikoSecretMount
 	}
 	if o.Verbose {
-		log.Infof("cloning git for %s\n", o.CloneGitURL)
+		log.Logger().Infof("cloning git for %s\n", o.CloneGitURL)
 	}
 	if o.VersionResolver == nil {
 		o.VersionResolver, err = o.CreateVersionResolver("", "")
@@ -230,10 +230,10 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.cloneDir = o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
 		if o.DeleteTempDir {
 			defer func() {
-				log.Infof("removing the temp directory %s\n", o.cloneDir)
+				log.Logger().Infof("removing the temp directory %s\n", o.cloneDir)
 				err := os.RemoveAll(o.cloneDir)
 				if err != nil {
-					log.Warnf("failed to delete dir %s: %s\n", o.cloneDir, err.Error())
+					log.Logger().Warnf("failed to delete dir %s: %s\n", o.cloneDir, err.Error())
 				}
 			}()
 		}
@@ -244,7 +244,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.Verbose {
-		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
+		log.Logger().Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
 	if o.DockerRegistry == "" {
@@ -280,7 +280,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.BuildNumber = "1"
 	} else {
 		if o.Verbose {
-			log.Infof("generating build number...\n")
+			log.Logger().Infof("generating build number...\n")
 		}
 
 		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
@@ -290,7 +290,7 @@ func (o *StepCreateTaskOptions) Run() error {
 			return err
 		}
 		if o.Verbose {
-			log.Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
+			log.Logger().Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
 		}
 	}
 	projectConfig, projectConfigFile, err := o.loadProjectConfig()
@@ -350,7 +350,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.Verbose {
-		log.Infof("about to create the tekton CRDs\n")
+		log.Logger().Infof("about to create the tekton CRDs\n")
 	}
 	tektonCRDs, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
@@ -366,25 +366,25 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.Verbose {
-		log.Infof("created tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
+		log.Logger().Infof("created tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
 	}
 
 	activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr)
 
 	if o.Verbose {
-		log.Infof(" PipelineActivity for %s created successfully", tektonCRDs.Name())
+		log.Logger().Infof(" PipelineActivity for %s created successfully", tektonCRDs.Name())
 	}
 
 	o.Results = *tektonCRDs
 
 	if o.NoApply || o.DryRun {
-		log.Infof("Writing output ")
+		log.Logger().Infof("Writing output ")
 		err := tektonCRDs.WriteToDisk(o.OutDir, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
 	} else {
-		log.Infof("Applying changes ")
+		log.Logger().Infof("Applying changes ")
 		err := tekton.ApplyPipeline(jxClient, tektonClient, tektonCRDs, ns, o.GitInfo, o.Branch, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
@@ -392,7 +392,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		tektonCRDs.AddLabels(o.labels)
 
 		if o.Verbose {
-			log.Infof(" for %s\n", tektonCRDs.PipelineRun().Name)
+			log.Logger().Infof(" for %s\n", tektonCRDs.PipelineRun().Name)
 		}
 	}
 	return nil
@@ -541,17 +541,17 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	}
 
 	if o.EffectivePipeline {
-		log.Success("Successfully generated effective pipeline:")
+		log.Logger().Info("Successfully generated effective pipeline:")
 		effective := &jenkinsfile.PipelineLifecycles{
 			Pipeline: parsed,
 		}
 		effectiveYaml, _ := yaml.Marshal(effective)
-		log.Infof("%s", effectiveYaml)
+		log.Logger().Infof("%s", effectiveYaml)
 		return nil, nil
 	}
 
 	pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
-	pipeline, tasks, structure, err := parsed.GenerateCRDs(pipelineResourceName, o.BuildNumber, ns, o.PodTemplates, o.GetDefaultTaskInputs().Params, o.SourceName)
+	pipeline, tasks, structure, err := parsed.GenerateCRDs(pipelineResourceName, o.BuildNumber, ns, o.PodTemplates, o.GetDefaultTaskInputs().Params, o.SourceName, o.labels)
 	if err != nil {
 		return nil, errors.Wrapf(err, "generation failed for Pipeline")
 	}
@@ -798,13 +798,13 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 		dir = strings.Replace(dir, opts.PlaceHolderGitProvider, gitProviderHost, -1)
 		dir = strings.Replace(dir, opts.PlaceHolderDockerRegistryOrg, strings.ToLower(o.GetDockerRegistryOrg(projectConfig, gitInfo)), -1)
 	} else {
-		log.Warnf("No GitInfo available!\n")
+		log.Logger().Warnf("No GitInfo available!\n")
 	}
 
 	if step.GetCommand() != "" {
 		if containerName == "" {
 			containerName = o.DefaultImage
-			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
+			log.Logger().Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
 		}
 
 		s := syntax.Step{}
@@ -839,7 +839,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 		// let allow the docker images to have no actual version which is replaced via the version stream
 		image, err := o.VersionResolver.ResolveDockerImage(modifyStep.Image)
 		if err != nil {
-			log.Warnf("failed to resolve docker image version: %s due to %s\n", modifyStep.Image, err.Error())
+			log.Logger().Warnf("failed to resolve docker image version: %s due to %s\n", modifyStep.Image, err.Error())
 		} else {
 			modifyStep.Image = image
 		}
@@ -1011,7 +1011,7 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 	if container.Name == "build-container-build" && !o.NoKaniko {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
-			log.Warnf("failed to find kaniko secret: %s\n", err)
+			log.Logger().Warnf("failed to find kaniko secret: %s\n", err)
 		} else {
 			if o.KanikoSecret == "" {
 				o.KanikoSecret = kanikoSecretName
@@ -1023,7 +1023,7 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 			key := o.KanikoSecretKey
 			secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
 			if err != nil {
-				log.Warnf("failed to find secret %s in namespace %s: %s\n", secretName, ns, err)
+				log.Logger().Warnf("failed to find secret %s in namespace %s: %s\n", secretName, ns, err)
 			} else if secret != nil && secret.Data != nil && secret.Data[key] != nil {
 				// lets mount the kaniko secret
 				volumeName := "kaniko-secret"
@@ -1099,32 +1099,32 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 		if err != nil {
 			return err
 		}
-		log.Infof("shallow cloning repository %s to temp dir %s\n", gitURL, tmpDir)
+		log.Logger().Infof("shallow cloning repository %s to temp dir %s\n", gitURL, tmpDir)
 		err = o.Git().Init(tmpDir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to init a new git repository in directory %s", tmpDir)
 		}
 		if o.Verbose {
-			log.Infof("ran git init in %s", tmpDir)
+			log.Logger().Infof("ran git init in %s", tmpDir)
 		}
 		err = o.Git().AddRemote(tmpDir, "origin", gitURL)
 		if err != nil {
 			return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, tmpDir)
 		}
 		if o.Verbose {
-			log.Infof("ran git add remote origin %s in %s", gitURL, tmpDir)
+			log.Logger().Infof("ran git add remote origin %s in %s", gitURL, tmpDir)
 		}
 		commitish := make([]string, 0)
 		if pullRequestNumber != "" {
 			pr := fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branch)
 			if o.Verbose {
-				log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, tmpDir)
+				log.Logger().Infof("will fetch %s for %s in dir %s\n", pr, gitURL, tmpDir)
 			}
 			commitish = append(commitish, pr)
 		}
 		if revision != "" {
 			if o.Verbose {
-				log.Infof("will fetch %s for %s in dir %s\n", revision, gitURL, tmpDir)
+				log.Logger().Infof("will fetch %s for %s in dir %s\n", revision, gitURL, tmpDir)
 			}
 			commitish = append(commitish, revision)
 		} else {
@@ -1153,9 +1153,9 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 	// because that object is already deleted by a force-push
 	if err != nil {
 		if gits.IsUnadvertisedObjectError(err) {
-			log.Warnf("Commit most likely overwritten by force-push, so ignorning underlying error %v", err)
+			log.Logger().Warnf("Commit most likely overwritten by force-push, so ignorning underlying error %v", err)
 		} else {
-			log.Fatalf("failed to clone three times it's likely things wont recover so lets kill the process; %v", err)
+			log.Logger().Fatalf("failed to clone three times it's likely things wont recover so lets kill the process; %v", err)
 			panic(err)
 		}
 	}
@@ -1241,7 +1241,7 @@ func getVersionFromFile(dir string) (string, error) {
 		}
 		text := strings.TrimSpace(string(data))
 		if text == "" {
-			log.Warnf("versions file %s is empty!\n", versionFile)
+			log.Logger().Warnf("versions file %s is empty!\n", versionFile)
 		} else {
 			version = text
 			if version != "" {
@@ -1261,7 +1261,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 	if o.DryRun {
 		version, err := getVersionFromFile(o.cloneDir)
 		if err != nil {
-			log.Warn("No version file or incorrect content; using 0.0.1 as version")
+			log.Logger().Warn("No version file or incorrect content; using 0.0.1 as version")
 			version = "0.0.1"
 		}
 		o.version = version
@@ -1270,7 +1270,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 			Name:  "version",
 			Value: o.version,
 		})
-		log.Infof("Version used: '%s'", util.ColorInfo(version))
+		log.Logger().Infof("Version used: '%s'", util.ColorInfo(version))
 
 		return nil
 	} else if o.PipelineKind == jenkinsfile.PipelineKindRelease {
@@ -1354,7 +1354,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 	if c == "" {
 		return nil
 	}
-	log.Infof("running command: %s\n", util.ColorInfo(c))
+	log.Logger().Infof("running command: %s\n", util.ColorInfo(c))
 
 	commandText := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
 
@@ -1369,7 +1369,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("%s\n", result)
+	log.Logger().Infof("%s\n", result)
 	return nil
 }
 

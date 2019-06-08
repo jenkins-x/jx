@@ -68,7 +68,7 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 
 	// mock terminal
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, nil)
 	defer console.Cleanup()
 	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, &console.Stdio)
 	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)

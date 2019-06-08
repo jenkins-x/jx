@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
@@ -19,6 +20,8 @@ import (
 )
 
 // TODO Figure out how to test selects (affects arrays, enums, validation keywords for arrays)
+
+var timeout = 5 * time.Second
 
 type GeneratedSecret struct {
 	Name  string
@@ -852,7 +855,7 @@ func GenerateValuesAsYaml(t *testing.T, schemaName string, existingValues map[st
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	//t.Parallel()
 	secrets := make([]*GeneratedSecret, 0)
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	options := surveyutils.JSONSchemaOptions{
 		Out:                 console.Out,

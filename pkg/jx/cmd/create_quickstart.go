@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 
@@ -204,7 +205,7 @@ func (o *CreateQuickstartOptions) Run() error {
 				_, appName := filepath.Split(genDir)
 				appChartDir := filepath.Join(genDir, "charts", appName)
 
-				log.Infof("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
+				log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
 				err := util.CopyDirOverwrite(chartsDir, appChartDir)
 				if err != nil {
 					return err
@@ -216,10 +217,10 @@ func (o *CreateQuickstartOptions) Run() error {
 				return o.Git().Remove(genDir, filepath.Join("charts", folder))
 			}
 		} else {
-			log.Infof("### NO charts folder %s\n", chartsDir)
+			log.Logger().Infof("### NO charts folder %s\n", chartsDir)
 		}
 	}
-	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
+	log.Logger().Infof("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 
@@ -284,7 +285,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, fmt.Errorf("failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
 	}
-	log.Infof("Generated quickstart at %s\n", answer)
+	log.Logger().Infof("Generated quickstart at %s\n", answer)
 	return answer, nil
 }
 

@@ -3,7 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -195,7 +196,7 @@ func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
 func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 	releases, err := o.getAppsStatus(o.GitOps, o.Namespace, apps)
 	if err != nil {
-		log.Warnf("There was a problem obtaining the app status: %v\n", err)
+		log.Logger().Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
 	results := appsResult{}
 	for _, app := range apps.Items {
@@ -224,7 +225,7 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 	table := o.generateTableHeaders(apps)
 	releases, err := o.getAppsStatus(o.GitOps, o.Namespace, apps)
 	if err != nil {
-		log.Warnf("There was a problem obtaining the app status: %v\n", err)
+		log.Logger().Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
 	for _, app := range apps.Items {
 		if app.Labels != nil {

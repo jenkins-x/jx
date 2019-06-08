@@ -3,10 +3,11 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io"
 	"os"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -247,7 +248,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		if err != nil {
 			return errors.Wrap(err, "converting scan result to YAML")
 		}
-		log.Info(string(output))
+		log.Logger().Info(string(output))
 	} else {
 		nodeTable := o.CreateTable()
 		nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)

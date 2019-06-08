@@ -267,7 +267,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok && encodedValues != "" {
 					existingValuesBytes, err := base64.StdEncoding.DecodeString(encodedValues)
 					if err != nil {
-						log.Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,
+						log.Logger().Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,
 							appCrdName, encodedValues)
 					}
 					err = json.Unmarshal(existingValuesBytes, &existingValues)
@@ -350,7 +350,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 
 		if version == "" {
 			if o.Verbose {
-				log.Infof("No version specified so using latest version which is %s\n",
+				log.Logger().Infof("No version specified so using latest version which is %s\n",
 					util.ColorInfo(chartDetails.Version))
 			}
 		}
@@ -366,7 +366,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 
 		if schema != nil {
 			if o.valuesFiles != nil && len(o.valuesFiles.Items) > 0 {
-				log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
+				log.Logger().Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 			}
 
 			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, chartDetails.Name)
@@ -388,7 +388,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				defer func() {
 					err := o.KubeClient.CoreV1().ConfigMaps(o.Namespace).Delete(cmName, &metav1.DeleteOptions{})
 					if err != nil {
-						log.Errorf("error removing configmap %s: %v", cmName, err)
+						log.Logger().Errorf("error removing configmap %s: %v", cmName, err)
 					}
 				}()
 				if err != nil {
@@ -439,7 +439,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				defer func() {
 					err := o.KubeClient.RbacV1().Roles(o.Namespace).Delete(role.Name, &metav1.DeleteOptions{})
 					if err != nil {
-						log.Errorf("Error deleting role %s created for values.schema.json preprocessing: %v",
+						log.Logger().Errorf("Error deleting role %s created for values.schema.json preprocessing: %v",
 							role.Name, err)
 					}
 				}()
@@ -456,7 +456,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				defer func() {
 					err := o.KubeClient.CoreV1().ServiceAccounts(o.Namespace).Delete(serviceAccountName, &metav1.DeleteOptions{})
 					if err != nil {
-						log.Errorf("Error deleting serviceaccount %s created for values.schema.json preprocessing: %v",
+						log.Logger().Errorf("Error deleting serviceaccount %s created for values.schema.json preprocessing: %v",
 							serviceAccountName, err)
 					}
 				}()
@@ -487,7 +487,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 					err := o.KubeClient.RbacV1().RoleBindings(o.Namespace).Delete(roleBinding.Name,
 						&metav1.DeleteOptions{})
 					if err != nil {
-						log.Errorf("Error deleting rolebinding %s for values.schema.json preprocessing: %v",
+						log.Logger().Errorf("Error deleting rolebinding %s for values.schema.json preprocessing: %v",
 							roleBinding.Name, err)
 					}
 				}()
@@ -503,7 +503,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						RestartPolicy:      corev1.RestartPolicyNever,
 					},
 				}
-				log.Infof("Preparing questions to configure %s.\n"+
+				log.Logger().Infof("Preparing questions to configure %s.\n"+
 					"If this is the first time you have installed the app, this may take a couple of minutes.",
 					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
@@ -511,7 +511,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 					err := o.KubeClient.CoreV1().Pods(o.Namespace).Delete(pod.Name,
 						&metav1.DeleteOptions{})
 					if err != nil {
-						log.Errorf("Error deleting pod %s for values.schema.json preprocessing: %v",
+						log.Logger().Errorf("Error deleting pod %s for values.schema.json preprocessing: %v",
 							pod.Name, err)
 					}
 				}()
@@ -534,17 +534,17 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 					return &chartDetails, errors.Wrapf(err, "getting pod %s", pod.Name)
 				}
 				if kube.PodStatus(completePod) == string(corev1.PodFailed) {
-					log.Errorf("Pod Log")
-					log.Errorf("-----------")
+					log.Logger().Errorf("Pod Log")
+					log.Logger().Errorf("-----------")
 					err := kube.TailLogs(o.Namespace, pod.Name, appResource.Spec.SchemaPreprocessor.Name, o.Err, o.Out)
-					log.Errorf("-----------")
+					log.Logger().Errorf("-----------")
 					if err != nil {
 						return &chartDetails, errors.Wrapf(err, "getting pod logs for %s container %s", pod.Name,
 							appResource.Spec.SchemaPreprocessor.Name)
 					}
 					return &chartDetails, errors.Errorf("failed to prepare questions")
 				}
-				log.Infof("Questions prepared.")
+				log.Logger().Infof("Questions prepared.")
 				newCm, err := o.KubeClient.CoreV1().ConfigMaps(o.Namespace).Get(cmName, metav1.GetOptions{})
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "getting configmap %s for values.schema."+

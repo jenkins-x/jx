@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -110,7 +111,7 @@ func (o *CreateStepOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Updated Jenkins X Pipeline file: %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("Updated Jenkins X Pipeline file: %s\n", util.ColorInfo(fileName))
 	return nil
 
 }

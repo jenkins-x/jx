@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -99,7 +100,7 @@ func (o *EditDeployKindOptions) Run() error {
 			teamSettings := &env.Spec.TeamSettings
 			teamSettings.DeployKind = name
 
-			log.Infof("Setting the team deploy kind to: %s\n", util.ColorInfo(name))
+			log.Logger().Infof("Setting the team deploy kind to: %s\n", util.ColorInfo(name))
 			return nil
 		}
 		return o.ModifyDevEnvironment(callback)

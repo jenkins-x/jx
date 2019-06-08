@@ -89,7 +89,7 @@ func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) 
 	version, err = getLatestReleaseFromGithubUsingHttpRedirect(githubOwner, githubRepo)
 
 	if version == "" || err != nil {
-		log.Warnf("getting latest release using HTTP redirect (%v) - using API instead", err)
+		log.Logger().Warnf("getting latest release using HTTP redirect (%v) - using API instead", err)
 		version, err = getLatestReleaseFromGithubUsingApi(githubOwner, githubRepo)
 	}
 

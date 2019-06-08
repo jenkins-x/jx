@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/sirupsen/logrus"
 )
@@ -49,19 +49,19 @@ func (s *HTTPBuildNumberServer) Start() error {
 	mux.Handle(HealthPath, http.HandlerFunc(s.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(s.ready))
 
-	log.Infof("Serving build numbers at http://%s:%d%s", s.bindAddress, s.port, s.path)
+	log.Logger().Infof("Serving build numbers at http://%s:%d%s", s.bindAddress, s.port, s.path)
 	return http.ListenAndServe(":"+strconv.Itoa(s.port), mux)
 }
 
 // health returns either HTTP 204 if the build number service is healthy, otherwise nothing ('cos it's dead).
 func (s *HTTPBuildNumberServer) health(w http.ResponseWriter, r *http.Request) {
-	log.Debug("Health check")
+	log.Logger().Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the build number service is ready to serve /vend requests, otherwise HTTP 503.
 func (s *HTTPBuildNumberServer) ready(w http.ResponseWriter, r *http.Request) {
-	log.Debug("Ready check")
+	log.Logger().Debug("Ready check")
 	if s.issuer.Ready() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
@@ -76,11 +76,11 @@ func (s *HTTPBuildNumberServer) vend(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		s.generateBuildNumber(w, r)
 	case http.MethodHead:
-		log.Info("HEAD Todo...")
+		log.Logger().Info("HEAD Todo...")
 	case http.MethodPost:
-		log.Info("POST Todo...")
+		log.Logger().Info("POST Todo...")
 	default:
-		log.Errorf("Unsupported method %s for %s", r.Method, s.path)
+		log.Logger().Errorf("Unsupported method %s for %s", r.Method, s.path)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
@@ -91,7 +91,7 @@ func (s *HTTPBuildNumberServer) generateBuildNumber(w http.ResponseWriter, r *ht
 	//Check for a pipeline identifier following the base path.
 	if !(len(r.URL.Path) > len(s.path)) {
 		msg := fmt.Sprintf("Missing pipeline identifier in URL path %s", r.URL.Path)
-		log.Errorf(msg)
+		log.Logger().Errorf(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
@@ -106,6 +106,6 @@ func (s *HTTPBuildNumberServer) generateBuildNumber(w http.ResponseWriter, r *ht
 		return
 	}
 
-	log.Infof("Vending build number %s for pipeline %s to %s.", buildNum, pipeline, r.RemoteAddr)
+	log.Logger().Infof("Vending build number %s for pipeline %s to %s.", buildNum, pipeline, r.RemoteAddr)
 	fmt.Fprintf(w, "%s", buildNum)
 }

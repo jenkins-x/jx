@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -109,9 +110,16 @@ func (o *GCActivitiesOptions) Run() error {
 		return err
 	}
 
-	err = o.gcPipelineRuns(client, currentNs)
+	prowEnabled, err := o.IsProw()
 	if err != nil {
 		return err
+	}
+
+	if prowEnabled {
+		err = o.gcPipelineRuns(client, currentNs)
+		if err != nil {
+			return err
+		}
 	}
 
 	// cannot use field selectors like `spec.kind=Preview` on CRDs so list all environments
@@ -123,14 +131,9 @@ func (o *GCActivitiesOptions) Run() error {
 	if len(activities.Items) == 0 {
 		// no preview environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no activities found\n")
+			log.Logger().Info("no activities found\n")
 		}
 		return nil
-	}
-
-	prowEnabled, err := o.IsProw()
-	if err != nil {
-		return err
 	}
 
 	var jobNames []string
@@ -159,8 +162,8 @@ func (o *GCActivitiesOptions) Run() error {
 	for i := len(activities.Items) - 1; i >= 0; i-- {
 		a := activities.Items[i]
 		branchName := a.BranchName()
-		isPR := o.isPullRequestBranch(branchName)
-		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR)
+		isPR, isBatch := o.isPullRequestOrBatchBranch(branchName)
+		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR, isBatch)
 		// lets remove activities that are too old
 		if a.Spec.CompletedTimestamp != nil && a.Spec.CompletedTimestamp.Add(maxAge).Before(now) {
 			err = o.deleteActivity(activityInterface, &a)
@@ -208,7 +211,7 @@ func (o *GCActivitiesOptions) gcPipelineRuns(jxClient versioned.Interface, ns st
 	pipelineRunInterface := tektonkClient.TektonV1alpha1().PipelineRuns(ns)
 	activities, err := pipelineRunInterface.List(metav1.ListOptions{})
 	if err != nil {
-		log.Warnf("no PipelineRun instances found: %s\n", err.Error())
+		log.Logger().Warnf("no PipelineRun instances found: %s\n", err.Error())
 		return nil
 	}
 
@@ -218,8 +221,11 @@ func (o *GCActivitiesOptions) gcPipelineRuns(jxClient versioned.Interface, ns st
 	// lets go in reverse order so we delete the oldest first
 	for i := len(activities.Items) - 1; i >= 0; i-- {
 		a := activities.Items[i]
-		isPR := a.Labels != nil && o.isPullRequestBranch(a.Labels["branch"])
-		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR)
+		var isPR, isBatch bool
+		if a.Labels != nil {
+			isPR, isBatch = o.isPullRequestOrBatchBranch(a.Labels["branch"])
+		}
+		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR, isBatch)
 
 		completionTime := a.Status.CompletionTime
 		if completionTime != nil && completionTime.Add(maxAge).Before(now) {
@@ -260,7 +266,7 @@ func (o *GCActivitiesOptions) deleteActivity(activityInterface jv1.PipelineActiv
 	if o.DryRun {
 		prefix = "not "
 	}
-	log.Infof("%sdeleting PipelineActivity %s\n", prefix, util.ColorInfo(a.Name))
+	log.Logger().Infof("%sdeleting PipelineActivity %s\n", prefix, util.ColorInfo(a.Name))
 	if o.DryRun {
 		return nil
 	}
@@ -272,23 +278,23 @@ func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tv1alpha1.P
 	if o.DryRun {
 		prefix = "not "
 	}
-	log.Infof("%sdeleting PipelineRun %s\n", prefix, util.ColorInfo(a.Name))
+	log.Logger().Infof("%sdeleting PipelineRun %s\n", prefix, util.ColorInfo(a.Name))
 	if o.DryRun {
 		return nil
 	}
 	return pipelineRunInterface.Delete(a.Name, metav1.NewDeleteOptions(0))
 }
 
-func (o *GCActivitiesOptions) ageAndHistoryLimits(isPR bool) (time.Duration, int) {
+func (o *GCActivitiesOptions) ageAndHistoryLimits(isPR, isBatch bool) (time.Duration, int) {
 	maxAge := o.ReleaseAgeLimit
 	revisionLimit := o.ReleaseHistoryLimit
-	if isPR {
+	if isPR || isBatch {
 		maxAge = o.PullRequestAgeLimit
 		revisionLimit = o.PullRequestHistoryLimit
 	}
 	return maxAge, revisionLimit
 }
 
-func (o *GCActivitiesOptions) isPullRequestBranch(branchName string) bool {
-	return strings.HasPrefix(branchName, "PR-")
+func (o *GCActivitiesOptions) isPullRequestOrBatchBranch(branchName string) (bool, bool) {
+	return strings.HasPrefix(branchName, "PR-"), branchName == "batch"
 }

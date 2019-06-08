@@ -5,6 +5,9 @@ items:
       creationTimestamp: null
       labels:
         jenkins.io/task-stage-name: from-build-pack
+        branch: master
+        owner: abayer
+        repo: golang-qs-test
       name: abayer-golang-qs-test-master-from-build-pack-1
       namespace: jx
     spec:

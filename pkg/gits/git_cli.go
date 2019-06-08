@@ -84,7 +84,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 	commitish string, pullRequest string) error {
 	var err error
 	if verbose {
-		log.Infof("cloning repository %s to dir %s\n", gitURL, dir)
+		log.Logger().Infof("cloning repository %s to dir %s\n", gitURL, dir)
 	}
 	if remoteName == "" {
 		remoteName = "origin"
@@ -111,14 +111,14 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 		return errors.Wrapf(err, "failed to init a new git repository in directory %s", dir)
 	}
 	if verbose {
-		log.Infof("ran git init in %s", dir)
+		log.Logger().Infof("ran git init in %s", dir)
 	}
 	err = g.AddRemote(dir, "origin", gitURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to add remote %s with url %s in directory %s", remoteName, gitURL, dir)
 	}
 	if verbose {
-		log.Infof("ran git add remote %s %s in %s", remoteName, gitURL, dir)
+		log.Logger().Infof("ran git add remote %s %s in %s", remoteName, gitURL, dir)
 	}
 
 	err = g.fetchBranch(dir, remoteName, false, shallow, verbose, commitish)
@@ -133,7 +133,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 			return errors.Wrapf(err, "failed to create branch %s in directory %s", localBranch, dir)
 		}
 		if verbose {
-			log.Infof("ran git branch %s in directory %s", localBranch, dir)
+			log.Logger().Infof("ran git branch %s in directory %s", localBranch, dir)
 		}
 	}
 	if commitish == "" {
@@ -147,7 +147,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 		return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
 	}
 	if verbose {
-		log.Infof("ran git reset --hard %s in directory %s", commitish, dir)
+		log.Logger().Infof("ran git reset --hard %s in directory %s", commitish, dir)
 	}
 	err = g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("%s/%s", remoteName, commitish), localBranch)
 	if err != nil {
@@ -155,7 +155,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 			commitish, localBranch, dir)
 	}
 	if verbose {
-		log.Infof("ran git branch --set-upstream-to %s/%s %s in directory %s", remoteName, commitish,
+		log.Logger().Infof("ran git branch --set-upstream-to %s/%s %s in directory %s", remoteName, commitish,
 			localBranch, dir)
 	}
 	return nil
@@ -535,11 +535,11 @@ func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, shallow bo
 	}
 	if verbose {
 		if shallow {
-			log.Infof("ran git fetch %s --depth=1 %s in dir %s", repo, strings.Join(refspecs, " "), dir)
+			log.Logger().Infof("ran git fetch %s --depth=1 %s in dir %s", repo, strings.Join(refspecs, " "), dir)
 		} else if unshallow {
-			log.Infof("ran git fetch %s unshallow %s in dir %s", repo, strings.Join(refspecs, " "), dir)
+			log.Logger().Infof("ran git fetch %s unshallow %s in dir %s", repo, strings.Join(refspecs, " "), dir)
 		} else {
-			log.Infof("ran git fetch %s --depth=1 %s in dir %s", repo, strings.Join(refspecs, " "), dir)
+			log.Logger().Infof("ran git fetch %s --depth=1 %s in dir %s", repo, strings.Join(refspecs, " "), dir)
 		}
 
 	}
@@ -720,8 +720,8 @@ func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServe
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
 	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
-	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))
-	fmt.Fprint(o, "Then COPY the token and enter in into the form below:\n\n")
+	fmt.Fprintf(o, "Please click this URL and generate a token \n%s\n\n", util.ColorInfo(tokenUrl))
+	fmt.Fprint(o, "Then COPY the token and enter it below:\n\n")
 }
 
 // IsFork indicates if the repository at the given directory is a fork

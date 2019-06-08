@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -79,6 +80,6 @@ func (o *DeleteChatServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted chat servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	log.Logger().Infof("Deleted chat servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
 	return nil
 }

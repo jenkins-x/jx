@@ -756,7 +756,7 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 	}
 	for _, hook := range hooks {
 		if data.URL == hook.URL {
-			log.Warnf("Already has a webhook registered for %s\n", data.URL)
+			log.Logger().Warnf("Already has a webhook registered for %s\n", data.URL)
 			return nil
 		}
 	}
@@ -843,17 +843,17 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 	if dataID == 0 && data.ExistingURL != "" {
 		hooks, err := b.ListWebHooks(projectKey, repo)
 		if err != nil {
-			log.Errorf("Error querying webhooks on %s/%s: %s\n", projectKey, repo, err)
+			log.Logger().Errorf("Error querying webhooks on %s/%s: %s\n", projectKey, repo, err)
 		}
 		for _, hook := range hooks {
 			if data.ExistingURL == hook.URL {
-				log.Warnf("Found existing webhook for url %s\n", data.ExistingURL)
+				log.Logger().Warnf("Found existing webhook for url %s\n", data.ExistingURL)
 				dataID = hook.ID
 			}
 		}
 	}
 	if dataID == 0 {
-		log.Warn("No webhooks found to update")
+		log.Logger().Warn("No webhooks found to update")
 		return nil
 	}
 	id := int32(dataID)
@@ -879,7 +879,7 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 		return errors.Wrap(err, "failed to JSON encode webhook request body for update")
 	}
 
-	log.Infof("Updating Bitbucket server webhook for %s/%s for url %s\n", util.ColorInfo(projectKey), util.ColorInfo(repo), util.ColorInfo(data.URL))
+	log.Logger().Infof("Updating Bitbucket server webhook for %s/%s for url %s\n", util.ColorInfo(projectKey), util.ColorInfo(repo), util.ColorInfo(data.URL))
 	_, err = b.Client.DefaultApi.UpdateWebhook(projectKey, repo, id, requestBody, []string{"application/json"})
 
 	if err != nil {
@@ -892,7 +892,7 @@ func (b *BitbucketServerProvider) SearchIssues(org string, name string, query st
 
 	gitIssues := []*GitIssue{}
 
-	log.Warn("Searching issues on bitbucket server is not supported at this moment")
+	log.Logger().Warn("Searching issues on bitbucket server is not supported at this moment")
 
 	return gitIssues, nil
 }
@@ -907,7 +907,7 @@ func (b *BitbucketServerProvider) SearchIssuesClosedSince(org string, name strin
 
 func (b *BitbucketServerProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 
-	log.Warn("Finding an issue on bitbucket server is not supported at this moment")
+	log.Logger().Warn("Finding an issue on bitbucket server is not supported at this moment")
 	return &GitIssue{}, nil
 }
 
@@ -926,7 +926,7 @@ func (b *BitbucketServerProvider) IssueURL(org string, name string, number int, 
 
 func (b *BitbucketServerProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
 
-	log.Warn("Creating an issue on bitbucket server is not suuported at this moment")
+	log.Logger().Warn("Creating an issue on bitbucket server is not suuported at this moment")
 	return &GitIssue{}, nil
 }
 
@@ -945,7 +945,7 @@ func (b *BitbucketServerProvider) AddPRComment(pr *GitPullRequest, comment strin
 }
 
 func (b *BitbucketServerProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	log.Warn("Bitbucket Server doesn't support adding issue comments via the REST API")
+	log.Logger().Warn("Bitbucket Server doesn't support adding issue comments via the REST API")
 	return nil
 }
 
@@ -1006,7 +1006,7 @@ func (b *BitbucketServerProvider) UserInfo(username string) *GitUser {
 	var user bitbucket.UserWithLinks
 	apiResponse, err := b.Client.DefaultApi.GetUser(username)
 	if err != nil {
-		log.Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
+		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
 		return nil
 	}
 	err = mapstructure.Decode(apiResponse.Values, &user)
@@ -1020,28 +1020,28 @@ func (b *BitbucketServerProvider) UserInfo(username string) *GitUser {
 }
 
 func (b *BitbucketServerProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
-	log.Warn("Bitbucket Server doesn't support releases")
+	log.Logger().Warn("Bitbucket Server doesn't support releases")
 	return nil
 }
 
 func (b *BitbucketServerProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
-	log.Warn("Bitbucket Server doesn't support releases")
+	log.Logger().Warn("Bitbucket Server doesn't support releases")
 	return answer, nil
 }
 
 func (b *BitbucketServerProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
 
 func (b *BitbucketServerProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (b *BitbucketServerProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
 	return &github.Response{}, nil
 }
 

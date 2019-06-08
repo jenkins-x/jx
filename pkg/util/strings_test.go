@@ -81,3 +81,8 @@ func assertDiffSlice(t *testing.T, originalSlice, newSlice, removed, added []str
 	assert.Equal(t, toDelete, removed, fmt.Sprintf("removal incorrect - original [%s] new [%s]", strings.Join(originalSlice, ", "), strings.Join(newSlice, ", ")))
 	assert.Equal(t, toInsert, added, fmt.Sprintf("insert incorrect - original [%s] new [%s]", strings.Join(originalSlice, ", "), strings.Join(newSlice, ", ")))
 }
+
+func TestYesNo(t *testing.T) {
+	assert.Equal(t, "Yes", util.YesNo(true), "Yes boolean conversion")
+	assert.Equal(t, "No", util.YesNo(false), "No boolean conversion")
+}

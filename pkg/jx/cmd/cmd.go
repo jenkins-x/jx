@@ -18,15 +18,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 	"io"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"syscall"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -208,7 +209,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		}
 		pluginCommandGroups, managedPluginsEnabled, err := commonOpts.GetPluginCommandGroups(verifier)
 		if err != nil {
-			log.Errorf("%v\n", err)
+			log.Logger().Errorf("%v\n", err)
 		}
 		return pluginCommandGroups, managedPluginsEnabled
 	}
@@ -236,12 +237,12 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		if _, _, err := cmds.Find(cmdPathPieces); err != nil {
 			if _, managedPluginsEnabled := getPluginCommandGroups(); managedPluginsEnabled {
 				if err := handleEndpointExtensions(managedPlugins, cmdPathPieces); err != nil {
-					log.Errorf("%v\n", err)
+					log.Logger().Errorf("%v\n", err)
 					os.Exit(1)
 				}
 			} else {
 				if err := handleEndpointExtensions(localPlugins, cmdPathPieces); err != nil {
-					log.Errorf("%v\n", err)
+					log.Logger().Errorf("%v\n", err)
 					os.Exit(1)
 				}
 			}
@@ -332,7 +333,7 @@ func (h *managedPluginHandler) Lookup(filename string) (string, error) {
 		found := possibles.Items[0]
 		if len(possibles.Items) > 1 {
 			// There is a warning about this when you install extensions as well
-			log.Warnf("More than one plugin installed for %s by apps. Selecting the one installed by %s at random.\n",
+			log.Logger().Warnf("More than one plugin installed for %s by apps. Selecting the one installed by %s at random.\n",
 				filename, found.Name)
 
 		}
@@ -382,7 +383,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string) err
 		if err != nil || len(path) == 0 {
 			/* Usually "executable file not found in $PATH", spams output of jx help subcommand:
 			if err != nil {
-				log.Errorf("Error installing plugin for command %s. %v\n", remainingArgs, err)
+				log.Logger().Errorf("Error installing plugin for command %s. %v\n", remainingArgs, err)
 			}
 			*/
 			remainingArgs = remainingArgs[:len(remainingArgs)-1]

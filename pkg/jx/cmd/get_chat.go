@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/chats"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -67,7 +68,7 @@ func (o *GetChatOptions) Run() error {
 	config := authConfigSvc.Config()
 
 	if len(config.Servers) == 0 {
-		log.Infof("No chat servers registered. To register a new chat servers use: %s\n", util.ColorInfo("jx create chat server"))
+		log.Logger().Infof("No chat servers registered. To register a new chat servers use: %s\n", util.ColorInfo("jx create chat server"))
 		return nil
 	}
 	filterKind := o.Kind

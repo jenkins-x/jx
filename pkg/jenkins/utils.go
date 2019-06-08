@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -75,11 +75,11 @@ func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigServi
 		if showForm {
 			return nil, fmt.Errorf("No valid Username and API Token specified for Jenkins server: %s\n", url)
 		} else {
-			log.Warnf("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
+			log.Logger().Warnf("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
 			PrintGetTokenFromURL(os.Stdout, tokenUrl)
 			if batch {
-				log.Infof("Then run this command on your terminal and try again:\n\n")
-				log.Infof("export JENKINS_TOKEN=myApiToken\n\n")
+				log.Logger().Infof("Then run this command on your terminal and try again:\n\n")
+				log.Logger().Infof("export JENKINS_TOKEN=myApiToken\n\n")
 				return nil, errors.New("No environment variables (JENKINS_USERNAME and JENKINS_TOKEN) or JENKINS_BEARER_TOKEN defined")
 			}
 		}
@@ -124,11 +124,11 @@ func JenkinsLoginURL(url string) string {
 
 func EditUserAuth(url string, configService jenkauth.ConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (jenkauth.UserAuth, error) {
 
-	log.Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
+	log.Logger().Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
 
 	f := func(username string) error {
-		log.Infof("\nPlease go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
-		log.Infof("Then COPY the API token so that you can paste it into the form below:\n\n")
+		log.Logger().Infof("\nPlease go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
+		log.Logger().Infof("Then COPY the API token so that you can paste it into the form below:\n\n")
 		return nil
 	}
 
@@ -213,13 +213,13 @@ func SwitchJenkinsBaseURL(jobURL string, baseURL string) string {
 	}
 	u, err := url.Parse(jobURL)
 	if err != nil {
-		log.Warnf("failed to parse Jenkins Job URL %s due to: %s\n", jobURL, err)
+		log.Logger().Warnf("failed to parse Jenkins Job URL %s due to: %s\n", jobURL, err)
 		return jobURL
 	}
 
 	u2, err := url.Parse(baseURL)
 	if err != nil {
-		log.Warnf("failed to parse Jenkins base URL %s due to: %s\n", baseURL, err)
+		log.Logger().Warnf("failed to parse Jenkins base URL %s due to: %s\n", baseURL, err)
 		return jobURL
 	}
 	u.Host = u2.Host

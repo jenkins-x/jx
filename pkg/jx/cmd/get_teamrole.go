@@ -61,7 +61,7 @@ func (o *GetTeamRoleOptions) Run() error {
 		return err
 	}
 	if len(teamRoles) == 0 {
-		log.Info(`
+		log.Logger().Info(`
 There are no Team roles defined so far!
 `)
 		return nil

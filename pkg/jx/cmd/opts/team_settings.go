@@ -150,13 +150,13 @@ func (o *CommonOptions) DefaultModifyEnvironment(name string, callback func(env 
 		return errors.Wrapf(err, "failed to call the callback function when modifying Environment %s", name)
 	}
 	if create {
-		log.Infof("Creating %s Environment in namespace %s\n", env.Name, ns)
+		log.Logger().Infof("Creating %s Environment in namespace %s\n", env.Name, ns)
 		_, err = environmentInterface.Create(env)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
 		}
 	} else {
-		log.Infof("Updating %s Environment in namespace %s\n", env.Name, ns)
+		log.Logger().Infof("Updating %s Environment in namespace %s\n", env.Name, ns)
 		_, err = environmentInterface.PatchUpdate(env)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)

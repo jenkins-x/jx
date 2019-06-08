@@ -2,9 +2,10 @@ package step
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"sort"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -104,7 +105,7 @@ func (o *StepCredentialOptions) Run() error {
 	secret, err := kubeClient.CoreV1().Secrets(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if o.Optional {
-			log.Warnf("failed to find Secret %s in namespace %s", name, ns)
+			log.Logger().Warnf("failed to find Secret %s in namespace %s", name, ns)
 			return nil
 		}
 		return errors.Wrapf(err, "failed to find Secret %s in namespace %s", name, ns)
@@ -112,7 +113,7 @@ func (o *StepCredentialOptions) Run() error {
 	data := secret.Data
 	if data == nil {
 		if o.Optional {
-			log.Warnf("Secret %s in namespace %s has no data", name, ns)
+			log.Logger().Warnf("Secret %s in namespace %s has no data", name, ns)
 			return nil
 		}
 		return errors.Wrapf(err, "Secret %s in namespace %s has no data", name, ns)
@@ -152,7 +153,7 @@ func (o *StepCredentialOptions) Run() error {
 
 	value, ok := data[key]
 	if !ok {
-		log.Warnf("Secret %s in namespace %s does not have key %s\n", name, ns, key)
+		log.Logger().Warnf("Secret %s in namespace %s does not have key %s\n", name, ns, key)
 		if o.Optional {
 			return nil
 		}

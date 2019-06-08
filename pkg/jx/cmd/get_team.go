@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -72,7 +73,7 @@ func (o *GetTeamOptions) Run() error {
 		return err
 	}
 	if len(teams) == 0 {
-		log.Info(`
+		log.Logger().Info(`
 You do not belong to any teams.
 Have you installed Jenkins X yet to create a team?
 See https://jenkins-x.io/getting-started/\n for more detail
@@ -106,7 +107,7 @@ func (o *GetTeamOptions) getPendingTeams() error {
 	}
 
 	if len(names) == 0 {
-		log.Info(`
+		log.Logger().Info(`
 There are no pending Teams yet. Try create one via: jx create team --pending
 `)
 		return nil

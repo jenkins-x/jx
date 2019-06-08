@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -131,16 +132,16 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the cluster role binding '%s' for vault", vaultName)
 	}
 
-	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
+	log.Logger().Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
 
 	if o.RemoveCloudResources {
 		if teamSettings.KubeProvider == cloud.GKE {
-			log.Infof("Removing GCP resources allocated for Vault...\n")
+			log.Logger().Infof("Removing GCP resources allocated for Vault...\n")
 			err := o.removeGCPResources(vaultName)
 			if err != nil {
 				return errors.Wrap(err, "removing GCP resource")
 			}
-			log.Infof("Cloud resources allocated for vault %s deleted\n", util.ColorInfo(vaultName))
+			log.Logger().Infof("Cloud resources allocated for vault %s deleted\n", util.ColorInfo(vaultName))
 		}
 	}
 
@@ -178,7 +179,7 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
 	}
-	log.Infof("GCP service account %s deleted\n", util.ColorInfo(sa))
+	log.Logger().Infof("GCP service account %s deleted\n", util.ColorInfo(sa))
 
 	bucket := gke.BucketName(vaultName)
 	err = gke.DeleteAllObjectsInBucket(bucket)
@@ -186,7 +187,7 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 		return errors.Wrapf(err, "deleting all objects in GCS bucket '%s'", bucket)
 	}
 
-	log.Infof("GCS bucket %s deleted\n", util.ColorInfo(bucket))
+	log.Logger().Infof("GCS bucket %s deleted\n", util.ColorInfo(bucket))
 
 	return nil
 }

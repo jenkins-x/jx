@@ -2,11 +2,13 @@ package cmd_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -27,6 +29,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 )
+
+var timeout = 5 * time.Second
 
 func TestUpgradeAppForGitOps(t *testing.T) {
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
@@ -178,7 +182,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 	}()
 
 	// Needs console
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
@@ -266,7 +270,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 	}()
 
 	// Needs console
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
@@ -367,7 +371,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 	}()
 
 	// Needs console
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out
@@ -470,7 +474,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 	}()
 
 	// Needs console
-	console := tests.NewTerminal(t)
+	console := tests.NewTerminal(t, &timeout)
 	defer console.Cleanup()
 	testOptions.CommonOptions.In = console.In
 	testOptions.CommonOptions.Out = console.Out

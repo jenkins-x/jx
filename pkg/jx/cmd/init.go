@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
-	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
@@ -177,7 +178,7 @@ func (o *InitOptions) checkOptions() error {
 
 	if o.Flags.SkipIngress {
 		if o.Flags.ExternalIP == "" {
-			log.Warnf("Expecting ingress controller to be installed in %s\n",
+			log.Logger().Warnf("Expecting ingress controller to be installed in %s\n",
 				util.ColorInfo(fmt.Sprintf("%s/%s", o.Flags.IngressNamespace, o.Flags.IngressDeployment)))
 		}
 	}
@@ -244,14 +245,14 @@ func (o *InitOptions) Run() error {
 	})
 
 	if err != nil {
-		log.Fatalf("helm init failed: %v", err)
+		log.Logger().Fatalf("helm init failed: %v", err)
 		return err
 	}
 
 	// draft init
 	_, _, err = o.InitBuildPacks()
 	if err != nil {
-		log.Fatalf("initialise build packs failed: %v", err)
+		log.Logger().Fatalf("initialise build packs failed: %v", err)
 		return err
 	}
 
@@ -259,7 +260,7 @@ func (o *InitOptions) Run() error {
 	if !o.Flags.SkipIngress {
 		err = o.initIngress()
 		if err != nil {
-			log.Fatalf("ingress init failed: %v", err)
+			log.Logger().Fatalf("ingress init failed: %v", err)
 			return err
 		}
 	}
@@ -311,13 +312,13 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	return o.Retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
+			log.Logger().Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 
 			_, err = clusterRoleBindingInterface.Create(clusterRoleBinding)
 			if err == nil {
-				log.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+				log.Logger().Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
 			}
 		}
 		return err
@@ -328,31 +329,31 @@ func (o *InitOptions) configureForICP() {
 	icpDefaultTillerNS := "default"
 	icpDefaultNS := "jx"
 
-	log.Info("")
-	log.Info(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
-	log.Info("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
+	log.Logger().Info("")
+	log.Logger().Info(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
+	log.Logger().Info("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
 		"configured to point to the cluster jx will be installed into.")
-	log.Info("")
+	log.Logger().Info("")
 
-	log.Info(util.ColorInfo("Permitting image repositories to be used"))
-	log.Info("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
+	log.Logger().Info(util.ColorInfo("Permitting image repositories to be used"))
+	log.Logger().Info("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
 		"the scope of which can be narrowed down once you are sure only images from certain repositories are being used:")
-	log.Info("- name: docker.io/* \n" +
+	log.Logger().Info("- name: docker.io/* \n" +
 		"- name: gcr.io/* \n" +
 		"- name: quay.io/* \n" +
 		"- name: k8s.gcr.io/* \n" +
 		"- name: <your ICP cluster name>:8500/* \n")
 
-	log.Info(util.ColorInfo("IBM Cloud Private defaults"))
-	log.Info("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
+	log.Logger().Info(util.ColorInfo("IBM Cloud Private defaults"))
+	log.Logger().Info("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
 		"where Jenkins X resources will be installed into is \"" + icpDefaultNS + "\".")
-	log.Info("")
+	log.Logger().Info("")
 
-	log.Info(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
-	log.Info("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
+	log.Logger().Info(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
+	log.Logger().Info("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
 		"create a Docker registry secret and patch the default service account in the created namespace to use the secret, adding it as an ImagePullSecret. " +
 		"This is required so that pods in the created namespace can pull images from the registry.")
-	log.Info("")
+	log.Logger().Info("")
 
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
@@ -366,7 +367,7 @@ func (o *InitOptions) configureForICP() {
 
 	if !(o.BatchMode) {
 		if o.Flags.ExternalIP != "" {
-			log.Info("An external IP has already been specified: otherwise you will be prompted for one to use")
+			log.Logger().Info("An external IP has already been specified: otherwise you will be prompted for one to use")
 			return
 		}
 
@@ -392,7 +393,7 @@ func (o *InitOptions) configureForICP() {
 }
 
 func (o *InitOptions) initIKSIngress() error {
-	log.Info("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
+	log.Logger().Info("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -440,20 +441,20 @@ func (o *InitOptions) initIngress() error {
 			return err
 		}
 		if strings.Contains(addons, "- ingress: enabled") {
-			log.Success("nginx ingress controller already enabled")
+			log.Logger().Info("nginx ingress controller already enabled")
 			return nil
 		}
 		err = o.RunCommand("minikube", "addons", "enable", "ingress")
 		if err != nil {
 			return err
 		}
-		log.Success("nginx ingress controller now enabled on Minikube")
+		log.Logger().Info("nginx ingress controller now enabled on Minikube")
 		return nil
 
 	}
 
 	if isOpenShiftProvider(o.Flags.Provider) {
-		log.Info("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
+		log.Logger().Info("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
 
@@ -471,13 +472,19 @@ func (o *InitOptions) initIngress() error {
 		installIngressController := false
 		if o.BatchMode {
 			installIngressController = true
-		} else {
+		} else if o.AdvancedMode {
 			prompt := &survey.Confirm{
 				Message: "No existing ingress controller found in the " + ingressNamespace + " namespace, shall we install one?",
 				Default: true,
 				Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
 			}
-			survey.AskOne(prompt, &installIngressController, nil, surveyOpts)
+			err = survey.AskOne(prompt, &installIngressController, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			installIngressController = true
+			log.Logger().Infof("No existing ingress controller found in the "+ingressNamespace+" namespace, installing one: %v", util.ColorPrompt(util.YesNo(installIngressController)))
 		}
 
 		if !installIngressController {
@@ -526,7 +533,7 @@ controller:
 			if err != nil {
 				return err
 			}
-			log.Infof("Using helm values file: %s\n", fileName)
+			log.Logger().Infof("Using helm values file: %s\n", fileName)
 			valuesFiles = append(valuesFiles, fileName)
 		}
 		chartName := "stable/nginx-ingress"
@@ -538,7 +545,7 @@ controller:
 
 		i := 0
 		for {
-			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
+			log.Logger().Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
 			helmOptions := helm.InstallChartOptions{
 				Chart:       chartName,
 				ReleaseName: "jxing",
@@ -550,7 +557,7 @@ controller:
 			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
 				if i >= 3 {
-					log.Errorf("Failed to install ingress chart: %s", err)
+					log.Logger().Errorf("Failed to install ingress chart: %s", err)
 					break
 				}
 				i++
@@ -565,19 +572,19 @@ controller:
 		}
 
 	} else {
-		log.Info("existing ingress controller found, no need to install a new one\n")
+		log.Logger().Info("existing ingress controller found, no need to install a new one\n")
 	}
 
 	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.MINISHIFT && o.Flags.Provider != cloud.OPENSHIFT {
 
-		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
+		log.Logger().Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 
 		if o.Flags.Provider == cloud.OKE {
-			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
+			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
 		}
 
 		if o.Flags.Provider == cloud.GKE {
-			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
+			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
 		}
 
 		externalIP := o.Flags.ExternalIP
@@ -592,7 +599,7 @@ controller:
 			}
 			host := kube.CurrentServer(config)
 			if host == "" {
-				log.Warnf("No API server host is defined in the local kube config!\n")
+				log.Logger().Warnf("No API server host is defined in the local kube config!\n")
 			} else {
 				externalIP, err = util.UrlHostNameWithoutPort(host)
 				if err != nil {
@@ -606,9 +613,9 @@ controller:
 			if err != nil {
 				return err
 			}
-			log.Infof("External loadbalancer created\n")
+			log.Logger().Infof("External loadbalancer created\n")
 		} else {
-			log.Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
+			log.Logger().Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
 		}
 
 		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
@@ -618,7 +625,7 @@ controller:
 		}
 	}
 
-	log.Success("nginx ingress controller installed and configured")
+	log.Logger().Info("nginx ingress controller installed and configured")
 
 	return nil
 }
@@ -667,7 +674,7 @@ func (o *InitOptions) validateGit() error {
 			return err
 		}
 	}
-	log.Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
+	log.Logger().Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
 	return nil
 }
 

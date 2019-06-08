@@ -2,8 +2,9 @@ package git
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -94,9 +95,9 @@ func (o *StepGitForkAndCloneOptions) Run() error {
 		fmt.Print(dir)
 	}
 	if gitInfo.Fork {
-		log.Infof("Forked %s and pulled it into %s checking out %s", gitURL, dir, baseRef)
+		log.Logger().Infof("Forked %s and pulled it into %s checking out %s", gitURL, dir, baseRef)
 	} else {
-		log.Infof("Pulled %s (%s) into %s", gitURL, baseRef, dir)
+		log.Logger().Infof("Pulled %s (%s) into %s", gitURL, baseRef, dir)
 	}
 
 	return nil

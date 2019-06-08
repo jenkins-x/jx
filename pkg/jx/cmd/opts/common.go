@@ -36,12 +36,15 @@ import (
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 )
+
+// LogLevel represents the logging level when reporting feedback
+type LogLevel string
 
 const (
 	OptionServerName       = "name"
@@ -55,6 +58,14 @@ const (
 	OptionEnvironment      = "env"
 	OptionApplication      = "app"
 	OptionTimeout          = "timeout"
+	OptionAdvancedMode     = "advanced-mode"
+
+	// LogInfo info level logging
+	LogInfo LogLevel = "INFO"
+	// LogWarning warning level logging
+	LogWarning LogLevel = "WARN"
+	// LogError error level logging
+	LogError LogLevel = "ERROR"
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
@@ -85,6 +96,7 @@ type CommonOptions struct {
 	SkipAuthSecretsMerge   bool
 	Username               string
 	Verbose                bool
+	NotifyCallback         func(LogLevel, string)
 
 	apiExtensionsClient    apiextensionsclientset.Interface
 	certManagerClient      certmngclient.Interface
@@ -109,6 +121,7 @@ type CommonOptions struct {
 	tektonClient           tektonclient.Interface
 	vaultClient            vault.Client
 	vaultOperatorClient    vaultoperatorclient.Interface
+	AdvancedMode           bool
 }
 
 type ServerFlags struct {
@@ -139,6 +152,23 @@ func (o *CommonOptions) CreateTable() table.Table {
 	return o.factory.CreateTable(o.Out)
 }
 
+// NotifyProgress by default logs info to the console but a custom callback can be added to send feedback to, say, a web UI
+func (o *CommonOptions) NotifyProgress(level LogLevel, format string, args ...interface{}) {
+	if o.NotifyCallback != nil {
+		text := fmt.Sprintf(format, args...)
+		o.NotifyCallback(level, text)
+		return
+	}
+	switch level {
+	case LogInfo:
+		log.Logger().Infof(format, args...)
+	case LogWarning:
+		log.Logger().Warnf(format, args...)
+	default:
+		log.Logger().Errorf(format, args...)
+	}
+}
+
 // NewCommonOptionsWithTerm creates a new CommonOptions instance with given terminal input, output and error
 func NewCommonOptionsWithTerm(factory clients.Factory, in terminal.FileReader, out terminal.FileWriter, err io.Writer) *CommonOptions {
 	return &CommonOptions{
@@ -162,19 +192,19 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Infof("Setting the dev namespace to: %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Setting the dev namespace to: %s\n", util.ColorInfo(ns))
 }
 
 func (o *CommonOptions) SetCurrentNamespace(ns string) {
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (o *CommonOptions) Debugf(format string, a ...interface{}) {
 	if o.Verbose {
-		log.Infof(format, a...)
+		log.Logger().Infof(format, a...)
 	}
 }
 
@@ -190,6 +220,7 @@ func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVarP(&o.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
 	cmd.PersistentFlags().BoolVarP(&o.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
 	cmd.PersistentFlags().BoolVarP(&o.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
+	cmd.PersistentFlags().BoolVarP(&o.AdvancedMode, OptionAdvancedMode, "", false, "Advanced install options. This will prompt for advanced install options")
 
 	o.Cmd = cmd
 }
@@ -429,7 +460,7 @@ func (o *CommonOptions) Helm() helm.Helmer {
 			if noTillerFlag == "true" {
 				helmTemplate = true
 			} else {
-				log.Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
+				log.Logger().Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
 			}
 		}
 		return o.NewHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
@@ -532,7 +563,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 		if name != "" && o.BatchMode {
 			server = config.GetServerByName(name)
 			if server == nil {
-				log.Warnf("Current server %s no longer exists\n", name)
+				log.Logger().Warnf("Current server %s no longer exists\n", name)
 			}
 		}
 	}
@@ -682,7 +713,7 @@ func (o *CommonOptions) Retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		log.Warnf("\nretrying after error:%s\n\n", err)
+		log.Logger().Warnf("\nretrying after error:%s\n\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -716,7 +747,7 @@ func (o *CommonOptions) RetryUntilFatalError(attempts int, sleep time.Duration, 
 
 		time.Sleep(sleep)
 
-		log.Infof("retrying after error:%s\n", err)
+		log.Logger().Infof("retrying after error:%s\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -743,7 +774,7 @@ func (o *CommonOptions) RetryQuiet(attempts int, sleep time.Duration, call func(
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			log.Info(".")
+			log.Logger().Info(".")
 			dot = true
 		} else {
 			lastMessage = message
@@ -751,7 +782,7 @@ func (o *CommonOptions) RetryQuiet(attempts int, sleep time.Duration, call func(
 				dot = false
 				log.Blank()
 			}
-			log.Warnf("%s\n\n", lastMessage)
+			log.Logger().Warnf("%s\n\n", lastMessage)
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
@@ -781,7 +812,7 @@ func (o *CommonOptions) RetryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			log.Info(".")
+			log.Logger().Info(".")
 			dot = true
 		} else {
 			lastMessage = message
@@ -789,7 +820,7 @@ func (o *CommonOptions) RetryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 				dot = false
 				log.Blank()
 			}
-			log.Warnf("%s\n\n", lastMessage)
+			log.Logger().Warnf("%s\n\n", lastMessage)
 		}
 	}
 }

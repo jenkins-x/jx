@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -173,12 +174,12 @@ func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient versione
 func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlSpecMap map[string]string) {
 	activity, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Infof("Object is not a PipelineActivity %#v\n", obj)
+		log.Logger().Infof("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	data, err := yaml.Marshal(&activity.Spec)
 	if err != nil {
-		log.Infof("Failed to marshal Activity.Spec to YAML: %s", err)
+		log.Logger().Infof("Failed to marshal Activity.Spec to YAML: %s", err)
 	} else {
 		text := string(data)
 		name := activity.Name
@@ -204,7 +205,7 @@ func (o *GetActivityOptions) addStepRow(table *tbl.Table, parent *v1.PipelineAct
 	} else if promote != nil {
 		addPromoteRow(table, promote, indent)
 	} else {
-		log.Warnf("Unknown step kind %#v\n", parent)
+		log.Logger().Warnf("Unknown step kind %#v\n", parent)
 	}
 }
 

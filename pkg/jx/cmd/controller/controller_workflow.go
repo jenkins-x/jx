@@ -2,13 +2,14 @@ package controller
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 
@@ -106,7 +107,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 		return err
 	}
 	if prow {
-		log.Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
+		log.Logger().Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
 			"statuses from the PR, see https://github.com/jenkins-x/jx/issues/2410")
 		o.NoWaitForUpdatePipeline = true
 	}
@@ -128,7 +129,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 		return o.updatePipelinesWithoutWatching(jxClient, ns)
 	}
 
-	log.Infof("Watching for PipelineActivity resources in namespace %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Watching for PipelineActivity resources in namespace %s\n", util.ColorInfo(ns))
 	workflow := &v1.Workflow{}
 	activity := &v1.PipelineActivity{}
 	workflowListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "workflows", ns, fields.Everything())
@@ -176,7 +177,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 	go func() {
 		for t := range ticker.C {
 			if o.Verbose {
-				log.Infof("Polling to see if any PRs have merged: %v\n", t)
+				log.Logger().Infof("Polling to see if any PRs have merged: %v\n", t)
 			}
 			//o.pollGitPipelineStatuses(jxClient, ns)
 			o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
@@ -214,7 +215,7 @@ func (o *ControllerWorkflowOptions) updatePipelinesWithoutWatching(jxClient vers
 func (o *ControllerWorkflowOptions) onWorkflowObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	workflow, ok := obj.(*v1.Workflow)
 	if !ok {
-		log.Warnf("Object is not a Workflow %#v\n", obj)
+		log.Logger().Warnf("Object is not a Workflow %#v\n", obj)
 		return
 	}
 	if workflow != nil {
@@ -225,7 +226,7 @@ func (o *ControllerWorkflowOptions) onWorkflowObj(obj interface{}, jxClient vers
 func (o *ControllerWorkflowOptions) deleteWorkflowObjb(obj interface{}, jxClient versioned.Interface, ns string) {
 	workflow, ok := obj.(*v1.Workflow)
 	if !ok {
-		log.Warnf("Object is not a Workflow %#v\n", obj)
+		log.Logger().Warnf("Object is not a Workflow %#v\n", obj)
 		return
 	}
 	if workflow != nil {
@@ -244,7 +245,7 @@ func (o *ControllerWorkflowOptions) onWorkflowDelete(workflow *v1.Workflow, jxCl
 func (o *ControllerWorkflowOptions) onActivityObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	pipeline, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Warnf("Object is not a PipelineActivity %#v\n", obj)
+		log.Logger().Warnf("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	if pipeline != nil {
@@ -252,7 +253,7 @@ func (o *ControllerWorkflowOptions) onActivityObj(obj interface{}, jxClient vers
 		if err == nil {
 			if kube.IsResourceVersionNewer(activity.ResourceVersion, pipeline.ResourceVersion) {
 				if o.Verbose {
-					log.Infof("onActivity %s using newer resourceVersion of PipelineActivity %s > %s\n", pipeline.Name, activity.ResourceVersion, pipeline.ResourceVersion)
+					log.Logger().Infof("onActivity %s using newer resourceVersion of PipelineActivity %s > %s\n", pipeline.Name, activity.ResourceVersion, pipeline.ResourceVersion)
 				}
 				pipeline = activity
 			}
@@ -270,14 +271,14 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 	build := pipeline.Spec.Build
 
 	if o.Verbose {
-		log.Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
+		log.Logger().Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
 	}
 
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	if repoName == "" || version == "" || build == "" || pipelineName == "" {
 		if o.Verbose {
-			log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
+			log.Logger().Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
 		}
 		o.removePipelineActivity(pipeline, activities)
 		return
@@ -294,7 +295,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 			var err error
 			flow, err = workflow.CreateDefaultWorkflow(jxClient, ns)
 			if err != nil {
-				log.Warnf("Cannot create default Workflow: %s\n", err)
+				log.Logger().Warnf("Cannot create default Workflow: %s\n", err)
 				o.removePipelineActivity(pipeline, activities)
 				return
 			}
@@ -310,7 +311,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		}
 
 		if !o.isReleaseBranch(branch) {
-			log.Infof("Ignoring branch %s\n", branch)
+			log.Logger().Infof("Ignoring branch %s\n", branch)
 			o.removePipelineActivity(pipeline, activities)
 			return
 		}
@@ -332,12 +333,12 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 						allStepsComplete = false
 						// can we generate a PR now?
 						if canExecuteStep(flow, pipeline, &step, promoteStatusMap, envName) {
-							log.Infof("Creating PR for environment %s from PipelineActivity %s as current status is %#v\n", envName, pipeline.Name, status)
+							log.Logger().Infof("Creating PR for environment %s from PipelineActivity %s as current status is %#v\n", envName, pipeline.Name, status)
 							po := o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 
 							err := po.Run()
 							if err != nil {
-								log.Warnf("Failed to create PullRequest on pipeline %s repo %s version %s with workflow %s: %s\n", pipeline.Name, repoName, version, workflowName, err)
+								log.Logger().Warnf("Failed to create PullRequest on pipeline %s repo %s version %s with workflow %s: %s\n", pipeline.Name, repoName, version, workflowName, err)
 							}
 						}
 					}
@@ -352,7 +353,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 			pipeline.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
 			_, err := jxClient.JenkinsV1().PipelineActivities(ns).PatchUpdate(pipeline)
 			if err != nil {
-				log.Warnf("Failed to update PipelineActivity %s due to being complete: %s", pipeline.Name, err)
+				log.Logger().Warnf("Failed to update PipelineActivity %s due to being complete: %s", pipeline.Name, err)
 			}
 
 		}
@@ -443,11 +444,11 @@ func (o *ControllerWorkflowOptions) ReloadAndPollGitPipelineStatuses(jxClient ve
 
 	pipelines, err := activities.List(metav1.ListOptions{})
 	if err != nil {
-		log.Warnf("failed to list PipelineActivity resources: %s", err)
+		log.Logger().Warnf("failed to list PipelineActivity resources: %s", err)
 	} else {
 		for _, pipeline := range pipelines.Items {
 			if o.Verbose {
-				log.Infof("Polling git status of activity %s\n", pipeline.Name)
+				log.Logger().Infof("Polling git status of activity %s\n", pipeline.Name)
 			}
 			o.pollGitStatusforPipeline(&pipeline, activities, environments, ns)
 		}
@@ -474,24 +475,24 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 		}
 		if promoteStep.Status.IsTerminated() {
 			if o.Verbose {
-				log.Infof("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promoteStep.Environment, string(promoteStep.Status))
+				log.Logger().Infof("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promoteStep.Environment, string(promoteStep.Status))
 			}
 			continue
 		}
 		envName := promoteStep.Environment
 		pullRequestStep := promoteStep.PullRequest
 		if pullRequestStep == nil {
-			log.Infof("Pipeline %s promote Environment %s status %s ignored as no PullRequest\n", activity.Name, promoteStep.Environment, string(promoteStep.Status))
+			log.Logger().Infof("Pipeline %s promote Environment %s status %s ignored as no PullRequest\n", activity.Name, promoteStep.Environment, string(promoteStep.Status))
 			continue
 		}
 		prURL := pullRequestStep.PullRequestURL
 		if prURL == "" || envName == "" {
-			log.Infof("Pipeline %s promote Environment %s status %s ignored for PR %s\n", activity.Name, promoteStep.Environment, string(promoteStep.Status), prURL)
+			log.Logger().Infof("Pipeline %s promote Environment %s status %s ignored for PR %s\n", activity.Name, promoteStep.Environment, string(promoteStep.Status), prURL)
 			continue
 		}
 		gitProvider, gitInfo, err := o.createGitProviderForPR(prURL)
 		if err != nil {
-			log.Warnf("Failed to create git Provider: %s", err)
+			log.Logger().Warnf("Failed to create git Provider: %s", err)
 			return
 		}
 		if gitProvider == nil || gitInfo == nil {
@@ -499,22 +500,22 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 		}
 		prNumber, err := PullRequestURLToNumber(prURL)
 		if err != nil {
-			log.Warnf("Failed to get PR number: %s", err)
+			log.Logger().Warnf("Failed to get PR number: %s", err)
 			return
 		}
 		pr, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
 		if err != nil {
-			log.Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
+			log.Logger().Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
 		} else {
 			if o.Verbose {
-				log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
+				log.Logger().Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
 			}
 			po := o.createPromoteOptionsFromActivity(activity, envName)
 			po.GitInfo = gitInfo
 
 			if pr.Merged != nil && *pr.Merged {
 				if pr.MergeCommitSHA == nil {
-					log.Warnf("Pipeline %s promote Environment %s has PR %s which is merged but there is no merge SHA\n", activity.Name, envName, prURL)
+					log.Logger().Warnf("Pipeline %s promote Environment %s has PR %s which is merged but there is no merge SHA\n", activity.Name, envName, prURL)
 				} else {
 					mergeSha := *pr.MergeCommitSHA
 					mergedPR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
@@ -524,29 +525,29 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 					}
 					env, err := environments.Get(envName, metav1.GetOptions{})
 					if err != nil {
-						log.Warnf("Failed to find environment %s: %s\n", envName, err)
+						log.Logger().Warnf("Failed to find environment %s: %s\n", envName, err)
 						return
 					} else {
 						promoteKey := po.CreatePromoteKey(env)
 
 						jxClient, _, err := o.JXClient()
 						if err != nil {
-							log.Warnf("Failed to get the jx client: %s\n", err)
+							log.Logger().Warnf("Failed to get the jx client: %s\n", err)
 							return
 						}
 						promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
 						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
-							log.Infof("Pull Request %d merged but we are not waiting for the update pipeline to complete!\n",
+							log.Logger().Infof("Pull Request %d merged but we are not waiting for the update pipeline to complete!\n",
 								prNumber)
 							err = po.CommentOnIssues(ns, env, promoteKey)
 							if err != nil {
-								log.Warnf("Failed to comment on issues: %s", err)
+								log.Logger().Warnf("Failed to comment on issues: %s", err)
 							}
 							err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 							if err != nil {
-								log.Warnf("PipelineActivity update failed while completing promotion step. activity=%s\n",
+								log.Logger().Warnf("PipelineActivity update failed while completing promotion step. activity=%s\n",
 									activity.Name)
 							}
 							return
@@ -559,7 +560,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 							if len(statuses) > 0 {
 								for _, status := range statuses {
 									if status.IsFailed() {
-										log.Warnf("merge status: %s URL: %s description: %s\n",
+										log.Logger().Warnf("merge status: %s URL: %s description: %s\n",
 											status.State, status.TargetURL, status.Description)
 										return
 									}
@@ -600,23 +601,23 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 								if succeeded {
 									gitURL := activity.Spec.GitURL
 									if gitURL == "" {
-										log.Warnf("No git URL for PipelineActivity %s so cannot comment on issues\n", activity.Name)
+										log.Logger().Warnf("No git URL for PipelineActivity %s so cannot comment on issues\n", activity.Name)
 										return
 									}
 									gitInfo, err := gits.ParseGitURL(gitURL)
 									if err != nil {
-										log.Warnf("Failed to parse Git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
+										log.Logger().Warnf("Failed to parse Git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
 										return
 									}
 									po.GitInfo = gitInfo
 									err = po.CommentOnIssues(ns, env, promoteKey)
 									if err != nil {
-										log.Warnf("Failed to comment on issues: %s", err)
+										log.Logger().Warnf("Failed to comment on issues: %s", err)
 										return
 									}
 									err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									if err != nil {
-										log.Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
+										log.Logger().Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}
 									return
 								}
@@ -626,7 +627,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 				}
 			} else {
 				if pr.IsClosed() {
-					log.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+					log.Logger().Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
 					// TODO should we mark the PipelineActivity as complete?
 					return
 				}
@@ -634,31 +635,31 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 				// lets try merge if the status is good
 				status, err := gitProvider.PullRequestLastCommitStatus(pr)
 				if err != nil {
-					log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+					log.Logger().Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 					//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 				} else if status == "in-progress" {
-					log.Info("The build for the Pull Request last commit is currently in progress.")
+					log.Logger().Info("The build for the Pull Request last commit is currently in progress.")
 				} else {
-					log.Infof("Pipeline %s promote Environment %s has PR %s with status %s\n", activity.Name, envName, prURL, status)
+					log.Logger().Infof("Pipeline %s promote Environment %s has PR %s with status %s\n", activity.Name, envName, prURL, status)
 
 					if status == "success" {
 						if !o.NoMergePullRequest {
 							err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
 							if err != nil {
-								log.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+								log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
 							}
 						}
 					} else if status == "error" || status == "failure" {
-						log.Warnf("Pull request %s last commit has status %s for ref %s", pr.URL, status, pr.LastCommitSha)
+						log.Logger().Warnf("Pull request %s last commit has status %s for ref %s", pr.URL, status, pr.LastCommitSha)
 						return
 					}
 				}
 			}
 			if pr.Mergeable != nil && !*pr.Mergeable {
-				log.Info("Rebasing PullRequest due to conflict")
+				log.Logger().Info("Rebasing PullRequest due to conflict")
 				env, err := environments.Get(envName, metav1.GetOptions{})
 				if err != nil {
-					log.Warnf("Failed to find environment %s: %s\n", envName, err)
+					log.Logger().Warnf("Failed to find environment %s: %s\n", envName, err)
 				} else {
 					releaseInfo := o.createReleaseInfo(activity, env)
 					if releaseInfo != nil {
@@ -696,11 +697,11 @@ func canExecuteStep(workflow *v1.Workflow, activity *v1.PipelineActivity, step *
 	for _, envName := range step.Preconditions.Environments {
 		status := statusMap[envName]
 		if status == nil {
-			log.Warnf("Cannot promote to Environment: %s as precondition Environment: %s as no status\n", promoteToEnv, envName)
+			log.Logger().Warnf("Cannot promote to Environment: %s as precondition Environment: %s as no status\n", promoteToEnv, envName)
 			return false
 		}
 		if status.Status != v1.ActivityStatusTypeSucceeded {
-			log.Warnf("Cannot promote to Environment: %s as precondition Environment: %s has status %s", promoteToEnv, envName, string(status.Status))
+			log.Logger().Warnf("Cannot promote to Environment: %s as precondition Environment: %s has status %s", promoteToEnv, envName, string(status.Status))
 			return false
 		}
 	}
@@ -762,7 +763,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 	gitInfo, err := gits.ParseGitURL(gitUrl)
 	if err != nil {
-		log.Warnf("Failed to parse Git URL %s: %s", gitUrl, err)
+		log.Logger().Warnf("Failed to parse Git URL %s: %s", gitUrl, err)
 		return nil
 	}
 	org := gitInfo.Organisation
@@ -838,7 +839,7 @@ func modifyPipeline(activities typev1.PipelineActivityInterface, activity *v1.Pi
 		if !reflect.DeepEqual(activity, &old) {
 			_, err := activities.PatchUpdate(activity)
 			if err != nil {
-				log.Warnf("Failed to update PipelineActivity %s: %s\n", activity.Name, err)
+				log.Logger().Warnf("Failed to update PipelineActivity %s: %s\n", activity.Name, err)
 				return err
 			}
 		}
@@ -865,13 +866,13 @@ func (o *ControllerWorkflowOptions) isNewestPipeline(activity *v1.PipelineActivi
 	}
 	for _, p := range deleteNames {
 		if o.Verbose {
-			log.Infof("Removing old Pipeline version %s\n", p.Name)
+			log.Logger().Infof("Removing old Pipeline version %s\n", p.Name)
 		}
 		o.modifyAndRemovePipelineActivity(p, activities, setActivityAborted)
 	}
 	if !newest {
 		if o.Verbose {
-			log.Infof("Removing old Pipeline version %s\n", activity.Name)
+			log.Logger().Infof("Removing old Pipeline version %s\n", activity.Name)
 		}
 		o.modifyAndRemovePipelineActivity(activity, activities, setActivityAborted)
 	}

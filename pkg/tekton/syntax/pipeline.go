@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,7 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
@@ -1140,7 +1141,7 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, labels map[string]string) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
@@ -1203,7 +1204,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), buildIdentifier),
-				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
+				Labels:    util.MergeMaps(labels, map[string]string{LabelStageName: s.stageLabelName()}),
 			},
 		}
 		// Only add the default git merge step if this is the first actual step stage - including if the stage is one of
@@ -1274,7 +1275,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates, labels)
 			if err != nil {
 				return nil, err
 			}
@@ -1291,7 +1292,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 
 		for _, nested := range s.Parallel {
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates, labels)
 			if err != nil {
 				return nil, err
 			}
@@ -1476,7 +1477,7 @@ func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string, labels map[string]string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -1519,6 +1520,11 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 	}
 
+	if len(labels) > 0 {
+		p.Labels = util.MergeMaps(labels)
+		structure.Labels = util.MergeMaps(labels)
+	}
+
 	var previousStage *transformedStage
 
 	var tasks []*tektonv1alpha1.Task
@@ -1528,7 +1534,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
 
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates, labels)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -1537,7 +1543,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		if o.RootOptions != nil {
 			if o.Retry > 0 {
 				stage.Stage.Options.Retry = s.Options.Retry
-				log.Infof("setting retries to %d for stage %s", stage.Stage.Options.Retry, stage.Stage.Name)
+				log.Logger().Infof("setting retries to %d for stage %s", stage.Stage.Options.Retry, stage.Stage.Name)
 			}
 		}
 		previousStage = stage

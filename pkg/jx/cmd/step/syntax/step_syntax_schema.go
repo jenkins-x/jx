@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -88,17 +89,17 @@ func (o *StepSyntaxSchemaOptions) Run() error {
 		}
 		output = string(tempOutput)
 	}
-	log.Successf("JSON schema for %s:", schemaName)
+	log.Logger().Infof("JSON schema for %s:", schemaName)
 
 	if o.Out != "" {
 		err := ioutil.WriteFile(o.Out, []byte(output), util.DefaultWritePermissions)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save file %s", o.Out)
 		}
-		log.Infof("wrote file %s\n", util.ColorInfo(o.Out))
+		log.Logger().Infof("wrote file %s\n", util.ColorInfo(o.Out))
 		return nil
 	}
-	log.Infof("%s", output)
+	log.Logger().Infof("%s", output)
 	return nil
 }
 

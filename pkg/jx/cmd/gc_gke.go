@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/spf13/cobra"
 
@@ -110,9 +111,9 @@ func (o *GCGKEOptions) Run() error {
 %s
 
 `
-	log.Warn("This command is experimental and the generated script should be executed at the users own risk\n")
-	log.Warn("We will generate a script for you to review and execute, this command will not delete any resources by itself\n")
-	log.Info("It may take a few minutes to create the script\n")
+	log.Logger().Warn("This command is experimental and the generated script should be executed at the users own risk\n")
+	log.Logger().Warn("We will generate a script for you to review and execute, this command will not delete any resources by itself\n")
+	log.Logger().Info("It may take a few minutes to create the script\n")
 
 	fw, err := o.cleanUpFirewalls()
 	if err != nil {
@@ -135,7 +136,7 @@ func (o *GCGKEOptions) Run() error {
 
 	err = ioutil.WriteFile("gc_gke.sh", []byte(data), util.DefaultWritePermissions)
 
-	log.Info("Script 'gc_gke.sh' created!\n")
+	log.Logger().Info("Script 'gc_gke.sh' created!\n")
 	return nil
 }
 

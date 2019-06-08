@@ -14,3 +14,12 @@ func TestGetRegionFromZone(t *testing.T) {
 	r = GetRegionFromZone("uswest1-d")
 	assert.Equal(t, r, "uswest1")
 }
+
+func TestGetManagedZoneName(t *testing.T) {
+	t.Parallel()
+	d := getManagedZoneName("wine.cheese.co.uk")
+	assert.Equal(t, d, "wine-cheese-co-uk-zone")
+
+	d = getManagedZoneName("planes.n.trains.com")
+	assert.Equal(t, d, "planes-n-trains-com-zone")
+}

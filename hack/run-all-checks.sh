@@ -11,6 +11,7 @@ echo "Running validation scripts..."
 scripts=(
     "./hack/gofmt.sh"
     "./hack/linter.sh"
+    "./hack/codecov-validate.sh"
     "make verify-generation-complete"
     "make generate-docs"
 )

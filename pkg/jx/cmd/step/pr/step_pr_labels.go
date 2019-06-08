@@ -2,11 +2,12 @@ package pr
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -92,7 +93,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	prNum, err := strconv.Atoi(o.PullRequest)
 	if err != nil {
-		log.Warn("Unable to convert PR " + o.PullRequest + " to a number" + "\n")
+		log.Logger().Warn("Unable to convert PR " + o.PullRequest + " to a number" + "\n")
 	}
 
 	pr, err := provider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
@@ -107,7 +108,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	for _, v := range pr.Labels {
 		envKey := reg.ReplaceAllString(*v.Name, "_")
-		log.Infof("%v_%v='%v'\n", o.Prefix, strings.ToUpper(envKey), *v.Name)
+		log.Logger().Infof("%v_%v='%v'\n", o.Prefix, strings.ToUpper(envKey), *v.Name)
 	}
 	return nil
 }

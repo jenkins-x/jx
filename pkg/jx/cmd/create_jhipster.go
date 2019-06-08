@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/spf13/cobra"
 
@@ -69,10 +70,10 @@ func NewCmdCreateJHipster(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 	_, err := o.GetCommandOutput("", "jhipster", "--version")
 	if err != nil {
-		log.Info("Installing JHipster..")
+		log.Logger().Info("Installing JHipster..")
 		_, err = o.GetCommandOutput("", "rimraf", "--version")
 		if err != nil {
-			log.Info("Installing rimraf..")
+			log.Logger().Info("Installing rimraf..")
 			_, err = o.GetCommandOutput("", "npm", "install", "-g", "rimraf")
 			if err != nil {
 				return err
@@ -82,7 +83,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 		if err != nil {
 			return err
 		}
-		log.Info("Installed JHipster")
+		log.Logger().Info("Installed JHipster")
 	}
 	return err
 }
@@ -127,6 +128,6 @@ func (o *CreateJHipsterOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Created JHipster project at %s\n\n", util.ColorInfo(dir))
+	log.Logger().Infof("Created JHipster project at %s\n\n", util.ColorInfo(dir))
 	return o.ImportCreatedProject(dir)
 }

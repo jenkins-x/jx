@@ -2,10 +2,11 @@ package step
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -142,7 +143,7 @@ func (o *StepStashOptions) Run() error {
 			if sourceURL == "" {
 				_, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 				if err != nil {
-					log.Warnf("Could not find a .git directory: %s\n", err)
+					log.Logger().Warnf("Could not find a .git directory: %s\n", err)
 				} else {
 					sourceURL, err = o.DiscoverGitURL(gitConf)
 				}
@@ -210,7 +211,7 @@ func (o *StepStashOptions) Run() error {
 	}
 
 	for _, u := range urls {
-		log.Infof("stashed: %s\n", util.ColorInfo(u))
+		log.Logger().Infof("stashed: %s\n", util.ColorInfo(u))
 	}
 
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it

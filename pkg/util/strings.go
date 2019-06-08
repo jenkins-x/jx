@@ -210,3 +210,11 @@ func RemoveStringFromSlice(strings []string, toRemove string) []string {
 	}
 	return strings
 }
+
+// YesNo returns a Yes/No conversion for a boolean parameter
+func YesNo(t bool) string {
+	if t {
+		return "Yes"
+	}
+	return "No"
+}

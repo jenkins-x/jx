@@ -3,13 +3,14 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -120,7 +121,7 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 		gitDir := filepath.Join(testDir, ".gitdir")
 		dotGitExists, gitErr := util.FileExists(gitDir)
 		if gitErr != nil {
-			log.Warnf("Git source directory %s does not exist: %s", gitDir, gitErr)
+			log.Logger().Warnf("Git source directory %s does not exist: %s", gitDir, gitErr)
 		} else if dotGitExists {
 			dotGitDir := filepath.Join(testDir, ".git")
 			util.RenameDir(gitDir, dotGitDir, true)

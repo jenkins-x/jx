@@ -122,7 +122,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if "" == settings.KubeProvider {
-		log.Warnf("Unable to determine provider from team settings")
+		log.Logger().Warnf("Unable to determine provider from team settings")
 
 		provider := ""
 
@@ -143,7 +143,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	log.Infof("Using provider '%s' from team settings\n", util.ColorInfo(settings.KubeProvider))
+	log.Logger().Infof("Using provider '%s' from team settings\n", util.ColorInfo(settings.KubeProvider))
 
 	wrkDir := ""
 
@@ -177,11 +177,11 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if targetVersion != currentVersion {
-		log.Infof("Upgrading platform from version %s to version %s\n", util.ColorInfo(currentVersion), util.ColorInfo(targetVersion))
+		log.Logger().Infof("Upgrading platform from version %s to version %s\n", util.ColorInfo(currentVersion), util.ColorInfo(targetVersion))
 	} else if o.AlwaysUpgrade {
-		log.Infof("Rerunning platform version %s\n", util.ColorInfo(targetVersion))
+		log.Logger().Infof("Rerunning platform version %s\n", util.ColorInfo(targetVersion))
 	} else {
-		log.Infof("Already installed platform version %s. Skipping upgrade process.\n", util.ColorInfo(targetVersion))
+		log.Logger().Infof("Already installed platform version %s. Skipping upgrade process.\n", util.ColorInfo(targetVersion))
 		return nil
 	}
 
@@ -253,7 +253,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "unable to remove %s if exist", configFileName)
 	}
 
-	log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(opts.JXInstallConfig))
+	log.Logger().Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(opts.JXInstallConfig))
 	err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[opts.AdminSecretsFile], 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
@@ -294,7 +294,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.Debugf("Saved admin secrets to Kubernetes secret %s\n", util.ColorInfo(opts.JXInstallConfig))
 	}
 
-	log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(opts.JXInstallConfig))
+	log.Logger().Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(opts.JXInstallConfig))
 	err = ioutil.WriteFile(configFileName, oldSecret.Data[opts.ExtraValuesFile], 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write the config file %s", configFileName)
@@ -306,7 +306,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if sopsFileExists {
-		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		log.Logger().Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
 		// need to decrypt secrets now
 		err = o.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
 		if err != nil {
@@ -320,7 +320,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 
 		if decryptedSecretsFile {
-			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			log.Logger().Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
 			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
 		}
 	}
@@ -331,7 +331,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if invalidFormat {
-		log.Warnf("We have detected that the %s file has an invalid format", adminSecretsFileName)
+		log.Logger().Warnf("We have detected that the %s file has an invalid format", adminSecretsFileName)
 
 		confirm := false
 		prompt := &survey.Confirm{
@@ -346,7 +346,7 @@ func (o *UpgradePlatformOptions) Run() error {
 				return errors.Wrap(err, "unable to repair adminSecrets.yaml")
 			}
 		} else {
-			log.Error("Aborting upgrade due to invalid adminSecrets.yaml")
+			log.Logger().Error("Aborting upgrade due to invalid adminSecrets.yaml")
 			return nil
 		}
 	}

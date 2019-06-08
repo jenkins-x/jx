@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -113,7 +114,7 @@ func (o *SyncOptions) Run() error {
 	if !o.NoKsyncInit {
 		flag, err := kube.IsDaemonSetExists(client, "ksync", "kube-system")
 		if !flag || err != nil {
-			log.Infof("Initialising ksync\n")
+			log.Logger().Infof("Initialising ksync\n")
 			// Deal with https://github.com/vapor-ware/ksync/issues/218
 			err = o.RunCommandInteractive(true, "ksync", "init", "--upgrade", "--image",
 				fmt.Sprintf("vaporio/ksync:%s", version))
@@ -129,7 +130,7 @@ func (o *SyncOptions) Run() error {
 	for {
 		err = o.KsyncWatch()
 		if err != nil {
-			log.Warnf("Failed on ksync watch: %s\n", err)
+			log.Logger().Warnf("Failed on ksync watch: %s\n", err)
 		}
 	}
 }
@@ -140,12 +141,12 @@ func (o *SyncOptions) waitForKsyncWatchToFail() {
 		_, err := o.GetCommandOutput("", "ksync", "get")
 		if err != nil {
 			// lets assume watch is no longer running
-			log.Infof("Looks like 'ksync watch' is not running: %s\n", err)
+			log.Logger().Infof("Looks like 'ksync watch' is not running: %s\n", err)
 			return
 		}
 		if !logged {
 			logged = true
-			log.Infof("It looks like 'ksync watch' is already running so we don't need to run it yet...\n")
+			log.Logger().Infof("It looks like 'ksync watch' is already running so we don't need to run it yet...\n")
 		}
 		time.Sleep(time.Second * 5)
 	}
@@ -166,7 +167,7 @@ func (o *SyncOptions) KsyncWatch() error {
 		return err
 	}
 
-	log.Infof("Started the ksync watch\n")
+	log.Logger().Infof("Started the ksync watch\n")
 	time.Sleep(1 * time.Second)
 
 	state := cmd.ProcessState
@@ -183,7 +184,7 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 	os.Setenv("PATH", util.PathWithBinary())
 
 	info := util.ColorInfo
-	log.Infof("synchronizing directory %s to DevPod %s path %s\n", info(dir), info(name), info(remoteDir))
+	log.Logger().Infof("synchronizing directory %s to DevPod %s path %s\n", info(dir), info(name), info(remoteDir))
 
 	ignoreFile := filepath.Join(dir, ".stignore")
 	exists, err := util.FileExists(ignoreFile)
@@ -233,7 +234,7 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 		return err
 	})
 	if err != nil {
-		log.Warnf("Failed to get from ksync daemon: %s\n", err)
+		log.Logger().Warnf("Failed to get from ksync daemon: %s\n", err)
 	}
 
 	reload := "--reload=false"
@@ -243,7 +244,7 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 
 	for _, n := range deleteNames {
 		// ignore results as we may not have a spec yet for this name
-		log.Infof("Removing old ksync %s\n", n)
+		log.Logger().Infof("Removing old ksync %s\n", n)
 
 		o.RunCommand("ksync", "delete", n)
 	}
@@ -255,6 +256,6 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 
 func (o *SyncOptions) killWatchProcess(cmd *exec.Cmd) {
 	if err := cmd.Process.Kill(); err != nil {
-		log.Warnf("failed to kill 'ksync watch' process: %s\n", err)
+		log.Logger().Warnf("failed to kill 'ksync watch' process: %s\n", err)
 	}
 }

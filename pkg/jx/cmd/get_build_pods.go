@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -92,7 +93,7 @@ func (o *GetBuildPodsOptions) Run() error {
 	jxPipelines := teamSettings.IsJenkinsXPipelines()
 	pods, err := builds.GetBuildPods(kubeClient, ns)
 	if err != nil {
-		log.Warnf("Failed to query pods %s\n", err)
+		log.Logger().Warnf("Failed to query pods %s\n", err)
 		return err
 	}
 

@@ -1,8 +1,9 @@
 package helm
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -59,16 +60,16 @@ func NewCmdStepHelmEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *StepHelmEnvOptions) Run() error {
 	h := o.Helm()
 	if h != nil {
-		log.Info("\n")
-		log.Info("# helm environment variables\n")
+		log.Logger().Info("\n")
+		log.Logger().Info("# helm environment variables\n")
 		envVars := h.Env()
 		keys := util.SortedMapKeys(envVars)
 		for _, key := range keys {
 			if strings.HasPrefix(key, "HELM") {
-				log.Infof("export %s=\"%s\"\n", key, envVars[key])
+				log.Logger().Infof("export %s=\"%s\"\n", key, envVars[key])
 			}
 		}
-		log.Info("\n")
+		log.Logger().Info("\n")
 	}
 	return nil
 }

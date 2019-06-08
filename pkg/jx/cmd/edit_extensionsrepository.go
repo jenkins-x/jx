@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/ghodss/yaml"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -266,7 +267,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 		}
 		msg = fmt.Sprintf("Chart %s in repo %s", util.ColorInfo(current.Chart.Name), util.ColorInfo(current.Chart.Repo))
 	}
-	log.Infof("Set Extensions Repository to %s\n", msg)
+	log.Logger().Infof("Set Extensions Repository to %s\n", msg)
 
 	return nil
 

@@ -5,13 +5,14 @@ package controller_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/controller"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/controller"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -331,7 +332,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
-	log.Infof("Promoting to production version %s for app %s\n", version, testRepoName)
+	log.Logger().Infof("Promoting to production version %s for app %s\n", version, testRepoName)
 	err = po.Run()
 	assert.NoError(t, err)
 	if err != nil {

@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -172,7 +173,7 @@ func (o *CreateAddonGiteaOptions) createGitServer() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitUser() error {
-	log.Infof("Generating user: %s with email: %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	log.Logger().Infof("Generating user: %s with email: %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitUserOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,
@@ -186,7 +187,7 @@ func (o *CreateAddonGiteaOptions) createGitUser() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitToken() error {
-	log.Infof("Generating token for user %s with email %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	log.Logger().Infof("Generating token for user %s with email %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitTokenOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,

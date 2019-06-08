@@ -3,30 +3,39 @@ package log
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/rickar/props"
+
+	"github.com/pkg/errors"
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
 
-// colorStatus returns a new function that returns status-colorized (cyan) strings for the
-// given arguments with fmt.Sprint().
-var colorStatus = color.New(color.FgCyan).SprintFunc()
+var (
+	// colorStatus returns a new function that returns status-colorized (cyan) strings for the
+	// given arguments with fmt.Sprint().
+	colorStatus = color.New(color.FgCyan).SprintFunc()
 
-// colorWarn returns a new function that returns status-colorized (yellow) strings for the
-// given arguments with fmt.Sprint().
-var colorWarn = color.New(color.FgYellow).SprintFunc()
+	// colorWarn returns a new function that returns status-colorized (yellow) strings for the
+	// given arguments with fmt.Sprint().
+	colorWarn = color.New(color.FgYellow).SprintFunc()
 
-// colorInfo returns a new function that returns info-colorized (green) strings for the
-// given arguments with fmt.Sprint().
-var colorInfo = color.New(color.FgGreen).SprintFunc()
+	// colorInfo returns a new function that returns info-colorized (green) strings for the
+	// given arguments with fmt.Sprint().
+	colorInfo = color.New(color.FgGreen).SprintFunc()
 
-// colorError returns a new function that returns error-colorized (red) strings for the
-// given arguments with fmt.Sprint().
-var colorError = color.New(color.FgRed).SprintFunc()
+	// colorError returns a new function that returns error-colorized (red) strings for the
+	// given arguments with fmt.Sprint().
+	colorError = color.New(color.FgRed).SprintFunc()
+
+	logger *logrus.Entry
+
+	labelsPath = "/etc/labels"
+)
 
 // FormatLayoutType the layout kind
 type FormatLayoutType string
@@ -39,13 +48,51 @@ const (
 	FormatLayoutText FormatLayoutType = "text"
 )
 
-func init() {
-	format := os.Getenv("JX_LOG_FORMAT")
-	if format == "json" {
-		SetFormatter(FormatLayoutJSON)
-	} else {
-		SetFormatter(FormatLayoutText)
+func initializeLogger() error {
+	if logger == nil {
+
+		// if we are inside a pod, record some useful info
+		var fields logrus.Fields
+		if exists, err := fileExists(labelsPath); err != nil {
+			return errors.Wrapf(err, "checking if %s exists", labelsPath)
+		} else if exists {
+			f, err := os.Open(labelsPath)
+			if err != nil {
+				return errors.Wrapf(err, "opening %s", labelsPath)
+			}
+			labels, err := props.Read(f)
+			if err != nil {
+				return errors.Wrapf(err, "reading %s as properties", labelsPath)
+			}
+			app := labels.Get("app")
+			if app != "" {
+				fields["app"] = app
+			}
+			chart := labels.Get("chart")
+			if chart != "" {
+				fields["chart"] = labels.Get("chart")
+			}
+		}
+		logger = logrus.WithFields(fields)
+
+		format := os.Getenv("JX_LOG_FORMAT")
+		if format == "json" {
+			setFormatter(FormatLayoutJSON)
+		} else {
+			setFormatter(FormatLayoutText)
+		}
 	}
+	return nil
+}
+
+// Logger obtains the logger for use in the jx codebase
+// This is the only way you should obtain a logger
+func Logger() *logrus.Entry {
+	err := initializeLogger()
+	if err != nil {
+		logrus.Warnf("error initializing logrus %v", err)
+	}
+	return logger
 }
 
 // SetLevel sets the logging level
@@ -54,6 +101,7 @@ func SetLevel(s string) error {
 	if err != nil {
 		return errors.Errorf("Invalid log level '%s'", s)
 	}
+	Logger().Debugf("logging set to level: %s", level)
 	logrus.SetLevel(level)
 	return nil
 }
@@ -67,8 +115,8 @@ func GetLevels() []string {
 	return levels
 }
 
-// SetFormatter sets the logrus format to use either text or JSON formatting
-func SetFormatter(layout FormatLayoutType) {
+// setFormatter sets the logrus format to use either text or JSON formatting
+func setFormatter(layout FormatLayoutType) {
 	switch layout {
 	case FormatLayoutJSON:
 		logrus.SetFormatter(&logrus.JSONFormatter{})
@@ -127,93 +175,15 @@ func (f *JenkinsXTextFormat) Format(entry *logrus.Entry) ([]byte, error) {
 
 	b.WriteString(entry.Message)
 
-	/*    if len(entry.Data) > 0 {
-	          b.WriteString(" || ")
-	      }
-	      for key, value := range entry.Data {
-	          b.WriteString(key)
-	          b.WriteByte('=')
-	          b.WriteByte('{')
-	          fmt.Fprint(b, value)
-	          b.WriteString("}, ")
-	      }
-
-	*/
-
 	if !strings.HasSuffix(entry.Message, "\n") {
 		b.WriteByte('\n')
 	}
 	return b.Bytes(), nil
 }
 
-// Debugf debug logging with arguments
-func Debugf(msg string, args ...interface{}) {
-	logrus.Debugf(msg, args...)
-}
-
-// Debug debug logging
-func Debug(msg string) {
-	logrus.Debug(msg)
-}
-
-// Infof info logging with arguments
-func Infof(msg string, args ...interface{}) {
-	logrus.Infof(msg, args...)
-}
-
-// Info info logging
-func Info(msg string) {
-	logrus.Info(msg)
-}
-
 // Blank prints a blank line
 func Blank() {
 	fmt.Println()
-}
-
-// Warnf warning logging with arguments
-func Warnf(msg string, args ...interface{}) {
-	logrus.Warnf(msg, args...)
-}
-
-// Warn warning logging
-func Warn(msg string) {
-	logrus.Warnf(msg)
-}
-
-// Errorf warning logging with arguments
-func Errorf(msg string, args ...interface{}) {
-	logrus.Errorf(msg, args...)
-}
-
-// Error warning logging
-func Error(msg string) {
-	logrus.Error(msg)
-}
-
-// Fatalf logging with arguments
-func Fatalf(msg string, args ...interface{}) {
-	logrus.Fatalf(msg, args...)
-}
-
-// Fatal logging
-func Fatal(msg string) {
-	logrus.Fatal(msg)
-}
-
-// Success grean logging
-func Success(msg string) {
-	logrus.Info(colorInfo(msg))
-}
-
-// Successf grean logging with arguments
-func Successf(msg string, args ...interface{}) {
-	logrus.Infof(colorInfo(msg), args...)
-}
-
-// Failure red logging
-func Failure(msg string) {
-	logrus.Info(colorError(msg))
 }
 
 // CaptureOutput calls the specified function capturing and returning all logged messages.
@@ -228,4 +198,16 @@ func CaptureOutput(f func()) string {
 // SetOutput sets the outputs for the default logger.
 func SetOutput(out io.Writer) {
 	logrus.SetOutput(out)
+}
+
+// copied from utils to avoid circular import
+func fileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, errors.Wrapf(err, "failed to check if file exists %s", path)
 }

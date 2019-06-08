@@ -3,13 +3,14 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
@@ -159,7 +160,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 
 			callback := func(env *v1.Environment) error {
 				env.Spec.TeamSettings.QuickstartLocations = locations
-				log.Infof("Adding the default ml quickstart repo %s\n", util.ColorInfo(util.UrlJoin(DefaultMLQuickstartLocation.GitURL, DefaultMLQuickstartLocation.Owner)))
+				log.Logger().Infof("Adding the default ml quickstart repo %s\n", util.ColorInfo(util.UrlJoin(DefaultMLQuickstartLocation.GitURL, DefaultMLQuickstartLocation.Owner)))
 				return nil
 			}
 			o.ModifyDevEnvironment(callback)

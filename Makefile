@@ -52,25 +52,6 @@ endif
 # set dev version unless VERSION is explicitly set via environment
 VERSION ?= $(shell echo "$$(git describe --abbrev=0 --tags 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
 
-BUILDFLAGS :=  -ldflags \
-  " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
-		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
-		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
-		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
-		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'"
-
-ifdef DEBUG
-BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
-endif
-
-ifdef PARALLEL_BUILDS
-BUILDFLAGS += -p $(PARALLEL_BUILDS)
-GOTEST += -p $(PARALLEL_BUILDS)
-else
-# -p 4 seems to work well for people
-GOTEST += -p 4
-endif
-
 # Various codecov.io variables that are set from the CI envrionment if present, otherwise from locally computed values
 
 CODECOV_NAME ?= integration
@@ -110,20 +91,50 @@ CODECOV_BRANCH := $(PULL_BASE_REF)
 endif
 
 ifeq ($(JOB_TYPE),postsubmit)
-CODECOV_ARGS += -T v$(VERSION)
+CODECOV_TAG := v$(VERSION)
+CODECOV_ARGS += -T $(CODECOV_TAG)
 endif
 
 #End Codecov
 
+BUILDFLAGS :=  -ldflags \
+  " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
+		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
+		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
+		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
+		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'\
+		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Flag=$(CODECOV_NAME)\
+		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Slug=$(CODECOV_SLUG)\
+		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Branch=$(CODECOV_BRANCH)\
+		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Sha=$(CODECOV_SHA)\
+		-X $(ROOT_PACKAGE)/cmd/jx/codecov.BuildNumber=$(BUILD_NUMBER)\
+		-X $(ROOT_PACKAGE)/cmd/jx/codecov.PullRequestNumber=$(PULL_NUMBER)\
+		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Tag=$(CODECOV_TAG)"
+
+ifdef DEBUG
+BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
+endif
+
+ifdef PARALLEL_BUILDS
+BUILDFLAGS += -p $(PARALLEL_BUILDS)
+GOTEST += -p $(PARALLEL_BUILDS)
+else
+# -p 4 seems to work well for people
+GOTEST += -p 4
+endif
+
+
+
 # support for building a covered jx binary (one with the coverage instrumentation compiled in). The `build-covered`
 # target also builds the covered binary explicitly
 COVERED_MAIN_SRC_FILE=./cmd/jx
-COVERAGE_BUILDFLAGS = -c -coverpkg=./... -covermode=count
+COVERAGE_BUILDFLAGS = -c -tags covered_binary -coverpkg=./... -covermode=count
 COVERAGE_BUILD_TARGET = test
 ifdef COVERED_BINARY
 BUILDFLAGS += $(COVERAGE_BUILDFLAGS)
 BUILD_TARGET = $(COVERAGE_BUILD_TARGET)
 MAIN_SRC_FILE = $(COVERED_MAIN_SRC_FILE)
+
 endif
 
 # Build the Jenkins X distribution
@@ -296,6 +307,11 @@ codecov-upload:
 	SOURCE_COMMIT="$(CODECOV_SHA)" \
 	SOURCE_BRANCH="$(CODECOV_BRANCH)" \
 	bash <(curl -s https://codecov.io/bash) $(CODECOV_ARGS)
+
+.PHONY: codecov-validate
+codecov-validate:
+	./jx/scripts/codecov-validate.sh
+
 
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))

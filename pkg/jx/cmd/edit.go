@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"reflect"
 	"strconv"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/spf13/cobra"
 
@@ -126,7 +127,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOption
 					case bool:
 						valueField.SetBool(value.(bool))
 					}
-					log.Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
+					log.Logger().Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
 					return nil
 				}
 				helper.CheckErr(options.ModifyDevEnvironment(callback))

@@ -509,7 +509,7 @@ func ListDirectory(root string, recurse bool) error {
 		if err != nil {
 			return errors.Wrapf(err, "stat %s", path)
 		}
-		log.Infof("%v %d %s %s\n", info.Mode().String(), info.Size(), info.ModTime().Format(time.RFC822), info.Name())
+		log.Logger().Infof("%v %d %s %s\n", info.Mode().String(), info.Size(), info.ModTime().Format(time.RFC822), info.Name())
 		return nil
 	})
 

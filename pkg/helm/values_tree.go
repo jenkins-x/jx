@@ -75,7 +75,7 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 			}
 		} else {
 			if verbose {
-				log.Infof("Ignoring %s\n", rPath)
+				log.Logger().Infof("Ignoring %s\n", rPath)
 			}
 		}
 		return nil

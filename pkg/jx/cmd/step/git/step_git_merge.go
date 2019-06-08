@@ -1,8 +1,9 @@
 package git
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/pkg/errors"
@@ -90,7 +91,7 @@ func (o *StepGitMergeCommand) Run() error {
 	if len(o.SHAs) == 0 || o.BaseBranch == "" || o.BaseSHA == "" {
 		// Try to look in the env vars
 		if pullRefs := os.Getenv("PULL_REFS"); pullRefs != "" {
-			log.Infof("Using SHAs from PULL_REFS=%s\n", pullRefs)
+			log.Logger().Infof("Using SHAs from PULL_REFS=%s\n", pullRefs)
 			pullRefs, err := prow.ParsePullRefs(pullRefs)
 			if err != nil {
 				return errors.Wrapf(err, "parsing PULL_REFS=%s", pullRefs)
@@ -110,7 +111,7 @@ func (o *StepGitMergeCommand) Run() error {
 		}
 	}
 	if len(o.SHAs) == 0 {
-		log.Warnf("no SHAs to merge, falling back to initial cloned commit")
+		log.Logger().Warnf("no SHAs to merge, falling back to initial cloned commit")
 		return nil
 	}
 	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git(), o.Verbose)

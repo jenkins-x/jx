@@ -2,10 +2,11 @@ package helper
 
 import (
 	"fmt"
-	"github.com/golang/glog"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/golang/glog"
 
 	"github.com/spf13/cobra"
 )
@@ -29,7 +30,7 @@ func DefaultBehaviorOnFatal() {
 }
 
 // Fatal prints the message (if provided) and then exits. If V(2) or greater,
-// glog.Fatal is invoked for extended information.
+// glog.Logger().Fatal is invoked for extended information.
 func Fatal(msg string, code int) {
 	if len(msg) > 0 {
 		// add newline if needed

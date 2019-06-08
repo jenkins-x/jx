@@ -280,12 +280,13 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	if err != nil {
 		return err
 	}
-	err = h.kubectlApply(ns, chart, releaseName, wait, create, outputDir)
+
+	err = h.kubectlApply(ns, releaseName, wait, create, outputDir)
 	if err != nil {
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
 	}
-	log.Info("\n")
+	log.Logger().Info("\n")
 	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create)
@@ -296,7 +297,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
-	log.Info("\n")
+	log.Logger().Info("\n")
 
 	return util.CombineErrors(err, err2)
 }
@@ -324,7 +325,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 	if !exists {
-		log.Debugf("Fetching chart: %s\n", chart)
+		log.Logger().Debugf("Fetching chart: %s\n", chart)
 		chartDir, err = h.fetchChart(chart, version, chartsDir, repo, username, password)
 		if err != nil {
 			return err
@@ -360,7 +361,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	err = h.kubectlApply(ns, chart, releaseName, wait, create, outputDir)
+	err = h.kubectlApply(ns, releaseName, wait, create, outputDir)
 	if err != nil {
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
@@ -383,9 +384,51 @@ func (h *HelmTemplate) DecryptSecrets(location string) error {
 	return h.Client.DecryptSecrets(location)
 }
 
-func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string, wait bool, create bool, dir string) error {
-	log.Infof("Applying generated chart %s YAML via kubectl in dir: %s\n", chart, dir)
+func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, create bool, dir string) error {
 
+	// does namespaces dir exist?
+	namespacesDir := filepath.Join(dir, "namespaces")
+	if _, err := os.Stat(namespacesDir); !os.IsNotExist(err) {
+
+		fileInfo, err := ioutil.ReadDir(namespacesDir)
+		if err != nil {
+			return errors.Wrapf(err, "unable to locate subdirs in %s", namespacesDir)
+		}
+
+		for _, path := range fileInfo {
+			namespace := filepath.Base(path.Name())
+			fullPath := filepath.Join(namespacesDir, path.Name())
+
+			log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s\n", releaseName, fullPath, namespace)
+
+			command := "apply"
+			if create {
+				command = "create"
+			}
+			args := []string{command, "--recursive", "-f", fullPath, "-l", LabelReleaseName + "=" + releaseName}
+			applyNs := namespace
+			if applyNs == "" {
+				applyNs = ns
+			}
+			if applyNs != "" {
+				args = append(args, "--namespace", applyNs)
+			}
+			if wait && !create {
+				args = append(args, "--wait")
+			}
+			if !h.KubectlValidate {
+				args = append(args, "--validate=false")
+			}
+			err = h.runKubectl(args...)
+			if err != nil {
+				return err
+			}
+			log.Logger().Info("\n")
+		}
+		return err
+	}
+
+	log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s\n", releaseName, dir, ns)
 	command := "apply"
 	if create {
 		command = "create"
@@ -401,12 +444,17 @@ func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string,
 		args = append(args, "--validate=false")
 	}
 	err := h.runKubectl(args...)
-	log.Info("\n")
-	return err
+	if err != nil {
+		return err
+	}
+
+	log.Logger().Info("\n")
+	return nil
+
 }
 
 func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
-	log.Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
+	log.Logger().Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
 
 	command := "apply"
 	if create {
@@ -423,12 +471,12 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 		args = append(args, "--validate=false")
 	}
 	err := h.runKubectl(args...)
-	log.Info("\n")
+	log.Logger().Info("\n")
 	return err
 }
 
 func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
-	log.Infof("Deleting helm hook sources from file: %s\n", file)
+	log.Logger().Infof("Deleting helm hook sources from file: %s\n", file)
 	return h.runKubectl("delete", "-f", file, "--namespace", ns, "--wait")
 }
 
@@ -443,12 +491,12 @@ func (h *HelmTemplate) deleteResourcesAndClusterResourcesBySelector(ns string, s
 
 	errList := []error{}
 
-	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(kinds, " "))
+	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(kinds, " "))
 	errs := h.deleteResourcesBySelector(ns, kinds, selector, wait)
 	errList = append(errList, errs...)
 
 	selector += "," + LabelNamespace + "=" + ns
-	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
+	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
 	errs = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
 	errList = append(errList, errs...)
 	return util.CombineErrors(errList...)
@@ -470,7 +518,7 @@ func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, sele
 		} else {
 			output = strings.TrimSpace(output)
 			if output != "No resources found" {
-				log.Info(output + "\n")
+				log.Logger().Info(output + "\n")
 			}
 		}
 	}
@@ -546,13 +594,12 @@ func (h *HelmTemplate) clearOutputDir(releaseName string) error {
 
 func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo string, username string,
 	password string) (string, error) {
-	chartDir := filepath.Join(dir, chart)
-	exists, err := util.FileExists(chartDir)
+	exists, err := util.FileExists(chart)
 	if err != nil {
 		return "", err
 	}
 	if exists {
-		log.Infof("Chart dir already exists: %s\n", chartDir)
+		log.Logger().Infof("Chart dir already exists: %s\n", dir)
 		return chart, nil
 	}
 	if dir == "" {
@@ -589,7 +636,7 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 			break
 		}
 	}
-	log.Infof("Fetched chart %s to dir %s\n", chart, answer)
+	log.Logger().Infof("Fetched chart %s to dir %s\n", chart, answer)
 	return answer, nil
 }
 
@@ -601,17 +648,16 @@ func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, versio
 	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata, ns)
 }
 
-func splitObjectsInFiles(file string) ([]string, error) {
+func splitObjectsInFiles(inputFile string, baseDir string, relativePath, defaultNamespace string) ([]string, error) {
 	result := make([]string, 0)
-	f, err := os.Open(file)
+	f, err := os.Open(inputFile)
 	if err != nil {
-		return result, errors.Wrapf(err, "opening file %q", file)
+		return result, errors.Wrapf(err, "opening inputFile %q", inputFile)
 	}
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	var buf bytes.Buffer
-	dir := filepath.Dir(file)
-	fileName := filepath.Base(file)
+	fileName := filepath.Base(inputFile)
 	count := 0
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -625,14 +671,21 @@ func splitObjectsInFiles(file string) ([]string, error) {
 
 			m := yaml.MapSlice{}
 			err = yaml.Unmarshal(data, &m)
+
+			namespace := getYamlValueString(&m, "metadata", "namespace")
+			if namespace == "" {
+				namespace = defaultNamespace
+			}
+
 			if err != nil {
-				return make([]string, 0), errors.Wrapf(err, "Failed to parse the following YAML from file '%s':\n%s", file, buf.String())
+				return make([]string, 0), errors.Wrapf(err, "Failed to parse the following YAML from inputFile '%s':\n%s", inputFile, buf.String())
 			}
 			if len(m) == 0 {
 				buf.Reset()
 				continue
 			}
-			objFile, err := writeObjectInFile(&buf, dir, fileName, count)
+
+			objFile, err := writeObjectInFile(&buf, baseDir, relativePath, namespace, fileName, count)
 			if err != nil {
 				return result, errors.Wrapf(err, "saving object")
 			}
@@ -642,7 +695,7 @@ func splitObjectsInFiles(file string) ([]string, error) {
 		} else {
 			_, err := buf.WriteString(line)
 			if err != nil {
-				return result, errors.Wrapf(err, "writing line from file %q into a buffer", file)
+				return result, errors.Wrapf(err, "writing line from inputFile %q into a buffer", inputFile)
 			}
 			_, err = buf.WriteString("\n")
 			if err != nil {
@@ -651,15 +704,21 @@ func splitObjectsInFiles(file string) ([]string, error) {
 		}
 	}
 	if buf.Len() > 0 && !isWhitespaceOrComments(buf.Bytes()) {
-		if count > 0 {
-			objFile, err := writeObjectInFile(&buf, dir, fileName, count)
-			if err != nil {
-				return result, errors.Wrapf(err, "saving object")
-			}
-			result = append(result, objFile)
-		} else {
-			result = append(result, file)
+		data := buf.Bytes()
+
+		m := yaml.MapSlice{}
+		err = yaml.Unmarshal(data, &m)
+
+		namespace := getYamlValueString(&m, "metadata", "namespace")
+		if namespace == "" {
+			namespace = defaultNamespace
 		}
+
+		objFile, err := writeObjectInFile(&buf, baseDir, relativePath, namespace, fileName, count)
+		if err != nil {
+			return result, errors.Wrapf(err, "saving object")
+		}
+		result = append(result, objFile)
 	}
 
 	return result, nil
@@ -680,14 +739,28 @@ func isWhitespaceOrComments(data []byte) bool {
 	return true
 }
 
-func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int) (string, error) {
+func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespace string, fileName string, count int) (string, error) {
+	relativeDir := filepath.Dir(relativePath)
+
 	const filePrefix = "part"
 	partFile := fmt.Sprintf("%s%d-%s", filePrefix, count, fileName)
-	absFile := filepath.Join(dir, partFile)
+	absFile := filepath.Join(baseDir, "namespaces", namespace, relativeDir, partFile)
+
+	absFileDir := filepath.Dir(absFile)
+
+	log.Logger().Infof("creating file: %s\n", absFile)
+
+	err := os.MkdirAll(absFileDir, os.ModePerm)
+	if err != nil {
+		return "", errors.Wrapf(err, "creating directory %q", absFileDir)
+	}
 	file, err := os.Create(absFile)
 	if err != nil {
 		return "", errors.Wrapf(err, "creating file %q", absFile)
 	}
+
+	log.Logger().Debugf("writing data to %s\n", absFile)
+
 	defer file.Close()
 	_, err = buf.WriteTo(file)
 	if err != nil {
@@ -696,17 +769,26 @@ func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int
 	return absFile, nil
 }
 
-func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
+func addLabelsToChartYaml(basedir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
-	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+	log.Logger().Debugf("Searching for yaml files from basedir %s\n", basedir)
+
+	err := filepath.Walk(basedir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
 		if ext == ".yaml" {
 			file := path
-			objFiles, err := splitObjectsInFiles(file)
+
+			relativePath, err := filepath.Rel(basedir, file)
 			if err != nil {
-				return errors.Wrapf(err, "spliting objects from file %q", file)
+				return errors.Wrapf(err, "unable to determine relative path %q", file)
 			}
+
+			objFiles, err := splitObjectsInFiles(file, basedir, relativePath, ns)
+			if err != nil {
+				return errors.Wrapf(err, "splitting objects from file %q", file)
+			}
+
 			for _, file := range objFiles {
 				data, err := ioutil.ReadFile(file)
 				if err != nil {
@@ -720,13 +802,13 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 				kind := getYamlValueString(&m, "kind")
 				helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
 				if helmHook != "" {
-					// lets move any helm hooks to the new path
-					relPath, err := filepath.Rel(dir, path)
+					// lets move any helm hooks to the new file
+					relPath, err := filepath.Rel(basedir, path)
 					if err != nil {
 						return err
 					}
 					if relPath == "" {
-						return fmt.Errorf("Failed to find relative path of dir %s and path %s", dir, path)
+						return fmt.Errorf("Failed to find relative path of basedir %s and path %s", basedir, file)
 					}
 					newPath := filepath.Join(hooksDir, relPath)
 					newDir, _ := filepath.Split(newPath)
@@ -734,9 +816,9 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 					if err != nil {
 						return err
 					}
-					err = os.Rename(path, newPath)
+					err = os.Rename(file, newPath)
 					if err != nil {
-						log.Warnf("Failed to move helm hook template %s to %s: %s", path, newPath, err)
+						log.Logger().Warnf("Failed to move helm hook template %s to %s: %s", file, newPath, err)
 						return err
 					}
 					name := getYamlValueString(&m, "metadata", "name")
@@ -748,7 +830,7 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 				if err != nil {
 					return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 				}
-				if isClusterKind(kind) {
+				if !isClusterKind(kind) {
 					err = setYamlValue(&m, ns, "metadata", "labels", LabelNamespace)
 					if err != nil {
 						return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
@@ -790,6 +872,7 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 		}
 		return nil
 	})
+
 	return helmHooks, err
 }
 
@@ -914,7 +997,7 @@ func (h *HelmTemplate) runKubectl(args ...string) error {
 	h.Runner.SetName(h.Binary)
 	h.Runner.SetArgs(args)
 	output, err := h.Runner.RunWithoutRetry()
-	log.Info(output + "\n")
+	log.Logger().Info(output + "\n")
 	return err
 }
 
@@ -984,16 +1067,16 @@ func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDele
 		kind := hook.Kind
 		name := hook.Name
 		if kind == "Job" && name != "" {
-			log.Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
+			log.Logger().Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
 			err := kube.WaitForJobToComplete(h.KubeClient, ns, name, time.Minute*30, false)
 			if err != nil {
-				log.Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
+				log.Logger().Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
 			}
 		} else {
-			log.Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
+			log.Logger().Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
 		}
 		if flag == "true" {
-			log.Infof("Not deleting the Job %s as we have the $JX_DISABLE_DELETE_HELM_HOOKS enabled\n", name)
+			log.Logger().Infof("Not deleting the Job %s as we have the $JX_DISABLE_DELETE_HELM_HOOKS enabled\n", name)
 			continue
 		}
 		err := h.kubectlDeleteFile(ns, hook.File)

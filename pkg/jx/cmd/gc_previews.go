@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 
@@ -77,7 +78,7 @@ func (o *GCPreviewsOptions) Run() error {
 	if len(envs.Items) == 0 {
 		// no environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no environments found\n")
+			log.Logger().Info("no environments found\n")
 		}
 		return nil
 	}
@@ -107,11 +108,11 @@ func (o *GCPreviewsOptions) Run() error {
 			}
 			prNum, err := strconv.Atoi(e.Spec.PreviewGitSpec.Name)
 			if err != nil {
-				log.Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
+				log.Logger().Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
 			}
 			pullRequest, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
 			if err != nil {
-				log.Warnf("Can not get pull request %s, skipping: %s", e.Spec.PreviewGitSpec.Name, err)
+				log.Logger().Warnf("Can not get pull request %s, skipping: %s", e.Spec.PreviewGitSpec.Name, err)
 				continue
 			}
 
@@ -134,7 +135,7 @@ func (o *GCPreviewsOptions) Run() error {
 		}
 	}
 	if o.Verbose && !previewFound {
-		log.Info("no preview environments found\n")
+		log.Logger().Info("no preview environments found\n")
 	}
 	return nil
 }

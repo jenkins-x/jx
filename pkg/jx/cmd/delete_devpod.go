@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -111,6 +112,6 @@ func (o *DeleteDevPodOptions) Run() error {
 			return err
 		}
 	}
-	log.Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
+	log.Logger().Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
 	return nil
 }

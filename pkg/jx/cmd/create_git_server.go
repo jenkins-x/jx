@@ -113,7 +113,7 @@ func (o *CreateGitServerOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to save GitAuthConfigService")
 	}
-	log.Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	log.Logger().Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 
 	err = o.EnsureGitServiceCRD(server)
 	if err != nil {

@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"os"
 	"os/exec"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -79,7 +80,7 @@ func (o *GetEksOptions) Run() error {
 		}
 		err := o.InstallMissingDependencies(deps)
 		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			log.Logger().Errorf("%v\nPlease fix the error or install manually then try again", err)
 			os.Exit(-1)
 		}
 
