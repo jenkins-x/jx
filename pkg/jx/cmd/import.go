@@ -1373,7 +1373,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 		CommonOptions: o.CommonOptions,
 	}
 	log.Logger().Info("Getting latest packs ...\n")
-	dir, _, err := initOpts.InitBuildPacks()
+	dir, _, err := initOpts.InitBuildPacks(nil)
 	if err != nil {
 		return nil, err
 	}
