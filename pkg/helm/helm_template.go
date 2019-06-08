@@ -270,18 +270,19 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	helmPostPhase := "post-install"
 	wait := true
 	create := true
+	force := true
 
-	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create)
+	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		return err
 	}
 
-	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create)
+	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		return err
 	}
 
-	err = h.kubectlApply(ns, releaseName, wait, create, outputDir)
+	err = h.kubectlApply(ns, releaseName, wait, create, force, outputDir)
 	if err != nil {
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
@@ -289,7 +290,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	log.Logger().Info("\n")
 	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 
-	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create)
+	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
 		return err
@@ -351,24 +352,24 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	helmPostPhase := "post-upgrade"
 	create := false
 
-	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create)
+	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		return err
 	}
 
-	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create)
+	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		return err
 	}
 
-	err = h.kubectlApply(ns, releaseName, wait, create, outputDir)
+	err = h.kubectlApply(ns, releaseName, wait, create, force, outputDir)
 	if err != nil {
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
 	}
 	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 
-	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create)
+	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
 		return err
@@ -384,7 +385,7 @@ func (h *HelmTemplate) DecryptSecrets(location string) error {
 	return h.Client.DecryptSecrets(location)
 }
 
-func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, create bool, dir string) error {
+func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, create bool, force bool, dir string) error {
 
 	// does namespaces dir exist?
 	namespacesDir := filepath.Join(dir, "namespaces")
@@ -440,6 +441,9 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 	if wait && !create {
 		args = append(args, "--wait")
 	}
+	if force {
+		args = append(args, "--force")
+	}
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
 	}
@@ -453,7 +457,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 
 }
 
-func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
+func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, force bool, file string) error {
 	log.Logger().Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
 
 	command := "apply"
@@ -466,6 +470,9 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 	}
 	if wait && !create {
 		args = append(args, "--wait")
+	}
+	if force {
+		args = append(args, "--force")
 	}
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
@@ -1049,10 +1056,10 @@ func (h *HelmTemplate) getChart(chartDir string, version string) (*chart.Metadat
 	return metadata, version, err
 }
 
-func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool) error {
+func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool, force bool) error {
 	matchingHooks := MatchingHooks(hooks, hookPhase, "")
 	for _, hook := range matchingHooks {
-		err := h.kubectlApplyFile(ns, hookPhase, wait, create, hook.File)
+		err := h.kubectlApplyFile(ns, hookPhase, wait, create, force, hook.File)
 		if err != nil {
 			return err
 		}
