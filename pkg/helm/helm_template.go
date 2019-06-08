@@ -209,8 +209,8 @@ func (h *HelmTemplate) FindChart() (string, error) {
 }
 
 // Lint lints the helm chart from the current working directory and returns the warnings in the output
-func (h *HelmTemplate) Lint() (string, error) {
-	return h.Client.Lint()
+func (h *HelmTemplate) Lint(valuesFiles []string) (string, error) {
+	return h.Client.Lint(valuesFiles)
 }
 
 // Env returns the environment variables for the helmer

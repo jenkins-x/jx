@@ -27,7 +27,7 @@ type Helmer interface {
 	PackageChart() error
 	StatusRelease(ns string, releaseName string) error
 	StatusReleaseWithOutput(ns string, releaseName string, format string) (string, error)
-	Lint() (string, error)
+	Lint(valuesFiles []string) (string, error)
 	Version(tls bool) (string, error)
 	SearchCharts(filter string) ([]ChartSummary, error)
 	SetHost(host string)

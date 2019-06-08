@@ -600,8 +600,14 @@ func (h *HelmCLI) StatusReleaseWithOutput(ns string, releaseName string, outputF
 }
 
 // Lint lints the helm chart from the current working directory and returns the warnings in the output
-func (h *HelmCLI) Lint() (string, error) {
-	return h.runHelmWithOutput("lint")
+func (h *HelmCLI) Lint(valuesFiles []string) (string, error) {
+	args := []string{"lint"}
+	for _, valueFile := range valuesFiles {
+		if valueFile != "" {
+			args = append(args, "--values", valueFile)
+		}
+	}
+	return h.runHelmWithOutput(args...)
 }
 
 // Env returns the environment variables for the helmer

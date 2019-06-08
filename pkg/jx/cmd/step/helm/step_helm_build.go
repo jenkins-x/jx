@@ -73,9 +73,14 @@ func (o *StepHelmBuildOptions) Run() error {
 		}
 	}
 
-	if o.recursive {
-		return o.HelmInitRecursiveDependencyBuild(dir, o.DefaultReleaseCharts())
+	valuesFiles, err := o.discoverValuesFiles(dir)
+	if err != nil {
+		return err
 	}
-	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
+
+	if o.recursive {
+		return o.HelmInitRecursiveDependencyBuild(dir, o.DefaultReleaseCharts(), valuesFiles)
+	}
+	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts(), valuesFiles)
 	return err
 }
