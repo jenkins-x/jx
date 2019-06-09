@@ -557,13 +557,13 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	var author, committer *v1.User
 	var err error
 	sha := commit.Hash.String()
-	if commit.Author.Email != "" && commit.Author.Name == "" {
+	if commit.Author.Email != "" && commit.Author.Name != "" {
 		author, err = resolver.GitSignatureAsUser(&commit.Author)
 		if err != nil {
 			log.Logger().Warnf("Failed to enrich commit %s with issues: %v\n", sha, err)
 		}
 	}
-	if commit.Committer.Email != "" && commit.Committer.Name == "" {
+	if commit.Committer.Email != "" && commit.Committer.Name != "" {
 		committer, err = resolver.GitSignatureAsUser(&commit.Committer)
 		if err != nil {
 			log.Logger().Warnf("Failed to enrich commit %s with issues: %v\n", sha, err)
@@ -712,8 +712,7 @@ func toV1Labels(labels []gits.GitLabel) []v1.IssueLabel {
 	return answer
 }
 
-// fullCommitMessageText returns the commit message plus any extra omitted commit message
-// lines from parent commits as a result of a PR
+// fullCommitMessageText returns the commit message
 func fullCommitMessageText(commit *object.Commit) string {
 	answer := commit.Message
 	fn := func(parent *object.Commit) error {
@@ -727,7 +726,7 @@ func fullCommitMessageText(commit *object.Commit) string {
 		}
 		return nil
 	}
-	commit.Parents().ForEach(fn)
+	fn(commit)
 	return answer
 
 }
