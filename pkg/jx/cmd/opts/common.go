@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -20,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -36,7 +35,7 @@ import (
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -86,7 +85,6 @@ type CommonOptions struct {
 	ExternalJenkinsBaseURL string
 	In                     terminal.FileReader
 	InstallDependencies    bool
-	LogLevel               string
 	ModifyDevEnvironmentFn ModifyDevEnvironmentFn
 	ModifyEnvironmentFn    ModifyEnvironmentFn
 	NoBrew                 bool
@@ -201,15 +199,22 @@ func (o *CommonOptions) SetCurrentNamespace(ns string) {
 	log.Logger().Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
 }
 
-// addCommonFlags adds the common flags to the given command
-func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
+// AddBaseFlags adds the base flags for all commands
+func (o *CommonOptions) AddBaseFlags(cmd *cobra.Command) {
 	defaultBatchMode := false
 	if os.Getenv("JX_BATCH_MODE") == "true" {
 		defaultBatchMode = true
 	}
 	cmd.PersistentFlags().BoolVarP(&o.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
 	cmd.PersistentFlags().BoolVarP(&o.Verbose, OptionVerbose, "", false, "Enables verbose output")
-	cmd.PersistentFlags().StringVarP(&o.LogLevel, OptionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
+
+	o.Cmd = cmd
+}
+
+// AddCommonFlags adds the common flags to the given command
+func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
+	o.AddBaseFlags(cmd)
+
 	cmd.PersistentFlags().BoolVarP(&o.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
 	cmd.PersistentFlags().BoolVarP(&o.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
 	cmd.PersistentFlags().BoolVarP(&o.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")

@@ -176,9 +176,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 	ticker := time.NewTicker(*o.PullRequestPollDuration)
 	go func() {
 		for t := range ticker.C {
-			if o.Verbose {
-				log.Logger().Infof("Polling to see if any PRs have merged: %v\n", t)
-			}
+			log.Logger().Debugf("Polling to see if any PRs have merged: %v\n", t)
 			//o.pollGitPipelineStatuses(jxClient, ns)
 			o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
 		}
@@ -270,16 +268,12 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 	pipelineName := pipeline.Spec.Pipeline
 	build := pipeline.Spec.Build
 
-	if o.Verbose {
-		log.Logger().Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
-	}
+	log.Logger().Debugf("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
 
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	if repoName == "" || version == "" || build == "" || pipelineName == "" {
-		if o.Verbose {
-			log.Logger().Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
-		}
+		log.Logger().Debugf("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
 		o.removePipelineActivity(pipeline, activities)
 		return
 	}
@@ -447,9 +441,7 @@ func (o *ControllerWorkflowOptions) ReloadAndPollGitPipelineStatuses(jxClient ve
 		log.Logger().Warnf("failed to list PipelineActivity resources: %s", err)
 	} else {
 		for _, pipeline := range pipelines.Items {
-			if o.Verbose {
-				log.Logger().Infof("Polling git status of activity %s\n", pipeline.Name)
-			}
+			log.Logger().Debugf("Polling git status of activity %s\n", pipeline.Name)
 			o.pollGitStatusforPipeline(&pipeline, activities, environments, ns)
 		}
 	}
@@ -507,9 +499,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 		if err != nil {
 			log.Logger().Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
 		} else {
-			if o.Verbose {
-				log.Logger().Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
-			}
+			log.Logger().Debugf("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
 			po := o.createPromoteOptionsFromActivity(activity, envName)
 			po.GitInfo = gitInfo
 
@@ -865,15 +855,11 @@ func (o *ControllerWorkflowOptions) isNewestPipeline(activity *v1.PipelineActivi
 		}
 	}
 	for _, p := range deleteNames {
-		if o.Verbose {
-			log.Logger().Infof("Removing old Pipeline version %s\n", p.Name)
-		}
+		log.Logger().Debugf("Removing old Pipeline version %s\n", p.Name)
 		o.modifyAndRemovePipelineActivity(p, activities, setActivityAborted)
 	}
 	if !newest {
-		if o.Verbose {
-			log.Logger().Infof("Removing old Pipeline version %s\n", activity.Name)
-		}
+		log.Logger().Debugf("Removing old Pipeline version %s\n", activity.Name)
 		o.modifyAndRemovePipelineActivity(activity, activities, setActivityAborted)
 	}
 	return newest

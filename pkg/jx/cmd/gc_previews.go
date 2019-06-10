@@ -134,8 +134,8 @@ func (o *GCPreviewsOptions) Run() error {
 			}
 		}
 	}
-	if o.Verbose && !previewFound {
-		log.Logger().Info("no preview environments found\n")
+	if !previewFound {
+		log.Logger().Debug("no preview environments found\n")
 	}
 	return nil
 }

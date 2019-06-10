@@ -115,9 +115,7 @@ func (o *StepTagOptions) Run() error {
 	if o.Flags.Version == "" {
 		return errors.New("No version flag")
 	}
-	if o.Verbose {
-		log.Logger().Infof("looking for charts folder...\n")
-	}
+	log.Logger().Debug("looking for charts folder...\n")
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir == "" {
 		exists, err := util.FileExists("Chart.yaml")

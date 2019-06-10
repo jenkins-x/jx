@@ -205,9 +205,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 			buildName = labels[builds.LabelPipelineRunName]
 		}
 		if buildName != "" {
-			if o.Verbose {
-				log.Logger().Infof("Found build pod %s\n", pod.Name)
-			}
+			log.Logger().Debugf("Found build pod %s\n", pod.Name)
 
 			activities := jxClient.JenkinsV1().PipelineActivities(ns)
 			key := o.createPromoteStepActivityKey(buildName, pod)
@@ -224,9 +222,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 						return err
 					}
 					if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
-						if o.Verbose {
-							log.Logger().Infof("updating PipelineActivity %s\n", a.Name)
-						}
+						log.Logger().Debugf("updating PipelineActivity %s\n", a.Name)
 						_, err := activities.PatchUpdate(a)
 						if err != nil {
 							log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
@@ -279,9 +275,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 					return
 				}
 				if pri != nil {
-					if o.Verbose {
-						log.Logger().Infof("Found pipeline run %s\n", pri.Name)
-					}
+					log.Logger().Debugf("Found pipeline run %s\n", pri.Name)
 
 					activities := jxClient.JenkinsV1().PipelineActivities(ns)
 					key := o.createPromoteStepActivityKeyFromRun(pri)
@@ -298,9 +292,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 								return err
 							}
 							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
-								if o.Verbose {
-									log.Logger().Infof("updating PipelineActivity %s\n", a.Name)
-								}
+								log.Logger().Debugf("updating PipelineActivity %s\n", a.Name)
 								_, err := activities.PatchUpdate(a)
 								if err != nil {
 									log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
@@ -930,9 +922,8 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 	if logMasker != nil {
 		data = logMasker.MaskLogData(data)
 	}
-	if o.Verbose {
-		log.Logger().Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
-	}
+
+	log.Logger().Debugf("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
 
 	if initGitCredentials {
 		gc := &git.StepGitCredentialsOptions{}

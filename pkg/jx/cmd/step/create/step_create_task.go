@@ -249,9 +249,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
-	if o.Verbose {
-		log.Logger().Infof("setting up docker registry for %s\n", o.CloneGitURL)
-	}
+	log.Logger().Debugf("setting up docker registry for %s\n", o.CloneGitURL)
 
 	if o.DockerRegistry == "" && !o.InterpretMode {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
@@ -285,9 +283,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.NoApply || o.DryRun || o.InterpretMode {
 		o.BuildNumber = "1"
 	} else {
-		if o.Verbose {
-			log.Logger().Infof("generating build number...\n")
-		}
+		log.Logger().Debugf("generating build number...\n")
 
 		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
 
@@ -295,9 +291,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		if o.Verbose {
-			log.Logger().Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
-		}
+		log.Logger().Debugf("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
 	}
 	projectConfig, projectConfigFile, err := o.loadProjectConfig()
 	if err != nil {
@@ -355,9 +349,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return err
 	}
 
-	if o.Verbose {
-		log.Logger().Infof("about to create the tekton CRDs\n")
-	}
+	log.Logger().Debug("about to create the tekton CRDs\n")
 	tektonCRDs, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRD")
@@ -371,9 +363,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return nil
 	}
 
-	if o.Verbose {
-		log.Logger().Infof("created tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
-	}
+	log.Logger().Debugf("created tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
 
 	o.Results = *tektonCRDs
 
@@ -390,9 +380,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	} else {
 		activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr)
 
-		if o.Verbose {
-			log.Logger().Infof(" PipelineActivity for %s created successfully", tektonCRDs.Name())
-		}
+		log.Logger().Debugf(" PipelineActivity for %s created successfully", tektonCRDs.Name())
 
 		log.Logger().Infof("Applying changes ")
 		err := tekton.ApplyPipeline(jxClient, tektonClient, tektonCRDs, ns, o.GitInfo, o.Branch, activityKey)
@@ -401,9 +389,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 		tektonCRDs.AddLabels(o.labels)
 
-		if o.Verbose {
-			log.Logger().Infof(" for %s\n", tektonCRDs.PipelineRun().Name)
-		}
+		log.Logger().Debugf(" for %s\n", tektonCRDs.PipelineRun().Name)
 	}
 	return nil
 }
@@ -1116,28 +1102,20 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 		if err != nil {
 			return errors.Wrapf(err, "failed to init a new git repository in directory %s", tmpDir)
 		}
-		if o.Verbose {
-			log.Logger().Infof("ran git init in %s", tmpDir)
-		}
+		log.Logger().Debugf("ran git init in %s", tmpDir)
 		err = o.Git().AddRemote(tmpDir, "origin", gitURL)
 		if err != nil {
 			return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, tmpDir)
 		}
-		if o.Verbose {
-			log.Logger().Infof("ran git add remote origin %s in %s", gitURL, tmpDir)
-		}
+		log.Logger().Debugf("ran git add remote origin %s in %s", gitURL, tmpDir)
 		commitish := make([]string, 0)
 		if pullRequestNumber != "" {
 			pr := fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branch)
-			if o.Verbose {
-				log.Logger().Infof("will fetch %s for %s in dir %s\n", pr, gitURL, tmpDir)
-			}
+			log.Logger().Debugf("will fetch %s for %s in dir %s\n", pr, gitURL, tmpDir)
 			commitish = append(commitish, pr)
 		}
 		if revision != "" {
-			if o.Verbose {
-				log.Logger().Infof("will fetch %s for %s in dir %s\n", revision, gitURL, tmpDir)
-			}
+			log.Logger().Debugf("will fetch %s for %s in dir %s\n", revision, gitURL, tmpDir)
 			commitish = append(commitish, revision)
 		} else {
 			commitish = append(commitish, "master")
