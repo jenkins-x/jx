@@ -108,6 +108,17 @@ func (g GKECluster) Region() string {
 	return gke.GetRegionFromZone(g.Zone)
 }
 
+type terraformFileWriter struct {
+	err error
+}
+
+func (tf *terraformFileWriter) write(path string, key string, value string) {
+	if tf.err != nil {
+		return
+	}
+	tf.err = terraform.WriteKeyValueToFileIfNotExists(path, key, value)
+}
+
 // CreateTfVarsFile create vars
 func (g GKECluster) CreateTfVarsFile(path string) error {
 	user, err := os_user.Current()
@@ -118,94 +129,34 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 		username = sanitizeLabel(user.Username)
 	}
 
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "created_by", username)
-	if err != nil {
+	tf := terraformFileWriter{}
+	tf.write(path, "created_by", username)
+	tf.write(path, "created_timestamp", time.Now().Format("20060102150405"))
+	tf.write(path, "cluster_name", g.ClusterName())
+	tf.write(path, "organisation", g.Organisation)
+	tf.write(path, "cloud_provider", g.provider)
+	tf.write(path, "gcp_zone", g.Zone)
+	tf.write(path, "gcp_region", g.Region())
+	tf.write(path, "gcp_project", g.ProjectID)
+	tf.write(path, "min_node_count", g.MinNumOfNodes)
+	tf.write(path, "max_node_count", g.MaxNumOfNodes)
+	tf.write(path, "node_machine_type", g.MachineType)
+	tf.write(path, "node_preemptible", strconv.FormatBool(g.Preemptible))
+	tf.write(path, "node_disk_size", g.DiskSize)
+	tf.write(path, "auto_repair", strconv.FormatBool(g.AutoRepair))
+	tf.write(path, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
+	tf.write(path, "enable_kubernetes_alpha", "false")
+	tf.write(path, "enable_legacy_abac", "false")
+	tf.write(path, "logging_service", "logging.googleapis.com")
+	tf.write(path, "monitoring_service", "monitoring.googleapis.com")
+	tf.write(path, "node_devstorage_role", g.DevStorageRole)
+	tf.write(path, "enable_kaniko", booleanAsInt(g.EnableKaniko))
+	tf.write(path, "enable_vault", booleanAsInt(g.EnableVault))
+
+	if tf.err != nil {
 		return err
 	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "created_timestamp", time.Now().Format("20060102150405"))
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "cluster_name", g.ClusterName())
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "organisation", g.Organisation)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "cloud_provider", g.provider)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_zone", g.Zone)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_region", g.Region())
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_project", g.ProjectID)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "min_node_count", g.MinNumOfNodes)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "max_node_count", g.MaxNumOfNodes)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_machine_type", g.MachineType)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_preemptible", strconv.FormatBool(g.Preemptible))
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_disk_size", g.DiskSize)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "auto_repair", strconv.FormatBool(g.AutoRepair))
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_kubernetes_alpha", "false")
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "false")
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "logging_service", "logging.googleapis.com")
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "monitoring_service", "monitoring.googleapis.com")
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_devstorage_role", g.DevStorageRole)
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_kaniko", booleanAsInt(g.EnableKaniko))
-	if err != nil {
-		return err
-	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_vault", booleanAsInt(g.EnableVault))
-	if err != nil {
-		return err
-	}
+	
 	return nil
 }
 
