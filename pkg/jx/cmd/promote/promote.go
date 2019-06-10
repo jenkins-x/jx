@@ -870,9 +870,7 @@ func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStep
 		}
 	}
 	name = kube.ToValidName(name)
-	if o.Verbose {
-		log.Logger().Infof("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
-	}
+	log.Logger().Debugf("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:            name,
@@ -981,9 +979,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 	// lets try update the PipelineActivity
 	if url != "" && promoteKey.ApplicationURL == "" {
 		promoteKey.ApplicationURL = url
-		if o.Verbose {
-			log.Logger().Infof("Application is available at: %s\n", util.ColorInfo(url))
-		}
+		log.Logger().Debugf("Application is available at: %s\n", util.ColorInfo(url))
 	}
 
 	release, err := jxClient.JenkinsV1().Releases(ens).Get(releaseName, metav1.GetOptions{})

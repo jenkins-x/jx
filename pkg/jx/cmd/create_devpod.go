@@ -637,11 +637,7 @@ func (o *CreateDevPodOptions) Run() error {
 		o.NotifyProgress(opts.LogInfo, "Creating a DevPod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
 		if err != nil {
-			if o.Verbose {
-				return fmt.Errorf("Failed to create pod %s\npod: %#v", err, pod)
-			} else {
-				return fmt.Errorf("Failed to create pod %s", err)
-			}
+			return fmt.Errorf("Failed to create pod %s\npod: %#v", err, pod)
 		}
 
 		err := o.ensureEditEnvironmentHasExposeController(editEnv)

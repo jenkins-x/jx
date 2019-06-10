@@ -130,9 +130,7 @@ func (o *GCActivitiesOptions) Run() error {
 	}
 	if len(activities.Items) == 0 {
 		// no preview environments found so lets return gracefully
-		if o.Verbose {
-			log.Logger().Info("no activities found\n")
-		}
+		log.Logger().Debug("no activities found\n")
 		return nil
 	}
 

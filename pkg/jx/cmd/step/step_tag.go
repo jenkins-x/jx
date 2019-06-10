@@ -127,9 +127,7 @@ func (o *StepTagOptions) Run() error {
 			}
 		}
 	}
-	if o.Verbose {
-		log.Logger().Infof("updating chart if it exists\n")
-	}
+	log.Logger().Debugf("updating chart if it exists\n")
 	err := o.updateChart(o.Flags.Version, chartsDir)
 	if err != nil {
 		return err
@@ -140,10 +138,7 @@ func (o *StepTagOptions) Run() error {
 	}
 
 	tag := "v" + o.Flags.Version
-
-	if o.Verbose {
-		log.Logger().Infof("performing git commit\n")
-	}
+	log.Logger().Debugf("performing git commit\n")
 	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
@@ -158,9 +153,7 @@ func (o *StepTagOptions) Run() error {
 		log.Logger().Infof("NoApply: no push tag to git server")
 	} else {
 
-		if o.Verbose {
-			log.Logger().Infof("pushing git tag %s\n", tag)
-		}
+		log.Logger().Debugf("pushing git tag %s\n", tag)
 		err = o.Git().PushTag("", tag)
 		if err != nil {
 			return err

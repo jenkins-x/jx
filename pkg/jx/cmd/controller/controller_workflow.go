@@ -250,9 +250,7 @@ func (o *ControllerWorkflowOptions) onActivityObj(obj interface{}, jxClient vers
 		activity, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipeline.Name, metav1.GetOptions{})
 		if err == nil {
 			if kube.IsResourceVersionNewer(activity.ResourceVersion, pipeline.ResourceVersion) {
-				if o.Verbose {
-					log.Logger().Infof("onActivity %s using newer resourceVersion of PipelineActivity %s > %s\n", pipeline.Name, activity.ResourceVersion, pipeline.ResourceVersion)
-				}
+				log.Logger().Debugf("onActivity %s using newer resourceVersion of PipelineActivity %s > %s\n", pipeline.Name, activity.ResourceVersion, pipeline.ResourceVersion)
 				pipeline = activity
 			}
 		}
@@ -466,9 +464,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 			continue
 		}
 		if promoteStep.Status.IsTerminated() {
-			if o.Verbose {
-				log.Logger().Infof("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promoteStep.Environment, string(promoteStep.Status))
-			}
+			log.Logger().Debugf("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promoteStep.Environment, string(promoteStep.Status))
 			continue
 		}
 		envName := promoteStep.Environment

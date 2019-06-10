@@ -77,9 +77,7 @@ func (o *GCPreviewsOptions) Run() error {
 	}
 	if len(envs.Items) == 0 {
 		// no environments found so lets return gracefully
-		if o.Verbose {
-			log.Logger().Info("no environments found\n")
-		}
+		log.Logger().Debug("no environments found\n")
 		return nil
 	}
 

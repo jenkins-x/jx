@@ -222,9 +222,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.KanikoSecretMount == "" {
 		o.KanikoSecretMount = kanikoSecretMount
 	}
-	if o.Verbose {
-		log.Logger().Infof("cloning git for %s\n", o.CloneGitURL)
-	}
+	log.Logger().Debugf("cloning git for %s\n", o.CloneGitURL)
 	if o.VersionResolver == nil {
 		o.VersionResolver, err = o.CreateVersionResolver("", "")
 		if err != nil {

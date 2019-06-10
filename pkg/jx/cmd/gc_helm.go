@@ -85,27 +85,19 @@ func (o *GCHelmOptions) Run() error {
 	}
 	if len(cms.Items) == 0 {
 		// no configmaps found so lets return gracefully
-		if o.Verbose {
-			log.Logger().Info("no config maps found\n")
-		}
+		log.Logger().Debug("no config maps found\n")
 		return nil
 	}
 
 	releases := ExtractReleases(cms)
-	if o.Verbose {
-		log.Logger().Info(fmt.Sprintf("Found %d releases.\n", len(releases)))
-		log.Logger().Info(fmt.Sprintf("Releases: %v\n", releases))
-	}
+	log.Logger().Debug(fmt.Sprintf("Found %d releases.\n", len(releases)))
+	log.Logger().Debug(fmt.Sprintf("Releases: %v\n", releases))
 
 	for _, release := range releases {
-		if o.Verbose {
-			log.Logger().Info(fmt.Sprintf("Checking %s. ", release))
-		}
+		log.Logger().Debug(fmt.Sprintf("Checking %s. ", release))
 		versions := ExtractVersions(cms, release)
-		if o.Verbose {
-			log.Logger().Info(fmt.Sprintf("Found %d.\n", len(versions)))
-			log.Logger().Info(fmt.Sprintf("%v\n", versions))
-		}
+		log.Logger().Debug(fmt.Sprintf("Found %d.\n", len(versions)))
+		log.Logger().Debug(fmt.Sprintf("%v\n", versions))
 		to_delete := VersionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
@@ -161,9 +153,7 @@ func (o *GCHelmOptions) Run() error {
 				}
 			}
 		} else {
-			if o.Verbose {
-				log.Logger().Info("Nothing to do.")
-			}
+			log.Logger().Debug("Nothing to do.")
 		}
 	}
 	return nil

@@ -199,18 +199,13 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	log.Logger().Infof("You can watch progress in the CloudFormation console: %s", util.ColorInfo("https://console.aws.amazon.com/cloudformation/"))
 
 	log.Logger().Debugf("Running command: %s", util.ColorInfo("eksctl "+strings.Join(args, " ")))
-	if o.Verbose {
-		err = o.RunCommandVerbose("eksctl", args...)
-		if err != nil {
-			return err
-		}
-		log.Blank()
-	} else {
-		err = o.RunCommandQuietly("eksctl", args...)
-		if err != nil {
-			return err
-		}
+
+	err = o.RunCommandVerbose("eksctl", args...)
+	if err != nil {
+		return err
 	}
+	log.Blank()
+
 	o.InstallOptions.setInstallValues(map[string]string{
 		kube.Region: region,
 	})
