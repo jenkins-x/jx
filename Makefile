@@ -40,14 +40,13 @@ CGO_ENABLED = 0
 
 REPORTS_DIR=$(BUILD_TARGET)/reports
 
-GOTEST := go test
+GOTEST := $(GO) test
 # If available, use gotestsum which provides more comprehensive output
 # This is used in the CI builds
 ifneq (, $(shell which gotestsum 2> /dev/null))
 GOTESTSUM_FORMAT ?= standard-quiet
-GOTEST := gotestsum --junitfile $(REPORTS_DIR)/integration.junit.xml --format $(GOTESTSUM_FORMAT) --
+GOTEST := GO111MODULE=on gotestsum --junitfile $(REPORTS_DIR)/integration.junit.xml --format $(GOTESTSUM_FORMAT) --
 endif
-
 
 # set dev version unless VERSION is explicitly set via environment
 VERSION ?= $(shell echo "$$(git describe --abbrev=0 --tags 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
