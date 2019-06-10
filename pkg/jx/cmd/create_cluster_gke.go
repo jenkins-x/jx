@@ -58,10 +58,10 @@ type CreateClusterGKEFlags struct {
 }
 
 const (
-	preemptibleFlagName    = "preemptible"
-	enhancedAPIFlagName    = "enhanced-apis"
-	enhancedScopesFlagName = "enhanced-scopes"
-	maxClusterNameLength   = 27
+	preemptibleFlagName     = "preemptible"
+	enhancedAPIFlagName     = "enhanced-apis"
+	enhancedScopesFlagName  = "enhanced-scopes"
+	maxGKEClusterNameLength = 27
 )
 
 var (
@@ -142,7 +142,6 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
-	// Issue 3251
 	err := validateClusterName(o.Flags.ClusterName)
 	if err != nil {
 		return err
@@ -196,22 +195,33 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	clusterName := o.Flags.ClusterName
 	if clusterName == "" {
 		defaultClusterName := strings.ToLower(randomdata.SillyName())
-		if len(defaultClusterName) > maxClusterNameLength {
+		if len(defaultClusterName) > maxGKEClusterNameLength {
 			defaultClusterName = strings.ToLower(randomdata.SillyName())
 		}
 		if advancedMode {
-			prompt := &survey.Input{
-				Message: "What cluster name would you like to use",
-				Default: defaultClusterName,
-			}
+			clusterNameHelp := fmt.Sprintf("Cluster name should be less than %d chars and limited to lowercase alphanumerics and dashes", maxGKEClusterNameLength)
+			var invalidClusterName = true
+			for invalidClusterName {
+				prompt := &survey.Input{
+					Message: "What cluster name would you like to use",
+					Help:    clusterNameHelp,
+					Default: defaultClusterName,
+				}
 
-			err = survey.AskOne(prompt, &clusterName, nil, surveyOpts)
-			if err != nil {
-				return err
+				err = survey.AskOne(prompt, &clusterName, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
+				err = validateClusterName(clusterName)
+				if err != nil {
+					log.Logger().Infof(util.ColorAnswer(clusterNameHelp))
+				} else {
+					invalidClusterName = false
+				}
 			}
 		} else {
 			clusterName = defaultClusterName
-			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one: %s", clusterName))
+			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one", clusterName))
 		}
 	}
 
