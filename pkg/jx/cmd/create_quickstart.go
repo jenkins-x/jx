@@ -248,7 +248,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	token := userAuth.ApiToken
 	username := userAuth.Username
 	if token != "" && username != "" {
-		o.Debugf("Downloading Quickstart source zip from %s with basic auth for user: %s\n", u, username)
+		log.Logger().Debugf("Downloading Quickstart source zip from %s with basic auth for user: %s\n", u, username)
 		req.SetBasicAuth(username, token)
 	}
 	res, err := client.Do(req)
@@ -316,10 +316,10 @@ func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig
 			if err != nil {
 				return model, err
 			}
-			o.Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
 			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
 			if err != nil {
-				o.Debugf("Quickstart load error: %s\n", err.Error())
+				log.Logger().Debugf("Quickstart load error: %s\n", err.Error())
 			}
 		}
 	}

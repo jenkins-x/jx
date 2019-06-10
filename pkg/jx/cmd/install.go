@@ -909,7 +909,7 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 	allValuesFiles = append(allValuesFiles, valuesFiles...)
 	allValuesFiles = append(allValuesFiles, secretsFiles...)
 	for _, f := range allValuesFiles {
-		options.Debugf("Adding values file %s\n", util.ColorInfo(f))
+		log.Logger().Debugf("Adding values file %s\n", util.ColorInfo(f))
 	}
 
 	helmOpts := helm.InstallChartOptions{
@@ -2873,9 +2873,9 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 	}
 	wrkDir := filepath.Join(configDir, "cloud-environments")
 
-	options.Debugf("Current configuration dir: %s\n", configDir)
-	options.Debugf("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
-	options.Debugf("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+	log.Logger().Debugf("Current configuration dir: %s\n", configDir)
+	log.Logger().Debugf("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
+	log.Logger().Debugf("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
 
 	if options.Flags.LocalCloudEnvironment {
 		currentDir, err := os.Getwd()

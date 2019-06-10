@@ -201,13 +201,6 @@ func (o *CommonOptions) SetCurrentNamespace(ns string) {
 	log.Logger().Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
 }
 
-// Debugf outputs the given text to the console if verbose mode is enabled
-func (o *CommonOptions) Debugf(format string, a ...interface{}) {
-	if o.Verbose {
-		log.Logger().Infof(format, a...)
-	}
-}
-
 // addCommonFlags adds the common flags to the given command
 func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	defaultBatchMode := false

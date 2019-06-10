@@ -127,16 +127,16 @@ func (o *DeleteContextOptions) Run() error {
 	for _, name := range selected {
 		a := newConfig.Contexts[name].AuthInfo
 		if o.DeleteAuthInfo && a != "" {
-			o.Debugf("Deleting user %s for context %s\n", util.ColorInfo(a), util.ColorInfo(name))
+			log.Logger().Debugf("Deleting user %s for context %s\n", util.ColorInfo(a), util.ColorInfo(name))
 			delete(newConfig.AuthInfos, a)
 		}
 		c := newConfig.Contexts[name].Cluster
 		if o.DeleteCluster && c != "" {
-			o.Debugf("Deleting cluster %s for context %s\n", util.ColorInfo(c), util.ColorInfo(name))
+			log.Logger().Debugf("Deleting cluster %s for context %s\n", util.ColorInfo(c), util.ColorInfo(name))
 			delete(newConfig.Clusters, c)
 		}
 
-		o.Debugf("Deleting context %s\n", util.ColorInfo(name))
+		log.Logger().Debugf("Deleting context %s\n", util.ColorInfo(name))
 		delete(newConfig.Contexts, name)
 	}
 	err = clientcmd.ModifyConfig(po, newConfig, false)

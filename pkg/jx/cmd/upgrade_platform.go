@@ -259,7 +259,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
 	}
 
-	o.Debugf("%s from %s is %s\n", opts.AdminSecretsFile, opts.JXInstallConfig, oldSecret.Data[opts.AdminSecretsFile])
+	log.Logger().Debugf("%s from %s is %s\n", opts.AdminSecretsFile, opts.JXInstallConfig, oldSecret.Data[opts.AdminSecretsFile])
 
 	if o.UpdateSecrets {
 		// load admin secrets service from adminSecretsFileName
@@ -271,7 +271,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.AdminSecretsService.NewMavenSettingsXML()
 		adminSecrets := &o.AdminSecretsService.Secrets
 
-		o.Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
+		log.Logger().Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
 		err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
 		if err != nil {
 			return errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
@@ -291,7 +291,7 @@ func (o *UpgradePlatformOptions) Run() error {
 			return errors.Wrapf(err, "unable to save admin secrets to kubernetes secret: %s", opts.JXInstallConfig)
 		}
 
-		o.Debugf("Saved admin secrets to Kubernetes secret %s\n", util.ColorInfo(opts.JXInstallConfig))
+		log.Logger().Debugf("Saved admin secrets to Kubernetes secret %s\n", util.ColorInfo(opts.JXInstallConfig))
 	}
 
 	log.Logger().Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(opts.JXInstallConfig))
@@ -364,7 +364,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	for _, v := range valueFiles {
-		o.Debugf("Adding values file %s\n", util.ColorInfo(v))
+		log.Logger().Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
 	helmOptions := helm.InstallChartOptions{
@@ -403,7 +403,7 @@ func (o *UpgradePlatformOptions) removeFileIfExists(fileName string) error {
 		return errors.Wrapf(err, "unable to determine if %s exist", fileName)
 	}
 	if fileNameExists {
-		o.Debugf("Removing values file %s\n", util.ColorInfo(fileName))
+		log.Logger().Debugf("Removing values file %s\n", util.ColorInfo(fileName))
 		err = os.Remove(fileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to remove %s", fileName)

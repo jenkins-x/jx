@@ -461,10 +461,10 @@ func (o *CreateClusterGKETerraformOptions) writeKeyValueIfNotExists(path string,
 		}
 		contents := string(buffer)
 
-		o.Debugf("Checking if %s contains %s\n", path, key)
+		log.Logger().Debugf("Checking if %s contains %s\n", path, key)
 
 		if strings.Contains(contents, key) {
-			o.Debugf("Skipping %s\n", key)
+			log.Logger().Debugf("Skipping %s\n", key)
 			return nil
 		}
 	}
@@ -476,7 +476,7 @@ func (o *CreateClusterGKETerraformOptions) writeKeyValueIfNotExists(path string,
 	defer file.Close()
 
 	line := fmt.Sprintf("%s = \"%s\"", key, value)
-	o.Debugf("Writing '%s' to %s\n", line, path)
+	log.Logger().Debugf("Writing '%s' to %s\n", line, path)
 
 	_, err = file.WriteString(line)
 	if err != nil {

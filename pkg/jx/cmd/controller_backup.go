@@ -208,8 +208,8 @@ func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, res
 		return
 	}
 
-	o.Debugf("Dumping %s with key %s...\n", util.ColorInfo(resource), util.ColorInfo(key))
-	o.Debugf("%s\n", string(out))
+	log.Logger().Debugf("Dumping %s with key %s...\n", util.ColorInfo(resource), util.ColorInfo(key))
+	log.Logger().Debugf("%s\n", string(out))
 
 	nsDir := path.Join(dir, fmt.Sprintf("%ss", resource), ns)
 	err = os.MkdirAll(nsDir, os.FileMode(0755))

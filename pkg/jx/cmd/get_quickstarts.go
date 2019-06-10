@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/log"
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -124,10 +125,10 @@ func (o *GetQuickstartsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			o.Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
 			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
 			if err != nil {
-				o.Debugf("Quickstart load error: %s\n", err.Error())
+				log.Logger().Debugf("Quickstart load error: %s\n", err.Error())
 			}
 		}
 	}

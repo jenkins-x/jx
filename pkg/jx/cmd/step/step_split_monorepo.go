@@ -101,7 +101,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	glob := o.Glob
 
 	fullGlob := filepath.Join(dir, glob)
-	o.Debugf("Searching in monorepo at: %s\n", fullGlob)
+	log.Logger().Debugf("Searching in monorepo at: %s\n", fullGlob)
 	matches, err := filepath.Glob(fullGlob)
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 			}
 			switch mode := fi.Mode(); {
 			case mode.IsDir():
-				o.Debugf("Found match: %s\n", path)
+				log.Logger().Debugf("Found match: %s\n", path)
 				outPath := filepath.Join(outputDir, name)
 
 				var gitUrl string

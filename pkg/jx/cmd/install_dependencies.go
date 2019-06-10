@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -113,6 +114,6 @@ func (options *InstallDependenciesOptions) Run() error {
 		return options.DoInstallMissingDependencies(install)
 	}
 
-	options.Debugf("No dependencies selected to install\n")
+	log.Logger().Debugf("No dependencies selected to install\n")
 	return nil
 }
