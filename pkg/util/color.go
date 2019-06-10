@@ -22,7 +22,7 @@ var ColorWarning = color.New(color.FgYellow).SprintFunc()
 // given arguments with fmt.Sprint().
 var ColorError = color.New(color.FgRed).SprintFunc()
 
-// ColorBold returns a new function that returns prompt-bold (bold) strings for the
+// ColorBold returns a new function that returns bold-colorized (bold) strings for the
 // given arguments with fmt.Sprint().
 var ColorBold = color.New(color.Bold).SprintFunc()
 
