@@ -1816,6 +1816,11 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 		return errors.Wrap(err, "failed to get clusterName")
 	}
 
+	err = o.helm.AddRepo(kube.ChartOwnerExternalDNS, kube.ChartURLExternalDNS, "", "")
+	if err != nil {
+		return errors.Wrapf(err, "adding helm repo")
+	}
+
 	googleProjectID, err := gke.GetCurrentProject()
 	if err != nil {
 		return errors.Wrap(err, "failed to get project")
