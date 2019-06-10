@@ -61,6 +61,7 @@ const (
 	preemptibleFlagName    = "preemptible"
 	enhancedAPIFlagName    = "enhanced-apis"
 	enhancedScopesFlagName = "enhanced-scopes"
+	maxClusterNameLength   = 27
 )
 
 var (
@@ -195,6 +196,9 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	clusterName := o.Flags.ClusterName
 	if clusterName == "" {
 		defaultClusterName := strings.ToLower(randomdata.SillyName())
+		if len(defaultClusterName) > maxClusterNameLength {
+			defaultClusterName = strings.ToLower(randomdata.SillyName())
+		}
 		if advancedMode {
 			prompt := &survey.Input{
 				Message: "What cluster name would you like to use",
