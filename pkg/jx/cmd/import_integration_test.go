@@ -181,7 +181,6 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true
-	o.LogLevel = "warn"
 	o.UseDefaultGit = true
 
 	if dirName == "maven-camel" {
