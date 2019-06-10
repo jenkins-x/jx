@@ -484,7 +484,7 @@ func (o *InitOptions) initIngress() error {
 			}
 		} else {
 			installIngressController = true
-			log.Logger().Infof("No existing ingress controller found in the "+ingressNamespace+" namespace, installing one: %v", util.ColorPrompt(util.YesNo(installIngressController)))
+			log.Logger().Infof(util.QuestionAnswer("No existing ingress controller found in the %s namespace, installing one", util.YesNo(installIngressController)), ingressNamespace)
 		}
 
 		if !installIngressController {

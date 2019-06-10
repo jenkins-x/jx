@@ -2912,7 +2912,7 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 				}
 			} else {
 				flag = true
-				log.Logger().Infof("A local Jenkins X cloud environments repository already exists, recreating with latest: %v", util.ColorPrompt(util.YesNo(flag)))
+				log.Logger().Infof(util.QuestionAnswer("A local Jenkins X cloud environments repository already exists, recreating with latest", util.YesNo(flag)))
 			}
 
 			if flag {

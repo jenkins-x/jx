@@ -207,7 +207,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			clusterName = defaultClusterName
-			log.Logger().Infof("No cluster name provided so using a generated one: %s", util.ColorPrompt(clusterName))
+			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one: %s", clusterName))
 		}
 	}
 
@@ -237,7 +237,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					return err
 				}
 			} else {
-				log.Logger().Infof("Defaulting to cluster type: %s", util.ColorPrompt(clusterType))
+				log.Logger().Infof(util.QuestionAnswer("Defaulting to cluster type", clusterType))
 			}
 
 			if "Regional" == clusterType {
@@ -276,7 +276,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			machineType = defaultMachineType
-			log.Logger().Infof("Defaulting to machine type: %s", util.ColorPrompt(machineType))
+			log.Logger().Infof(util.QuestionAnswer("Defaulting to machine type", machineType))
 		}
 	}
 
@@ -299,7 +299,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			minNumOfNodes = defaultNodes
-			log.Logger().Infof("Defaulting to minimum number of nodes: %s", util.ColorPrompt(minNumOfNodes))
+			log.Logger().Infof(util.QuestionAnswer("Defaulting to minimum number of nodes", minNumOfNodes))
 		}
 	}
 
@@ -322,7 +322,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			maxNumOfNodes = defaultNodes
-			log.Logger().Infof("Defaulting to maxiumum number of nodes: %s", util.ColorPrompt(maxNumOfNodes))
+			log.Logger().Infof(util.QuestionAnswer("Defaulting to maxiumum number of nodes", maxNumOfNodes))
 		}
 	}
 
@@ -340,7 +340,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			} else {
 				o.Flags.Preemptible = false
-				log.Logger().Infof("Defaulting use of preemptible VMs: %v", util.ColorPrompt(util.YesNo(o.Flags.Preemptible)))
+				log.Logger().Infof(util.QuestionAnswer("Defaulting use of preemptible VMs", util.YesNo(o.Flags.Preemptible)))
 			}
 		}
 	}
@@ -367,7 +367,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			} else {
 				o.Flags.EnhancedScopes = true
-				log.Logger().Infof("Defaulting access to Google Cloud Storage / Google Container Registry: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedScopes)))
+				log.Logger().Infof(util.QuestionAnswer("Defaulting access to Google Cloud Storage / Google Container Registry", util.YesNo(o.Flags.EnhancedScopes)))
 			}
 		}
 	}
@@ -398,7 +398,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					}
 				} else {
 					o.Flags.EnhancedApis = true
-					log.Logger().Infof("Defaulting enabling Cloud Build, Container Registry & Container Analysis API's: %v", util.ColorPrompt(util.YesNo(o.Flags.EnhancedApis)))
+					log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Cloud Build, Container Registry & Container Analysis API's", util.YesNo(o.Flags.EnhancedApis)))
 				}
 			}
 		}
@@ -428,7 +428,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			} else {
 				o.InstallOptions.Flags.Kaniko = false
-				log.Logger().Infof("Defaulting enabling Kaniko for building container images: %v", util.ColorPrompt(util.YesNo(o.InstallOptions.Flags.Kaniko)))
+				log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Kaniko for building container images", util.YesNo(o.InstallOptions.Flags.Kaniko)))
 			}
 		}
 	}

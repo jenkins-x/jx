@@ -488,7 +488,7 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 				}
 			} else {
 				pullLatest = true
-				log.Logger().Infof("A local Jenkins X versions repository already exists, pulling the latest: %v", util.ColorPrompt(util.YesNo(pullLatest)))
+				log.Logger().Infof(util.QuestionAnswer("A local Jenkins X versions repository already exists, pulling the latest", util.YesNo(pullLatest)))
 			}
 
 			if pullLatest {
