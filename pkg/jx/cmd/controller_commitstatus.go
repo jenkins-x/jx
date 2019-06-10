@@ -307,7 +307,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						if err != nil {
 							return err
 						}
-							log.Logger().Debugf("pod watcher: Using contexts %v\n", contexts)
+						log.Logger().Debugf("pod watcher: Using contexts %v\n", contexts)
 
 						for _, ctx := range contexts {
 							if pullRequest != "" {
@@ -357,7 +357,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 			}
 		}
 		statusDetails := jenkinsv1.CommitStatusDetails{}
-			log.Logger().Debugf("pod watcher: Discovered possible status details %v\n", possibleStatusDetails)
+		log.Logger().Debugf("pod watcher: Discovered possible status details %v\n", possibleStatusDetails)
 		if len(possibleStatusDetails) == 1 {
 			log.Logger().Debugf("CommitStatus %s for pipeline %s already exists\n", name, pipelineActName)
 		} else if len(possibleStatusDetails) == 0 {
