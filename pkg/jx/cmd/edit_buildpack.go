@@ -148,7 +148,7 @@ func (o *EditBuildPackOptions) Run() error {
 				}
 			} else {
 				label = defaultValue
-				log.Logger().Infof(("Defaulting workload build pack: %s", util.ColorPrompt(defaultValue))
+				log.Logger().Infof("Defaulting workload build pack: %s", util.ColorPrompt(defaultValue))
 			}
 			buildPack := m[label]
 			if buildPack == nil {
