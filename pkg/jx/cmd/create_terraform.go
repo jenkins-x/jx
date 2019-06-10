@@ -44,6 +44,7 @@ type Cluster interface {
 	SetProvider(string) string
 	Context() string
 	CreateTfVarsFile(path string) error
+	Validate() error
 }
 
 // GKECluster implements Cluster interface for GKE
@@ -117,6 +118,13 @@ func (tf *terraformFileWriter) write(path string, key string, value string) {
 		return
 	}
 	tf.err = terraform.WriteKeyValueToFileIfNotExists(path, key, value)
+}
+// Validate validates that all args are ok to create a GKE cluster
+func (g GKECluster) Validate() error {
+	if len(g.ClusterName()) >= 27 {
+		return errors.New("cluster name must not be longer than 27 characters - " + g.ClusterName())
+	}
+	return nil
 }
 
 // CreateTfVarsFile create vars
