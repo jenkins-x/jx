@@ -1756,6 +1756,9 @@ func (o *CommonOptions) CreateWebhookProw(gitURL string, gitProvider gits.GitPro
 	if err != nil {
 		return errors.Wrapf(err, "in namespace %s", ns)
 	}
+	if baseURL == "" {
+		return fmt.Errorf("failed to find external URL of service hook in namespace %s", ns)
+	}
 	webhookUrl := util.UrlJoin(baseURL, "hook")
 
 	hmacToken, err := client.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
