@@ -75,7 +75,7 @@ items:
               value: ${inputs.params.version}
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
-          image: rawlingsj/builder-jx:wip34
+          image: gcr.io/jenkinsxio/builder-jx:0.1.477
           name: git-merge
           resources:
             limits:
