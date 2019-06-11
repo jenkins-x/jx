@@ -3190,9 +3190,9 @@ func (options *InstallOptions) setValuesFileValue(fileName string, key string, v
 // validateClusterName checks for compliance of a user supplied
 // cluster name against GKE's rules for these names.
 func validateClusterName(clustername string) error {
-	// Check for length greater than 40.
-	if len(clustername) > 40 {
-		err := fmt.Errorf("cluster name %v is greater than the maximum 40 characters", clustername)
+	// Check for length greater than 27.
+	if len(clustername) > maxGKEClusterNameLength {
+		err := fmt.Errorf("cluster name %s is greater than the maximum %d characters", clustername, maxGKEClusterNameLength)
 		return err
 	}
 	// Now we need only make sure that clustername is limited to

@@ -26,7 +26,7 @@ func Test_sanitizeLabel(t *testing.T) {
 }
 
 func Test_validateClusterName(t *testing.T) {
-	var bigLongName = string("this-name-is-too-long-to-be-used-by-2chars")
+	var bigLongName = string("this-name-is-too-long-by-one")
 	var capitalName = string("NameWithCapitalLetters")
 	var gibberishName = string("l337n@me")
 	var goodName = string("good-name-for-cluster")
