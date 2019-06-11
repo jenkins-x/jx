@@ -67,7 +67,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 		branch         string
 		kind           string
 		expectingError bool
-		noKaniko       bool
+		useKaniko      bool
 	}{
 		{
 			name:         "js_build_pack",
@@ -76,6 +76,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "build-pack",
 			kind:         "release",
+			useKaniko:    true,
 		},
 		{
 			name:         "maven_build_pack",
@@ -84,7 +85,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			noKaniko:     true,
+			useKaniko:    false,
 		},
 		{
 			name:         "from_yaml",
@@ -142,7 +143,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			noKaniko:     true,
+			useKaniko:    false,
 		},
 		{
 			name:         "override_block_step",
@@ -159,7 +160,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			noKaniko:     true,
+			useKaniko:    false,
 		},
 		{
 			name:         "containeroptions-on-pipelineconfig",
@@ -168,7 +169,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			noKaniko:     true,
+			useKaniko:    false,
 		},
 		{
 			name:         "default-in-jenkins-x-yml",
@@ -259,7 +260,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			noKaniko:     true,
+			useKaniko:    false,
 		},
 		{
 			name:         "replace-stage-steps-in-jenkins-x-yml",
@@ -348,7 +349,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				},
 				Branch:       tt.branch,
 				PipelineKind: tt.kind,
-				NoKaniko:     tt.noKaniko,
+				NoKaniko:     !tt.useKaniko,
 				Trigger:      string(pipelineapi.PipelineTriggerTypeManual),
 				StepOptions: opts.StepOptions{
 					CommonOptions: &opts.CommonOptions{

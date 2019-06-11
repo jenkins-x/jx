@@ -153,7 +153,7 @@ type CreatePipelineArguments struct {
 	DockerRegistry    string
 	DockerRegistryOrg string
 	KanikoImage       string
-	NoKaniko          bool
+	UseKaniko         bool
 	NoReleasePrepare  bool
 	StepCounter       int
 }
@@ -807,6 +807,7 @@ func (c *PipelineConfig) CreatePipelineSteps(step *syntax.Step, prefixPath strin
 	if step.Dir != "" {
 		dir = step.Dir
 	}
+	// Replace the Go buildpack path with the correct location for Tekton builds.
 	dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", args.WorkspaceDir, -1)
 
 	dir = strings.Replace(dir, util.PlaceHolderAppName, args.GitName, -1)
@@ -847,7 +848,7 @@ func (c *PipelineConfig) CreatePipelineSteps(step *syntax.Step, prefixPath strin
 
 		s.Dir = dir
 
-		modifyStep := c.modifyStep(s, dir, args.DockerRegistry, args.DockerRegistryOrg, args.GitName, args.ProjectID, args.KanikoImage, args.NoKaniko)
+		modifyStep := c.modifyStep(s, dir, args.DockerRegistry, args.DockerRegistryOrg, args.GitName, args.ProjectID, args.KanikoImage, args.UseKaniko)
 
 		steps = append(steps, modifyStep)
 	} else if step.Loop != nil {
@@ -882,8 +883,8 @@ func replaceCommandText(step *syntax.Step) string {
 }
 
 // modifyStep allows a container step to be modified to do something different
-func (c *PipelineConfig) modifyStep(parsedStep syntax.Step, workspaceDir, dockerRegistry, dockerRegistryOrg, appName, projectID, kanikoImage string, noKaniko bool) syntax.Step {
-	if !noKaniko {
+func (c *PipelineConfig) modifyStep(parsedStep syntax.Step, workspaceDir, dockerRegistry, dockerRegistryOrg, appName, projectID, kanikoImage string, useKaniko bool) syntax.Step {
+	if useKaniko {
 		if strings.HasPrefix(parsedStep.GetCommand(), "skaffold build") ||
 			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) ||
 			commandIsSkaffoldRegex.MatchString(parsedStep.GetCommand()) {
@@ -978,8 +979,8 @@ func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments
 			container := podTemplate.Spec.Containers[0]
 			if !equality.Semantic.DeepEqual(container, corev1.Container{}) {
 				container.Name = ""
-				container.Command = []string{}
-				container.Args = []string{}
+				container.Command = nil
+				container.Args = nil
 				container.Image = ""
 				container.WorkingDir = ""
 				container.Stdin = false

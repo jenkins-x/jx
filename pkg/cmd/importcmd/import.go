@@ -9,40 +9,30 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	//_ "github.com/Azure/draft/pkg/linguist"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"sigs.k8s.io/yaml"
-
 	"github.com/cenkalti/backoff"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/pkg/errors"
-
+	"github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	//_ "github.com/Azure/draft/pkg/linguist"
-	"time"
-
-	gitignore "github.com/denormal/go-gitignore"
-	"github.com/jenkins-x/jx/pkg/prow"
+	"sigs.k8s.io/yaml"
 )
 
 // CallbackFn callback function

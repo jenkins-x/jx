@@ -1,7 +1,6 @@
 package create
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/ghodss/yaml"
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	syntaxstep "github.com/jenkins-x/jx/pkg/cmd/step/syntax"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -35,11 +35,9 @@ import (
 )
 
 const (
-	kanikoDockerImage     = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
-	kanikoSecretMount     = "/kaniko-secret/secret.json"
-	kanikoSecretName      = "kaniko-secret"
-	kanikoSecretKey       = "kaniko-secret"
-	defaultContainerImage = "gcr.io/jenkinsxio/builder-maven"
+	kanikoSecretMount = "/kaniko-secret/secret.json"
+	kanikoSecretName  = "kaniko-secret"
+	kanikoSecretKey   = "kaniko-secret"
 )
 
 var (
@@ -165,11 +163,11 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&o.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
-	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", defaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
+	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", syntax.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
 	cmd.Flags().BoolVarP(&o.DeleteTempDir, "delete-temp-dir", "", true, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&o.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
 	cmd.Flags().BoolVarP(&o.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
-	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", kanikoDockerImage, "The docker image for Kaniko")
+	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", syntax.KanikoDockerImage, "The docker image for Kaniko")
 	cmd.Flags().StringVarP(&o.KanikoSecretMount, "kaniko-secret-mount", "", kanikoSecretMount, "The mount point of the Kaniko secret")
 	cmd.Flags().StringVarP(&o.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
 	cmd.Flags().StringVarP(&o.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
@@ -208,7 +206,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 	if o.DefaultImage == "" {
-		o.DefaultImage = defaultContainerImage
+		o.DefaultImage = syntax.DefaultContainerImage
 	}
 	log.Logger().Debugf("cloning git for %s", o.CloneGitURL)
 	if o.VersionResolver == nil {
@@ -218,7 +216,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 	if o.KanikoImage == "" {
-		o.KanikoImage = kanikoDockerImage
+		o.KanikoImage = syntax.KanikoDockerImage
 	}
 	o.KanikoImage, err = o.VersionResolver.ResolveDockerImage(o.KanikoImage)
 	if err != nil {
@@ -392,45 +390,38 @@ func (o *StepCreateTaskOptions) Run() error {
 
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline
 func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*tekton.CRDWrapper, error) {
-	name := o.Pack
-	packDir := filepath.Join(packsDir, name)
-
 	pipelineConfig := projectConfig.PipelineConfig
-	if name != "none" {
-		pipelineFile := filepath.Join(packDir, jenkinsfile.PipelineConfigFileName)
-		exists, err := util.FileExists(pipelineFile)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to find build pack pipeline YAML: %s", pipelineFile)
-		}
-		if !exists {
-			return nil, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
-		}
-		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
-		}
 
-		localPipelineConfig := projectConfig.PipelineConfig
-		if localPipelineConfig != nil {
-			err = localPipelineConfig.ExtendPipeline(pipelineConfig, false)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)
-			}
-			pipelineConfig = localPipelineConfig
-		}
-	} else {
-		pipelineConfig.PopulatePipelinesFromDefault()
-	}
-
-	if pipelineConfig == nil {
-		return nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
-	}
-
-	err := o.combineEnvVars(pipelineConfig)
+	err := o.setBuildValues()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to combine env vars")
+		return nil, err
 	}
 
+	createCanonical := &syntaxstep.StepSyntaxCanonicalOptions{
+		Pack:              o.Pack,
+		BuildPackURL:      o.BuildPackURL,
+		BuildPackRef:      o.BuildPackRef,
+		Context:           o.Context,
+		CustomImage:       o.CustomImage,
+		DefaultImage:      o.DefaultImage,
+		UseKaniko:         !o.NoKaniko,
+		KanikoImage:       o.KanikoImage,
+		ProjectID:         o.ProjectID,
+		DockerRegistry:    o.DockerRegistry,
+		DockerRegistryOrg: o.DockerRegistryOrg,
+		SourceName:        o.SourceName,
+		CustomEnvs:        o.CustomEnvs,
+		GitInfo:           o.GitInfo,
+		PodTemplates:      o.PodTemplates,
+		VersionResolver:   o.VersionResolver,
+	}
+	commonCopy := *o.CommonOptions
+	createCanonical.CommonOptions = &commonCopy
+
+	updatedProjectConfig, err := createCanonical.CreateCanonicalPipeline(packsDir, projectConfig, projectConfigFile, resolver)
+	if err != nil {
+		return nil, errors.Wrapf(err, "canonical pipeline creation failed")
+	}
 	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
 	// working with custom jenkins pipelines in custom jenkins servers
 	if projectConfig.NoReleasePrepare {
@@ -441,88 +432,16 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
 
-	var lifecycles *jenkinsfile.PipelineLifecycles
-	kind := o.PipelineKind
-	pipelines := pipelineConfig.Pipelines
-	switch kind {
-	case jenkinsfile.PipelineKindRelease:
-		lifecycles = pipelines.Release
-
-		// lets add a pre-step to setup the credentials
-		if !o.InterpretMode {
-			if lifecycles.Setup == nil {
-				lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
-			}
-			steps := []*syntax.Step{
-				{
-					Command: "jx step git credentials",
-					Name:    "jx-git-credentials",
-				},
-			}
-			lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
-		}
-
-	case jenkinsfile.PipelineKindPullRequest:
-		lifecycles = pipelines.PullRequest
-	case jenkinsfile.PipelineKindFeature:
-		lifecycles = pipelines.Feature
-	default:
-		return nil, fmt.Errorf("unknown pipeline kind %s. Supported values are %s", kind, strings.Join(jenkinsfile.PipelineKinds, ", "))
-	}
-
-	err = o.setBuildValues()
-	if err != nil {
-		return nil, err
-	}
-
 	var parsed *syntax.ParsedPipeline
-
-	if lifecycles != nil && lifecycles.Pipeline != nil {
-		parsed = lifecycles.Pipeline
-		for _, override := range pipelines.Overrides {
-			if override.MatchesPipeline(kind) {
-				parsed = syntax.ExtendParsedPipeline(parsed, override)
-			}
-		}
-	} else {
-		args := jenkinsfile.CreatePipelineArguments{
-			Lifecycles:        lifecycles,
-			PodTemplates:      o.PodTemplates,
-			CustomImage:       o.CustomImage,
-			DefaultImage:      o.DefaultImage,
-			WorkspaceDir:      o.getWorkspaceDir(),
-			GitHost:           o.GitInfo.Host,
-			GitName:           o.GitInfo.Name,
-			GitOrg:            o.GitInfo.Organisation,
-			ProjectID:         o.ProjectID,
-			DockerRegistry:    o.getDockerRegistry(projectConfig),
-			DockerRegistryOrg: o.GetDockerRegistryOrg(projectConfig, o.GitInfo),
-			KanikoImage:       o.KanikoImage,
-			NoKaniko:          o.NoKaniko,
-			NoReleasePrepare:  o.NoReleasePrepare,
-			StepCounter:       o.stepCounter,
-		}
-		parsed, o.stepCounter, err = pipelineConfig.CreatePipelineForBuildPack(args)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to generate pipeline from build pack")
-		}
-	}
-
-	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
-
-	if pipelineConfig.ContainerOptions != nil {
-		mergedContainer, err := syntax.MergeContainers(pipelineConfig.ContainerOptions, parsed.Options.ContainerOptions)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Could not merge containerOptions from parent")
-		}
-		parsed.Options.ContainerOptions = mergedContainer
-	}
-
-	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
-	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
-	ctx := context.Background()
-	if validateErr := parsed.Validate(ctx); validateErr != nil {
-		return nil, errors.Wrapf(validateErr, "validation failed for Pipeline")
+	switch o.PipelineKind {
+	case jenkinsfile.PipelineKindRelease:
+		parsed = updatedProjectConfig.PipelineConfig.Pipelines.Release.Pipeline
+	case jenkinsfile.PipelineKindPullRequest:
+		parsed = updatedProjectConfig.PipelineConfig.Pipelines.PullRequest.Pipeline
+	case jenkinsfile.PipelineKindFeature:
+		parsed = updatedProjectConfig.PipelineConfig.Pipelines.Feature.Pipeline
+	default:
+		return nil, fmt.Errorf("unknown pipeline kind %s", o.PipelineKind)
 	}
 
 	if o.EffectivePipeline {
@@ -541,7 +460,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, errors.Wrapf(err, "generation failed for Pipeline")
 	}
 
-	tasks, pipeline = o.EnhanceTasksAndPipeline(tasks, pipeline, pipelineConfig.Env)
+	tasks, pipeline = o.EnhanceTasksAndPipeline(tasks, pipeline, updatedProjectConfig.PipelineConfig.Env)
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(pipelineResourceName, o.GitInfo, o.Revision)}
 
 	var timeout *metav1.Duration

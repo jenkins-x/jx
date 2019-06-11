@@ -1,0 +1,551 @@
+package syntax_test
+
+import (
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/step/syntax"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	jxsyntax "github.com/jenkins-x/jx/pkg/tekton/syntax"
+	sht "github.com/jenkins-x/jx/pkg/tekton/syntax/syntax_helpers_test"
+	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/knative/pkg/kmp"
+	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/assert"
+	tb "github.com/tektoncd/pipeline/test/builder"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
+)
+
+var (
+	overrideAfter  = jxsyntax.StepOverrideAfter
+	overrideBefore = jxsyntax.StepOverrideBefore
+)
+
+func TestCreateCanonicalPipeline(t *testing.T) {
+	t.Parallel()
+
+	log.SetOutput(ioutil.Discard)
+	defer log.SetOutput(os.Stderr)
+
+	testData := path.Join("..", "create", "test_data", "step_create_task")
+	_, err := os.Stat(testData)
+	assert.NoError(t, err)
+
+	testVersionsDir := path.Join(testData, "stable_versions")
+	packsDir := path.Join(testData, "packs")
+	_, err = os.Stat(packsDir)
+	assert.NoError(t, err)
+
+	resolver := func(importFile *jenkinsfile.ImportFile) (string, error) {
+		dirPath := []string{packsDir, "import_dir", importFile.Import}
+		// lets handle cross platform paths in `importFile.File`
+		path := append(dirPath, strings.Split(importFile.File, "/")...)
+		return filepath.Join(path...), nil
+	}
+
+	cases := []struct {
+		name         string
+		pack         string
+		repoName     string
+		organization string
+		branch       string
+		expected     *config.ProjectConfig
+	}{{
+		name:         "js_build_pack",
+		pack:         "javascript",
+		repoName:     "js-test-repo",
+		organization: "abayer",
+		branch:       "build-pack",
+		expected: &config.ProjectConfig{
+			PipelineConfig: &jenkinsfile.PipelineConfig{
+				Agent: &jxsyntax.Agent{
+					Container: "nodejs",
+					Label:     "jenkins-nodejs",
+				},
+				Env: []corev1.EnvVar{},
+				Extends: &jenkinsfile.PipelineExtends{
+					File:   "javascript/pipeline.yaml",
+					Import: "classic",
+				},
+				Pipelines: jenkinsfile.Pipelines{
+					Post: &jenkinsfile.PipelineLifecycle{
+						Steps:    []*jxsyntax.Step{},
+						PreSteps: []*jxsyntax.Step{},
+					},
+					PullRequest: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineOptions(
+								sht.PipelineContainerOptions(
+									sht.ContainerResourceRequests("400m", "512Mi"),
+									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											Key: "docker.registry",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "jenkins-x-docker-registry",
+											}}}),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
+									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
+									sht.ContainerSecurityContext(true),
+									tb.VolumeMount("workspace-volume", "/home/jenkins"),
+									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
+									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
+								),
+							),
+							sht.PipelineStage("from-build-pack",
+								sht.StageAgent("nodejs"),
+								sht.StageStep(sht.StepCmd("npm install"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-npm-install")),
+								sht.StageStep(sht.StepCmd("CI=true DISPLAY=:99 npm test"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-step3")),
+								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
+									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
+									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
+									sht.StepArg("--destination=gcr.io/abayer/js-test-repo:${inputs.params.version}"),
+									sht.StepArg("--cache-repo=gcr.io//cache")),
+								sht.StageStep(sht.StepCmd("jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"),
+									sht.StepDir("/workspace/source"), sht.StepImage("nodejs"), sht.StepName("postbuild-post-build")),
+								sht.StageStep(sht.StepCmd("make preview"), sht.StepDir("/workspace/source/charts/preview"),
+									sht.StepImage("nodejs"), sht.StepName("promote-make-preview")),
+								sht.StageStep(sht.StepCmd("jx preview --app $APP_NAME --dir ../.."), sht.StepDir("/workspace/source/charts/preview"),
+									sht.StepImage("nodejs"), sht.StepName("promote-jx-preview")),
+							),
+						),
+					},
+					Release: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineOptions(
+								sht.PipelineContainerOptions(
+									sht.ContainerResourceRequests("400m", "512Mi"),
+									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											Key: "docker.registry",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "jenkins-x-docker-registry",
+											}}}),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
+									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
+									sht.ContainerSecurityContext(true),
+									tb.VolumeMount("workspace-volume", "/home/jenkins"),
+									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
+									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
+								),
+							),
+							sht.PipelineStage("from-build-pack",
+								sht.StageAgent("nodejs"),
+								sht.StageStep(sht.StepCmd("jx step git credentials"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("setup-jx-git-credentials")),
+								sht.StageStep(sht.StepCmd("npm install"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-npm-install")),
+								sht.StageStep(sht.StepCmd("CI=true DISPLAY=:99 npm test"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-npm-test")),
+								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
+									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
+									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
+									sht.StepArg("--destination=gcr.io/abayer/js-test-repo:${inputs.params.version}"),
+									sht.StepArg("--cache-repo=gcr.io//cache")),
+								sht.StageStep(sht.StepCmd("jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:${VERSION}"),
+									sht.StepDir("/workspace/source"), sht.StepImage("nodejs"), sht.StepName("build-post-build")),
+								sht.StageStep(sht.StepCmd("jx step changelog --batch-mode --version v${VERSION}"),
+									sht.StepDir("/workspace/source/charts/js-test-repo"), sht.StepImage("nodejs"),
+									sht.StepName("promote-changelog")),
+								sht.StageStep(sht.StepCmd("jx step helm release"), sht.StepDir("/workspace/source/charts/js-test-repo"),
+									sht.StepImage("nodejs"), sht.StepName("promote-helm-release")),
+								sht.StageStep(sht.StepCmd("jx promote -b --all-auto --timeout 1h --version ${VERSION}"),
+									sht.StepDir("/workspace/source/charts/js-test-repo"),
+									sht.StepImage("nodejs"), sht.StepName("promote-jx-promote")),
+							),
+						),
+					},
+				},
+			},
+		},
+	}, {
+		name:         "default-in-buildpack",
+		pack:         "default-pipeline",
+		repoName:     "golang-qs-test",
+		organization: "abayer",
+		branch:       "master",
+		expected: &config.ProjectConfig{
+			PipelineConfig: &jenkinsfile.PipelineConfig{
+				Agent: &jxsyntax.Agent{
+					Container: "go",
+					Label:     "builder-go",
+				},
+				Env: []corev1.EnvVar{},
+				Pipelines: jenkinsfile.Pipelines{
+					Default: sht.ParsedPipeline(
+						sht.PipelineAgent("go"),
+						sht.PipelineStage("from-build-pack",
+							sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
+							sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+						),
+					),
+					Feature: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("go"),
+							sht.PipelineStage("from-build-pack",
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+							),
+						),
+					},
+					PullRequest: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("go"),
+							sht.PipelineStage("from-build-pack",
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+							),
+						),
+					},
+					Release: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("go"),
+							sht.PipelineStage("from-build-pack",
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+							),
+						),
+					},
+				},
+			},
+		},
+	}, {
+		name:         "add-env-to-default-in-buildpack",
+		pack:         "default-pipeline",
+		repoName:     "golang-qs-test",
+		organization: "abayer",
+		branch:       "master",
+		expected: &config.ProjectConfig{
+			PipelineConfig: &jenkinsfile.PipelineConfig{
+				Agent: &jxsyntax.Agent{
+					Image: "go",
+					Label: "builder-go",
+				},
+				Env: []corev1.EnvVar{{
+					Name:  "FRUIT",
+					Value: "BANANA",
+				}, {
+					Name:  "GIT_AUTHOR_NAME",
+					Value: "somebodyelse",
+				}},
+				Pipelines: jenkinsfile.Pipelines{
+					Feature: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("go"),
+							sht.PipelineEnvVar("FRUIT", "BANANA"),
+							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
+							sht.PipelineStage("from-build-pack",
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+							),
+						),
+					},
+					PullRequest: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("go"),
+							sht.PipelineEnvVar("FRUIT", "BANANA"),
+							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
+							sht.PipelineStage("from-build-pack",
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+							),
+						),
+					},
+					Release: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("go"),
+							sht.PipelineEnvVar("FRUIT", "BANANA"),
+							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
+							sht.PipelineStage("from-build-pack",
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+							),
+						),
+					},
+				},
+			},
+		},
+	}, {
+		name:         "append-and-prepend-stage-steps",
+		pack:         "maven",
+		repoName:     "jx-demo-qs",
+		organization: "abayer",
+		branch:       "master",
+		expected: &config.ProjectConfig{
+			PipelineConfig: &jenkinsfile.PipelineConfig{
+				Agent: &jxsyntax.Agent{
+					Image: "maven",
+					Label: "jenkins-maven",
+				},
+				Env: []corev1.EnvVar{{
+					Name:  "FRUIT",
+					Value: "BANANA",
+				}, {
+					Name:  "GIT_AUTHOR_NAME",
+					Value: "somebodyelse",
+				}},
+				Pipelines: jenkinsfile.Pipelines{
+					Overrides: []*jxsyntax.PipelineOverride{{
+						Pipeline: "release",
+						Stage:    "build",
+						Steps: []*jxsyntax.Step{{
+							Sh: "echo hi there",
+						}},
+						Type: &overrideBefore,
+					}, {
+						Pipeline: "release",
+						Stage:    "build",
+						Steps: []*jxsyntax.Step{{
+							Sh: "echo goodbye",
+						}, {
+							Sh: "echo wait why am i here",
+						}},
+						Type: &overrideAfter,
+					}},
+					Post: &jenkinsfile.PipelineLifecycle{
+						Steps:    []*jxsyntax.Step{},
+						PreSteps: []*jxsyntax.Step{},
+					},
+					PullRequest: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineEnvVar("FRUIT", "BANANA"),
+							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
+							sht.PipelineOptions(
+								sht.PipelineContainerOptions(
+									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											Key: "docker.registry",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "jenkins-x-docker-registry",
+											}}}),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
+									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
+									tb.EnvVar("_JAVA_OPTIONS", "-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m"),
+									sht.ContainerSecurityContext(true),
+									tb.VolumeMount("workspace-volume", "/home/jenkins"),
+									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
+									tb.VolumeMount("volume-0", "/root/.m2/"),
+									tb.VolumeMount("volume-1", "/home/jenkins/.docker"),
+									tb.VolumeMount("volume-2", "/home/jenkins/.gnupg"),
+								),
+							),
+							sht.PipelineStage("from-build-pack",
+								sht.StageAgent("maven"),
+								sht.StageStep(sht.StepCmd("mvn versions:set -DnewVersion=$PREVIEW_VERSION"), sht.StepImage("maven"),
+									sht.StepDir("/workspace/source"), sht.StepName("build-set-version")),
+								sht.StageStep(sht.StepCmd("mvn install"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("build-mvn-install")),
+								sht.StageStep(sht.StepCmd("skaffold version"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("build-skaffold-version")),
+								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
+									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
+									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
+									sht.StepArg("--destination=gcr.io/abayer/jx-demo-qs:${inputs.params.version}"),
+									sht.StepArg("--cache-repo=gcr.io//cache")),
+								sht.StageStep(sht.StepCmd("jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"),
+									sht.StepDir("/workspace/source"), sht.StepImage("maven"), sht.StepName("postbuild-post-build")),
+								sht.StageStep(sht.StepCmd("make preview"), sht.StepDir("/workspace/source/charts/preview"),
+									sht.StepImage("maven"), sht.StepName("promote-make-preview")),
+								sht.StageStep(sht.StepCmd("jx preview --app $APP_NAME --dir ../.."), sht.StepDir("/workspace/source/charts/preview"),
+									sht.StepImage("maven"), sht.StepName("promote-jx-preview")),
+							),
+						),
+					},
+					Release: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineEnvVar("FRUIT", "BANANA"),
+							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
+							sht.PipelineOptions(
+								sht.PipelineContainerOptions(
+									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											Key: "docker.registry",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "jenkins-x-docker-registry",
+											}}}),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
+									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
+									tb.EnvVar("_JAVA_OPTIONS", "-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m"),
+									sht.ContainerSecurityContext(true),
+									tb.VolumeMount("workspace-volume", "/home/jenkins"),
+									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
+									tb.VolumeMount("volume-0", "/root/.m2/"),
+									tb.VolumeMount("volume-1", "/home/jenkins/.docker"),
+									tb.VolumeMount("volume-2", "/home/jenkins/.gnupg"),
+								),
+							),
+							sht.PipelineStage("from-build-pack",
+								sht.StageAgent("maven"),
+								sht.StageStep(sht.StepCmd("jx step git credentials"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("setup-jx-git-credentials")),
+								sht.StageStep(sht.StepCmd("echo hi there"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("build-step3")),
+								sht.StageStep(sht.StepCmd("mvn clean deploy"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("build-mvn-deploy")),
+								sht.StageStep(sht.StepCmd("skaffold version"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("build-skaffold-version")),
+								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
+									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
+									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
+									sht.StepArg("--destination=gcr.io/abayer/jx-demo-qs:${inputs.params.version}"),
+									sht.StepArg("--cache-repo=gcr.io//cache")),
+								sht.StageStep(sht.StepCmd("jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:${VERSION}"),
+									sht.StepDir("/workspace/source"), sht.StepImage("maven"), sht.StepName("build-post-build")),
+								sht.StageStep(sht.StepCmd("echo goodbye"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("build-step8")),
+								sht.StageStep(sht.StepCmd("echo wait why am i here"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("build-step9")),
+								sht.StageStep(sht.StepCmd("jx step changelog --version v${VERSION}"),
+									sht.StepDir("/workspace/source/charts/jx-demo-qs"), sht.StepImage("maven"),
+									sht.StepName("promote-changelog")),
+								sht.StageStep(sht.StepCmd("jx step helm release"), sht.StepDir("/workspace/source/charts/jx-demo-qs"),
+									sht.StepImage("maven"), sht.StepName("promote-helm-release")),
+								sht.StageStep(sht.StepCmd("jx promote -b --all-auto --timeout 1h --version ${VERSION}"),
+									sht.StepDir("/workspace/source/charts/jx-demo-qs"),
+									sht.StepImage("maven"), sht.StepName("promote-jx-promote")),
+							),
+						),
+					},
+				},
+			},
+		},
+	}}
+
+	k8sObjects := []runtime.Object{
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kube.ConfigMapJenkinsDockerRegistry,
+				Namespace: "jx",
+			},
+			Data: map[string]string{
+				"docker.registry": "gcr.io",
+			},
+		},
+	}
+	jxObjects := []runtime.Object{}
+	repoOwnerUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoOwner := repoOwnerUUID.String()
+	repoNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoName := repoNameUUID.String()
+	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+
+			caseDir := path.Join(testData, tt.name)
+			_, err = os.Stat(caseDir)
+			assert.NoError(t, err)
+
+			projectConfig, projectConfigFile, err := config.LoadProjectConfig(caseDir)
+			if err != nil {
+				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
+			}
+
+			createCanonical := &syntax.StepSyntaxCanonicalOptions{
+				Pack:         tt.pack,
+				DefaultImage: "maven",
+				KanikoImage:  "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6",
+				UseKaniko:    true,
+				PodTemplates: assertLoadPodTemplates(t),
+				GitInfo: &gits.GitRepository{
+					Host:         "github.com",
+					Name:         tt.repoName,
+					Organisation: tt.organization,
+				},
+				VersionResolver: &opts.VersionResolver{
+					VersionsDir: testVersionsDir,
+				},
+				SourceName: "source",
+				StepOptions: opts.StepOptions{
+					CommonOptions: &opts.CommonOptions{
+						ServiceAccount: "tekton-bot",
+					},
+				},
+			}
+			cmd_test_helpers.ConfigureTestOptionsWithResources(createCanonical.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
+
+			newConfig, err := createCanonical.CreateCanonicalPipeline(packsDir, projectConfig, projectConfigFile, resolver)
+			if err != nil {
+				t.Fatalf("Error creating canonical pipeline: %s", err)
+			}
+			if d, _ := kmp.SafeDiff(tt.expected, newConfig, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
+				cy, _ := yaml.Marshal(newConfig)
+				t.Logf("NEW CONFIG: %s", cy)
+				t.Errorf("Generated canonical pipeline does not match expected:\n%s", d)
+			}
+		})
+	}
+}
+
+func assertLoadPodTemplates(t *testing.T) map[string]*corev1.Pod {
+	fileName := filepath.Join("..", "create", "test_data", "step_create_task", "PodTemplates.yml")
+	if tests.AssertFileExists(t, fileName) {
+		configMap := &corev1.ConfigMap{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, configMap)
+			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
+				podTemplates := make(map[string]*corev1.Pod)
+				for k, v := range configMap.Data {
+					pod := &corev1.Pod{}
+					if v != "" {
+						err := yaml.Unmarshal([]byte(v), pod)
+						if assert.NoError(t, err, "Failed to parse pod template") {
+							podTemplates[k] = pod
+						}
+					}
+				}
+				return podTemplates
+			}
+		}
+	}
+	return nil
+}
