@@ -2,8 +2,8 @@ package create_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
@@ -347,7 +347,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				},
 				DefaultImage: "maven",
 			}
-			cmd_test_helpers.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
+			testhelpers.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
 			crds, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
 			if tt.expectingError {

@@ -1,8 +1,8 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/config"
@@ -31,7 +31,7 @@ func TestStepValidate(t *testing.T) {
 func AssertValidateWorks(t *testing.T, options *step.StepValidateOptions) {
 	//options.Out = tests.Output()
 	//options.Factory = cmd_mocks.NewMockFactory()
-	cmd_test_helpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	testhelpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	err := options.Run()
 	assert.NoError(t, err, "Command failed: %#v", options)
 }
@@ -39,7 +39,7 @@ func AssertValidateWorks(t *testing.T, options *step.StepValidateOptions) {
 func AssertValidateFails(t *testing.T, options *step.StepValidateOptions) {
 	//options.Out = tests.Output()
 	//options.Factory = cmd_mocks.NewMockFactory()
-	cmd_test_helpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	testhelpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	err := options.Run()
 	assert.NotNil(t, err, "Command should have failed: %#v", options)
 }

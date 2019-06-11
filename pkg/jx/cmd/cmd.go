@@ -18,6 +18,23 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cloudbees"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/compliance"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/controller"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/deletecmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/edit"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/gc"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/get"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/importcmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/initcmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/preview"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/rsh"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/start"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/stop"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/sync"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/uninstall"
+
 	"io"
 	"os"
 	"os/exec"
@@ -45,17 +62,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-const (
-	//     * runs (aka 'run')
-
-	valid_resources = `Valid resource types include:
-
-    * environments (aka 'env')
-    * pipelines (aka 'pipe')
-    * urls (aka 'url')
-    `
-)
-
 // NewJXCommand creates the `jx` command and its nested children.
 // args used to determine binary plugin to run can be overridden (does not affect compiled in commands).
 func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWriter,
@@ -75,24 +81,24 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	commonOpts.AddCommonFlags(cmds)
 
 	addCommands := add.NewCmdAdd(commonOpts)
-	createCommands := NewCmdCreate(commonOpts)
-	deleteCommands := NewCmdDelete(commonOpts)
-	getCommands := NewCmdGet(commonOpts)
-	editCommands := NewCmdEdit(commonOpts)
+	createCommands := create.NewCmdCreate(commonOpts)
+	deleteCommands := deletecmd.NewCmdDelete(commonOpts)
+	getCommands := get.NewCmdGet(commonOpts)
+	editCommands := edit.NewCmdEdit(commonOpts)
 	updateCommands := NewCmdUpdate(commonOpts)
 
 	installCommands := []*cobra.Command{
-		NewCmdInstall(commonOpts),
-		NewCmdUninstall(commonOpts),
+		create.NewCmdInstall(commonOpts),
+		uninstall.NewCmdUninstall(commonOpts),
 		NewCmdUpgrade(commonOpts),
 	}
 	installCommands = append(installCommands, findCommands("cluster", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)
 	installCommands = append(installCommands, findCommands("jenkins token", createCommands, deleteCommands)...)
-	installCommands = append(installCommands, NewCmdInit(commonOpts))
+	installCommands = append(installCommands, initcmd.NewCmdInit(commonOpts))
 
 	addProjectCommands := []*cobra.Command{
-		NewCmdImport(commonOpts),
+		importcmd.NewCmdImport(commonOpts),
 	}
 	addProjectCommands = append(addProjectCommands, findCommands("create archetype", createCommands, deleteCommands)...)
 	addProjectCommands = append(addProjectCommands, findCommands("create spring", createCommands, deleteCommands)...)
@@ -110,7 +116,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	addonCommands = append(addonCommands, findCommands("app", createCommands, deleteCommands, addCommands)...)
 
 	environmentsCommands := []*cobra.Command{
-		NewCmdPreview(commonOpts),
+		preview.NewCmdPreview(commonOpts),
 		promote.NewCmdPromote(commonOpts),
 	}
 	environmentsCommands = append(environmentsCommands, findCommands("environment", createCommands, deleteCommands, editCommands, getCommands)...)
@@ -135,7 +141,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		{
 			Message: "Working with Kubernetes:",
 			Commands: []*cobra.Command{
-				NewCompliance(commonOpts),
+				compliance.NewCompliance(commonOpts),
 				NewCmdCompletion(commonOpts),
 				NewCmdContext(commonOpts),
 				NewCmdEnvironment(commonOpts),
@@ -153,14 +159,14 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 				NewCmdConsole(commonOpts),
 				NewCmdLogs(commonOpts),
 				NewCmdOpen(commonOpts),
-				NewCmdRsh(commonOpts),
-				NewCmdSync(commonOpts),
+				rsh.NewCmdRsh(commonOpts),
+				sync.NewCmdSync(commonOpts),
 			},
 		},
 		{
 			Message: "Working with CloudBees application:",
 			Commands: []*cobra.Command{
-				NewCmdCloudBees(commonOpts),
+				cloudbees.NewCmdCloudBees(commonOpts),
 				NewCmdLogin(commonOpts),
 			},
 		},
@@ -177,8 +183,8 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 				updateCommands,
 				deleteCommands,
 				addCommands,
-				NewCmdStart(commonOpts),
-				NewCmdStop(commonOpts),
+				start.NewCmdStart(commonOpts),
+				stop.NewCmdStop(commonOpts),
 			},
 		},
 		{
@@ -190,8 +196,8 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		{
 			Message: "Jenkins X services:",
 			Commands: []*cobra.Command{
-				NewCmdController(commonOpts),
-				NewCmdGC(commonOpts),
+				controller.NewCmdController(commonOpts),
+				gc.NewCmdGC(commonOpts),
 			},
 		},
 	}

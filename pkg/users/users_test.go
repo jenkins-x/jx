@@ -1,7 +1,7 @@
 package users_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"testing"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +33,7 @@ func TestResolveUserWithEmptyIdDoesNotCreateEmptyAccountReference(t *testing.T) 
 		},
 	}
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(&o,
+	testhelpers.ConfigureTestOptionsWithResources(&o,
 		[]runtime.Object{},
 		[]runtime.Object{&user},
 		&gits.GitFake{},
@@ -94,7 +94,7 @@ func TestExistingUserIdButNotFoundBySelectErrors(t *testing.T) {
 		},
 	}
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(&o,
+	testhelpers.ConfigureTestOptionsWithResources(&o,
 		[]runtime.Object{},
 		[]runtime.Object{&user1},
 		&gits.GitFake{},

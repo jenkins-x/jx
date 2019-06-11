@@ -1,7 +1,7 @@
 package step
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"testing"
 
 	"github.com/pborman/uuid"
@@ -27,7 +27,7 @@ func TestStepValuesSchemaTemplate(t *testing.T) {
 			"defaultName=def",
 		},
 	}
-	cmd_test_helpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	schemaTemplate := `{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",

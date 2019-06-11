@@ -2,11 +2,11 @@ package step_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/stretchr/testify/assert"
@@ -62,7 +62,7 @@ func TestServiceLinking(t *testing.T) {
 		},
 	}
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{fromNspc, toNspc, svcInFromNs, svcInToNs, svcDummyInFromNs},
 		nil,
 		gits.NewGitCLI(),

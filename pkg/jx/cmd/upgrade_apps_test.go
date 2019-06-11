@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -17,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -33,7 +33,7 @@ import (
 var timeout = 5 * time.Second
 
 func TestUpgradeAppForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -178,7 +178,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -270,7 +270,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -375,7 +375,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -482,7 +482,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -554,7 +554,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 }
 
 func TestUpgradeAppToLatestForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -618,7 +618,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAllAppsForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)

@@ -2,6 +2,7 @@ package helm_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	helm_cmd "github.com/jenkins-x/jx/pkg/jx/cmd/step/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/mholt/archiver"
@@ -20,7 +20,7 @@ import (
 )
 
 func TestApplyAppsTemplateOverrides(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "dummy", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "dummy", t)
 	_, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
 

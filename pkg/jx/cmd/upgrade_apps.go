@@ -98,12 +98,12 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app [--gitops]")
 	cmd.Flags().StringVarP(&o.Version, "version", "v", "",
 		"The chart version to install [--gitops]")
-	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "The Namespace to promote to [--no-gitops]")
+	cmd.Flags().StringVarP(&o.Namespace, opts.OptionNamespace, "", "", "The Namespace to promote to [--no-gitops]")
 	cmd.Flags().StringArrayVarP(&o.Set, "set", "s", []string{},
 		"The Helm parameters to pass in while upgrading [--no-gitops]")
 	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
 		"Should we run helm update first to ensure we use the latest version (available when NOT using GitOps for your dev environment)")
-	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", "",
+	cmd.Flags().StringVarP(&o.ReleaseName, opts.OptionRelease, "r", "",
 		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev environment)")
 	cmd.Flags().BoolVarP(&o.AskAll, "ask-all", "", false, "Ask all configuration questions. "+
 		"By default existing answers are reused automatically.")
@@ -152,7 +152,7 @@ func (o *UpgradeAppsOptions) Run() error {
 	if o.GitOps {
 		msg := "Unable to specify --%s when using GitOps for your dev environment"
 		if o.Namespace != "" {
-			return util.InvalidOptionf(optionNamespace, o.ReleaseName, msg, optionNamespace)
+			return util.InvalidOptionf(opts.OptionNamespace, o.ReleaseName, msg, opts.OptionNamespace)
 		}
 		if len(o.Set) > 0 {
 			return util.InvalidOptionf(optionSet, o.ReleaseName, msg, optionSet)

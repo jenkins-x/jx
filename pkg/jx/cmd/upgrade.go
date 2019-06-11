@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/upgrade"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +54,7 @@ func NewCmdUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdUpgradeCLI(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeBinaries(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeCluster(commonOpts))
-	cmd.AddCommand(NewCmdUpgradeIngress(commonOpts))
+	cmd.AddCommand(upgrade.NewCmdUpgradeIngress(commonOpts))
 	cmd.AddCommand(NewCmdUpgradePlatform(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeExtensions(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeApps(commonOpts))

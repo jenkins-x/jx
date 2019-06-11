@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
@@ -32,19 +33,19 @@ var (
 
 // UpgradeAddonsOptions the options for the create spring command
 type UpgradeAddonsOptions struct {
-	CreateOptions
+	create.CreateOptions
 
 	Namespace   string
 	Set         string
 	VersionsDir string
 
-	InstallFlags InstallFlags
+	InstallFlags create.InstallFlags
 }
 
 // NewCmdUpgradeAddons defines the command
 func NewCmdUpgradeAddons(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeAddonsOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: create.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -63,8 +64,7 @@ func NewCmdUpgradeAddons(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	options.addFlags(cmd)
-
-	options.InstallFlags.addCloudEnvOptions(cmd)
+	options.InstallFlags.AddCloudEnvOptions(cmd)
 
 	cmd.AddCommand(NewCmdUpgradeAddonProw(commonOpts))
 

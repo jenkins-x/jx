@@ -5,12 +5,13 @@ package controller_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/controller"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
 
@@ -27,16 +28,16 @@ import (
 )
 
 func TestSequentialWorkflow(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -98,7 +99,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -116,7 +117,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		resources_test.NewMockInstaller(),
 	)
 
-	err = cmd_test_helpers.CreateTestEnvironmentDir(o.CommonOptions)
+	err = testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -129,15 +130,15 @@ func TestSequentialWorkflow(t *testing.T) {
 			spec := workflow.Spec
 			assert.Equal(t, 2, len(spec.Steps), "number of steps")
 			if len(spec.Steps) > 0 {
-				cmd_test_helpers.AssertPromoteStep(t, &spec.Steps[0], "staging")
+				testhelpers.AssertPromoteStep(t, &spec.Steps[0], "staging")
 			}
 			if len(spec.Steps) > 1 {
-				cmd_test_helpers.AssertPromoteStep(t, &spec.Steps[1], "production")
+				testhelpers.AssertPromoteStep(t, &spec.Steps[1], "production")
 			}
 		}
 	}
 
-	a, err := cmd_test_helpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
+	a, err := testhelpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -148,63 +149,63 @@ func TestSequentialWorkflow(t *testing.T) {
 		return
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	err = o.Run()
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// still no PR merged so cannot create a PR for production
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
 		return
 	}
 
 	// now lets poll again due to change to the activity to detect the staging is complete
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
 		return
 	}
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
 
-	cmd_test_helpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
+	testhelpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
 func TestWorkflowManualPromote(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -262,7 +263,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	workflowName := "default"
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -276,13 +277,13 @@ func TestWorkflowManualPromote(t *testing.T) {
 		resources_test.NewMockInstaller(),
 	)
 
-	err = cmd_test_helpers.CreateTestEnvironmentDir(o.CommonOptions)
+	err = testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
 
-	a, err := cmd_test_helpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", workflowName)
+	a, err := testhelpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", workflowName)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -293,27 +294,27 @@ func TestWorkflowManualPromote(t *testing.T) {
 		return
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets make sure we don't create a PR for production as its manual
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
 		return
 	}
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 
 	// now lets do a manual promotion
 	version := a.Spec.Version
@@ -339,63 +340,63 @@ func TestWorkflowManualPromote(t *testing.T) {
 		return
 	}
 
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
 // TestParallelWorkflow lets test promoting to A + B then when A + B is complete then C
 func TestParallelWorkflow(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -471,7 +472,7 @@ func TestParallelWorkflow(t *testing.T) {
 	step2 := workflow.CreateWorkflowPromoteStep(envNameB)
 	step3 := workflow.CreateWorkflowPromoteStep(envNameC, step1, step2)
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			envA,
@@ -490,7 +491,7 @@ func TestParallelWorkflow(t *testing.T) {
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	err = cmd_test_helpers.CreateTestEnvironmentDir(o.CommonOptions)
+	err = testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -503,18 +504,18 @@ func TestParallelWorkflow(t *testing.T) {
 			spec := workflow.Spec
 			assert.Equal(t, 3, len(spec.Steps), "number of steps")
 			if len(spec.Steps) > 0 {
-				cmd_test_helpers.AssertPromoteStep(t, &spec.Steps[0], envNameA)
+				testhelpers.AssertPromoteStep(t, &spec.Steps[0], envNameA)
 			}
 			if len(spec.Steps) > 1 {
-				cmd_test_helpers.AssertPromoteStep(t, &spec.Steps[1], envNameB)
+				testhelpers.AssertPromoteStep(t, &spec.Steps[1], envNameB)
 			}
 			if len(spec.Steps) > 2 {
-				cmd_test_helpers.AssertPromoteStep(t, &spec.Steps[2], envNameC)
+				testhelpers.AssertPromoteStep(t, &spec.Steps[2], envNameC)
 			}
 		}
 	}
 
-	a, err := cmd_test_helpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
+	a, err := testhelpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -525,83 +526,83 @@ func TestParallelWorkflow(t *testing.T) {
 		return
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, envNameA)
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, envNameB)
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, envNameA)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, envNameB)
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	err = o.Run()
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 
 	// still no PR merged so cannot create a PR for C until A and B complete
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 
 	// test no PR on production until staging completed
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, repoA.Owner, repoA.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, repoA.Owner, repoA.GitRepo.Name, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, repoA, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, repoA, 1) {
 		return
 	}
 
 	// now lets poll again due to change to the activity to detect the staging is complete
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, repoB.Owner, repoB.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, repoB.Owner, repoB.GitRepo.Name, 1) {
 		return
 	}
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, repoB, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, repoB, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	// C should have started now
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, envNameC)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameC, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, envNameC)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameC, v1.ActivityStatusTypeRunning)
 
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, repoC.Owner, repoC.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, repoC.Owner, repoC.GitRepo.Name, 1) {
 		return
 	}
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, repoC, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, repoC, 1) {
 		return
 	}
 
 	// should be complete now
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, envNameC, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameC, v1.ActivityStatusTypeSucceeded)
 
-	cmd_test_helpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
+	testhelpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
 // TestNewVersionWhileExistingWorkflow lets test that we create a new workflow and terminate
 // the old workflow if we find a new version
 func TestNewVersionWhileExistingWorkflow(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -662,7 +663,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -679,7 +680,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	err = cmd_test_helpers.CreateTestEnvironmentDir(o.CommonOptions)
+	err = testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -692,15 +693,15 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 			spec := workflow.Spec
 			assert.Equal(t, 2, len(spec.Steps), "number of steps")
 			if len(spec.Steps) > 0 {
-				cmd_test_helpers.AssertPromoteStep(t, &spec.Steps[0], "staging")
+				testhelpers.AssertPromoteStep(t, &spec.Steps[0], "staging")
 			}
 			if len(spec.Steps) > 1 {
-				cmd_test_helpers.AssertPromoteStep(t, &spec.Steps[1], "production")
+				testhelpers.AssertPromoteStep(t, &spec.Steps[1], "production")
 			}
 		}
 	}
 
-	a, err := cmd_test_helpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
+	a, err := testhelpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -711,61 +712,61 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		return
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets trigger a new pipeline release which should close the old version
 	aOld := a
-	a, err = cmd_test_helpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "2", myFlowName)
+	a, err = testhelpers.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "2", myFlowName)
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	cmd_test_helpers.AssertWorkflowStatus(t, activities, aOld.Name, v1.ActivityStatusTypeAborted)
+	testhelpers.AssertWorkflowStatus(t, activities, aOld.Name, v1.ActivityStatusTypeAborted)
 
 	// still no PR merged so cannot create a PR for production
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 2) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 2) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	cmd_test_helpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 2) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 2) {
 		return
 	}
 
 	// now lets poll again due to change to the activity to detect the staging is complete
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
-	cmd_test_helpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	if !cmd_test_helpers.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
+	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
 		return
 	}
-	if !cmd_test_helpers.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
+	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
 		return
 	}
 
-	cmd_test_helpers.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	cmd_test_helpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
 
-	cmd_test_helpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
+	testhelpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
 func TestPullRequestNumber(t *testing.T) {
@@ -786,4 +787,11 @@ func TestPullRequestNumber(t *testing.T) {
 			assert.Equal(t, expected, actual, "pullRequestURLToNumber() for %s", u)
 		}
 	}
+}
+
+func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *controller.ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
+	o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
+	err := o.Run()
+	assert.NoError(t, err, "Failed to react to PipelineActivity changes")
+	return err
 }

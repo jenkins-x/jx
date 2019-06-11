@@ -3,8 +3,8 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"
@@ -18,16 +18,16 @@ import (
 )
 
 func TestSetVersionJavascript(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -65,16 +65,16 @@ func TestSetVersionJavascript(t *testing.T) {
 }
 
 func TestSetVersionChart(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 

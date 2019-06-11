@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	"sigs.k8s.io/yaml"
@@ -42,7 +43,7 @@ var (
 
 // UpgradePlatformOptions the options for the create spring command
 type UpgradePlatformOptions struct {
-	InstallOptions
+	create.InstallOptions
 
 	Version       string
 	ReleaseName   string
@@ -52,13 +53,13 @@ type UpgradePlatformOptions struct {
 	AlwaysUpgrade bool
 	UpdateSecrets bool
 
-	InstallFlags InstallFlags
+	InstallFlags create.InstallFlags
 }
 
 // NewCmdUpgradePlatform defines the command
 func NewCmdUpgradePlatform(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradePlatformOptions{
-		InstallOptions: InstallOptions{
+		InstallOptions: create.InstallOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -85,7 +86,7 @@ func NewCmdUpgradePlatform(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true].")
 	cmd.Flags().BoolVarP(&options.UpdateSecrets, "update-secrets", "", false, "Regenerate adminSecrets.yaml on upgrade")
 
-	options.InstallFlags.addCloudEnvOptions(cmd)
+	options.InstallFlags.AddCloudEnvOptions(cmd)
 
 	return cmd
 }
@@ -147,7 +148,7 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	wrkDir := ""
 
-	io := &InstallOptions{}
+	io := &create.InstallOptions{}
 	io.CommonOptions = o.CommonOptions
 	io.Flags = o.InstallFlags
 	versionsDir, err := io.CloneJXVersionsRepo(o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
@@ -156,7 +157,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if targetVersion == "" {
-		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(versionsDir, configStore)
+		targetVersion, err = create.LoadVersionFromCloudEnvironmentsDir(versionsDir, configStore)
 		if err != nil {
 			return err
 		}
@@ -204,7 +205,7 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	// clone the environments repo
 	if wrkDir == "" {
-		wrkDir, err = o.cloneJXCloudEnvironmentsRepo()
+		wrkDir, err = o.CloneJXCloudEnvironmentsRepo()
 		if err != nil {
 			return errors.Wrap(err, "failed to clone the jx cloud environments repo")
 		}

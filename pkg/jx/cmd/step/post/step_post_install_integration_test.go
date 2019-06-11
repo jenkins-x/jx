@@ -4,6 +4,7 @@ package post_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/post"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"os"
 	"testing"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins/fake"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
@@ -24,16 +24,16 @@ import (
 )
 
 func TestStepPostInstall(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -52,7 +52,7 @@ func TestStepPostInstall(t *testing.T) {
 			},
 		},
 	}
-	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
