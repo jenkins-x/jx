@@ -119,6 +119,7 @@ func (tf *terraformFileWriter) write(path string, key string, value string) {
 	}
 	tf.err = terraform.WriteKeyValueToFileIfNotExists(path, key, value)
 }
+
 // Validate validates that all args are ok to create a GKE cluster
 func (g GKECluster) Validate() error {
 	if len(g.ClusterName()) >= 27 {
