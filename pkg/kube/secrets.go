@@ -58,14 +58,14 @@ func DefaultModifySecret(kubeClient kubernetes.Interface, ns string, name string
 		return secret, err
 	}
 	if create {
-		log.Logger().Infof("Creating Secret %s in namespace %s\n", util.ColorInfo(name), util.ColorInfo(ns))
+		log.Logger().Infof("Creating Secret %s in namespace %s", util.ColorInfo(name), util.ColorInfo(ns))
 		_, err = secretInterface.Create(secret)
 		if err != nil {
 			return secret, errors.Wrapf(err, "Failed to create Secret %s in namespace %s", name, ns)
 		}
 		return secret, err
 	}
-	log.Logger().Infof("Updating Secret %s in namespace %s\n", util.ColorInfo(name), util.ColorInfo(ns))
+	log.Logger().Infof("Updating Secret %s in namespace %s", util.ColorInfo(name), util.ColorInfo(ns))
 	_, err = secretInterface.Update(secret)
 	if err != nil {
 		return secret, errors.Wrapf(err, "Failed to update Secret %s in namespace %s", name, ns)

@@ -764,7 +764,7 @@ func (f *factory) CreateHelm(verbose bool,
 		featureFlag = "no-tiller-server"
 	}
 	if verbose {
-		log.Logger().Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+		log.Logger().Infof("Using helmBinary %s with feature flag: %s", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
 	}
 	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI

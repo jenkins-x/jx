@@ -42,7 +42,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		branchPattern = patterns.DefaultBranchPattern
 	}
 	if branchPattern == "" {
-		log.Logger().Infof("Querying if the repo is a fork at %s with kind %s\n", gitProvider.ServerURL(), gitProvider.Kind())
+		log.Logger().Infof("Querying if the repo is a fork at %s with kind %s", gitProvider.ServerURL(), gitProvider.Kind())
 		fork, err := o.Git().IsFork(dir)
 		if err != nil {
 			return fmt.Errorf("No branch pattern specified and could not determine if the Git repository is a fork: %s", err)
@@ -58,7 +58,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			}
 			// TODO do we need to scape any wacky characters to make it a valid branch pattern?
 			branchPattern = branch
-			log.Logger().Infof("No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI/CD on to: %s\n", branchPattern)
+			log.Logger().Infof("No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI/CD on to: %s", branchPattern)
 		} else {
 			branchPattern = jenkins.BranchPattern(gitProvider.Kind())
 		}
@@ -130,7 +130,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			if err != nil {
 				return fmt.Errorf("error creating Jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
 			}
-			log.Logger().Infof("Created credential %s for host %s user %s\n", util.ColorInfo(credentials), util.ColorInfo(u), util.ColorInfo(user.Username))
+			log.Logger().Infof("Created credential %s for host %s user %s", util.ColorInfo(credentials), util.ColorInfo(u), util.ColorInfo(user.Username))
 		}
 	}
 	org := gitInfo.Organisation
@@ -164,7 +164,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			if failIfExists {
 				return fmt.Errorf("Job already exists in Jenkins at %s", job.Url)
 			} else {
-				log.Logger().Infof("Job already exists in Jenkins at %s\n", job.Url)
+				log.Logger().Infof("Job already exists in Jenkins at %s", job.Url)
 			}
 		} else {
 			err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
@@ -175,7 +175,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			if err != nil {
 				return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
 			}
-			log.Logger().Infof("Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
+			log.Logger().Infof("Created Jenkins Project: %s", util.ColorInfo(job.Url))
 			o.LogImportedProject(isEnvironment, gitInfo)
 
 			params := url.Values{}
@@ -209,13 +209,13 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 func (o *CommonOptions) LogImportedProject(isEnvironment bool, gitInfo *gits.GitRepository) {
 	log.Blank()
 	if !isEnvironment {
-		log.Logger().Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
-		log.Logger().Infof("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
-		log.Logger().Infof("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
-		log.Logger().Infof("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
+		log.Logger().Infof("Watch pipeline activity via:    %s", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
+		log.Logger().Infof("Browse the pipeline log via:    %s", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
+		log.Logger().Infof("You can list the pipelines via: %s", util.ColorInfo("jx get pipelines"))
+		log.Logger().Infof("When the pipeline is complete:  %s", util.ColorInfo("jx get applications"))
 		log.Blank()
-		log.Logger().Infof("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
+		log.Logger().Infof("For more help on available commands see: %s", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
 		log.Blank()
 	}
-	log.Logger().Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary images get downloaded!\n\n"))
+	log.Logger().Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary images get downloaded!\n"))
 }

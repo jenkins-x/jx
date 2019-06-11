@@ -49,7 +49,7 @@ func (o *StepGitOptions) dropRepositories(repoIds []string, message string) erro
 	for _, repoId := range repoIds {
 		err := o.dropRepository(repoId, message)
 		if err != nil {
-			log.Logger().Warnf("Failed to drop repository %s: %s\n", util.ColorInfo(repoIds), util.ColorError(err))
+			log.Logger().Warnf("Failed to drop repository %s: %s", util.ColorInfo(repoIds), util.ColorError(err))
 			if answer == nil {
 				answer = err
 			}
@@ -62,7 +62,7 @@ func (o *StepGitOptions) dropRepository(repoId string, message string) error {
 	if repoId == "" {
 		return nil
 	}
-	log.Logger().Infof("Dropping nexus release repository %s\n", util.ColorInfo(repoId))
+	log.Logger().Infof("Dropping nexus release repository %s", util.ColorInfo(repoId))
 	err := o.RunCommand("mvn",
 		"org.sonatype.plugins:nexus-staging-maven-plugin:1.6.5:rc-drop",
 		"-DserverId=oss-sonatype-staging",
@@ -70,9 +70,9 @@ func (o *StepGitOptions) dropRepository(repoId string, message string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\""+message+"\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		log.Logger().Warnf("Failed to drop repository %s due to: %s\n", repoId, err)
+		log.Logger().Warnf("Failed to drop repository %s due to: %s", repoId, err)
 	} else {
-		log.Logger().Infof("Dropped repository %s\n", util.ColorInfo(repoId))
+		log.Logger().Infof("Dropped repository %s", util.ColorInfo(repoId))
 	}
 	return err
 }
@@ -81,7 +81,7 @@ func (o *StepGitOptions) releaseRepository(repoId string) error {
 	if repoId == "" {
 		return nil
 	}
-	log.Logger().Infof("Releasing nexus release repository %s\n", util.ColorInfo(repoId))
+	log.Logger().Infof("Releasing nexus release repository %s", util.ColorInfo(repoId))
 	options := o
 	err := options.RunCommand("mvn",
 		"org.sonatype.plugins:nexus-staging-maven-plugin:1.6.5:rc-release",
@@ -90,9 +90,9 @@ func (o *StepGitOptions) releaseRepository(repoId string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\"Next release is ready\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		log.Logger().Warnf("Failed to release repository %s due to: %s\n", repoId, err)
+		log.Logger().Warnf("Failed to release repository %s due to: %s", repoId, err)
 	} else {
-		log.Logger().Infof("Released repository %s\n", util.ColorInfo(repoId))
+		log.Logger().Infof("Released repository %s", util.ColorInfo(repoId))
 	}
 	return err
 }

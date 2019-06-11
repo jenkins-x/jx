@@ -60,16 +60,16 @@ func NewCmdStepHelmEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *StepHelmEnvOptions) Run() error {
 	h := o.Helm()
 	if h != nil {
-		log.Logger().Info("\n")
-		log.Logger().Info("# helm environment variables\n")
+		log.Logger().Info("")
+		log.Logger().Info("# helm environment variables")
 		envVars := h.Env()
 		keys := util.SortedMapKeys(envVars)
 		for _, key := range keys {
 			if strings.HasPrefix(key, "HELM") {
-				log.Logger().Infof("export %s=\"%s\"\n", key, envVars[key])
+				log.Logger().Infof("export %s=\"%s\"", key, envVars[key])
 			}
 		}
-		log.Logger().Info("\n")
+		log.Logger().Info("")
 	}
 	return nil
 }

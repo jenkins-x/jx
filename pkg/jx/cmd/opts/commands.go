@@ -36,7 +36,7 @@ func (o *CommonOptions) RunCommand(name string, args ...string) error {
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		log.Logger().Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -49,7 +49,7 @@ func (o *CommonOptions) RunCommandVerbose(name string, args ...string) error {
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		log.Logger().Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -65,7 +65,7 @@ func (o *CommonOptions) RunCommandVerboseAt(dir string, name string, args ...str
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		log.Logger().Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -90,7 +90,7 @@ func (o *CommonOptions) RunCommandInteractive(interactive bool, name string, arg
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		log.Logger().Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -109,7 +109,7 @@ func (o *CommonOptions) RunCommandInteractiveInDir(interactive bool, dir string,
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		log.Logger().Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
 	return err
 }

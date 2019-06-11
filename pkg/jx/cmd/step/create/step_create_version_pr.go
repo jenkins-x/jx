@@ -127,7 +127,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 			return err
 		}
 
-		log.Logger().Infof("the latest builder image version is %s\n", util.ColorInfo(o.builderImageVersion))
+		log.Logger().Infof("the latest builder image version is %s", util.ColorInfo(o.builderImageVersion))
 	}
 
 	if len(o.Includes) == 0 {
@@ -140,7 +140,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 			if err != nil {
 				return errors.Wrapf(err, "failed to find latest chart version for %s", o.Name)
 			}
-			log.Logger().Infof("found latest version %s for chart %s\n", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
+			log.Logger().Infof("found latest version %s for chart %s", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
 		}
 		if o.Version == "" {
 			return util.MissingOption("version")
@@ -224,7 +224,7 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersions(dir string
 		}
 		v, err := o.findLatestChartVersion(name)
 		if err != nil {
-			log.Logger().Warnf("failed to find latest version of %s: %s\n", name, err.Error())
+			log.Logger().Warnf("failed to find latest version of %s: %s", name, err.Error())
 			return true, nil
 		}
 		if v != stableVersion.Version {
@@ -281,9 +281,9 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string
 	if len(info) == 0 {
 		return "", fmt.Errorf("no version found for chart %s", name)
 	}
-	log.Logger().Debugf("found %d versions:\n", len(info))
+	log.Logger().Debugf("found %d versions:", len(info))
 	for _, v := range info {
-		log.Logger().Debugf("    %s:\n", v)
+		log.Logger().Debugf("    %s:", v)
 	}
 	return info[0], nil
 }
@@ -293,7 +293,7 @@ func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
 	if o.updatedHelmRepo {
 		return nil
 	}
-	log.Logger().Info("updating helm repositories to find the latest chart versions...\n")
+	log.Logger().Info("updating helm repositories to find the latest chart versions...")
 	err := o.Helm().UpdateRepo()
 	if err != nil {
 		return errors.Wrap(err, "failed to update helm repos")

@@ -45,7 +45,7 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 		if !isReady {
 			return false, nil
 		}
-		log.Logger().Infof("Ready Cert: %s\n", util.ColorInfo(name))
+		log.Logger().Infof("Ready Cert: %s", util.ColorInfo(name))
 		return true, nil
 	})
 	if err != nil {

@@ -226,7 +226,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
 		err := createSourceRepositoryIfMissing(jxClient, ns, k)
 		if err != nil {
-			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
+			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s", err.Error())
 		}
 	}
 

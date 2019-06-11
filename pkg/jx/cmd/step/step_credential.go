@@ -153,7 +153,7 @@ func (o *StepCredentialOptions) Run() error {
 
 	value, ok := data[key]
 	if !ok {
-		log.Logger().Warnf("Secret %s in namespace %s does not have key %s\n", name, ns, key)
+		log.Logger().Warnf("Secret %s in namespace %s does not have key %s", name, ns, key)
 		if o.Optional {
 			return nil
 		}

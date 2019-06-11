@@ -53,6 +53,6 @@ func NewCmdStepGetBuildNumber(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *StepGetBuildNumberOptions) Run() error {
 	text := o.GetBuildNumber()
-	log.Logger().Infof("%s\n", text)
+	log.Logger().Infof("%s", text)
 	return nil
 }

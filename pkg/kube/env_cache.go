@@ -73,7 +73,7 @@ func (c *EnvironmentNamespaceCache) Item(name string) *v1.Environment {
 func (c *EnvironmentNamespaceCache) onEnvironmentObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	Environment, ok := obj.(*v1.Environment)
 	if !ok {
-		log.Logger().Warnf("Object is not a Environment %#v\n", obj)
+		log.Logger().Warnf("Object is not a Environment %#v", obj)
 		return
 	}
 	if Environment != nil {
@@ -84,7 +84,7 @@ func (c *EnvironmentNamespaceCache) onEnvironmentObj(obj interface{}, jxClient v
 func (c *EnvironmentNamespaceCache) onEnvironmentDelete(obj interface{}, jxClient versioned.Interface, ns string) {
 	Environment, ok := obj.(*v1.Environment)
 	if !ok {
-		log.Logger().Warnf("Object is not a Environment %#v\n", obj)
+		log.Logger().Warnf("Object is not a Environment %#v", obj)
 		return
 	}
 	if Environment != nil {

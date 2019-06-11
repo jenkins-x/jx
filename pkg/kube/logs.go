@@ -28,7 +28,7 @@ func TailLogs(ns string, pod string, containerName string, errOut io.Writer, out
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Start()
 	if err != nil {
-		log.Logger().Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
 
 	scanner := bufio.NewScanner(stdout)

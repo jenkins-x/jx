@@ -143,7 +143,7 @@ func (o *StepStashOptions) Run() error {
 			if sourceURL == "" {
 				_, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 				if err != nil {
-					log.Logger().Warnf("Could not find a .git directory: %s\n", err)
+					log.Logger().Warnf("Could not find a .git directory: %s", err)
 				} else {
 					sourceURL, err = o.DiscoverGitURL(gitConf)
 				}
@@ -211,7 +211,7 @@ func (o *StepStashOptions) Run() error {
 	}
 
 	for _, u := range urls {
-		log.Logger().Infof("stashed: %s\n", util.ColorInfo(u))
+		log.Logger().Infof("stashed: %s", util.ColorInfo(u))
 	}
 
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it

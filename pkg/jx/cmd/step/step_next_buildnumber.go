@@ -85,7 +85,7 @@ func (o *StepNextBuildNumberOptions) Run() error {
 	for i := 0; i < attempts; i++ {
 		buildNum, err := buildNumGen.NextBuildNumber(pID)
 		if err == nil {
-			log.Logger().Infof("%s\n", buildNum)
+			log.Logger().Infof("%s", buildNum)
 			return nil
 		}
 

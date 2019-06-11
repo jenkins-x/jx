@@ -359,7 +359,7 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 		errorResponse := errorResponse{}
 		json.Unmarshal(errorBody, &errorResponse)
 
-		log.Logger().Infof("%s\n", util.ColorError(errorResponse.Message))
+		log.Logger().Infof("%s", util.ColorError(errorResponse.Message))
 		return answer, errors.New("unable to create spring quickstart")
 	}
 

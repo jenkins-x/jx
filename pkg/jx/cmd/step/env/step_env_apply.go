@@ -141,7 +141,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	exists, err = util.FileExists(chartFile)
 	if exists && err == nil {
 		// lets setup the Helmer based on the current settings
-		log.Logger().Infof("Loading the latest Dev Environment configuration from %s\n", devEnvFile)
+		log.Logger().Infof("Loading the latest Dev Environment configuration from %s", devEnvFile)
 
 		env := v1.Environment{}
 		data, err := ioutil.ReadFile(devEnvFile)
@@ -227,6 +227,6 @@ func (o *StepEnvApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "applying the helm chart in dir %s", dir)
 	}
-	log.Logger().Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Environment applied in namespace %s", util.ColorInfo(ns))
 	return nil
 }

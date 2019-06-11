@@ -81,7 +81,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("build pack is %s\n", settings.BuildPackURL)
+	log.Logger().Infof("build pack is %s", settings.BuildPackURL)
 
 	defaultJenkinsfile := filepath.Join(dir, jenkinsfile.Name)
 	jenkinsfile := jenkinsfile.Name

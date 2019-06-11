@@ -29,7 +29,7 @@ func (o *CommonOptions) EnsureServiceAccount(ns string, serviceAccountName strin
 		if err != nil {
 			return fmt.Errorf("Failed to create ServiceAccount %s in namespace %s: %s", serviceAccountName, ns, err)
 		}
-		log.Logger().Infof("Created ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(ns))
+		log.Logger().Infof("Created ServiceAccount %s in namespace %s", util.ColorInfo(serviceAccountName), util.ColorInfo(ns))
 	}
 	return err
 }
@@ -38,7 +38,7 @@ func (o *CommonOptions) EnsureServiceAccount(ns string, serviceAccountName strin
 // Todo: use permissions from somewhere, or provide common ones in a class that we can pass in here
 // this is an unimplemented and unused method for building upon that may eventually be of use
 func (o *CommonOptions) EnsureClusterRoleExists(roleName string, namespace string) error {
-	log.Logger().Infof("Ensuring cluster role exists, role name: %s, namespace: %s\n", roleName, namespace)
+	log.Logger().Infof("Ensuring cluster role exists, role name: %s, namespace: %s", roleName, namespace)
 
 	client, err := o.KubeClient()
 	if err != nil {
@@ -47,7 +47,7 @@ func (o *CommonOptions) EnsureClusterRoleExists(roleName string, namespace strin
 
 	_, err = client.RbacV1().ClusterRoles().Get(roleName, meta_v1.GetOptions{})
 	if err != nil {
-		log.Logger().Infof("Trying to create ClusterRole %s in namespace %s\n", roleName, namespace)
+		log.Logger().Infof("Trying to create ClusterRole %s in namespace %s", roleName, namespace)
 
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -60,7 +60,7 @@ func (o *CommonOptions) EnsureClusterRoleExists(roleName string, namespace strin
 		if err != nil {
 			return fmt.Errorf("Failed to create ClusterRole %s: %s", roleName, err)
 		}
-		log.Logger().Infof("Created ClusterRole %s in namespace %s\n", roleName, namespace)
+		log.Logger().Infof("Created ClusterRole %s in namespace %s", roleName, namespace)
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func (o *CommonOptions) EnsureClusterRoleBinding(clusterRoleBindingName string, 
 
 	_, err = client.RbacV1().ClusterRoleBindings().Get(clusterRoleBindingName, meta_v1.GetOptions{})
 	if err != nil {
-		log.Logger().Infof("Trying to create ClusterRoleBinding %s for role: %s and ServiceAccount: %s/%s\n",
+		log.Logger().Infof("Trying to create ClusterRoleBinding %s for role: %s and ServiceAccount: %s/%s",
 			clusterRoleBindingName, role, serviceAccountNamespace, serviceAccountName)
 
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{
@@ -98,7 +98,7 @@ func (o *CommonOptions) EnsureClusterRoleBinding(clusterRoleBindingName string, 
 		if err != nil {
 			return fmt.Errorf("Failed to create ClusterRoleBindings %s: %s", clusterRoleBindingName, err)
 		}
-		log.Logger().Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+		log.Logger().Infof("Created ClusterRoleBinding %s", clusterRoleBindingName)
 	}
 	return nil
 }

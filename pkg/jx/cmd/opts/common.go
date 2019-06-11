@@ -190,13 +190,13 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Logger().Infof("Setting the dev namespace to: %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Setting the dev namespace to: %s", util.ColorInfo(ns))
 }
 
 func (o *CommonOptions) SetCurrentNamespace(ns string) {
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Logger().Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Setting the current namespace to: %s", util.ColorInfo(ns))
 }
 
 // AddBaseFlags adds the base flags for all commands
@@ -458,7 +458,7 @@ func (o *CommonOptions) Helm() helm.Helmer {
 			if noTillerFlag == "true" {
 				helmTemplate = true
 			} else {
-				log.Logger().Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
+				log.Logger().Warnf("Failed to retrieve team settings: %v - falling back to default settings...", err)
 			}
 		}
 		return o.NewHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
@@ -561,7 +561,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 		if name != "" && o.BatchMode {
 			server = config.GetServerByName(name)
 			if server == nil {
-				log.Logger().Warnf("Current server %s no longer exists\n", name)
+				log.Logger().Warnf("Current server %s no longer exists", name)
 			}
 		}
 	}
@@ -711,7 +711,7 @@ func (o *CommonOptions) Retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		log.Logger().Warnf("\nretrying after error:%s\n\n", err)
+		log.Logger().Warnf("\nretrying after error:%s\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -745,7 +745,7 @@ func (o *CommonOptions) RetryUntilFatalError(attempts int, sleep time.Duration, 
 
 		time.Sleep(sleep)
 
-		log.Logger().Infof("retrying after error:%s\n", err)
+		log.Logger().Infof("retrying after error:%s", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -780,7 +780,7 @@ func (o *CommonOptions) RetryQuiet(attempts int, sleep time.Duration, call func(
 				dot = false
 				log.Blank()
 			}
-			log.Logger().Warnf("%s\n\n", lastMessage)
+			log.Logger().Warnf("%s\n", lastMessage)
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
@@ -818,7 +818,7 @@ func (o *CommonOptions) RetryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 				dot = false
 				log.Blank()
 			}
-			log.Logger().Warnf("%s\n\n", lastMessage)
+			log.Logger().Warnf("%s\n", lastMessage)
 		}
 	}
 }

@@ -111,7 +111,7 @@ func (o *StepGpgCredentialsOptions) GenerateGpgFiles(secret *v1.Secret) error {
 		if err != nil {
 			return err
 		}
-		log.Logger().Infof("Generated file %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("Generated file %s", util.ColorInfo(fileName))
 	}
 	return nil
 }

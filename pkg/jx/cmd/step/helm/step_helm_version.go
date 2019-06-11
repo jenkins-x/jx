@@ -90,6 +90,6 @@ func (o *StepHelmVersionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Modified file %s to set the chart to version %s\n", util.ColorInfo(chartFile), util.ColorInfo(version))
+	log.Logger().Infof("Modified file %s to set the chart to version %s", util.ColorInfo(chartFile), util.ColorInfo(version))
 	return nil
 }

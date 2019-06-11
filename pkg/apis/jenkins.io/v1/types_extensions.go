@@ -217,8 +217,8 @@ func (e *ExtensionExecution) Execute() (err error) {
 	if err != nil {
 		return err
 	}
-	log.Logger().Debugf("Environment Variables:\n %s\n", e.EnvironmentVariables)
-	log.Logger().Debugf("Script:\n %s\n", e.Script)
+	log.Logger().Debugf("Environment Variables:\n %s", e.EnvironmentVariables)
+	log.Logger().Debugf("Script:\n %s", e.Script)
 	envVars := make(map[string]string, 0)
 	for _, v := range e.EnvironmentVariables {
 		envVars[v.Name] = v.Value

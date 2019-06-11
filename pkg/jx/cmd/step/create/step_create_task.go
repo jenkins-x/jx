@@ -222,7 +222,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.KanikoSecretMount == "" {
 		o.KanikoSecretMount = kanikoSecretMount
 	}
-	log.Logger().Debugf("cloning git for %s\n", o.CloneGitURL)
+	log.Logger().Debugf("cloning git for %s", o.CloneGitURL)
 	if o.VersionResolver == nil {
 		o.VersionResolver, err = o.CreateVersionResolver("", "")
 		if err != nil {
@@ -234,10 +234,10 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.cloneDir = o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
 		if o.DeleteTempDir {
 			defer func() {
-				log.Logger().Infof("removing the temp directory %s\n", o.cloneDir)
+				log.Logger().Infof("removing the temp directory %s", o.cloneDir)
 				err := os.RemoveAll(o.cloneDir)
 				if err != nil {
-					log.Logger().Warnf("failed to delete dir %s: %s\n", o.cloneDir, err.Error())
+					log.Logger().Warnf("failed to delete dir %s: %s", o.cloneDir, err.Error())
 				}
 			}()
 		}
@@ -247,7 +247,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
-	log.Logger().Debugf("setting up docker registry for %s\n", o.CloneGitURL)
+	log.Logger().Debugf("setting up docker registry for %s", o.CloneGitURL)
 
 	if o.DockerRegistry == "" && !o.InterpretMode {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
@@ -281,7 +281,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.NoApply || o.DryRun || o.InterpretMode {
 		o.BuildNumber = "1"
 	} else {
-		log.Logger().Debugf("generating build number...\n")
+		log.Logger().Debugf("generating build number...")
 
 		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
 
@@ -289,7 +289,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Logger().Debugf("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
+		log.Logger().Debugf("generated build number %s for %s", o.BuildNumber, o.CloneGitURL)
 	}
 	projectConfig, projectConfigFile, err := o.loadProjectConfig()
 	if err != nil {
@@ -347,7 +347,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Debug("about to create the tekton CRDs\n")
+	log.Logger().Debug("about to create the tekton CRDs")
 	tektonCRDs, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRD")
@@ -361,7 +361,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return nil
 	}
 
-	log.Logger().Debugf("created tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
+	log.Logger().Debugf("created tekton CRDs for %s", tektonCRDs.PipelineRun().Name)
 
 	o.Results = *tektonCRDs
 
@@ -387,7 +387,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 		tektonCRDs.AddLabels(o.labels)
 
-		log.Logger().Debugf(" for %s\n", tektonCRDs.PipelineRun().Name)
+		log.Logger().Debugf(" for %s", tektonCRDs.PipelineRun().Name)
 	}
 	return nil
 }
@@ -794,13 +794,13 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 		dir = strings.Replace(dir, opts.PlaceHolderGitProvider, gitProviderHost, -1)
 		dir = strings.Replace(dir, opts.PlaceHolderDockerRegistryOrg, strings.ToLower(o.GetDockerRegistryOrg(projectConfig, gitInfo)), -1)
 	} else {
-		log.Logger().Warnf("No GitInfo available!\n")
+		log.Logger().Warnf("No GitInfo available!")
 	}
 
 	if step.GetCommand() != "" {
 		if containerName == "" {
 			containerName = o.DefaultImage
-			log.Logger().Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
+			log.Logger().Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s", containerName)
 		}
 
 		s := syntax.Step{}
@@ -835,7 +835,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 		// let allow the docker images to have no actual version which is replaced via the version stream
 		image, err := o.VersionResolver.ResolveDockerImage(modifyStep.Image)
 		if err != nil {
-			log.Logger().Warnf("failed to resolve docker image version: %s due to %s\n", modifyStep.Image, err.Error())
+			log.Logger().Warnf("failed to resolve docker image version: %s due to %s", modifyStep.Image, err.Error())
 		} else {
 			modifyStep.Image = image
 		}
@@ -1007,7 +1007,7 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 	if container.Name == "build-container-build" && !o.NoKaniko {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
-			log.Logger().Warnf("failed to find kaniko secret: %s\n", err)
+			log.Logger().Warnf("failed to find kaniko secret: %s", err)
 		} else {
 			if o.KanikoSecret == "" {
 				o.KanikoSecret = kanikoSecretName
@@ -1019,7 +1019,7 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 			key := o.KanikoSecretKey
 			secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
 			if err != nil {
-				log.Logger().Warnf("failed to find secret %s in namespace %s: %s\n", secretName, ns, err)
+				log.Logger().Warnf("failed to find secret %s in namespace %s: %s", secretName, ns, err)
 			} else if secret != nil && secret.Data != nil && secret.Data[key] != nil {
 				// lets mount the kaniko secret
 				volumeName := "kaniko-secret"
@@ -1095,7 +1095,7 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 		if err != nil {
 			return err
 		}
-		log.Logger().Infof("shallow cloning repository %s to temp dir %s\n", gitURL, tmpDir)
+		log.Logger().Infof("shallow cloning repository %s to temp dir %s", gitURL, tmpDir)
 		err = o.Git().Init(tmpDir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to init a new git repository in directory %s", tmpDir)
@@ -1109,11 +1109,11 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 		commitish := make([]string, 0)
 		if pullRequestNumber != "" {
 			pr := fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branch)
-			log.Logger().Debugf("will fetch %s for %s in dir %s\n", pr, gitURL, tmpDir)
+			log.Logger().Debugf("will fetch %s for %s in dir %s", pr, gitURL, tmpDir)
 			commitish = append(commitish, pr)
 		}
 		if revision != "" {
-			log.Logger().Debugf("will fetch %s for %s in dir %s\n", revision, gitURL, tmpDir)
+			log.Logger().Debugf("will fetch %s for %s in dir %s", revision, gitURL, tmpDir)
 			commitish = append(commitish, revision)
 		} else {
 			commitish = append(commitish, "master")
@@ -1229,7 +1229,7 @@ func getVersionFromFile(dir string) (string, error) {
 		}
 		text := strings.TrimSpace(string(data))
 		if text == "" {
-			log.Logger().Warnf("versions file %s is empty!\n", versionFile)
+			log.Logger().Warnf("versions file %s is empty!", versionFile)
 		} else {
 			version = text
 			if version != "" {
@@ -1342,7 +1342,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 	if c == "" {
 		return nil
 	}
-	log.Logger().Infof("running command: %s\n", util.ColorInfo(c))
+	log.Logger().Infof("running command: %s", util.ColorInfo(c))
 
 	commandText := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
 
@@ -1357,7 +1357,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("%s\n", result)
+	log.Logger().Infof("%s", result)
 	return nil
 }
 
@@ -1501,7 +1501,7 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, task *pipelineapi.Task,
 		}
 	}
 	envMap := toEnvMap(step.Env)
-	log.Logger().Infof("running step %s command: %s in dir: %s with env: %s\n", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(dir), util.ColorInfo(fmt.Sprintf("%#v", envMap)))
+	log.Logger().Infof("running step %s command: %s in dir: %s with env: %s", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(dir), util.ColorInfo(fmt.Sprintf("%#v", envMap)))
 	cmd := util.Command{
 		Name: commandAndArgs[0],
 		Args: commandAndArgs[1:],

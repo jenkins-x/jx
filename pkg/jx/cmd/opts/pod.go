@@ -42,7 +42,7 @@ func (o *CommonOptions) WaitForReadyPodForSelectorLabels(c kubernetes.Interface,
 
 // WaitForReadyKnativeBuildPod waits for knative build pod to be ready
 func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns string, readyOnly bool) (string, error) {
-	log.Logger().Warnf("Waiting for a running Knative build pod in namespace %s\n", ns)
+	log.Logger().Warnf("Waiting for a running Knative build pod in namespace %s", ns)
 	lastPod := ""
 	for {
 		pods, err := builds.GetBuildPods(c, ns)
@@ -70,7 +70,7 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 			if name != lastPod {
 				lastPod = name
 				loggedContainerIdx = -1
-				log.Logger().Warnf("Found newest pod: %s\n", name)
+				log.Logger().Warnf("Found newest pod: %s", name)
 			}
 			if kube.IsPodReady(latestPod) {
 				return name, nil
@@ -81,7 +81,7 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 				if isContainerStarted(&ic.State) && idx > loggedContainerIdx {
 					loggedContainerIdx = idx
 					containerName := ic.Name
-					log.Logger().Warnf("Container on pod: %s is: %s\n", name, containerName)
+					log.Logger().Warnf("Container on pod: %s is: %s", name, containerName)
 					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break
@@ -96,7 +96,7 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 
 // WaitForReadyPodForSelector waits for a pod to which the selector applies to be ready
 func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns string, selector labels.Selector, readyOnly bool) (string, error) {
-	log.Logger().Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, selector.String())
+	log.Logger().Warnf("Waiting for a running pod in namespace %s with labels %v", ns, selector.String())
 	lastPod := ""
 	for {
 		pods, err := c.CoreV1().Pods(ns).List(metav1.ListOptions{
@@ -126,7 +126,7 @@ func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns st
 			if name != lastPod {
 				lastPod = name
 				loggedContainerIdx = -1
-				log.Logger().Warnf("Found newest pod: %s\n", name)
+				log.Logger().Warnf("Found newest pod: %s", name)
 			}
 			if kube.IsPodReady(latestPod) {
 				return name, nil
@@ -137,7 +137,7 @@ func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns st
 				if isContainerStarted(&ic.State) && idx > loggedContainerIdx {
 					loggedContainerIdx = idx
 					containerName := ic.Name
-					log.Logger().Warnf("Container on pod: %s is: %s\n", name, containerName)
+					log.Logger().Warnf("Container on pod: %s is: %s", name, containerName)
 					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break

@@ -93,7 +93,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	prNum, err := strconv.Atoi(o.PullRequest)
 	if err != nil {
-		log.Logger().Warn("Unable to convert PR " + o.PullRequest + " to a number" + "\n")
+		log.Logger().Warn("Unable to convert PR " + o.PullRequest + " to a number" + "")
 	}
 
 	pr, err := provider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
@@ -108,7 +108,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	for _, v := range pr.Labels {
 		envKey := reg.ReplaceAllString(*v.Name, "_")
-		log.Logger().Infof("%v_%v='%v'\n", o.Prefix, strings.ToUpper(envKey), *v.Name)
+		log.Logger().Infof("%v_%v='%v'", o.Prefix, strings.ToUpper(envKey), *v.Name)
 	}
 	return nil
 }

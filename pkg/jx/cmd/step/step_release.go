@@ -247,7 +247,7 @@ func (o *StepReleaseOptions) Run() error {
 			return fmt.Errorf("Failed to promote: %s", err)
 		}
 	} else {
-		log.Logger().Infof("No charts directory %s so not promoting\n", util.ColorInfo(chartsDir))
+		log.Logger().Infof("No charts directory %s so not promoting", util.ColorInfo(chartsDir))
 	}
 
 	return nil

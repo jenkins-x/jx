@@ -104,6 +104,6 @@ func (o *StepHelmInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Installed chart %s with name %s into namespace %s\n", util.ColorInfo(chart), util.ColorInfo(releaseName), util.ColorInfo(ns))
+	log.Logger().Infof("Installed chart %s with name %s into namespace %s", util.ColorInfo(chart), util.ColorInfo(releaseName), util.ColorInfo(ns))
 	return nil
 }

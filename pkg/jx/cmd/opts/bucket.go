@@ -60,16 +60,16 @@ func (o *CommonOptions) CreateBucket(cb *CreateBucketValues, settings *v1.TeamSe
 	obj, err := iter.Next(ctx)
 	if err != nil {
 		if err == io.EOF {
-			log.Logger().Infof("bucket %s is empty\n", bucketURL)
+			log.Logger().Infof("bucket %s is empty", bucketURL)
 		} else {
-			log.Logger().Infof("The bucket %s does not exist yet so lets create it...\n", util.ColorInfo(bucketURL))
+			log.Logger().Infof("The bucket %s does not exist yet so lets create it...", util.ColorInfo(bucketURL))
 			err = o.CreateBucketFromURL(bucketURL, bucket, cb)
 			if err != nil {
 				return bucketURL, errors.Wrapf(err, "failed to create the bucket for %s", bucketURL)
 			}
 		}
 	} else {
-		log.Logger().Infof("Found item in bucket %s for %s\n", bucketURL, obj.Key)
+		log.Logger().Infof("Found item in bucket %s for %s", bucketURL, obj.Key)
 	}
 	return bucketURL, nil
 }

@@ -99,7 +99,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 			return err
 		}
 		for _, pe := range a.Spec.PostExtensions {
-			log.Logger().Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", pe.Namespace, pe.Name)))
+			log.Logger().Infof("Running Extension %s", util.ColorInfo(fmt.Sprintf("%s.%s", pe.Namespace, pe.Name)))
 			err = pe.Execute()
 			if err != nil {
 				return err

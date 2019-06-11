@@ -91,7 +91,7 @@ func (crds *CRDWrapper) ObjectReferences() []kube.ObjectReference {
 	var resources []kube.ObjectReference
 	for _, task := range crds.tasks {
 		if task.ObjectMeta.Name == "" {
-			log.Logger().Warnf("created Task has no name: %#v\n", task)
+			log.Logger().Warnf("created Task has no name: %#v", task)
 
 		} else {
 			resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
@@ -99,7 +99,7 @@ func (crds *CRDWrapper) ObjectReferences() []kube.ObjectReference {
 	}
 	if crds.pipeline != nil {
 		if crds.pipeline.ObjectMeta.Name == "" {
-			log.Logger().Warnf("created pipeline has no name: %#v\n", crds.pipeline)
+			log.Logger().Warnf("created pipeline has no name: %#v", crds.pipeline)
 
 		} else {
 			resources = append(resources, kube.CreateObjectReference(crds.pipeline.TypeMeta, crds.pipeline.ObjectMeta))
@@ -107,13 +107,13 @@ func (crds *CRDWrapper) ObjectReferences() []kube.ObjectReference {
 	}
 	if crds.pipelineRun != nil {
 		if crds.pipelineRun.ObjectMeta.Name == "" {
-			log.Logger().Warnf("created pipelineRun has no name: %#v\n", crds.pipelineRun)
+			log.Logger().Warnf("created pipelineRun has no name: %#v", crds.pipelineRun)
 		} else {
 			resources = append(resources, kube.CreateObjectReference(crds.pipelineRun.TypeMeta, crds.pipelineRun.ObjectMeta))
 		}
 	}
 	if len(resources) == 0 {
-		log.Logger().Warnf("no tasks, pipeline or PipelineRuns created\n")
+		log.Logger().Warnf("no tasks, pipeline or PipelineRuns created")
 	}
 	return resources
 }
@@ -138,7 +138,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save pipeline file %s", fileName)
 	}
-	log.Logger().Infof("generated pipeline at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated pipeline at %s", util.ColorInfo(fileName))
 
 	data, err = yaml.Marshal(crds.pipelineRun)
 	if err != nil {
@@ -149,7 +149,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save pipelineRun file %s", fileName)
 	}
-	log.Logger().Infof("generated pipelineRun at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated pipelineRun at %s", util.ColorInfo(fileName))
 
 	if crds.structure != nil {
 		data, err = yaml.Marshal(crds.structure)
@@ -161,7 +161,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 		if err != nil {
 			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
 		}
-		log.Logger().Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("generated PipelineStructure at %s", util.ColorInfo(fileName))
 	}
 
 	taskList := &pipelineapi.TaskList{}
@@ -183,7 +183,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save Task file %s", fileName)
 	}
-	log.Logger().Infof("generated Tasks at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated Tasks at %s", util.ColorInfo(fileName))
 
 	data, err = yaml.Marshal(resourceList)
 	if err != nil {
@@ -194,7 +194,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to save PipelineResource file %s", fileName)
 	}
-	log.Logger().Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("generated PipelineResources at %s", util.ColorInfo(fileName))
 
 	if pipelineActivity != nil {
 		data, err = yaml.Marshal(pipelineActivity)
@@ -206,7 +206,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 		if err != nil {
 			return errors.Wrapf(err, "failed to save PipelineActivity file %s", fileName)
 		}
-		log.Logger().Infof("generated PipelineActivity at %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("generated PipelineActivity at %s", util.ColorInfo(fileName))
 	}
 	return nil
 }

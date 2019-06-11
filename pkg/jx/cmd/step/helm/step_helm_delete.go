@@ -84,6 +84,6 @@ func (o *StepHelmDeleteOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Deleted release %s in namespace %s\n", util.ColorInfo(releaseName), util.ColorInfo(ns))
+	log.Logger().Infof("Deleted release %s in namespace %s", util.ColorInfo(releaseName), util.ColorInfo(ns))
 	return nil
 }

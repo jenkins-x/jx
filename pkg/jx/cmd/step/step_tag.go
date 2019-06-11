@@ -115,7 +115,7 @@ func (o *StepTagOptions) Run() error {
 	if o.Flags.Version == "" {
 		return errors.New("No version flag")
 	}
-	log.Logger().Debug("looking for charts folder...\n")
+	log.Logger().Debug("looking for charts folder...")
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir == "" {
 		exists, err := util.FileExists("Chart.yaml")
@@ -127,7 +127,7 @@ func (o *StepTagOptions) Run() error {
 			}
 		}
 	}
-	log.Logger().Debugf("updating chart if it exists\n")
+	log.Logger().Debugf("updating chart if it exists")
 	err := o.updateChart(o.Flags.Version, chartsDir)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (o *StepTagOptions) Run() error {
 	}
 
 	tag := "v" + o.Flags.Version
-	log.Logger().Debugf("performing git commit\n")
+	log.Logger().Debugf("performing git commit")
 	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
@@ -153,7 +153,7 @@ func (o *StepTagOptions) Run() error {
 		log.Logger().Infof("NoApply: no push tag to git server")
 	} else {
 
-		log.Logger().Debugf("pushing git tag %s\n", tag)
+		log.Logger().Debugf("pushing git tag %s", tag)
 		err = o.Git().PushTag("", tag)
 		if err != nil {
 			return err
@@ -183,7 +183,7 @@ func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
 	}
 	chart.Version = version
 	chart.AppVersion = version
-	log.Logger().Infof("Updating chart version in %s to %s\n", chartFile, version)
+	log.Logger().Infof("Updating chart version in %s to %s", chartFile, version)
 	err = chartutil.SaveChartfile(chartFile, chart)
 	if err != nil {
 		return fmt.Errorf("Failed to save chart %s: %s", chartFile, err)
@@ -216,13 +216,13 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 			chartValueRepository = kube.ToValidImageName(chartValueRepository)
 			updated = true
 			changedRepository = true
-			log.Logger().Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
+			log.Logger().Infof("Updating repository in %s to %s", valuesFile, chartValueRepository)
 			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
 		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) && !changedTag {
 			version = kube.ToValidImageVersion(version)
 			updated = true
 			changedTag = true
-			log.Logger().Infof("Updating tag in %s to %s\n", valuesFile, version)
+			log.Logger().Infof("Updating tag in %s to %s", valuesFile, version)
 			lines[idx] = ValuesYamlTagPrefix + " " + version
 		}
 	}
@@ -238,7 +238,7 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 func (o *StepTagOptions) defaultChartValueRepository() string {
 	gitInfo, err := o.FindGitInfo(o.Flags.ChartsDir)
 	if err != nil {
-		log.Logger().Warnf("failed to find git repository: %s\n", err.Error())
+		log.Logger().Warnf("failed to find git repository: %s", err.Error())
 	}
 
 	projectConfig, _, _ := config.LoadProjectConfig(o.Flags.Dir)

@@ -63,7 +63,7 @@ func (o *StepNexusReleaseOptions) Run() error {
 	m := map[string]string{}
 
 	if len(repoIds) == 0 {
-		log.Logger().Infof("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
+		log.Logger().Infof("No Nexus staging repository ids found in %s", util.ColorInfo(statingRepositoryProperties))
 		return nil
 	}
 	var answer error

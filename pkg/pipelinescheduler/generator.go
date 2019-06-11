@@ -279,7 +279,7 @@ func (o *GitOpsOptions) AddToEnvironmentRepo(cfg *config.Config, plugs *plugins.
 		return errors.Wrapf(err, "creating pr for prow config")
 	}
 	if info != nil {
-		log.Logger().Infof("Added prow config via Pull Request %s\n", info.PullRequest.URL)
+		log.Logger().Infof("Added prow config via Pull Request %s", info.PullRequest.URL)
 	}
 	return nil
 }

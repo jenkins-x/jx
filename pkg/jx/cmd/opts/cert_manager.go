@@ -13,7 +13,7 @@ import (
 
 // EnsureCertManager ensures cert-manager is installed
 func (o *CommonOptions) EnsureCertManager() error {
-	log.Logger().Infof("Looking for %q deployment in namespace %q...\n", pki.CertManagerDeployment, pki.CertManagerNamespace)
+	log.Logger().Infof("Looking for %q deployment in namespace %q...", pki.CertManagerDeployment, pki.CertManagerNamespace)
 	client, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kube client")
@@ -29,15 +29,15 @@ func (o *CommonOptions) EnsureCertManager() error {
 				o.In, o.Out, o.Err)
 		}
 		if ok {
-			log.Logger().Info("Installing cert-manager...\n")
-			log.Logger().Infof("Installing CRDs from %q...\n", pki.CertManagerCRDsFile)
+			log.Logger().Info("Installing cert-manager...")
+			log.Logger().Infof("Installing CRDs from %q...", pki.CertManagerCRDsFile)
 			output, err := o.ResourcesInstaller().Install(pki.CertManagerCRDsFile)
 			if err != nil {
 				return errors.Wrapf(err, "installing the cert-manager CRDs from %q", pki.CertManagerCRDsFile)
 			}
-			log.Logger().Info(output + "\n")
+			log.Logger().Info(output + "")
 
-			log.Logger().Infof("Installing the chart %q in namespace %q...\n", pki.CertManagerChart, pki.CertManagerNamespace)
+			log.Logger().Infof("Installing the chart %q in namespace %q...", pki.CertManagerChart, pki.CertManagerNamespace)
 			values := []string{
 				"rbac.create=true",
 				"webhook.enabled=false",
@@ -56,7 +56,7 @@ func (o *CommonOptions) EnsureCertManager() error {
 				return errors.Wrapf(err, "installing %q chart", pki.CertManagerChart)
 			}
 
-			log.Logger().Info("Waiting for CertManager deployment to be ready, this can take a few minutes\n")
+			log.Logger().Info("Waiting for CertManager deployment to be ready, this can take a few minutes")
 
 			err = kube.WaitForDeploymentToBeReady(client, pki.CertManagerDeployment, pki.CertManagerNamespace, 10*time.Minute)
 			if err != nil {

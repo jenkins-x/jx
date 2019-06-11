@@ -138,14 +138,14 @@ func (o *StepWaitForArtifactOptions) Run() error {
 		}
 		o.ArtifactURL = util.UrlJoin(o.RepoURL, group, artifact, version, artifact+"-"+version+"."+o.Extension)
 	}
-	log.Logger().Infof("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+	log.Logger().Infof("Waiting for artifact at %s", util.ColorInfo(o.ArtifactURL))
 
 	fn := func() error {
 		return o.getUrlStatusOK(o.ArtifactURL)
 	}
 	err = o.RetryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
 	if err == nil {
-		log.Logger().Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+		log.Logger().Infof("Found artifact at %s", util.ColorInfo(o.ArtifactURL))
 		return nil
 	}
 	log.Logger().Warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
