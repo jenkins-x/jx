@@ -307,7 +307,7 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 					Script:      strings.TrimSuffix(script, "\n"),
 					Children:    children,
 				}
-				log.Logger().Debugf("Found extension %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+				log.Logger().Debugf("Found extension %s version %s", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 				result = append(result, extension)
 			} else {
 				children, err := o.walkLock(oldLookupByUUID[UUID], oldLookupByUUID)
