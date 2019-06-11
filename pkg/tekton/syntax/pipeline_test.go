@@ -817,6 +817,45 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			),
 		},
 		{
+			name: "loop_step_with_name",
+			expected: ParsedPipeline(
+				PipelineEnvVar("LANGUAGE", "rust"),
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageEnvVar("DISTRO", "gentoo"),
+					StageStep(
+						StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
+							LoopStep(StepName("echo-step"), StepCmd("echo"), StepArg("hello"), StepArg("${LANGUAGE}")),
+						),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+				),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("source"))),
+						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "rust")),
+						tb.Step("echo-step1", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello ${LANGUAGE}"), workingDir("/workspace/source"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "maven")),
+						tb.Step("echo-step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello ${LANGUAGE}"), workingDir("/workspace/source"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "gradle")),
+						tb.Step("echo-step3", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello ${LANGUAGE}"), workingDir("/workspace/source"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "nodejs")),
+					)),
+			},
+			structure: PipelineStructure("somepipeline-1",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			),
+		},
+		{
 			name: "loop_with_syntactic_sugar_step",
 			expected: ParsedPipeline(
 				PipelineAgent("some-image"),
