@@ -3193,7 +3193,7 @@ func (options *InstallOptions) setValuesFileValue(fileName string, key string, v
 func validateClusterName(clustername string) error {
 	// Check for length greater than 27.
 	if len(clustername) > maxGKEClusterNameLength {
-		err := fmt.Errorf("cluster name %v is greater than the maximum %s characters", clustername, maxGKEClusterNameLength)
+		err := fmt.Errorf("cluster name %s is greater than the maximum %d characters", clustername, maxGKEClusterNameLength)
 		return err
 	}
 	// Now we need only make sure that clustername is limited to
