@@ -79,7 +79,7 @@ func CreateBucket(vaultName, clusterName, projectID, zone string, recreate bool,
 			return bucketName, nil
 		}
 		if batchMode {
-			log.Logger().Warnf("We are deleting the Vault bucket %s so that Vault will install cleanly\n", bucketName)
+			log.Logger().Warnf("We are deleting the Vault bucket %s so that Vault will install cleanly", bucketName)
 		} else {
 			if !util.Confirm(fmt.Sprintf("We are about to delete bucket %q, so we can install a clean Vault. Are you sure: ", bucketName),
 				true, "We recommend you delete the Vault bucket on install to ensure Vault starts up reliably", in, out, outErr) {

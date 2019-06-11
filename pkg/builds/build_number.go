@@ -47,11 +47,11 @@ func getDownwardAPILabelsMap() map[string]string {
 	const podInfoLabelsFile = "/etc/podinfo/labels"
 	exists, err := util.FileExists(podInfoLabelsFile)
 	if err != nil {
-		log.Logger().Warnf("failed to detect if the file %s exists: %s\n", podInfoLabelsFile, err)
+		log.Logger().Warnf("failed to detect if the file %s exists: %s", podInfoLabelsFile, err)
 	} else if exists {
 		data, err := ioutil.ReadFile(podInfoLabelsFile)
 		if err != nil {
-			log.Logger().Warnf("failed to load downward API pod labels from %s due to: %s\n", podInfoLabelsFile, err)
+			log.Logger().Warnf("failed to load downward API pod labels from %s due to: %s", podInfoLabelsFile, err)
 		} else {
 			text := strings.TrimSpace(string(data))
 			if text != "" {

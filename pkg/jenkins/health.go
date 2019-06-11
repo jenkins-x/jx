@@ -22,7 +22,7 @@ func CheckHealth(url string, healthTimeout time.Duration) error {
 	if ping(endpoint) == nil {
 		return nil
 	}
-	log.Logger().Infof("waiting up to %s for the Jenkins server to be healty at URL %s\n", util.ColorInfo(healthTimeout.String()), util.ColorInfo(endpoint))
+	log.Logger().Infof("waiting up to %s for the Jenkins server to be healty at URL %s", util.ColorInfo(healthTimeout.String()), util.ColorInfo(endpoint))
 	err := util.Retry(healthTimeout, func() error {
 		return ping(endpoint)
 	})

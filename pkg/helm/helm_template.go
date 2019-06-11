@@ -287,7 +287,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
 	}
-	log.Logger().Info("\n")
+	log.Logger().Info("")
 	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
@@ -298,7 +298,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
-	log.Logger().Info("\n")
+	log.Logger().Info("")
 
 	return util.CombineErrors(err, err2)
 }
@@ -326,7 +326,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 	if !exists {
-		log.Logger().Debugf("Fetching chart: %s\n", chart)
+		log.Logger().Debugf("Fetching chart: %s", chart)
 		chartDir, err = h.fetchChart(chart, version, chartsDir, repo, username, password)
 		if err != nil {
 			return err
@@ -400,7 +400,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 			namespace := filepath.Base(path.Name())
 			fullPath := filepath.Join(namespacesDir, path.Name())
 
-			log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s\n", releaseName, fullPath, namespace)
+			log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, fullPath, namespace)
 
 			command := "apply"
 			if create {
@@ -424,12 +424,12 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 			if err != nil {
 				return err
 			}
-			log.Logger().Info("\n")
+			log.Logger().Info("")
 		}
 		return err
 	}
 
-	log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s\n", releaseName, dir, ns)
+	log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, dir, ns)
 	command := "apply"
 	if create {
 		command = "create"
@@ -452,13 +452,13 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 		return err
 	}
 
-	log.Logger().Info("\n")
+	log.Logger().Info("")
 	return nil
 
 }
 
 func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, force bool, file string) error {
-	log.Logger().Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
+	log.Logger().Infof("Applying Helm hook %s YAML via kubectl in file: %s", helmHook, file)
 
 	command := "apply"
 	if create {
@@ -478,12 +478,12 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 		args = append(args, "--validate=false")
 	}
 	err := h.runKubectl(args...)
-	log.Logger().Info("\n")
+	log.Logger().Info("")
 	return err
 }
 
 func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
-	log.Logger().Infof("Deleting helm hook sources from file: %s\n", file)
+	log.Logger().Infof("Deleting helm hook sources from file: %s", file)
 	return h.runKubectl("delete", "-f", file, "--namespace", ns, "--wait")
 }
 
@@ -498,12 +498,12 @@ func (h *HelmTemplate) deleteResourcesAndClusterResourcesBySelector(ns string, s
 
 	errList := []error{}
 
-	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(kinds, " "))
+	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(kinds, " "))
 	errs := h.deleteResourcesBySelector(ns, kinds, selector, wait)
 	errList = append(errList, errs...)
 
 	selector += "," + LabelNamespace + "=" + ns
-	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
+	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
 	errs = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
 	errList = append(errList, errs...)
 	return util.CombineErrors(errList...)
@@ -525,7 +525,7 @@ func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, sele
 		} else {
 			output = strings.TrimSpace(output)
 			if output != "No resources found" {
-				log.Logger().Info(output + "\n")
+				log.Logger().Info(output + "")
 			}
 		}
 	}
@@ -606,7 +606,7 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 		return "", err
 	}
 	if exists {
-		log.Logger().Infof("Chart dir already exists: %s\n", dir)
+		log.Logger().Infof("Chart dir already exists: %s", dir)
 		return chart, nil
 	}
 	if dir == "" {
@@ -643,7 +643,7 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 			break
 		}
 	}
-	log.Logger().Infof("Fetched chart %s to dir %s\n", chart, answer)
+	log.Logger().Infof("Fetched chart %s to dir %s", chart, answer)
 	return answer, nil
 }
 
@@ -755,7 +755,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 
 	absFileDir := filepath.Dir(absFile)
 
-	log.Logger().Infof("creating file: %s\n", absFile)
+	log.Logger().Infof("creating file: %s", absFile)
 
 	err := os.MkdirAll(absFileDir, os.ModePerm)
 	if err != nil {
@@ -766,7 +766,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 		return "", errors.Wrapf(err, "creating file %q", absFile)
 	}
 
-	log.Logger().Debugf("writing data to %s\n", absFile)
+	log.Logger().Debugf("writing data to %s", absFile)
 
 	defer file.Close()
 	_, err = buf.WriteTo(file)
@@ -779,7 +779,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 func addLabelsToChartYaml(basedir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
-	log.Logger().Debugf("Searching for yaml files from basedir %s\n", basedir)
+	log.Logger().Debugf("Searching for yaml files from basedir %s", basedir)
 
 	err := filepath.Walk(basedir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
@@ -1004,7 +1004,7 @@ func (h *HelmTemplate) runKubectl(args ...string) error {
 	h.Runner.SetName(h.Binary)
 	h.Runner.SetArgs(args)
 	output, err := h.Runner.RunWithoutRetry()
-	log.Logger().Info(output + "\n")
+	log.Logger().Info(output + "")
 	return err
 }
 
@@ -1074,16 +1074,16 @@ func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDele
 		kind := hook.Kind
 		name := hook.Name
 		if kind == "Job" && name != "" {
-			log.Logger().Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
+			log.Logger().Infof("Waiting for helm %s hook Job %s to complete before removing it", hookPhase, name)
 			err := kube.WaitForJobToComplete(h.KubeClient, ns, name, time.Minute*30, false)
 			if err != nil {
-				log.Logger().Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
+				log.Logger().Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway", name, hookPhase, err)
 			}
 		} else {
-			log.Logger().Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
+			log.Logger().Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s", kind, name, hookPhase)
 		}
 		if flag == "true" {
-			log.Logger().Infof("Not deleting the Job %s as we have the $JX_DISABLE_DELETE_HELM_HOOKS enabled\n", name)
+			log.Logger().Infof("Not deleting the Job %s as we have the $JX_DISABLE_DELETE_HELM_HOOKS enabled", name)
 			continue
 		}
 		err := h.kubectlDeleteFile(ns, hook.File)

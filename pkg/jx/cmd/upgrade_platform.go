@@ -143,7 +143,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	log.Logger().Infof("Using provider '%s' from team settings\n", util.ColorInfo(settings.KubeProvider))
+	log.Logger().Infof("Using provider '%s' from team settings", util.ColorInfo(settings.KubeProvider))
 
 	wrkDir := ""
 
@@ -177,11 +177,11 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if targetVersion != currentVersion {
-		log.Logger().Infof("Upgrading platform from version %s to version %s\n", util.ColorInfo(currentVersion), util.ColorInfo(targetVersion))
+		log.Logger().Infof("Upgrading platform from version %s to version %s", util.ColorInfo(currentVersion), util.ColorInfo(targetVersion))
 	} else if o.AlwaysUpgrade {
-		log.Logger().Infof("Rerunning platform version %s\n", util.ColorInfo(targetVersion))
+		log.Logger().Infof("Rerunning platform version %s", util.ColorInfo(targetVersion))
 	} else {
-		log.Logger().Infof("Already installed platform version %s. Skipping upgrade process.\n", util.ColorInfo(targetVersion))
+		log.Logger().Infof("Already installed platform version %s. Skipping upgrade process.", util.ColorInfo(targetVersion))
 		return nil
 	}
 
@@ -253,13 +253,13 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "unable to remove %s if exist", configFileName)
 	}
 
-	log.Logger().Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(opts.JXInstallConfig))
+	log.Logger().Infof("Creating %s from %s", util.ColorInfo(adminSecretsFileName), util.ColorInfo(opts.JXInstallConfig))
 	err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[opts.AdminSecretsFile], 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
 	}
 
-	log.Logger().Debugf("%s from %s is %s\n", opts.AdminSecretsFile, opts.JXInstallConfig, oldSecret.Data[opts.AdminSecretsFile])
+	log.Logger().Debugf("%s from %s is %s", opts.AdminSecretsFile, opts.JXInstallConfig, oldSecret.Data[opts.AdminSecretsFile])
 
 	if o.UpdateSecrets {
 		// load admin secrets service from adminSecretsFileName
@@ -271,7 +271,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.AdminSecretsService.NewMavenSettingsXML()
 		adminSecrets := &o.AdminSecretsService.Secrets
 
-		log.Logger().Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
+		log.Logger().Debugf("Rewriting secrets file to %s", util.ColorInfo(adminSecretsFileName))
 		err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
 		if err != nil {
 			return errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
@@ -291,10 +291,10 @@ func (o *UpgradePlatformOptions) Run() error {
 			return errors.Wrapf(err, "unable to save admin secrets to kubernetes secret: %s", opts.JXInstallConfig)
 		}
 
-		log.Logger().Debugf("Saved admin secrets to Kubernetes secret %s\n", util.ColorInfo(opts.JXInstallConfig))
+		log.Logger().Debugf("Saved admin secrets to Kubernetes secret %s", util.ColorInfo(opts.JXInstallConfig))
 	}
 
-	log.Logger().Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(opts.JXInstallConfig))
+	log.Logger().Infof("Creating %s from %s", util.ColorInfo(configFileName), util.ColorInfo(opts.JXInstallConfig))
 	err = ioutil.WriteFile(configFileName, oldSecret.Data[opts.ExtraValuesFile], 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write the config file %s", configFileName)
@@ -306,7 +306,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if sopsFileExists {
-		log.Logger().Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		log.Logger().Infof("Attempting to decrypt secrets file %s", util.ColorInfo(cloudEnvironmentSecretsLocation))
 		// need to decrypt secrets now
 		err = o.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
 		if err != nil {
@@ -320,7 +320,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 
 		if decryptedSecretsFile {
-			log.Logger().Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			log.Logger().Infof("Successfully decrypted %s", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
 			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
 		}
 	}
@@ -364,7 +364,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	for _, v := range valueFiles {
-		log.Logger().Debugf("Adding values file %s\n", util.ColorInfo(v))
+		log.Logger().Debugf("Adding values file %s", util.ColorInfo(v))
 	}
 
 	helmOptions := helm.InstallChartOptions{
@@ -403,7 +403,7 @@ func (o *UpgradePlatformOptions) removeFileIfExists(fileName string) error {
 		return errors.Wrapf(err, "unable to determine if %s exist", fileName)
 	}
 	if fileNameExists {
-		log.Logger().Debugf("Removing values file %s\n", util.ColorInfo(fileName))
+		log.Logger().Debugf("Removing values file %s", util.ColorInfo(fileName))
 		err = os.Remove(fileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to remove %s", fileName)

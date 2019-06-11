@@ -756,7 +756,7 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 	}
 	for _, hook := range hooks {
 		if data.URL == hook.URL {
-			log.Logger().Warnf("Already has a webhook registered for %s\n", data.URL)
+			log.Logger().Warnf("Already has a webhook registered for %s", data.URL)
 			return nil
 		}
 	}
@@ -843,11 +843,11 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 	if dataID == 0 && data.ExistingURL != "" {
 		hooks, err := b.ListWebHooks(projectKey, repo)
 		if err != nil {
-			log.Logger().Errorf("Error querying webhooks on %s/%s: %s\n", projectKey, repo, err)
+			log.Logger().Errorf("Error querying webhooks on %s/%s: %s", projectKey, repo, err)
 		}
 		for _, hook := range hooks {
 			if data.ExistingURL == hook.URL {
-				log.Logger().Warnf("Found existing webhook for url %s\n", data.ExistingURL)
+				log.Logger().Warnf("Found existing webhook for url %s", data.ExistingURL)
 				dataID = hook.ID
 			}
 		}
@@ -879,7 +879,7 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 		return errors.Wrap(err, "failed to JSON encode webhook request body for update")
 	}
 
-	log.Logger().Infof("Updating Bitbucket server webhook for %s/%s for url %s\n", util.ColorInfo(projectKey), util.ColorInfo(repo), util.ColorInfo(data.URL))
+	log.Logger().Infof("Updating Bitbucket server webhook for %s/%s for url %s", util.ColorInfo(projectKey), util.ColorInfo(repo), util.ColorInfo(data.URL))
 	_, err = b.Client.DefaultApi.UpdateWebhook(projectKey, repo, id, requestBody, []string{"application/json"})
 
 	if err != nil {
@@ -1006,7 +1006,7 @@ func (b *BitbucketServerProvider) UserInfo(username string) *GitUser {
 	var user bitbucket.UserWithLinks
 	apiResponse, err := b.Client.DefaultApi.GetUser(username)
 	if err != nil {
-		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
+		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error() + "")
 		return nil
 	}
 	err = mapstructure.Decode(apiResponse.Values, &user)
@@ -1031,17 +1031,17 @@ func (b *BitbucketServerProvider) ListReleases(org string, name string) ([]*GitR
 }
 
 func (b *BitbucketServerProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 func (b *BitbucketServerProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (b *BitbucketServerProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.")
 	return &github.Response{}, nil
 }
 

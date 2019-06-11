@@ -69,7 +69,7 @@ func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...
 // SetHost is used to point at a locally running tiller
 func (h *HelmCLI) SetHost(tillerAddress string) {
 	if h.Debug {
-		log.Logger().Infof("Setting tiller address to %s\n", util.ColorInfo(tillerAddress))
+		log.Logger().Infof("Setting tiller address to %s", util.ColorInfo(tillerAddress))
 	}
 	h.Runner.SetEnvVariable("HELM_HOST", tillerAddress)
 }
@@ -122,7 +122,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 	}
 
 	if h.Debug {
-		log.Logger().Infof("Initialising Helm '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Initialising Helm '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -255,7 +255,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	var err error
 	currentNamespace := ""
 	if h.Binary == "helm3" {
-		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented\n", ns)
+		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented", ns)
 		currentNamespace, err = h.getCurrentNamespace()
 		if err != nil {
 			return err
@@ -300,7 +300,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 		args = append(args, "--password", password)
 	}
 	if h.Debug {
-		log.Logger().Infof("Installing Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Installing Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	err = h.runHelm(args...)
@@ -351,7 +351,7 @@ func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir 
 	}
 
 	if h.Debug {
-		log.Logger().Infof("Fetching Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Fetching Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -372,7 +372,7 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 	}
 
 	if h.Debug {
-		log.Logger().Infof("Generating Chart Template '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Generating Chart Template '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 	err := h.runHelm(args...)
 	if err != nil {
@@ -386,7 +386,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	var err error
 	currentNamespace := ""
 	if h.Binary == "helm3" {
-		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented\n", ns)
+		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented", ns)
 		currentNamespace, err = h.getCurrentNamespace()
 		if err != nil {
 			return err
@@ -442,7 +442,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	args = append(args, releaseName, chart)
 
 	if h.Debug {
-		log.Logger().Infof("Upgrading Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Upgrading Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	err = h.runHelm(args...)
