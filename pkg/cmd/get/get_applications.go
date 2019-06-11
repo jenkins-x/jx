@@ -1,12 +1,13 @@
 package get
 
 import (
-	"fmt"
 	"os/user"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/templates"
 
 	"github.com/jenkins-x/jx/pkg/kserving"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -17,9 +18,6 @@ import (
 	"github.com/spf13/cobra"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	altv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/flagger"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -150,21 +148,20 @@ func (o *GetApplicationsOptions) Run() error {
 
 func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps, kubeClient kubernetes.Interface, kserveClient kserve.Interface) table.Table {
 	table := o.generateTableHeaders(envApps)
-
+	logger := log.Logger()
 	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		log.Fatalf("Error getting jx client and dev namespace: %s", err)
+		logger.Fatalf("Error getting jx client and dev namespace: %s", err)
 	}
-	sourceRepositories := jxClient.JenkinsV1().SourceRepositories(ns)
+	releases := jxClient.JenkinsV1().Releases(ns)
 	for _, appName := range apps {
 		row := []string{appName}
-		sourceRepository, err := GetSourceRepositoryForApplication(appName, sourceRepositories)
-		gitURL := "None Found"
+		release, err := releases.Get(appName, metav1.GetOptions{})
 		if err == nil {
-			gitURL = BuildGitURL(sourceRepository)
+			logger.Fatalf("Release for application %s not found: %s", appName, err)
 		}
-		row = append(row, gitURL)
+		row = append(row, release.Spec.GitHTTPURL)
 		for _, ea := range envApps {
 			version := ""
 			d, ok := ea.Apps[appName]
@@ -257,31 +254,6 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 	}
 	o.Results.Applications = appEnvMap
 	return table
-}
-
-// BuildGitURL concatenates various fields of a SourceRepository CRD into a valid URL.
-func BuildGitURL(sourceRepository *v1.SourceRepository) string {
-	if sourceRepository.Spec.Provider == "" || sourceRepository.Spec.Org == "" || sourceRepository.Spec.Repo == "" {
-		return "None Found"
-	}
-	return sourceRepository.Spec.Provider + "/" + sourceRepository.Spec.Org + "/" + sourceRepository.Spec.Repo + ".git"
-}
-
-// GetSourceRepositoryForApplication fetches a SourceRepository CRD for a particular application by trying to match its name to a repo.
-func GetSourceRepositoryForApplication(application string, sourceRepositories altv1.SourceRepositoryInterface) (*v1.SourceRepository, error) {
-	// We can't pull the SourceRepository by name because we don't know the org, so we iterate over all of them and match the application name to the repo.
-	repoList, err := sourceRepositories.List(metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("Failed to list SourceRepositories: %s", err)
-	}
-
-	for _, repo := range repoList.Items {
-		if repo.Spec.Repo == application {
-			return &repo, nil
-		}
-	}
-
-	return nil, fmt.Errorf("No Source Repository found")
 }
 
 func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (namespaces []string, envApps []EnvApps, envNames, apps []string, err error) {
