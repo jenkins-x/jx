@@ -3,6 +3,8 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/initcmd"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -34,7 +36,7 @@ import (
 // CreateExtensionsRepositoryOptions the flags for running create cluster
 type UpgradeExtensionsRepositoryOptions struct {
 	UpgradeExtensionsOptions
-	Flags      InitFlags
+	Flags      initcmd.InitFlags
 	InputFile  string
 	OutputFile string
 }
@@ -74,7 +76,7 @@ var (
 func NewCmdUpgradeExtensionsRepository(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsRepositoryOptions{
 		UpgradeExtensionsOptions: UpgradeExtensionsOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: create.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

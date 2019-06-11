@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -43,17 +44,15 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 )
 
-// Constants for some test data to be used.
 const (
 	namespace = "jx"
 )
 
 func TestAddAppForGitOps(t *testing.T) {
 	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -124,7 +123,7 @@ func TestAddAppForGitOps(t *testing.T) {
 
 func TestAddAppForGitOpsWithShortName(t *testing.T) {
 	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -211,7 +210,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(false, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -360,7 +359,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(false, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -493,7 +492,7 @@ func TestStashValues(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(false, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -572,7 +571,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -670,7 +669,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 }
 
 func TestAddApp(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -727,7 +726,7 @@ func TestAddApp(t *testing.T) {
 }
 
 func TestAddAppWithShortName(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -799,7 +798,7 @@ func TestAddAppWithShortName(t *testing.T) {
 }
 
 func TestAddAppFromPath(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -860,7 +859,7 @@ func TestAddAppFromPath(t *testing.T) {
 
 func TestAddLatestApp(t *testing.T) {
 
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -919,7 +918,7 @@ func TestAddLatestApp(t *testing.T) {
 }
 
 func TestAddAppWithValuesFileForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -979,7 +978,7 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 }
 
 func TestAddAppWithReadmeForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -1066,7 +1065,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 }
 
 func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -1132,7 +1131,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 }
 
 func TestAddLatestAppForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
+	testOptions := testhelpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -1196,7 +1195,7 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)
@@ -1308,7 +1307,7 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", r)
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
 			assert.NoError(r, err)

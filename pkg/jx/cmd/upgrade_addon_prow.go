@@ -1,7 +1,9 @@
 package cmd
 
 import (
-	version "github.com/hashicorp/go-version"
+	"github.com/hashicorp/go-version"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -37,7 +39,7 @@ type UpgradeAddonProwOptions struct {
 func NewCmdUpgradeAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeAddonProwOptions{
 		UpgradeAddonsOptions: UpgradeAddonsOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: create.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -58,7 +60,7 @@ func NewCmdUpgradeAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	options.UpgradeAddonsOptions.addFlags(cmd)
-	options.InstallFlags.addCloudEnvOptions(cmd)
+	options.InstallFlags.AddCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&options.newKnativeBuildVersion, "new-knative-build-version", "", "0.1.1", "The new kanative build verion that prow needs to work with")
 	cmd.Flags().BoolVarP(&options.Tekton, "tekton", "t", true, "Enables Knative Build Pipeline. Otherwise we default to use Knative Build")
 	cmd.Flags().BoolVarP(&options.ExternalDNS, "external-dns", "", true, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
@@ -125,8 +127,8 @@ func (o *UpgradeAddonProwOptions) Run() error {
 				}
 
 				// delete knative build
-				deleteKnativeBuildOpts := &DeleteKnativeBuildOptions{
-					DeleteAddonOptions: DeleteAddonOptions{
+				deleteKnativeBuildOpts := &deletecmd.DeleteKnativeBuildOptions{
+					DeleteAddonOptions: deletecmd.DeleteAddonOptions{
 						CommonOptions: o.CommonOptions,
 					},
 				}

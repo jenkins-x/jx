@@ -64,7 +64,7 @@ func NewCmdUpdateClusterGKETerraform(commonOpts *opts.CommonOptions) *cobra.Comm
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster")
+	cmd.Flags().StringVarP(&options.Flags.ClusterName, opts.OptionClusterName, "n", "", "The name of this cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "Use a service account to login to GCE")
 

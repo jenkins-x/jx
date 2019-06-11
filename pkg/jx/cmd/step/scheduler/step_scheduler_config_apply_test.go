@@ -6,9 +6,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/scheduler"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	uuid "github.com/satori/go.uuid"
@@ -82,16 +82,16 @@ func TestStepSchedulerConfigApplyGitopsAll(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := &StepSchedulerApplyTestOptions{}
 	testOptions.createSchedulerTestOptions("gitops_all", true, t)
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 	err = testOptions.StepSchedulerConfigApplyOptions.Run()
@@ -107,16 +107,16 @@ func TestStepSchedulerConfigApplyGitopsDefaultScheduler(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := &StepSchedulerApplyTestOptions{}
 	testOptions.createSchedulerTestOptions("gitops_default_scheduler", true, t)
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 	err = testOptions.StepSchedulerConfigApplyOptions.Run()
@@ -132,16 +132,16 @@ func TestStepSchedulerConfigApplyGitopsRepoScheduler(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := &StepSchedulerApplyTestOptions{}
 	testOptions.createSchedulerTestOptions("gitops_repo_scheduler", true, t)
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 	err = testOptions.StepSchedulerConfigApplyOptions.Run()
@@ -157,16 +157,16 @@ func TestStepSchedulerConfigApplyGitopsRepoGroupScheduler(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := &StepSchedulerApplyTestOptions{}
 	testOptions.createSchedulerTestOptions("gitops_repogroup_scheduler", true, t)
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 	err = testOptions.StepSchedulerConfigApplyOptions.Run()
@@ -219,7 +219,7 @@ type StepSchedulerApplyTestOptions struct {
 func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType string, gitOps bool, t *testing.T) {
 	mockFactory := cmd_test.NewMockFactory()
 	commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)
-	cmd_test_helpers.ConfigureTestOptions(&commonOpts, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	testhelpers.ConfigureTestOptions(&commonOpts, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	o.StepSchedulerConfigApplyOptions = &scheduler.StepSchedulerConfigApplyOptions{}
 	o.StepSchedulerConfigApplyOptions.Agent = "prow"
 	o.StepSchedulerConfigApplyOptions.CommonOptions = &commonOpts
@@ -289,7 +289,7 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 		}
 		jxResources = append(jxResources, devEnv, sourceRepo)
 		installerMock := resources_test.NewMockInstaller()
-		cmd_test_helpers.ConfigureTestOptionsWithResources(o.StepSchedulerConfigApplyOptions.CommonOptions,
+		testhelpers.ConfigureTestOptionsWithResources(o.StepSchedulerConfigApplyOptions.CommonOptions,
 			[]runtime.Object{},
 			jxResources,
 			gits.NewGitLocal(),
@@ -297,13 +297,13 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 			o.StepSchedulerConfigApplyOptions.Helm(),
 			installerMock,
 		)
-		err = cmd_test_helpers.CreateTestEnvironmentDir(o.StepSchedulerConfigApplyOptions.CommonOptions)
+		err = testhelpers.CreateTestEnvironmentDir(o.StepSchedulerConfigApplyOptions.CommonOptions)
 		assert.NoError(t, err)
 		o.DevEnvRepo = devEnvRepo
 		o.DevRepoName = testRepoName
 	} else {
 		installerMock := resources_test.NewMockInstaller()
-		cmd_test_helpers.ConfigureTestOptionsWithResources(o.StepSchedulerConfigApplyOptions.CommonOptions,
+		testhelpers.ConfigureTestOptionsWithResources(o.StepSchedulerConfigApplyOptions.CommonOptions,
 			[]runtime.Object{},
 			jxResources,
 			gits.NewGitLocal(),

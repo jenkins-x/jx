@@ -19,7 +19,6 @@ import (
 const (
 	optionOrganisation   = "organisation"
 	defaultKubernetesDir = "kubernetes"
-	optionOutputDir      = "output-dir"
 )
 
 var (
@@ -73,7 +72,7 @@ func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Organisation, optionOrganisation, "o", "", "The GitHub organisation to split the repositories into")
 	cmd.Flags().StringVarP(&options.RepoName, "reponame", "n", "", "The GitHub monorepo to be split")
 	cmd.Flags().StringVarP(&options.Dir, "source-dir", "s", "", "The source directory to look inside for the folders to move into separate Git repositories")
-	cmd.Flags().StringVarP(&options.OutputDir, optionOutputDir, "d", "generated", "The output directory where new projects are created")
+	cmd.Flags().StringVarP(&options.OutputDir, opts.OptionOutputDir, "d", "generated", "The output directory where new projects are created")
 	cmd.Flags().StringVarP(&options.KubernetesDir, "kubernetes-folder", "", defaultKubernetesDir, "The folder containing all the Kubernetes YAML for each app")
 	cmd.Flags().BoolVarP(&options.NoGit, "no-git", "", false, "If enabled then don't try to clone/create the separate repositories in github")
 	return cmd
@@ -88,7 +87,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	reponame := o.RepoName
 	outputDir := o.OutputDir
 	if outputDir == "" {
-		return util.MissingOption(optionOutputDir)
+		return util.MissingOption(opts.OptionOutputDir)
 	}
 	var err error
 	dir := o.Dir

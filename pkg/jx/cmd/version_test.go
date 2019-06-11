@@ -1,7 +1,7 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"path"
 	"testing"
 
@@ -89,7 +89,7 @@ func TestDockerImageGetsLabel(t *testing.T) {
 	assert.DirExists(t, versionsDir)
 
 	o := &opts.CommonOptions{}
-	cmd_test_helpers.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, "", true))
+	testhelpers.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, "", true))
 
 	resolver := &opts.VersionResolver{
 		VersionsDir: versionsDir,

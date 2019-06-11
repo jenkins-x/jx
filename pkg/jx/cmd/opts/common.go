@@ -46,18 +46,27 @@ import (
 type LogLevel string
 
 const (
-	OptionServerName       = "name"
-	OptionServerURL        = "url"
-	OptionBatchMode        = "batch-mode"
-	OptionVerbose          = "verbose"
-	OptionLogLevel         = "log-level"
-	OptionNoBrew           = "no-brew"
-	OptionInstallDeps      = "install-dependencies"
-	OptionSkipAuthSecMerge = "skip-auth-secrets-merge"
-	OptionEnvironment      = "env"
-	OptionApplication      = "app"
-	OptionTimeout          = "timeout"
 	OptionAdvancedMode     = "advanced-mode"
+	OptionAlias            = "alias"
+	OptionApplication      = "app"
+	OptionBatchMode        = "batch-mode"
+	OptionClusterName      = "cluster-name"
+	OptionEnvironment      = "env"
+	OptionInstallDeps      = "install-dependencies"
+	OptionLabel            = "label"
+	OptionName             = "name"
+	OptionNamespace        = "namespace"
+	OptionNoBrew           = "no-brew"
+	OptionRelease          = "release"
+	OptionServerName       = "name"
+	OptionOutputDir        = "output-dir"
+	OptionServerURL        = "url"
+	OptionSkipAuthSecMerge = "skip-auth-secrets-merge"
+	OptionTimeout          = "timeout"
+	OptionVerbose          = "verbose"
+
+	BranchPatternCommandName      = "branchpattern"
+	QuickStartLocationCommandName = "quickstartlocation"
 
 	// LogInfo info level logging
 	LogInfo LogLevel = "INFO"
@@ -65,6 +74,16 @@ const (
 	LogWarning LogLevel = "WARN"
 	// LogError error level logging
 	LogError LogLevel = "ERROR"
+)
+
+var (
+	BranchPatternCommandAliases = []string{
+		"branch pattern",
+	}
+
+	QuickStartLocationCommandAliases = []string{
+		QuickStartLocationCommandName + "s", "quickstartloc", "qsloc",
+	}
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment

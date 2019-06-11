@@ -1,8 +1,8 @@
 package get_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/get"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -45,7 +45,7 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 		StableBranch:  stableBranch,
 	}
 	options.CommonOptions.Out = fakeStdout
-	cmd_test_helpers.ConfigureTestOptionsWithResources(options.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(options.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{},
 		gits.NewGitLocal(),
@@ -110,7 +110,7 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 		StableBranch: stableBranch,
 	}
 	options.CommonOptions.Out = fakeStdout
-	cmd_test_helpers.ConfigureTestOptionsWithResources(options.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(options.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{},
 		gits.NewGitLocal(),

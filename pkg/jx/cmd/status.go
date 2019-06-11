@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
@@ -61,8 +62,8 @@ func (o *StatusOptions) Run() error {
 	if err != nil {
 
 		log.Logger().Warn("Unable to connect to Kubernetes cluster -  is one running ?")
-		log.Logger().Warn("you could try: jx create cluster - e.g: " + createClusterExample + "\n")
-		log.Logger().Warn(createClusterLong)
+		log.Logger().Warn("you could try: jx create cluster - e.g: " + create.CreateClusterExample + "\n")
+		log.Logger().Warn(create.CreateClusterLong)
 
 		return err
 	}
@@ -84,8 +85,8 @@ func (o *StatusOptions) Run() error {
 
 	if deployList == nil || len(deployList.Items) == 0 {
 		log.Logger().Warnf("Unable to find JX components in %s", clusterStatus.Info())
-		log.Logger().Info("you could try: " + instalExample + "\n")
-		log.Logger().Info(instalLong)
+		log.Logger().Info("you could try: " + create.InstalExample + "\n")
+		log.Logger().Info(create.InstalLong)
 		return fmt.Errorf("no deployments found in namespace %s", namespace)
 	}
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 	"io/ioutil"
 
@@ -22,12 +23,12 @@ var (
 )
 
 type UpgradeBinariesOptions struct {
-	CreateOptions
+	create.CreateOptions
 }
 
 func NewCmdUpgradeBinaries(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeBinariesOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: create.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

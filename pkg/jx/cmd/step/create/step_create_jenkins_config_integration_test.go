@@ -3,8 +3,8 @@
 package create_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"
@@ -24,16 +24,16 @@ import (
 )
 
 func TestCreateJenkinsConfig(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd_test_helpers.CreateTestJxHomeDir()
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
 		assert.NoError(t, err)
 	}()
-	originalKubeCfg, tempKubeCfg, err := cmd_test_helpers.CreateTestKubeConfigDir()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
 	assert.NoError(t, err)
 	defer func() {
-		err := cmd_test_helpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
 		assert.NoError(t, err)
 	}()
 
@@ -78,7 +78,7 @@ func TestCreateJenkinsConfig(t *testing.T) {
 		Output: fileName,
 	}
 
-	cmd_test_helpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
 		runtimeObjects,
 		nil,
 		gits.NewGitCLI(),

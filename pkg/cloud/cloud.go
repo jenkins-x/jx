@@ -1,5 +1,10 @@
 package cloud
 
+import (
+	"sort"
+	"strings"
+)
+
 const (
 	GKE        = "gke"
 	OKE        = "oke"
@@ -19,3 +24,11 @@ const (
 
 // KubernetesProviders list of all available Kubernetes providers
 var KubernetesProviders = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP, ALIBABA}
+
+// KubernetesProviderOptions returns all the Kubernetes providers as a string
+func KubernetesProviderOptions() string {
+	values := []string{}
+	values = append(values, KubernetesProviders...)
+	sort.Strings(values)
+	return strings.Join(values, ", ")
+}

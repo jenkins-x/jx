@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/create"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/deletecmd"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,7 +36,7 @@ const (
 type StepBDDOptions struct {
 	opts.StepOptions
 
-	InstallOptions InstallOptions
+	InstallOptions create.InstallOptions
 	Flags          StepBDDFlags
 }
 
@@ -83,7 +86,7 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
-		InstallOptions: CreateInstallOptions(commonOpts),
+		InstallOptions: create.CreateInstallOptions(commonOpts),
 	}
 	cmd := &cobra.Command{
 		Use:     "bdd",
@@ -98,7 +101,7 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	installOptions := &options.InstallOptions
-	installOptions.addInstallFlags(cmd, true)
+	installOptions.AddInstallFlags(cmd, true)
 
 	cmd.Flags().StringVarP(&options.Flags.BaseDomain, "base-domain", "", "", "the base domain to use when creating the cluster")
 	cmd.Flags().StringVarP(&options.Flags.ConfigFile, "config", "c", "", "the config YAML file containing the clusters to create")
@@ -122,7 +125,7 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.UseRevision, "use-revision", "", true, "Use the git revision from the current git clone instead of the Pull Request branch")
 	cmd.Flags().BoolVarP(&options.Flags.VersionsRepoPr, "version-repo-pr", "", false, "For use with jenkins-x-versions PR. Indicates the git revision of the PR should be used to clone the jenkins-x-versions")
 
-	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
+	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+cloud.KubernetesProviderOptions())
 
 	return cmd
 }
@@ -236,8 +239,8 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		defaultOptions.SetDevNamespace(team)
 
 		// now lets setup the git server
-		createGitServer := &CreateGitServerOptions{
-			CreateOptions: CreateOptions{
+		createGitServer := &create.CreateGitServerOptions{
+			CreateOptions: create.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			Kind: gitProviderName,
@@ -255,8 +258,8 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 			return err
 		}
 
-		createGitToken := &CreateGitTokenOptions{
-			CreateOptions: CreateOptions{
+		createGitToken := &create.CreateGitTokenOptions{
+			CreateOptions: create.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			ServerFlags: opts.ServerFlags{
@@ -271,8 +274,8 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		}
 
 		// now lets create an environment...
-		createEnv := &CreateEnvOptions{
-			CreateOptions: CreateOptions{
+		createEnv := &create.CreateEnvOptions{
+			CreateOptions: create.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			HelmValuesConfig: config.HelmValuesConfig{
@@ -326,7 +329,7 @@ func (o *StepBDDOptions) deleteTeam(team string) error {
 	}
 
 	log.Logger().Infof("Deleting team %s", util.ColorInfo(team))
-	deleteTeam := &DeleteTeamOptions{
+	deleteTeam := &deletecmd.DeleteTeamOptions{
 		CommonOptions: o.createDefaultCommonOptions(),
 		Confirm:       true,
 	}
@@ -585,8 +588,8 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	}
 
 	if !cluster.NoLabels {
-		cluster.Labels = addLabel(cluster.Labels, "cluster", baseClusterName)
-		cluster.Labels = addLabel(cluster.Labels, "branch", branch)
+		cluster.Labels = create.AddLabel(cluster.Labels, "cluster", baseClusterName)
+		cluster.Labels = create.AddLabel(cluster.Labels, "branch", branch)
 
 		args = append(args, "--labels", cluster.Labels)
 	}
@@ -670,7 +673,7 @@ func (o *StepBDDOptions) getVersion() (string, error) {
 
 	// lets try detect a local `Makefile` to find the version
 	dir := o.Flags.VersionsDir
-	version, err := LoadVersionFromCloudEnvironmentsDir(dir, configio.NewFileStore())
+	version, err := create.LoadVersionFromCloudEnvironmentsDir(dir, configio.NewFileStore())
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to load jenkins-x-platform version from dir %s", dir)
 	}

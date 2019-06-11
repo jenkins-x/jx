@@ -2,7 +2,7 @@ package users_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"testing"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -286,7 +286,7 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	fakeProvider.Type = gits.Fake
 
 	o := opts.CommonOptions{}
-	cmd_test_helpers.ConfigureTestOptionsWithResources(&o,
+	testhelpers.ConfigureTestOptionsWithResources(&o,
 		[]runtime.Object{},
 		[]runtime.Object{},
 		&gits.GitFake{},

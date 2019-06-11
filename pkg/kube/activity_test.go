@@ -2,7 +2,7 @@ package kube_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"strconv"
 	"testing"
 	"time"
@@ -25,7 +25,7 @@ import (
 func TestGenerateBuildNumber(t *testing.T) {
 	commonOpts := opts.NewCommonOptionsWithFactory(clients.NewFactory())
 	options := &commonOpts
-	cmd_test_helpers.ConfigureTestOptions(options, options.Git(), options.Helm())
+	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()
 	assert.NoError(t, err, "Creating JX client")

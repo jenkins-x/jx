@@ -2,9 +2,13 @@ package opts
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -64,6 +68,25 @@ func Test_NotifyProgress(t *testing.T) {
 	commonOptsUnderTest.NotifyProgress(LogInfo, expectedText)
 
 	assert.Equal(t, expectedText, actual, "callback receives the log message")
+}
+
+func Test_JXNamespace(t *testing.T) {
+	setupTestCommand()
+	commonOptsUnderTest.SetFactory(clients.NewFactory())
+
+	kubeClient, ns, err := commonOptsUnderTest.KubeClientAndNamespace()
+	assert.NoError(t, err, "Failed to create kube client")
+
+	if err == nil {
+		resource, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+		assert.NoError(t, err, "Failed to query namespace")
+		if err == nil {
+			log.Logger().Warnf("Found namespace %#v", resource)
+		}
+	}
+
+	_, err = commonOptsUnderTest.CreateGitAuthConfigService()
+	assert.NoError(t, err, "Failed to create GitAuthConfigService")
 }
 
 func setupTestCommand() {

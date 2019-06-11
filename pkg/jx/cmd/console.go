@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/get"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
 
@@ -17,7 +18,7 @@ import (
 )
 
 type ConsoleOptions struct {
-	GetURLOptions
+	get.GetURLOptions
 
 	OnlyViewURL     bool
 	ClassicMode     bool
@@ -44,8 +45,8 @@ var (
 
 func NewCmdConsole(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ConsoleOptions{
-		GetURLOptions: GetURLOptions{
-			GetOptions: GetOptions{
+		GetURLOptions: get.GetURLOptions{
+			GetOptions: get.GetOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -70,7 +71,7 @@ func (o *ConsoleOptions) addConsoleFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
 	cmd.Flags().BoolVarP(&o.ClassicMode, "classic", "", false, "Use the classic Jenkins skin instead of Blue Ocean")
 
-	o.addGetUrlFlags(cmd)
+	o.AddGetUrlFlags(cmd)
 	o.JenkinsSelector.AddFlags(cmd)
 }
 

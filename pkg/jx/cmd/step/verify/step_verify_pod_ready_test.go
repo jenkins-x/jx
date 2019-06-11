@@ -1,8 +1,8 @@
 package verify_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/step/verify"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -24,7 +24,7 @@ func TestStepVerifyPod(t *testing.T) {
 	commonOpts.Err = os.Stderr
 	options.CommonOptions = &commonOpts
 
-	cmd_test_helpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	testhelpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	err := options.Run()
 	assert.NoError(t, err, "Command failed: %#v", options)
 
@@ -47,7 +47,7 @@ func TestStepVerifyPodDebug(t *testing.T) {
 	commonOpts.Err = os.Stderr
 	options.CommonOptions = &commonOpts
 
-	cmd_test_helpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	testhelpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	err := options.Run()
 	assert.NoError(t, err, "Command failed: %#v", options)
 
