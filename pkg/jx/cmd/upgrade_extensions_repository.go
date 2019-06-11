@@ -132,12 +132,11 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 			lookupByUUID[r.UUID] = r
 		}
 	}
-	if o.Verbose {
-		log.Logger().Infof("Extension to UUID mapping:\n")
-		for k, v := range lookupByName {
-			log.Logger().Infof("  %s: %s\n", util.ColorInfo(k), util.ColorInfo(v.UUID))
-		}
+	log.Logger().Debugf("Extension to UUID mapping:\n")
+	for k, v := range lookupByName {
+		log.Logger().Debugf("  %s: %s\n", util.ColorInfo(k), util.ColorInfo(v.UUID))
 	}
+
 	uuidResolveErrors := make([]string, 0)
 	seenExtensions := make(map[string]string, 0)
 	replacementLocks := newLock.Extensions[:0]
@@ -189,10 +188,8 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 		log.Logger().Warnf("Error finding diff %s", err.Error())
 	}
 
-	if o.Verbose && diff != "" {
-		log.Logger().Infof("Changes are \n\n%s\n\n", diff)
-	} else {
-		log.Logger().Infof("\n")
+	if diff != "" {
+		log.Logger().Debugf("Changes are \n\n%s\n\n", diff)
 	}
 	return nil
 }
@@ -310,9 +307,7 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 					Script:      strings.TrimSuffix(script, "\n"),
 					Children:    children,
 				}
-				if o.Verbose {
-					log.Logger().Infof("Found extension %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
-				}
+				log.Logger().Debugf("Found extension %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 				result = append(result, extension)
 			} else {
 				children, err := o.walkLock(oldLookupByUUID[UUID], oldLookupByUUID)

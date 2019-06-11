@@ -110,11 +110,9 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	}
 
 	if len(extensionsList.Extensions) > 0 {
-		if o.Verbose {
-			log.Logger().Infof("These extensions are configured for the team:\n")
-			for _, e := range extensionsList.Extensions {
-				log.Logger().Infof("  %s\n", util.ColorInfo(e.FullyQualifiedName()))
-			}
+		log.Logger().Debugf("These extensions are configured for the team:\n")
+		for _, e := range extensionsList.Extensions {
+			log.Logger().Debugf("  %s\n", util.ColorInfo(e.FullyQualifiedName()))
 		}
 	} else {
 		log.Logger().Warnf("No extensions are configured for the team\n")
@@ -162,9 +160,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			if o.Verbose {
-				log.Logger().Infof("Using %s to unpack Helm Charts\n", util.ColorInfo(unpackDir))
-			}
+			log.Logger().Debugf("Using %s to unpack Helm Charts\n", util.ColorInfo(unpackDir))
 			chart := fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name)
 			log.Logger().Infof("Updating extensions from Helm Chart %s repo %s \n", util.ColorInfo(chart), util.ColorInfo(current.Chart.Repo))
 			err = o.Helm().FetchChart(chart, "", true, unpackDir, "", "", "")
@@ -173,9 +169,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			}
 			path := filepath.Join(unpackDir, current.Chart.Name, "repository", "jenkins-x-extensions-repository.lock.yaml")
 			bs, err = ioutil.ReadFile(path)
-			if o.Verbose {
-				log.Logger().Infof("Extensions Repository Lock located at %s\n", util.ColorInfo(path))
-			}
+			log.Logger().Debugf("Extensions Repository Lock located at %s\n", util.ColorInfo(path))
 			if err != nil {
 				return fmt.Errorf("Unable to fetch Extensions Repository Helm Chart %s/%s because %v", current.Chart.RepoName, current.Chart.Name, err)
 			}
@@ -265,7 +259,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		}
 
 		log.Logger().Infof("Preparing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
-		n.Execute(o.Verbose)
+		n.Execute()
 	}
 	return nil
 }

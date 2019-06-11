@@ -76,9 +76,7 @@ func (o *GCReleasesOptions) Run() error {
 	}
 	if len(releases.Items) == 0 {
 		// no preview environments found so lets return gracefully
-		if o.Verbose {
-			log.Logger().Info("no releases found\n")
-		}
+		log.Logger().Debug("no releases found\n")
 		return nil
 	}
 

@@ -180,7 +180,7 @@ func (o *DeleteExtensionOptions) Run() error {
 			if err != nil {
 				log.Logger().Warnf("Error %v getting executable version of %s\n", err, ext.Spec.FullyQualifiedName())
 			}
-			err = e.Execute(o.Verbose)
+			err = e.Execute()
 			if err != nil {
 				log.Logger().Warnf("Error %v running OnUninstall hook for %s\n", err, ext.Spec.FullyQualifiedName())
 			}

@@ -281,11 +281,9 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string
 	if len(info) == 0 {
 		return "", fmt.Errorf("no version found for chart %s", name)
 	}
-	if o.Verbose {
-		log.Logger().Infof("found %d versions:\n", len(info))
-		for _, v := range info {
-			log.Logger().Infof("    %s:\n", v)
-		}
+	log.Logger().Debugf("found %d versions:\n", len(info))
+	for _, v := range info {
+		log.Logger().Debugf("    %s:\n", v)
 	}
 	return info[0], nil
 }

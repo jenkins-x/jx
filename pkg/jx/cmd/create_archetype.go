@@ -123,7 +123,7 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 			return err
 		}
 	}
-	o.Debugf("basedir is: %s\n", dir)
+	log.Logger().Debugf("basedir is: %s\n", dir)
 
 	args := []string{}
 	if !o.Interactive {

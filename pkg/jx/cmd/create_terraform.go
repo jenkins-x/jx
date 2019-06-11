@@ -656,7 +656,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 		}
 
 		if !exists {
-			options.Debugf("cluster %s does not exist, creating...", c.Name())
+			log.Logger().Debugf("cluster %s does not exist, creating...", c.Name())
 
 			os.MkdirAll(path, util.DefaultWritePermissions)
 
@@ -685,7 +685,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 			os.RemoveAll(filepath.Join(path, ".gitignore"))
 		} else {
 			// if the directory already exists, try to load its config
-			options.Debugf("cluster %s already exists, loading...", c.Name())
+			log.Logger().Debugf("cluster %s already exists, loading...", c.Name())
 
 			switch c.Provider() {
 			case "gke", "jx-infra":
@@ -795,7 +795,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	}
 
 	if g.ServiceAccount != "" {
-		options.Debugf("loading service account for cluster %s", g.Name())
+		log.Logger().Debugf("loading service account for cluster %s", g.Name())
 
 		err := gke.Login(g.ServiceAccount, false)
 		if err != nil {
@@ -804,7 +804,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	}
 
 	if g.ProjectID == "" {
-		options.Debugf("determining google project for cluster %s", g.Name())
+		log.Logger().Debugf("determining google project for cluster %s", g.Name())
 
 		projectID, err := options.getGoogleProjectID()
 		if err != nil {
@@ -814,7 +814,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	}
 
 	if !options.Flags.GKESkipEnableApis {
-		options.Debugf("enabling apis for %s", g.Name())
+		log.Logger().Debugf("enabling apis for %s", g.Name())
 
 		err := gke.EnableAPIs(g.ProjectID, "iam", "compute", "container")
 		if err != nil {
@@ -823,14 +823,14 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	}
 
 	if g.Name() == "" {
-		options.Debugf("generating a new name for cluster %s", g.Name())
+		log.Logger().Debugf("generating a new name for cluster %s", g.Name())
 
 		g.name = strings.ToLower(randomdata.SillyName())
 		log.Logger().Infof("No cluster name provided so using a generated one: %s\n", util.ColorInfo(g.Name()))
 	}
 
 	if g.Zone == "" {
-		options.Debugf("getting available zones for cluster %s", g.Name())
+		log.Logger().Debugf("getting available zones for cluster %s", g.Name())
 
 		availableZones, err := gke.GetGoogleZones(g.ProjectID)
 		if err != nil {
@@ -979,7 +979,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	}
 
 	storageBucket := fmt.Sprintf(gkeBucketConfiguration, validTerraformVersions, g.ProjectID, options.Flags.OrganisationName, g.Name())
-	options.Debugf("Using bucket configuration %s", storageBucket)
+	log.Logger().Debugf("Using bucket configuration %s", storageBucket)
 
 	terraformTf := filepath.Join(path, "terraform.tf")
 	// file exists
@@ -1019,7 +1019,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 				return err
 			}
 
-			options.Debugf("attempting to enable apis")
+			log.Logger().Debugf("attempting to enable apis")
 			err = gke.EnableAPIs(g.ProjectID, "iam", "compute", "container")
 			if err != nil {
 				return err

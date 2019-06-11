@@ -105,6 +105,7 @@ func NewCmdGetBuildLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.Context, "context", "", "", "Filters the context of the build")
 	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
 	options.JenkinsSelector.AddFlags(cmd)
+	options.AddBaseFlags(cmd)
 
 	return cmd
 }
@@ -558,9 +559,7 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 		}
 		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, &ps, &pr)
 		if err != nil {
-			if o.Verbose {
-				log.Logger().Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
-			}
+			log.Logger().Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
 		}
 		if pri != nil && o.BuildFilter.BuildMatches(pri.ToBuildPodInfo()) {
 			buildInfos = append(buildInfos, pri)

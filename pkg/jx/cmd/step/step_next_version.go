@@ -149,9 +149,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 			return "", err
 		}
 
-		if o.Verbose {
-			log.Logger().Infof("Found Chart.yaml\n")
-		}
+		log.Logger().Debugf("Found Chart.yaml\n")
 		scanner := bufio.NewScanner(strings.NewReader(string(chart)))
 		for scanner.Scan() {
 			if strings.Contains(scanner.Text(), "version") {
@@ -159,9 +157,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 
 				v := strings.TrimSpace(parts[1])
 				if v != "" {
-					if o.Verbose {
-						log.Logger().Infof("existing Chart version %v\n", v)
-					}
+					log.Logger().Debugf("existing Chart version %v\n", v)
 					return v, nil
 				}
 			}
@@ -173,16 +169,13 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 			return "", err
 		}
 
-		if o.Verbose {
-			log.Logger().Infof("found %s\n", packagejson)
-		}
+		log.Logger().Debugf("found %s\n", packagejson)
+
 		var jsPackage PackageJSON
 		json.Unmarshal(p, &jsPackage)
 
 		if jsPackage.Version != "" {
-			if o.Verbose {
-				log.Logger().Infof("existing version %s\n", jsPackage.Version)
-			}
+			log.Logger().Debugf("existing version %s\n", jsPackage.Version)
 			return jsPackage.Version, nil
 		}
 
@@ -193,15 +186,11 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 			return "", err
 		}
 
-		if o.Verbose {
-			log.Logger().Infof("found pom.xml\n")
-		}
+		log.Logger().Debugf("found pom.xml\n")
 		var project Project
 		xml.Unmarshal(p, &project)
 		if project.Version != "" {
-			if o.Verbose {
-				log.Logger().Infof("existing version %s\n", project.Version)
-			}
+			log.Logger().Debugf("existing version %s\n", project.Version)
 			return project.Version, nil
 		}
 
@@ -212,9 +201,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 			return "", err
 		}
 
-		if o.Verbose {
-			log.Logger().Infof("found Makefile\n")
-		}
+		log.Logger().Debugf("found Makefile\n")
 		scanner := bufio.NewScanner(strings.NewReader(string(m)))
 		for scanner.Scan() {
 			if strings.HasPrefix(scanner.Text(), "VERSION") || strings.HasPrefix(scanner.Text(), "VERSION ") || strings.HasPrefix(scanner.Text(), "VERSION:") || strings.HasPrefix(scanner.Text(), "VERSION=") {
@@ -222,9 +209,7 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 
 				v := strings.TrimSpace(parts[1])
 				if v != "" {
-					if o.Verbose {
-						log.Logger().Infof("existing Makefile version %s\n", v)
-					}
+					log.Logger().Debugf("existing Makefile version %s\n", v)
 					return v, nil
 				}
 			}
@@ -256,9 +241,7 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	// build an array of all the tags
 	versionsRaw = make([]string, len(tags))
 	for i, tag := range tags {
-		if o.Verbose {
-			log.Logger().Infof("found tag %s\n", tag)
-		}
+		log.Logger().Debugf("found tag %s\n", tag)
 		tag = strings.TrimPrefix(tag, "v")
 		if tag != "" {
 			versionsRaw[i] = tag
@@ -281,9 +264,7 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 
 	// return the latest tag
 	col := version.Collection(versions)
-	if o.Verbose {
-		log.Logger().Infof("version collection %v\n", col)
-	}
+	log.Logger().Debugf("version collection %v\n", col)
 
 	sort.Sort(col)
 	latest := len(versions)

@@ -22,15 +22,13 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/add"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/promote"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/util"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -285,11 +283,21 @@ func fullPath(command *cobra.Command) string {
 }
 
 func setLoggingLevel(cmd *cobra.Command, args []string) {
-	level := cmd.Flag(opts.OptionLogLevel).Value.String()
-	err := log.SetLevel(level)
+	verbose, err := strconv.ParseBool(cmd.Flag(opts.OptionVerbose).Value.String())
 	if err != nil {
-		invalidOptionErr := util.InvalidOption(opts.OptionLogLevel, level, log.GetLevels())
-		helper.CheckErr(invalidOptionErr)
+		log.Logger().Errorf("Unable to determine log level")
+	}
+
+	if verbose {
+		err := log.SetLevel("debug")
+		if err != nil {
+			log.Logger().Errorf("Unable to set log level to debug")
+		}
+	} else {
+		err := log.SetLevel("info")
+		if err != nil {
+			log.Logger().Errorf("Unable to set log level to info")
+		}
 	}
 }
 

@@ -278,16 +278,12 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 				act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipelineActName, metav1.GetOptions{})
 				if err != nil {
 					// An error just means the activity doesn't exist yet
-					if o.Verbose {
-						log.Logger().Infof("pod watcher: Unable to find PipelineActivity for %s\n", pipelineActName)
-					}
+					log.Logger().Debugf("pod watcher: Unable to find PipelineActivity for %s\n", pipelineActName)
 				} else {
 					act.Spec.LastCommitSHA = sha
 					act.Spec.GitURL = sourceUrl
 					act.Spec.GitOwner = org
-					if o.Verbose {
-						log.Logger().Infof("pod watcher: Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
-					}
+					log.Logger().Debugf("pod watcher: Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
 					_, err := jxClient.JenkinsV1().PipelineActivities(ns).PatchUpdate(act)
 					if err != nil {
 						// We can safely return this error as it will just get logged
@@ -295,10 +291,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 					}
 				}
 				if org != "" && repo != "" && buildNumber != "" && (pullBaseSha != "" || pullPullSha != "") {
-
-					if o.Verbose {
-						log.Logger().Infof("pod watcher: build pod: %s, org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", pod.Name, org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
-					}
+					log.Logger().Debugf("pod watcher: build pod: %s, org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", pod.Name, org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
 					if sha == "" {
 						log.Logger().Warnf("pod watcher: No sha on %s, not upserting commit status\n", pod.Name)
 					} else {
@@ -314,9 +307,8 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						if err != nil {
 							return err
 						}
-						if o.Verbose {
-							log.Logger().Infof("pod watcher: Using contexts %v\n", contexts)
-						}
+						log.Logger().Debugf("pod watcher: Using contexts %v\n", contexts)
+
 						for _, ctx := range contexts {
 							if pullRequest != "" {
 								name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
@@ -365,13 +357,9 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 			}
 		}
 		statusDetails := jenkinsv1.CommitStatusDetails{}
-		if o.Verbose {
-			log.Logger().Infof("pod watcher: Discovered possible status details %v\n", possibleStatusDetails)
-		}
+		log.Logger().Debugf("pod watcher: Discovered possible status details %v\n", possibleStatusDetails)
 		if len(possibleStatusDetails) == 1 {
-			if o.Verbose {
-				log.Logger().Infof("CommitStatus %s for pipeline %s already exists\n", name, pipelineActName)
-			}
+			log.Logger().Debugf("CommitStatus %s for pipeline %s already exists\n", name, pipelineActName)
 		} else if len(possibleStatusDetails) == 0 {
 			insert = true
 		} else {
@@ -420,9 +408,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 				return err
 			}
 		} else {
-			if o.Verbose {
-				log.Logger().Infof("pod watcher: Not updating or creating pipeline activity %s\n", pipelineActName)
-			}
+			log.Logger().Debugf("pod watcher: Not updating or creating pipeline activity %s\n", pipelineActName)
 		}
 	} else {
 		errors.New("commit status controller: Must supply name")

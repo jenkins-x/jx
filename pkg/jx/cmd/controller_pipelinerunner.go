@@ -169,9 +169,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		o.returnError(err, "could not parse body: "+err.Error(), w, r)
 		return
 	}
-	if o.Verbose {
-		log.Logger().Infof("got payload %#v", arguments)
-	}
+	log.Logger().Debugf("got payload %#v", arguments)
 	pj := arguments.ProwJobSpec
 
 	var revision string

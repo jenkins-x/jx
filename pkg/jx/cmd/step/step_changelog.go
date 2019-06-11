@@ -186,7 +186,6 @@ func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.Footer, "footer", "", "", "The changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.FooterFile, "footer-file", "", "", "The file name of the changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
-	cmd.Flags().BoolVarP(&options.Verbose, opts.OptionVerbose, "", false, "Enable verbose output")
 
 	return cmd
 }
@@ -336,14 +335,12 @@ func (o *StepChangelogOptions) Run() error {
 				commits = &tmp
 			}
 		}
-		if o.Verbose {
-			log.Logger().Infof("Found commits:")
-			for _, commit := range *commits {
-				log.Logger().Infof("  commit %s", commit.Hash)
-				log.Logger().Infof("  Author: %s <%s>", commit.Author.Name, commit.Author.Email)
-				log.Logger().Infof("  Date: %s", commit.Committer.When.Format("Wed Sep 26 12:57:08 2018 +0100"))
-				log.Logger().Infof("\n      %s\n", commit.Message)
-			}
+		log.Logger().Debugf("Found commits:")
+		for _, commit := range *commits {
+			log.Logger().Debugf("  commit %s", commit.Hash)
+			log.Logger().Debugf("  Author: %s <%s>", commit.Author.Name, commit.Author.Email)
+			log.Logger().Debugf("  Date: %s", commit.Committer.When.Format("Wed Sep 26 12:57:08 2018 +0100"))
+			log.Logger().Debugf("\n      %s\n", commit.Message)
 		}
 	}
 	version := o.Version
@@ -406,9 +403,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	markdown = header + markdown + footer
 
-	if o.Verbose {
-		log.Logger().Infof("Generated release notes:\n\n%s\n\n", markdown)
-	}
+	log.Logger().Debugf("Generated release notes:\n\n%s\n\n", markdown)
 
 	if version != "" && o.UpdateRelease && foundGitProvider {
 		releaseInfo := &gits.GitRelease{
