@@ -65,7 +65,7 @@ type FakeRepository struct {
 }
 
 type FakeProvider struct {
-	Server             auth.AuthServer
+	Server             auth.ServerAuth
 	User               auth.UserAuth
 	Organizations      []GitOrganisation
 	Repositories       map[string][]*FakeRepository

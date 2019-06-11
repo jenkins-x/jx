@@ -12,6 +12,14 @@ const (
 	DefaultUsername   = "dummy"
 )
 
+// UserAuth generic auth credentials for a user
+type UserAuth struct {
+	Username    string `json:"username"`
+	ApiToken    string `json:"apitoken"`
+	BearerToken string `json:"bearertoken"`
+	Password    string `json:"password,omitempty"`
+}
+
 // UsernameEnv builds the username environment variable name
 func UsernameEnv(prefix string) string {
 	prefix = strings.ToUpper(prefix)

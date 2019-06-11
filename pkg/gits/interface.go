@@ -160,7 +160,7 @@ type GitProvider interface {
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
 type Gitter interface {
 	FindGitConfigDir(dir string) (string, string, error)
-	PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer)
+	PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer)
 
 	Status(dir string) error
 	Server(dir string) (string, error)

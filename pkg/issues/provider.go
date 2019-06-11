@@ -31,7 +31,7 @@ type IssueProvider interface {
 	HomeURL() string
 }
 
-func CreateIssueProvider(kind string, server *auth.AuthServer, userAuth *auth.UserAuth, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
+func CreateIssueProvider(kind string, server *auth.ServerAuth, userAuth *auth.UserAuth, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
 	switch kind {
 	case Jira:
 		return CreateJiraIssueProvider(server, userAuth, project, batchMode, git)

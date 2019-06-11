@@ -7,21 +7,31 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-func (s *AuthServer) Label() string {
+// ServerAuth auth configuration for a generic server
+type ServerAuth struct {
+	URL   string      `json:"url"`
+	Users []*UserAuth `json:"users"`
+	Name  string      `json:"name"`
+	Kind  string      `json:"kind"`
+
+	CurrentUser string `json:"currentuser"`
+}
+
+func (s *ServerAuth) Label() string {
 	if s.Name != "" {
 		return s.Name
 	}
 	return s.URL
 }
 
-func (s *AuthServer) Description() string {
+func (s *ServerAuth) Description() string {
 	if s.Name != "" {
 		return s.Name + " at " + s.URL
 	}
 	return s.URL
 }
 
-func (s *AuthServer) DeleteUser(username string) error {
+func (s *ServerAuth) DeleteUser(username string) error {
 	idx := -1
 	for i, user := range s.Users {
 		if user.Username == username {
@@ -39,7 +49,7 @@ func (s *AuthServer) DeleteUser(username string) error {
 	return nil
 }
 
-func (s *AuthServer) GetUsernames() []string {
+func (s *ServerAuth) GetUsernames() []string {
 	answer := []string{}
 	for _, user := range s.Users {
 		name := user.Username
@@ -52,12 +62,12 @@ func (s *AuthServer) GetUsernames() []string {
 }
 
 //HasUserAuths checks if a server has any user auth configured
-func (s *AuthServer) HasUserAuths() bool {
+func (s *ServerAuth) HasUserAuths() bool {
 	return len(s.Users) > 0
 }
 
 // CurrentAuth returns the current user auth, otherwise the first one
-func (s *AuthServer) CurrentAuth() *UserAuth {
+func (s *ServerAuth) CurrentUserAuth() *UserAuth {
 	for _, user := range s.Users {
 		if user.Username == s.CurrentUser {
 			return user
@@ -69,7 +79,7 @@ func (s *AuthServer) CurrentAuth() *UserAuth {
 	return nil
 }
 
-func (s *AuthServer) GetUserAuth(username string) *UserAuth {
+func (s *ServerAuth) GetUserAuth(username string) *UserAuth {
 	if s == nil {
 		return nil
 	}

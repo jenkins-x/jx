@@ -79,7 +79,7 @@ func (suite *BitbucketServerProviderTestSuite) SetupSuite() {
 		suite.mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/bitbucket_server", methodMap))
 	}
 
-	as := auth.AuthServer{
+	as := auth.ServerAuth{
 		URL:         "http://auth.example.com",
 		Name:        "Test Auth Server",
 		Kind:        "Oauth2",

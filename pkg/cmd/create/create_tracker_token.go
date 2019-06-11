@@ -136,7 +136,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	return nil
 }
 
-func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
+func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *auth.ServerAuth, userAuth *auth.UserAuth) error {
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err

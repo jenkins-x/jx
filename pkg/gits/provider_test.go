@@ -60,19 +60,17 @@ func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.Con
 	return &authConfigSvc
 }
 
-func createAuthConfig(currentServer *auth.AuthServer, piplineServer, pipelineUser string, servers ...*auth.AuthServer) *auth.AuthConfig {
+func createAuthConfig(currentServer *auth.ServerAuth, piplineServer, pipelineUser string, servers ...*auth.ServerAuth) *auth.AuthConfig {
 	servers = append(servers, currentServer)
 	return &auth.AuthConfig{
-		Servers:          servers,
-		CurrentServer:    currentServer.URL,
-		PipeLineServer:   piplineServer,
-		PipeLineUsername: pipelineUser,
+		Servers:       servers,
+		CurrentServer: currentServer.URL,
 	}
 }
 
-func createAuthServer(url string, name string, kind string, currentUser *auth.UserAuth, users ...*auth.UserAuth) *auth.AuthServer {
+func createAuthServer(url string, name string, kind string, currentUser *auth.UserAuth, users ...*auth.UserAuth) *auth.ServerAuth {
 	users = append(users, currentUser)
-	return &auth.AuthServer{
+	return &auth.ServerAuth{
 		URL:         url,
 		Name:        name,
 		Kind:        kind,
@@ -81,7 +79,7 @@ func createAuthServer(url string, name string, kind string, currentUser *auth.Us
 	}
 }
 
-func createGitProvider(t *testing.T, kind string, server *auth.AuthServer, user *auth.UserAuth, git gits.Gitter) gits.GitProvider {
+func createGitProvider(t *testing.T, kind string, server *auth.ServerAuth, user *auth.UserAuth, git gits.Gitter) gits.GitProvider {
 	switch kind {
 	case gits.KindGitHub:
 		gitHubProvider, err := gits.NewGitHubProvider(server, user, git)
@@ -764,7 +762,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			var users []*auth.UserAuth
 			var currUser *auth.UserAuth
 			var pipelineUser *auth.UserAuth
-			var server *auth.AuthServer
+			var server *auth.ServerAuth
 			var authSvc *auth.ConfigService
 			configFile, err := ioutil.TempFile("", "test-config")
 			defer os.Remove(configFile.Name())

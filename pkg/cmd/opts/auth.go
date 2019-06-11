@@ -131,7 +131,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 				log.Logger().Warnf("WARNING: unable to get remote Git repo server, %v", err)
 				server = "https://github.com"
 			}
-			config.Servers = []*auth.AuthServer{
+			config.Servers = []*auth.ServerAuth{
 				{
 					Name:  "Git",
 					URL:   server,
@@ -142,7 +142,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 	}
 
 	if len(config.Servers) == 0 {
-		config.Servers = []*auth.AuthServer{
+		config.Servers = []*auth.ServerAuth{
 			{
 				Name:  "GitHub",
 				URL:   "https://github.com",
@@ -197,8 +197,8 @@ func (o *CommonOptions) LoadPipelineSecrets(kind, serviceKind string) (*corev1.S
 }
 
 // PickPipelineUserAuth returns the user auth for pipeline user
-func (o *CommonOptions) PickPipelineUserAuth(config *auth.AuthConfig, server *auth.AuthServer) (*auth.UserAuth, error) {
-	userName := config.PipeLineUsername
+func (o *CommonOptions) PickPipelineUserAuth(config *auth.AuthConfig, server *auth.ServerAuth) (*auth.UserAuth, error) {
+	var userName string
 	if userName != "" {
 		userAuth := config.GetOrCreateUserAuth(server.URL, userName)
 		if userAuth != nil {
@@ -215,9 +215,7 @@ func (o *CommonOptions) PickPipelineUserAuth(config *auth.AuthConfig, server *au
 			return userAuth, err
 		}
 	}
-	if userAuth != nil {
-		config.PipeLineUsername = userAuth.Username
-	} else {
+	if userAuth == nil {
 		// lets create an empty one for now
 		userAuth = &auth.UserAuth{}
 	}

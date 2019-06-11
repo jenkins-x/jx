@@ -86,13 +86,9 @@ func (o *StepVerifyGitOptions) Run() error {
 	for _, server := range servers {
 		log.Infof("verifying git server %s at %s\n", info(server.Name), info(server.URL))
 
-		pipelineUser := config.PipeLineUsername
-		if pipelineUser == "" {
-			return fmt.Errorf("no PipelineUsername defined for server %s at %s", server.Name, server.URL)
-		}
-		user := server.GetUserAuth(pipelineUser)
+		user := server.CurrentUserAuth()
 		if user == nil {
-			return fmt.Errorf("no UserAuth found for pipeline user %s defined for server %s at %s", pipelineUser, server.Name, server.URL)
+			return fmt.Errorf("no current UserAuth found for server %s at %s", server.Name, server.URL)
 		}
 
 		provider, err := gits.CreateProvider(server, user, o.Git())

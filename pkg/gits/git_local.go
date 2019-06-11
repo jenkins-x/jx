@@ -315,7 +315,7 @@ func (g *GitLocal) CreateTag(dir string, tag string, msg string) error {
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
-func (g *GitLocal) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
+func (g *GitLocal) PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer) {
 	g.GitCLI.PrintCreateRepositoryGenerateAccessToken(server, username, o)
 }
 

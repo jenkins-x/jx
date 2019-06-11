@@ -39,7 +39,7 @@ func (suite *GerritProviderTestSuite) SetupSuite() {
 		suite.mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/gerrit", methodMap))
 	}
 
-	as := auth.AuthServer{
+	as := auth.ServerAuth{
 		URL:         suite.server.URL,
 		Name:        "Test Server",
 		Kind:        "Oauth2",

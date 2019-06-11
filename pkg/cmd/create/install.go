@@ -1336,7 +1336,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		authConfig.SetUserAuth(gitServer, userAuth)
 	}
 
-	var authServer *auth.AuthServer
+	var authServer *auth.ServerAuth
 	if gitServer != "" {
 		kind := ""
 		if options.GitRepositoryOptions.ServerKind == "" {
@@ -1376,8 +1376,8 @@ func (options *InstallOptions) configureGitAuth() error {
 		authConfig.SetUserAuth(gitServer, userAuth)
 	}
 
-	log.Logger().Infof("Select the CI/CD pipelines Git server and user")
-	var pipelineAuthServer *auth.AuthServer
+	log.Logger().Infof("Select the CI/CD pipelines Git server and user\n")
+	var pipelineAuthServer *auth.ServerAuth
 	if options.BatchMode {
 		pipelineAuthServer = authServer
 	} else {
@@ -1410,10 +1410,10 @@ func (options *InstallOptions) configureGitAuth() error {
 
 	// lets default the values from the CLI arguments
 	if options.GitRepositoryOptions.Username != "" {
-		authConfig.PipeLineUsername = options.GitRepositoryOptions.Username
+		// authConfig.PipeLineUsername = options.GitRepositoryOptions.Username
 	}
 	if options.GitRepositoryOptions.ServerURL != "" {
-		authConfig.PipeLineServer = options.GitRepositoryOptions.ServerURL
+		// authConfig.PipeLineServer = options.GitRepositoryOptions.ServerURL
 	}
 	pipelineUserAuth, err := options.PickPipelineUserAuth(authConfig, authServer)
 	if err != nil {
@@ -1442,7 +1442,7 @@ func (options *InstallOptions) configureGitAuth() error {
 
 	log.Logger().Infof("Setting the pipelines Git server %s and user name %s.",
 		util.ColorInfo(pipelineAuthServerURL), util.ColorInfo(pipelineAuthUsername))
-	authConfig.UpdatePipelineServer(pipelineAuthServer, pipelineUserAuth)
+	// authConfig.UpdatePipelineServer(pipelineAuthServer, pipelineUserAuth)
 
 	log.Logger().Debugf("Saving the Git authentication configuration")
 	err = authConfigSvc.SaveConfig()
@@ -1477,7 +1477,7 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 	if server == nil {
 		return nil, fmt.Errorf("no current git server set in the configuration")
 	}
-	user := config.CurrentUser(server, false)
+	user := server.CurrentUserAuth()
 	if user == nil {
 		return nil, fmt.Errorf("no current git user set in configuration for server '%s'", server.Label())
 	}
@@ -3033,7 +3033,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	}
 	config := authConfigSvc.Config()
 
-	var server *auth.AuthServer
+	var server *auth.ServerAuth
 	if options.ServerFlags.IsEmpty() {
 		url := ""
 		url, err = options.FindService(kube.ServiceChartMuseum)

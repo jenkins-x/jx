@@ -7,8 +7,14 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// vaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
+type vaultAuthConfigSaver struct {
+	vaultClient vault.Client
+	secretName  string
+}
+
 // LoadConfig loads the config from the vault
-func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (v *vaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 	data, err := v.vaultClient.ReadYaml(vault.AuthSecretPath(v.secretName))
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading the auth config %q from vault", v.secretName)
@@ -26,7 +32,7 @@ func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the config to the vault
-func (v *VaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
+func (v *vaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return errors.Wrap(err, "marshaling auth config")
@@ -44,8 +50,8 @@ func NewVaultAuthConfigService(secretName string, vaultClient vault.Client) Conf
 }
 
 // newVaultAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
-func newVaultAuthConfigSaver(secretName string, vaultClient vault.Client) VaultAuthConfigSaver {
-	return VaultAuthConfigSaver{
+func newVaultAuthConfigSaver(secretName string, vaultClient vault.Client) vaultAuthConfigSaver {
+	return vaultAuthConfigSaver{
 		secretName:  secretName,
 		vaultClient: vaultClient,
 	}

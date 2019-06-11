@@ -8,7 +8,7 @@ import (
 )
 
 // GetAddonAuth returns the server and user auth for the given addon service URL
-func (o *CommonOptions) GetAddonAuth(serviceURL string) (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *CommonOptions) GetAddonAuth(serviceURL string) (*auth.ServerAuth, *auth.UserAuth, error) {
 	if serviceURL == "" {
 		return nil, nil, nil
 	}
@@ -24,14 +24,14 @@ func (o *CommonOptions) GetAddonAuth(serviceURL string) (*auth.AuthServer, *auth
 }
 
 // GetAddonAuth returns the server and user auth for the given addon service URL. Returns null values if there is no server
-func (o *CommonOptions) GetAddonAuthByKind(kind, serverURL string) (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *CommonOptions) GetAddonAuthByKind(kind, serverURL string) (*auth.ServerAuth, *auth.UserAuth, error) {
 	authConfigSvc, err := o.CreateAddonAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}
 	config := authConfigSvc.Config()
 
-	var server *auth.AuthServer
+	var server *auth.ServerAuth
 	for _, s := range config.Servers {
 		if s.Kind == kind && s.URL == serverURL {
 			server = s

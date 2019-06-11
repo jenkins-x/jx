@@ -721,7 +721,7 @@ func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
-func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
+func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
 	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())

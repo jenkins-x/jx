@@ -214,7 +214,7 @@ func (pr *GitPullRequest) NumberString() string {
 	return "#" + strconv.Itoa(*n)
 }
 
-func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func CreateProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	if server.Kind == "" {
 		server.Kind = SaasGitKind(server.URL)
 	}
@@ -389,7 +389,7 @@ func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, m
 	return i.CreateProviderForUser(server, userAuth, gitKind, git)
 }
 
-func (i *GitRepository) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth, gitKind string, git Gitter) (GitProvider, error) {
+func (i *GitRepository) CreateProviderForUser(server *auth.ServerAuth, user *auth.UserAuth, gitKind string, git Gitter) (GitProvider, error) {
 	if i.Host == GitHubHost {
 		return NewGitHubProvider(server, user, git)
 	}
@@ -422,7 +422,7 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 		server.Kind = gitKind
 	}
 
-	userAuth := config.CurrentUser(server, inCluster)
+	userAuth := server.CurrentUserAuth()
 	if userAuth != nil && !userAuth.IsInvalid() {
 		return CreateProvider(server, userAuth, git)
 	}
@@ -442,7 +442,7 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 	return CreateProvider(server, userAuth, git)
 }
 
-func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.AuthServer,
+func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.ServerAuth,
 	git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*auth.UserAuth, error) {
 
 	f := func(username string) error {

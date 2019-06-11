@@ -126,7 +126,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	var server *auth.AuthServer
+	var server *auth.ServerAuth
 	if o.ServerFlags.IsEmpty() {
 		url, err := o.CustomJenkinsURL(&o.JenkinsSelector, kubeClient, ns)
 		if err != nil {

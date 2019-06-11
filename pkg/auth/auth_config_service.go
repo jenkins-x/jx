@@ -1,5 +1,11 @@
 package auth
 
+// AuthConfigService implements the generic features of the ConfigService because we don't have superclasses
+type AuthConfigService struct {
+	config *AuthConfig
+	saver  ConfigSaver
+}
+
 // Config gets the AuthConfig from the service
 func (s *AuthConfigService) Config() *AuthConfig {
 	if s.config == nil {
@@ -17,17 +23,6 @@ func (s *AuthConfigService) SetConfig(c *AuthConfig) {
 func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
 	config := s.config
 	config.SetUserAuth(url, userAuth)
-	user := userAuth.Username
-	if user != "" {
-		config.DefaultUsername = user
-	}
-
-	// Set Pipeline user once only.
-	if config.PipeLineUsername == "" {
-		config.PipeLineUsername = user
-		config.PipeLineServer = url
-	}
-
 	config.CurrentServer = url
 	return s.saver.SaveConfig(s.config)
 }

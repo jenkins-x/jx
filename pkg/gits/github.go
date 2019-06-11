@@ -27,12 +27,12 @@ type GitHubProvider struct {
 	Client   *github.Client
 	Context  context.Context
 
-	Server auth.AuthServer
+	Server auth.ServerAuth
 	User   auth.UserAuth
 	Git    Gitter
 }
 
-func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func NewGitHubProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
 	provider := GitHubProvider{

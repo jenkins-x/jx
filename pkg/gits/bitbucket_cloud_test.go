@@ -113,7 +113,7 @@ var bitbucketRouter = util.Router{
 }
 
 func setupGitProvider(url, name, user string) (gits.GitProvider, error) {
-	as := auth.AuthServer{
+	as := auth.ServerAuth{
 		URL:         url,
 		Name:        "Test Auth Server",
 		Kind:        "Oauth2",

@@ -21,7 +21,7 @@ func TestAddGiteaServers(t *testing.T) {
 	expectedGitURL := "https://my.gitea.com"
 	expectedGitName := "mygitea"
 	expectedCredentials := "my-credential-name"
-	server := &auth.AuthServer{
+	server := &auth.ServerAuth{
 		Kind: gits.KindGitea,
 		Name: expectedGitName,
 		URL:  expectedGitURL,
@@ -109,7 +109,7 @@ func TestAddGitHuvServers(t *testing.T) {
 	expectedGitURL := expectedGitHostURL + "/api/v3/"
 	expectedGitName := "GHE"
 	expectedCredentials := "my-credential-name"
-	server := &auth.AuthServer{
+	server := &auth.ServerAuth{
 		Kind: kind,
 		Name: expectedGitName,
 		URL:  expectedGitHostURL,
@@ -151,7 +151,7 @@ func TestAddBitBucketServerServers(t *testing.T) {
 	expectedGitURL := "https://my.bitbucket.com"
 	expectedGitName := "mybitbucket"
 	expectedCredentials := "my-credential-name"
-	server := &auth.AuthServer{
+	server := &auth.ServerAuth{
 		Kind: kind,
 		Name: expectedGitName,
 		URL:  expectedGitURL,
@@ -193,7 +193,7 @@ func TestAddBitBucketCloudServers(t *testing.T) {
 	expectedGitURL := gits.BitbucketCloudURL
 	expectedGitName := "mybitbucket"
 	expectedCredentials := "my-credential-name"
-	server := &auth.AuthServer{
+	server := &auth.ServerAuth{
 		Kind: kind,
 		Name: expectedGitName,
 		URL:  expectedGitURL,

@@ -18,12 +18,12 @@ type GerritProvider struct {
 	Username string
 	Context  context.Context
 
-	Server auth.AuthServer
+	Server auth.ServerAuth
 	User   auth.UserAuth
 	Git    Gitter
 }
 
-func NewGerritProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func NewGerritProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
 	provider := GerritProvider{

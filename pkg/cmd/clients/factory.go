@@ -238,7 +238,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 		}
 		if !userAuth.IsInvalid() || (customJenkins && userAuth.Password != "") {
 			if len(config.Servers) == 0 {
-				config.Servers = []*auth.AuthServer{
+				config.Servers = []*auth.ServerAuth{
 					{
 						Name:  u.Host,
 						URL:   svcURL,
@@ -354,7 +354,6 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 								userAuth.ApiToken = string(pwd)
 							}
 							config.SetUserAuth(u, userAuth)
-							config.UpdatePipelineServer(server, userAuth)
 						}
 					}
 				}

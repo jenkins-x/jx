@@ -16,13 +16,13 @@ import (
 
 type JiraService struct {
 	JiraClient *jira.Client
-	Server     *auth.AuthServer
+	Server     *auth.ServerAuth
 	UserAuth   *auth.UserAuth
 	Project    string
 	Git        gits.Gitter
 }
 
-func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
+func CreateJiraIssueProvider(server *auth.ServerAuth, userAuth *auth.UserAuth, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
 	u := server.URL
 	if u == "" {
 		return nil, fmt.Errorf("No base URL for server!")

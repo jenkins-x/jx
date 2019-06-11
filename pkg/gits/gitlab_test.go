@@ -60,7 +60,7 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *gits.
 		ApiToken: "test",
 	}
 
-	authServer := &auth.AuthServer{
+	authServer := &auth.ServerAuth{
 		URL:   server.URL,
 		Users: []*auth.UserAuth{userAuth},
 	}

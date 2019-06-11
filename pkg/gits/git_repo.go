@@ -19,7 +19,7 @@ type CreateRepoData struct {
 	PrivateRepo  bool
 	User         *auth.UserAuth
 	GitProvider  GitProvider
-	GitServer    *auth.AuthServer
+	GitServer    *auth.ServerAuth
 }
 
 type GitRepositoryOptions struct {
@@ -43,7 +43,7 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 }
 
 func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
-	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*CreateRepoData, error) {
+	repoOptions *GitRepositoryOptions, server *auth.ServerAuth, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
 
 	var err error
@@ -223,6 +223,6 @@ func GetOwner(batchMode bool, provider GitProvider, gitUsername string, in termi
 }
 
 func PickNewGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
-	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*CreateRepoData, error) {
+	repoOptions *GitRepositoryOptions, server *auth.ServerAuth, userAuth *auth.UserAuth, git Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*CreateRepoData, error) {
 	return PickNewOrExistingGitRepository(batchMode, authConfigSvc, defaultRepoName, repoOptions, server, userAuth, git, false, in, out, outErr)
 }

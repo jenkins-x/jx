@@ -82,7 +82,7 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 }
 
 // UpdatePipelineGitCredentialsSecret updates the pipeline git credentials in a kubernetes secret
-func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
+func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.ServerAuth, userAuth *auth.UserAuth) (string, error) {
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
@@ -198,7 +198,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 }
 
 // EnsureGitServiceCRD ensure that the GitService CRD is installed
-func (o *CommonOptions) EnsureGitServiceCRD(server *auth.AuthServer) error {
+func (o *CommonOptions) EnsureGitServiceCRD(server *auth.ServerAuth) error {
 	kind := server.Kind
 	if kind == "github" && server.URL == gits.GitHubURL {
 		return nil
@@ -367,7 +367,7 @@ func (o *CommonOptions) InitGitConfigAndUser() error {
 }
 
 // GetPipelineGitAuth returns the pipeline git authentication credentials
-func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *CommonOptions) GetPipelineGitAuth() (*auth.ServerAuth, *auth.UserAuth, error) {
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
@@ -376,7 +376,8 @@ func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, 
 	if authConfig == nil {
 		return nil, nil, errors.New("empty Git config")
 	}
-	server, user := authConfig.GetPipelineAuth()
+	server := authConfig.CurrentAuthServer()
+	user := server.CurrentUserAuth()
 	return server, user, nil
 }
 

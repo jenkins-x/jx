@@ -6,7 +6,6 @@ type ConfigService interface {
 	SetConfig(c *AuthConfig)
 	// LoadConfig loads the configuration from the users JX config directory
 	LoadConfig() (*AuthConfig, error)
-	//HasConfigFile() (bool, error)
 	// SaveConfig saves the configuration
 	SaveConfig() error
 	// SaveUserAuth saves the given user auth for the server url
@@ -20,7 +19,6 @@ type ConfigService interface {
 type ConfigSaver interface {
 	// LoadConfig loads the configuration from the users JX config directory
 	LoadConfig() (*AuthConfig, error)
-	//HasConfigFile() (bool, error)
 	// SaveConfig saves the configuration
 	SaveConfig(config *AuthConfig) error
 }

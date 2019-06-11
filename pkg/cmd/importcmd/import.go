@@ -71,7 +71,7 @@ type ImportOptions struct {
 	InitialisedGit        bool
 	Jenkins               gojenkins.JenkinsClient
 	GitConfDir            string
-	GitServer             *auth.AuthServer
+	GitServer             *auth.ServerAuth
 	GitUserAuth           *auth.UserAuth
 	GitProvider           gits.GitProvider
 	PostDraftPackCallback CallbackFn
@@ -234,7 +234,7 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 		config := authConfigSvc.Config()
-		var server *auth.AuthServer
+		var server *auth.ServerAuth
 		if options.RepoURL != "" {
 			gitInfo, err := gits.ParseGitURL(options.RepoURL)
 			if err != nil {
@@ -250,7 +250,7 @@ func (options *ImportOptions) Run() error {
 		}
 
 		if options.UseDefaultGit {
-			userAuth = config.CurrentUser(server, options.CommonOptions.InCluster())
+			userAuth = server.CurrentUserAuth()
 		} else {
 			// Get the org in case there is more than one user auth on the server and batchMode is true
 			org := options.getOrganisationOrCurrentUser()

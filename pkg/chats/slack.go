@@ -12,11 +12,11 @@ import (
 
 type SlackChatProvider struct {
 	SlackClient *slack.Client
-	Server      *auth.AuthServer
+	Server      *auth.ServerAuth
 	UserAuth    *auth.UserAuth
 }
 
-func CreateSlackChatProvider(server *auth.AuthServer, userAuth *auth.UserAuth, batchMode bool) (ChatProvider, error) {
+func CreateSlackChatProvider(server *auth.ServerAuth, userAuth *auth.UserAuth, batchMode bool) (ChatProvider, error) {
 	u := server.URL
 	if u == "" {
 		return nil, fmt.Errorf("No base URL for server!")

@@ -37,7 +37,7 @@ type ElasticsearchProvider struct {
 	BaseURL   string
 }
 
-func NewElasticsearchProvider(server *auth.AuthServer, user *auth.UserAuth) (PipelineEventsProvider, error) {
+func NewElasticsearchProvider(server *auth.ServerAuth, user *auth.UserAuth) (PipelineEventsProvider, error) {
 
 	basicAuth := util.BasicAuth(user.Username, user.Password)
 

@@ -22,12 +22,12 @@ type GitlabProvider struct {
 	Client   *gitlab.Client
 	Context  context.Context
 
-	Server auth.AuthServer
+	Server auth.ServerAuth
 	User   auth.UserAuth
 	Git    Gitter
 }
 
-func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func NewGitlabProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	u := server.URL
 	c := gitlab.NewClient(nil, user.ApiToken)
 	if !IsGitLabServerURL(u) {
@@ -44,7 +44,7 @@ func IsGitLabServerURL(u string) bool {
 }
 
 // Used by unit tests to inject a mocked client
-func WithGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
+func WithGitlabClient(server *auth.ServerAuth, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
 	provider := &GitlabProvider{
 		Server:   *server,
 		User:     *user,

@@ -54,7 +54,7 @@ func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the generate access token URL
-func (g *GitFake) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
+func (g *GitFake) PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer) {
 	fmt.Fprintf(o, "Access token URL: %s\n\n", g.AccessTokenURL)
 }
 

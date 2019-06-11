@@ -2,15 +2,13 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -18,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
@@ -88,7 +87,7 @@ func (o *DeleteBranchOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	var server *auth.AuthServer
+	var server *auth.ServerAuth
 	config := authConfigSvc.Config()
 	if o.GitHub {
 		server = config.GetOrCreateServer(gits.GitHubURL)

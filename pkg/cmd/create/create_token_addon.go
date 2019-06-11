@@ -96,7 +96,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 		kind = "addon"
 	}
 
-	var server *auth.AuthServer
+	var server *auth.ServerAuth
 	server, err = o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
 		return err
@@ -147,7 +147,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 	return nil
 }
 
-func (o *CreateTokenAddonOptions) updateAddonCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
+func (o *CreateTokenAddonOptions) updateAddonCredentialsSecret(server *auth.ServerAuth, userAuth *auth.UserAuth) error {
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err

@@ -94,7 +94,7 @@ func (o *DeleteGitServerOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteGitServerOptions) deleteServerResources(server *auth.AuthServer) error {
+func (o *DeleteGitServerOptions) deleteServerResources(server *auth.ServerAuth) error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err

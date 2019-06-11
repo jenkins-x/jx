@@ -9,6 +9,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// fileAuthConfigSaver is a ConfigSaver that saves its config to the local filesystem
+type fileAuthConfigSaver struct {
+	FileName string
+}
+
 // NewFileAuthConfigService
 func NewFileAuthConfigService(filename string) (ConfigService, error) {
 	saver, err := newFileAuthSaver(filename)
@@ -19,7 +24,7 @@ func NewFileAuthConfigService(filename string) (ConfigService, error) {
 // If the fileName is an absolute path, it will be used. If it is a simple filename, it will be stored in the default
 // Config directory
 func newFileAuthSaver(fileName string) (ConfigSaver, error) {
-	svc := &FileAuthConfigSaver{}
+	svc := &fileAuthConfigSaver{}
 	// If the fileName is an absolute path, use that. Otherwise treat it as a config filename to be used in
 	if fileName == filepath.Base(fileName) {
 		dir, err := util.ConfigDir()
@@ -34,7 +39,7 @@ func newFileAuthSaver(fileName string) (ConfigSaver, error) {
 }
 
 // LoadConfig loads the configuration from the users JX config directory
-func (s *FileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (s *fileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 	config := &AuthConfig{}
 	fileName := s.FileName
 	if fileName != "" {
@@ -57,7 +62,7 @@ func (s *FileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the configuration to disk
-func (s *FileAuthConfigSaver) SaveConfig(config *AuthConfig) error {
+func (s *fileAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	fileName := s.FileName
 	if fileName == "" {
 		return fmt.Errorf("no filename defined")

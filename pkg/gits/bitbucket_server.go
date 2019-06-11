@@ -28,7 +28,7 @@ type BitbucketServerProvider struct {
 	Username string
 	Context  context.Context
 
-	Server auth.AuthServer
+	Server auth.ServerAuth
 	User   auth.UserAuth
 	Git    Gitter
 }
@@ -97,7 +97,7 @@ type webHook struct {
 	Active        bool                   `json:"active"`
 }
 
-func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func NewBitbucketServerProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 	apiKeyAuthContext := context.WithValue(ctx, bitbucket.ContextAccessToken, user.ApiToken)
 

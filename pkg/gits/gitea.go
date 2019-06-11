@@ -20,12 +20,12 @@ type GiteaProvider struct {
 	Username string
 	Client   *gitea.Client
 
-	Server auth.AuthServer
+	Server auth.ServerAuth
 	User   auth.UserAuth
 	Git    Gitter
 }
 
-func NewGiteaProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func NewGiteaProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	client := gitea.NewClient(server.URL, user.ApiToken)
 
 	provider := GiteaProvider{

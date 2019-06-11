@@ -54,7 +54,7 @@ func (suite *AnchoreProviderTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(suite.mux)
 	suite.Require().NotNil(suite.server)
 
-	as := auth.AuthServer{
+	as := auth.ServerAuth{
 		URL:         suite.server.URL,
 		Name:        "Test Anchore Server",
 		Kind:        "anchore-anchore-engine-core",
