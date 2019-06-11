@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -86,5 +87,46 @@ func TestValidateClusterDetailsForInvalidParameterCombination(t *testing.T) {
 		o := cmd.CreateTerraformOptions{Flags: flags}
 		err := o.ValidateClusterDetails()
 		assert.EqualError(t, err, "--cluster cannot be used in conjunction with --cluster-name or --cloud-provider")
+	}
+}
+
+func TestValidateClusterArgs(t *testing.T) {
+	t.Parallel()
+
+	var tests = []struct {
+		name                string
+		org                 string
+		shortClusterName    string
+		expectedClusterName string
+		err                 error
+	}{
+		{
+			name:                "basic_cluster_name",
+			org:                 "org",
+			shortClusterName:    "dev",
+			expectedClusterName: "org-dev",
+		},
+		{
+			name:             "too_long_cluster_name",
+			org:              "thisisareallylongorgname",
+			shortClusterName: "thisisareallylongclustername",
+			err:              errors.New("cluster name must not be longer than 27 characters - thisisareallylongorgname-thisisareallylongclustername"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := cmd.GKECluster{
+				Organisation: tt.org,
+			}
+			g.SetName(tt.shortClusterName)
+
+			err := g.Validate()
+			if tt.err != nil {
+				assert.Equal(t, tt.err, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
