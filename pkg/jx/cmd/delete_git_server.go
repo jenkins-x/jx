@@ -90,7 +90,7 @@ func (o *DeleteGitServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Deleted Git servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	log.Logger().Infof("Deleted Git servers: %s from local settings", util.ColorInfo(strings.Join(args, ", ")))
 	return nil
 }
 
@@ -111,7 +111,7 @@ func (o *DeleteGitServerOptions) deleteServerResources(server *auth.AuthServer) 
 		ann := secret.Annotations
 		if ann != nil && ann[kube.AnnotationURL] == server.URL {
 			name := secret.Name
-			log.Logger().Infof("Deleting Secret %s\n", util.ColorInfo(name))
+			log.Logger().Infof("Deleting Secret %s", util.ColorInfo(name))
 
 			err = kubeClient.CoreV1().Secrets(ns).Delete(name, nil)
 			if err != nil {
@@ -127,7 +127,7 @@ func (o *DeleteGitServerOptions) deleteServerResources(server *auth.AuthServer) 
 	for _, gitService := range gitServices.Items {
 		if gitService.Spec.URL == server.URL {
 			name := gitService.Name
-			log.Logger().Infof("Deleting GitService %s\n", util.ColorInfo(name))
+			log.Logger().Infof("Deleting GitService %s", util.ColorInfo(name))
 			err = gitServiceResources.Delete(name, nil)
 			if err != nil {
 				return err

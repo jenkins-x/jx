@@ -100,7 +100,7 @@ func (o *EditDeployKindOptions) Run() error {
 			teamSettings := &env.Spec.TeamSettings
 			teamSettings.DeployKind = name
 
-			log.Logger().Infof("Setting the team deploy kind to: %s\n", util.ColorInfo(name))
+			log.Logger().Infof("Setting the team deploy kind to: %s", util.ColorInfo(name))
 			return nil
 		}
 		return o.ModifyDevEnvironment(callback)

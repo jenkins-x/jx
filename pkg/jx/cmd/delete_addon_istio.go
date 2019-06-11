@@ -85,7 +85,7 @@ func (o *DeleteAddonIstioOptions) Run() error {
 		return err
 	}
 	selector := fmt.Sprintf("chart=%s,release=%s", o.ReleaseName, o.ReleaseName)
-	log.Logger().Infof("Removing Istio CRDs using selector: %s\n", util.ColorInfo(selector))
+	log.Logger().Infof("Removing Istio CRDs using selector: %s", util.ColorInfo(selector))
 	err = apisClient.ApiextensionsV1beta1().CustomResourceDefinitions().DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err

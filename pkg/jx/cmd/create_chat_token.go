@@ -102,11 +102,11 @@ func (o *CreateChatTokenOptions) Run() error {
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			log.Logger().Infof("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
+			log.Logger().Infof("Please generate an API Token for %s server %s", server.Kind, server.Label())
 			if tokenUrl != "" {
-				log.Logger().Infof("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+				log.Logger().Infof("Click this URL %s\n", util.ColorInfo(tokenUrl))
 			}
-			log.Logger().Infof("Then COPY the token and enter in into the form below:\n\n")
+			log.Logger().Infof("Then COPY the token and enter in into the form below:\n")
 			return nil
 		}
 
@@ -127,10 +127,10 @@ func (o *CreateChatTokenOptions) Run() error {
 
 	err = o.updateChatCredentialsSecret(server, userAuth)
 	if err != nil {
-		log.Logger().Warnf("Failed to update chat credentials secret: %v\n", err)
+		log.Logger().Warnf("Failed to update chat credentials secret: %v", err)
 	}
 
-	log.Logger().Infof("Created user %s API Token for chat server %s at %s\n",
+	log.Logger().Infof("Created user %s API Token for chat server %s at %s",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

@@ -297,11 +297,11 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 						changed = true
 					}
 					if changed {
-						log.Logger().Infof("Updating Role %s in namespace %s\n", roleName, ns)
+						log.Logger().Infof("Updating Role %s in namespace %s", roleName, ns)
 						_, err = roles.Update(oldRole)
 					}
 				} else {
-					log.Logger().Infof("Creating Role %s in namespace %s\n", roleName, ns)
+					log.Logger().Infof("Creating Role %s in namespace %s", roleName, ns)
 					newRole := &rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: roleName,
@@ -317,7 +317,7 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 			}
 		}
 		if err != nil {
-			log.Logger().Warnf("Failed: %s\n", err)
+			log.Logger().Warnf("Failed: %s", err)
 			errors = append(errors, err)
 		}
 
@@ -338,11 +338,11 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 				changed = true
 			}
 			if changed {
-				log.Logger().Infof("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
+				log.Logger().Infof("Updating RoleBinding %s in namespace %s", bindingName, ns)
 				_, err = roleBindings.Update(old)
 			}
 		} else {
-			log.Logger().Infof("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
+			log.Logger().Infof("Creating RoleBinding %s in namespace %s", bindingName, ns)
 			newBinding := &rbacv1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: bindingName,
@@ -357,7 +357,7 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 			_, err = roleBindings.Create(newBinding)
 		}
 		if err != nil {
-			log.Logger().Warnf("Failed: %s\n", err)
+			log.Logger().Warnf("Failed: %s", err)
 			errors = append(errors, err)
 		}
 	}
@@ -504,11 +504,11 @@ func (o *ControllerRoleOptions) upsertRoleInEnvironments(env *v1.Environment, ro
 			changed = true
 		}
 		if changed {
-			log.Logger().Infof("Updating Role %s in namespace %s\n", roleName, ns)
+			log.Logger().Infof("Updating Role %s in namespace %s", roleName, ns)
 			_, err = roles.Update(oldRole)
 		}
 	} else {
-		log.Logger().Infof("Creating Role %s in namespace %s\n", roleName, ns)
+		log.Logger().Infof("Creating Role %s in namespace %s", roleName, ns)
 		newRole := &rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: roleName,
@@ -536,7 +536,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versio
 					}
 				}
 				if foundRole == 0 {
-					log.Logger().Infof("Environment binding doesn't exist for role %s , creating it.\n", util.ColorInfo(roleValue.GetName()))
+					log.Logger().Infof("Environment binding doesn't exist for role %s , creating it.", util.ColorInfo(roleValue.GetName()))
 					newSubject := rbacv1.Subject{
 						Name:      roleValue.GetName(),
 						Kind:      kube.ValueKindEnvironmentRole,

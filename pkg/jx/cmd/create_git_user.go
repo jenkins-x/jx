@@ -101,7 +101,7 @@ func (o *CreateGitUserOptions) Run() error {
 	}
 
 	deploymentName := "gitea-gitea"
-	log.Logger().Infof("Waiting for pods to be ready for deployment %s\n", deploymentName)
+	log.Logger().Infof("Waiting for pods to be ready for deployment %s", deploymentName)
 
 	err = kube.WaitForDeploymentToBeReady(client, deploymentName, ns, 5*time.Minute)
 	if err != nil {
@@ -126,7 +126,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return nil
 	}
 
-	log.Logger().Infof("Created user %s API Token for Git server %s at %s\n",
+	log.Logger().Infof("Created user %s API Token for Git server %s at %s",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

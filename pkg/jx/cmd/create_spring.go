@@ -139,7 +139,7 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
+	log.Logger().Infof("Created Spring Boot project at %s", util.ColorInfo(outDir))
 
 	if details != nil {
 		o.ConfigureImportOptions(details)

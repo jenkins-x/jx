@@ -147,7 +147,7 @@ func (o *CreateVariableOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Updated Jenkins X Pipeline file: %s\n", util.ColorInfo(fileName))
+	log.Logger().Infof("Updated Jenkins X Pipeline file: %s", util.ColorInfo(fileName))
 	return nil
 
 }

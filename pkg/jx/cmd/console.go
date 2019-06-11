@@ -112,7 +112,7 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 		svcURL, err = o.FindService(name)
 	}
 	if err != nil && name != "" {
-		log.Logger().Infof("If the app %s is running in a different environment you could try: %s\n", util.ColorInfo(name), util.ColorInfo("jx get applications"))
+		log.Logger().Infof("If the app %s is running in a different environment you could try: %s", util.ColorInfo(name), util.ColorInfo("jx get applications"))
 	}
 	if err != nil {
 		return err

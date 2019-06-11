@@ -141,7 +141,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error enabling Istio for environment %s", o.ProductionEnvironment))
 		}
-		log.Logger().Infof("Enabling Istio in namespace %s\n", ns)
+		log.Logger().Infof("Enabling Istio in namespace %s", ns)
 		patch := []byte(`{"metadata":{"labels":{"istio-injection":"enabled"}}}`)
 		_, err = client.CoreV1().Namespaces().Patch(ns, types.MergePatchType, patch)
 		if err != nil {
@@ -178,13 +178,13 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 				},
 			}
 
-			log.Logger().Infof("Creating Istio gateway: %s\n", o.IstioGateway)
+			log.Logger().Infof("Creating Istio gateway: %s", o.IstioGateway)
 			gateway, err = istioClient.NetworkingV1alpha3().Gateways(defaultIstioNamespace).Create(gateway)
 			if err != nil {
 				return errors.Wrap(err, "error creating Istio gateway")
 			}
 		} else {
-			log.Logger().Infof("Istio gateway already exists: %s\n", o.IstioGateway)
+			log.Logger().Infof("Istio gateway already exists: %s", o.IstioGateway)
 		}
 	}
 	return nil

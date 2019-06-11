@@ -89,11 +89,11 @@ func (o *CreateAddonIngressControllerOptions) Run() error {
 	// now lets try update the domain
 	domain := o.InitOptions.Domain
 	if domain == "" {
-		log.Logger().Error("No domain could be discovered so we cannot update the domain entry in your GitOps repository\n")
+		log.Logger().Error("No domain could be discovered so we cannot update the domain entry in your GitOps repository")
 	}
-	log.Logger().Infof("domain is %s\n", util.ColorInfo(domain))
+	log.Logger().Infof("domain is %s", util.ColorInfo(domain))
 
-	log.Logger().Infof("\n\nLets create a Pull Request against %s to modify the domain...\n\n", util.ColorInfo(gitRepo))
+	log.Logger().Infof("\n\nLets create a Pull Request against %s to modify the domain...\n", util.ColorInfo(gitRepo))
 
 	// now lets make sure we have the latest domain in the git repository
 	return o.createPullRequestForDomain(gitRepo, domain)

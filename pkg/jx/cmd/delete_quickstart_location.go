@@ -120,7 +120,7 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 		for i, l := range settings.QuickstartLocations {
 			if l.GitURL == o.GitUrl && l.Owner == o.Owner {
 				settings.QuickstartLocations = append(settings.QuickstartLocations[0:i], settings.QuickstartLocations[i+1:]...)
-				log.Logger().Infof("Removing quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(l.GitURL, l.Owner)))
+				log.Logger().Infof("Removing quickstart git owner %s", util.ColorInfo(util.UrlJoin(l.GitURL, l.Owner)))
 				return nil
 			}
 		}

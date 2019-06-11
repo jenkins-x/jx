@@ -259,7 +259,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	}
 	setValues = append(setValues, "tekton.rbac.cluster="+strconv.FormatBool(o.ClusterRBAC))
 
-	log.Logger().Infof("installing the Environment Controller with values: %s\n", util.ColorInfo(strings.Join(setValues, ",")))
+	log.Logger().Infof("installing the Environment Controller with values: %s", util.ColorInfo(strings.Join(setValues, ",")))
 	helmOptions := helm.InstallChartOptions{
 		Chart:          "environment-controller",
 		ReleaseName:    o.ReleaseName,
@@ -274,6 +274,6 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("installed the Environment Controller!\n")
+	log.Logger().Infof("installed the Environment Controller!")
 	return nil
 }

@@ -116,7 +116,7 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient versioned.Interface, ns str
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Deleted environment %s\n", util.ColorInfo(name))
+	log.Logger().Infof("Deleted environment %s", util.ColorInfo(name))
 
 	env := envMap[name]
 	envNs := env.Spec.Namespace
@@ -131,7 +131,7 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient versioned.Interface, ns str
 	if o.DeleteNamespace || !kind.IsPermanent() {
 		return client.CoreV1().Namespaces().Delete(envNs, &metav1.DeleteOptions{})
 	}
-	log.Logger().Infof("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
-	log.Logger().Infof(util.ColorInfo("  kubectl delete namespace %s\n"), envNs)
+	log.Logger().Infof("To delete the associated namespace %s for environment %s then please run this command", name, envNs)
+	log.Logger().Infof(util.ColorInfo("  kubectl delete namespace %s"), envNs)
 	return nil
 }

@@ -121,7 +121,7 @@ func (o *DeleteTeamOptions) Run() error {
 	for _, name := range names {
 		err = o.deleteTeam(name)
 		if err != nil {
-			log.Logger().Warnf("Failed to delete team %s: %s\n", name, err)
+			log.Logger().Warnf("Failed to delete team %s: %s", name, err)
 		}
 	}
 	return nil

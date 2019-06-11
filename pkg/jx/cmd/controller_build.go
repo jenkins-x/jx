@@ -133,7 +133,7 @@ func (o *ControllerBuildOptions) Run() error {
 
 	if tektonEnabled {
 		pod := &corev1.Pod{}
-		log.Logger().Infof("Watching for Pods in namespace %s\n", util.ColorInfo(ns))
+		log.Logger().Infof("Watching for Pods in namespace %s", util.ColorInfo(ns))
 		listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
 		kube.SortListWatchByName(listWatch)
 		_, controller := cache.NewInformer(
@@ -156,7 +156,7 @@ func (o *ControllerBuildOptions) Run() error {
 		go controller.Run(stop)
 	} else {
 		pod := &corev1.Pod{}
-		log.Logger().Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
+		log.Logger().Infof("Watching for Knative build pods in namespace %s", util.ColorInfo(ns))
 		listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
 		kube.SortListWatchByName(listWatch)
 		_, controller := cache.NewInformer(
@@ -186,7 +186,7 @@ func (o *ControllerBuildOptions) Run() error {
 func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		log.Logger().Infof("Object is not a Pod %#v\n", obj)
+		log.Logger().Infof("Object is not a Pod %#v", obj)
 		return
 	}
 	if pod != nil {
@@ -205,7 +205,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 			buildName = labels[builds.LabelPipelineRunName]
 		}
 		if buildName != "" {
-			log.Logger().Debugf("Found build pod %s\n", pod.Name)
+			log.Logger().Debugf("Found build pod %s", pod.Name)
 
 			activities := jxClient.JenkinsV1().PipelineActivities(ns)
 			key := o.createPromoteStepActivityKey(buildName, pod)
@@ -218,14 +218,14 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 						if created {
 							operation = "create"
 						}
-						log.Logger().Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, buildName, err)
+						log.Logger().Warnf("Failed to %s PipelineActivities for build %s: %s", operation, buildName, err)
 						return err
 					}
 					if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
-						log.Logger().Debugf("updating PipelineActivity %s\n", a.Name)
+						log.Logger().Debugf("updating PipelineActivity %s", a.Name)
 						_, err := activities.PatchUpdate(a)
 						if err != nil {
-							log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
+							log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s", a.Name, err.Error())
 							name = a.Name
 							return err
 						}
@@ -233,7 +233,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 					return nil
 				})
 				if err != nil {
-					log.Logger().Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+					log.Logger().Warnf("Failed to update PipelineActivities %s: %s", name, err)
 				}
 			}
 		}
@@ -244,7 +244,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, tektonClient tektonclient.Interface, ns string) {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		log.Logger().Infof("Object is not a Pod %#v\n", obj)
+		log.Logger().Infof("Object is not a Pod %#v", obj)
 		return
 	}
 	if pod != nil {
@@ -253,7 +253,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 				prName := pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
 				pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
 				if err != nil {
-					log.Logger().Warnf("Error getting PipelineRun for name %s: %s\n", prName, err)
+					log.Logger().Warnf("Error getting PipelineRun for name %s: %s", prName, err)
 					return
 				}
 				// Get the Pod for this PipelineRun
@@ -261,21 +261,21 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 					LabelSelector: builds.LabelPipelineRunName + "=" + prName,
 				})
 				if err != nil {
-					log.Logger().Warnf("Error getting PodList for PipelineRun %s: %s\n", prName, err)
+					log.Logger().Warnf("Error getting PodList for PipelineRun %s: %s", prName, err)
 					return
 				}
 				structure, err := jxClient.JenkinsV1().PipelineStructures(ns).Get(prName, metav1.GetOptions{})
 				if err != nil {
-					log.Logger().Warnf("Error getting PipelineStructure for PipelineRun %s: %s\n", prName, err)
+					log.Logger().Warnf("Error getting PipelineStructure for PipelineRun %s: %s", prName, err)
 					return
 				}
 				pri, err := tekton.CreatePipelineRunInfo(prName, podList, structure, pr)
 				if err != nil {
-					log.Logger().Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", prName, err)
+					log.Logger().Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s", prName, err)
 					return
 				}
 				if pri != nil {
-					log.Logger().Debugf("Found pipeline run %s\n", pri.Name)
+					log.Logger().Debugf("Found pipeline run %s", pri.Name)
 
 					activities := jxClient.JenkinsV1().PipelineActivities(ns)
 					key := o.createPromoteStepActivityKeyFromRun(pri)
@@ -288,14 +288,14 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 								if created {
 									operation = "create"
 								}
-								log.Logger().Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, pri.Name, err)
+								log.Logger().Warnf("Failed to %s PipelineActivities for build %s: %s", operation, pri.Name, err)
 								return err
 							}
 							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
-								log.Logger().Debugf("updating PipelineActivity %s\n", a.Name)
+								log.Logger().Debugf("updating PipelineActivity %s", a.Name)
 								_, err := activities.PatchUpdate(a)
 								if err != nil {
-									log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
+									log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s", a.Name, err.Error())
 									name = a.Name
 									return err
 								}
@@ -303,7 +303,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 							return nil
 						})
 						if err != nil {
-							log.Logger().Warnf("Failed to update PipelineActivities%s: %s\n", name, err)
+							log.Logger().Warnf("Failed to update PipelineActivities%s: %s", name, err)
 						}
 					}
 				}
@@ -339,7 +339,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 // If the PA is a branch build it then sets the commit author and last commit message
 func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineActivity) error {
 
-	log.Logger().Infof("[BuildInfo] Completing build info for PipelineActivity=%s\n", activity.Name)
+	log.Logger().Infof("[BuildInfo] Completing build info for PipelineActivity=%s", activity.Name)
 
 	gitInfo, err := gits.ParseGitURL(activity.Spec.GitURL)
 	if err != nil {
@@ -381,7 +381,7 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 			activity.Spec.Author = pr.Author.Login
 		}
 		activity.Spec.PullTitle = pr.Title
-		log.Logger().Infof("[BuildInfo] PipelineActivity set with author=%s and PR title=%s\n", activity.Spec.Author, activity.Spec.PullTitle)
+		log.Logger().Infof("[BuildInfo] PipelineActivity set with author=%s and PR title=%s", activity.Spec.Author, activity.Spec.PullTitle)
 	} else {
 		// this is a branch build
 		gitCommits, e := provider.ListCommits(gitInfo.Organisation, gitInfo.Name, &gits.ListCommitsArguments{
@@ -398,7 +398,7 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 				activity.Spec.LastCommitMessage = gitCommits[0].Message
 			}
 		}
-		log.Logger().Infof("[BuildInfo] PipelineActicity set with author=%s and last message\n", activity.Spec.Author)
+		log.Logger().Infof("[BuildInfo] PipelineActicity set with author=%s and last message", activity.Spec.Author)
 	}
 	return nil
 }
@@ -555,23 +555,23 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			location := v1.StorageLocation{}
 			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
-				log.Logger().Warnf("No Environment %s found\n", envName)
+				log.Logger().Warnf("No Environment %s found", envName)
 			} else {
 				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
 			}
 			if location.IsEmpty() {
 				location.GitURL = activity.Spec.GitURL
 				if location.GitURL == "" {
-					log.Logger().Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
+					log.Logger().Warnf("No GitURL on PipelineActivity %s", activity.Name)
 				}
 			}
 			masker, err := kube.NewLogMasker(kubeClient, ns)
 			if err != nil {
-				log.Logger().Warnf("Failed to create LogMasker in namespace %s: %s\n", ns, err.Error())
+				log.Logger().Warnf("Failed to create LogMasker in namespace %s: %s", ns, err.Error())
 			}
 			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials, masker)
 			if err != nil {
-				log.Logger().Warnf("%s\n", err)
+				log.Logger().Warnf("%s", err)
 			}
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
@@ -667,25 +667,25 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 			location := v1.StorageLocation{}
 			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
-				log.Logger().Warnf("No Environment %s found\n", envName)
+				log.Logger().Warnf("No Environment %s found", envName)
 			} else {
 				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
 			}
 			if location.IsEmpty() {
 				location.GitURL = activity.Spec.GitURL
 				if location.GitURL == "" {
-					log.Logger().Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
+					log.Logger().Warnf("No GitURL on PipelineActivity %s", activity.Name)
 				}
 			}
 
 			masker, err := kube.NewLogMasker(kubeClient, ns)
 			if err != nil {
-				log.Logger().Warnf("Failed to create LogMasker in namespace %s: %s\n", ns, err.Error())
+				log.Logger().Warnf("Failed to create LogMasker in namespace %s: %s", ns, err.Error())
 			}
 
 			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials, masker)
 			if err != nil {
-				log.Logger().Warnf("%s\n", err)
+				log.Logger().Warnf("%s", err)
 			}
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
@@ -921,14 +921,14 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		data = logMasker.MaskLogData(data)
 	}
 
-	log.Logger().Debugf("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
+	log.Logger().Debugf("got build log for pod: %s PipelineActivity: %s with bytes: %d", pod.Name, activity.Name, len(data))
 
 	if initGitCredentials {
 		gc := &git.StepGitCredentialsOptions{}
 		copy := *o.CommonOptions
 		gc.CommonOptions = &copy
 		gc.BatchMode = true
-		log.Logger().Info("running: jx step git credentials\n")
+		log.Logger().Info("running: jx step git credentials")
 		err = gc.Run()
 		if err != nil {
 			return "", errors.Wrapf(err, "Failed to setup git credentials")
@@ -1005,7 +1005,7 @@ func (o *ControllerBuildOptions) ensurePipelineActivityHasLabels(jxClient versio
 			if err != nil {
 				return errors.Wrapf(err, "failed to modify labels on PipelineActivity %s", act.Name)
 			}
-			log.Logger().Infof("updated labels on PipelineActivity %s\n", util.ColorInfo(act.Name))
+			log.Logger().Infof("updated labels on PipelineActivity %s", util.ColorInfo(act.Name))
 		}
 	}
 	return nil
@@ -1051,7 +1051,7 @@ func (o *ControllerBuildOptions) ensureSourceRepositoryHasLabels(jxClient versio
 			if err != nil {
 				return errors.Wrapf(err, "failed to modify labels on SourceRepository %s", sr.Name)
 			}
-			log.Logger().Infof("updated labels on SourceRepository %s\n", util.ColorInfo(sr.Name))
+			log.Logger().Infof("updated labels on SourceRepository %s", util.ColorInfo(sr.Name))
 		}
 	}
 	return nil

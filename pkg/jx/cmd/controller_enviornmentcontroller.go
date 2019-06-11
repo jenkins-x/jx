@@ -123,7 +123,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 		return util.MissingOption("path")
 	}
 
-	log.Logger().Infof("using require GitHub headers: %s\n", strconv.FormatBool(o.RequireHeaders))
+	log.Logger().Infof("using require GitHub headers: %s", strconv.FormatBool(o.RequireHeaders))
 
 	// lets default some values from environment variables
 	if o.StepCreateTaskOptions.ProjectID == "" {
@@ -167,7 +167,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	if o.GitKind == "" {
 		o.GitKind = os.Getenv("GIT_KIND")
 		if o.GitKind == "" {
-			log.Logger().Warnf("No $GIT_KIND defined or --git-kind supplied to assuming GitHub.com environment git repository\n")
+			log.Logger().Warnf("No $GIT_KIND defined or --git-kind supplied to assuming GitHub.com environment git repository")
 		}
 	}
 	if o.GitOwner == "" {
@@ -201,7 +201,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	if o.SourceURL == "" {
 		o.SourceURL = util.UrlJoin(o.GitServerURL, o.GitOwner, o.GitRepo)
 	}
-	log.Logger().Infof("using environment source directory %s and external webhook URL: %s\n", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
+	log.Logger().Infof("using environment source directory %s and external webhook URL: %s", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
 	o.secret, err = o.loadOrCreateHmacSecret()
 	if err != nil {
 		return errors.Wrapf(err, "loading hmac secret")
@@ -234,7 +234,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	}
 	mux.Handle(o.Path, http.HandlerFunc(o.handleWebHookRequests))
 
-	log.Logger().Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions\n", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
+	log.Logger().Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
@@ -291,7 +291,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	log.Logger().Infof("triggering pipeline for repo %s branch %s revision %s\n", sourceURL, branch, revision)
+	log.Logger().Infof("triggering pipeline for repo %s branch %s revision %s", sourceURL, branch, revision)
 
 	err = pr.Run()
 	if err != nil {
@@ -338,7 +338,7 @@ func (o *ControllerEnvironmentOptions) discoverWebHookURL() (string, error) {
 
 			if !loggedWait {
 				loggedWait = true
-				log.Logger().Infof("waiting for the external IP on the service %s in namespace %s ...\n", environmentControllerService, ns)
+				log.Logger().Infof("waiting for the external IP on the service %s in namespace %s ...", environmentControllerService, ns)
 			}
 			return false, nil
 		}
@@ -439,7 +439,7 @@ func (o *ControllerEnvironmentOptions) marshalPayload(w http.ResponseWriter, r *
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
-	log.Logger().Infof("completed request successfully and returned: %s\n", string(data))
+	log.Logger().Infof("completed request successfully and returned: %s", string(data))
 	return nil
 }
 
@@ -473,7 +473,7 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 		return
 	}
 	eventType, eventGUID, data, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
-	log.Logger().Infof("webhook handler invoked event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
+	log.Logger().Infof("webhook handler invoked event type %s UID %s valid %s method %s", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	if !valid {
 		return
 	}
@@ -498,7 +498,7 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 		return
 	}
 
-	log.Logger().Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
+	log.Logger().Infof("starting pipeline from event type %s UID %s valid %s method %s", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	w.Write([]byte("OK"))
 
 	go o.startPipelineRun(w, r)
@@ -506,7 +506,7 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 
 func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
 	gitURL := o.SourceURL
-	log.Logger().Infof("verifying that the webhook is registered for the git repository %s\n", util.ColorInfo(gitURL))
+	log.Logger().Infof("verifying that the webhook is registered for the git repository %s", util.ColorInfo(gitURL))
 
 	var provider gits.GitProvider
 	var err error

@@ -61,8 +61,8 @@ func (o *ComplianceStatusOptions) Run() error {
 	}
 	status, err := cc.GetStatus(complianceNamespace)
 	if err != nil {
-		log.Logger().Infof("No compliance status found. Use %s command to start the compliance tests.\n", util.ColorInfo("jx compliance run"))
-		log.Logger().Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
+		log.Logger().Infof("No compliance status found. Use %s command to start the compliance tests.", util.ColorInfo("jx compliance run"))
+		log.Logger().Infof("You can watch the logs with %s command.", util.ColorInfo("jx compliance logs -f"))
 		return nil
 	}
 	log.Logger().Info(hummanReadableStatus(status.Status))

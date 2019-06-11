@@ -92,7 +92,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "ensuring cert-manager is installed")
 	}
 
-	log.Logger().Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
+	log.Logger().Infof("Installing %s...", util.ColorInfo("dex identity provider"))
 
 	ingressConfig, err := kube.GetIngressConfig(client, devNamespace)
 	if err != nil {
@@ -103,11 +103,11 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("Configuring %s connector\n", util.ColorInfo("GitHub"))
+	log.Logger().Infof("Configuring %s connector", util.ColorInfo("GitHub"))
 
-	log.Logger().Infof("Please go to %s and create a new OAuth application with an Authorization Callback URL of %s.\nChoose a suitable Application name and Homepage URL.\n",
+	log.Logger().Infof("Please go to %s and create a new OAuth application with an Authorization Callback URL of %s.\nChoose a suitable Application name and Homepage URL.",
 		util.ColorInfo(githubNewOAuthAppURL), util.ColorInfo(o.dexCallback(domain)))
-	log.Logger().Infof("Copy the %s and the %s and paste them into the form below:\n",
+	log.Logger().Infof("Copy the %s and the %s and paste them into the form below:",
 		util.ColorInfo("Client ID"), util.ColorInfo("Client Secret"))
 
 	clientID, err := util.PickValue("Client ID:", "", true, "", o.In, o.Out, o.Err)
@@ -138,14 +138,14 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "installing dex")
 	}
 
-	log.Logger().Infof("Installing %s...\n", util.ColorInfo("sso-operator"))
+	log.Logger().Infof("Installing %s...", util.ColorInfo("sso-operator"))
 	dexGrpcService := fmt.Sprintf("%s.%s", dexServiceName, o.Namespace)
 	err = o.installSSOOperator(dexGrpcService)
 	if err != nil {
 		return errors.Wrap(err, "installing sso-operator")
 	}
 
-	log.Logger().Infof("Exposing services with %s enabled...\n", util.ColorInfo("TLS"))
+	log.Logger().Infof("Exposing services with %s enabled...", util.ColorInfo("TLS"))
 	return o.exposeSSO()
 }
 

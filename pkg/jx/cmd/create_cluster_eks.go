@@ -210,6 +210,6 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 		kube.Region: region,
 	})
 
-	log.Logger().Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...")
 	return o.initAndInstall(cloud.EKS)
 }

@@ -228,13 +228,13 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		//First login
 
 		if userName != "" && password != "" {
-			log.Logger().Info("Logging in to Azure using provider username and password...\n")
+			log.Logger().Info("Logging in to Azure using provider username and password...")
 			err = o.RunCommand("az", "login", "-u", userName, "-p", password)
 			if err != nil {
 				return err
 			}
 		} else {
-			log.Logger().Info("Logging in to Azure interactively...\n")
+			log.Logger().Info("Logging in to Azure interactively...")
 			err = o.RunCommandVerbose("az", "login")
 			if err != nil {
 				return err
@@ -271,7 +271,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	subscription := o.Flags.Subscription
 
 	if subscription != "" {
-		log.Logger().Info("Changing subscription...\n")
+		log.Logger().Info("Changing subscription...")
 		err = o.RunCommandVerbose("az", "account", "set", "--subscription", subscription)
 
 		if err != nil {
@@ -362,7 +362,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		createCluster = append(createCluster, "--tags", o.Flags.Tags)
 	}
 
-	log.Logger().Infof("Creating cluster named %s in resource group %s...\n", clusterName, resourceName)
+	log.Logger().Infof("Creating cluster named %s in resource group %s...", clusterName, resourceName)
 	err = o.RunCommand("az", createCluster...)
 	if err != nil {
 		return err
@@ -377,6 +377,6 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		return err
 	}
 
-	log.Logger().Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...")
 	return o.initAndInstall(cloud.AKS)
 }

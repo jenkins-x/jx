@@ -109,6 +109,6 @@ func (o *CreateTeamOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to create Team %s: %s", name, err)
 	}
-	log.Logger().Infof("Created Team: %s\n", util.ColorInfo(name))
+	log.Logger().Infof("Created Team: %s", util.ColorInfo(name))
 	return nil
 }

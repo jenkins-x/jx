@@ -160,7 +160,7 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Updated environment %s\n", util.ColorInfo(env.Name))
+	log.Logger().Infof("Updated environment %s", util.ColorInfo(env.Name))
 
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
 	if err != nil {

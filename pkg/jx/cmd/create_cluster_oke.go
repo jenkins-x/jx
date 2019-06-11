@@ -170,7 +170,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 	if o.Flags.ClusterName == "" {
 		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Logger().Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		log.Logger().Infof("No cluster name provided so using a generated one: %s", o.Flags.ClusterName)
 	}
 
 	compartmentId := o.Flags.CompartmentId
@@ -213,7 +213,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	//Get node pool settings
 	if o.Flags.NodePoolName == "" {
 		o.Flags.NodePoolName = strings.ToLower(randomdata.SillyName())
-		log.Logger().Infof("No node pool name provided so using a generated one: " + o.Flags.NodePoolName + "\n")
+		log.Logger().Infof("No node pool name provided so using a generated one: " + o.Flags.NodePoolName + "")
 	}
 
 	nodeImageName := o.Flags.NodeImageName
@@ -347,7 +347,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	}
 
 	fmt.Printf("Args are: %s\n", args)
-	log.Logger().Info("Creating cluster...\n")
+	log.Logger().Info("Creating cluster...")
 	output, err := o.GetCommandOutput("", "oci", args...)
 	if err != nil {
 		return err
@@ -362,7 +362,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		fmt.Printf("Cluster id: %s\n", clusterId)
 
 		//setup the kube context
-		log.Logger().Info("Setup kube context ...\n")
+		log.Logger().Info("Setup kube context ...")
 		var kubeconfigFile = ""
 		if home := util.HomeDir(); home != "" {
 			kubeconfigFile = filepath.Join(util.HomeDir(), "kubeconfig")
@@ -381,13 +381,13 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		os.Setenv("KUBECONFIG", kubeconfigFile)
 
 		//create node pool
-		log.Logger().Info("Creating node pool ...\n")
+		log.Logger().Info("Creating node pool ...")
 
 		poolArgs := "ce node-pool create --name=" + o.Flags.NodePoolName + " --compartment-id=" + compartmentId + " --cluster-id=" + clusterId + " --kubernetes-version=" + kubernetesVersion + " --node-image-name=" + nodeImageName + " --node-shape=" + nodeShape + " --subnet-ids=file:///tmp/oke_pool_config.json" + " --wait-for-state=SUCCEEDED"
 
 		quantityPerSubnet := o.Flags.QuantityPerSubnet
 		quantityPerSubnet = (map[bool]string{true: quantityPerSubnet, false: "1"})[quantityPerSubnet != ""]
-		log.Logger().Info("Will create " + quantityPerSubnet + " node per subnet ...\n")
+		log.Logger().Info("Will create " + quantityPerSubnet + " node per subnet ...")
 		poolArgs = poolArgs + " --quantity-per-subnet=" + quantityPerSubnet
 
 		initialNodeLabels := o.Flags.InitialNodeLabels
@@ -411,7 +411,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			poolArgs = poolArgs + " --wait-interval-seconds=" + poolWaitIntervalSeconds
 		}
 
-		log.Logger().Info("Creating Node Pool...\n")
+		log.Logger().Info("Creating Node Pool...")
 		poolArgsArray := strings.Split(poolArgs, " ")
 
 		if sshPublicKeyValue != "" {
@@ -464,7 +464,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			if err != nil {
 				return err
 			}
-			log.Logger().Info("Initialising cluster ...\n")
+			log.Logger().Info("Initialising cluster ...")
 
 			return o.initAndInstall(cloud.OKE)
 		}

@@ -75,7 +75,7 @@ func (o *DiagnoseOptions) Run() error {
 		return err
 	}
 	log.Logger().Info("\nPlease visit https://jenkins-x.io/faq/issues/ for any known issues.")
-	log.Logger().Info("\nFinished printing diagnostic information.\n")
+	log.Logger().Info("\nFinished printing diagnostic information.")
 	return nil
 }
 
@@ -87,6 +87,6 @@ func printStatus(o *DiagnoseOptions, header string, command string, options ...s
 		return err
 	}
 	// Print the output of the command, and add a little header at the top for formatting / readability
-	log.Logger().Infof("\n%s:\n %s\n", header, util.ColorInfo(output))
+	log.Logger().Infof("\n%s:\n %s", header, util.ColorInfo(output))
 	return nil
 }

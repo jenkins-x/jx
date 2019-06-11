@@ -118,10 +118,10 @@ func (o *DeleteNamespaceOptions) Run() error {
 	}
 
 	for _, name := range names {
-		log.Logger().Infof("Deleting namespace: %s\n", util.ColorInfo(name))
+		log.Logger().Infof("Deleting namespace: %s", util.ColorInfo(name))
 		err = namespaceInterface.Delete(name, nil)
 		if err != nil {
-			log.Logger().Warnf("Failed to delete namespace %s: %s\n", name, err)
+			log.Logger().Warnf("Failed to delete namespace %s: %s", name, err)
 		}
 	}
 	return nil

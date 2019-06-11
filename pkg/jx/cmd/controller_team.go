@@ -79,7 +79,7 @@ func (o *ControllerTeamOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("Using the admin namespace %s\n", adminNs)
+	log.Logger().Infof("Using the admin namespace %s", adminNs)
 
 	client, err := co.KubeClient()
 	if err != nil {
@@ -96,14 +96,14 @@ func (o *ControllerTeamOptions) Run() error {
 	if co.InCluster() {
 		sgc := &git.StepGitCredentialsOptions{}
 		sgc.CommonOptions = co.CommonOptions
-		log.Logger().Info("Setting up git credentials\n")
+		log.Logger().Info("Setting up git credentials")
 		err = sgc.Run()
 		if err != nil {
 			return errors.Wrapf(err, "Failed to run: jx step git credentials")
 		}
 	}
 
-	log.Logger().Infof("Watching for teams in all namespaces\n")
+	log.Logger().Infof("Watching for teams in all namespaces")
 
 	stop := make(chan struct{})
 
@@ -140,12 +140,12 @@ func (o *ControllerTeamOptions) Run() error {
 func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, adminNs string) {
 	team, ok := obj.(*v1.Team)
 	if !ok {
-		log.Logger().Infof("Object is not a Team %#v\n", obj)
+		log.Logger().Infof("Object is not a Team %#v", obj)
 		return
 	}
 
 	teamNs := team.Name
-	log.Logger().Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(teamNs), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
+	log.Logger().Infof("Adding / Updating Team %s, Namespace %s, Status '%s'", util.ColorInfo(teamNs), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
 
 	if v1.TeamProvisionStatusNone == team.Status.ProvisionStatus {
 		// update first
@@ -155,10 +155,10 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		// lets default the team settings based on the current team settings
 		settings, err := oc.TeamSettings()
 		if err != nil {
-			log.Logger().Errorf("Failed to get TeamSettings: %s\n", err)
+			log.Logger().Errorf("Failed to get TeamSettings: %s", err)
 		}
 		if settings == nil {
-			log.Logger().Errorf("No TeamSettings found!\n")
+			log.Logger().Errorf("No TeamSettings found!")
 		}
 
 		// lets default to no tiller as we can only support > 1 dev teams with no-tiller or helm3 today
@@ -257,7 +257,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				log.Logger().Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
 			} else {
 				io.OAUTHToken = oauthToken
-				log.Logger().Infof("Loaded the Prow OAuth Token in namespace %s with %d digits\n", adminNs, len(oauthToken))
+				log.Logger().Infof("Loaded the Prow OAuth Token in namespace %s with %d digits", adminNs, len(oauthToken))
 
 			}
 		}
@@ -304,7 +304,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			}
 			err = oc.ModifyDevEnvironmentWithNs(jxClient, teamNs, callback)
 			if err != nil {
-				log.Logger().Errorf("Failed to update team settings in namespace %s: %s\n", teamNs, err)
+				log.Logger().Errorf("Failed to update team settings in namespace %s: %s", teamNs, err)
 			}
 		}
 

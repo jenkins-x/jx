@@ -90,7 +90,7 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Deleted API tokens for users: %s for addon server %s at %s from local settings\n",
+	log.Logger().Infof("Deleted API tokens for users: %s for addon server %s at %s from local settings",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

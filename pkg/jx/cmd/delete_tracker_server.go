@@ -80,6 +80,6 @@ func (o *DeleteTrackerServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Deleted issue tracker servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	log.Logger().Infof("Deleted issue tracker servers: %s from local settings", util.ColorInfo(strings.Join(args, ", ")))
 	return nil
 }

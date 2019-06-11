@@ -205,7 +205,7 @@ func (o *CreateQuickstartOptions) Run() error {
 				_, appName := filepath.Split(genDir)
 				appChartDir := filepath.Join(genDir, "charts", appName)
 
-				log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
+				log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s", chartsDir, appChartDir)
 				err := util.CopyDirOverwrite(chartsDir, appChartDir)
 				if err != nil {
 					return err
@@ -217,10 +217,10 @@ func (o *CreateQuickstartOptions) Run() error {
 				return o.Git().Remove(genDir, filepath.Join("charts", folder))
 			}
 		} else {
-			log.Logger().Infof("### NO charts folder %s\n", chartsDir)
+			log.Logger().Infof("### NO charts folder %s", chartsDir)
 		}
 	}
-	log.Logger().Infof("Created project at %s\n\n", util.ColorInfo(genDir))
+	log.Logger().Infof("Created project at %s\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 
@@ -248,7 +248,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	token := userAuth.ApiToken
 	username := userAuth.Username
 	if token != "" && username != "" {
-		log.Logger().Debugf("Downloading Quickstart source zip from %s with basic auth for user: %s\n", u, username)
+		log.Logger().Debugf("Downloading Quickstart source zip from %s with basic auth for user: %s", u, username)
 		req.SetBasicAuth(username, token)
 	}
 	res, err := client.Do(req)
@@ -285,7 +285,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, fmt.Errorf("failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
 	}
-	log.Logger().Infof("Generated quickstart at %s\n", answer)
+	log.Logger().Infof("Generated quickstart at %s", answer)
 	return answer, nil
 }
 
@@ -316,10 +316,10 @@ func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig
 			if err != nil {
 				return model, err
 			}
-			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s ", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
 			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
 			if err != nil {
-				log.Logger().Debugf("Quickstart load error: %s\n", err.Error())
+				log.Logger().Debugf("Quickstart load error: %s", err.Error())
 			}
 		}
 	}

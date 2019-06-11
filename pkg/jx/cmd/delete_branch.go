@@ -188,7 +188,7 @@ func (o *DeleteBranchOptions) Run() error {
 			if err != nil {
 				return errors.Wrapf(err, "Failed to delete remote branche %s from %s/%s", branch, org, name)
 			}
-			log.Logger().Infof("Deleted branch in repo %s/%s branch: %s\n", info(org), info(name), info(branch))
+			log.Logger().Infof("Deleted branch in repo %s/%s branch: %s", info(org), info(name), info(branch))
 		}
 	}
 	return nil
@@ -221,7 +221,7 @@ func (o *DeleteBranchOptions) cloneOrPullRepository(org string, repo string, git
 			return dir, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
 		info := util.ColorInfo
-		log.Logger().Infof("Cloning repository %s/%s to %s\n", info(org), info(repo), info(dir))
+		log.Logger().Infof("Cloning repository %s/%s to %s", info(org), info(repo), info(dir))
 		err = o.Git().Clone(gitURL, dir)
 		if err != nil {
 			return dir, err

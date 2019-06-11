@@ -125,8 +125,8 @@ func (o *CreateUserOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to create User %s: %s", login, err)
 	}
-	log.Logger().Infof("Created User: %s\n", util.ColorInfo(login))
-	log.Logger().Infof("You can configure the roles for the user via: %s\n", util.ColorInfo(fmt.Sprintf("jx edit userrole %s", login)))
+	log.Logger().Infof("Created User: %s", util.ColorInfo(login))
+	log.Logger().Infof("You can configure the roles for the user via: %s", util.ColorInfo(fmt.Sprintf("jx edit userrole %s", login)))
 	return nil
 
 }
