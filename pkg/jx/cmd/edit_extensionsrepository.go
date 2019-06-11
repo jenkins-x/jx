@@ -267,7 +267,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 		}
 		msg = fmt.Sprintf("Chart %s in repo %s", util.ColorInfo(current.Chart.Name), util.ColorInfo(current.Chart.Repo))
 	}
-	log.Logger().Infof("Set Extensions Repository to %s\n", msg)
+	log.Logger().Infof("Set Extensions Repository to %s", msg)
 
 	return nil
 

@@ -179,7 +179,7 @@ func (o *GetPipelineOptions) dump(jenkinsClient gojenkins.JenkinsClient, name st
 			o.dump(jenkinsClient, job.FullName+"/"+child.Name, table)
 		}
 		if len(job.Jobs) == 0 {
-			log.Logger().Warnf("Job %s has no children!\n", job.Name)
+			log.Logger().Warnf("Job %s has no children!", job.Name)
 		}
 	} else {
 		job.Url = jenkins.SwitchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
@@ -191,7 +191,7 @@ func (o *GetPipelineOptions) dump(jenkinsClient gojenkins.JenkinsClient, name st
 					table.AddRow(job.FullName, job.Url, "", "Never Built", "")
 				}
 			} else {
-				log.Logger().Warnf("Failed to find last build for job %s: %s\n", job.Name, err.Error())
+				log.Logger().Warnf("Failed to find last build for job %s: %s", job.Name, err.Error())
 			}
 			return nil
 		}

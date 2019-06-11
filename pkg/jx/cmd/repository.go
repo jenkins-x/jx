@@ -79,7 +79,7 @@ func (o *RepoOptions) Run() error {
 		fmt.Fprintln(o.Out, fullURL)
 		return nil
 	}
-	log.Logger().Infof("repository: %s\n", util.ColorInfo(fullURL))
+	log.Logger().Infof("repository: %s", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {
 		browser.OpenURL(fullURL)
 	}

@@ -77,7 +77,7 @@ func (o *GCPreviewsOptions) Run() error {
 	}
 	if len(envs.Items) == 0 {
 		// no environments found so lets return gracefully
-		log.Logger().Debug("no environments found\n")
+		log.Logger().Debug("no environments found")
 		return nil
 	}
 
@@ -106,7 +106,7 @@ func (o *GCPreviewsOptions) Run() error {
 			}
 			prNum, err := strconv.Atoi(e.Spec.PreviewGitSpec.Name)
 			if err != nil {
-				log.Logger().Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
+				log.Logger().Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "")
 			}
 			pullRequest, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
 			if err != nil {
@@ -133,7 +133,7 @@ func (o *GCPreviewsOptions) Run() error {
 		}
 	}
 	if !previewFound {
-		log.Logger().Debug("no preview environments found\n")
+		log.Logger().Debug("no preview environments found")
 	}
 	return nil
 }

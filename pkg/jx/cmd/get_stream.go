@@ -87,7 +87,7 @@ func (o *GetStreamOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to resolve docker image %s", name)
 		}
-		log.Logger().Infof("resolved image %s to %s\n", util.ColorInfo(name), util.ColorInfo(result))
+		log.Logger().Infof("resolved image %s to %s", util.ColorInfo(name), util.ColorInfo(result))
 		return nil
 	}
 
@@ -96,6 +96,6 @@ func (o *GetStreamOptions) Run() error {
 		return errors.Wrapf(err, "failed to resolve %s version of %s", o.Kind, name)
 	}
 
-	log.Logger().Infof("resolved %s %s to version: %s\n", util.ColorInfo(name), util.ColorInfo(o.Kind), util.ColorInfo(n))
+	log.Logger().Infof("resolved %s %s to version: %s", util.ColorInfo(name), util.ColorInfo(o.Kind), util.ColorInfo(n))
 	return nil
 }

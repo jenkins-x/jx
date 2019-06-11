@@ -26,7 +26,7 @@ func TestJXNamespace(t *testing.T) {
 		resource, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 		assert.NoError(t, err, "Failed to query namespace")
 		if err == nil {
-			log.Logger().Warnf("Found namespace %#v\n", resource)
+			log.Logger().Warnf("Found namespace %#v", resource)
 		}
 	}
 

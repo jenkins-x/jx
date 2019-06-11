@@ -76,7 +76,7 @@ func (o *GCReleasesOptions) Run() error {
 	}
 	if len(releases.Items) == 0 {
 		// no preview environments found so lets return gracefully
-		log.Logger().Debug("no releases found\n")
+		log.Logger().Debug("no releases found")
 		return nil
 	}
 
@@ -118,7 +118,7 @@ func (o *GCReleasesOptions) Run() error {
 			if err != nil {
 				return err
 			} else {
-				log.Logger().Infof("Deleting Release %s as it no longer has a pipeline for %s\n", a.Name, pipeline)
+				log.Logger().Infof("Deleting Release %s as it no longer has a pipeline for %s", a.Name, pipeline)
 			}
 		}
 
@@ -136,7 +136,7 @@ func (o *GCReleasesOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("failed to delete Release %s in namespace %s: %v\n", name, ns, err)
 			} else {
-				log.Logger().Infof("Deleting old Release %s\n", name)
+				log.Logger().Infof("Deleting old Release %s", name)
 			}
 		}
 	}

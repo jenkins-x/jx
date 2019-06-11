@@ -90,7 +90,7 @@ func (o *GetCVEOptions) Run() error {
 
 	externalURL, err := o.EnsureAddonServiceAvailable(kube.AddonServices[defaultAnchoreName])
 	if err != nil {
-		log.Logger().Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.\n")
+		log.Logger().Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.")
 		return fmt.Errorf("if no CVE provider running, try running `jx create addon anchore` in your teams dev environment: %v", err)
 	}
 

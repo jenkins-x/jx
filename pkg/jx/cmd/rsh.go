@@ -224,7 +224,7 @@ func (o *RshOptions) Run() error {
 	} else if len(commandArguments) > 0 {
 		a = append(a, commandArguments...)
 	}
-	log.Logger().Debugf("Running command: kubectl %s\n", strings.Join(a, " "))
+	log.Logger().Debugf("Running command: kubectl %s", strings.Join(a, " "))
 	return o.RunCommandInteractive(true, "kubectl", a...)
 }
 

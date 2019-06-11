@@ -122,7 +122,7 @@ func (o *GetEnvOptions) Run() error {
 			return err
 		}
 		if len(envs.Items) == 0 {
-			log.Logger().Infof("No environments found.\nTo create an environment use: jx create env\n")
+			log.Logger().Infof("No environments found.\nTo create an environment use: jx create env")
 			return nil
 		}
 

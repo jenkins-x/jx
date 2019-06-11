@@ -224,11 +224,11 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if o.GitInfo == nil {
-		log.Logger().Warnf("No GitInfo found\n")
+		log.Logger().Warnf("No GitInfo found")
 	} else if o.GitInfo.Organisation == "" {
-		log.Logger().Warnf("No GitInfo.Organisation found\n")
+		log.Logger().Warnf("No GitInfo.Organisation found")
 	} else if o.GitInfo.Name == "" {
-		log.Logger().Warnf("No GitInfo.Name found\n")
+		log.Logger().Warnf("No GitInfo.Name found")
 	}
 
 	// we need pull request info to include
@@ -239,7 +239,7 @@ func (o *PreviewOptions) Run() error {
 
 	prNum, err := strconv.Atoi(o.PullRequestName)
 	if err != nil {
-		log.Logger().Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
+		log.Logger().Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "")
 	}
 
 	var user *v1.UserSpec
@@ -268,11 +268,11 @@ func (o *PreviewOptions) Run() error {
 		if prNum > 0 {
 			pullRequest, err = gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
-				log.Logger().Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
+				log.Logger().Warnf("issue getting pull request %s, %s, %v: %v", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
 			}
 			commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
-				log.Logger().Warn("Unable to get commits: " + err.Error() + "\n")
+				log.Logger().Warn("Unable to get commits: " + err.Error() + "")
 			}
 			if pullRequest != nil {
 				prAuthor := pullRequest.Author
@@ -300,7 +300,7 @@ func (o *PreviewOptions) Run() error {
 			statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
 
 			if err != nil {
-				log.Logger().Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
+				log.Logger().Warn("Unable to get statuses for PR " + o.PullRequestName + "")
 			}
 
 			if len(statuses) > 0 {
@@ -445,7 +445,7 @@ func (o *PreviewOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to create environment in namespace %s due to: %s", ns, err)
 		}
-		log.Logger().Infof("Created environment %s\n", util.ColorInfo(env.Name))
+		log.Logger().Infof("Created environment %s", util.ColorInfo(env.Name))
 	}
 
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
@@ -495,7 +495,7 @@ func (o *PreviewOptions) Run() error {
 	url, appNames, err := o.findPreviewURL(kubeClient, kserveClient)
 
 	if url == "" {
-		log.Logger().Warnf("Could not find the service URL in namespace %s for names %s: %s\n", o.Namespace, strings.Join(appNames, ", "), err.Error())
+		log.Logger().Warnf("Could not find the service URL in namespace %s for names %s: %s", o.Namespace, strings.Join(appNames, ", "), err.Error())
 	} else {
 		writePreviewURL(o, url)
 	}
@@ -542,14 +542,14 @@ func (o *PreviewOptions) Run() error {
 				if updated {
 					_, err = activities.PatchUpdate(a)
 					if err != nil {
-						log.Logger().Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+						log.Logger().Warnf("Failed to update PipelineActivities %s: %s", name, err)
 					} else {
-						log.Logger().Infof("Updating PipelineActivities %s which has status %s\n", name, string(a.Spec.Status))
+						log.Logger().Infof("Updating PipelineActivities %s which has status %s", name, string(a.Spec.Status))
 					}
 				}
 			}
 		} else {
-			log.Logger().Warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
+			log.Logger().Warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs")
 		}
 	}
 	if url != "" {
@@ -583,7 +583,7 @@ func (o *PreviewOptions) Run() error {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
 		}
-		log.Logger().Infof("Preview application is now available at: %s\n\n", util.ColorInfo(url))
+		log.Logger().Infof("Preview application is now available at: %s\n", util.ColorInfo(url))
 	}
 
 	stepPRCommentOptions := pr.StepPRCommentOptions{
@@ -604,7 +604,7 @@ func (o *PreviewOptions) Run() error {
 		err = stepPRCommentOptions.Run()
 	}
 	if err != nil {
-		log.Logger().Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s\n", o.GitInfo.Organisation, o.GitInfo.Name, err)
+		log.Logger().Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s", o.GitInfo.Organisation, o.GitInfo.Name, err)
 	}
 	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build)
 }
@@ -649,7 +649,7 @@ func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns
 	for _, job := range jobs {
 		// TODO lets modify the job name?
 		job2 := o.modifyJob(&job, envVars)
-		log.Logger().Infof("Triggering post preview Job %s in namespace %s\n", util.ColorInfo(job2.Name), util.ColorInfo(ns))
+		log.Logger().Infof("Triggering post preview Job %s in namespace %s", util.ColorInfo(job2.Name), util.ColorInfo(ns))
 
 		gracePeriod := int64(0)
 		propationPolicy := metav1.DeletePropagationForeground
@@ -690,7 +690,7 @@ func (o *PreviewOptions) waitForJobsToComplete(kubeClient kubernetes.Interface, 
 func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv1.Job) error {
 	name := job.Name
 	ns := job.Namespace
-	log.Logger().Infof("waiting for Job %s in namespace %s to complete...\n\n", util.ColorInfo(name), util.ColorInfo(ns))
+	log.Logger().Infof("waiting for Job %s in namespace %s to complete...\n", util.ColorInfo(name), util.ColorInfo(ns))
 
 	count := 0
 	fn := func() (bool, error) {
@@ -716,7 +716,7 @@ func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv
 	}
 	err := o.RetryUntilTrueOrTimeout(o.PostPreviewJobTimeoutDuration, o.PostPreviewJobPollDuration, fn)
 	if err != nil {
-		log.Logger().Warnf("\nFailed to complete post Preview Job %s in namespace %s: %s\n", name, ns, err)
+		log.Logger().Warnf("\nFailed to complete post Preview Job %s in namespace %s: %s", name, ns, err)
 	}
 	return err
 }
@@ -766,18 +766,18 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 				}
 				root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 				if err != nil {
-					log.Logger().Warnf("Could not find a .git directory: %s\n", err)
+					log.Logger().Warnf("Could not find a .git directory: %s", err)
 				} else {
 					if root != "" {
 						o.Dir = root
 						o.SourceURL, err = o.DiscoverGitURL(gitConf)
 						if err != nil {
-							log.Logger().Warnf("Could not find the remote git source URL:  %s\n", err)
+							log.Logger().Warnf("Could not find the remote git source URL:  %s", err)
 						} else {
 							if o.SourceRef == "" {
 								o.SourceRef, err = o.Git().Branch(root)
 								if err != nil {
-									log.Logger().Warnf("Could not find the remote git source ref:  %s\n", err)
+									log.Logger().Warnf("Could not find the remote git source ref:  %s", err)
 								}
 
 							}
@@ -801,13 +801,13 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	if o.SourceURL != "" {
 		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)
 		if err != nil {
-			log.Logger().Warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
+			log.Logger().Warnf("Could not parse the git URL %s due to %s", o.SourceURL, err)
 		} else {
 			o.SourceURL = o.GitInfo.HttpCloneURL()
 			if o.PullRequestURL == "" {
 				if o.PullRequest == "" {
 					if warnMissingName {
-						log.Logger().Warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+						log.Logger().Warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME")
 					}
 				} else {
 					o.PullRequestURL = o.GitInfo.PullRequestURL(o.PullRequestName)

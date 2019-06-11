@@ -110,12 +110,12 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	}
 
 	if len(extensionsList.Extensions) > 0 {
-		log.Logger().Debugf("These extensions are configured for the team:\n")
+		log.Logger().Debugf("These extensions are configured for the team:")
 		for _, e := range extensionsList.Extensions {
-			log.Logger().Debugf("  %s\n", util.ColorInfo(e.FullyQualifiedName()))
+			log.Logger().Debugf("  %s", util.ColorInfo(e.FullyQualifiedName()))
 		}
 	} else {
-		log.Logger().Warnf("No extensions are configured for the team\n")
+		log.Logger().Warnf("No extensions are configured for the team")
 
 	}
 
@@ -139,7 +139,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			log.Logger().Infof("Updating extensions from %s\n", path)
+			log.Logger().Infof("Updating extensions from %s", path)
 			bs, err = ioutil.ReadFile(filepath.Join(cwd, path))
 			if err != nil {
 				return errors.New(fmt.Sprintf("Unable to open Extensions Repository at %s", path))
@@ -160,16 +160,16 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			log.Logger().Debugf("Using %s to unpack Helm Charts\n", util.ColorInfo(unpackDir))
+			log.Logger().Debugf("Using %s to unpack Helm Charts", util.ColorInfo(unpackDir))
 			chart := fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name)
-			log.Logger().Infof("Updating extensions from Helm Chart %s repo %s \n", util.ColorInfo(chart), util.ColorInfo(current.Chart.Repo))
+			log.Logger().Infof("Updating extensions from Helm Chart %s repo %s ", util.ColorInfo(chart), util.ColorInfo(current.Chart.Repo))
 			err = o.Helm().FetchChart(chart, "", true, unpackDir, "", "", "")
 			if err != nil {
 				return err
 			}
 			path := filepath.Join(unpackDir, current.Chart.Name, "repository", "jenkins-x-extensions-repository.lock.yaml")
 			bs, err = ioutil.ReadFile(path)
-			log.Logger().Debugf("Extensions Repository Lock located at %s\n", util.ColorInfo(path))
+			log.Logger().Debugf("Extensions Repository Lock located at %s", util.ColorInfo(path))
 			if err != nil {
 				return fmt.Errorf("Unable to fetch Extensions Repository Helm Chart %s/%s because %v", current.Chart.RepoName, current.Chart.Name, err)
 			}
@@ -189,7 +189,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 				}
 				extensionsRepositoryUrl = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/jenkins-x-extensions-repository.lock.yaml", repoInfo.Organisation, repoInfo.Name, resolvedTag)
 			}
-			log.Logger().Infof("Updating extensions from %s\n", extensionsRepositoryUrl)
+			log.Logger().Infof("Updating extensions from %s", extensionsRepositoryUrl)
 			httpClient := &http.Client{Timeout: 10 * time.Second}
 			resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", extensionsRepositoryUrl, time.Now().UnixNano()/int64(time.Millisecond)))
 			if err != nil {
@@ -208,7 +208,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Upgrading to Extension Repository version %s\n", util.ColorInfo(extensionsRepository.Version))
+	log.Logger().Infof("Upgrading to Extension Repository version %s", util.ColorInfo(extensionsRepository.Version))
 	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -258,7 +258,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			envVars = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(strings.TrimSuffix(envVarsFormatted.String(), ", ")))
 		}
 
-		log.Logger().Infof("Preparing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
+		log.Logger().Infof("Preparing %s %s", util.ColorInfo(n.FullyQualifiedName()), envVars)
 		n.Execute()
 	}
 	return nil
@@ -297,9 +297,9 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.Extensio
 		})
 		if depth == 0 {
 			initialIndent = 7
-			log.Logger().Infof("Adding %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(newVersion))
+			log.Logger().Infof("Adding %s version %s", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(newVersion))
 		} else {
-			log.Logger().Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+			log.Logger().Infof("%s└ %s version %s", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		}
 		if err != nil {
 			return result, err
@@ -333,9 +333,9 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.Extensio
 			}
 			if depth == 0 {
 				initialIndent = 10
-				log.Logger().Infof("Upgrading %s from %s to %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
+				log.Logger().Infof("Upgrading %s from %s to %s", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
 			} else {
-				log.Logger().Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+				log.Logger().Infof("%s└ %s version %s", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 			}
 		}
 	}

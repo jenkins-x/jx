@@ -67,7 +67,7 @@ func (o *GetTrackerOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 	if len(config.Servers) == 0 {
-		log.Logger().Infof("No issue trackers registered. To register a new issue tracker use: %s\n", util.ColorInfo("jx create tracker server"))
+		log.Logger().Infof("No issue trackers registered. To register a new issue tracker use: %s", util.ColorInfo("jx create tracker server"))
 		return nil
 	}
 

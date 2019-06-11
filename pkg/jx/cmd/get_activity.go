@@ -174,7 +174,7 @@ func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient versione
 func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlSpecMap map[string]string) {
 	activity, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Logger().Infof("Object is not a PipelineActivity %#v\n", obj)
+		log.Logger().Infof("Object is not a PipelineActivity %#v", obj)
 		return
 	}
 	data, err := yaml.Marshal(&activity.Spec)
@@ -205,7 +205,7 @@ func (o *GetActivityOptions) addStepRow(table *tbl.Table, parent *v1.PipelineAct
 	} else if promote != nil {
 		addPromoteRow(table, promote, indent)
 	} else {
-		log.Logger().Warnf("Unknown step kind %#v\n", parent)
+		log.Logger().Warnf("Unknown step kind %#v", parent)
 	}
 }
 

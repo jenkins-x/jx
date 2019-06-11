@@ -93,7 +93,7 @@ func (o *GetBuildPodsOptions) Run() error {
 	jxPipelines := teamSettings.IsJenkinsXPipelines()
 	pods, err := builds.GetBuildPods(kubeClient, ns)
 	if err != nil {
-		log.Logger().Warnf("Failed to query pods %s\n", err)
+		log.Logger().Warnf("Failed to query pods %s", err)
 		return err
 	}
 

@@ -99,7 +99,7 @@ func (o *GetWorkflowOptions) getWorkflow(name string, jxClient versioned.Interfa
 		return err
 	}
 
-	log.Logger().Infof("Workflow: %s\n", workflow.Name)
+	log.Logger().Infof("Workflow: %s", workflow.Name)
 	lines := []*StepSummary{}
 	var lastSummary *StepSummary
 	for _, step := range workflow.Spec.Steps {
@@ -123,9 +123,9 @@ func (o *GetWorkflowOptions) getWorkflow(name string, jxClient versioned.Interfa
 	}
 	for i, summary := range lines {
 		if i > 0 {
-			log.Logger().Info("    |\n")
+			log.Logger().Info("    |")
 		}
-		log.Logger().Infof("%s to %s\n", summary.Action, strings.Join(summary.Resources, " + "))
+		log.Logger().Infof("%s to %s", summary.Action, strings.Join(summary.Resources, " + "))
 	}
 	return nil
 }

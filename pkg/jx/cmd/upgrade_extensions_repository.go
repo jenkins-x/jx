@@ -132,9 +132,9 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 			lookupByUUID[r.UUID] = r
 		}
 	}
-	log.Logger().Debugf("Extension to UUID mapping:\n")
+	log.Logger().Debugf("Extension to UUID mapping:")
 	for k, v := range lookupByName {
-		log.Logger().Debugf("  %s: %s\n", util.ColorInfo(k), util.ColorInfo(v.UUID))
+		log.Logger().Debugf("  %s: %s", util.ColorInfo(k), util.ColorInfo(v.UUID))
 	}
 
 	uuidResolveErrors := make([]string, 0)
@@ -189,7 +189,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	}
 
 	if diff != "" {
-		log.Logger().Debugf("Changes are \n\n%s\n\n", diff)
+		log.Logger().Debugf("Changes are \n\n%s\n", diff)
 	}
 	return nil
 }
@@ -242,12 +242,12 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 			if UUID == "" {
 				UUID = uuid.New()
 				log.Logger().Infof("No UUID found for %s. Generated UUID %s, please update your extension definition "+
-					"accordingly.\n", ed.FullyQualifiedName(), UUID)
+					"accordingly.", ed.FullyQualifiedName(), UUID)
 			}
 			newVersion := strings.TrimPrefix(resolvedTag, "v")
 			oldSemanticVersion, err := semver.Parse(oldLookupByUUID[UUID].Version)
 			if err != nil {
-				log.Logger().Infof("Cannot determine existing version for %s. Upgrading to %s anyway.\n", ed.FullyQualifiedName(), newVersion)
+				log.Logger().Infof("Cannot determine existing version for %s. Upgrading to %s anyway.", ed.FullyQualifiedName(), newVersion)
 				oldSemanticVersion = semver.Version{}
 			}
 			newSemanticVersion, err := semver.Parse(newVersion)

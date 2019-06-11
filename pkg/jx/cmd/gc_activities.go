@@ -130,7 +130,7 @@ func (o *GCActivitiesOptions) Run() error {
 	}
 	if len(activities.Items) == 0 {
 		// no preview environments found so lets return gracefully
-		log.Logger().Debug("no activities found\n")
+		log.Logger().Debug("no activities found")
 		return nil
 	}
 
@@ -209,7 +209,7 @@ func (o *GCActivitiesOptions) gcPipelineRuns(jxClient versioned.Interface, ns st
 	pipelineRunInterface := tektonkClient.TektonV1alpha1().PipelineRuns(ns)
 	activities, err := pipelineRunInterface.List(metav1.ListOptions{})
 	if err != nil {
-		log.Logger().Warnf("no PipelineRun instances found: %s\n", err.Error())
+		log.Logger().Warnf("no PipelineRun instances found: %s", err.Error())
 		return nil
 	}
 
@@ -264,7 +264,7 @@ func (o *GCActivitiesOptions) deleteActivity(activityInterface jv1.PipelineActiv
 	if o.DryRun {
 		prefix = "not "
 	}
-	log.Logger().Infof("%sdeleting PipelineActivity %s\n", prefix, util.ColorInfo(a.Name))
+	log.Logger().Infof("%sdeleting PipelineActivity %s", prefix, util.ColorInfo(a.Name))
 	if o.DryRun {
 		return nil
 	}
@@ -276,7 +276,7 @@ func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tv1alpha1.P
 	if o.DryRun {
 		prefix = "not "
 	}
-	log.Logger().Infof("%sdeleting PipelineRun %s\n", prefix, util.ColorInfo(a.Name))
+	log.Logger().Infof("%sdeleting PipelineRun %s", prefix, util.ColorInfo(a.Name))
 	if o.DryRun {
 		return nil
 	}

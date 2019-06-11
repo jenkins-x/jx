@@ -119,7 +119,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	}
 
 	if o.Flags.ClusterName == "" {
-		log.Logger().Info("No cluster name provided\n")
+		log.Logger().Info("No cluster name provided")
 		return nil
 	}
 
@@ -142,13 +142,13 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	}
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		log.Logger().Infof("Unable to find service account key %s\n", keyPath)
+		log.Logger().Infof("Unable to find service account key %s", keyPath)
 		return nil
 	}
 
 	terraformDir := filepath.Join(clusterHome, "terraform")
 	if _, err := os.Stat(terraformDir); os.IsNotExist(err) {
-		log.Logger().Infof("Unable to find Terraform plan dir %s\n", terraformDir)
+		log.Logger().Infof("Unable to find Terraform plan dir %s", terraformDir)
 		return nil
 	}
 
@@ -186,7 +186,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		}
 	}
 
-	log.Logger().Info("Applying plan...\n")
+	log.Logger().Info("Applying plan...")
 
 	args = []string{"apply",
 		"-auto-approve",
