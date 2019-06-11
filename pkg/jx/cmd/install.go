@@ -118,7 +118,6 @@ type InstallFlags struct {
 	RecreateVaultBucket         bool
 	Tekton                      bool
 	KnativeBuild                bool
-	ExternalDNS                 bool
 	BuildPackName               string
 	Kaniko                      bool
 	GitOpsMode                  bool
@@ -355,7 +354,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker Registry organiation/user to create images inside. On GCP this is typically your Google Project ID.")
 	cmd.Flags().StringVarP(&flags.ExposeControllerURLTemplate, "exposecontroller-urltemplate", "", "", "The ExposeController urltemplate for how services should be exposed as URLs. Defaults to being empty, which in turn defaults to \"{{.Service}}.{{.Namespace}}.{{.Domain}}\".")
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
-	cmd.Flags().BoolVarP(&flags.ExternalDNS, "external-dns", "", false, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
+
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
 	cmd.Flags().BoolVarP(&flags.Tekton, "tekton", "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline) along with Prow to provide Serverless Jenkins. Otherwise we default to use Knative Build if you enable Prow")
@@ -447,11 +446,11 @@ func (options *InstallOptions) CheckFlags() error {
 		}
 	}
 	if flags.CloudBeesDomain != "" {
-		flags.ExternalDNS = true
+		options.InitOptions.Flags.ExternalDNS = true
 	}
 
 	// If we're using external-dns then remove the namespace subdomain from the URLTemplate
-	if flags.ExternalDNS {
+	if options.InitOptions.Flags.ExternalDNS {
 		flags.ExposeControllerURLTemplate = `"{{.Service}}-{{.Namespace}}.{{.Domain}}"`
 	}
 
@@ -833,7 +832,7 @@ func (options *InstallOptions) init() error {
 			log.Logger().Info("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
 		}
 		if (ecConfig.UrlTemplate == "" && options.Flags.ExposeControllerURLTemplate != "") ||
-			(options.Flags.ExposeControllerURLTemplate != "" && options.Flags.ExternalDNS) {
+			(options.Flags.ExposeControllerURLTemplate != "" && options.InitOptions.Flags.ExternalDNS) {
 			ecConfig.UrlTemplate = options.Flags.ExposeControllerURLTemplate
 			log.Logger().Info("set exposeController Config URLTemplate " + ecConfig.UrlTemplate + "\n")
 		}
@@ -1061,7 +1060,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username, valuesFiles)
+		err = options.InstallProw(options.Flags.Tekton, options.InitOptions.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username, valuesFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing Prow")
 		}
