@@ -72,20 +72,6 @@ func (o *StepVerifyPodCountOptions) Run() error {
 	// Wait for the given time to exceed before starting the verification
 	time.Sleep(time.Duration(o.After) * time.Second)
 
-	apisClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the API extensions client")
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the pipeline activity CRD")
-	}
-
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the environment CRD")
-	}
-
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the jx client")
