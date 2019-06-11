@@ -133,7 +133,7 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", true, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", opts.DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", opts.DefaultSkipClusterRole, "Don't enable cluster admin role for user")
-
+	cmd.Flags().BoolVarP(&o.Flags.ExternalDNS, "external-dns", "", false, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", opts.DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
 }
 
@@ -256,6 +256,11 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
+	// configure options for external-dns
+	if o.Flags.ExternalDNS {
+		o.configureOptionsForExternalDNS()
+	}
+
 	// install ingress
 	if !o.Flags.SkipIngress {
 		err = o.initIngress()
@@ -323,6 +328,22 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		}
 		return err
 	})
+}
+
+func (o *InitOptions) configureOptionsForExternalDNS() {
+	if !(o.BatchMode) {
+		surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+		ExternalDNSDomain := ""
+		prompt := &survey.Input{
+			Message: "Provide the domain Jenkins X should be available at:",
+			Default: "",
+			Help:    "",
+		}
+
+		survey.AskOne(prompt, &ExternalDNSDomain, nil, surveyOpts)
+
+		o.Flags.Domain = ExternalDNSDomain
+	}
 }
 
 func (o *InitOptions) configureForICP() {
