@@ -112,6 +112,6 @@ func (o *DeleteDevPodOptions) Run() error {
 			return err
 		}
 	}
-	log.Logger().Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
+	log.Logger().Infof("Deleted DevPods %s", util.ColorInfo(deletePods))
 	return nil
 }

@@ -958,7 +958,7 @@ func (b *BitbucketCloudProvider) UserAuth() auth.UserAuth {
 func (b *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 	user, _, err := b.Client.UsersApi.UsersUsernameGet(b.Context, username)
 	if err != nil {
-		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
+		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error() + "")
 		return nil
 	}
 
@@ -983,17 +983,17 @@ func (b *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRe
 }
 
 func (b *BitbucketCloudProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 func (b *BitbucketCloudProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (b *BitbucketCloudProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.")
 	return &github.Response{}, nil
 }
 

@@ -194,7 +194,7 @@ func (o *CreateDevPodOptions) Run() error {
 	if importURL == "" {
 		gitInfo, err := o.FindGitInfo(dir)
 		if err != nil {
-			log.Logger().Warnf("could not find git URL in dir %s due to: %s\n", dir, err.Error())
+			log.Logger().Warnf("could not find git URL in dir %s due to: %s", dir, err.Error())
 		} else {
 			importURL = gitInfo.HttpCloneURL()
 		}
@@ -229,7 +229,7 @@ func (o *CreateDevPodOptions) Run() error {
 	if importURL != "" && o.Reuse {
 		gitInfo, err := gits.ParseGitURL(importURL)
 		if err != nil {
-			log.Logger().Warnf("could not parse the git URL %s: %s\n", importURL, err.Error())
+			log.Logger().Warnf("could not parse the git URL %s: %s", importURL, err.Error())
 		} else {
 			gitLabelKey = fmt.Sprintf("%s-%s-%s-%s", kube.LabelDevPodGitPrefix, gitInfo.Host, gitInfo.Organisation, gitInfo.Name)
 			gitLabelValue = kube.ToValidNameWithDots(importURL)
@@ -625,7 +625,7 @@ func (o *CreateDevPodOptions) Run() error {
 					pod.Labels[gitLabelKey] = gitLabelValue
 					_, err = podResources.Update(pod)
 					if err != nil {
-						log.Logger().Warnf("failed to update label of pod %s: %s\n", pod.Name, err.Error())
+						log.Logger().Warnf("failed to update label of pod %s: %s", pod.Name, err.Error())
 					}
 				}
 			}
@@ -770,7 +770,7 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	o.NotifyProgress(opts.LogInfo, "Pod %s is now ready!\n", util.ColorInfo(pod.Name))
-	log.Logger().Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
+	log.Logger().Infof("You can open other shells into this DevPod via %s", util.ColorInfo("jx create devpod"))
 
 	if !o.Sync {
 		ideServiceURL, err := services.FindServiceURL(client, curNs, ideServiceName)
@@ -784,7 +784,7 @@ func (o *CreateDevPodOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			log.Logger().Infof("\nYou can edit your app using the Web IDE at: %s\n", util.ColorInfo(ideServiceURL))
+			log.Logger().Infof("\nYou can edit your app using the Web IDE at: %s", util.ColorInfo(ideServiceURL))
 			o.Results.TheaServiceURL = ideServiceURL
 		} else {
 			o.NotifyProgress(opts.LogWarning, "Could not find service with name %s in namespace %s\n", ideServiceName, curNs)
@@ -804,11 +804,11 @@ func (o *CreateDevPodOptions) Run() error {
 		exposePortURLs = append(exposePortURLs, u)
 	}
 	if len(exposePortURLs) > 0 {
-		log.Logger().Infof("\nYou can access the DevPod from your browser via the following URLs:\n")
+		log.Logger().Infof("\nYou can access the DevPod from your browser via the following URLs:")
 		for _, u := range exposePortURLs {
-			log.Logger().Infof("* %s\n", util.ColorInfo(u))
+			log.Logger().Infof("* %s", util.ColorInfo(u))
 		}
-		log.Logger().Info("\n")
+		log.Logger().Info("")
 
 		o.Results.ExposePortURLs = exposePortURLs
 	}
@@ -971,7 +971,7 @@ func (o *CreateDevPodOptions) ensureEditEnvironmentHasExposeController(env *v1.E
 func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (string, error) {
 	root, _, err := o.Git().FindGitConfigDir(o.Dir)
 	if err != nil {
-		log.Logger().Warnf("Could not find a .git directory: %s\n", err)
+		log.Logger().Warnf("Could not find a .git directory: %s", err)
 	}
 	answer := ""
 	if root != "" {

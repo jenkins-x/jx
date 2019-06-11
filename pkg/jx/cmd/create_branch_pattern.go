@@ -71,7 +71,7 @@ func (o *CreateBranchPatternOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.BranchPatterns = arg
-		log.Logger().Infof("Setting the team branch pattern to: %s\n", util.ColorInfo(arg))
+		log.Logger().Infof("Setting the team branch pattern to: %s", util.ColorInfo(arg))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

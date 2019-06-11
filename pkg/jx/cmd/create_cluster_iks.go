@@ -284,7 +284,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	clusterMaxLength := 64 - (len(iKSSubDomain) + len(dockerRegistryhost) + len(c.Region) + 1)
 	if clusterName != "" {
 		if len(clusterName) > clusterMaxLength {
-			log.Logger().Infof("Cluster name too can only be %d bytes for %s\n", clusterMaxLength, c.Region)
+			log.Logger().Infof("Cluster name too can only be %d bytes for %s", clusterMaxLength, c.Region)
 		} else {
 			validClusterName = true
 		}
@@ -437,7 +437,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	if privateVLAN == "" {
 		log.Logger().Info("Creating Private VLAN.")
 	} else {
-		log.Logger().Infof("Chosen Private VLAN is %s\n", util.ColorInfo(privateVLAN))
+		log.Logger().Infof("Chosen Private VLAN is %s", util.ColorInfo(privateVLAN))
 	}
 
 	publicarr, err := iks.GetPublicVLANs(*zone, *region, vLANs)
@@ -467,7 +467,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 			log.Logger().Info("Creating Public VLAN.")
 		}
 	} else {
-		log.Logger().Infof("Chosen Public VLAN is %s\n", util.ColorInfo(publicVLAN))
+		log.Logger().Infof("Chosen Public VLAN is %s", util.ColorInfo(publicVLAN))
 	}
 
 	var clusterInfo = containerv1.ClusterCreateRequest{
@@ -484,7 +484,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		EnableTrusted:  o.Flags.Trusted,
 	}
 
-	log.Logger().Infof("Creating cluster named %s\n", clusterName)
+	log.Logger().Infof("Creating cluster named %s", clusterName)
 	//	fmt.Println(clusterInfo)
 	createResponse, err := clusters.Create(clusterInfo, target)
 	if err != nil {
@@ -500,7 +500,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 			return err
 	}*/
 
-	log.Logger().Infof("Waiting for cluster named %s, can take around 15 minutes (time out in 1h) ...\n", cluster.Name)
+	log.Logger().Infof("Waiting for cluster named %s, can take around 15 minutes (time out in 1h) ...", cluster.Name)
 
 	timeout := time.After(time.Hour)
 	tick := time.Tick(time.Second)
@@ -532,17 +532,17 @@ L:
 
 	//setup the kube context
 
-	log.Logger().Infof("\nCreated cluster named %s\n", cluster.Name)
+	log.Logger().Infof("\nCreated cluster named %s", cluster.Name)
 
 	kubeconfig, err := config.GetClusterConfig(cluster.Name, target)
 	if err != nil {
 		return err
 	}
 
-	log.Logger().Info("Setting kube config file\n")
-	log.Logger().Infof("export KUBECONFIG=\"%s\"\n", kubeconfig)
+	log.Logger().Info("Setting kube config file")
+	log.Logger().Infof("export KUBECONFIG=\"%s\"", kubeconfig)
 	os.Setenv("KUBECONFIG", kubeconfig)
-	log.Logger().Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...")
 
 	return o.initAndInstall(cloud.IKS)
 }

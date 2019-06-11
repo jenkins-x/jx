@@ -294,17 +294,17 @@ func (p *GerritProvider) UserInfo(username string) *GitUser {
 }
 
 func (p *GerritProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit. Please add user: %v as a collaborator to this project.\n", user)
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 func (p *GerritProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (p *GerritProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.")
 	return &github.Response{}, nil
 }
 

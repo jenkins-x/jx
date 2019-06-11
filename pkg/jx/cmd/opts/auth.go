@@ -86,7 +86,7 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 				log.Logger().Warnf("WARNING: Could not get the current namespace")
 			}
 
-			log.Logger().Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
+			log.Logger().Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s", ns, err)
 		}
 	}
 
@@ -127,7 +127,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 			// if no config file is being used lets grab the git server from the current directory
 			server, err := o.Git().Server("")
 			if err != nil {
-				log.Logger().Warnf("WARNING: unable to get remote Git repo server, %v\n", err)
+				log.Logger().Warnf("WARNING: unable to get remote Git repo server, %v", err)
 				server = "https://github.com"
 			}
 			config.Servers = []*auth.AuthServer{

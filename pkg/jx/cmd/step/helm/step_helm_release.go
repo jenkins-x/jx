@@ -113,7 +113,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 		}
 		secret, err := client.CoreV1().Secrets(ns).Get(kube.SecretJenkinsChartMuseum, metav1.GetOptions{})
 		if err != nil {
-			log.Logger().Warnf("Could not load Secret %s in namespace %s: %s\n", kube.SecretJenkinsChartMuseum, ns, err)
+			log.Logger().Warnf("Could not load Secret %s in namespace %s: %s", kube.SecretJenkinsChartMuseum, ns, err)
 		} else {
 			if secret != nil && secret.Data != nil {
 				if userName == "" {
@@ -141,7 +141,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the chart archive '%s'", tarball)
 	}
-	log.Logger().Infof("Uploading chart file %s to %s\n", util.ColorInfo(tarball), util.ColorInfo(u))
+	log.Logger().Infof("Uploading chart file %s to %s", util.ColorInfo(tarball), util.ColorInfo(u))
 	req, err := http.NewRequest(http.MethodPost, u, bufio.NewReader(file))
 	if err != nil {
 		return errors.Wrapf(err, "failed to build the chart upload request for endpoint '%s'", u)
@@ -162,7 +162,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	}
 	responseMessage := string(body)
 	statusCode := res.StatusCode
-	log.Logger().Infof("Received %d response: %s\n", statusCode, responseMessage)
+	log.Logger().Infof("Received %d response: %s", statusCode, responseMessage)
 	if statusCode >= 300 {
 		return fmt.Errorf("Failed to post chart to %s due to response %d: %s", u, statusCode, responseMessage)
 	}

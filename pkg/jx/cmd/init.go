@@ -178,7 +178,7 @@ func (o *InitOptions) checkOptions() error {
 
 	if o.Flags.SkipIngress {
 		if o.Flags.ExternalIP == "" {
-			log.Logger().Warnf("Expecting ingress controller to be installed in %s\n",
+			log.Logger().Warnf("Expecting ingress controller to be installed in %s",
 				util.ColorInfo(fmt.Sprintf("%s/%s", o.Flags.IngressNamespace, o.Flags.IngressDeployment)))
 		}
 	}
@@ -317,13 +317,13 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	return o.Retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Logger().Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
+			log.Logger().Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 
 			_, err = clusterRoleBindingInterface.Create(clusterRoleBinding)
 			if err == nil {
-				log.Logger().Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+				log.Logger().Infof("Created ClusterRoleBinding %s", clusterRoleBindingName)
 			}
 		}
 		return err
@@ -363,7 +363,7 @@ func (o *InitOptions) configureForICP() {
 		"- name: gcr.io/* \n" +
 		"- name: quay.io/* \n" +
 		"- name: k8s.gcr.io/* \n" +
-		"- name: <your ICP cluster name>:8500/* \n")
+		"- name: <your ICP cluster name>:8500/* ")
 
 	log.Logger().Info(util.ColorInfo("IBM Cloud Private defaults"))
 	log.Logger().Info("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
@@ -554,7 +554,7 @@ controller:
 			if err != nil {
 				return err
 			}
-			log.Logger().Infof("Using helm values file: %s\n", fileName)
+			log.Logger().Infof("Using helm values file: %s", fileName)
 			valuesFiles = append(valuesFiles, fileName)
 		}
 		chartName := "stable/nginx-ingress"
@@ -566,7 +566,7 @@ controller:
 
 		i := 0
 		for {
-			log.Logger().Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
+			log.Logger().Infof("Installing using helm binary: %s", util.ColorInfo(o.Helm().HelmBinary()))
 			helmOptions := helm.InstallChartOptions{
 				Chart:       chartName,
 				ReleaseName: "jxing",
@@ -593,19 +593,19 @@ controller:
 		}
 
 	} else {
-		log.Logger().Info("existing ingress controller found, no need to install a new one\n")
+		log.Logger().Info("existing ingress controller found, no need to install a new one")
 	}
 
 	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.MINISHIFT && o.Flags.Provider != cloud.OPENSHIFT {
 
-		log.Logger().Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
+		log.Logger().Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace", ingressNamespace)
 
 		if o.Flags.Provider == cloud.OKE {
-			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
+			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account")
 		}
 
 		if o.Flags.Provider == cloud.GKE {
-			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
+			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s", util.ColorInfo("gcloud compute project-info describe"))
 		}
 
 		externalIP := o.Flags.ExternalIP
@@ -620,7 +620,7 @@ controller:
 			}
 			host := kube.CurrentServer(config)
 			if host == "" {
-				log.Logger().Warnf("No API server host is defined in the local kube config!\n")
+				log.Logger().Warnf("No API server host is defined in the local kube config!")
 			} else {
 				externalIP, err = util.UrlHostNameWithoutPort(host)
 				if err != nil {
@@ -634,9 +634,9 @@ controller:
 			if err != nil {
 				return err
 			}
-			log.Logger().Infof("External loadbalancer created\n")
+			log.Logger().Infof("External loadbalancer created")
 		} else {
-			log.Logger().Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
+			log.Logger().Infof("Using external IP: %s", util.ColorInfo(externalIP))
 		}
 
 		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
@@ -695,7 +695,7 @@ func (o *InitOptions) validateGit() error {
 			return err
 		}
 	}
-	log.Logger().Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
+	log.Logger().Infof("Git configured for user: %s and email %s", util.ColorInfo(userName), util.ColorInfo(userEmail))
 	return nil
 }
 

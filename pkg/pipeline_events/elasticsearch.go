@@ -104,7 +104,7 @@ func (e ElasticsearchProvider) SendIssue(i *ESIssue) error {
 	}
 	var index *Index
 
-	log.Logger().Infof("sending issue %s\n", id)
+	log.Logger().Infof("sending issue %s", id)
 	err = e.post("issues", id, data, &index)
 	if err != nil {
 		return err

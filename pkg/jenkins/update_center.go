@@ -210,7 +210,7 @@ func (u *UpdateCenter) PickPlugins(currentValues []string, in terminal.FileReade
 	for _, sel := range selection {
 		value := pluginMap[sel]
 		if value == "" {
-			log.Logger().Warnf("Could not find value for %s in map!\n", value)
+			log.Logger().Warnf("Could not find value for %s in map!", value)
 		} else {
 			answer = append(answer, value)
 		}

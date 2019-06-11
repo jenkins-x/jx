@@ -120,12 +120,12 @@ func NewCmdCreateMLQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the generic Create command
 func (o *CreateMLQuickstartOptions) Run() error {
-	log.Logger().Debugf("Running CreateMLQuickstart...\n")
+	log.Logger().Debugf("Running CreateMLQuickstart...")
 
 	interactive := true
 	if o.BatchMode {
 		interactive = false
-		log.Logger().Debugf("In batch mode.\n")
+		log.Logger().Debugf("In batch mode.")
 	}
 
 	authConfigSvc, err := o.CreateGitAuthConfigService()
@@ -148,7 +148,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		foundDefault := false
 		for i := range locations {
 			locations[i].Includes = []string{"ML-*"} // Filter for ML repos
-			log.Logger().Debugf("Location: %s \n", locations[i])
+			log.Logger().Debugf("Location: %s ", locations[i])
 			if locations[i].GitURL == gits.GitHubURL && locations[i].Owner == JenkinsXMLQuickstartsOrganisation {
 				foundDefault = true
 			}
@@ -160,7 +160,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 
 			callback := func(env *v1.Environment) error {
 				env.Spec.TeamSettings.QuickstartLocations = locations
-				log.Logger().Infof("Adding the default ml quickstart repo %s\n", util.ColorInfo(util.UrlJoin(DefaultMLQuickstartLocation.GitURL, DefaultMLQuickstartLocation.Owner)))
+				log.Logger().Infof("Adding the default ml quickstart repo %s", util.ColorInfo(util.UrlJoin(DefaultMLQuickstartLocation.GitURL, DefaultMLQuickstartLocation.Owner)))
 				return nil
 			}
 			o.ModifyDevEnvironment(callback)
@@ -258,7 +258,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		for _, project := range ps {
 			w.ImportOptions = o.ImportOptions // Reset the options each time as they are modified by Import (DraftPack)
 			if interactive {
-				log.Logger().Debugf("Setting Quickstart from surveys.\n")
+				log.Logger().Debugf("Setting Quickstart from surveys.")
 				w.ImportOptions.Organisation = details.Organisation
 				w.GitRepositoryOptions = o.GitRepositoryOptions
 				w.GitRepositoryOptions.ServerURL = details.GitServer.URL
@@ -273,7 +273,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 			w.Filter.Text = project.Repo
 			w.Filter.ProjectName = stub + project.Tail
 			w.Filter.Language = ""
-			log.Logger().Debugf("Invoking CreateQuickstart for %s...\n", project.Repo)
+			log.Logger().Debugf("Invoking CreateQuickstart for %s...", project.Repo)
 
 			e = w.Run()
 
@@ -283,7 +283,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		}
 	} else {
 		// Must be a conventional quickstart
-		log.Logger().Debugf("Invoking CreateQuickstart...\n")
+		log.Logger().Debugf("Invoking CreateQuickstart...")
 		return w.Run()
 	}
 
@@ -300,14 +300,14 @@ func (o *CreateMLQuickstartOptions) getMLProjectSet(q *quickstarts.Quickstart) (
 
 	req, err := http.NewRequest(http.MethodGet, u, strings.NewReader(""))
 	if err != nil {
-		log.Logger().Debugf("Projectset not found because %+#v\n", err)
+		log.Logger().Debugf("Projectset not found because %+#v", err)
 		return nil, err
 	}
 	userAuth := q.GitProvider.UserAuth()
 	token := userAuth.ApiToken
 	username := userAuth.Username
 	if token != "" && username != "" {
-		log.Logger().Debugf("Downloading projectset from %s with basic auth for user: %s\n", u, username)
+		log.Logger().Debugf("Downloading projectset from %s with basic auth for user: %s", u, username)
 		req.SetBasicAuth(username, token)
 	}
 	res, err := client.Do(req)
@@ -336,10 +336,10 @@ func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConf
 			if err != nil {
 				return model, err
 			}
-			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s ", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
 			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
 			if err != nil {
-				log.Logger().Debugf("Quickstart load error: %s\n", err.Error())
+				log.Logger().Debugf("Quickstart load error: %s", err.Error())
 			}
 		}
 	}

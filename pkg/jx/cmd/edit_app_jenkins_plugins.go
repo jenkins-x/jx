@@ -73,9 +73,9 @@ func (o *EditAppJenkinsPluginsOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("chosen selection:\n")
+	log.Logger().Infof("chosen selection:")
 	for _, sel := range selection {
-		log.Logger().Infof("    %s\n", util.ColorInfo(sel))
+		log.Logger().Infof("    %s", util.ColorInfo(sel))
 	}
 	// TODO update the GitOps values.yaml folder
 	return nil

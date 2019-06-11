@@ -166,12 +166,12 @@ func (o *ShellOptions) Run() error {
 	}
 
 	info := util.ColorInfo
-	log.Logger().Infof("Creating a new shell using the Kubernetes context %s\n", info(ctxName))
+	log.Logger().Infof("Creating a new shell using the Kubernetes context %s", info(ctxName))
 	if shell != "cmd.exe" {
-		log.Logger().Infof("Shell RC file is %s\n\n", tmpRCFileName)
+		log.Logger().Infof("Shell RC file is %s\n", tmpRCFileName)
 	}
-	log.Logger().Infof("All changes to the Kubernetes context like changing environment, namespace or context will be local to this shell\n")
-	log.Logger().Infof("To return to the global context use the command: exit\n\n")
+	log.Logger().Infof("All changes to the Kubernetes context like changing environment, namespace or context will be local to this shell")
+	log.Logger().Infof("To return to the global context use the command: exit\n")
 
 	e := exec.Command(shell, "-rcfile", tmpRCFileName, "-i")
 	if shell == "zsh" {

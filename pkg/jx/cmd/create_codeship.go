@@ -364,7 +364,7 @@ func (o *CreateCodeshipOptions) Run() error {
 
 		uuid = project.UUID
 
-		log.Logger().Infof("Created Project %s\n", util.ColorInfo(project.Name))
+		log.Logger().Infof("Created Project %s", util.ColorInfo(project.Name))
 	} else {
 		updateProjectRequest := codeship.ProjectUpdateRequest{
 			Type:          codeship.ProjectTypeBasic,
@@ -388,10 +388,10 @@ func (o *CreateCodeshipOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Logger().Infof("Updated Project %s\n", util.ColorInfo(project.Name))
+		log.Logger().Infof("Updated Project %s", util.ColorInfo(project.Name))
 	}
 
-	log.Logger().Infof("Triggering build for %s\n", util.ColorInfo(uuid))
+	log.Logger().Infof("Triggering build for %s", util.ColorInfo(uuid))
 	_, _, err = csOrg.CreateBuild(ctx, uuid, "heads/master", "")
 	if err != nil {
 		return err
@@ -435,7 +435,7 @@ func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg 
 
 	for _, p := range projects.Projects {
 		if p.Name == projectName {
-			log.Logger().Infof("Project %s already exists\n", util.ColorInfo(p.Name))
+			log.Logger().Infof("Project %s already exists", util.ColorInfo(p.Name))
 			return true, p.UUID, nil
 		}
 	}

@@ -89,7 +89,7 @@ func (o *ControllerBackupOptions) Run() error {
 
 	dir, err := o.getOrCreateBackupRepository()
 
-	log.Logger().Infof("Watching for users/teams/environments in namespace %s\n", util.ColorInfo(ns))
+	log.Logger().Infof("Watching for users/teams/environments in namespace %s", util.ColorInfo(ns))
 
 	_, environmentController := cache.NewInformer(
 		&cache.ListWatch{
@@ -177,7 +177,7 @@ func (o *ControllerBackupOptions) Run() error {
 func (o *ControllerBackupOptions) onEnvironmentChange(obj interface{}, ns string, dir string) {
 	env, ok := obj.(*v1.Environment)
 	if !ok {
-		log.Logger().Infof("Object is not a Environment %#v\n", obj)
+		log.Logger().Infof("Object is not a Environment %#v", obj)
 		return
 	}
 	o.writeResourceToBackupFile(env, "environment", env.ObjectMeta.Name, ns, dir)
@@ -186,7 +186,7 @@ func (o *ControllerBackupOptions) onEnvironmentChange(obj interface{}, ns string
 func (o *ControllerBackupOptions) onTeamChange(obj interface{}, ns string, dir string) {
 	env, ok := obj.(*v1.Team)
 	if !ok {
-		log.Logger().Infof("Object is not a Team %#v\n", obj)
+		log.Logger().Infof("Object is not a Team %#v", obj)
 		return
 	}
 	o.writeResourceToBackupFile(env, "team", env.ObjectMeta.Name, ns, dir)
@@ -195,7 +195,7 @@ func (o *ControllerBackupOptions) onTeamChange(obj interface{}, ns string, dir s
 func (o *ControllerBackupOptions) onUserChange(obj interface{}, ns string, dir string) {
 	env, ok := obj.(*v1.User)
 	if !ok {
-		log.Logger().Infof("Object is not a User %#v\n", obj)
+		log.Logger().Infof("Object is not a User %#v", obj)
 		return
 	}
 	o.writeResourceToBackupFile(env, "user", env.ObjectMeta.Name, ns, dir)
@@ -204,24 +204,24 @@ func (o *ControllerBackupOptions) onUserChange(obj interface{}, ns string, dir s
 func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, resource string, key string, ns string, dir string) {
 	out, err := yaml.Marshal(obj)
 	if err != nil {
-		log.Logger().Errorf("Unable to marshall %s %s\n", resource, err)
+		log.Logger().Errorf("Unable to marshall %s %s", resource, err)
 		return
 	}
 
-	log.Logger().Debugf("Dumping %s with key %s...\n", util.ColorInfo(resource), util.ColorInfo(key))
-	log.Logger().Debugf("%s\n", string(out))
+	log.Logger().Debugf("Dumping %s with key %s...", util.ColorInfo(resource), util.ColorInfo(key))
+	log.Logger().Debugf("%s", string(out))
 
 	nsDir := path.Join(dir, fmt.Sprintf("%ss", resource), ns)
 	err = os.MkdirAll(nsDir, os.FileMode(0755))
 	if err != nil {
-		log.Logger().Errorf("Unable to create directory %s\n", err)
+		log.Logger().Errorf("Unable to create directory %s", err)
 		return
 	}
 
 	envFile := path.Join(nsDir, fmt.Sprintf("%s.yaml", key))
 	err = ioutil.WriteFile(envFile, out, 0644)
 	if err != nil {
-		log.Logger().Errorf("Unable to write file %s\n", err)
+		log.Logger().Errorf("Unable to write file %s", err)
 		return
 	}
 
@@ -231,26 +231,26 @@ func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, res
 func (o *ControllerBackupOptions) commitDirIfChanges(dir string, message string) {
 	changes, err := o.Git().HasChanges(dir)
 	if err != nil {
-		log.Logger().Errorf("Unable to determine changes %s\n", err)
+		log.Logger().Errorf("Unable to determine changes %s", err)
 		return
 	}
 
 	if changes {
 		err = o.Git().Add(dir, "*")
 		if err != nil {
-			log.Logger().Errorf("Unable to add files %s\n", err)
+			log.Logger().Errorf("Unable to add files %s", err)
 			return
 		}
 
 		err = o.Git().CommitDir(dir, message)
 		if err != nil {
-			log.Logger().Errorf("Unable to commit dir %s\n", err)
+			log.Logger().Errorf("Unable to commit dir %s", err)
 			return
 		}
 
 		err = o.Git().PushMaster(dir)
 		if err != nil {
-			log.Logger().Errorf("Unable to push master %s\n", err)
+			log.Logger().Errorf("Unable to push master %s", err)
 			return
 		}
 

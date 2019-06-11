@@ -64,7 +64,7 @@ func (o *DeleteAddonEnvironmentControllerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Addon %s deleted successfully\n", util.ColorInfo(o.ReleaseName))
+	log.Logger().Infof("Addon %s deleted successfully", util.ColorInfo(o.ReleaseName))
 
 	return nil
 

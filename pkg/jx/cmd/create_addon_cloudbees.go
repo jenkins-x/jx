@@ -136,7 +136,7 @@ To register to get your username/password to to: %s
 	}
 
 	if o.Sso {
-		log.Logger().Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
+		log.Logger().Infof("Configuring %s...", util.ColorInfo("single sign-on"))
 		_, devNamespace, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			return errors.Wrap(err, "getting the dev namespace")
@@ -205,7 +205,7 @@ To register to get your username/password to to: %s
 	if o.Sso {
 		// wait for cert to be issued
 		certName := pki.CertSecretPrefix + "jxui"
-		log.Logger().Infof("Waiting for cert: %s...\n", util.ColorInfo(certName))
+		log.Logger().Infof("Waiting for cert: %s...", util.ColorInfo(certName))
 		certMngrClient, err := o.CertManagerClient()
 		if err != nil {
 			return errors.Wrap(err, "creating the cert-manager client")
@@ -214,7 +214,7 @@ To register to get your username/password to to: %s
 		if err != nil {
 			return err // this is already wrapped by the previous call
 		}
-		log.Logger().Infof("Ready Cert: %s\n", util.ColorInfo(certName))
+		log.Logger().Infof("Ready Cert: %s", util.ColorInfo(certName))
 	}
 
 	if o.Basic {
@@ -255,8 +255,8 @@ To register to get your username/password to to: %s
 			}
 		}
 
-		log.Logger().Infof("using exposecontroller config from dev namespace %s\n", devNamespace)
-		log.Logger().Infof("target namespace %s\n", o.Namespace)
+		log.Logger().Infof("using exposecontroller config from dev namespace %s", devNamespace)
+		log.Logger().Infof("target namespace %s", o.Namespace)
 
 		// create the ingress rule
 		err = o.Expose(devNamespace, o.Namespace, o.Password)
@@ -265,7 +265,7 @@ To register to get your username/password to to: %s
 		}
 	}
 
-	log.Logger().Infof("Addon installed successfully.\n\n  %s opens the app in a browser\n\n", util.ColorInfo("jx cloudbees"))
+	log.Logger().Infof("Addon installed successfully.\n\n  %s opens the app in a browser\n", util.ColorInfo("jx cloudbees"))
 
 	return nil
 }

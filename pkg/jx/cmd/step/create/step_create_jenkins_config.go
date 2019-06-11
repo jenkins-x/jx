@@ -118,6 +118,6 @@ func (o *StepCreateJenkinsConfigOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", o.Output)
 	}
-	log.Logger().Infof("generated Jenkins configuration file %s\n", util.ColorInfo(o.Output))
+	log.Logger().Infof("generated Jenkins configuration file %s", util.ColorInfo(o.Output))
 	return nil
 }

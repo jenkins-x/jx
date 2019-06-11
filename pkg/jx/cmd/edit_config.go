@@ -122,7 +122,7 @@ func (o *EditConfigOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Logger().Infof("Saved project configuration %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("Saved project configuration %s", util.ColorInfo(fileName))
 	}
 	return nil
 }

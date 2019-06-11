@@ -213,7 +213,7 @@ func (o *CreateEnvOptions) Run() error {
 		}
 		return nil
 	})
-	log.Logger().Infof("Created environment %s\n", util.ColorInfo(env.Name))
+	log.Logger().Infof("Created environment %s", util.ColorInfo(env.Name))
 
 	if !o.GitOpsMode {
 		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
@@ -229,7 +229,7 @@ func (o *CreateEnvOptions) Run() error {
 			err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
 			if err != nil {
 				// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
-				log.Logger().Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
+				log.Logger().Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) ", env.Spec.Namespace)
 			}
 		}
 		imagePullSecrets := strings.Fields(o.PullSecrets)
@@ -239,8 +239,8 @@ func (o *CreateEnvOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account %s in namespace %s: %v", imagePullSecrets, saName, env.Spec.Namespace, err)
 		} else {
-			log.Logger().Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s \n", saName, env.Spec.Namespace, imagePullSecrets)
-			log.Logger().Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment \n", env.Spec.Namespace)
+			log.Logger().Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s ", saName, env.Spec.Namespace, imagePullSecrets)
+			log.Logger().Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment ", env.Spec.Namespace)
 		}
 	}
 
@@ -261,7 +261,7 @@ func (o *CreateEnvOptions) Run() error {
 func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService) error {
 	gitURL := env.Spec.Source.URL
 	if gitURL == "" {
-		log.Logger().Warnf("environment %s does not have a git source URL\n", env.Name)
+		log.Logger().Warnf("environment %s does not have a git source URL", env.Name)
 		return nil
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)

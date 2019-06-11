@@ -82,13 +82,13 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 
 	skipTiller := config.SkipTiller
 	if config.Helm3 {
-		log.Logger().Infof("Using %s\n", util.ColorInfo("helm3"))
+		log.Logger().Infof("Using %s", util.ColorInfo("helm3"))
 		skipTiller = true
 	} else {
-		log.Logger().Infof("Using %s\n", util.ColorInfo("helm2"))
+		log.Logger().Infof("Using %s", util.ColorInfo("helm2"))
 	}
 	if !skipTiller {
-		log.Logger().Infof("Configuring %s\n", util.ColorInfo("tiller"))
+		log.Logger().Infof("Configuring %s", util.ColorInfo("tiller"))
 		client, curNs, err := o.KubeClientAndNamespace()
 		if err != nil {
 			return err
@@ -146,7 +146,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 				if err != nil {
 					return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				log.Logger().Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				log.Logger().Infof("Created Role %s in namespace %s", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
 			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, metav1.GetOptions{})
 			if err != nil {
@@ -173,13 +173,13 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 				if err != nil {
 					return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				log.Logger().Infof("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				log.Logger().Infof("Created RoleBinding %s in namespace %s", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
 		}
 
 		running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
 		if running {
-			log.Logger().Infof("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
+			log.Logger().Infof("Tiller Deployment is running in namespace %s", util.ColorInfo(tillerNamespace))
 			return nil
 		}
 		if err == nil && !running {
@@ -187,7 +187,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 		}
 
 		if !running {
-			log.Logger().Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
+			log.Logger().Infof("Initialising helm using ServiceAccount %s in namespace %s", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
 			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, false)
 			if err != nil {
@@ -204,13 +204,13 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 			}
 		}
 
-		log.Logger().Infof("Waiting for tiller-deploy to be ready in tiller namespace %s\n", tillerNamespace)
+		log.Logger().Infof("Waiting for tiller-deploy to be ready in tiller namespace %s", tillerNamespace)
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Logger().Infof("Skipping %s\n", util.ColorInfo("tiller"))
+		log.Logger().Infof("Skipping %s", util.ColorInfo("tiller"))
 	}
 
 	if config.Helm3 {
@@ -435,8 +435,8 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 		versionRepository = DefaultVersionsURL
 	}
 
-	log.Logger().Debugf("Current configuration dir: %s\n", configDir)
-	log.Logger().Debugf("versionRepository: %s git ref: %s\n", versionRepository, versionRef)
+	log.Logger().Debugf("Current configuration dir: %s", configDir)
+	log.Logger().Debugf("versionRepository: %s git ref: %s", versionRepository, versionRef)
 
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
@@ -485,7 +485,7 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 				}
 				err = survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
 				if err != nil {
-					log.Logger().Errorf("Error confirming if we should pull latest, skipping %s\n", wrkDir)
+					log.Logger().Errorf("Error confirming if we should pull latest, skipping %s", wrkDir)
 				}
 			} else {
 				pullLatest = true
@@ -532,10 +532,10 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		if strings.HasPrefix(referenceName, "PR-") {
 			prNumber := strings.TrimPrefix(referenceName, "PR-")
 
-			log.Logger().Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+			log.Logger().Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 			return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, prNumber, "")
 		}
-		log.Logger().Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+		log.Logger().Infof("Cloning the Jenkins X versions repo %s with revision %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 
 		err := o.Git().Clone(versionRepository, wrkDir)
 		if err != nil {
@@ -554,7 +554,7 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		// TODO doesn't seem to work at all for a git ref....
 		//return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", referenceName)
 	}
-	log.Logger().Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+	log.Logger().Infof("Cloning the Jenkins X versions repo %s with ref %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           versionRepository,
 		ReferenceName: plumbing.ReferenceName(referenceName),
@@ -569,7 +569,7 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 
 func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, revision string) error {
 	if pullRequestNumber != "" {
-		log.Logger().Infof("shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
+		log.Logger().Infof("shallow cloning pull request %s of repository %s to temp dir %s", gitURL,
 			pullRequestNumber, dir)
 		err := o.Git().ShallowClone(dir, gitURL, "", pullRequestNumber)
 		if err != nil {
@@ -577,7 +577,7 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 				pullRequestNumber, dir)
 		}
 	} else if revision != "" {
-		log.Logger().Infof("shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
+		log.Logger().Infof("shallow cloning revision %s of repository %s to temp dir %s", gitURL,
 			revision, dir)
 		err := o.Git().ShallowClone(dir, gitURL, revision, "")
 		if err != nil {
@@ -585,7 +585,7 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 				revision, dir)
 		}
 	} else {
-		log.Logger().Infof("shallow cloning master of repository %s to temp dir %s\n", gitURL, dir)
+		log.Logger().Infof("shallow cloning master of repository %s to temp dir %s", gitURL, dir)
 		err := o.Git().ShallowClone(dir, gitURL, "", "")
 		if err != nil {
 			return errors.Wrapf(err, "shallow cloning master of repository %s to temp dir %s\n", gitURL, dir)
@@ -919,7 +919,7 @@ func (o *CommonOptions) ReleaseChartMuseumUrl() string {
 	if chartRepo == "" {
 		if o.factory.IsInCDPipeline() {
 			chartRepo = DefaultChartRepo
-			log.Logger().Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", DefaultChartRepo)
+			log.Logger().Warnf("No $CHART_REPOSITORY defined so using the default value of: %s", DefaultChartRepo)
 		} else {
 			return ""
 		}
@@ -969,6 +969,6 @@ func (o *CommonOptions) ModifyHelmValuesFile(dir string, fn func(string) (string
 		return errors.Wrapf(err, "failed to write file %s", valuesFileName)
 	}
 
-	log.Logger().Infof("modified the helm file: %s\n", util.ColorInfo(valuesFileName))
+	log.Logger().Infof("modified the helm file: %s", util.ColorInfo(valuesFileName))
 	return nil
 }

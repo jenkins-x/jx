@@ -290,8 +290,8 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 		if last.Number != previous.Number {
 			last.Url = jenkins.SwitchJenkinsBaseURL(last.Url, jenkinsClient.BaseURL())
 
-			log.Logger().Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
-			log.Logger().Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
+			log.Logger().Infof("Started build of %s at %s", util.ColorInfo(name), util.ColorInfo(last.Url))
+			log.Logger().Infof("%s %s", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
 				return o.TailJenkinsBuildLog(&o.JenkinsSelector, name, &last)
 			}

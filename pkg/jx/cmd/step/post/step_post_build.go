@@ -119,7 +119,7 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 		return fmt.Errorf("no JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT env var found")
 	}
 
-	log.Logger().Infof("adding image %s to CVE provider\n", o.FullImageName)
+	log.Logger().Infof("adding image %s to CVE provider", o.FullImageName)
 
 	imageID, err := o.addImageToAnchore()
 	if err != nil {
@@ -133,7 +133,7 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 
 	// todo use image id to annotate pods during environments helm install / upgrade
 	// todo then we can use `jx get cve --env staging` and list all CVEs for an environment
-	log.Logger().Infof("anchore image is %s \n", imageID)
+	log.Logger().Infof("anchore image is %s ", imageID)
 	return nil
 }
 

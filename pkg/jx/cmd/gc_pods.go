@@ -91,11 +91,11 @@ func (o *GCPodsOptions) Run() error {
 		if matches {
 			err := podInterface.Delete(pod.Name, deleteOptions)
 			if err != nil {
-				log.Logger().Warnf("Failed to delete pod %s in namespace %s: %s\n", pod.Name, ns, err)
+				log.Logger().Warnf("Failed to delete pod %s in namespace %s: %s", pod.Name, ns, err)
 				errors = append(errors, err)
 			} else {
 				ageText := strings.TrimSuffix(age.Round(time.Minute).String(), "0s")
-				log.Logger().Infof("Deleted pod %s in namespace %s with phase %s as its age is: %s\n", pod.Name, ns, string(pod.Status.Phase), ageText)
+				log.Logger().Infof("Deleted pod %s in namespace %s with phase %s as its age is: %s", pod.Name, ns, string(pod.Status.Phase), ageText)
 			}
 		}
 	}

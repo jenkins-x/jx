@@ -23,13 +23,13 @@ import (
 func (o *CommonOptions) isManagedPluginsEnabled() bool {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
-		log.Logger().Warnf("Unable to load managed plugins because %v\n", err)
+		log.Logger().Warnf("Unable to load managed plugins because %v", err)
 		return false
 	}
 	_, err = apisClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get("plugins."+jenkinsio.GroupName,
 		metav1.GetOptions{})
 	if err != nil {
-		log.Logger().Warnf("Unable to load managed plugins because %v\n", err)
+		log.Logger().Warnf("Unable to load managed plugins because %v", err)
 		return false
 	}
 	return true

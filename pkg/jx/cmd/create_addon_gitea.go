@@ -173,7 +173,7 @@ func (o *CreateAddonGiteaOptions) createGitServer() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitUser() error {
-	log.Logger().Infof("Generating user: %s with email: %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	log.Logger().Infof("Generating user: %s with email: %s", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitUserOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,
@@ -187,7 +187,7 @@ func (o *CreateAddonGiteaOptions) createGitUser() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitToken() error {
-	log.Logger().Infof("Generating token for user %s with email %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	log.Logger().Infof("Generating token for user %s with email %s", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitTokenOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,

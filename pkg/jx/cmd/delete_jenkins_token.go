@@ -100,7 +100,7 @@ func (o *DeleteJenkinsTokenOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Deleted API tokens for users: %s for Git server %s at %s from local settings\n",
+	log.Logger().Infof("Deleted API tokens for users: %s for Git server %s at %s from local settings",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

@@ -41,7 +41,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	}
 
 	if o.Message == "" {
-		log.Logger().Warn("missing option: 'message' when creating a PR\n")
+		log.Logger().Warn("missing option: 'message' when creating a PR")
 	}
 	username := provider.CurrentUsername()
 	if username == "" {
@@ -62,7 +62,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 		if err != nil {
 			return errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 		}
-		log.Logger().Infof("Forked %s to %s\n\n", message, util.ColorInfo(repo.HTMLURL))
+		log.Logger().Infof("Forked %s to %s\n", message, util.ColorInfo(repo.HTMLURL))
 
 		repo, err = provider.GetRepository(username, originalRepo)
 		if err != nil {
@@ -75,7 +75,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	if err != nil {
 		return errors.Wrapf(err, "cloning the %s %q", message, repo.CloneURL)
 	}
-	log.Logger().Infof("cloned fork of %s %s to %s\n", message, util.ColorInfo(repo.HTMLURL), util.ColorInfo(dir))
+	log.Logger().Infof("cloned fork of %s %s to %s", message, util.ColorInfo(repo.HTMLURL), util.ColorInfo(dir))
 
 	err = gitter.SetRemoteURL(dir, "upstream", originalGitURL)
 	if err != nil {
@@ -127,7 +127,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 		return err
 	}
 	if !changes {
-		log.Logger().Infof("No source changes so not generating a Pull Request\n")
+		log.Logger().Infof("No source changes so not generating a Pull Request")
 		return nil
 	}
 
@@ -144,11 +144,11 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	for _, pr := range prs {
 		author := pr.Author
 		if pr.Title == o.Title && author != nil && author.Login == username {
-			log.Logger().Infof("found existing PullRequest: %s\n", util.ColorInfo(pr.URL))
+			log.Logger().Infof("found existing PullRequest: %s", util.ColorInfo(pr.URL))
 
 			head := pr.HeadRef
 			if head == nil {
-				log.Logger().Warnf("No head value!\n")
+				log.Logger().Warnf("No head value!")
 			} else {
 				headText := *head
 				remoteBranch := headText
@@ -156,7 +156,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 				if len(paths) > 1 {
 					remoteBranch = paths[1]
 				}
-				log.Logger().Infof("force pushing to remote branch %s\n", util.ColorInfo(remoteBranch))
+				log.Logger().Infof("force pushing to remote branch %s", util.ColorInfo(remoteBranch))
 				err := gitter.ForcePushBranch(dir, branchName, remoteBranch)
 				if err != nil {
 					return errors.Wrapf(err, "failed to force push to remote branch %s", remoteBranch)
@@ -164,7 +164,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 
 				pr.Body = o.Message
 
-				log.Logger().Infof("force pushed new pull request change to: %s\n", util.ColorInfo(pr.URL))
+				log.Logger().Infof("force pushed new pull request change to: %s", util.ColorInfo(pr.URL))
 
 				err = provider.AddPRComment(pr, o.Message)
 				if err != nil {
@@ -198,6 +198,6 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	if err != nil {
 		return errors.Wrapf(err, "failed to create pull quest from base %s with header %s", base, head)
 	}
-	log.Logger().Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
+	log.Logger().Infof("Created Pull Request: %s\n", util.ColorInfo(pr.URL))
 	return nil
 }

@@ -58,7 +58,7 @@ func (o *GetHelmBinOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Your team uses the helm binary: %s\n", util.ColorInfo(helm))
-	log.Logger().Infof("To change this value use: %s\n", util.ColorInfo("jx edit helmbin helm3"))
+	log.Logger().Infof("Your team uses the helm binary: %s", util.ColorInfo(helm))
+	log.Logger().Infof("To change this value use: %s", util.ColorInfo("jx edit helmbin helm3"))
 	return nil
 }

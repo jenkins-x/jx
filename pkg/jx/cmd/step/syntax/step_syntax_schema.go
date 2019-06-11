@@ -96,7 +96,7 @@ func (o *StepSyntaxSchemaOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to save file %s", o.Out)
 		}
-		log.Logger().Infof("wrote file %s\n", util.ColorInfo(o.Out))
+		log.Logger().Infof("wrote file %s", util.ColorInfo(o.Out))
 		return nil
 	}
 	log.Logger().Infof("%s", output)

@@ -56,7 +56,7 @@ func (o *CommonOptions) GetPipelineName(gitInfo *gits.GitRepository, pipeline st
 		// lets default the pipeline name from the Git repo
 		branch, err := o.Git().Branch(".")
 		if err != nil {
-			log.Logger().Warnf("Could not find the branch name: %s\n", err)
+			log.Logger().Warnf("Could not find the branch name: %s", err)
 		}
 		if branch == "" {
 			branch = "master"
@@ -83,12 +83,12 @@ func (o *CommonOptions) GetPipelineName(gitInfo *gits.GitRepository, pipeline st
 	}
 	if pipeline == "" {
 		// lets try find
-		log.Logger().Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+		log.Logger().Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes")
 	} else if build == "" {
 		// lets validate and determine the current active pipeline branch
 		p, b, err := o.GetLatestPipelineBuild(pipeline)
 		if err != nil {
-			log.Logger().Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
+			log.Logger().Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s", pipeline, err)
 			build = "1"
 		} else {
 			pipeline = p
@@ -100,7 +100,7 @@ func (o *CommonOptions) GetPipelineName(gitInfo *gits.GitRepository, pipeline st
 
 // getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
 func (o *CommonOptions) GetLatestPipelineBuild(pipeline string) (string, string, error) {
-	log.Logger().Infof("pipeline %s\n", pipeline)
+	log.Logger().Infof("pipeline %s", pipeline)
 	build := ""
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {

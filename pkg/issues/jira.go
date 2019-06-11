@@ -36,14 +36,14 @@ func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, p
 		}
 		httpClient = tp.Client()
 		if batchMode {
-			log.Logger().Infof("Using JIRA server %s user name %s and API token %s\n", u, username, strings.Repeat("*", len(userAuth.ApiToken)))
+			log.Logger().Infof("Using JIRA server %s user name %s and API token %s", u, username, strings.Repeat("*", len(userAuth.ApiToken)))
 		}
 	} else {
 		if batchMode {
 			if userAuth != nil && userAuth.Username != "" {
-				log.Logger().Warnf("No API token found for JIRA server %s user %s so using anonymous access\n", u, userAuth.Username)
+				log.Logger().Warnf("No API token found for JIRA server %s user %s so using anonymous access", u, userAuth.Username)
 			} else {
-				log.Logger().Warnf("No authentication found for JIRA server %s so using anonymous access\n", u)
+				log.Logger().Warnf("No authentication found for JIRA server %s so using anonymous access", u)
 			}
 		}
 	}

@@ -196,7 +196,7 @@ func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
 func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 	releases, err := o.getAppsStatus(o.GitOps, o.Namespace, apps)
 	if err != nil {
-		log.Logger().Warnf("There was a problem obtaining the app status: %v\n", err)
+		log.Logger().Warnf("There was a problem obtaining the app status: %v", err)
 	}
 	results := appsResult{}
 	for _, app := range apps.Items {
@@ -225,7 +225,7 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 	table := o.generateTableHeaders(apps)
 	releases, err := o.getAppsStatus(o.GitOps, o.Namespace, apps)
 	if err != nil {
-		log.Logger().Warnf("There was a problem obtaining the app status: %v\n", err)
+		log.Logger().Warnf("There was a problem obtaining the app status: %v", err)
 	}
 	for _, app := range apps.Items {
 		if app.Labels != nil {

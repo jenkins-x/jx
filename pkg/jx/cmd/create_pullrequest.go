@@ -128,7 +128,7 @@ func (o *CreatePullRequestOptions) createPullRequestDetails(gitInfo *gits.GitRep
 		}
 		defaultValue, body, err := o.findLastCommitTitle()
 		if err != nil {
-			log.Logger().Warnf("Failed to find last git commit title: %s\n", err)
+			log.Logger().Warnf("Failed to find last git commit title: %s", err)
 		}
 		if o.Body == "" {
 			o.Body = body
@@ -162,7 +162,7 @@ func (o *CreatePullRequestOptions) findLastCommitTitle() (string, string, error)
 		return title, body, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		log.Logger().Warnf("No git directory could be found from dir %s\n", dir)
+		log.Logger().Warnf("No git directory could be found from dir %s", dir)
 		return title, body, err
 	}
 	message, err := o.Git().GetLatestCommitMessage(dir)

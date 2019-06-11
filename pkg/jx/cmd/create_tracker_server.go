@@ -100,7 +100,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Added issue tracker server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	log.Logger().Infof("Added issue tracker server %s for URL %s", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }
 

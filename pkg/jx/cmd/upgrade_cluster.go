@@ -92,14 +92,14 @@ func (o *UpgradeClusterOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("Upgrading %s master to %s (this may take a few minutes)\n", selectedClusterName, selectedVersion)
+	log.Logger().Infof("Upgrading %s master to %s (this may take a few minutes)", selectedClusterName, selectedVersion)
 
 	err = o.RunCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--cluster-version", selectedVersion, "--master", "--quiet")
 	if err != nil {
 		return err
 	}
 
-	log.Logger().Infof("Upgrading %s nodes (this may take a few minutes)\n", selectedClusterName)
+	log.Logger().Infof("Upgrading %s nodes (this may take a few minutes)", selectedClusterName)
 
 	return o.RunCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--quiet")
 }
@@ -130,7 +130,7 @@ func (o *UpgradeClusterOptions) getClusterName() (string, error) {
 		return "", errors.New("Could not find a cluster to upgrade, please manually create one and rerun the wizard")
 	} else if len(existingClusters) == 1 {
 		selectedClusterName = existingClusters[0]
-		log.Logger().Infof("Using the only GKE cluster %s\n", util.ColorInfo(selectedClusterName))
+		log.Logger().Infof("Using the only GKE cluster %s", util.ColorInfo(selectedClusterName))
 	} else {
 		prompts := &survey.Select{
 			Message: "GKE Cluster:",

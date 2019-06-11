@@ -209,7 +209,7 @@ func (s *ProjectHistoryService) SaveHistory() error {
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err == nil {
-		log.Logger().Infof("Wrote Project History file %s\n", util.ColorInfo(fileName))
+		log.Logger().Infof("Wrote Project History file %s", util.ColorInfo(fileName))
 	}
 	return err
 }

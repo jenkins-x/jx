@@ -105,14 +105,14 @@ func (o *StepUnstashOptions) Run() error {
 		return err
 	}
 	if file == "" {
-		log.Logger().Infof("%s\n", string(data))
+		log.Logger().Infof("%s", string(data))
 		return nil
 	}
 	err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", file)
 	}
-	log.Logger().Infof("wrote: %s\n", util.ColorInfo(file))
+	log.Logger().Infof("wrote: %s", util.ColorInfo(file))
 	return nil
 }
 
@@ -121,7 +121,7 @@ func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, error)
 	return func(urlText string) (string, error) {
 		token, err := GetTokenForGitURL(authSvc, urlText)
 		if err != nil {
-			log.Logger().Warnf("Could not find the git token to access urlText %s due to: %s\n", urlText, err)
+			log.Logger().Warnf("Could not find the git token to access urlText %s due to: %s", urlText, err)
 		} else if token != "" {
 			idx := strings.Index(urlText, "://")
 			if idx > 0 {

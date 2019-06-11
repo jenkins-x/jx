@@ -109,7 +109,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 	}
 	releases, _, err := o.Helm().ListReleases(ns)
 	if err != nil {
-		log.Logger().Warnf("Failed to find Helm installs: %s\n", err)
+		log.Logger().Warnf("Failed to find Helm installs: %s", err)
 	}
 
 	charts := kube.AddonCharts
@@ -135,7 +135,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 		status := releases[k].Status
 		name := k
 		if status != "" {
-			log.Logger().Infof("Upgrading %s chart %s...\n", util.ColorInfo(name), util.ColorInfo(chart))
+			log.Logger().Infof("Upgrading %s chart %s...", util.ColorInfo(name), util.ColorInfo(chart))
 
 			valueFiles := []string{}
 			valueFiles, err = helm.AppendMyValues(valueFiles)
@@ -182,7 +182,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 				}
 			}
 
-			log.Logger().Infof("Upgraded %s chart %s\n", util.ColorInfo(name), util.ColorInfo(chart))
+			log.Logger().Infof("Upgraded %s chart %s", util.ColorInfo(name), util.ColorInfo(chart))
 		}
 	}
 	return nil

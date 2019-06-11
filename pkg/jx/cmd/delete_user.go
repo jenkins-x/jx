@@ -121,14 +121,14 @@ func (o *DeleteUserOptions) Run() error {
 	for _, name := range names {
 		err = o.deleteUser(name)
 		if err != nil {
-			log.Logger().Warnf("Failed to delete user %s: %s\n", name, err)
+			log.Logger().Warnf("Failed to delete user %s: %s", name, err)
 		} else {
-			log.Logger().Infof("Deleted user %s\n", util.ColorInfo(name))
+			log.Logger().Infof("Deleted user %s", util.ColorInfo(name))
 		}
-		log.Logger().Infof("Attempting to unbind user %s from associated role\n", util.ColorInfo(name))
+		log.Logger().Infof("Attempting to unbind user %s from associated role", util.ColorInfo(name))
 		err = o.deleteUserFromRoleBindings(name, ns, jxClient)
 		if err != nil {
-			log.Logger().Warnf("Problem to unbind user %s from associated role\n", util.ColorWarning(name))
+			log.Logger().Warnf("Problem to unbind user %s from associated role", util.ColorWarning(name))
 		}
 	}
 	return nil

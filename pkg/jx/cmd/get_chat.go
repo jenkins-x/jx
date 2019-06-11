@@ -68,7 +68,7 @@ func (o *GetChatOptions) Run() error {
 	config := authConfigSvc.Config()
 
 	if len(config.Servers) == 0 {
-		log.Logger().Infof("No chat servers registered. To register a new chat servers use: %s\n", util.ColorInfo("jx create chat server"))
+		log.Logger().Infof("No chat servers registered. To register a new chat servers use: %s", util.ColorInfo("jx create chat server"))
 		return nil
 	}
 	filterKind := o.Kind

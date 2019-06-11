@@ -267,7 +267,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok && encodedValues != "" {
 					existingValuesBytes, err := base64.StdEncoding.DecodeString(encodedValues)
 					if err != nil {
-						log.Logger().Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,
+						log.Logger().Warnf("Error decoding base64 encoded string from %s on %s\n%s", ValuesAnnotation,
 							appCrdName, encodedValues)
 					}
 					err = json.Unmarshal(existingValuesBytes, &existingValues)
@@ -350,7 +350,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 
 		if version == "" {
 			if o.Verbose {
-				log.Logger().Infof("No version specified so using latest version which is %s\n",
+				log.Logger().Infof("No version specified so using latest version which is %s",
 					util.ColorInfo(chartDetails.Version))
 			}
 		}
@@ -503,7 +503,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						RestartPolicy:      corev1.RestartPolicyNever,
 					},
 				}
-				log.Logger().Infof("Preparing questions to configure %s.\n"+
+				log.Logger().Infof("Preparing questions to configure %s."+
 					"If this is the first time you have installed the app, this may take a couple of minutes.",
 					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)

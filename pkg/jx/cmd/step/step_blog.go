@@ -181,7 +181,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 			issuesClosed := len(spec.Issues)
 			queryClosedIssueCount, err := o.queryClosedIssues()
 			if err != nil {
-				log.Logger().Warnf("Failed to query closed issues: %s\n", err)
+				log.Logger().Warnf("Failed to query closed issues: %s", err)
 			}
 			if queryClosedIssueCount > issuesClosed {
 				issuesClosed = queryClosedIssueCount
@@ -397,7 +397,7 @@ func (o *StepBlogOptions) report() (*reports.ProjectHistory, *reports.ProjectRep
 		toDate := o.ToDate
 		report := history.FindReport(toDate)
 		if report == nil {
-			log.Logger().Warnf("No report for date %s\n", toDate)
+			log.Logger().Warnf("No report for date %s", toDate)
 		}
 		return history, report
 	}
@@ -433,7 +433,7 @@ func (o *StepBlogOptions) createNewCommitters() string {
 			o.addContributors(issue.Assignees)
 		}
 	} else {
-		log.Logger().Warnf("No Release!\n")
+		log.Logger().Warnf("No Release!")
 	}
 	history, _ := o.report()
 	if history != nil {
@@ -569,7 +569,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 		} else {
 			metrics, err := o.getChannelMetrics(chatConfig, devChannel)
 			if err != nil {
-				log.Logger().Warnf("Failed to get chat metrics for channel %s: %s\n", devChannel, err)
+				log.Logger().Warnf("Failed to get chat metrics for channel %s: %s", devChannel, err)
 				return nil
 			}
 			count = metrics.MemberCount
@@ -585,7 +585,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 		} else {
 			metrics, err := o.getChannelMetrics(chatConfig, userChannel)
 			if err != nil {
-				log.Logger().Warnf("Failed to get chat metrics for channel %s: %s\n", userChannel, err)
+				log.Logger().Warnf("Failed to get chat metrics for channel %s: %s", userChannel, err)
 				return nil
 			}
 			count = metrics.MemberCount

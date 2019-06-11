@@ -53,7 +53,7 @@ func (o *CommonOptions) GetGoogleProjectId() (string, error) {
 		}
 	} else if len(existingProjects) == 1 {
 		projectId = existingProjects[0]
-		log.Logger().Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
+		log.Logger().Infof("Using the only Google Cloud Project %s to create the cluster", util.ColorInfo(projectId))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",

@@ -178,12 +178,12 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("cluster short name for vault naming: %s\n", util.ColorInfo(clusterName))
+	log.Logger().Infof("cluster short name for vault naming: %s", util.ColorInfo(clusterName))
 	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.Namespace, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
-	log.Logger().Infof("Created service account %s for Vault authentication\n", util.ColorInfo(vaultAuthServiceAccount))
+	log.Logger().Infof("Created service account %s for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
 	if kubeProvider == cloud.GKE {
 		err = o.createVaultGKE(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
 	}
@@ -194,12 +194,12 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 		return errors.Wrap(err, "creating vault")
 	}
 
-	log.Logger().Infof("Exposing Vault...\n")
+	log.Logger().Infof("Exposing Vault...")
 	err = o.exposeVault(vaultName)
 	if err != nil {
 		return errors.Wrap(err, "exposing vault")
 	}
-	log.Logger().Infof("Vault %s exposed\n", util.ColorInfo(vaultName))
+	log.Logger().Infof("Vault %s exposed", util.ColorInfo(vaultName))
 	return nil
 }
 
@@ -269,33 +269,33 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 		o.GKEZone = zone
 	}
 
-	log.Logger().Infof("Ensure KMS API is enabled\n")
+	log.Logger().Infof("Ensure KMS API is enabled")
 	err = gke.EnableAPIs(o.GKEProjectID, "cloudkms")
 	if err != nil {
 		return errors.Wrap(err, "unable to enable 'cloudkms' API")
 	}
 
-	log.Logger().Infof("Creating GCP service account for Vault backend\n")
+	log.Logger().Infof("Creating GCP service account for Vault backend")
 	gcpServiceAccountSecretName, err := gkevault.CreateVaultGCPServiceAccount(kubeClient, vaultName, o.Namespace, clusterName, o.GKEProjectID)
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
 	}
-	log.Logger().Infof("%s service account created\n", util.ColorInfo(gcpServiceAccountSecretName))
+	log.Logger().Infof("%s service account created", util.ColorInfo(gcpServiceAccountSecretName))
 
-	log.Logger().Infof("Setting up GCP KMS configuration\n")
+	log.Logger().Infof("Setting up GCP KMS configuration")
 	kmsConfig, err := gkevault.CreateKmsConfig(vaultName, clusterName, o.GKEProjectID)
 	if err != nil {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
-	log.Logger().Infof("KMS Key %s created in keying %s\n", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
+	log.Logger().Infof("KMS Key %s created in keying %s", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
 	vaultBucket, err := gkevault.CreateBucket(vaultName, clusterName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
-	log.Logger().Infof("GCS bucket %s was created for Vault backend\n", util.ColorInfo(vaultBucket))
+	log.Logger().Infof("GCS bucket %s was created for Vault backend", util.ColorInfo(vaultBucket))
 
-	log.Logger().Infof("Creating Vault...\n")
+	log.Logger().Infof("Creating Vault...")
 	gcpConfig := &kubevault.GCPConfig{
 		ProjectId:   o.GKEProjectID,
 		KmsKeyring:  kmsConfig.Keyring,
@@ -312,7 +312,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}
-	log.Logger().Infof("Vault %s created in cluster %s\n", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
+	log.Logger().Infof("Vault %s created in cluster %s", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
 	return nil
 }
 
@@ -335,7 +335,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 		if err != nil {
 			return errors.Wrap(err, "finding default AWS region")
 		}
-		log.Logger().Infof("Region not specified, defaulting to %s\n", util.ColorInfo(defaultRegion))
+		log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
 		if o.DynamoDBRegion == "" {
 			o.DynamoDBRegion = defaultRegion
 		}
@@ -359,7 +359,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}
-	log.Logger().Infof("Vault %s created in cluster %s\n", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
+	log.Logger().Infof("Vault %s created in cluster %s", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
 
 	return nil
 }

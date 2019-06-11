@@ -332,7 +332,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
-	log.Logger().Infof("Promoting to production version %s for app %s\n", version, testRepoName)
+	log.Logger().Infof("Promoting to production version %s for app %s", version, testRepoName)
 	err = po.Run()
 	assert.NoError(t, err)
 	if err != nil {

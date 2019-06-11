@@ -114,6 +114,6 @@ func (options *InstallDependenciesOptions) Run() error {
 		return options.DoInstallMissingDependencies(install)
 	}
 
-	log.Logger().Debugf("No dependencies selected to install\n")
+	log.Logger().Debugf("No dependencies selected to install")
 	return nil
 }

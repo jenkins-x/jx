@@ -134,7 +134,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-	log.Logger().Infof("found dev namespace %s\n", devNamespace)
+	log.Logger().Infof("found dev namespace %s", devNamespace)
 
 	values := []string{}
 	if o.NoInjectorWebhook {
@@ -142,12 +142,12 @@ func (o *CreateAddonIstioOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	log.Logger().Infof("installing istio-init\n")
+	log.Logger().Infof("installing istio-init")
 	err = o.InstallChartAt(o.Dir, o.ReleaseName, o.Chart+"-init", o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("istio-init deployment failed: %v", err)
 	}
-	log.Logger().Infof("installing istio\n")
+	log.Logger().Infof("installing istio")
 	err = o.InstallChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)
@@ -159,14 +159,14 @@ func (o *CreateAddonIstioOptions) Run() error {
 		for {
 			svc, err := client.CoreV1().Services(o.Namespace).Get(o.IngressGatewayService, metav1.GetOptions{})
 			if err != nil {
-				log.Logger().Warnf("Error getting Istio ingress gateway %s/%s: %s\n", o.Namespace, o.IngressGatewayService, err)
+				log.Logger().Warnf("Error getting Istio ingress gateway %s/%s: %s", o.Namespace, o.IngressGatewayService, err)
 				c <- ""
 			} else {
 				if len(svc.Status.LoadBalancer.Ingress) > 0 {
 					c <- svc.Status.LoadBalancer.Ingress[0].IP
 					return
 				}
-				log.Logger().Infof("Waiting for Istio ingress gateway ip %s/%s\n", o.Namespace, o.IngressGatewayService)
+				log.Logger().Infof("Waiting for Istio ingress gateway ip %s/%s", o.Namespace, o.IngressGatewayService)
 			}
 			time.Sleep(5 * time.Second)
 		}
@@ -175,7 +175,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 	select {
 	case ip := <-c:
 		if ip != "" {
-			log.Logger().Infof("Istio ingress gateway service ip: %s\n", ip)
+			log.Logger().Infof("Istio ingress gateway service ip: %s", ip)
 		}
 	case <-time.After(1 * time.Minute):
 		log.Logger().Infof("Istio ingress gateway service ip is not yet ready, you can get it with `kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'`")

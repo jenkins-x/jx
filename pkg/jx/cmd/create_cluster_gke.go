@@ -184,7 +184,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	log.Logger().Infof("Let's ensure we have %s and %s enabled on your project\n", util.ColorInfo("container"), util.ColorInfo("compute"))
+	log.Logger().Infof("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
 	err = gke.EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
@@ -223,7 +223,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			clusterType := "Zonal"
 
 			if o.InstallOptions.Flags.NextGeneration {
-				log.Logger().Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
+				log.Logger().Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected."))
 			} else if advancedMode {
 				prompts := &survey.Select{
 					Message: "What type of cluster would you like to create",
@@ -405,7 +405,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if o.Flags.EnhancedApis {
-		log.Logger().Infof("checking if we need to enable APIs for GCB and GCR\n")
+		log.Logger().Infof("checking if we need to enable APIs for GCB and GCR")
 
 		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
@@ -489,7 +489,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if len(o.Flags.Scopes) > 0 {
-		log.Logger().Infof("using cluster scopes: %s\n", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
+		log.Logger().Infof("using cluster scopes: %s", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
 
 		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
 	}
@@ -509,13 +509,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--labels="+strings.ToLower(labels))
 	}
 
-	log.Logger().Info("Creating cluster...\n")
+	log.Logger().Info("Creating cluster...")
 	err = o.RunCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
 
-	log.Logger().Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...")
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = clusterName
 	}

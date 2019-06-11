@@ -91,7 +91,7 @@ func (o *StepGitMergeCommand) Run() error {
 	if len(o.SHAs) == 0 || o.BaseBranch == "" || o.BaseSHA == "" {
 		// Try to look in the env vars
 		if pullRefs := os.Getenv("PULL_REFS"); pullRefs != "" {
-			log.Logger().Infof("Using SHAs from PULL_REFS=%s\n", pullRefs)
+			log.Logger().Infof("Using SHAs from PULL_REFS=%s", pullRefs)
 			pullRefs, err := prow.ParsePullRefs(pullRefs)
 			if err != nil {
 				return errors.Wrapf(err, "parsing PULL_REFS=%s", pullRefs)

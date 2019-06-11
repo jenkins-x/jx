@@ -94,6 +94,6 @@ func (o *StartProtectionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("%s enabled for %s\n", util.ColorInfo(context), util.ColorInfo(orgrepo))
+	log.Logger().Infof("%s enabled for %s", util.ColorInfo(context), util.ColorInfo(orgrepo))
 	return nil
 }

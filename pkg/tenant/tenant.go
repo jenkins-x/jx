@@ -124,7 +124,7 @@ func NewTenantClient(options ...Option) *tenantClient {
 }
 
 func (tCli *tenantClient) callWithExponentialBackOff(url string, auth string, httpMethod string, reqBody []byte) ([]byte, error) {
-	log.Logger().Debugf("%sing %s to %s\n", httpMethod, reqBody, url)
+	log.Logger().Debugf("%sing %s to %s", httpMethod, reqBody, url)
 	resp, respBody := &http.Response{}, []byte{}
 	if url != "" && httpMethod != "" {
 		f := func() error {

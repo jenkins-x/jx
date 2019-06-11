@@ -85,24 +85,24 @@ func (o *GCHelmOptions) Run() error {
 	}
 	if len(cms.Items) == 0 {
 		// no configmaps found so lets return gracefully
-		log.Logger().Debug("no config maps found\n")
+		log.Logger().Debug("no config maps found")
 		return nil
 	}
 
 	releases := ExtractReleases(cms)
-	log.Logger().Debug(fmt.Sprintf("Found %d releases.\n", len(releases)))
-	log.Logger().Debug(fmt.Sprintf("Releases: %v\n", releases))
+	log.Logger().Debug(fmt.Sprintf("Found %d releases.", len(releases)))
+	log.Logger().Debug(fmt.Sprintf("Releases: %v", releases))
 
 	for _, release := range releases {
 		log.Logger().Debug(fmt.Sprintf("Checking %s. ", release))
 		versions := ExtractVersions(cms, release)
-		log.Logger().Debug(fmt.Sprintf("Found %d.\n", len(versions)))
-		log.Logger().Debug(fmt.Sprintf("%v\n", versions))
+		log.Logger().Debug(fmt.Sprintf("Found %d.", len(versions)))
+		log.Logger().Debug(fmt.Sprintf("%v", versions))
 		to_delete := VersionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
 				log.Logger().Info("Would delete:")
-				log.Logger().Infof("%v\n", to_delete)
+				log.Logger().Infof("%v", to_delete)
 			} else {
 				// Backup and delete
 				if o.NoBackup == false {
@@ -141,14 +141,14 @@ func (o *GCHelmOptions) Run() error {
 						var opts *metav1.DeleteOptions
 						err5 := kubeClient.CoreV1().ConfigMaps(kubeNamespace).Delete(version, opts)
 						if err5 == nil {
-							log.Logger().Info(fmt.Sprintf("ConfigMap %v deleted.\n", version))
+							log.Logger().Info(fmt.Sprintf("ConfigMap %v deleted.", version))
 						} else {
 							// Failed to delete
 							return err5
 						}
 					} else {
 						// Failed to find a ConfigMap that we know was in memory. Unlikely to occur.
-						log.Logger().Warn(fmt.Sprintf("Failed to find ConfigMap %s. \n", version))
+						log.Logger().Warn(fmt.Sprintf("Failed to find ConfigMap %s. ", version))
 					}
 				}
 			}

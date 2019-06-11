@@ -127,7 +127,7 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 func (o *CreateClusterMinikubeOptions) defaultMacVMDriver() string {
 	_, err := o.GetCommandOutput("", "hyperkit", "-v")
 	if err != nil {
-		log.Logger().Warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
+		log.Logger().Warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/")
 		return "xhyve"
 	}
 	return "hyperkit"
@@ -269,7 +269,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		o.InstallOptions.Flags.Domain = o.CreateClusterOptions.InstallOptions.InitOptions.Flags.Domain
 	}
 
-	log.Logger().Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...")
 	err = o.initAndInstall(cloud.MINIKUBE)
 	if err != nil {
 		return err

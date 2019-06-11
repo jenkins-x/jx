@@ -77,8 +77,8 @@ func GetClusterStatus(client kubernetes.Interface, namespace string, verbose boo
 	for _, node := range nodes.Items {
 		if verbose {
 
-			log.Logger().Infof("\n-------------------------\n")
-			log.Logger().Infof("Node:\n%s\n\n", node.Name)
+			log.Logger().Infof("\n-------------------------")
+			log.Logger().Infof("Node:\n%s\n", node.Name)
 		}
 
 		nodeStatus, err := Status(client, namespace, node, verbose)
@@ -174,7 +174,7 @@ func Status(client kubernetes.Interface, namespace string, node v1.Node, verbose
 			cpuMessage = " - Node appears to be overcommitted on CPU"
 		}
 
-		log.Logger().Infof("CPU usage %v%% %s\n", cpuPercent, util.ColorWarning(cpuMessage))
+		log.Logger().Infof("CPU usage %v%% %s", cpuPercent, util.ColorWarning(cpuMessage))
 
 		memoryPercent := (memoryReqs.Value() * 100) / allocatable.Memory().Value()
 		memoryMessage := ""
@@ -182,7 +182,7 @@ func Status(client kubernetes.Interface, namespace string, node v1.Node, verbose
 			memoryMessage = " - Node appears to be overcommitted on Memory"
 		}
 
-		log.Logger().Infof("Memory usage %v%%%s\n", memoryPercent, util.ColorWarning(memoryMessage))
+		log.Logger().Infof("Memory usage %v%%%s", memoryPercent, util.ColorWarning(memoryMessage))
 	}
 
 	nodeStatus.CpuRequests = cpuReqs
@@ -200,7 +200,7 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList, verbose bool) (reqs map[
 	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
 
 	if verbose {
-		log.Logger().Infof("Pods:\n")
+		log.Logger().Infof("Pods:")
 	}
 
 	for _, pod := range podList.Items {
@@ -217,7 +217,7 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList, verbose bool) (reqs map[
 				messages = append(messages, "No Memory request set")
 			}
 
-			log.Logger().Infof("%s - %s %s\n", pod.Name, pod.Status.Phase, util.ColorError(strings.Join(messages, ", ")))
+			log.Logger().Infof("%s - %s %s", pod.Name, pod.Status.Phase, util.ColorError(strings.Join(messages, ", ")))
 		}
 
 		for podReqName, podReqValue := range podReqs {
@@ -239,7 +239,7 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList, verbose bool) (reqs map[
 	}
 
 	if verbose {
-		log.Logger().Infof("\n")
+		log.Logger().Infof("")
 	}
 
 	return

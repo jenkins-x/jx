@@ -81,8 +81,8 @@ func (o *GetReleaseOptions) Run() error {
 		if o.Filter != "" {
 			suffix = fmt.Sprintf(" for filter: %s", util.ColorInfo(o.Filter))
 		}
-		log.Logger().Infof("No Releases found in namespace %s%s.\n", util.ColorInfo(ns), suffix)
-		log.Logger().Infof("To create a release try merging code to a master branch to trigger a pipeline or try: %s\n", util.ColorInfo("jx start build"))
+		log.Logger().Infof("No Releases found in namespace %s%s.", util.ColorInfo(ns), suffix)
+		log.Logger().Infof("To create a release try merging code to a master branch to trigger a pipeline or try: %s", util.ColorInfo("jx start build"))
 		return nil
 	}
 	table := o.CreateTable()

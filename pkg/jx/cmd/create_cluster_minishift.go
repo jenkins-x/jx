@@ -209,13 +209,13 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		}
 	}
 
-	log.Logger().Info("Installing default addons ...\n")
+	log.Logger().Info("Installing default addons ...")
 	err = o.RunCommand("minishift", "addons", "install", "--defaults")
 	if err != nil {
 		return err
 	}
 
-	log.Logger().Info("Enabling admin user...\n")
+	log.Logger().Info("Enabling admin user...")
 	err = o.RunCommand("minishift", "addons", "enable", "admin-user")
 	if err != nil {
 		return err
@@ -227,7 +227,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
 	}
 
-	log.Logger().Info("Creating cluster...\n")
+	log.Logger().Info("Creating cluster...")
 	err = o.RunCommand("minishift", args...)
 	if err != nil {
 		return err
@@ -252,7 +252,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		}
 	}
 
-	log.Logger().Info("Initialising cluster ...\n")
+	log.Logger().Info("Initialising cluster ...")
 	err = o.initAndInstall(cloud.MINISHIFT)
 	if err != nil {
 		return err

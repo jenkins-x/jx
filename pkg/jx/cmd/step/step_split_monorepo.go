@@ -101,7 +101,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	glob := o.Glob
 
 	fullGlob := filepath.Join(dir, glob)
-	log.Logger().Debugf("Searching in monorepo at: %s\n", fullGlob)
+	log.Logger().Debugf("Searching in monorepo at: %s", fullGlob)
 	matches, err := filepath.Glob(fullGlob)
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 			}
 			switch mode := fi.Mode(); {
 			case mode.IsDir():
-				log.Logger().Debugf("Found match: %s\n", path)
+				log.Logger().Debugf("Found match: %s", path)
 				outPath := filepath.Join(outputDir, name)
 
 				var gitUrl string
@@ -147,7 +147,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						log.Logger().Infof("Cloning %s into directory %s\n", util.ColorInfo(repo.CloneURL), util.ColorInfo(outPath))
+						log.Logger().Infof("Cloning %s into directory %s", util.ColorInfo(repo.CloneURL), util.ColorInfo(outPath))
 						err = o.Git().CloneOrPull(gitUrl, outPath)
 						if err != nil {
 							return err
@@ -191,7 +191,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						log.Logger().Infof("Created Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+						log.Logger().Infof("Created Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
 
 						userAuth := gitProvider.UserAuth()
 						gitUrl, err = o.Git().CreatePushURL(repo.CloneURL, &userAuth)
@@ -234,7 +234,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					if err != nil {
 						return err
 					}
-					log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+					log.Logger().Infof("Pushed Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
 				}
 			}
 		}

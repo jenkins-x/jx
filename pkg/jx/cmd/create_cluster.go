@@ -142,7 +142,7 @@ func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider st
 
 func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	if o.SkipInstallation {
-		log.Logger().Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
+		log.Logger().Infof("%s cluster created. Skipping Jenkins X installation.", o.Provider)
 		return nil
 	}
 

@@ -61,7 +61,7 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 	if o.token == "" {
 		return fmt.Errorf("no pipeline git token provided")
 	}
-	log.Logger().Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
+	log.Logger().Infof("Installing %s addon\n", kube.DefaultKnativeBuildReleaseName)
 
 	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.token}, ",")
 
@@ -78,7 +78,7 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("\n%s installed\n", kube.DefaultKnativeBuildReleaseName)
-	log.Logger().Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -k"))
+	log.Logger().Infof("\n%s installed", kube.DefaultKnativeBuildReleaseName)
+	log.Logger().Infof("To watch a build running use: %s", util.ColorInfo("jx logs -k"))
 	return nil
 }

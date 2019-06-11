@@ -119,11 +119,11 @@ func AddSecretsToTemplate(dir string, chartName string, generatedSecrets []*surv
 		cleanup := func() {
 			err = secretsFile.Close()
 			if err != nil {
-				log.Logger().Warnf("Error closing %s because %v\n", secretsFile.Name(), err)
+				log.Logger().Warnf("Error closing %s because %v", secretsFile.Name(), err)
 			}
 			err = util.DeleteFile(secretsFile.Name())
 			if err != nil {
-				log.Logger().Warnf("Error deleting %s because %v\n", secretsFile.Name(), err)
+				log.Logger().Warnf("Error deleting %s because %v", secretsFile.Name(), err)
 			}
 		}
 		if err != nil {
@@ -146,18 +146,18 @@ func AddValuesToChart(chartName string, values []byte, verbose bool) (string, fu
 		return "", func() {}, errors.Wrapf(err, "error converting values from json to yaml\n\n%v", values)
 	}
 	if verbose {
-		log.Logger().Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
+		log.Logger().Infof("Generated values.yaml:\n\n%v", util.ColorInfo(string(valuesYaml)))
 	}
 
 	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(chartName)))
 	cleanup := func() {
 		err = valuesFile.Close()
 		if err != nil {
-			log.Logger().Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
+			log.Logger().Warnf("Error closing %s because %v", valuesFile.Name(), err)
 		}
 		err = util.DeleteFile(valuesFile.Name())
 		if err != nil {
-			log.Logger().Warnf("Error deleting %s because %v\n", valuesFile.Name(), err)
+			log.Logger().Warnf("Error deleting %s because %v", valuesFile.Name(), err)
 		}
 	}
 	if err != nil {

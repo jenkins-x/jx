@@ -41,7 +41,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 				}
 				return errors.Wrap(err, "failed to PatchUpdate")
 			} else {
-				log.Logger().Infof("already has GitService %s in namespace %s for URL %s\n", gs.Name, devNs, gitUrl)
+				log.Logger().Infof("already has GitService %s in namespace %s for URL %s", gs.Name, devNs, gitUrl)
 				return nil
 			}
 		}
@@ -71,7 +71,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 		if err != nil {
 			return errors.Wrapf(err, "failed to create GitService with name %s", gitSvc.Name)
 		}
-		log.Logger().Infof("GitService %s created in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
+		log.Logger().Infof("GitService %s created in namespace %s for URL %s", gitSvc.Name, devNs, gitUrl)
 	} else if current != nil {
 		if current.Spec.URL != gitSvc.Spec.URL || current.Spec.GitKind != gitSvc.Spec.GitKind {
 			current.Spec.URL = gitSvc.Spec.URL
@@ -81,7 +81,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 			if err != nil {
 				return errors.Wrapf(err, "failed to PatchUpdate GitService with name %s", gitSvc.Name)
 			}
-			log.Logger().Infof("GitService %s updated in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
+			log.Logger().Infof("GitService %s updated in namespace %s for URL %s", gitSvc.Name, devNs, gitUrl)
 		}
 	}
 	return nil

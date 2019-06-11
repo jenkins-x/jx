@@ -86,7 +86,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 		log.Logger().Info("Downloading and building micro dependencies...")
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
-			log.Logger().Infof("Installing %s\n", p)
+			log.Logger().Infof("Installing %s", p)
 			err = o.RunCommand("go", "get", "-u", p)
 			if err != nil {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
@@ -153,7 +153,7 @@ For instructions please see: %s
 	}
 
 	path := filepath.Join(gopath, "src", dir)
-	log.Logger().Infof("Created micro project at %s\n\n", util.ColorInfo(path))
+	log.Logger().Infof("Created micro project at %s\n", util.ColorInfo(path))
 
 	return o.ImportCreatedProject(path)
 }

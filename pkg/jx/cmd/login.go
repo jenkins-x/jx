@@ -116,7 +116,7 @@ func (o *LoginOptions) Run() error {
 		return errors.Wrap(err, "updating the ~/kube/config file")
 	}
 
-	jxlog.Logger().Infof("You are %s. You credentials are stored in %s file.\n",
+	jxlog.Logger().Infof("You are %s. You credentials are stored in %s file.",
 		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
 
 	teamOptions := TeamOptions{

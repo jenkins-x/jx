@@ -116,7 +116,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Logger().Infof("Updated file %s\n", util.ColorInfo(name))
+		log.Logger().Infof("Updated file %s", util.ColorInfo(name))
 	}
 	return nil
 }

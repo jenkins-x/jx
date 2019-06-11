@@ -181,7 +181,7 @@ func (options *ImportOptions) Run() error {
 		}
 		log.Logger().Info("Available draft packs:")
 		for i := 0; i < len(packs); i++ {
-			log.Logger().Infof(packs[i] + "\n")
+			log.Logger().Infof(packs[i] + "")
 		}
 		return nil
 	}
@@ -337,7 +337,7 @@ func (options *ImportOptions) Run() error {
 		if options.RepoURL != "" {
 			info, err := gits.ParseGitURL(options.RepoURL)
 			if err != nil {
-				log.Logger().Warnf("Failed to parse git URL %s : %s\n", options.RepoURL, err)
+				log.Logger().Warnf("Failed to parse git URL %s : %s", options.RepoURL, err)
 			} else {
 				options.AppName = info.Name
 			}
@@ -425,7 +425,7 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 			DisableJenkinsfileCheck: options.DisableJenkinsfileCheck,
 			DisableDraft:            options.DisableDraft,
 		}
-		log.Logger().Infof("Importing repository %s\n", util.ColorInfo(r.Name))
+		log.Logger().Infof("Importing repository %s", util.ColorInfo(r.Name))
 		err = o2.Run()
 		if err != nil {
 			return err
@@ -630,7 +630,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	log.Logger().Infof("Pushed Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
 
 	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
 	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer != nil && options.GitServer.URL == options.PipelineServer {
@@ -648,8 +648,8 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 		}
 		pipelineUserAuth := authConfig.FindUserAuth(options.GitServer.URL, options.PipelineUserName)
 		if pipelineUserAuth == nil {
-			log.Logger().Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate\n"+
-				"on %s if %s is not part of %s.\n\n",
+			log.Logger().Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate"+
+				"on %s if %s is not part of %s.\n",
 				options.PipelineUserName, details.RepoName, options.PipelineUserName, details.Organisation)
 		} else {
 			pipelineServerAuth := authConfig.GetServer(authConfig.CurrentServer)
@@ -727,7 +727,7 @@ func (options *ImportOptions) DiscoverGit() error {
 		}
 		if root != "" {
 			if root != options.Dir {
-				log.Logger().Infof("Importing from directory %s as we found a .git folder there\n", root)
+				log.Logger().Infof("Importing from directory %s as we found a .git folder there", root)
 			}
 			options.Dir = root
 			options.GitConfDir = gitConf
@@ -742,7 +742,7 @@ func (options *ImportOptions) DiscoverGit() error {
 
 	// lets prompt the user to initialise the Git repository
 	if !options.BatchMode {
-		log.Logger().Infof("The directory %s is not yet using git\n", util.ColorInfo(dir))
+		log.Logger().Infof("The directory %s is not yet using git", util.ColorInfo(dir))
 		flag := false
 		prompt := &survey.Confirm{
 			Message: "Would you like to initialise git now?",
@@ -796,7 +796,7 @@ func (options *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("\nGit repository created\n")
+	log.Logger().Infof("\nGit repository created")
 	return nil
 }
 
@@ -952,11 +952,11 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 	orgName := options.getOrganisationOrCurrentUser()
 	appName := options.AppName
 	if orgName == "" {
-		log.Logger().Warnf("Missing organisation name!\n")
+		log.Logger().Warnf("Missing organisation name!")
 		return nil
 	}
 	if appName == "" {
-		log.Logger().Warnf("Missing application name!\n")
+		log.Logger().Warnf("Missing application name!")
 		return nil
 	}
 	kubeClient, curNs, err := options.KubeClientAndNamespace()
@@ -987,8 +987,8 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 // ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryOrg string) error {
 	options.Organisation = kube.ToValidName(strings.ToLower(options.Organisation))
-	log.Logger().Infof("replacing placeholders in directory %s\n", options.Dir)
-	log.Logger().Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
+	log.Logger().Infof("replacing placeholders in directory %s", options.Dir)
+	log.Logger().Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
 
 	ignore, err := gitignore.NewRepository(options.Dir)
 	if err != nil {
@@ -1035,16 +1035,16 @@ func (options *ImportOptions) skipPathForReplacement(path string, fi os.FileInfo
 	matchIgnore := match != nil && match.Ignore() //Defaults to including if match == nil
 	if fi.IsDir() {
 		if matchIgnore || fi.Name() == ".git" {
-			log.Logger().Infof("skipping directory %q\n", path)
+			log.Logger().Infof("skipping directory %q", path)
 			return true, filepath.SkipDir
 		}
 	} else if matchIgnore {
-		log.Logger().Infof("skipping ignored file %q\n", path)
+		log.Logger().Infof("skipping ignored file %q", path)
 		return true, nil
 	}
 	// Don't process nor follow symlinks
 	if (fi.Mode() & os.ModeSymlink) == os.ModeSymlink {
-		log.Logger().Infof("skipping symlink file %q\n", path)
+		log.Logger().Infof("skipping symlink file %q", path)
 		return true, nil
 	}
 	return false, nil
@@ -1216,7 +1216,7 @@ func (options *ImportOptions) fixDockerIgnoreFile() error {
 				if err != nil {
 					return err
 				}
-				log.Logger().Infof("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
+				log.Logger().Infof("Removed old `Dockerfile` entry from %s", util.ColorInfo(filename))
 			}
 		}
 	}
@@ -1372,7 +1372,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 	initOpts := InitOptions{
 		CommonOptions: o.CommonOptions,
 	}
-	log.Logger().Info("Getting latest packs ...\n")
+	log.Logger().Info("Getting latest packs ...")
 	dir, _, err := initOpts.InitBuildPacks()
 	if err != nil {
 		return nil, err

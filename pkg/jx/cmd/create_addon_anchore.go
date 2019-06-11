@@ -107,7 +107,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("found dev namespace %s\n", devNamespace)
+	log.Logger().Infof("found dev namespace %s", devNamespace)
 
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
 	setValues := strings.Split(o.SetValues, ",")
@@ -124,7 +124,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return fmt.Errorf("anchore deployment failed: %v", err)
 	}
 
-	log.Logger().Info("waiting for anchore deployment to be ready, this can take a few minutes\n")
+	log.Logger().Info("waiting for anchore deployment to be ready, this can take a few minutes")
 
 	err = kube.WaitForDeploymentToBeReady(client, anchoreDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {

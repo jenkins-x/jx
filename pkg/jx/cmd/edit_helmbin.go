@@ -75,7 +75,7 @@ func (o *EditHelmBinOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.HelmBinary = arg
-		log.Logger().Infof("Setting the helm binary name to: %s\n", util.ColorInfo(arg))
+		log.Logger().Infof("Setting the helm binary name to: %s", util.ColorInfo(arg))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

@@ -130,7 +130,7 @@ func (o *StepPreExtendOptions) Run() error {
 				e, err := extensionsClient.Get(v.FullyQualifiedKebabName(), metav1.GetOptions{})
 				if err != nil {
 					// Extension can't be found
-					log.Logger().Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", v.FullyQualifiedName())), util.ColorInfo(availableExtensionsNames))
+					log.Logger().Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s", util.ColorInfo(fmt.Sprintf("%s", v.FullyQualifiedName())), util.ColorInfo(availableExtensionsNames))
 				} else {
 					result, err := o.walk(&e.Spec, availableExtensionsUUIDLookup, v.Parameters, 0, client.JenkinsV1().Extensions(ns))
 					if err != nil {
@@ -153,9 +153,9 @@ func (o *StepPreExtendOptions) walk(extension *jenkinsv1.ExtensionSpec, lookup m
 	if len(extension.Children) > 0 {
 		if depth > 0 {
 			indent := ((depth - 1) * 2) + 7
-			log.Logger().Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+			log.Logger().Infof("%s└ %s version %s", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		} else {
-			log.Logger().Infof("Adding %s version %s to pipeline\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+			log.Logger().Infof("Adding %s version %s to pipeline", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		}
 		for _, childRef := range extension.Children {
 			if child, ok := lookup[childRef]; ok {
@@ -184,9 +184,9 @@ func (o *StepPreExtendOptions) walk(extension *jenkinsv1.ExtensionSpec, lookup m
 			}
 			if depth > 0 {
 				indent := ((depth - 1) * 2) + 7
-				log.Logger().Infof("%s└ %s version %s %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
+				log.Logger().Infof("%s└ %s version %s %s", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
 			} else {
-				log.Logger().Infof("Adding %s version %s to pipeline %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
+				log.Logger().Infof("Adding %s version %s to pipeline %s", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
 			}
 			result = append(result, ext)
 		}

@@ -52,7 +52,7 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 		return nil, nil, nil, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		log.Logger().Warnf("No git directory could be found from dir %s\n", dir)
+		log.Logger().Warnf("No git directory could be found from dir %s", dir)
 		return nil, nil, nil, nil
 	}
 
@@ -160,7 +160,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 		if err != nil {
 			return name, fmt.Errorf("Failed to update Jenkins ConfigMap: %s", err)
 		}
-		log.Logger().Infof("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
+		log.Logger().Infof("Updated the Jenkins ConfigMap %s", kube.ConfigMapJenkinsX)
 
 		// wait a little bit to give k8s chance to sync the ConfigMap to the file system
 		time.Sleep(time.Second * 2)
@@ -174,7 +174,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 		//err = jenk.Reload()
 		err = jenk.SafeRestart()
 		if err != nil {
-			log.Logger().Warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
+			log.Logger().Warnf("Failed to safe restart Jenkins after configuration change %s", err)
 		} else {
 			log.Logger().Info("Safe Restarted Jenkins server")
 
@@ -203,7 +203,7 @@ func (o *CommonOptions) EnsureGitServiceCRD(server *auth.AuthServer) error {
 		return nil
 	}
 	if kind == "" {
-		log.Logger().Warnf("Kind of git server %s with URL %s is empty\n", server.Name, server.URL)
+		log.Logger().Warnf("Kind of git server %s with URL %s is empty", server.Name, server.URL)
 		return nil
 	}
 	// lets lazily populate the name if its empty
@@ -219,7 +219,7 @@ func (o *CommonOptions) EnsureGitServiceCRD(server *auth.AuthServer) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure GitService exists for kind %s server %s in namespace %s", kind, server.URL, devNs)
 	}
-	log.Logger().Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL, devNs)
+	log.Logger().Infof("Ensured we have a GitService called %s for URL %s in namespace %s", server.Name, server.URL, devNs)
 	return nil
 }
 
@@ -360,7 +360,7 @@ func (o *CommonOptions) InitGitConfigAndUser() error {
 		return err
 	}
 	if os.Getenv("XDG_CONFIG_HOME") == "" {
-		log.Logger().Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
+		log.Logger().Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!")
 	}
 	return nil
 }

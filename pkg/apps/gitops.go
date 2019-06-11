@@ -48,7 +48,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
 	}
-	log.Logger().Infof("Added app via Pull Request %s\n", info.PullRequest.URL)
+	log.Logger().Infof("Added app via Pull Request %s", info.PullRequest.URL)
 	return nil
 }
 
@@ -159,7 +159,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Delete app via Pull Request %s\n", info.PullRequest.URL)
+	log.Logger().Infof("Delete app via Pull Request %s", info.PullRequest.URL)
 	return nil
 }
 

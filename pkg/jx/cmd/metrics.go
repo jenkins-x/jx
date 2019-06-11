@@ -134,7 +134,7 @@ func (o *MetricsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Logger().Infof("%s\n", string(data))
+		log.Logger().Infof("%s", string(data))
 		return nil
 	}
 

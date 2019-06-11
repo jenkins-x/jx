@@ -128,6 +128,6 @@ func (o *CreateJHipsterOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("Created JHipster project at %s\n\n", util.ColorInfo(dir))
+	log.Logger().Infof("Created JHipster project at %s\n", util.ColorInfo(dir))
 	return o.ImportCreatedProject(dir)
 }

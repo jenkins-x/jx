@@ -133,7 +133,7 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.QuickstartLocations = locations
-		log.Logger().Infof("Adding the quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
+		log.Logger().Infof("Adding the quickstart git owner %s", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)
