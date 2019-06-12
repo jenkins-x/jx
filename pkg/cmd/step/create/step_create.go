@@ -3,17 +3,13 @@ package create
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
 	"github.com/spf13/cobra"
 )
 
-// StepCreateOptions contains the command line flags
-type StepCreateOptions struct {
-	opts.StepOptions
-}
-
 // NewCmdStepCreate Steps a command object for the "step" command
 func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &StepCreateOptions{
+	options := &opts.StepCreateOptions{
 		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
@@ -33,12 +29,17 @@ func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepCreateJenkinsConfig(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateTask(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateInstallValues(commonOpts))
-	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateValues(commonOpts))
+	cmd.AddCommand(pr.NewCmdStepCreatePr(commonOpts))
 	return cmd
 }
 
+//StepCreateCommand is the options for NewCmdStepCreate
+type StepCreateCommand struct {
+	opts.StepCreateOptions
+}
+
 // Run implements this command
-func (o *StepCreateOptions) Run() error {
+func (o *StepCreateCommand) Run() error {
 	return o.Cmd.Help()
 }

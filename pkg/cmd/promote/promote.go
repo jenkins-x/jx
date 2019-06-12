@@ -490,7 +490,11 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	info, err := options.Create(env, environmentsDir, &details, releaseInfo.PullRequestInfo, "", false)
+	filter := &gits.PullRequestFilter{}
+	if releaseInfo.PullRequestInfo != nil && releaseInfo.PullRequestInfo.PullRequest != nil {
+		filter.Number = releaseInfo.PullRequestInfo.PullRequest.Number
+	}
+	info, err := options.Create(env, environmentsDir, &details, filter, "", false)
 	releaseInfo.PullRequestInfo = info
 	return err
 }

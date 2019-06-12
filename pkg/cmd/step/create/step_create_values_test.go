@@ -78,7 +78,7 @@ func TestCreateValuesFileWithVault(t *testing.T) {
 		assert.NoError(t, err)
 
 		o := StepCreateValuesOptions{
-			StepCreateOptions: StepCreateOptions{
+			StepCreateOptions: opts.StepCreateOptions{
 				StepOptions: opts.StepOptions{
 					CommonOptions: &commonOpts,
 				},
@@ -106,7 +106,7 @@ func TestCreateValuesFileWithVault(t *testing.T) {
 			console.SendLine("abc")
 			console.ExpectString("Do you want to configure a Docker Registry?")
 			console.SendLine("y")
-			console.ExpectString("Docker Registry Url")
+			console.ExpectString("Docker Registry URL")
 			console.SendLine("")
 			console.ExpectString("Docker Registry username")
 			console.SendLine("james")

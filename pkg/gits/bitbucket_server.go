@@ -416,6 +416,11 @@ func (b *BitbucketServerProvider) CreatePullRequest(data *GitPullRequestArgument
 	}, nil
 }
 
+// UpdatePullRequest updates pull request number with data
+func (b *BitbucketServerProvider) UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error) {
+	return nil, errors.Errorf("Not yet implemented for bitbucket")
+}
+
 func parseBitBucketServerURL(URL string) (string, string) {
 	var projectKey, repoName, subString string
 	var projectsIndex, reposIndex, repoEndIndex int
@@ -1028,6 +1033,12 @@ func (b *BitbucketServerProvider) ListReleases(org string, name string) ([]*GitR
 	answer := []*GitRelease{}
 	log.Logger().Warn("Bitbucket Server doesn't support releases")
 	return answer, nil
+}
+
+// GetRelease is unsupported on bitbucket as releases are not supported
+func (b *BitbucketServerProvider) GetRelease(org string, name string, tag string) (*GitRelease, error) {
+	log.Logger().Warn("Bitbucket Cloud doesn't support releases")
+	return nil, nil
 }
 
 func (b *BitbucketServerProvider) AddCollaborator(user string, organisation string, repo string) error {

@@ -418,3 +418,8 @@ func (g *GitLocal) RemoteUpdate(dir string) error {
 func (g *GitLocal) LocalBranches(dir string) ([]string, error) {
 	return g.GitCLI.LocalBranches(dir)
 }
+
+// MergeTheirs performs a cherry pick of commitish
+func (g *GitLocal) MergeTheirs(dir string, commitish string) error {
+	return g.GitCLI.MergeTheirs(dir, commitish)
+}

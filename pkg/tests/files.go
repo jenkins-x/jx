@@ -2,11 +2,16 @@ package tests
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/pkg/errors"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -117,6 +122,37 @@ func AssertTextFileContentsEqual(t *testing.T, expectedFile string, actualFile s
 	require.NoError(t, err)
 
 	assert.Equal(t, expected, actual, "contents of expected file %s and actual file %s", expectedFile, actualFile)
+}
 
-	t.Logf("compared %s and %s and they have equal content\n", expectedFile, actualFile)
+// AssertDirContentsEqual walks two directory structures and validates that the same files exist (by name) and that they have the same content
+func AssertDirContentsEqual(t *testing.T, expectedDir string, actualDir string) {
+	actualFiles := make(map[string]string, 0)
+	expectedFiles := make(map[string]string, 0)
+	err := filepath.Walk(actualDir, func(path string, info os.FileInfo, err error) error {
+		relativePath, err := filepath.Rel(actualDir, path)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		actualFiles[relativePath] = path
+		return nil
+	})
+	assert.NoError(t, err)
+	err = filepath.Walk(expectedDir, func(path string, info os.FileInfo, err error) error {
+		relativePath, err := filepath.Rel(expectedDir, path)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		expectedFiles[relativePath] = path
+		return nil
+	})
+	assert.Len(t, actualFiles, len(expectedFiles))
+	for relativePath, path := range expectedFiles {
+		actualFile, ok := actualFiles[relativePath]
+		assert.True(t, ok, "%s not present", relativePath)
+		info, err := os.Stat(actualFile)
+		assert.NoError(t, err)
+		if !info.IsDir() {
+			AssertTextFileContentsEqual(t, path, actualFile)
+		}
+	}
 }

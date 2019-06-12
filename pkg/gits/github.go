@@ -233,6 +233,19 @@ func (p *GitHubProvider) ListReleases(org string, name string) ([]*GitRelease, e
 	return answer, nil
 }
 
+// GetRelease gets the release info for org, repo name and tag
+func (p *GitHubProvider) GetRelease(org string, name string, tag string) (*GitRelease, error) {
+	owner := org
+	if owner == "" {
+		owner = p.Username
+	}
+	repo, _, err := p.Client.Repositories.GetReleaseByTag(p.Context, owner, name, tag)
+	if err != nil {
+		return nil, err
+	}
+	return toGitHubRelease(owner, name, repo), nil
+}
+
 func toGitHubRelease(org string, name string, release *github.RepositoryRelease) *GitRelease {
 	totalDownloadCount := 0
 	assets := make([]GitReleaseAsset, 0)
@@ -515,6 +528,48 @@ func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 		config.Base = github.String(base)
 	}
 	pr, resp, err := p.Client.PullRequests.Create(p.Context, owner, repo, config)
+	if err != nil {
+		if resp != nil && resp.Body != nil {
+			data, err2 := ioutil.ReadAll(resp.Body)
+			if err2 == nil && len(data) > 0 {
+				return nil, errors.Wrapf(err, "response: %s", string(data))
+			}
+		}
+		return nil, err
+	}
+	return &GitPullRequest{
+		URL:    notNullString(pr.HTMLURL),
+		Owner:  owner,
+		Repo:   repo,
+		Number: pr.Number,
+	}, nil
+}
+
+// UpdatePullRequest updates pull request with number using data
+func (p *GitHubProvider) UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error) {
+	owner := data.GitRepository.Organisation
+	repo := data.GitRepository.Name
+	title := data.Title
+	body := data.Body
+	head := data.Head
+	base := data.Base
+	config := &github.PullRequest{
+		Head: &github.PullRequestBranch{},
+		Base: &github.PullRequestBranch{},
+	}
+	if title != "" {
+		config.Title = github.String(title)
+	}
+	if body != "" {
+		config.Body = github.String(body)
+	}
+	if head != "" {
+		config.Head.Ref = github.String(head)
+	}
+	if base != "" {
+		config.Base.Ref = github.String(base)
+	}
+	pr, resp, err := p.Client.PullRequests.Edit(p.Context, owner, repo, number, config)
 	if err != nil {
 		if resp != nil && resp.Body != nil {
 			data, err2 := ioutil.ReadAll(resp.Body)

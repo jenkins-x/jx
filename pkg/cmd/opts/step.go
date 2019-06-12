@@ -13,3 +13,19 @@ type StepOptions struct {
 func (o *StepOptions) Run() error {
 	return o.Cmd.Help()
 }
+
+// StepGitMergeOptions contains the command line flags
+type StepGitMergeOptions struct {
+	StepOptions
+
+	SHAs       []string
+	Remote     string
+	Dir        string
+	BaseBranch string
+	BaseSHA    string
+}
+
+// StepCreateOptions contains the command line flags
+type StepCreateOptions struct {
+	StepOptions
+}

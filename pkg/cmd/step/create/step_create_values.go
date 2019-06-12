@@ -46,7 +46,7 @@ var (
 
 // StepCreateValuesOptions contains the command line flags
 type StepCreateValuesOptions struct {
-	StepCreateOptions
+	opts.StepCreateOptions
 
 	Dir      string
 	Name     string
@@ -68,7 +68,7 @@ type StepCreateValuesResults struct {
 // NewCmdStepCreateValues Creates a new Command object
 func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateValuesOptions{
-		StepCreateOptions: StepCreateOptions{
+		StepCreateOptions: opts.StepCreateOptions{
 			StepOptions: opts.StepOptions{
 				CommonOptions: commonOpts,
 			},
