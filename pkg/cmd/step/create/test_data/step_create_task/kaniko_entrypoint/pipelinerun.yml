@@ -20,6 +20,7 @@ spec:
         apiVersion: tekton.dev/v1alpha1
         name: jenkins-x-jx-fix-kaniko-special
   serviceAccount: tekton-bot
+  timeout: 240h0m0s
   trigger:
     type: manual
 status: {}

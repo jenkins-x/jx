@@ -221,6 +221,8 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 			},
 			Resources: resourceBindings,
 			Params:    pipelineParams,
+			// TODO: This should be configurable, and we shouldn't have to set a timeout in the first place. See https://github.com/tektoncd/pipeline/issues/978
+			Timeout:   &metav1.Duration{ Duration: 240 * time.Hour},
 		},
 	}
 
