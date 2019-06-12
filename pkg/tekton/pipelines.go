@@ -189,7 +189,8 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 	labels map[string]string,
 	trigger string,
 	serviceAccount string,
-	pipelineParams []pipelineapi.Param) *pipelineapi.PipelineRun {
+	pipelineParams []pipelineapi.Param,
+	timeout *metav1.Duration) *pipelineapi.PipelineRun {
 	var resourceBindings []pipelineapi.PipelineResourceBinding
 	for _, resource := range resources {
 		resourceBindings = append(resourceBindings, pipelineapi.PipelineResourceBinding{
@@ -199,6 +200,10 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 				APIVersion: resource.APIVersion,
 			},
 		})
+	}
+
+	if timeout == nil {
+		timeout = &metav1.Duration{Duration: 240 * time.Hour}
 	}
 
 	pipelineRun := &pipelineapi.PipelineRun{
@@ -221,8 +226,8 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 			},
 			Resources: resourceBindings,
 			Params:    pipelineParams,
-			// TODO: This should be configurable, and we shouldn't have to set a timeout in the first place. See https://github.com/tektoncd/pipeline/issues/978
-			Timeout:   &metav1.Duration{ Duration: 240 * time.Hour},
+			// TODO: We shouldn't have to set a default timeout in the first place. See https://github.com/tektoncd/pipeline/issues/978
+			Timeout: timeout,
 		},
 	}
 

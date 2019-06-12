@@ -287,6 +287,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "really-long",
 			kind:         "release",
 		},
+		{
+			name:         "pipeline-timeout",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
@@ -380,8 +388,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				}
 
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), crds.PipelineRun()); d != "" {
-					pry, _ := yaml.Marshal(crds.PipelineRun())
-					t.Logf("PR: %s", pry)
 					t.Errorf("Generated PipelineRun did not match expected: %s", d)
 				}
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), crds.Structure()); d != "" {

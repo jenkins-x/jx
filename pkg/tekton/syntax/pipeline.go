@@ -95,7 +95,8 @@ type Timeout struct {
 	Unit TimeoutUnit `json:"unit,omitempty"`
 }
 
-func (t Timeout) toDuration() (*metav1.Duration, error) {
+// ToDuration generates a duration struct from a Timeout
+func (t *Timeout) ToDuration() (*metav1.Duration, error) {
 	durationStr := ""
 	// TODO: Populate a default timeout unit, most likely seconds.
 	if t.Unit != "" {
