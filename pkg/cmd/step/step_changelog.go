@@ -360,6 +360,9 @@ func (o *StepChangelogOptions) Run() error {
 			},
 			//ResourceVersion:   "1",
 			DeletionTimestamp: &metav1.Time{},
+			Labels: map[string]string{
+				"application": SpecName,
+			},
 		},
 		Spec: v1.ReleaseSpec{
 			Name:          SpecName,

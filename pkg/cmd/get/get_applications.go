@@ -157,8 +157,9 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 	releases := jxClient.JenkinsV1().Releases(ns)
 	for _, appName := range apps {
 		row := []string{appName}
-		release, err := releases.Get(appName, metav1.GetOptions{})
-		if err == nil {
+		crdName := appName + "-0-0-1" // I am not proud of this - wbrefvem
+		release, err := releases.Get(crdName, metav1.GetOptions{})
+		if err != nil {
 			logger.Fatalf("Release for application %s not found: %s", appName, err)
 		}
 		row = append(row, release.Spec.GitHTTPURL)
@@ -344,7 +345,7 @@ func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.T
 		title = "PULL REQUESTS"
 	}
 	titles := []string{title}
-	titles = append(titles, "GIT REPO")
+	titles = append(titles, "GIT URL")
 	for _, ea := range envApps {
 		envName := ea.Environment.Name
 		if len(ea.Apps) > 0 {
