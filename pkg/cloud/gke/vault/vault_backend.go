@@ -15,7 +15,7 @@ import (
 
 const (
 	gkeServiceAccountSecretKey = "service-account.json"
-	//vault service account suffix
+	//DefaultVaultAbbreviation is vault service accounts suffix
 	DefaultVaultAbbreviation   = "vt"
 )
 
