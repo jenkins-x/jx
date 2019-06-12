@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -93,7 +92,7 @@ func (o *GetEksOptions) Run() error {
 		if err != nil {
 			return nil
 		}
-		fmt.Print(string(output))
+		log.Logger().Infof(string(output))
 		return nil
 	} else {
 		cluster := o.Args[0]
@@ -117,14 +116,14 @@ func (o *GetEksOptions) Run() error {
 		}
 
 		if o.Output == "" {
-			fmt.Println("NAME")
-			fmt.Println(cluster)
+			log.Logger().Infof("NAME")
+			log.Logger().Infof(cluster)
 		} else if o.Output == "yaml" {
 			reservations, err := yaml.Marshal(instances.Reservations)
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(reservations))
+			log.Logger().Infof(string(reservations))
 		} else {
 			return errors.New("Invalid output format.")
 		}

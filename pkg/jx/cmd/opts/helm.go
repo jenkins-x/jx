@@ -356,7 +356,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 	chartUntarDir, _ := ioutil.TempDir("", chart+uuid.NewUUID().String())
 	err := o.Helm().FetchChart(chart, version, true, chartUntarDir, repo, "", "")
 	if err != nil {
-		fmt.Println(err)
+		log.Logger().Errorf("unable to fetch chart - %s", err)
 	}
 
 	// Maybe modify the gitOpsEnvDir to after a fetch

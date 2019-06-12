@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/log"
 	"os"
 	"os/exec"
 
@@ -70,7 +71,7 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 		return errors.Wrapf(err, "failed to list the PODs in namespace '%s'", ns)
 	}
 
-	fmt.Println("Checking pod statuses")
+	log.Logger().Infof("Checking pod statuses")
 
 	table := o.CreateTable()
 	table.AddRow("POD", "STATUS")
@@ -78,7 +79,7 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 	var f *os.File
 
 	if o.Debug {
-		fmt.Println("Creating verify-pod.log file")
+		log.Logger().Infof("Creating verify-pod.log file")
 		f, err = os.Create("verify-pod.log")
 		if err != nil {
 			return errors.Wrap(err, "error creating log file")

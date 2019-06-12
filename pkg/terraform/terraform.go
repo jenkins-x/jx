@@ -3,6 +3,7 @@ package terraform
 import (
 	"fmt"
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
@@ -13,10 +14,10 @@ import (
 )
 
 func Init(terraformDir string, serviceAccountPath string) error {
-	fmt.Println("Initialising Terraform")
+	log.Logger().Infof("Initialising Terraform")
 
 	if _, err := os.Stat(".terraform"); !os.IsNotExist(err) {
-		fmt.Println("Discovered local .terraform directory, removing...")
+		log.Logger().Infof("Discovered local .terraform directory, removing...")
 		err = os.RemoveAll(".terraform")
 		if err != nil {
 			return errors.Wrap(err, "unable to remove local .terraform directory")
@@ -36,7 +37,7 @@ func Init(terraformDir string, serviceAccountPath string) error {
 }
 
 func Plan(terraformDir string, terraformVars string, serviceAccountPath string) (string, error) {
-	fmt.Println("Showing Terraform Plan")
+	log.Logger().Infof("Showing Terraform Plan")
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"plan",
@@ -53,7 +54,7 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string) 
 }
 
 func Apply(terraformDir string, terraformVars string, serviceAccountPath string, stdout io.Writer, stderr io.Writer) error {
-	fmt.Println("Applying Terraform")
+	log.Logger().Infof("Applying Terraform")
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"apply", "-auto-approve",
@@ -123,7 +124,7 @@ func ReadValueFromFile(path string, key string) (string, error) {
 
 // CheckVersion checks the installed version of terraform to sure it is greater than 0.11.0
 func CheckVersion() error {
-	fmt.Println("Checking Terraform Version...")
+	log.Logger().Infof("Checking Terraform Version...")
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"-version"},
@@ -135,7 +136,7 @@ func CheckVersion() error {
 
 	version, err := extractVersionFromTerraformOutput(output)
 
-	fmt.Printf("Determined terraform version as %s\n", util.ColorInfo(version))
+	log.Logger().Infof("Determined terraform version as %s", util.ColorInfo(version))
 
 	if err != nil {
 		return err
@@ -148,7 +149,7 @@ func CheckVersion() error {
 		return errors.New("terraform version appears to be too old, please install a newer version '>= 0.11.0'")
 	}
 
-	fmt.Printf("Terraform version appears to be valid\n")
+	log.Logger().Infof("Terraform version appears to be valid")
 
 	return nil
 }

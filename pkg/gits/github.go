@@ -1279,7 +1279,7 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 	}
 	githubCommits, _, err := p.Client.Repositories.ListCommits(p.Context, owner, repo, githubOpt)
 	if err != nil {
-		fmt.Println(err)
+		log.Logger().Errorf("%s", err)
 		return nil, fmt.Errorf("Could not find commits for repository %s/%s", owner, repo)
 	}
 	var commits []*GitCommit

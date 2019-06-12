@@ -356,11 +356,11 @@ func (k *PipelineActivityKey) addBatchBuildData(activitiesClient typev1.Pipeline
 			if i.Spec.Build != "" && selectedPipeline.Spec.Build != "" {
 				ib, err := strconv.Atoi(i.Spec.Build)
 				if err != nil {
-					fmt.Println(err)
+					log.Logger().Errorf("%s", err)
 				}
 				cb, err := strconv.Atoi(selectedPipeline.Spec.Build)
 				if err != nil {
-					fmt.Println(err)
+					log.Logger().Errorf("%s", err)
 				}
 				if ib > cb {
 					selectedPipeline = i
