@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -88,6 +87,6 @@ func (o *deleteEksOptions) Run() error {
 	if err != nil {
 		return nil
 	}
-	fmt.Print(string(output))
+	log.Logger().Infof(string(output))
 	return nil
 }

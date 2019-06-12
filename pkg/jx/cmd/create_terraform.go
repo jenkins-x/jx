@@ -722,7 +722,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 }
 
 func (options *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
-	fmt.Printf("Creating/Updating %v clusters\n", util.ColorInfo(len(clusterDefinitions)))
+	log.Logger().Infof("Creating/Updating %v clusters\n", util.ColorInfo(len(clusterDefinitions)))
 	for _, c := range clusterDefinitions {
 		switch v := c.(type) {
 		case *GKECluster:

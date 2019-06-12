@@ -103,7 +103,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 	}
 	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for path %s", outputPath))
 	if err != nil {
-		fmt.Println(err)
+		log.Logger().Errorf("%s", err)
 		return urls, err
 	}
 	err = gitClient.Push(ghPagesDir)

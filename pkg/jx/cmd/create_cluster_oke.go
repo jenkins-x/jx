@@ -165,7 +165,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 		survey.AskOne(prompt, &endpoint, nil, surveyOpts)
 	}
-	fmt.Printf("Endpoint is %s\n", endpoint)
+	log.Logger().Infof("Endpoint is %s\n", endpoint)
 	os.Setenv("ENDPOINT", endpoint)
 
 	if o.Flags.ClusterName == "" {
@@ -265,7 +265,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	nodePoolSubnetIdsTemp := "[" + strings.Join(nodePoolSubnetIdsArray, ",") + "]"
 	err = ioutil.WriteFile("/tmp/oke_pool_config.json", []byte(nodePoolSubnetIdsTemp), 0644)
 	if err != nil {
-		fmt.Printf("error write file to /tmp file %v", err)
+		log.Logger().Infof("error write file to /tmp file %v", err)
 	}
 
 	args := []string{"ce", "cluster", "create",
@@ -299,7 +299,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 		err := ioutil.WriteFile("/tmp/oke_cluster_config.json", []byte(serviceLbSubnetIdsTemp), 0644)
 		if err != nil {
-			fmt.Printf("error write file to /tmp file %v", err)
+			log.Logger().Infof("error write file to /tmp file %v", err)
 		}
 
 		args = append(args, "--service-lb-subnet-ids", "file:///tmp/oke_cluster_config.json")
@@ -346,20 +346,20 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		args = append(args, "--wait-interval-seconds", clusterWaitIntervalSeconds)
 	}
 
-	fmt.Printf("Args are: %s\n", args)
+	log.Logger().Infof("Args are: %s\n", args)
 	log.Logger().Info("Creating cluster...")
 	output, err := o.GetCommandOutput("", "oci", args...)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Create cluster output: %s\n", output)
+	log.Logger().Infof("Create cluster output: %s\n", output)
 
 	if strings.Contains(output, "identifier") {
 		subClusterInfo := strings.Split(output, "identifier")
 		clusterIdRaw := strings.Split(subClusterInfo[1], "}")
 		clusterId := strings.TrimSpace(strings.Replace(clusterIdRaw[0][4:], "\"", "", -1))
-		fmt.Printf("Cluster id: %s\n", clusterId)
+		log.Logger().Infof("Cluster id: %s\n", clusterId)
 
 		//setup the kube context
 		log.Logger().Info("Setup kube context ...")
@@ -395,7 +395,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			initialNodeLabelsJson := "[" + initialNodeLabels + "]"
 			err := ioutil.WriteFile("/tmp/oke_pool_labels_config.json", []byte(initialNodeLabelsJson), 0644)
 			if err != nil {
-				fmt.Printf("error write file to /tmp file %v", err)
+				log.Logger().Infof("error write file to /tmp file %v", err)
 			}
 			poolArgs = poolArgs + " --initial-node-labels=file:///tmp/oke_pool_labels_config.json"
 		}
@@ -419,7 +419,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			poolArgsArray = append(poolArgsArray, sshPubKey)
 		}
 
-		fmt.Printf("Pool creation args are: %s\n", poolArgsArray)
+		log.Logger().Infof("Pool creation args are: %s\n", poolArgsArray)
 		poolCreationOutput, err := o.GetCommandOutput("", "oci", poolArgsArray...)
 		if err != nil {
 			return err
@@ -430,7 +430,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			subPoolInfo := strings.Split(poolCreationOutput, "identifier")
 			poolIdRaw := strings.Split(subPoolInfo[1], "}")
 			poolId := strings.TrimSpace(strings.Replace(poolIdRaw[0][4:], "\"", "", -1))
-			fmt.Printf("Node Pool id: %s\n", poolId)
+			log.Logger().Infof("Node Pool id: %s\n", poolId)
 
 			//get node pool status until they are active
 			nodeQuantity, err := strconv.Atoi(quantityPerSubnet)
@@ -445,7 +445,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 			if isTillerEnabled {
 				//need to wait for tiller pod is running
-				fmt.Printf("Wait for tiller pod is running\n")
+				log.Logger().Infof("Wait for tiller pod is running\n")
 				err = o.waitForTillerComeUp()
 				if err != nil {
 					return fmt.Errorf("Failed to wait for Tiller to be ready: %s\n", err)
@@ -483,7 +483,7 @@ func (o *CreateClusterOKEOptions) waitForNodeToComeUp(nodeQuantity int, poolId s
 		}
 
 		count := len(status.FindAllStringIndex(poolStatusOutput, -1))
-		fmt.Printf("Now only %d nodes are ready\n", count)
+		log.Logger().Infof("Now only %d nodes are ready\n", count)
 		if count == nodeQuantity {
 			break
 		}

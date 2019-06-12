@@ -485,7 +485,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	}
 
 	log.Logger().Infof("Creating cluster named %s", clusterName)
-	//	fmt.Println(clusterInfo)
+	//	log.Logger().Infof(clusterInfo)
 	createResponse, err := clusters.Create(clusterInfo, target)
 	if err != nil {
 		return err
