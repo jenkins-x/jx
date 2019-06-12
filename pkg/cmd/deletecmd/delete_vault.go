@@ -174,7 +174,7 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 		o.GKEZone = zone
 	}
 
-	sa := gke.ServiceAccountName(vaultName)
+	sa := gke.ServiceAccountName(vaultName, gkevault.DefaultVaultAbbreviation)
 	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
