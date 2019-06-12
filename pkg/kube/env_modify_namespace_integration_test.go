@@ -3,7 +3,7 @@
 package kube_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"

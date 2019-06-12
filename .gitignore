@@ -46,9 +46,6 @@ docs/apidocs/build
 docs/apidocs/includes
 docs/apidocs/site
 
-# generated clients
-clients/
-
 # ignore these files 1 by 1 so we can not ignore the stylesheet override
 docs/apidocs/static/FontAwesome.otf
 docs/apidocs/static/bootstrap-3.3.7.min.js
