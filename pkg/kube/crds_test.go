@@ -3,7 +3,7 @@ package kube_test
 import (
 	"testing"
 
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"

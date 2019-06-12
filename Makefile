@@ -235,7 +235,7 @@ test1: get-test-deps make-reports-dir
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) ./... -test.v -run $(TEST)
 
 testbin: get-test-deps make-reports-dir
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/cmd -o build/jx-test
 
 testbin-gits: get-test-deps make-reports-dir
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/gits -o build/jx-test-gits
@@ -247,7 +247,7 @@ debugtest1gits: testbin-gits
 	cd pkg/gits && dlv --log --listen=:2345 --headless=true --api-version=2 exec ../../build/jx-test-gits -- -test.run $(TEST)
 
 inttestbin: get-test-deps
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-inttest
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration -c github.com/jenkins-x/jx/pkg/cmd -o build/jx-inttest
 
 debuginttest1: inttestbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
