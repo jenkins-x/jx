@@ -2,7 +2,9 @@ package util
 
 import (
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -30,4 +32,12 @@ func EncodeKubernetesName(name string) string {
 		}
 	}
 	return encodedName.String()
+}
+
+// DurationString returns the duration between start and end time as string
+func DurationString(start *metav1.Time, end *metav1.Time) string {
+	if start == nil || end == nil {
+		return ""
+	}
+	return end.Sub(start.Time).Round(time.Second).String()
 }
