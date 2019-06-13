@@ -1,4 +1,4 @@
-package cmd
+package update
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud"

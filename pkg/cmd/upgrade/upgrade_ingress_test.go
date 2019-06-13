@@ -1,7 +1,7 @@
 package upgrade_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
 	"io/ioutil"
 	"path/filepath"
 	"testing"

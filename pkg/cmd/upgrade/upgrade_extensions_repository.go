@@ -1,4 +1,4 @@
-package cmd
+package upgrade
 
 import (
 	"encoding/base64"

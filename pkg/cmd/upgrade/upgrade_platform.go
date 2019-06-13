@@ -1,4 +1,4 @@
-package cmd
+package upgrade
 
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"

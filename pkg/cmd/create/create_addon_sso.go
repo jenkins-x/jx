@@ -2,7 +2,7 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
 	"sort"
 	"strings"
 

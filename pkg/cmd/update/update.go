@@ -1,8 +1,7 @@
-package cmd
+package update
 
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/update"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -49,7 +48,7 @@ func NewCmdUpdate(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdUpdateCluster(commonOpts))
-	cmd.AddCommand(update.NewCmdUpdateWebhooks(commonOpts))
+	cmd.AddCommand(NewCmdUpdateWebhooks(commonOpts))
 
 	return cmd
 }

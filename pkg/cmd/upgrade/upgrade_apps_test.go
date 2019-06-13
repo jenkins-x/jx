@@ -1,8 +1,9 @@
-package cmd_test
+package upgrade_test
 
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -26,8 +27,6 @@ import (
 	"github.com/blang/semver"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/jenkins-x/jx/pkg/cmd"
 )
 
 var timeout = 5 * time.Second
@@ -46,7 +45,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	assert.NoError(t, err)
 	newVersion.Patch++
 	commonOpts := *testOptions.CommonOptions
-	o := &cmd.UpgradeAppsOptions{
+	o := &upgrade.UpgradeAppsOptions{
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
@@ -111,7 +110,7 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 	assert.NoError(t, err)
 	newVersion.Patch++
 	commonOpts := *testOptions.CommonOptions
-	o := &cmd.UpgradeAppsOptions{
+	o := &upgrade.UpgradeAppsOptions{
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
@@ -210,7 +209,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 		newVersion, err := semver.Parse(version)
 		assert.NoError(r, err)
 		newVersion.Patch++
-		o := &cmd.UpgradeAppsOptions{
+		o := &upgrade.UpgradeAppsOptions{
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
@@ -302,7 +301,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 		newVersion, err := semver.Parse(version)
 		assert.NoError(r, err)
 		newVersion.Patch++
-		o := &cmd.UpgradeAppsOptions{
+		o := &upgrade.UpgradeAppsOptions{
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
@@ -407,7 +406,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 		newVersion, err := semver.Parse(version)
 		assert.NoError(r, err)
 		newVersion.Patch++
-		o := &cmd.UpgradeAppsOptions{
+		o := &upgrade.UpgradeAppsOptions{
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
@@ -503,7 +502,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 		newVersion, err := semver.Parse(version)
 		assert.NoError(r, err)
 		newVersion.Patch++
-		o := &cmd.UpgradeAppsOptions{
+		o := &upgrade.UpgradeAppsOptions{
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
@@ -568,7 +567,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	assert.NoError(t, err)
 	newVersion.Patch++
 	commonOpts := *testOptions.CommonOptions
-	o := &cmd.UpgradeAppsOptions{
+	o := &upgrade.UpgradeAppsOptions{
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
@@ -638,7 +637,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 
 	// Now let's upgrade
 	commonOpts := *testOptions.CommonOptions
-	o := &cmd.UpgradeAppsOptions{
+	o := &upgrade.UpgradeAppsOptions{
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
