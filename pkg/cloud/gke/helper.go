@@ -148,17 +148,15 @@ func GetGoogleMachineTypes() []string {
 }
 
 // CreateGCPServiceAccount creates a service account in GCP for a service using the account roles specified
-func CreateGCPServiceAccount(kubeClient kubernetes.Interface, serviceName, namespace, clusterName, projectID string, serviceAccountRoles []string, serviceAccountSecretKey string) (string, error) {
+func CreateGCPServiceAccount(kubeClient kubernetes.Interface, serviceName, serviceAbbreviation, namespace, clusterName, projectID string, serviceAccountRoles []string, serviceAccountSecretKey string) (string, error) {
 	serviceAccountDir, err := ioutil.TempDir("", "gke")
 	if err != nil {
 		return "", errors.Wrap(err, "creating a temporary folder where the service account will be stored")
 	}
 	defer os.RemoveAll(serviceAccountDir)
 
-	serviceAccountName := ServiceAccountName(serviceName)
-	if err != nil {
-		return "", err
-	}
+	serviceAccountName := ServiceAccountName(clusterName, serviceAbbreviation)
+
 	serviceAccountPath, err := GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, serviceAccountRoles)
 	if err != nil {
 		return "", errors.Wrap(err, "creating the service account")
