@@ -1773,6 +1773,8 @@ definitions:
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseSpec:
     description: ReleaseSpec is the specification of the Release
     properties:
+      BuildNumber:
+        type: string
       commits:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitSummary'
@@ -1799,6 +1801,8 @@ definitions:
         type: string
       version:
         type: string
+    required:
+    - BuildNumber
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseStatus:
     description: ReleaseStatus is the status of a release

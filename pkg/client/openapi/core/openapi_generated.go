@@ -4607,7 +4607,14 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 							Format: "",
 						},
 					},
+					"BuildNumber": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
+				Required: []string{"BuildNumber"},
 			},
 		},
 		Dependencies: []string{

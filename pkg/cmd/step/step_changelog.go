@@ -374,6 +374,7 @@ func (o *StepChangelogOptions) Run() error {
 			Commits:       []v1.CommitSummary{},
 			Issues:        []v1.IssueSummary{},
 			PullRequests:  []v1.IssueSummary{},
+			BuildNumber:   o.Build,
 		},
 	}
 

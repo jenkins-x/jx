@@ -45,6 +45,7 @@ type ReleaseSpec struct {
 	ReleaseNotesURL string          `json:"releaseNotesURL,omitempty" protobuf:"bytes,8,opt,name=releaseNotesURL"`
 	GitRepository   string          `json:"gitRepository,omitempty" protobuf:"bytes,9,opt,name=gitRepository"`
 	GitOwner        string          `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
+	BuildNumber     string          `json:buildNumber,omitempty" protobuf:"bytes,11,opt,name=buildNumber"`
 }
 
 // ReleaseStatus is the status of a release

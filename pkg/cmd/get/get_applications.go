@@ -1,6 +1,7 @@
 package get
 
 import (
+	"fmt"
 	"os/user"
 	"sort"
 	"strings"
@@ -22,6 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,13 +158,20 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 	}
 	releases := jxClient.JenkinsV1().Releases(ns)
 	for _, appName := range apps {
-		row := []string{appName}
-		crdName := appName + "-0-0-1" // I am not proud of this - wbrefvem
-		release, err := releases.Get(crdName, metav1.GetOptions{})
+		releaseList, err := releases.List(metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("application=%s", appName),
+		})
 		if err != nil {
 			logger.Fatalf("Release for application %s not found: %s", appName, err)
 		}
-		row = append(row, release.Spec.GitHTTPURL)
+		// Sort the ResourceList by Spec.BuildNumber in reverse so the zeroth Release is the latest
+		sort.Slice(releaseList.Items, func(a, b int) bool {
+			return releaseList.Items[a].Spec.BuildNumber > releaseList.Items[b].Spec.BuildNumber
+		})
+
+		row := []string{appName}
+		row = append(row, releaseList.Items[0].Spec.GitHTTPURL)
+
 		for _, ea := range envApps {
 			version := ""
 			d, ok := ea.Apps[appName]
