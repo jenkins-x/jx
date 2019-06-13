@@ -2,6 +2,7 @@ package opts
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -1017,7 +1018,49 @@ func (o *CommonOptions) InstallTerraform() error {
 
 // GetLatestJXVersion returns latest jx version
 func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		log.Logger().Debugf("Locating latest JX version from HomeBrew")
+		// incase auto-update is not enabled, lets perform an explicit brew update first
+		brewUpdate, err := o.GetCommandOutput("", "brew", "update")
+		if err != nil {
+			log.Logger().Errorf("unable to update brew - %s", brewUpdate)
+			return semver.Version{}, err
+		}
+		log.Logger().Debugf("updating brew - %s", brewUpdate)
+
+		brewInfo, err := o.GetCommandOutput("", "brew", "info", "--json", "jx")
+		if err != nil {
+			log.Logger().Errorf("unable to get brew info for jx - %s", brewInfo)
+			return semver.Version{}, err
+		}
+
+		v, err := o.LatestJxBrewVersion(brewInfo)
+		if err != nil {
+			return semver.Version{}, err
+		}
+
+		return semver.Make(v)
+	}
+	log.Logger().Debugf("Locating latest JX version from GitHub")
 	return util.GetLatestVersionFromGitHub("jenkins-x", "jx")
+}
+
+func (o *CommonOptions) LatestJxBrewVersion(jsonInfo string) (string, error) {
+	var brewInfo []brewInfo
+	err := json.Unmarshal([]byte(jsonInfo), &brewInfo)
+	if err != nil {
+		return "", err
+	}
+	return brewInfo[0].Versions.Stable, nil
+}
+
+// BrewInfo contains some of the `brew info` data.
+type brewInfo struct {
+	Name     string
+	Outdated bool
+	Versions struct {
+		Stable string
+	}
 }
 
 // InstallKops installs kops
@@ -1100,6 +1143,7 @@ func (o *CommonOptions) InstallKSync() (string, error) {
 
 // InstallJx installs jx cli
 func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
+	log.Logger().Debugf("installing jx %s", version)
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		if upgrade {
 			return o.RunCommand("brew", "upgrade", "jx")

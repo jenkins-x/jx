@@ -152,34 +152,10 @@ func (o *VersionOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "getting latest jx version")
 		}
-		update, err := o.ShouldUpdate(newVersion)
-		if err != nil {
-			return errors.Wrap(err, "checking version")
-		}
-		if update {
-			return o.upgradeCli(newVersion)
-		}
+
+		return o.upgradeCli(newVersion)
 	}
 	return nil
-}
-
-// ShouldUpdate checks if CLI version should be updated
-func (o *VersionOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
-	currentVersion, err := version.GetSemverVersion()
-	if err != nil {
-		return false, err
-	}
-
-	if newVersion.GT(currentVersion) {
-		// Do not ask to update if we are using a dev build...
-		for _, x := range currentVersion.Pre {
-			if x.VersionStr == "dev" {
-				return false, nil
-			}
-		}
-		return true, nil
-	}
-	return false, nil
 }
 
 func (o *VersionOptions) upgradeCli(newVersion semver.Version) error {
