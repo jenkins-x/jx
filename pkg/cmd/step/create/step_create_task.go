@@ -554,7 +554,15 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 	tasks, pipeline = o.EnhanceTasksAndPipeline(tasks, pipeline, pipelineConfig.Env)
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(pipelineResourceName, o.GitInfo, o.Revision)}
-	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, o.labels, o.Trigger, o.ServiceAccount, o.pipelineParams)
+
+	var timeout *metav1.Duration
+	if parsed.Options != nil && parsed.Options.Timeout != nil {
+		timeout, err = parsed.Options.Timeout.ToDuration()
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing of pipeline timeout failed")
+		}
+	}
+	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, o.labels, o.Trigger, o.ServiceAccount, o.pipelineParams, timeout)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
 	if err != nil {
