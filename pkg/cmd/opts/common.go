@@ -64,7 +64,6 @@ const (
 	OptionSkipAuthSecMerge = "skip-auth-secrets-merge"
 	OptionTimeout          = "timeout"
 	OptionVerbose          = "verbose"
-	optionAdvancedMode     = "advanced-mode"
 
 	BranchPatternCommandName      = "branchpattern"
 	QuickStartLocationCommandName = "quickstartlocation"
