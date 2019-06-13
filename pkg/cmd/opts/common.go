@@ -64,6 +64,7 @@ const (
 	OptionSkipAuthSecMerge = "skip-auth-secrets-merge"
 	OptionTimeout          = "timeout"
 	OptionVerbose          = "verbose"
+	optionAdvancedMode     = "advanced-mode"
 
 	BranchPatternCommandName      = "branchpattern"
 	QuickStartLocationCommandName = "quickstartlocation"
@@ -237,6 +238,7 @@ func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVarP(&o.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
 	cmd.PersistentFlags().BoolVarP(&o.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
 	cmd.PersistentFlags().BoolVarP(&o.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
+	cmd.PersistentFlags().BoolVarP(&o.AdvancedMode, OptionAdvancedMode, "", false, "Advanced install options. This will prompt for advanced install options")
 
 	o.Cmd = cmd
 }
