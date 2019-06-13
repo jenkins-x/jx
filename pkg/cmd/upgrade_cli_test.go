@@ -3,7 +3,10 @@ package cmd
 import (
 	"fmt"
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -78,8 +81,12 @@ var sampleBrewInfo = `[
 ]`
 
 func TestLatestJxBrewVersion(t *testing.T) {
-	o := UpgradeCLIOptions{}
-	version, err := o.latestJxBrewVersion(sampleBrewInfo)
+	o := UpgradeCLIOptions{
+		CreateOptions: create.CreateOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	version, err := o.LatestJxBrewVersion(sampleBrewInfo)
 	assert.NoError(t, err)
 	assert.Equal(t, "2.0.181", version)
 }
@@ -114,4 +121,84 @@ func TestNeedsUpgrade(t *testing.T) {
 		})
 		assert.Equal(t, data.expectedMessage, actualMessage, fmt.Sprintf("Unexpected message for %v", data))
 	}
+}
+
+func TestVersionCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T) {
+	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
+	version.Map["version"] = "1.4.0"
+	opts := &UpgradeCLIOptions{
+		CreateOptions: create.CreateOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	update, err := opts.ShouldUpdate(jxVersion)
+	assert.NoError(t, err, "should check version without failure")
+	assert.False(t, update, "should not update")
+}
+
+func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
+	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
+	version.Map["version"] = "1.2.3"
+	opts := &UpgradeCLIOptions{
+		CreateOptions: create.CreateOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	update, err := opts.ShouldUpdate(jxVersion)
+	assert.NoError(t, err, "should check version without failure")
+	assert.False(t, update, "should not update")
+}
+
+func TestVersionCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
+	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
+	version.Map["version"] = "1.0.0"
+	opts := &UpgradeCLIOptions{
+		CreateOptions: create.CreateOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	update, err := opts.ShouldUpdate(jxVersion)
+	assert.NoError(t, err, "should check version without failure")
+	assert.True(t, update, "should update")
+}
+
+func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testing.T) {
+	prVersions := []semver.PRVersion{}
+	prVersions = append(prVersions, semver.PRVersion{VersionStr: "dev"})
+	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3, Pre: prVersions, Build: []string(nil)}
+	version.Map["version"] = "1.2.3"
+	opts := &UpgradeCLIOptions{
+		CreateOptions: create.CreateOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	update, err := opts.ShouldUpdate(jxVersion)
+	assert.NoError(t, err, "should check version without failure")
+	assert.False(t, update, "should not update")
+}
+
+func TestVersionCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *testing.T) {
+	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
+	version.Map["version"] = "1.2.3-dev+6a8285f4"
+	opts := &UpgradeCLIOptions{
+		CreateOptions: create.CreateOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	update, err := opts.ShouldUpdate(jxVersion)
+	assert.NoError(t, err, "should check version without failure")
+	assert.False(t, update, "should not update")
+}
+
+func TestVersionCheckWhenCurrentVersionWithPatchIsLessThanReleaseVersion(t *testing.T) {
+	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
+	version.Map["version"] = "1.2.2-dev+6a8285f4"
+	opts := &UpgradeCLIOptions{
+		CreateOptions: create.CreateOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	update, err := opts.ShouldUpdate(jxVersion)
+	assert.NoError(t, err, "should check version without failure")
+	assert.False(t, update, "should not update")
 }
