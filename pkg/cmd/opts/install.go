@@ -1020,7 +1020,7 @@ func (o *CommonOptions) InstallTerraform() error {
 func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		log.Logger().Debugf("Locating latest JX version from HomeBrew")
-		// incase auto-update is not enabled, lets perform an explict brew update first
+		// incase auto-update is not enabled, lets perform an explicit brew update first
 		brewUpdate, err := o.GetCommandOutput("", "brew", "update")
 		if err != nil {
 			log.Logger().Errorf("unable to update brew - %s", brewUpdate)
