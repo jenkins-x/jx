@@ -1054,7 +1054,6 @@ func (o *CommonOptions) LatestJxBrewVersion(jsonInfo string) (string, error) {
 	return brewInfo[0].Versions.Stable, nil
 }
 
-
 // BrewInfo contains some of the `brew info` data.
 type brewInfo struct {
 	Name     string

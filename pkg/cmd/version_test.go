@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestDockerImageGetsLabel(t *testing.T) {
 	t.Parallel()
 
