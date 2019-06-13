@@ -135,6 +135,7 @@ func (o *InitOptions) AddInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", opts.DefaultSkipClusterRole, "Don't enable cluster admin role for user")
 	cmd.Flags().BoolVarP(&o.Flags.ExternalDNS, "external-dns", "", false, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", opts.DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
+	cmd.Flags().BoolVarP(&o.AdvancedMode, "advanced-mode", "", false, "Advanced install options. This will prompt for advanced install options")
 }
 
 func (o *InitOptions) AddIngressFlags(cmd *cobra.Command) {
