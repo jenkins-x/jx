@@ -400,7 +400,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 			namespace := filepath.Base(path.Name())
 			fullPath := filepath.Join(namespacesDir, path.Name())
 
-			log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, fullPath, namespace)
+			log.Logger().Debugf("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, fullPath, namespace)
 
 			command := "apply"
 			if create {
@@ -429,7 +429,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 		return err
 	}
 
-	log.Logger().Infof("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, dir, ns)
+	log.Logger().Debugf("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, dir, ns)
 	command := "apply"
 	if create {
 		command = "create"
@@ -498,12 +498,12 @@ func (h *HelmTemplate) deleteResourcesAndClusterResourcesBySelector(ns string, s
 
 	errList := []error{}
 
-	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(kinds, " "))
+	log.Logger().Debugf("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(kinds, " "))
 	errs := h.deleteResourcesBySelector(ns, kinds, selector, wait)
 	errList = append(errList, errs...)
 
 	selector += "," + LabelNamespace + "=" + ns
-	log.Logger().Infof("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
+	log.Logger().Debugf("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
 	errs = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
 	errList = append(errList, errs...)
 	return util.CombineErrors(errList...)
@@ -643,7 +643,7 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 			break
 		}
 	}
-	log.Logger().Infof("Fetched chart %s to dir %s", chart, answer)
+	log.Logger().Debugf("Fetched chart %s to dir %s", chart, answer)
 	return answer, nil
 }
 
@@ -755,7 +755,7 @@ func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespac
 
 	absFileDir := filepath.Dir(absFile)
 
-	log.Logger().Infof("creating file: %s", absFile)
+	log.Logger().Debugf("creating file: %s", absFile)
 
 	err := os.MkdirAll(absFileDir, os.ModePerm)
 	if err != nil {
@@ -1004,7 +1004,7 @@ func (h *HelmTemplate) runKubectl(args ...string) error {
 	h.Runner.SetName(h.Binary)
 	h.Runner.SetArgs(args)
 	output, err := h.Runner.RunWithoutRetry()
-	log.Logger().Info(output + "")
+	log.Logger().Debugf(output + "")
 	return err
 }
 
