@@ -24,8 +24,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// StepSyntaxCanonicalOptions contains the command line flags
-type StepSyntaxCanonicalOptions struct {
+// StepSyntaxEffectiveOptions contains the command line flags
+type StepSyntaxEffectiveOptions struct {
 	opts.StepOptions
 
 	Pack              string
@@ -49,18 +49,18 @@ type StepSyntaxCanonicalOptions struct {
 	VersionResolver *opts.VersionResolver
 }
 
-// NewCmdStepSyntaxCanonical Creates a new Command object
-func NewCmdStepSyntaxCanonical(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &StepSyntaxCanonicalOptions{
+// NewCmdStepSyntaxEffective Creates a new Command object
+func NewCmdStepSyntaxEffective(commonOpts *opts.CommonOptions) *cobra.Command {
+	options := &StepSyntaxEffectiveOptions{
 		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
 
 	cmd := &cobra.Command{
-		Use:   "canonical",
-		Short: "Outputs a canonical representation of the pipeline to be executed",
-		Long:  "Reads the appropriate jenkins-x.yml, depending on context, from the current directory, if one exists, and outputs a canonical representation of the pipelines",
+		Use:   "effective",
+		Short: "Outputs an effective representation of the pipeline to be executed",
+		Long:  "Reads the appropriate jenkins-x.yml, depending on context, from the current directory, if one exists, and outputs an effective representation of the pipelines",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -76,9 +76,9 @@ func NewCmdStepSyntaxCanonical(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // AddCommonFlags adds common CLI options
-func (o *StepSyntaxCanonicalOptions) AddCommonFlags(cmd *cobra.Command) {
+func (o *StepSyntaxEffectiveOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.OutDir, "output-dir", "", "", "The directory to write the output to as YAML. Defaults to STDOUT if neither --output-dir nor --output-file is specified.")
-	cmd.Flags().StringVarP(&o.OutputFile, "output-file", "", "", "The file to write the output to as YAML. If unspecified and --output-dir is specified, the filename defaults to 'jenkins-x[-context]-canonical.yml'")
+	cmd.Flags().StringVarP(&o.OutputFile, "output-file", "", "", "The file to write the output to as YAML. If unspecified and --output-dir is specified, the filename defaults to 'jenkins-x[-context]-effective.yml'")
 	cmd.Flags().StringVarP(&o.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
 	cmd.Flags().StringVarP(&o.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&o.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
@@ -95,7 +95,7 @@ func (o *StepSyntaxCanonicalOptions) AddCommonFlags(cmd *cobra.Command) {
 }
 
 // Run implements this command
-func (o *StepSyntaxCanonicalOptions) Run() error {
+func (o *StepSyntaxEffectiveOptions) Run() error {
 	settings, err := o.TeamSettings()
 	if err != nil {
 		return err
@@ -209,17 +209,17 @@ func (o *StepSyntaxCanonicalOptions) Run() error {
 		return err
 	}
 
-	canonicalConfig, err := o.CreateCanonicalPipeline(packsDir, projectConfig, projectConfigFile, resolver)
+	effectiveConfig, err := o.CreateEffectivePipeline(packsDir, projectConfig, projectConfigFile, resolver)
 	if err != nil {
 		return err
 	}
 
-	canonicalYaml, err := yaml.Marshal(canonicalConfig)
+	effectiveYaml, err := yaml.Marshal(effectiveConfig)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal canonical pipeline")
+		return errors.Wrap(err, "failed to marshal effective pipeline")
 	}
 	if o.OutDir == "" && o.OutputFile == "" {
-		log.Logger().Infof("%s", canonicalYaml)
+		log.Logger().Infof("%s", effectiveYaml)
 	} else {
 		outputDir := o.OutDir
 		if outputDir == "" {
@@ -234,21 +234,21 @@ func (o *StepSyntaxCanonicalOptions) Run() error {
 			if o.Context != "" {
 				outputFilename += "-" + o.Context
 			}
-			outputFilename += "-canonical.yml"
+			outputFilename += "-effective.yml"
 		}
 		outputFile := filepath.Join(outputDir, outputFilename)
-		err = ioutil.WriteFile(outputFile, canonicalYaml, util.DefaultWritePermissions)
+		err = ioutil.WriteFile(outputFile, effectiveYaml, util.DefaultWritePermissions)
 		if err != nil {
-			return errors.Wrapf(err, "failed to write canonical pipeline to %s", outputFile)
+			return errors.Wrapf(err, "failed to write effective pipeline to %s", outputFile)
 		}
-		log.Logger().Infof("Canonical pipeline written to %s", outputFile)
+		log.Logger().Infof("Effective pipeline written to %s", outputFile)
 	}
 	return nil
 }
 
-// CreateCanonicalPipeline takes a project config and generates the canonical version of the pipeline for it, including
+// CreateEffectivePipeline takes a project config and generates the effective version of the pipeline for it, including
 // build packs, inheritance, overrides, defaults, etc.
-func (o *StepSyntaxCanonicalOptions) CreateCanonicalPipeline(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver) (*config.ProjectConfig, error) {
+func (o *StepSyntaxEffectiveOptions) CreateEffectivePipeline(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver) (*config.ProjectConfig, error) {
 	name := o.Pack
 	packDir := filepath.Join(packsDir, name)
 
@@ -306,7 +306,7 @@ func (o *StepSyntaxCanonicalOptions) CreateCanonicalPipeline(packsDir string, pr
 		releaseLifecycles.Setup.Steps = append(steps, releaseLifecycles.Setup.Steps...)
 		parsed, err := o.createPipelineForKind(jenkinsfile.PipelineKindRelease, releaseLifecycles, pipelines, projectConfig, pipelineConfig)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create canonical pipeline for release")
+			return nil, errors.Wrapf(err, "failed to create effective pipeline for release")
 		}
 		pipelines.Release = &jenkinsfile.PipelineLifecycles{
 			Pipeline: parsed,
@@ -316,7 +316,7 @@ func (o *StepSyntaxCanonicalOptions) CreateCanonicalPipeline(packsDir string, pr
 		prLifecycles := pipelines.PullRequest
 		parsed, err := o.createPipelineForKind(jenkinsfile.PipelineKindPullRequest, prLifecycles, pipelines, projectConfig, pipelineConfig)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create canonical pipeline for pull request")
+			return nil, errors.Wrapf(err, "failed to create effective pipeline for pull request")
 		}
 		pipelines.PullRequest = &jenkinsfile.PipelineLifecycles{
 			Pipeline: parsed,
@@ -326,7 +326,7 @@ func (o *StepSyntaxCanonicalOptions) CreateCanonicalPipeline(packsDir string, pr
 		featureLifecycles := pipelines.Feature
 		parsed, err := o.createPipelineForKind(jenkinsfile.PipelineKindFeature, featureLifecycles, pipelines, projectConfig, pipelineConfig)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create canonical pipeline for pull request")
+			return nil, errors.Wrapf(err, "failed to create effective pipeline for pull request")
 		}
 		pipelines.Feature = &jenkinsfile.PipelineLifecycles{
 			Pipeline: parsed,
@@ -339,7 +339,7 @@ func (o *StepSyntaxCanonicalOptions) CreateCanonicalPipeline(packsDir string, pr
 	return projectConfig, nil
 }
 
-func (o *StepSyntaxCanonicalOptions) createPipelineForKind(kind string, lifecycles *jenkinsfile.PipelineLifecycles, pipelines jenkinsfile.Pipelines, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig) (*syntax.ParsedPipeline, error) {
+func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycles *jenkinsfile.PipelineLifecycles, pipelines jenkinsfile.Pipelines, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig) (*syntax.ParsedPipeline, error) {
 	var parsed *syntax.ParsedPipeline
 	var err error
 
@@ -395,7 +395,7 @@ func (o *StepSyntaxCanonicalOptions) createPipelineForKind(kind string, lifecycl
 	return parsed, nil
 }
 
-func (o *StepSyntaxCanonicalOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
+func (o *StepSyntaxEffectiveOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
 	// add any custom env vars
 	envMap := make(map[string]corev1.EnvVar)
 	for _, e := range projectConfig.Env {
@@ -416,11 +416,11 @@ func (o *StepSyntaxCanonicalOptions) combineEnvVars(projectConfig *jenkinsfile.P
 	return nil
 }
 
-func (o *StepSyntaxCanonicalOptions) getWorkspaceDir() string {
+func (o *StepSyntaxEffectiveOptions) getWorkspaceDir() string {
 	return filepath.Join("/workspace", o.SourceName)
 }
 
-func (o *StepSyntaxCanonicalOptions) getDockerRegistry(projectConfig *config.ProjectConfig) string {
+func (o *StepSyntaxEffectiveOptions) getDockerRegistry(projectConfig *config.ProjectConfig) string {
 	dockerRegistry := o.DockerRegistry
 	if dockerRegistry == "" {
 		dockerRegistry = o.GetDockerRegistry(projectConfig)
@@ -428,7 +428,7 @@ func (o *StepSyntaxCanonicalOptions) getDockerRegistry(projectConfig *config.Pro
 	return dockerRegistry
 }
 
-func (o *StepSyntaxCanonicalOptions) loadProjectConfig(workingDir string) (*config.ProjectConfig, string, error) {
+func (o *StepSyntaxEffectiveOptions) loadProjectConfig(workingDir string) (*config.ProjectConfig, string, error) {
 	if o.Context != "" {
 		fileName := filepath.Join(workingDir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
 		exists, err := util.FileExists(fileName)

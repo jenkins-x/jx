@@ -818,14 +818,18 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "loop_step_with_name",
-			expected: ParsedPipeline(
-				PipelineEnvVar("LANGUAGE", "rust"),
-				PipelineAgent("some-image"),
-				PipelineStage("A Working Stage",
-					StageEnvVar("DISTRO", "gentoo"),
-					StageStep(
-						StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
-							LoopStep(StepName("echo-step"), StepCmd("echo"), StepArg("hello"), StepArg("${LANGUAGE}")),
+			expected: syntax_helpers_test.ParsedPipeline(
+				syntax_helpers_test.PipelineEnvVar("LANGUAGE", "rust"),
+				syntax_helpers_test.PipelineAgent("some-image"),
+				syntax_helpers_test.PipelineStage("A Working Stage",
+					syntax_helpers_test.StageEnvVar("DISTRO", "gentoo"),
+					syntax_helpers_test.StageStep(
+						syntax_helpers_test.StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
+							syntax_helpers_test.LoopStep(
+								syntax_helpers_test.StepName("echo-step"),
+								syntax_helpers_test.StepCmd("echo"),
+								syntax_helpers_test.StepArg("hello"),
+								syntax_helpers_test.StepArg("${LANGUAGE}")),
 						),
 					),
 				),
@@ -836,7 +840,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -851,8 +855,9 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "nodejs")),
 					)),
 			},
-			structure: PipelineStructure("somepipeline-1",
-				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
+				syntax_helpers_test.StructureStage("A Working Stage",
+					syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{

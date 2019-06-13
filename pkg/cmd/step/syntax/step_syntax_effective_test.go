@@ -9,14 +9,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/step/syntax"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/step/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	jxsyntax "github.com/jenkins-x/jx/pkg/tekton/syntax"
@@ -489,7 +489,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
 			}
 
-			createCanonical := &syntax.StepSyntaxCanonicalOptions{
+			createCanonical := &syntax.StepSyntaxEffectiveOptions{
 				Pack:         tt.pack,
 				DefaultImage: "maven",
 				KanikoImage:  "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6",
@@ -510,9 +510,9 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 					},
 				},
 			}
-			cmd_test_helpers.ConfigureTestOptionsWithResources(createCanonical.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
+			testhelpers.ConfigureTestOptionsWithResources(createCanonical.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
-			newConfig, err := createCanonical.CreateCanonicalPipeline(packsDir, projectConfig, projectConfigFile, resolver)
+			newConfig, err := createCanonical.CreateEffectivePipeline(packsDir, projectConfig, projectConfigFile, resolver)
 			if err != nil {
 				t.Fatalf("Error creating canonical pipeline: %s", err)
 			}

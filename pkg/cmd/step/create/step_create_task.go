@@ -397,7 +397,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, err
 	}
 
-	createCanonical := &syntaxstep.StepSyntaxCanonicalOptions{
+	createEffective := &syntaxstep.StepSyntaxEffectiveOptions{
 		Pack:              o.Pack,
 		BuildPackURL:      o.BuildPackURL,
 		BuildPackRef:      o.BuildPackRef,
@@ -416,11 +416,11 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		VersionResolver:   o.VersionResolver,
 	}
 	commonCopy := *o.CommonOptions
-	createCanonical.CommonOptions = &commonCopy
+	createEffective.CommonOptions = &commonCopy
 
-	updatedProjectConfig, err := createCanonical.CreateCanonicalPipeline(packsDir, projectConfig, projectConfigFile, resolver)
+	updatedProjectConfig, err := createEffective.CreateEffectivePipeline(packsDir, projectConfig, projectConfigFile, resolver)
 	if err != nil {
-		return nil, errors.Wrapf(err, "canonical pipeline creation failed")
+		return nil, errors.Wrapf(err, "effective pipeline creation failed")
 	}
 	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
 	// working with custom jenkins pipelines in custom jenkins servers
