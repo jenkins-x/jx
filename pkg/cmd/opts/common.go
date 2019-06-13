@@ -133,6 +133,7 @@ type CommonOptions struct {
 	kuber                  kube.Kuber
 	modifyDevEnvironmentFn ModifyDevEnvironmentFn
 	modifyEnvironmentFn    ModifyEnvironmentFn
+	NameServers            []string
 	resourcesInstaller     resources.Installer
 	systemVaultClient      vault.Client
 	tektonClient           tektonclient.Interface

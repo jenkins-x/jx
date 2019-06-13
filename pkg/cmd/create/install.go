@@ -703,8 +703,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "installing the Jenkins X Addons")
 	}
 
-	options.logAdminPassword()
-
 	// Jenkins needs to be configured already here if running in non GitOps mode
 	// in order to be able to create the environments
 	if !options.Flags.GitOpsMode {
@@ -755,6 +753,8 @@ func (options *InstallOptions) Run() error {
 	log.Logger().Infof("\nJenkins X installation completed successfully")
 
 	options.logAdminPassword()
+
+	options.logNameServers()
 
 	log.Logger().Infof("\nYour Kubernetes context is now set to the namespace: %s ", util.ColorInfo(ns))
 	log.Logger().Infof("To switch back to your original namespace use: %s", util.ColorInfo("jx namespace "+originalNs))
@@ -2851,6 +2851,20 @@ func (options *InstallOptions) logAdminPassword() {
 		log.Logger().Infof(astrix+"\n", fmt.Sprintf("Your admin password is in vault: %s", util.ColorInfo("eval `jx get vault-config` && vault kv get secret/admin/jenkins")))
 	} else {
 		log.Logger().Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	}
+}
+
+func (options *InstallOptions) logNameServers() {
+	output := `
+	********************************************************
+
+	    External DNS: %s
+
+	********************************************************
+	`
+	if options.InitOptions.Flags.ExternalDNS {
+		log.Logger().Infof(output, fmt.Sprintf("Please delegate %s via \n\tyour registrar onto the following name servers: \n\t\t%s",
+			util.ColorInfo(options.Flags.Domain), util.ColorInfo(strings.Join(options.CommonOptions.NameServers, "\n\t\t"))))
 	}
 }
 

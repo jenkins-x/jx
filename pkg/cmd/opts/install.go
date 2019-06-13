@@ -18,7 +18,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	gke_externalDNS "github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
+	"github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -1829,8 +1829,21 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 		return errors.Wrap(err, "failed to get project")
 	}
 
+	// Create managed zone for external dns if it doesn't exist
+	var nameServers = []string{}
+	err = gke.CreateManagedZone(googleProjectID, o.Domain)
+	if err != nil {
+		return errors.Wrap(err, "while trying to creating a CloudDNS managed zone for external-dns")
+	}
+	_, nameServers, err = gke.GetManagedZoneNameServers(googleProjectID, o.Domain)
+	if err != nil {
+		return errors.Wrap(err, "while trying to retrieve the managed zone name servers for external-dns")
+	}
+
+	o.NameServers = nameServers
+
 	var gcpServiceAccountSecretName string
-	gcpServiceAccountSecretName, err = gke_externalDNS.CreateExternalDNSGCPServiceAccount(client,
+	gcpServiceAccountSecretName, err = externaldns.CreateExternalDNSGCPServiceAccount(client,
 		kube.DefaultExternalDNSReleaseName, devNamespace, clusterName, googleProjectID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create service account for ExternalDNS")
