@@ -458,7 +458,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 }
 
 func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, force bool, file string) error {
-	log.Logger().Infof("Applying Helm hook %s YAML via kubectl in file: %s", helmHook, file)
+	log.Logger().Debugf("Applying Helm hook %s YAML via kubectl in file: %s", helmHook, file)
 
 	command := "apply"
 	if create {
@@ -483,7 +483,7 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 }
 
 func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
-	log.Logger().Infof("Deleting helm hook sources from file: %s", file)
+	log.Logger().Debugf("Deleting helm hook sources from file: %s", file)
 	return h.runKubectl("delete", "-f", file, "--namespace", ns, "--wait")
 }
 
@@ -1074,7 +1074,7 @@ func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDele
 		kind := hook.Kind
 		name := hook.Name
 		if kind == "Job" && name != "" {
-			log.Logger().Infof("Waiting for helm %s hook Job %s to complete before removing it", hookPhase, name)
+			log.Logger().Debugf("Waiting for helm %s hook Job %s to complete before removing it", hookPhase, name)
 			err := kube.WaitForJobToComplete(h.KubeClient, ns, name, time.Minute*30, false)
 			if err != nil {
 				log.Logger().Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway", name, hookPhase, err)

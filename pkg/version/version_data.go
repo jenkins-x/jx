@@ -100,7 +100,7 @@ func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (stri
 	}
 	version := data.Version
 	if version != "" {
-		log.Logger().Infof("using stable version %s from %s of %s from %s", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
+		log.Logger().Debugf("using stable version %s from %s of %s from %s", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
 	} else {
 		// lets not warn if building current dir chart
 		if kind == KindChart && name == "." {

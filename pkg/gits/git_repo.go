@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -74,7 +75,8 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 			repoOptions.ServerURL = server.URL
 		}
 	}
-	fmt.Fprintf(out, "Using Git provider %s\n", util.ColorInfo(server.Description()))
+
+	log.Logger().Infof("Using Git provider %s", util.ColorInfo(server.Description()))
 	url := server.URL
 
 	if userAuth == nil {
@@ -131,7 +133,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 	}
 
 	gitUsername := userAuth.Username
-	fmt.Fprintf(out, "\n\nAbout to create repository %s on server %s with user %s\n", util.ColorInfo(defaultRepoName), util.ColorInfo(url), util.ColorInfo(gitUsername))
+	log.Logger().Debugf("About to create repository %s on server %s with user %s", util.ColorInfo(defaultRepoName), util.ColorInfo(url), util.ColorInfo(gitUsername))
 
 	provider, err := CreateProvider(server, userAuth, git)
 	if err != nil {
@@ -153,7 +155,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 	}
 
 	fullName := git.RepoName(owner, repoName)
-	fmt.Fprintf(out, "\n\nCreating repository %s\n", util.ColorInfo(fullName))
+	log.Logger().Infof("Creating repository %s", util.ColorInfo(fullName))
 
 	return &CreateRepoData{
 		Organisation: owner,

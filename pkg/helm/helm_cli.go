@@ -122,7 +122,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 	}
 
 	if h.Debug {
-		log.Logger().Infof("Initialising Helm '%s'", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Debugf("Initialising Helm '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -372,7 +372,7 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 	}
 
 	if h.Debug {
-		log.Logger().Infof("Generating Chart Template '%s'", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Debugf("Generating Chart Template '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 	err := h.runHelm(args...)
 	if err != nil {

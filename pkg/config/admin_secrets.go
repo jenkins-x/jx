@@ -143,7 +143,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	}
 
 	if s.Flags.DefaultAdminPassword == "" {
-		log.Logger().Infof("No default password set, generating a random one")
+		log.Logger().Debugf("No default password set, generating a random one")
 
 		input := password.GeneratorInput{
 			Symbols: allowedSymbols,

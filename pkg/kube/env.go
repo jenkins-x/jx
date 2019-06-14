@@ -378,7 +378,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
-		fmt.Fprintf(out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		log.Logger().Infof("Git repository %s/%s already exists", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
@@ -404,9 +404,9 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "pushing environment master branch")
 		}
-		fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+		log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	} else {
-		fmt.Fprintf(out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		log.Logger().Infof("Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		if forkEnvGitURL != "" {
 			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
@@ -429,7 +429,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 							originalOrg, originalRepo, repoName, err)
 					}
 				}
-				fmt.Fprintf(out, "Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+				log.Logger().Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 				dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 				if err != nil {
@@ -503,7 +503,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "push forked environment git repository")
 			}
-			fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+			log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 	}
 	return repo, provider, nil
