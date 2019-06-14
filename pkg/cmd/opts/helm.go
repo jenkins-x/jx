@@ -462,47 +462,52 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 				gitconfig.RefSpec(remoteRefs),
 			},
 		})
-		if err != nil {
-			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
-		}
-		if versionRef != "" {
-			err = o.Git().Checkout(wrkDir, versionRef)
-		}
 
 		// The repository is up to date
 		if err == git.NoErrAlreadyUpToDate {
+			if versionRef != "" {
+				err = o.Git().Checkout(wrkDir, versionRef)
+				if err != nil {
+					return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+				}
+			}
 			return wrkDir, nil
 		} else if err != nil {
 			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
-		} else {
-			pullLatest := false
-			if o.BatchMode {
-				pullLatest = true
-			} else if o.AdvancedMode {
-				confirm := &survey.Confirm{
-					Message: "A local Jenkins X versions repository already exists, pull the latest?",
-					Default: true,
-				}
-				err = survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
-				if err != nil {
-					log.Logger().Errorf("Error confirming if we should pull latest, skipping %s", wrkDir)
-				}
-			} else {
-				pullLatest = true
-				log.Logger().Infof(util.QuestionAnswer("A local Jenkins X versions repository already exists, pulling the latest", util.YesNo(pullLatest)))
-			}
-
-			if pullLatest {
-				w, err := repo.Worktree()
-				if err == nil {
-					err := w.Pull(&git.PullOptions{RemoteName: "origin"})
-					if err != nil {
-						return "", errors.Wrap(err, "pulling the latest")
-					}
-				}
-			}
-			return wrkDir, err
 		}
+
+		pullLatest := false
+		if o.BatchMode {
+			pullLatest = true
+		} else if o.AdvancedMode {
+			confirm := &survey.Confirm{
+				Message: "A local Jenkins X versions repository already exists, pull the latest?",
+				Default: true,
+			}
+			err = survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
+			if err != nil {
+				log.Logger().Errorf("Error confirming if we should pull latest, skipping %s", wrkDir)
+			}
+		} else {
+			pullLatest = true
+			log.Logger().Infof(util.QuestionAnswer("A local Jenkins X versions repository already exists, pulling the latest", util.YesNo(pullLatest)))
+		}
+		if pullLatest {
+			w, err := repo.Worktree()
+			if err == nil {
+				err := w.Pull(&git.PullOptions{RemoteName: "origin"})
+				if err != nil {
+					return "", errors.Wrap(err, "pulling the latest")
+				}
+			}
+		}
+		if versionRef != "" {
+			err = o.Git().Checkout(wrkDir, versionRef)
+			if err != nil {
+				return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+			}
+		}
+		return wrkDir, err
 	} else {
 		return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 	}
