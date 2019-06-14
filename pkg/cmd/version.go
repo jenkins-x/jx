@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -166,7 +167,7 @@ func (o *VersionOptions) upgradeCli(newVersion semver.Version) error {
 	} else {
 		message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
 		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
-			options := &UpgradeCLIOptions{
+			options := &upgrade.UpgradeCLIOptions{
 				CreateOptions: create.CreateOptions{
 					CommonOptions: o.CommonOptions,
 				},

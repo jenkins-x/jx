@@ -1,8 +1,7 @@
-package cmd
+package update
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 
@@ -14,9 +13,9 @@ import (
 // UpdateClusterOptions the flags for running update cluster
 type UpdateClusterOptions struct {
 	UpdateOptions
-	InstallOptions create.InstallOptions
-	Flags          initcmd.InitFlags
-	Provider       string
+	InitOption initcmd.InitOptions
+	Flags      initcmd.InitFlags
+	Provider   string
 }
 
 type UpdateClusterFlags struct {
@@ -24,10 +23,7 @@ type UpdateClusterFlags struct {
 
 var (
 	updateClusterLong = templates.LongDesc(`
-		This command updates an existing Kubernetes cluster, it can be used to apply minor changes to a cluster / node pool
-
-		%s
-
+		This command updates an existing Kubernetes cluster, it can be used to apply minor changes to a cluster / node pool.
 `)
 
 	updateClusterExample = templates.Examples(`
@@ -45,7 +41,7 @@ func NewCmdUpdateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "cluster [kubernetes provider]",
 		Short:   "Updates an existing Kubernetes cluster",
-		Long:    fmt.Sprintf(updateClusterLong, create.ValidKubernetesProviders),
+		Long:    fmt.Sprintf(updateClusterLong),
 		Example: updateClusterExample,
 		Run: func(cmd2 *cobra.Command, args []string) {
 			options.Cmd = cmd2

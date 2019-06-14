@@ -1,4 +1,4 @@
-package cmd
+package upgrade
 
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/create"

@@ -34,6 +34,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/stop"
 	"github.com/jenkins-x/jx/pkg/cmd/sync"
 	"github.com/jenkins-x/jx/pkg/cmd/uninstall"
+	"github.com/jenkins-x/jx/pkg/cmd/update"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 
 	"io"
 	"os"
@@ -85,12 +87,12 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	deleteCommands := deletecmd.NewCmdDelete(commonOpts)
 	getCommands := get.NewCmdGet(commonOpts)
 	editCommands := edit.NewCmdEdit(commonOpts)
-	updateCommands := NewCmdUpdate(commonOpts)
+	updateCommands := update.NewCmdUpdate(commonOpts)
 
 	installCommands := []*cobra.Command{
 		create.NewCmdInstall(commonOpts),
 		uninstall.NewCmdUninstall(commonOpts),
-		NewCmdUpgrade(commonOpts),
+		upgrade.NewCmdUpgrade(commonOpts),
 	}
 	installCommands = append(installCommands, findCommands("cluster", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)

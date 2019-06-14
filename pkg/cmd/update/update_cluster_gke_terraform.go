@@ -1,4 +1,4 @@
-package cmd
+package update
 
 import (
 	"fmt"
@@ -84,7 +84,7 @@ func createUpdateClusterGKETerraformOptions(commonOpts *opts.CommonOptions, clou
 }
 
 func (o *UpdateClusterGKETerraformOptions) Run() error {
-	err := o.InstallRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.InstallRequirements(cloud.GKE, "terraform", o.InitOption.HelmBinary())
 	if err != nil {
 		return err
 	}
