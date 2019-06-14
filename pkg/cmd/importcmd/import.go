@@ -9,36 +9,30 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"sigs.k8s.io/yaml"
+	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/pkg/errors"
-
+	"github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	//_ "github.com/Azure/draft/pkg/linguist"
-	"time"
-
-	gitignore "github.com/denormal/go-gitignore"
-	"github.com/jenkins-x/jx/pkg/prow"
+	"sigs.k8s.io/yaml"
 )
 
 // CallbackFn callback function
@@ -1007,17 +1001,17 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryO
 	}
 
 	replacer := strings.NewReplacer(
-		opts.PlaceHolderAppName, strings.ToLower(options.AppName),
-		opts.PlaceHolderGitProvider, strings.ToLower(gitServerName),
-		opts.PlaceHolderOrg, strings.ToLower(options.Organisation),
-		opts.PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
+		util.PlaceHolderAppName, strings.ToLower(options.AppName),
+		util.PlaceHolderGitProvider, strings.ToLower(gitServerName),
+		util.PlaceHolderOrg, strings.ToLower(options.Organisation),
+		util.PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
 
 	pathsToRename := []string{} // Renaming must be done post-Walk
 	if err := filepath.Walk(options.Dir, func(f string, fi os.FileInfo, err error) error {
 		if skip, err := options.skipPathForReplacement(f, fi, ignore); skip {
 			return err
 		}
-		if strings.Contains(filepath.Base(f), opts.PlaceHolderPrefix) {
+		if strings.Contains(filepath.Base(f), util.PlaceHolderPrefix) {
 			// Prepend so children are renamed before their parents
 			pathsToRename = append([]string{f}, pathsToRename...)
 		}
@@ -1069,7 +1063,7 @@ func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
 	}
 
 	lines := string(input)
-	if strings.Contains(lines, opts.PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
+	if strings.Contains(lines, util.PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
 		output := replacer.Replace(lines)
 		err = ioutil.WriteFile(file, []byte(output), 0644)
 		if err != nil {

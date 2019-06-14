@@ -281,10 +281,14 @@ items:
               readOnly: true
           workingDir: /workspace/source
         - args:
-            - skaffold build -f skaffold.yaml
+            - --cache=true
+            - --cache-dir=/workspace
+            - --context=/workspace/source
+            - --dockerfile=/workspace/source/Dockerfile
+            - --destination=gcr.io/abayer/js-test-repo:${inputs.params.version}
+            - --cache-repo=gcr.io//cache
           command:
-            - /bin/sh
-            - -c
+            - /kaniko/executor
           env:
             - name: DOCKER_CONFIG
               value: /home/jenkins/.docker/
@@ -323,9 +327,11 @@ items:
               value: "true"
             - name: VERSION
               value: ${inputs.params.version}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /kaniko-secret/secret.json
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
-          image: jenkinsxio/builder-nodejs:0.1.235
+          image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
           name: build-container-build
           resources:
             requests:

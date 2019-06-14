@@ -31,6 +31,7 @@ func NewCmdStepSyntax(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.AddCommand(NewCmdStepSyntaxValidate(commonOpts))
 	cmd.AddCommand(NewCmdStepSyntaxSchema(commonOpts))
+	cmd.AddCommand(NewCmdStepSyntaxEffective(commonOpts))
 	return cmd
 }
 
