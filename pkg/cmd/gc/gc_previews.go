@@ -104,7 +104,7 @@ func (o *GCPreviewsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			prNum, _, err := gitProvider.GetPRNumFromBranchName(gitInfo.Organisation, gitInfo, e.Spec.PreviewGitSpec.Name)
+			prNum, err := gitProvider.GetPRNumFromBranchName(gitInfo.Organisation, gitInfo, e.Spec.PreviewGitSpec.Name)
 			if err != nil {
 				log.Logger().Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "")
 			}

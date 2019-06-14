@@ -267,7 +267,7 @@ func (o *PreviewOptions) Run() error {
 		o.PullRequestName = strconv.Itoa(prNum)
 
 		if err != nil {
-			log.Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
+			log.Logger().Warnf("Unable to convert PR %s to a number",  o.PullRequestName )
 		}
 
 		if prNum > 0 {
