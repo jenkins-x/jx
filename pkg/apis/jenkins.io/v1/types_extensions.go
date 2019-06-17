@@ -200,7 +200,7 @@ const (
 	OwnerReferenceGlobalParameterName string = "extOwnerReference"
 )
 
-func (e *ExtensionExecution) Execute(verbose bool) (err error) {
+func (e *ExtensionExecution) Execute() (err error) {
 	scriptFile, err := ioutil.TempFile("", fmt.Sprintf("%s-*", e.Name))
 	if err != nil {
 		return err
@@ -217,10 +217,8 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 	if err != nil {
 		return err
 	}
-	if verbose {
-		log.Logger().Infof("Environment Variables:\n %s\n", e.EnvironmentVariables)
-		log.Logger().Infof("Script:\n %s\n", e.Script)
-	}
+	log.Logger().Debugf("Environment Variables:\n %s", e.EnvironmentVariables)
+	log.Logger().Debugf("Script:\n %s", e.Script)
 	envVars := make(map[string]string, 0)
 	for _, v := range e.EnvironmentVariables {
 		envVars[v.Name] = v.Value

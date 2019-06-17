@@ -140,7 +140,7 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 			if err != nil {
 				return nil, err
 			}
-			log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
+			log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io", providerKey, id, found.Name)
 			return found, nil
 		}
 	}
@@ -175,8 +175,8 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 			}
 			found.Labels[providerKey] = id
 			log.Logger().Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
-				"emails match\n", found.Name, found.Spec.Email, id)
-			log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
+				"emails match", found.Name, found.Spec.Email, id)
+			log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io", providerKey, id, found.Name)
 			_, err := jxClient.JenkinsV1().Users(namespace).Update(found)
 			if err != nil {
 				return nil, err

@@ -151,7 +151,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		}
 
 		if batchMode {
-			log.Logger().Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", ic.Domain)
+			log.Logger().Infof("Running in batch mode and no domain flag used so defaulting to team domain %s", ic.Domain)
 			helmValues.ExposeController.Config.Domain = ic.Domain
 		} else {
 			q := &survey.Input{
@@ -262,7 +262,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		} else {
 			gitRepoOptions.Owner = gitRepoOptions.Username
 		}
-		log.Logger().Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(gitRepoOptions.Owner))
+		log.Logger().Infof("Using %s environment git owner in batch mode.", util.ColorInfo(gitRepoOptions.Owner))
 	}
 	_, gitProvider, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, in, out, errOut)
 	return gitProvider, err
@@ -514,7 +514,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 func GetDevEnvGitOwner(jxClient versioned.Interface) (string, error) {
 	adminDevEnv, err := GetDevEnvironment(jxClient, "jx")
 	if err != nil {
-		log.Logger().Errorf("Error loading team settings. %v\n", err)
+		log.Logger().Errorf("Error loading team settings. %v", err)
 		return "", err
 	}
 	if adminDevEnv != nil {
@@ -537,7 +537,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		return err
 	}
 	if !exists {
-		log.Logger().Warnf("WARNING: Could not find a Makefile in %s\n", dir)
+		log.Logger().Warnf("WARNING: Could not find a Makefile in %s", dir)
 		return nil
 	}
 	input, err := ioutil.ReadFile(file)

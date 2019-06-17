@@ -78,7 +78,7 @@ func LazyCreateRegistry(kube kubernetes.Interface, namespace string, region stri
 		repoName = orgName + "/" + appName
 	}
 	repoName = strings.ToLower(repoName)
-	log.Logger().Infof("Let's ensure that we have an ECR repository for the Docker image %s\n", util.ColorInfo(repoName))
+	log.Logger().Infof("Let's ensure that we have an ECR repository for the Docker image %s", util.ColorInfo(repoName))
 	if region == "" {
 		region = GetRegionFromContainerRegistryHost(kube, namespace, dockerRegistry)
 	}
@@ -98,7 +98,7 @@ func LazyCreateRegistry(kube kubernetes.Interface, namespace string, region stri
 	}
 	for _, repo := range result.Repositories {
 		name := repo.String()
-		log.Logger().Infof("Found repository: %s\n", name)
+		log.Logger().Infof("Found repository: %s", name)
 		if name == repoName {
 			return nil
 		}
@@ -118,7 +118,7 @@ func LazyCreateRegistry(kube kubernetes.Interface, namespace string, region stri
 				log.Logger().Warnf("Created ECR repository (%s) doesn't match registry configured for team (%s)",
 					util.ColorInfo(*u), util.ColorInfo(dockerRegistry))
 			} else {
-				log.Logger().Infof("Created ECR repository: %s\n", util.ColorInfo(*u))
+				log.Logger().Infof("Created ECR repository: %s", util.ColorInfo(*u))
 			}
 		}
 	}

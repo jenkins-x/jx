@@ -269,7 +269,7 @@ func EnsureNamespaceCreated(kubeClient kubernetes.Interface, name string, labels
 	if err != nil {
 		return fmt.Errorf("Failed to create Namespace %s %s", name, err)
 	} else {
-		log.Logger().Infof("Namespace %s created \n ", name)
+		log.Logger().Infof("Namespace %s created ", name)
 	}
 	return err
 }

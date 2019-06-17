@@ -95,7 +95,8 @@ type Timeout struct {
 	Unit TimeoutUnit `json:"unit,omitempty"`
 }
 
-func (t Timeout) toDuration() (*metav1.Duration, error) {
+// ToDuration generates a duration struct from a Timeout
+func (t *Timeout) ToDuration() (*metav1.Duration, error) {
 	durationStr := ""
 	// TODO: Populate a default timeout unit, most likely seconds.
 	if t.Unit != "" {
@@ -1443,10 +1444,13 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 
 		steps = append(steps, *c)
 	} else if step.Loop != nil {
-		for _, v := range step.Loop.Values {
+		for i, v := range step.Loop.Values {
 			loopEnv := scopedEnv([]corev1.EnvVar{{Name: step.Loop.Variable, Value: v}}, env)
 
 			for _, s := range step.Loop.Steps {
+				if s.Name != "" {
+					s.Name = s.Name + strconv.Itoa(1+i)
+				}
 				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, sourceDir, baseWorkingDir, loopEnv, parentContainer, podTemplates, stepCounter)
 				if loopErr != nil {
 					return nil, nil, loopCounter, loopErr

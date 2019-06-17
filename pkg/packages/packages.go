@@ -148,11 +148,11 @@ func InstalledPackagesFile() (string, error) {
 
 // DownloadFile downloads binary content of given URL into local filesystem.
 func DownloadFile(clientURL string, fullPath string) error {
-	log.Logger().Infof("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
+	log.Logger().Infof("Downloading %s to %s...", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
 	err := util.DownloadFile(fullPath, clientURL)
 	if err != nil {
 		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
 	}
-	log.Logger().Infof("Downloaded %s\n", util.ColorInfo(fullPath))
+	log.Logger().Infof("Downloaded %s", util.ColorInfo(fullPath))
 	return nil
 }

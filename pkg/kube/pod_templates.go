@@ -56,7 +56,7 @@ func LoadPodTemplates(kubeClient kubernetes.Interface, ns string) (map[string]*c
 			}
 		}
 		if !found {
-			log.Logger().Warnf("ConfigMap %s does not contain a pod key\n", cm.Name)
+			log.Logger().Warnf("ConfigMap %s does not contain a pod key", cm.Name)
 		}
 	}
 	return answer, nil

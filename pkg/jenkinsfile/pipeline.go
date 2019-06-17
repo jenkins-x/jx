@@ -6,13 +6,17 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/yaml"
 )
 
@@ -53,6 +57,10 @@ var (
 
 	// CreateStepModes the step creation modes
 	CreateStepModes = []string{CreateStepModePre, CreateStepModePost, CreateStepModeReplace}
+
+	ipAddressRegistryRegex = regexp.MustCompile(`\d+\.\d+\.\d+\.\d+.\d+(:\d+)?`)
+
+	commandIsSkaffoldRegex = regexp.MustCompile(`export VERSION=.*? && skaffold build.*`)
 )
 
 // Pipelines contains all the different kinds of pipeline for different branches
@@ -127,6 +135,27 @@ type CreateJenkinsfileArguments struct {
 	OutputFile          string
 	JenkinsfileRunner   bool
 	ClearContainerNames bool
+}
+
+// +k8s:deepcopy-gen=false
+
+// CreatePipelineArguments contains the arguments to translate a build pack into a pipeline
+type CreatePipelineArguments struct {
+	Lifecycles        *PipelineLifecycles
+	PodTemplates      map[string]*corev1.Pod
+	CustomImage       string
+	DefaultImage      string
+	WorkspaceDir      string
+	GitHost           string
+	GitName           string
+	GitOrg            string
+	ProjectID         string
+	DockerRegistry    string
+	DockerRegistryOrg string
+	KanikoImage       string
+	UseKaniko         bool
+	NoReleasePrepare  bool
+	StepCounter       int
 }
 
 // Validate validates all the arguments are set correctly
@@ -761,4 +790,208 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 		return errors.Wrapf(err, "failed to write file %s", outFile)
 	}
 	return nil
+}
+
+// CreatePipelineSteps translates a step into one or more steps that can be used in jenkins-x.yml pipeline syntax.
+func (c *PipelineConfig) CreatePipelineSteps(step *syntax.Step, prefixPath string, args CreatePipelineArguments) ([]syntax.Step, int) {
+	steps := []syntax.Step{}
+
+	containerName := c.Agent.GetImage()
+
+	if step.GetImage() != "" {
+		containerName = step.GetImage()
+	}
+
+	dir := args.WorkspaceDir
+
+	if step.Dir != "" {
+		dir = step.Dir
+	}
+	// Replace the Go buildpack path with the correct location for Tekton builds.
+	dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", args.WorkspaceDir, -1)
+
+	dir = strings.Replace(dir, util.PlaceHolderAppName, args.GitName, -1)
+	dir = strings.Replace(dir, util.PlaceHolderOrg, args.GitOrg, -1)
+	dir = strings.Replace(dir, util.PlaceHolderGitProvider, args.GitHost, -1)
+	dir = strings.Replace(dir, util.PlaceHolderDockerRegistryOrg, strings.ToLower(args.DockerRegistryOrg), -1)
+
+	if strings.HasPrefix(dir, "./") {
+		dir = args.WorkspaceDir + strings.TrimPrefix(dir, ".")
+	}
+	if !filepath.IsAbs(dir) {
+		dir = filepath.Join(args.WorkspaceDir, dir)
+	}
+
+	if step.GetCommand() != "" {
+		if containerName == "" {
+			containerName = args.DefaultImage
+			log.Logger().Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s", containerName)
+		}
+
+		s := syntax.Step{}
+		args.StepCounter++
+		prefix := prefixPath
+		if prefix != "" {
+			prefix += "-"
+		}
+		stepName := step.Name
+		if stepName == "" {
+			stepName = "step" + strconv.Itoa(1+args.StepCounter)
+		}
+		s.Name = prefix + stepName
+		s.Command = replaceCommandText(step)
+		if args.CustomImage != "" {
+			s.Image = args.CustomImage
+		} else {
+			s.Image = containerName
+		}
+
+		s.Dir = dir
+
+		modifyStep := c.modifyStep(s, dir, args.DockerRegistry, args.DockerRegistryOrg, args.GitName, args.ProjectID, args.KanikoImage, args.UseKaniko)
+
+		steps = append(steps, modifyStep)
+	} else if step.Loop != nil {
+		// Just copy in the loop step without altering it.
+		// TODO: We don't get magic around image resolution etc, but we avoid naming collisions that result otherwise.
+		steps = append(steps, *step)
+	}
+	for _, s := range step.Steps {
+		// TODO add child prefix?
+		childPrefixPath := prefixPath
+		args.WorkspaceDir = dir
+		nestedSteps, nestedCounter := c.CreatePipelineSteps(s, childPrefixPath, args)
+		args.StepCounter = nestedCounter
+		steps = append(steps, nestedSteps...)
+	}
+	return steps, args.StepCounter
+}
+
+// replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
+// and replace any use of the VERSION file with using the VERSION env var
+func replaceCommandText(step *syntax.Step) string {
+	answer := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
+
+	// lets replace the old way of setting versions
+	answer = strings.Replace(answer, "export VERSION=`cat VERSION` && ", "", 1)
+	answer = strings.Replace(answer, "export VERSION=$PREVIEW_VERSION && ", "", 1)
+
+	for _, text := range []string{"$(cat VERSION)", "$(cat ../VERSION)", "$(cat ../../VERSION)"} {
+		answer = strings.Replace(answer, text, "${VERSION}", -1)
+	}
+	return answer
+}
+
+// modifyStep allows a container step to be modified to do something different
+func (c *PipelineConfig) modifyStep(parsedStep syntax.Step, workspaceDir, dockerRegistry, dockerRegistryOrg, appName, projectID, kanikoImage string, useKaniko bool) syntax.Step {
+	if useKaniko {
+		if strings.HasPrefix(parsedStep.GetCommand(), "skaffold build") ||
+			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) ||
+			commandIsSkaffoldRegex.MatchString(parsedStep.GetCommand()) {
+
+			sourceDir := workspaceDir
+			dockerfile := filepath.Join(sourceDir, "Dockerfile")
+			localRepo := dockerRegistry
+			destination := dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
+
+			args := []string{"--cache=true", "--cache-dir=/workspace",
+				"--context=" + sourceDir,
+				"--dockerfile=" + dockerfile,
+				"--destination=" + destination + ":${inputs.params.version}",
+				"--cache-repo=" + localRepo + "/" + projectID + "/cache",
+			}
+			if localRepo != "gcr.io" {
+				args = append(args, "--skip-tls-verify-registry="+localRepo)
+			}
+
+			if ipAddressRegistryRegex.MatchString(localRepo) {
+				args = append(args, "--insecure")
+			}
+
+			parsedStep.Command = "/kaniko/executor"
+			parsedStep.Arguments = args
+
+			parsedStep.Image = kanikoImage
+		}
+	}
+	return parsedStep
+}
+
+// CreateStageForBuildPack generates the Task for a build pack
+func (c *PipelineConfig) CreateStageForBuildPack(args CreatePipelineArguments) (*syntax.Stage, int, error) {
+	if args.Lifecycles == nil {
+		return nil, args.StepCounter, errors.New("generatePipeline: no lifecycles")
+	}
+
+	// lets generate the pipeline using the build packs
+	container := c.Agent.GetImage()
+	if args.CustomImage != "" {
+		container = args.CustomImage
+	}
+	if container == "" {
+		container = args.DefaultImage
+	}
+
+	steps := []syntax.Step{}
+	for _, n := range args.Lifecycles.All() {
+		l := n.Lifecycle
+		if l == nil {
+			continue
+		}
+		if !args.NoReleasePrepare && n.Name == "setversion" {
+			continue
+		}
+
+		for _, s := range l.Steps {
+			newSteps, newCounter := c.CreatePipelineSteps(s, n.Name, args)
+			args.StepCounter = newCounter
+			steps = append(steps, newSteps...)
+		}
+	}
+
+	stage := &syntax.Stage{
+		Name: syntax.DefaultStageNameForBuildPack,
+		Agent: &syntax.Agent{
+			Image: container,
+		},
+		Steps: steps,
+	}
+
+	return stage, args.StepCounter, nil
+}
+
+// CreatePipelineForBuildPack translates a set of lifecycles into a full pipeline.
+func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments) (*syntax.ParsedPipeline, int, error) {
+	stage, newCounter, err := c.CreateStageForBuildPack(args)
+	if err != nil {
+		return nil, args.StepCounter, errors.Wrapf(err, "Failed to generate stage from build pack")
+	}
+
+	parsed := &syntax.ParsedPipeline{
+		Stages: []syntax.Stage{*stage},
+	}
+
+	// If agent.container is specified, use that for default container configuration for step images.
+	containerName := c.Agent.GetImage()
+	if containerName != "" {
+		if args.PodTemplates != nil && args.PodTemplates[containerName] != nil {
+			podTemplate := args.PodTemplates[containerName]
+			container := podTemplate.Spec.Containers[0]
+			if !equality.Semantic.DeepEqual(container, corev1.Container{}) {
+				container.Name = ""
+				container.Command = nil
+				container.Args = nil
+				container.Image = ""
+				container.WorkingDir = ""
+				container.Stdin = false
+				container.TTY = false
+				if parsed.Options == nil {
+					parsed.Options = &syntax.RootOptions{}
+				}
+				parsed.Options.ContainerOptions = &container
+			}
+		}
+	}
+
+	return parsed, newCounter, nil
 }

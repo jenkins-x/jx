@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"sort"
@@ -217,4 +218,9 @@ func YesNo(t bool) string {
 		return "Yes"
 	}
 	return "No"
+}
+
+// QuestionAnswer returns strings like Cobra question/answers for default cli options
+func QuestionAnswer(question string, answer string) string {
+	return fmt.Sprintf("%s %s: %s", ColorBold(ColorInfo("?")), ColorBold(question), ColorAnswer(answer))
 }

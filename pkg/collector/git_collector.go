@@ -103,7 +103,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 	}
 	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for path %s", outputPath))
 	if err != nil {
-		fmt.Println(err)
+		log.Logger().Errorf("%s", err)
 		return urls, err
 	}
 	err = gitClient.Push(ghPagesDir)
@@ -161,7 +161,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 func (c *GitCollector) generateURL(storageOrg string, storageRepoName string, rPath string) string {
 	// TODO only supporting github for now!!!
 	url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", storageOrg, storageRepoName, c.gitBranch, rPath)
-	log.Logger().Infof("Publishing %s\n", util.ColorInfo(url))
+	log.Logger().Infof("Publishing %s", util.ColorInfo(url))
 	return url
 }
 
@@ -177,7 +177,7 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter, br
 	if err != nil {
 		log.Logger().Infof("error doing shallow clone of branch %s: %v", branchName, err)
 		// swallow the error
-		log.Logger().Infof("No existing %s branch so creating it\n", branchName)
+		log.Logger().Infof("No existing %s branch so creating it", branchName)
 		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
 		err = gitClient.Clone(sourceURL, ghPagesDir)
 		if err != nil {

@@ -100,14 +100,14 @@ func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (stri
 	}
 	version := data.Version
 	if version != "" {
-		log.Logger().Infof("using stable version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
+		log.Logger().Infof("using stable version %s from %s of %s from %s", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
 	} else {
 		// lets not warn if building current dir chart
 		if kind == KindChart && name == "." {
 			return version, err
 		}
-		log.Logger().Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/\n", string(kind), name, wrkDir)
-		log.Logger().Infof("Please lock this version down via the command: %s\n", util.ColorInfo(fmt.Sprintf("jx step create version pr -k %s -n %s\n", string(kind), name)))
+		log.Logger().Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/", string(kind), name, wrkDir)
+		log.Logger().Infof("Please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k %s -n %s", string(kind), name)))
 	}
 	return version, err
 }

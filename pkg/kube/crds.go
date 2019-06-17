@@ -621,7 +621,7 @@ func getOpenAPISchema(defName string) (*v1beta1.JSONSchemaProps, error) {
 	refCallBack := func(path string) spec.Ref {
 		ref, err := jsonreference.New(path)
 		if err != nil {
-			log.Logger().Warnf("Error resolving ref %s %v\n", path, err)
+			log.Logger().Warnf("Error resolving ref %s %v", path, err)
 		}
 		return spec.Ref{
 			Ref: ref,
@@ -707,7 +707,7 @@ func register(apiClient apiextensionsclientset.Interface, name string, crd *v1be
 				old.Spec = crd.Spec
 				_, err = crdResources.Update(old)
 				if err != nil {
-					log.Logger().Infof("Error doing update to %s %v\n%v\n", old.Name, err, old.Spec)
+					log.Logger().Infof("Error doing update to %s %v\n%v", old.Name, err, old.Spec)
 				}
 				return err
 			}

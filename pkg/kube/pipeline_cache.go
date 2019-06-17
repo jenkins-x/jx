@@ -101,7 +101,7 @@ func (c *PipelineNamespaceCache) ForEach(callback func(*v1.PipelineActivity)) {
 func (c *PipelineNamespaceCache) onPipelineObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	pipeline, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Logger().Warnf("Object is not a PipelineActivity %#v\n", obj)
+		log.Logger().Warnf("Object is not a PipelineActivity %#v", obj)
 		return
 	}
 	if pipeline != nil {
@@ -112,7 +112,7 @@ func (c *PipelineNamespaceCache) onPipelineObj(obj interface{}, jxClient version
 func (c *PipelineNamespaceCache) onPipelineDelete(obj interface{}, jxClient versioned.Interface, ns string) {
 	pipeline, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Logger().Warnf("Object is not a PipelineActivity %#v\n", obj)
+		log.Logger().Warnf("Object is not a PipelineActivity %#v", obj)
 		return
 	}
 	if pipeline != nil {

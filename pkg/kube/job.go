@@ -70,7 +70,7 @@ func WaitForJobToComplete(client kubernetes.Interface, namespace, jobName string
 		complete := completionTime != nil && !completionTime.IsZero()
 		if complete && verbose {
 			data, _ := yaml.Marshal(job)
-			log.Logger().Infof("Job %s is complete: %s\n", jobName, string(data))
+			log.Logger().Infof("Job %s is complete: %s", jobName, string(data))
 		}
 		return complete, nil
 	}

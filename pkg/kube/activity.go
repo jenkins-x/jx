@@ -226,7 +226,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
 		err := createSourceRepositoryIfMissing(jxClient, ns, k)
 		if err != nil {
-			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
+			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s", err.Error())
 		}
 	}
 
@@ -356,11 +356,11 @@ func (k *PipelineActivityKey) addBatchBuildData(activitiesClient typev1.Pipeline
 			if i.Spec.Build != "" && selectedPipeline.Spec.Build != "" {
 				ib, err := strconv.Atoi(i.Spec.Build)
 				if err != nil {
-					fmt.Println(err)
+					log.Logger().Errorf("%s", err)
 				}
 				cb, err := strconv.Atoi(selectedPipeline.Spec.Build)
 				if err != nil {
-					fmt.Println(err)
+					log.Logger().Errorf("%s", err)
 				}
 				if ib > cb {
 					selectedPipeline = i

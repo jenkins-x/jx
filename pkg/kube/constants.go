@@ -68,6 +68,8 @@ const (
 	DefaultVaultOperatorReleaseName = "vault-operator"
 
 	//ChartExternalDNS the default chart for external-dns
+	ChartOwnerExternalDNS         = "bitnami"
+	ChartURLExternalDNS           = "https://charts.bitnami.com/bitnami"
 	ChartExternalDNS              = "bitnami/external-dns"
 	DefaultExternalDNSReleaseName = "external-dns"
 	DefaultExternalDNSTag         = "1.5.2"

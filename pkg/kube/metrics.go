@@ -81,7 +81,7 @@ func (q *HeapterConfig) GetPodMetrics(ns string, pod string, selector string, me
 	if end != "" {
 		params["end"] = end
 	}
-	log.Logger().Infof("Querying %s using query parameters: %#v\n", path, params)
+	log.Logger().Infof("Querying %s using query parameters: %#v", path, params)
 	resp := kubeClient.CoreV1().Services(heapsterNamespace).ProxyGet(heapsterScheme, heapsterService, heapsterPort, path, params)
 	return resp.DoRaw()
 }

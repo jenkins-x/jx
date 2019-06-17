@@ -86,3 +86,7 @@ func TestYesNo(t *testing.T) {
 	assert.Equal(t, "Yes", util.YesNo(true), "Yes boolean conversion")
 	assert.Equal(t, "No", util.YesNo(false), "No boolean conversion")
 }
+
+func TestQuestionAnswer(t *testing.T) {
+	assert.Equal(t, "? This is a question: and answer", util.QuestionAnswer("This is a question", "and answer"))
+}

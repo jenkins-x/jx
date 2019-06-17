@@ -129,7 +129,7 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		log.Logger().Infof("Installing plugin %s version %s for command %s from %s\n", util.ColorInfo(plugin.Spec.Name),
+		log.Logger().Infof("Installing plugin %s version %s for command %s from %s", util.ColorInfo(plugin.Spec.Name),
 			util.ColorInfo(plugin.Spec.Version), util.ColorInfo(fmt.Sprintf("jx %s", plugin.Spec.SubCommand)), util.ColorInfo(u))
 
 		// Look for other versions to cleanup
@@ -142,14 +142,14 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 			if strings.HasPrefix(f.Name(), plugin.Name) {
 				err = os.Remove(filepath.Join(pluginBinDir, f.Name()))
 				if err != nil {
-					log.Logger().Warnf("Unable to delete old version of plugin %s installed at %s because %v\n", plugin.Name, f.Name(), err)
+					log.Logger().Warnf("Unable to delete old version of plugin %s installed at %s because %v", plugin.Name, f.Name(), err)
 				} else {
 					deleted = append(deleted, strings.TrimPrefix(f.Name(), fmt.Sprintf("%s-", plugin.Name)))
 				}
 			}
 		}
 		if len(deleted) > 0 {
-			log.Logger().Infof("Deleted old plugin versions: %v\n", util.ColorInfo(deleted))
+			log.Logger().Infof("Deleted old plugin versions: %v", util.ColorInfo(deleted))
 		}
 
 		var httpClient = &http.Client{
@@ -165,7 +165,7 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 		defer func() {
 			err := os.RemoveAll(tmpDir)
 			if err != nil {
-				log.Logger().Errorf("Error cleaning up tmpdir %s because %v\n", tmpDir, err)
+				log.Logger().Errorf("Error cleaning up tmpdir %s because %v", tmpDir, err)
 			}
 		}()
 		if err != nil {
@@ -239,15 +239,15 @@ func ValidatePlugins(jxClient jenkinsv1client.Interface, ns string) error {
 	}
 	for subCommand, ps := range seenSubCommands {
 		if len(ps) > 1 {
-			log.Logger().Warnf("More than one extension has installed a plugin which will be called for jx %s. These extensions are:\n", util.ColorWarning(subCommand))
+			log.Logger().Warnf("More than one extension has installed a plugin which will be called for jx %s. These extensions are:", util.ColorWarning(subCommand))
 			for _, p := range ps {
 				for _, o := range p.ObjectMeta.OwnerReferences {
 					if o.Kind == "Extension" {
-						log.Logger().Warnf("  %s\n", util.ColorWarning(o.Name))
+						log.Logger().Warnf("  %s", util.ColorWarning(o.Name))
 					}
 				}
 			}
-			log.Logger().Warnf("\nUnpredictable behavior will occur. Contact the extension authors and ask them to resolve the conflict.\n")
+			log.Logger().Warnf("\nUnpredictable behavior will occur. Contact the extension authors and ask them to resolve the conflict.")
 		}
 
 	}

@@ -15,6 +15,8 @@ import (
 
 const (
 	gkeServiceAccountSecretKey = "service-account.json"
+	//DefaultVaultAbbreviation is vault service accounts suffix
+	DefaultVaultAbbreviation = "vt"
 )
 
 var (
@@ -59,7 +61,7 @@ func CreateKmsConfig(vaultName, clusterName, projectId string) (*KmsConfig, erro
 // CreateGCPServiceAccount creates a service account in GCP for the vault service
 func CreateVaultGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespace, clusterName, projectID string) (string, error) {
 
-	gcpServiceAccountSecretName, error := gke.CreateGCPServiceAccount(kubeClient, vaultName, namespace, clusterName, projectID, ServiceAccountRoles, gkeServiceAccountSecretKey)
+	gcpServiceAccountSecretName, error := gke.CreateGCPServiceAccount(kubeClient, vaultName, DefaultVaultAbbreviation, namespace, clusterName, projectID, ServiceAccountRoles, gkeServiceAccountSecretKey)
 
 	if error != nil {
 		return "", errors.Wrap(error, "creating the Vault GCP Service Account")
@@ -79,7 +81,7 @@ func CreateBucket(vaultName, clusterName, projectID, zone string, recreate bool,
 			return bucketName, nil
 		}
 		if batchMode {
-			log.Logger().Warnf("We are deleting the Vault bucket %s so that Vault will install cleanly\n", bucketName)
+			log.Logger().Warnf("We are deleting the Vault bucket %s so that Vault will install cleanly", bucketName)
 		} else {
 			if !util.Confirm(fmt.Sprintf("We are about to delete bucket %q, so we can install a clean Vault. Are you sure: ", bucketName),
 				true, "We recommend you delete the Vault bucket on install to ensure Vault starts up reliably", in, out, outErr) {

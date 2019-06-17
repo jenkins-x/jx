@@ -84,7 +84,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 	commitish string, pullRequest string) error {
 	var err error
 	if verbose {
-		log.Logger().Infof("cloning repository %s to dir %s\n", gitURL, dir)
+		log.Logger().Infof("cloning repository %s to dir %s", gitURL, dir)
 	}
 	if remoteName == "" {
 		remoteName = "origin"

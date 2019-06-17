@@ -82,6 +82,6 @@ func VersionStringDefault(defaultValue string) string {
 	if err == nil {
 		return v.String()
 	}
-	log.Logger().Warnf("Warning failed to load version: %s\n", err)
+	log.Logger().Warnf("Warning failed to load version: %s", err)
 	return defaultValue
 }
