@@ -2,14 +2,15 @@ package importcmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/edit"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"github.com/jenkins-x/jx/pkg/cmd/start"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/edit"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
+	"github.com/jenkins-x/jx/pkg/cmd/start"
 
 	"github.com/cenkalti/backoff"
 	"github.com/denormal/go-gitignore"
@@ -1378,7 +1379,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 		CommonOptions: o.CommonOptions,
 	}
 	log.Logger().Info("Getting latest packs ...")
-	dir, _, err := initOpts.InitBuildPacks()
+	dir, _, err := initOpts.InitBuildPacks(nil)
 	if err != nil {
 		return nil, err
 	}

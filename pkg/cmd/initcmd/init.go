@@ -251,7 +251,7 @@ func (o *InitOptions) Run() error {
 	}
 
 	// draft init
-	_, _, err = o.InitBuildPacks()
+	_, _, err = o.InitBuildPacks(nil)
 	if err != nil {
 		log.Logger().Fatalf("initialise build packs failed: %v", err)
 		return err
