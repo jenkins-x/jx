@@ -17,7 +17,9 @@ for org_repo in "${ORG_REPOS[@]}"; do
   git add -N .
   git diff --exit-code
   if [ $? -ne 0 ]; then
-    jx create pullrequest -b --push=true --body="upgrade $org_repo client to jx $VERSION" --title="upgrade to jx $VERSION" --label="updatebot"
+    set -x
+    jx create pullrequest -b --push=true --fork=true --body "upgrade $org_repo client to jx $VERSION" --title "upgrade to jx $VERSION" --label="updatebot"
+    set +x
   else
     echo "No changes to generated code"
   fi

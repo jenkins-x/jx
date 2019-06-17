@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"sort"
@@ -209,4 +210,17 @@ func RemoveStringFromSlice(strings []string, toRemove string) []string {
 		}
 	}
 	return strings
+}
+
+// YesNo returns a Yes/No conversion for a boolean parameter
+func YesNo(t bool) string {
+	if t {
+		return "Yes"
+	}
+	return "No"
+}
+
+// QuestionAnswer returns strings like Cobra question/answers for default cli options
+func QuestionAnswer(question string, answer string) string {
+	return fmt.Sprintf("%s %s: %s", ColorBold(ColorInfo("?")), ColorBold(question), ColorAnswer(answer))
 }

@@ -9,8 +9,6 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  backoffLimit: {{ .Values.backoffLimit }}
-  activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
   selector:
     matchLabels:
       app: {{ template "jx.name" . }}

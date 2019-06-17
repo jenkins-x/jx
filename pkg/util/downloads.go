@@ -89,7 +89,7 @@ func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) 
 	version, err = getLatestReleaseFromGithubUsingHttpRedirect(githubOwner, githubRepo)
 
 	if version == "" || err != nil {
-		log.Warnf("getting latest release using HTTP redirect (%v) - using API instead", err)
+		log.Logger().Warnf("getting latest release using HTTP redirect (%v) - using API instead", err)
 		version, err = getLatestReleaseFromGithubUsingApi(githubOwner, githubRepo)
 	}
 
@@ -252,23 +252,7 @@ func UnTargz(tarball, target string, onlyFiles []string) error {
 		}
 
 		path := filepath.Join(target, path.Base(header.Name))
-		info := header.FileInfo()
-		if info.IsDir() {
-			if err = os.MkdirAll(path, info.Mode()); err != nil {
-				return err
-			}
-			continue
-		}
-
-		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		_, err = io.Copy(file, tarReader)
-		if err != nil {
-			return err
-		}
+		UnTarFile(header, path, tarReader)
 	}
 	return nil
 }
@@ -299,23 +283,26 @@ func UnTargzAll(tarball, target string) error {
 		}
 
 		path := filepath.Join(target, header.Name)
-		info := header.FileInfo()
-		if info.IsDir() {
-			if err = os.MkdirAll(path, info.Mode()); err != nil {
-				return err
-			}
-			continue
-		}
-
-		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		_, err = io.Copy(file, tarReader)
-		if err != nil {
-			return err
-		}
+		UnTarFile(header, path, tarReader)
 	}
 	return nil
+}
+
+// UnTarFile extracts one file from the tar, or creates a directory
+func UnTarFile(header *tar.Header, path string, tarReader *tar.Reader) error {
+	info := header.FileInfo()
+	if info.IsDir() {
+		if err := os.MkdirAll(path, info.Mode()); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = io.Copy(file, tarReader)
+	return err
 }

@@ -1,7 +1,0 @@
-items:
-- appName: <NAME_PLACEHOLDER>
-  chartRepository: http://chartmuseum.jenkins-x.io
-  description: My test chart description
-  namespace: jx
-  status: DEPLOYED
-  version: 0.0.1

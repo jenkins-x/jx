@@ -13,12 +13,13 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
+	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
-	"io/ioutil"
 )
 
 // GitOpsOptions is the options used for Git Operations for apps
@@ -47,7 +48,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
 	}
-	log.Infof("Added app via Pull Request %s\n", info.PullRequest.URL)
+	log.Logger().Infof("Added app via Pull Request %s", info.PullRequest.URL)
 	return nil
 }
 
@@ -136,7 +137,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 					return err
 				}
 			} else {
-				log.Warnf("Not removing %s for %s because it is not a directory", info.Name(), app)
+				log.Logger().Warnf("Not removing %s for %s because it is not a directory", info.Name(), app)
 			}
 		}
 		return nil
@@ -158,7 +159,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 	if err != nil {
 		return err
 	}
-	log.Infof("Delete app via Pull Request %s\n", info.PullRequest.URL)
+	log.Logger().Infof("Delete app via Pull Request %s", info.PullRequest.URL)
 	return nil
 }
 

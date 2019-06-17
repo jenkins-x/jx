@@ -14,6 +14,15 @@ pipelineConfig:
                 value: http://jenkins-x-athens-proxy
               - name: PATH
                 value: "/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/workspace/go/bin"
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 3
+                    memory: 6Gi
+                  requests:
+                    cpu: 2
+                    memory: 2Gi
             steps:
               - name: mkdir
                 image: busybox

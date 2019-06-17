@@ -75,7 +75,7 @@ func Unshallow(dir string, gitter Gitter) error {
 		if err := gitter.FetchTags(dir); err != nil {
 			return err
 		}
-		log.Infof("Converted %s to an unshallow repository\n", dir)
+		log.Logger().Infof("Converted %s to an unshallow repository", dir)
 		return nil
 	}
 	return nil
@@ -107,22 +107,22 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 				return errors.Wrapf(err, "updating remote %s", remote)
 			}
 			if verbose {
-				log.Infof("ran %s in %s\n", util.ColorInfo("git remote update"), dir)
+				log.Logger().Infof("ran %s in %s", util.ColorInfo("git remote update"), dir)
 			}
 		}
 		if verbose {
-			log.Infof("ran git fetch %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
+			log.Logger().Infof("ran git fetch %s %s in %s", remote, strings.Join(refspecs, " "), dir)
 		}
 		err = Unshallow(dir, gitter)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		if verbose {
-			log.Infof("Unshallowed git repo in %s\n", dir)
+			log.Logger().Infof("Unshallowed git repo in %s", dir)
 		}
 	} else {
 		if verbose {
-			log.Infof("ran git fetch --unshallow %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
+			log.Logger().Infof("ran git fetch --unshallow %s %s in %s", remote, strings.Join(refspecs, " "), dir)
 		}
 	}
 	branches, err := gitter.LocalBranches(dir)
@@ -148,7 +148,7 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 		return errors.Wrapf(err, "checking out %s", baseBranch)
 	}
 	if verbose {
-		log.Infof("ran git checkout %s in %s\n", baseBranch, dir)
+		log.Logger().Infof("ran git checkout %s in %s", baseBranch, dir)
 	}
 	// Ensure we are on the right revision
 	err = gitter.ResetHard(dir, baseSha)
@@ -156,14 +156,14 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 		return errors.Wrapf(err, "resetting %s to %s", baseBranch, baseSha)
 	}
 	if verbose {
-		log.Infof("ran git reset --hard %s in %s\n", baseSha, dir)
+		log.Logger().Infof("ran git reset --hard %s in %s", baseSha, dir)
 	}
 	err = gitter.CleanForce(dir, ".")
 	if err != nil {
 		return errors.Wrapf(err, "cleaning up the git repo")
 	}
 	if verbose {
-		log.Infof("ran clean --force -d . in %s\n", dir)
+		log.Logger().Infof("ran clean --force -d . in %s", dir)
 	}
 	// Now do the merges
 	for _, sha := range SHAs {
@@ -172,7 +172,7 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 			return errors.Wrapf(err, "merging %s into master", sha)
 		}
 		if verbose {
-			log.Infof("ran git merge %s in %s\n", sha, dir)
+			log.Logger().Infof("ran git merge %s in %s", sha, dir)
 		}
 	}
 	return nil
@@ -192,7 +192,7 @@ func GitProviderURL(text string) string {
 	}
 	u, err := url.Parse(text)
 	if err != nil {
-		log.Warnf("failed to parse git provider URL %s: %s\n", text, err.Error())
+		log.Logger().Warnf("failed to parse git provider URL %s: %s", text, err.Error())
 		return text
 	}
 	u.Path = ""
@@ -220,7 +220,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 			return nil, errors.WithStack(err)
 		}
 		if !changed {
-			log.Warnf("No changes made to the source code in %s. Code must be up to date!", dir)
+			log.Logger().Warnf("No changes made to the source code in %s. Code must be up to date!", dir)
 			return nil, nil
 		}
 		err = gitter.CommitDir(dir, prDetails.Message)
@@ -263,16 +263,16 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 
 	pr, err := provider.CreatePullRequest(gha)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrapf(err, "creating pull request with arguments %v", gha.String())
 	}
-	log.Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
+	log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	if autoMerge {
 		number := *pr.Number
 		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, []string{labelUpdatebot})
 		if err != nil {
 			return nil, err
 		}
-		log.Infof("Added label %s to Pull Request %s", util.ColorInfo(labelUpdatebot), pr.URL)
+		log.Logger().Infof("Added label %s to Pull Request %s", util.ColorInfo(labelUpdatebot), pr.URL)
 	}
 	return &PullRequestInfo{
 		GitProvider:          provider,
@@ -298,7 +298,7 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 	originalRepo := gitInfo.Name
 
 	if provider == nil {
-		log.Warnf("No GitProvider specified!\n")
+		log.Logger().Warnf("No GitProvider specified!")
 		debug.PrintStack()
 	} else {
 		userDetails = provider.UserAuth()
@@ -327,7 +327,7 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 			if err != nil {
 				return "", "", nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 			}
-			log.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+			log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
 		}
 
 		// lets only use this repository if it is a fork
@@ -491,4 +491,9 @@ func computeBranchName(baseRef string, branchName string, dir string, gitter Git
 		validBranchName += "-" + branchNameUUID.String()
 	}
 	return validBranchName, nil
+}
+
+//IsUnadvertisedObjectError returns true if the reason for the error is that the request was for an object that is unadvertised (i.e. doesn't exist)
+func IsUnadvertisedObjectError(err error) bool {
+	return strings.Contains(err.Error(), "Server does not allow request for unadvertised object")
 }

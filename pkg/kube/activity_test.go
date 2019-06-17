@@ -1,6 +1,8 @@
 package kube_test
 
 import (
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"strconv"
 	"testing"
 	"time"
@@ -10,11 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 	k8s_v1 "k8s.io/api/core/v1"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +25,7 @@ import (
 func TestGenerateBuildNumber(t *testing.T) {
 	commonOpts := opts.NewCommonOptionsWithFactory(clients.NewFactory())
 	options := &commonOpts
-	cmd.ConfigureTestOptions(options, options.Git(), options.Helm())
+	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()
 	assert.NoError(t, err, "Creating JX client")
@@ -196,6 +197,252 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, promote.Status, "promote status")
 
 	//tests.Debugf("Has Promote %#v\n", promote)
+}
+
+func TestCreateOrUpdateActivityForBatchBuild(t *testing.T) {
+	t.Parallel()
+
+	nsObj := &k8s_v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jx-testing",
+			Namespace: "testing_ns",
+		},
+	}
+
+	jxClient := jxfake.NewSimpleClientset()
+
+	const (
+		expectedName         = "demo-2"
+		expectedBuild        = "2"
+		expectedOrganisation = "test-org"
+	)
+	expectedPipeline := expectedOrganisation + "/" + expectedName + "/master"
+
+	key := kube.PipelineActivityKey{
+		Name:     expectedName,
+		Pipeline: expectedPipeline,
+		Build:    expectedBuild,
+		GitInfo: &gits.GitRepository{
+			Name:         expectedName,
+			Organisation: expectedOrganisation,
+			URL:          "https://github.com/" + expectedOrganisation + "/" + expectedName,
+		},
+		PullRefs: map[string]string{
+			"1": "sha1",
+			"2": "sha2",
+		},
+	}
+
+	_, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Create(&v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "PA0",
+			Labels: map[string]string{
+				"lastCommitSha": "sha1",
+				"branch":        "PR-1",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build: "1",
+		},
+	})
+	assert.NoError(t, err)
+
+	// lets create a build PA for the same PR but with a different SHA so we can check we discard it later
+	_, err = jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Create(&v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "PA0-2",
+			Labels: map[string]string{
+				"lastCommitSha": "sha3",
+				"branch":        "PR-1",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build: "5",
+		},
+	})
+	assert.NoError(t, err)
+
+	//lets create a few "builds" for PR-2 with the same SHA so we can check if we choose the right one
+	for i := 1; i < 4; i++ {
+		_, err = jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Create(&v1.PipelineActivity{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("PA%d", i),
+				Labels: map[string]string{
+					"lastCommitSha": "sha2",
+					"branch":        "PR-2",
+				},
+			},
+			Spec: v1.PipelineActivitySpec{
+				Build: strconv.Itoa(i),
+			},
+		})
+		assert.NoError(t, err)
+	}
+
+	a, _, err := key.GetOrCreate(jxClient, nsObj.Namespace)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedName, a.Name)
+	spec := &a.Spec
+	assert.Equal(t, expectedPipeline, spec.Pipeline)
+	assert.Equal(t, expectedBuild, spec.Build)
+
+	pa1, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Get("PA0", metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	pa3, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Get("PA3", metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	assert.Len(t, a.Spec.BatchPipelineActivity.ComprisingPulLRequests, 2, "There should be %d PRs information in the ComprisingPullRequests property", 2)
+	exists := false
+	for _, i := range a.Spec.BatchPipelineActivity.ComprisingPulLRequests {
+		if i.PullRequestNumber == "PR-1" {
+			assert.NotEqual(t, "5", i.LastBuildNumberForCommit)
+		}
+		if i.PullRequestNumber == "PR-2" {
+			exists = true
+			assert.Equal(t, "3", i.LastBuildNumberForCommit)
+		}
+	}
+	assert.True(t, exists, "There should be a Pull Request called PR-2 within the ComprisingPullRequests property")
+	assert.Equal(t, expectedBuild, pa1.Spec.BatchPipelineActivity.BatchBuildNumber, "The batch build number that is going to merge this PR should be %s", expectedBuild)
+	assert.Equal(t, expectedBuild, pa3.Spec.BatchPipelineActivity.BatchBuildNumber, "The batch build number that is going to merge this PR should be %s", expectedBuild)
+}
+
+func TestCreateOrUpdatePRActivityWithLastCommitSHA(t *testing.T) {
+	t.Parallel()
+
+	nsObj := &k8s_v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jx-testing",
+			Namespace: "testing_ns",
+		},
+	}
+
+	jxClient := jxfake.NewSimpleClientset()
+
+	const (
+		expectedName         = "demo-2"
+		expectedBuild        = "2"
+		expectedOrganisation = "test-org"
+	)
+	expectedPipeline := expectedOrganisation + "/" + expectedName + "/master"
+
+	key := kube.PipelineActivityKey{
+		Name:     expectedName,
+		Pipeline: expectedPipeline,
+		Build:    expectedBuild,
+		GitInfo: &gits.GitRepository{
+			Name:         expectedName,
+			Organisation: expectedOrganisation,
+			URL:          "https://github.com/" + expectedOrganisation + "/" + expectedName,
+		},
+		PullRefs: map[string]string{
+			"1": "sha1",
+		},
+	}
+
+	a, _, err := key.GetOrCreate(jxClient, nsObj.Namespace)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedName, a.Name)
+	spec := &a.Spec
+	assert.Equal(t, expectedPipeline, spec.Pipeline)
+	assert.Equal(t, expectedBuild, spec.Build)
+
+	assert.Equal(t, "sha1", a.ObjectMeta.Labels[v1.LabelLastCommitSha])
+}
+
+func TestBatchReconciliationWithTwoPRBuildExecutions(t *testing.T) {
+	t.Parallel()
+
+	nsObj := &k8s_v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jx-testing",
+			Namespace: "testing_ns",
+		},
+	}
+
+	jxClient := jxfake.NewSimpleClientset()
+
+	const (
+		expectedName         = "demo-2"
+		expectedBuild        = "2"
+		expectedOrganisation = "test-org"
+		expectedBatchBuild   = "1"
+	)
+
+	prPAName := fmt.Sprintf("%s-%s-pr1-1", expectedOrganisation, expectedName)
+	pr1PA := &v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: prPAName,
+			Labels: map[string]string{
+				v1.LabelBranch:           "PR-1",
+				v1.LabelLastCommitSha:    "sha1",
+				v1.LabelBuild:            "1",
+				v1.LabelSourceRepository: fmt.Sprintf("%s-%s", expectedOrganisation, expectedName),
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build: "1",
+			BatchPipelineActivity: v1.BatchPipelineActivity{
+				BatchBuildNumber: expectedBatchBuild,
+			},
+		},
+	}
+
+	_, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Create(pr1PA)
+	assert.NoError(t, err)
+
+	batchPAName := fmt.Sprintf("%s-%s-batch-1", expectedOrganisation, expectedName)
+	batchPA := &v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: batchPAName,
+			Labels: map[string]string{
+				v1.LabelBranch:           "batch",
+				v1.LabelLastCommitSha:    "testSha",
+				v1.LabelBuild:            expectedBatchBuild,
+				v1.LabelSourceRepository: fmt.Sprintf("%s-%s", expectedOrganisation, expectedName),
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build: expectedBatchBuild,
+			BatchPipelineActivity: v1.BatchPipelineActivity{
+				ComprisingPulLRequests: []v1.PullRequestInfo{
+					{PullRequestNumber: "PR-1", LastBuildNumberForCommit: "1"},
+				},
+			},
+		},
+	}
+
+	_, err = jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Create(batchPA)
+	assert.NoError(t, err)
+
+	expectedPipeline := expectedOrganisation + "/" + expectedName + "/PR-1"
+	key := kube.PipelineActivityKey{
+		Name:     expectedName,
+		Pipeline: expectedPipeline,
+		Build:    expectedBuild,
+		GitInfo: &gits.GitRepository{
+			Name:         expectedName,
+			Organisation: expectedOrganisation,
+			URL:          "https://github.com/" + expectedOrganisation + "/" + expectedName,
+		},
+		PullRefs: map[string]string{
+			expectedBuild: "sha1",
+		},
+	}
+
+	a, _, err := key.GetOrCreate(jxClient, nsObj.Namespace)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedBatchBuild, a.Spec.BatchPipelineActivity.BatchBuildNumber, "The batch build in the BatchPipeline of the PR should be 1")
+
+	o := metav1.GetOptions{}
+	batchPA, err = jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Get(batchPAName, o)
+	assert.Equal(t, expectedBuild, batchPA.Spec.BatchPipelineActivity.ComprisingPulLRequests[0].LastBuildNumberForCommit, "The build number for the comprising PR should be 2")
+
+	pr1PA, err = jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Get(prPAName, o)
+	assert.Empty(t, pr1PA.Spec.BatchPipelineActivity.BatchBuildNumber, "The batch build number for the second PR should be empty")
+
+	assert.Equal(t, expectedBatchBuild, a.Spec.BatchPipelineActivity.BatchBuildNumber, "The batch build number for the second execution of the PR should be 1")
 }
 
 func TestCreatePipelineDetails(t *testing.T) {

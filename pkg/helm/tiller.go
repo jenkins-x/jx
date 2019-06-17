@@ -37,7 +37,7 @@ func StartLocalTiller(lazy bool) error {
 	}
 	err = util.RunCommandBackground("tiller", f, !lazy, args...)
 	if err == nil {
-		log.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
+		log.Logger().Infof("running tiller locally and logging to file: %s", util.ColorInfo(logFile))
 	} else if lazy {
 		// lets assume its because the process is already running so lets ignore
 		return nil
@@ -47,7 +47,7 @@ func StartLocalTiller(lazy bool) error {
 
 // RestartLocalTiller resttarts locall tiller
 func RestartLocalTiller() error {
-	log.Info("checking if we need to kill a local tiller process\n")
+	log.Logger().Info("checking if we need to kill a local tiller process")
 	util.KillProcesses("tiller")
 	return StartLocalTiller(false)
 }

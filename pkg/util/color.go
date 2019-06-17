@@ -22,6 +22,14 @@ var ColorWarning = color.New(color.FgYellow).SprintFunc()
 // given arguments with fmt.Sprint().
 var ColorError = color.New(color.FgRed).SprintFunc()
 
+// ColorBold returns a new function that returns bold-colorized (bold) strings for the
+// given arguments with fmt.Sprint().
+var ColorBold = color.New(color.Bold).SprintFunc()
+
+// ColorAnswer returns a new function that returns answer-colorized (cyan) strings for the
+// given arguments with fmt.Sprint().
+var ColorAnswer = color.New(color.FgCyan).SprintFunc()
+
 var colorMap = map[string]color.Attribute{
 	// formatting
 	"bold":         color.Bold,

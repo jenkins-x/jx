@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/test-infra/prow/config"
-	"time"
 )
 
 // CreateTide creates a default Tide Config object
@@ -51,7 +52,7 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'application' tide config, adding...\n")
+			log.Logger().Infof("Failed to find 'application' tide config, adding...")
 			t.Queries = append(t.Queries, createApplicationTideQuery())
 		}
 	case Environment, RemoteEnvironment:
@@ -68,7 +69,7 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'environment' tide config, adding...\n")
+			log.Logger().Infof("Failed to find 'environment' tide config, adding...")
 			t.Queries = append(t.Queries, createEnvironmentTideQuery())
 		}
 	case Protection:
@@ -92,7 +93,7 @@ func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'application' tide config, adding...\n")
+			log.Logger().Infof("Failed to find 'application' tide config, adding...")
 		}
 	case Environment, RemoteEnvironment:
 		found := false
@@ -104,7 +105,7 @@ func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'environment' tide config, adding...\n")
+			log.Logger().Infof("Failed to find 'environment' tide config, adding...")
 		}
 	case Protection:
 		// No Tide config needed for Protection

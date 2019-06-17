@@ -175,6 +175,9 @@ func GetServiceURL(svc *v1.Service) string {
 				if ing.IP != "" {
 					return scheme + "://" + ing.IP + "/"
 				}
+				if ing.Hostname != "" {
+					return scheme + "://" + ing.Hostname + "/"
+				}
 			}
 		}
 	}

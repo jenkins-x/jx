@@ -481,7 +481,7 @@ func generate(d string, outputPackage string, relativePackage string, outputBase
 		if requirementVersion, ok := moduleRequirement[path]; !ok {
 			util.AppLogger().Warnf("unable to find module requirement version for %s (module %s), "+
 				"please add it to your go.mod, "+
-				"for now using HEAD of the master branch", pkg, moduleName)
+				"for now using HEAD of the master branch", path, moduleName)
 		} else {
 			dependencyVersion = requirementVersion
 		}

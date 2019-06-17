@@ -3,9 +3,8 @@ package tests
 import (
 	"bytes"
 	"strings"
-	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 	"github.com/acarl005/stripansi"
 	"github.com/hinshun/vt10x"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,7 @@ import (
 // ConsoleWrapper is a wrapper around the go-expect Console that takes a test object and will report failures
 // This prevents users having to manually detect and report errors during the tests
 type ConsoleWrapper struct {
-	tester  *testing.T
+	tester  assert.TestingT
 	console *expect.Console
 	state   *vt10x.State
 	terminal.Stdio
@@ -65,9 +64,16 @@ func (c *ConsoleWrapper) ExpectEOF() {
 	assert.NoError(c.tester, err, "Expected EOF. Got %q", stripansi.Strip(out))
 }
 
-// Close closes the console
-func (c *ConsoleWrapper) Close() error {
-	return c.console.Tty().Close()
+// Close closes the console input
+func (c *ConsoleWrapper) Close() {
+	err := c.console.Tty().Close()
+	assert.NoError(c.tester, err)
+}
+
+// Cleanup closes all resources the console was using
+func (c *ConsoleWrapper) Cleanup() {
+	err := c.console.Close()
+	assert.NoError(c.tester, err)
 }
 
 // CurrentState gets the last line of text currently on the console

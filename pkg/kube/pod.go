@@ -245,8 +245,18 @@ func GetContainersWithStatusAndIsInit(pod *v1.Pod) ([]v1.Container, []v1.Contain
 		isInit = false
 		// Add the non-init containers, and trim off the no-op container at the end of the list.
 		allContainers = append(allContainers, containers[:len(containers)-1]...)
-		statuses = append(statuses, pod.Status.ContainerStatuses[:len(containers)-1]...)
+		// Since status ordering is unpredictable, don't trim here - we'll be sorting/filtering below anyway.
+		statuses = append(statuses, pod.Status.ContainerStatuses...)
 	}
 
-	return allContainers, statuses, isInit
+	var sortedStatuses []v1.ContainerStatus
+	for _, c := range allContainers {
+		for _, cs := range statuses {
+			if cs.Name == c.Name {
+				sortedStatuses = append(sortedStatuses, cs)
+				break
+			}
+		}
+	}
+	return allContainers, sortedStatuses, isInit
 }

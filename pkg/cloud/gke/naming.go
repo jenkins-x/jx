@@ -8,8 +8,8 @@ func BucketName(serviceName string) string {
 }
 
 // ServiceAccountName creates a service account name for a given service and cluster name
-func ServiceAccountName(serviceName string) string {
-	return generateName(serviceName, "sa")
+func ServiceAccountName(clusterName, serviceAbbreviation string) string {
+	return generateName(clusterName, serviceAbbreviation)
 }
 
 // KeyringName creates a keyring name for a given service and cluster name

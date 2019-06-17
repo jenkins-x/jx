@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/client/openapi/all"
+	openapi "github.com/jenkins-x/jx/pkg/client/openapi/all"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-openapi/pkg/common"
@@ -19,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/cenkalti/backoff"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
@@ -621,7 +621,7 @@ func getOpenAPISchema(defName string) (*v1beta1.JSONSchemaProps, error) {
 	refCallBack := func(path string) spec.Ref {
 		ref, err := jsonreference.New(path)
 		if err != nil {
-			log.Warnf("Error resolving ref %s %v\n", path, err)
+			log.Logger().Warnf("Error resolving ref %s %v", path, err)
 		}
 		return spec.Ref{
 			Ref: ref,
@@ -707,7 +707,7 @@ func register(apiClient apiextensionsclientset.Interface, name string, crd *v1be
 				old.Spec = crd.Spec
 				_, err = crdResources.Update(old)
 				if err != nil {
-					log.Infof("Error doing update to %s %v\n%v\n", old.Name, err, old.Spec)
+					log.Logger().Infof("Error doing update to %s %v\n%v", old.Name, err, old.Spec)
 				}
 				return err
 			}
@@ -715,6 +715,9 @@ func register(apiClient apiextensionsclientset.Interface, name string, crd *v1be
 		}
 
 		_, err = crdResources.Create(crd)
+		if err != nil {
+			log.Logger().Infof("Error creating %s: %v", crd.Name, err)
+		}
 		return err
 	}
 

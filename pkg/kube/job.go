@@ -2,9 +2,10 @@ package kube
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
-	"time"
 
 	"context"
 
@@ -69,7 +70,7 @@ func WaitForJobToComplete(client kubernetes.Interface, namespace, jobName string
 		complete := completionTime != nil && !completionTime.IsZero()
 		if complete && verbose {
 			data, _ := yaml.Marshal(job)
-			log.Infof("Job %s is complete: %s\n", jobName, string(data))
+			log.Logger().Infof("Job %s is complete: %s", jobName, string(data))
 		}
 		return complete, nil
 	}

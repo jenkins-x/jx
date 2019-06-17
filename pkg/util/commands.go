@@ -22,6 +22,7 @@ type Command struct {
 	Timeout            time.Duration
 	Out                io.Writer
 	Err                io.Writer
+	In                 io.Reader
 	Env                map[string]string
 }
 
@@ -218,6 +219,10 @@ func (c *Command) run() (string, error) {
 
 	if c.Err != nil {
 		e.Stderr = c.Err
+	}
+
+	if c.In != nil {
+		e.Stdin = c.In
 	}
 
 	var text string

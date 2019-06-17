@@ -177,7 +177,7 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 	}
 
 	if IsOwnerGitHubUser(owner, p.Username) {
-		log.Infof("Owner of repo is same as username, using GitHub API for Users")
+		log.Logger().Infof("Owner of repo is same as username, using GitHub API for Users")
 		return p.ListRepositoriesForUser(p.Username)
 	}
 
@@ -323,7 +323,7 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 			owner = p.Username
 		}
 		if strings.Contains(err.Error(), "try again later") {
-			log.Warnf("Waiting for the fork of %s/%s to appear...\n", owner, name)
+			log.Logger().Warnf("Waiting for the fork of %s/%s to appear...", owner, name)
 			// lets wait for the fork to occur...
 			start := time.Now()
 			deadline := start.Add(time.Minute)
@@ -367,7 +367,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	}
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
 	if err != nil {
-		log.Warnf("Querying webhooks on %s/%s: %s\n", owner, repo, err)
+		log.Logger().Warnf("Querying webhooks on %s/%s: %s", owner, repo, err)
 	}
 	for _, hook := range hooks {
 		c := hook.Config["url"]
@@ -385,7 +385,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 					return errors.Wrapf(err, "failed to remove old webhook on %s/%s with ID %v with old secret", owner, repo, id)
 				}
 			} else {
-				log.Warnf("Already has a webhook registered for %s\n", webhookUrl)
+				log.Logger().Warnf("Already has a webhook registered for %s", webhookUrl)
 				return nil
 			}
 		}
@@ -403,7 +403,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Events: []string{"*"},
 	}
 
-	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
+	log.Logger().Infof("Creating GitHub webhook for %s/%s for url %s", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
 	return err
 }
@@ -455,7 +455,7 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 	}
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
 	if err != nil {
-		log.Warnf("Querying webhooks on %s/%s: %s\n", owner, repo, err)
+		log.Logger().Warnf("Querying webhooks on %s/%s: %s", owner, repo, err)
 	}
 
 	dataId := data.ID
@@ -464,7 +464,7 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 			c := hook.Config["url"]
 			s, ok := c.(string)
 			if ok && s == data.ExistingURL {
-				log.Warnf("Found existing webhook for url %s\n", data.ExistingURL)
+				log.Logger().Warnf("Found existing webhook for url %s", data.ExistingURL)
 				dataId = hook.GetID()
 			}
 		}
@@ -486,10 +486,10 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 			Events: []string{"*"},
 		}
 
-		log.Infof("Updating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
+		log.Logger().Infof("Updating GitHub webhook for %s/%s for url %s", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 		_, _, err = p.Client.Repositories.EditHook(p.Context, owner, repo, dataId, hook)
 	} else {
-		log.Warn("No webhooks found to update")
+		log.Logger().Warn("No webhooks found to update")
 	}
 	return err
 }
@@ -719,7 +719,7 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 				}
 
 				if summary.Author.Email == "" {
-					log.Info("Commit author email is empty for: " + commit.GetSHA() + "\n")
+					log.Logger().Infof("Commit author email is empty for: %s", commit.GetSHA())
 					dir, err := os.Getwd()
 					if err != nil {
 						return answer, err
@@ -728,10 +728,10 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 					if err != nil {
 						return answer, err
 					}
-					log.Info("Looking for commits in: " + gitDir + "\n")
+					log.Logger().Infof("Looking for commits in: %s", gitDir)
 					email, err := p.Git.GetAuthorEmailForCommit(gitDir, commit.GetSHA())
 					if err != nil {
-						log.Warn("Commit not found: " + commit.GetSHA() + "\n")
+						log.Logger().Warnf("Commit not found: %s", commit.GetSHA())
 						continue
 					}
 					summary.Author.Email = email
@@ -739,10 +739,10 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 
 				answer = append(answer, summary)
 			} else {
-				log.Warn("No author for commit: " + commit.GetSHA() + "\n")
+				log.Logger().Warnf("No author for commit: %s", commit.GetSHA())
 			}
 		} else {
-			log.Warn("No Commit object for for commit: " + commit.GetSHA() + "\n")
+			log.Logger().Warnf("No Commit object for for commit: %s", commit.GetSHA())
 		}
 	}
 	return answer, nil
@@ -970,11 +970,12 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	if release.TagName == nil && releaseInfo.TagName != "" {
 		release.TagName = &releaseInfo.TagName
 	}
-	if release.Body == nil && releaseInfo.Body != "" {
+	if (release.Body == nil || *release.Body == "") && releaseInfo.Body != "" {
 		release.Body = &releaseInfo.Body
 	}
+
 	if r != nil && r.StatusCode == 404 {
-		log.Warnf("No release found for %s/%s and tag %s so creating a new release\n", owner, repo, tag)
+		log.Logger().Warnf("No release found for %s/%s and tag %s so creating a new release", owner, repo, tag)
 		_, _, err = p.Client.Repositories.CreateRelease(p.Context, owner, repo, release)
 		return err
 	}
@@ -1198,7 +1199,7 @@ func (p *GitHubProvider) UserAuth() auth.UserAuth {
 func (p *GitHubProvider) UserInfo(username string) *GitUser {
 	user, _, err := p.Client.Users.Get(p.Context, username)
 	if user == nil || err != nil {
-		log.Error("Unable to fetch user info for " + username + "\n")
+		log.Logger().Errorf("Unable to fetch user info for %s", username)
 		return nil
 	}
 
@@ -1212,7 +1213,7 @@ func (p *GitHubProvider) UserInfo(username string) *GitUser {
 }
 
 func (p *GitHubProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user: %v as a collaborator.\n", user)
+	log.Logger().Infof("Automatically adding the pipeline user: %v as a collaborator.", user)
 	_, err := p.Client.Repositories.AddCollaborator(p.Context, organisation, repo, user, &github.RepositoryAddCollaboratorOptions{})
 	if err != nil {
 		return err
@@ -1225,7 +1226,7 @@ func (p *GitHubProvider) ListInvitations() ([]*github.RepositoryInvitation, *git
 }
 
 func (p *GitHubProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically accepted invitation: %v for the pipeline user.\n", ID)
+	log.Logger().Infof("Automatically accepted invitation: %v for the pipeline user.", ID)
 	return p.Client.Users.AcceptInvitation(p.Context, ID)
 }
 
@@ -1278,7 +1279,7 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 	}
 	githubCommits, _, err := p.Client.Repositories.ListCommits(p.Context, owner, repo, githubOpt)
 	if err != nil {
-		fmt.Println(err)
+		log.Logger().Errorf("%s", err)
 		return nil, fmt.Errorf("Could not find commits for repository %s/%s", owner, repo)
 	}
 	var commits []*GitCommit

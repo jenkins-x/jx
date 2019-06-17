@@ -217,7 +217,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitHub, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				console := utiltests.NewTerminal(t)
+				console := utiltests.NewTerminal(t, nil)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
@@ -227,9 +227,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitHub)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
+
 			},
 			"GitHub",
 			gits.KindGitHub,
@@ -244,7 +245,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 			false,
 		},
-		{"create GitHub provider in barch mode ",
+		{"create GitHub provider in batch mode ",
 			nil,
 			nil,
 			"GitHub",
@@ -262,13 +263,13 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		},
 		{"create GitHub provider in interactive mode",
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				assert.NotNil(t, c, "console should not be nil")
 				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					c.ExpectString("github.com user name:")
+					c.ExpectString("github.com username:")
 					c.SendLine("test")
 					c.ExpectString("API Token:")
 					c.SendLine("test")
@@ -277,9 +278,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"GitHub",
 			gits.KindGitHub,
@@ -330,7 +331,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitlab, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
@@ -340,9 +341,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitlab)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitlab",
 			gits.KindGitlab,
@@ -357,7 +358,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 			false,
 		},
-		{"create Gitlab provider in barch mode ",
+		{"create Gitlab provider in batch mode ",
 			nil,
 			nil,
 			"Gitlab",
@@ -375,13 +376,13 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		},
 		{"create Gitlab provider in interactive mode",
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				assert.NotNil(t, c, "console should not be nil")
 				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					c.ExpectString("gitlab.com user name:")
+					c.ExpectString("gitlab.com username:")
 					c.SendLine("test")
 					c.ExpectString("API Token:")
 					c.SendLine("test")
@@ -390,9 +391,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitlab",
 			gits.KindGitlab,
@@ -443,7 +444,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitea, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
@@ -453,9 +454,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitea)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitea",
 			gits.KindGitea,
@@ -470,7 +471,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 			false,
 		},
-		{"create Gitea provider in barch mode ",
+		{"create Gitea provider in batch mode ",
 			nil,
 			nil,
 			"Gitea",
@@ -488,13 +489,13 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		},
 		{"create Gitea provider in interactive mode",
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				assert.NotNil(t, c, "console should not be nil")
 				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					c.ExpectString("gitea.com user name:")
+					c.ExpectString("gitea.com username:")
 					c.SendLine("test")
 					c.ExpectString("API Token:")
 					c.SendLine("test")
@@ -503,9 +504,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"Gitea",
 			gits.KindGitea,
@@ -556,7 +557,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindBitBucketServer, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
@@ -566,9 +567,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindBitBucketServer)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"BitbucketServer",
 			gits.KindBitBucketServer,
@@ -583,7 +584,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 			false,
 		},
-		{"create BitbucketServer provider in barch mode ",
+		{"create BitbucketServer provider in batch mode ",
 			nil,
 			nil,
 			"BitbucketServer",
@@ -601,13 +602,13 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		},
 		{"create BitbucketServer provider in interactive mode",
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				assert.NotNil(t, c, "console should not be nil")
 				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					c.ExpectString("bitbucket-server.com user name:")
+					c.ExpectString("bitbucket-server.com username:")
 					c.SendLine("test")
 					c.ExpectString("API Token:")
 					c.SendLine("test")
@@ -616,8 +617,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
+				c.Cleanup()
 				<-donech
 			},
 			"BitbucketServer",
@@ -669,7 +670,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindBitBucketCloud, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
@@ -679,9 +680,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindBitBucketCloud)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,
@@ -696,7 +697,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 			false,
 		},
-		{"create BitbucketCloud provider in barch mode ",
+		{"create BitbucketCloud provider in batch mode ",
 			nil,
 			nil,
 			"BitbucketCloud",
@@ -714,13 +715,13 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		},
 		{"create BitbucketCloud provider in interactive mode",
 			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
-				c := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t, nil)
 				assert.NotNil(t, c, "console should not be nil")
 				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					c.ExpectString("bitbucket.org user name:")
+					c.ExpectString("bitbucket.org username:")
 					c.SendLine("test")
 					c.ExpectString("API Token:")
 					c.SendLine("test")
@@ -729,9 +730,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				return c, donech
 			},
 			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
-				err := c.Close()
-				assert.NoError(t, err, "should close the tty")
+				c.Close()
 				<-donech
+				c.Cleanup()
 			},
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,

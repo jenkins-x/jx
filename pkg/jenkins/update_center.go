@@ -3,15 +3,16 @@ package jenkins
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"io/ioutil"
 	"sort"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -209,7 +210,7 @@ func (u *UpdateCenter) PickPlugins(currentValues []string, in terminal.FileReade
 	for _, sel := range selection {
 		value := pluginMap[sel]
 		if value == "" {
-			log.Warnf("Could not find value for %s in map!\n", value)
+			log.Logger().Warnf("Could not find value for %s in map!", value)
 		} else {
 			answer = append(answer, value)
 		}

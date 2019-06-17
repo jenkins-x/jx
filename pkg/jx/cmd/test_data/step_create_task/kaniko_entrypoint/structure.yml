@@ -1,9 +1,0 @@
-metadata:
-  creationTimestamp: null
-  name: jenkins-x-jx-fix-kaniko-special-1
-pipelineRef: null
-pipelineRunRef: null
-stages:
-- depth: 0
-  name: ci
-  taskRef: jenkins-x-jx-fix-kaniko-special-ci-1

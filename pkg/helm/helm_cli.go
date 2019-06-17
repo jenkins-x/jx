@@ -2,12 +2,13 @@ package helm
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubernetes/pkg/util/slice"
@@ -68,7 +69,7 @@ func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...
 // SetHost is used to point at a locally running tiller
 func (h *HelmCLI) SetHost(tillerAddress string) {
 	if h.Debug {
-		log.Infof("Setting tiller address to %s\n", util.ColorInfo(tillerAddress))
+		log.Logger().Infof("Setting tiller address to %s", util.ColorInfo(tillerAddress))
 	}
 	h.Runner.SetEnvVariable("HELM_HOST", tillerAddress)
 }
@@ -121,7 +122,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 	}
 
 	if h.Debug {
-		log.Infof("Initialising Helm '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Debugf("Initialising Helm '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -246,9 +247,9 @@ func (h *HelmCLI) RemoveRequirementsLock() error {
 // BuildDependency builds the helm dependencies of the helm chart from the current working directory
 func (h *HelmCLI) BuildDependency() error {
 	if h.Debug {
-		log.Infof("Running %s dependency build in %s\n", h.Binary, util.ColorInfo(h.CWD))
+		log.Logger().Infof("Running %s dependency build in %s\n", h.Binary, util.ColorInfo(h.CWD))
 		out, err := h.runHelmWithOutput("dependency", "build")
-		log.Infof(out)
+		log.Logger().Infof(out)
 		return err
 	}
 	return h.runHelm("dependency", "build")
@@ -260,7 +261,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	var err error
 	currentNamespace := ""
 	if h.Binary == "helm3" {
-		log.Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented\n", ns)
+		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented", ns)
 		currentNamespace, err = h.getCurrentNamespace()
 		if err != nil {
 			return err
@@ -305,7 +306,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 		args = append(args, "--password", password)
 	}
 	if h.Debug {
-		log.Infof("Installing Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Installing Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	err = h.runHelm(args...)
@@ -356,7 +357,7 @@ func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir 
 	}
 
 	if h.Debug {
-		log.Infof("Fetching Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Fetching Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -377,7 +378,7 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 	}
 
 	if h.Debug {
-		log.Infof("Generating Chart Template '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Debugf("Generating Chart Template '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 	err := h.runHelm(args...)
 	if err != nil {
@@ -391,7 +392,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	var err error
 	currentNamespace := ""
 	if h.Binary == "helm3" {
-		log.Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented\n", ns)
+		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented", ns)
 		currentNamespace, err = h.getCurrentNamespace()
 		if err != nil {
 			return err
@@ -447,7 +448,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	args = append(args, releaseName, chart)
 
 	if h.Debug {
-		log.Infof("Upgrading Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Upgrading Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	err = h.runHelm(args...)
@@ -605,8 +606,14 @@ func (h *HelmCLI) StatusReleaseWithOutput(ns string, releaseName string, outputF
 }
 
 // Lint lints the helm chart from the current working directory and returns the warnings in the output
-func (h *HelmCLI) Lint() (string, error) {
-	return h.runHelmWithOutput("lint")
+func (h *HelmCLI) Lint(valuesFiles []string) (string, error) {
+	args := []string{"lint"}
+	for _, valueFile := range valuesFiles {
+		if valueFile != "" {
+			args = append(args, "--values", valueFile)
+		}
+	}
+	return h.runHelmWithOutput(args...)
 }
 
 // Env returns the environment variables for the helmer

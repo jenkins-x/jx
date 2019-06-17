@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudflare/cfssl/log"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 func HomeDir() string {
@@ -156,28 +156,28 @@ func JXBinaryLocation() (string, error) {
 func jXBinaryLocation(osExecutable func() (string, error)) (string, error) {
 	jxProcessBinary, err := osExecutable()
 	if err != nil {
-		log.Debugf("jxProcessBinary error %s", err)
+		log.Logger().Debugf("jxProcessBinary error %s", err)
 		return jxProcessBinary, err
 	}
-	log.Debugf("jxProcessBinary %s", jxProcessBinary)
+	log.Logger().Debugf("jxProcessBinary %s", jxProcessBinary)
 	// make it absolute
 	jxProcessBinary, err = filepath.Abs(jxProcessBinary)
 	if err != nil {
-		log.Debugf("jxProcessBinary error %s", err)
+		log.Logger().Debugf("jxProcessBinary error %s", err)
 		return jxProcessBinary, err
 	}
-	log.Debugf("jxProcessBinary %s", jxProcessBinary)
+	log.Logger().Debugf("jxProcessBinary %s", jxProcessBinary)
 
 	// if the process was started form a symlink go and get the absolute location.
 	jxProcessBinary, err = filepath.EvalSymlinks(jxProcessBinary)
 	if err != nil {
-		log.Debugf("jxProcessBinary error %s", err)
+		log.Logger().Debugf("jxProcessBinary error %s", err)
 		return jxProcessBinary, err
 	}
 
-	log.Debugf("jxProcessBinary %s", jxProcessBinary)
+	log.Logger().Debugf("jxProcessBinary %s", jxProcessBinary)
 	path := filepath.Dir(jxProcessBinary)
-	log.Debugf("dir from '%s' is '%s'", jxProcessBinary, path)
+	log.Logger().Debugf("dir from '%s' is '%s'", jxProcessBinary, path)
 	return path, nil
 }
 

@@ -69,7 +69,7 @@ func TestProjectConfigMarshal(t *testing.T) {
 
 	if tests.IsDebugLog() {
 		text := string(data)
-		log.Infof("Generated YAML: %s\n", text)
+		log.Logger().Infof("Generated YAML: %s", text)
 	}
 
 	copy := &config.ProjectConfig{}

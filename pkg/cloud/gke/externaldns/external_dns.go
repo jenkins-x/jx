@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	serviceAccountSecretKey = "credentials.json"
+	serviceAccountSecretKey        = "credentials.json"
+	defaultExternalDNSAbbreviation = "dn"
 )
 
 var (
@@ -20,9 +21,9 @@ var (
 // CreateExternalDNSGCPServiceAccount creates a service account in GCP for ExternalDNS
 func CreateExternalDNSGCPServiceAccount(kubeClient kubernetes.Interface, externalDNSName, namespace, clusterName, projectID string) (string, error) {
 
-	gcpServiceAccountSecretName, error := gke.CreateGCPServiceAccount(kubeClient, externalDNSName, namespace, clusterName, projectID, serviceAccountRoles, serviceAccountSecretKey)
-	if error != nil {
-		return "", errors.Wrap(error, "creating the ExternalDNS GCP Service Account")
+	gcpServiceAccountSecretName, err := gke.CreateGCPServiceAccount(kubeClient, externalDNSName, defaultExternalDNSAbbreviation, namespace, clusterName, projectID, serviceAccountRoles, serviceAccountSecretKey)
+	if err != nil {
+		return "", errors.Wrap(err, "creating the ExternalDNS GCP Service Account")
 	}
 	return gcpServiceAccountSecretName, nil
 }

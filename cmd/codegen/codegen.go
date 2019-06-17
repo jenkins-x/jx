@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/jenkins-x/jx/cmd/codegen/app"
 	"os"
+
+	"github.com/jenkins-x/jx/cmd/codegen/app"
 )
 
 func main() {

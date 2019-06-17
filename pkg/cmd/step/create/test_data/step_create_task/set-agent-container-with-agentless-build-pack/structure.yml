@@ -1,0 +1,13 @@
+metadata:
+  creationTimestamp: null
+  name: abayer-js-test-repo-no-default-1
+  labels:
+    branch: no-default-agent
+    owner: abayer
+    repo: js-test-repo
+pipelineRef: null
+pipelineRunRef: null
+stages:
+  - depth: 0
+    name: from-build-pack
+    taskRef: abayer-js-test-repo-no-default-from-build-pack-1

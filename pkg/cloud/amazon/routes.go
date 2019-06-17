@@ -2,6 +2,7 @@ package amazon
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
@@ -24,8 +25,10 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 	listZonesInput := &route53.ListHostedZonesInput{}
 	err = svc.ListHostedZonesPages(listZonesInput, func(page *route53.ListHostedZonesOutput, hasNext bool) bool {
 		if page != nil {
+			customDomainParts := strings.Split(customDomain, ".")
 			for _, r := range page.HostedZones {
-				if r != nil && r.Name != nil && (*r.Name == customDomain || *r.Name == customDomain+".") {
+				strings.Split(customDomain, ".")
+				if r != nil && r.Name != nil && (*r.Name == customDomain || *r.Name == customDomain+"." || *r.Name == strings.Join(customDomainParts[1:], ".")+".") {
 					hostedZoneId = r.Id
 					return false
 				}
@@ -63,7 +66,7 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 	recordType := "CNAME"
 	wildcard := "*." + customDomain
 	info := util.ColorInfo
-	log.Infof("About to insert/update DNS %s record into HostedZone %s with wildcard %s pointing to %s\n", info(recordType), info(*hostedZoneId), info(wildcard), info(elbAddress))
+	log.Logger().Infof("About to insert/update DNS %s record into HostedZone %s with wildcard %s pointing to %s", info(recordType), info(*hostedZoneId), info(wildcard), info(elbAddress))
 
 	changeInput := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: hostedZoneId,
@@ -89,6 +92,6 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to update record for hostedZoneID %s: %s", *hostedZoneId, err)
 	}
-	log.Infof("Updated HostZone ID %s successfully\n", info(*hostedZoneId))
+	log.Logger().Infof("Updated HostZone ID %s successfully", info(*hostedZoneId))
 	return nil
 }

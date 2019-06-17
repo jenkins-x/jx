@@ -15,14 +15,14 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -151,7 +151,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		}
 
 		if batchMode {
-			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", ic.Domain)
+			log.Logger().Infof("Running in batch mode and no domain flag used so defaulting to team domain %s", ic.Domain)
 			helmValues.ExposeController.Config.Domain = ic.Domain
 		} else {
 			q := &survey.Input{
@@ -262,7 +262,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		} else {
 			gitRepoOptions.Owner = gitRepoOptions.Username
 		}
-		log.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(gitRepoOptions.Owner))
+		log.Logger().Infof("Using %s environment git owner in batch mode.", util.ColorInfo(gitRepoOptions.Owner))
 	}
 	_, gitProvider, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, in, out, errOut)
 	return gitProvider, err
@@ -378,7 +378,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
-		fmt.Fprintf(out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		log.Logger().Infof("Git repository %s/%s already exists", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
@@ -404,9 +404,9 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "pushing environment master branch")
 		}
-		fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+		log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	} else {
-		fmt.Fprintf(out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		log.Logger().Infof("Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		if forkEnvGitURL != "" {
 			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
@@ -429,7 +429,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 							originalOrg, originalRepo, repoName, err)
 					}
 				}
-				fmt.Fprintf(out, "Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+				log.Logger().Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 				dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 				if err != nil {
@@ -503,7 +503,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "push forked environment git repository")
 			}
-			fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+			log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 	}
 	return repo, provider, nil
@@ -514,7 +514,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 func GetDevEnvGitOwner(jxClient versioned.Interface) (string, error) {
 	adminDevEnv, err := GetDevEnvironment(jxClient, "jx")
 	if err != nil {
-		log.Errorf("Error loading team settings. %v\n", err)
+		log.Logger().Errorf("Error loading team settings. %v", err)
 		return "", err
 	}
 	if adminDevEnv != nil {
@@ -537,7 +537,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		return err
 	}
 	if !exists {
-		log.Warnf("WARNING: Could not find a Makefile in %s\n", dir)
+		log.Logger().Warnf("WARNING: Could not find a Makefile in %s", dir)
 		return nil
 	}
 	input, err := ioutil.ReadFile(file)

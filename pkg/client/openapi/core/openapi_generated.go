@@ -19,6 +19,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppSpec":                             schema_pkg_apis_jenkinsio_v1_AppSpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve":                             schema_pkg_apis_jenkinsio_v1_Approve(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment":                          schema_pkg_apis_jenkinsio_v1_Attachment(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BatchPipelineActivity":               schema_pkg_apis_jenkinsio_v1_BatchPipelineActivity(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Binary":                              schema_pkg_apis_jenkinsio_v1_Binary(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy":       schema_pkg_apis_jenkinsio_v1_BranchProtectionContextPolicy(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher":                            schema_pkg_apis_jenkinsio_v1_Brancher(ref),
@@ -103,6 +104,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteWorkflowStep":                 schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicies":                  schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy":                    schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PullRequestInfo":                     schema_pkg_apis_jenkinsio_v1_PullRequestInfo(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query":                               schema_pkg_apis_jenkinsio_v1_Query(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation":                  schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher":                 schema_pkg_apis_jenkinsio_v1_RegexpChangeMatcher(ref),
@@ -359,6 +361,45 @@ func schema_pkg_apis_jenkinsio_v1_Attachment(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_BatchPipelineActivity(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BatchPipelineActivity contains information about a batch build, used by both the batch build and its comprising PRs for linking them together",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"batchBuildNumber": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"batchBranchName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"pullRequestInfo": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PullRequestInfo"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PullRequestInfo"},
 	}
 }
 
@@ -3212,11 +3253,16 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							},
 						},
 					},
+					"batchPipelineActivity": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BatchPipelineActivity"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BatchPipelineActivity", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -4229,6 +4275,32 @@ func schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReviewPolicy"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PullRequestInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PullRequestInfo contains information about a PR, like its PR and Build numbers",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pullRequestNumber": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"lastBuildNumberForCommit": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 

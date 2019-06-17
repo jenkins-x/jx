@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 
@@ -171,7 +171,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 							}
 							version = chartVersion
 							if verbose {
-								log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+								log.Logger().Infof("No version specified so using latest version which is %s", util.ColorInfo(version))
 							}
 						}
 
@@ -201,7 +201,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 			}
 		}
 		if !upgraded {
-			log.Infof("No upgrades available\n")
+			log.Logger().Infof("No upgrades available")
 		}
 		return nil
 	}
@@ -221,9 +221,9 @@ func CreateAddRequirementFn(chartName string, alias string, version string, repo
 		for _, d := range requirements.Dependencies {
 			if d.Name == chartName && d.Alias == alias {
 				// App found
-				log.Infof("App %s already installed.\n", util.ColorWarning(chartName))
+				log.Logger().Infof("App %s already installed.", util.ColorWarning(chartName))
 				if version != d.Version {
-					log.Infof("To upgrade the chartName use %s or %s\n",
+					log.Logger().Infof("To upgrade the chartName use %s or %s",
 						util.ColorInfo("jx upgrade chartName <chartName>"),
 						util.ColorInfo("jx upgrade apps --all"))
 				}
@@ -263,7 +263,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		return errors.Wrapf(err, "cannot create requirementName directory %s", appDir)
 	}
 	if verbose {
-		log.Infof("Using %s for requirementName files\n", appDir)
+		log.Logger().Infof("Using %s for requirementName files", appDir)
 	}
 	if requirementValuesFiles != nil && len(requirementValuesFiles.Items) > 0 {
 		if len(requirementValuesFiles.Items) == 1 {
@@ -294,7 +294,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 			}
 		}
 		if verbose {
-			log.Infof("Writing values file to %s\n", rootValuesFileName)
+			log.Logger().Infof("Writing values file to %s", rootValuesFileName)
 		}
 	}
 	// Write the release.yaml
@@ -302,7 +302,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 	templatesDir := filepath.Join(requirementDir, "templates")
 	if _, err := os.Stat(templatesDir); os.IsNotExist(err) {
 		if verbose {
-			log.Infof("No templates directory exists in %s\n", util.ColorInfo(dir))
+			log.Logger().Infof("No templates directory exists in %s", util.ColorInfo(dir))
 		}
 	} else if err != nil {
 		return errors.Wrapf(err, "stat directory %s", appDir)
@@ -326,13 +326,13 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 				return errors.Wrapf(err, "write file %s", releaseYamlOutPath)
 			}
 			if verbose {
-				log.Infof("Read release notes URL %s and git repo url %s from release.yaml\nWriting release."+
-					"yaml from chartName to %s\n", releaseNotesURL, gitRepo, releaseYamlOutPath)
+				log.Logger().Infof("Read release notes URL %s and git repo url %s from release.yaml\nWriting release."+
+					"yaml from chartName to %s", releaseNotesURL, gitRepo, releaseYamlOutPath)
 			}
 		} else if os.IsNotExist(err) {
 			if verbose {
 
-				log.Infof("Not adding release.yaml as not present in chart. Only files in %s are:\n",
+				log.Logger().Infof("Not adding release.yaml as not present in chart. Only files in %s are:",
 					templatesDir)
 				err := util.ListDirectory(templatesDir, true)
 				if err != nil {
@@ -357,7 +357,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		description = chart.Description
 	} else if os.IsNotExist(err) {
 		if verbose {
-			log.Infof("Not adding %s as not present in chart. Only files in %s are:\n", helm.ChartFileName,
+			log.Logger().Infof("Not adding %s as not present in chart. Only files in %s are:", helm.ChartFileName,
 				requirementDir)
 			err := util.ListDirectory(requirementDir, true)
 			if err != nil {
@@ -388,8 +388,8 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		}
 		if len(possibleReadmes) > 1 {
 			if verbose {
-				log.Warnf("Unable to add README to PR for %s as more than one exists and not sure which to"+
-					" use %s\n", requirementName, possibleReadmes)
+				log.Logger().Warnf("Unable to add README to PR for %s as more than one exists and not sure which to"+
+					" use %s", requirementName, possibleReadmes)
 			}
 		} else if len(possibleReadmes) == 1 {
 			bytes, err := ioutil.ReadFile(possibleReadmes[0])
@@ -422,7 +422,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		return errors.Wrap(err, fmt.Sprintf("error reading %s", requirementDir))
 	}
 	if verbose && appReadme == "" {
-		log.Infof("Not adding App Readme as no README, README.md, readme or readme.md found in %s\n", requirementDir)
+		log.Logger().Infof("Not adding App Readme as no README, README.md, readme or readme.md found in %s", requirementDir)
 	}
 	app, filename, err := LocateAppResource(helmer, requirementDir, requirementName)
 	if err != nil {
@@ -439,7 +439,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		return errors.Wrapf(err, "write README.md to %s", appDir)
 
 		if verbose {
-			log.Infof("Writing README.md to %s\n", readmeOutPath)
+			log.Logger().Infof("Writing README.md to %s", readmeOutPath)
 		}
 		externalFileHandler := func(path string, element map[string]interface{}, key string) error {
 			fileName, _ := filepath.Split(path)
@@ -458,7 +458,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 						return errors.Wrapf(err, "copy %s to %s", schemaPath, appDir)
 					}
 					if verbose {
-						log.Infof("Writing %s to %s\n", fileName, schemaOutPath)
+						log.Logger().Infof("Writing %s to %s", fileName, schemaOutPath)
 					}
 				}
 			}

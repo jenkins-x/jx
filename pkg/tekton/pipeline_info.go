@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -132,7 +132,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	build := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
-		log.Warnf("Failed to compile regexp because %s", err)
+		log.Logger().Warnf("Failed to compile regexp because %s", err)
 	}
 	gitURL := ""
 

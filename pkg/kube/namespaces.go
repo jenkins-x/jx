@@ -3,7 +3,7 @@ package kube
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
@@ -269,7 +269,7 @@ func EnsureNamespaceCreated(kubeClient kubernetes.Interface, name string, labels
 	if err != nil {
 		return fmt.Errorf("Failed to create Namespace %s %s", name, err)
 	} else {
-		log.Infof("Namespace %s created \n ", name)
+		log.Logger().Infof("Namespace %s created ", name)
 	}
 	return err
 }

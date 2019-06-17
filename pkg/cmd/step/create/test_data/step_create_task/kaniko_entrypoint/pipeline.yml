@@ -1,0 +1,31 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: jenkins-x-jx-fix-kaniko-special-1
+  namespace: jx
+  labels:
+    branch: fix-kaniko-special-casing
+    owner: jenkins-x
+    repo: jx
+spec:
+  params:
+    - default: 0.0.1
+      description: the version number for this pipeline which is used as a tag on docker
+        images and helm charts
+      name: version
+  resources:
+    - name: jenkins-x-jx-fix-kaniko-special
+      type: git
+  tasks:
+    - name: ci
+      params:
+        - name: version
+          value: ${params.version}
+      resources:
+        inputs:
+          - name: workspace
+            resource: jenkins-x-jx-fix-kaniko-special
+      taskRef:
+        name: jenkins-x-jx-fix-kaniko-special-ci-1
+status: {}

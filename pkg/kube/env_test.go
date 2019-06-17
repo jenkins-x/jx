@@ -6,9 +6,9 @@ import (
 	expect "github.com/Netflix/go-expect"
 	jenkinsio_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	versiond_mocks "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	v1 "k8s.io/api/core/v1"
@@ -168,8 +168,8 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 	// Override CreateApiExtensionsClient to return mock apiextensions interface
 	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
 
-	console := tests.NewTerminal(t)
-	defer console.Close()
+	console := tests.NewTerminal(t, nil)
+	defer console.Cleanup()
 
 	donec := make(chan struct{})
 	go func() {
@@ -235,15 +235,13 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		console.Out,
 		console.Err,
 	)
-
-	// Close the slave end of the pty, and read the remaining bytes from the master end.
-	console.Close()
-	<-donec
-
 	assert.NoError(t, err, "Should not error")
 
+	// Close the slave end of the pty, and read the remaining bytes from the master end.
 	// Dump the terminal's screen.
 	t.Log(expect.StripTrailingEmptyLines(console.CurrentState()))
+	console.Close()
+	<-donec
 }
 
 func TestGetPreviewEnvironmentReleaseName(t *testing.T) {

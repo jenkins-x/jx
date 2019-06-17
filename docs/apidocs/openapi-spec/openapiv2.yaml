@@ -93,6 +93,19 @@ definitions:
           type: string
         type: array
     type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BatchPipelineActivity:
+    description: BatchPipelineActivity contains information about a batch build, used
+      by both the batch build and its comprising PRs for linking them together
+    properties:
+      batchBranchName:
+        type: string
+      batchBuildNumber:
+        type: string
+      pullRequestInfo:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PullRequestInfo'
+        type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Binary:
     description: Binary provies the details of a downloadable binary
     properties:
@@ -1195,6 +1208,8 @@ definitions:
         type: array
       author:
         type: string
+      batchPipelineActivity:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BatchPipelineActivity'
       build:
         type: string
       buildLogsUrl:
@@ -1656,6 +1671,15 @@ definitions:
       restrictions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Restrictions'
         description: Restrictions limits who can merge
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PullRequestInfo:
+    description: PullRequestInfo contains information about a PR, like its PR and
+      Build numbers
+    properties:
+      lastBuildNumberForCommit:
+        type: string
+      pullRequestNumber:
+        type: string
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Query:
     description: 'Query is turned into a Git Provider search query. See the docs for

@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/stoewer/go-strcase"
+	strcase "github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -200,7 +200,7 @@ const (
 	OwnerReferenceGlobalParameterName string = "extOwnerReference"
 )
 
-func (e *ExtensionExecution) Execute(verbose bool) (err error) {
+func (e *ExtensionExecution) Execute() (err error) {
 	scriptFile, err := ioutil.TempFile("", fmt.Sprintf("%s-*", e.Name))
 	if err != nil {
 		return err
@@ -217,10 +217,8 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 	if err != nil {
 		return err
 	}
-	if verbose {
-		log.Infof("Environment Variables:\n %s\n", e.EnvironmentVariables)
-		log.Infof("Script:\n %s\n", e.Script)
-	}
+	log.Logger().Debugf("Environment Variables:\n %s", e.EnvironmentVariables)
+	log.Logger().Debugf("Script:\n %s", e.Script)
 	envVars := make(map[string]string, 0)
 	for _, v := range e.EnvironmentVariables {
 		envVars[v.Name] = v.Value
@@ -230,7 +228,7 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 		Env:  envVars,
 	}
 	out, err := cmd.RunWithoutRetry()
-	log.Info(out)
+	log.Logger().Info(out)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error executing script %s", e.Name))
 	}

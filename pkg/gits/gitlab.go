@@ -54,7 +54,7 @@ func WithGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitl
 }
 
 func (g *GitlabProvider) ListRepositories(org string) ([]*GitRepository, error) {
-	result, _, err := getRepositories(g.Client, g.Username, org)
+	result, _, err := getRepositories(g.Client, g.Username, org, "")
 	if err != nil {
 		return nil, err
 	}
@@ -72,16 +72,44 @@ func (g *GitlabProvider) ListReleases(org string, name string) ([]*GitRelease, e
 	return answer, nil
 }
 
-func getRepositories(g *gitlab.Client, username string, org string) ([]*gitlab.Project, *gitlab.Response, error) {
+func getRepositories(g *gitlab.Client, username string, org string, searchFilter string) ([]*gitlab.Project, *gitlab.Response, error) {
+	// TODO: handle the case of more than "pageSize" results, similarly to ListOpenPullRequests().
+	gitlabSearchFilter := gitlab.String(searchFilter)
+	listOpts := gitlab.ListOptions{PerPage: pageSize}
+	listProjectOpts := &gitlab.ListProjectsOptions{
+		Owned:       gitlab.Bool(true),
+		Search:      gitlabSearchFilter,
+		ListOptions: listOpts,
+	}
+
 	if org != "" {
-		projects, resp, err := g.Groups.ListGroupProjects(org, nil)
+		projects, resp, err := g.Groups.ListGroupProjects(org, &gitlab.ListGroupProjectsOptions{Search: gitlabSearchFilter, ListOptions: listOpts})
 		if err != nil {
-			return g.Projects.ListUserProjects(org, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+			return g.Projects.ListUserProjects(org, listProjectOpts)
 		}
 		return projects, resp, err
 
 	}
-	return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+	return g.Projects.ListUserProjects(username, listProjectOpts)
+}
+
+func GetOwnerNamespaceID(g *gitlab.Client, owner string) (int, error) {
+	n := &gitlab.ListNamespacesOptions{
+		Search: &owner,
+	}
+
+	namespaces, _, err := g.Namespaces.ListNamespaces(n)
+	if err != nil {
+		return -1, err
+	}
+
+	for _, v := range namespaces {
+		if v.FullPath == owner {
+			return v.ID, nil
+		}
+	}
+
+	return -1, fmt.Errorf("no namespace found for owner %s", owner)
 }
 
 func fromGitlabProject(p *gitlab.Project) *GitRepository {
@@ -100,9 +128,15 @@ func (g *GitlabProvider) CreateRepository(org string, name string, private bool)
 		visibility = gitlab.PrivateVisibility
 	}
 
+	namespaceID, err := GetOwnerNamespaceID(g.Client, owner(org, g.Username))
+	if err != nil {
+		return nil, err
+	}
+
 	p := &gitlab.CreateProjectOptions{
-		Name:       &name,
-		Visibility: &visibility,
+		Name:        &name,
+		Visibility:  &visibility,
+		NamespaceID: &namespaceID,
 	}
 
 	project, _, err := g.Client.Projects.CreateProject(p)
@@ -145,7 +179,7 @@ func (g *GitlabProvider) ListOrganisations() ([]GitOrganisation, error) {
 }
 
 func (g *GitlabProvider) projectId(org, username, name string) (string, error) {
-	repos, _, err := getRepositories(g.Client, username, org)
+	repos, _, err := getRepositories(g.Client, username, org, name)
 	if err != nil {
 		return "", err
 	}
@@ -648,19 +682,19 @@ func (g *GitlabProvider) IssueURL(org string, name string, number int, isPull bo
 
 // AddCollaborator adds a collaborator
 func (g *GitlabProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.\n", user)
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 // ListInvitations lists pending invites
 func (g *GitlabProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 // AcceptInvitation accepts an invitation
 func (g *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.")
 	return &github.Response{}, nil
 }
 

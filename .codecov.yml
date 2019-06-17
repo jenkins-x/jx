@@ -2,10 +2,22 @@ coverage:
   status:
     project:
       default:
-        # basic
+        # auto will
         target: auto
+        # For now, only use integration for the patch target as we aren't reporting e2e on release builds
+        flags: integration
     patch:
-      defualt:
+      default:
+        # For now, only use integration for the patch target as we aren't reporting e2e on release builds
+        flags: integration
         target: 70%
-comment:
-  behavior: new
+codecov:
+  ci:
+    # GitHub Contexts to use to consider the CI complete. Once all contexts go green, codecov will report
+    # Contexts starting with ! are excluded from consideration
+    - !DCO
+    - !Hound
+    - !lint
+    - !tide
+    - integration
+    - bdd

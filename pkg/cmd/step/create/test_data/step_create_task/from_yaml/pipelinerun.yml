@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  creationTimestamp: null
+  labels:
+    branch: really-long
+    owner: abayer
+    repo: js-test-repo
+  name: abayer-js-test-repo-really-long-1
+spec:
+  params:
+    - name: version
+      value: 0.0.1
+  pipelineRef:
+    apiVersion: tekton.dev/v1alpha1
+    name: abayer-js-test-repo-really-long-1
+  resources:
+    - name: abayer-js-test-repo-really-long
+      resourceRef:
+        apiVersion: tekton.dev/v1alpha1
+        name: abayer-js-test-repo-really-long
+  serviceAccount: tekton-bot
+  timeout: 240h0m0s
+  trigger:
+    type: manual
+status: {}

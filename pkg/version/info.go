@@ -14,8 +14,9 @@
 package version
 
 import (
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -81,6 +82,6 @@ func VersionStringDefault(defaultValue string) string {
 	if err == nil {
 		return v.String()
 	}
-	log.Warnf("Warning failed to load version: %s\n", err)
+	log.Logger().Warnf("Warning failed to load version: %s", err)
 	return defaultValue
 }

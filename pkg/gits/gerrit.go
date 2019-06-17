@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/andygrunwald/go-gerrit"
+	gerrit "github.com/andygrunwald/go-gerrit"
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -219,32 +219,32 @@ func (p *GerritProvider) Kind() string {
 }
 
 func (p *GerritProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
-	log.Warn("Gerrit does not support issue tracking")
+	log.Logger().Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) IssueURL(org string, name string, number int, isPull bool) string {
-	log.Warn("Gerrit does not support issue tracking")
+	log.Logger().Warn("Gerrit does not support issue tracking")
 	return ""
 }
 
 func (p *GerritProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
-	log.Warn("Gerrit does not support issue tracking")
+	log.Logger().Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error) {
-	log.Warn("Gerrit does not support issue tracking")
+	log.Logger().Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
-	log.Warn("Gerrit does not support issue tracking")
+	log.Logger().Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) HasIssues() bool {
-	log.Warn("Gerrit does not support issue tracking")
+	log.Logger().Warn("Gerrit does not support issue tracking")
 	return false
 }
 
@@ -253,7 +253,7 @@ func (p *GerritProvider) AddPRComment(pr *GitPullRequest, comment string) error 
 }
 
 func (p *GerritProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	log.Warn("Gerrit does not support issue tracking")
+	log.Logger().Warn("Gerrit does not support issue tracking")
 	return nil
 }
 
@@ -294,17 +294,17 @@ func (p *GerritProvider) UserInfo(username string) *GitUser {
 }
 
 func (p *GerritProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit. Please add user: %v as a collaborator to this project.\n", user)
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 func (p *GerritProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (p *GerritProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.\n")
+	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.")
 	return &github.Response{}, nil
 }
 

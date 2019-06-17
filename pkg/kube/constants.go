@@ -2,7 +2,7 @@ package kube
 
 const (
 	// DefaultChartMuseumURL default URL for Jenkins X Charts
-	DefaultChartMuseumURL = "http://chartmuseum.jenkins-x.io"
+	DefaultChartMuseumURL = "https://storage.googleapis.com/chartmuseum.jenkins-x.io"
 
 	// ChartAmbassador the default chart for ambassador
 	ChartAmbassador = "datawire/ambassador"
@@ -68,6 +68,8 @@ const (
 	DefaultVaultOperatorReleaseName = "vault-operator"
 
 	//ChartExternalDNS the default chart for external-dns
+	ChartOwnerExternalDNS         = "bitnami"
+	ChartURLExternalDNS           = "https://charts.bitnami.com/bitnami"
 	ChartExternalDNS              = "bitnami/external-dns"
 	DefaultExternalDNSReleaseName = "external-dns"
 	DefaultExternalDNSTag         = "1.5.2"
@@ -205,6 +207,9 @@ const (
 	// LabelDevPodUsername the user name owner of the DeVPod
 	LabelDevPodUsername = "jenkins.io/devpod_user"
 
+	// LabelDevPodGitPrefix used to label a devpod with the repository host, owner, repo
+	LabelDevPodGitPrefix = "jenkins.io/repo"
+
 	// LabelUsername the user name owner of a namespace or resource
 	LabelUsername = "jenkins.io/user"
 
@@ -261,6 +266,8 @@ const (
 	AnnotationWorkingDir = "jenkins.io/working-dir"
 	// AnnotationLocalDir the local directory that is sync'd to the DevPod
 	AnnotationLocalDir = "jenkins.io/local-dir"
+	// AnnotationGitURLs the newline separated list of git URLs of the DevPods
+	AnnotationGitURLs = "jenkins.io/git-urls"
 
 	// AnnotationIsDefaultStorageClass used to indicate a storageclass is default
 	AnnotationIsDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
