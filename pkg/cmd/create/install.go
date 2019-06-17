@@ -2337,16 +2337,20 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 	}
 
 	if !options.BatchMode && !options.Flags.LongTermStorage {
-		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
-		confirm := &survey.Confirm{
-			Message: fmt.Sprintf("Would you like to enable long term logs storage?"+
-				" A bucket for provider %s will be created", options.Flags.Provider),
-			Default: true,
-		}
-
-		err := survey.AskOne(confirm, &options.Flags.LongTermStorage, nil, surveyOpts)
-		if err != nil {
-			return errors.Wrap(err, "asking to enable Long Term Storage")
+		if options.AdvancedMode {
+			surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+			confirm := &survey.Confirm{
+				Message: fmt.Sprintf("Would you like to enable long term logs storage?"+
+					" A bucket for provider %s will be created", options.Flags.Provider),
+				Default: true,
+			}
+			err := survey.AskOne(confirm, &options.Flags.LongTermStorage, nil, surveyOpts)
+			if err != nil {
+				return errors.Wrap(err, "asking to enable Long Term Storage")
+			}
+		} else {
+			options.Flags.LongTermStorage = true
+			log.Logger().Infof(util.QuestionAnswer("Default enabling long term logs storage", util.YesNo(options.Flags.LongTermStorage)))
 		}
 	}
 
