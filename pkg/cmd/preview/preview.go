@@ -24,7 +24,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -239,7 +239,8 @@ func (o *PreviewOptions) Run() error {
 
 	prNum, err := strconv.Atoi(o.PullRequestName)
 	if err != nil {
-		log.Logger().Warn("Unable to convert PR " + o.PullRequestName + " to a number" )
+		log.Logger().Warnf(
+			"Unable to convert PR " + o.PullRequestName + " to a number")
 	}
 
 	var user *v1.UserSpec
@@ -272,7 +273,8 @@ func (o *PreviewOptions) Run() error {
 			}
 			commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
-				log.Logger().Warn("Unable to get commits: " + err.Error() )
+				log.Logger().Warnf(
+					"Unable to get commits: %s", err.Error())
 			}
 			if pullRequest != nil {
 				prAuthor := pullRequest.Author
@@ -300,7 +302,8 @@ func (o *PreviewOptions) Run() error {
 			statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
 
 			if err != nil {
-				log.Logger().Warn("Unable to get statuses for PR " + o.PullRequestName )
+				log.Logger().Warnf(
+					"Unable to get statuses for PR %s", o.PullRequestName)
 			}
 
 			if len(statuses) > 0 {
@@ -886,7 +889,7 @@ func writePreviewURL(o *PreviewOptions, url string) {
 	previewFileName := filepath.Join(o.Dir, ".previewUrl")
 	err := ioutil.WriteFile(previewFileName, []byte(url), 0644)
 	if err != nil {
-		log.Logger().Warn("Unable to write preview file")
+		log.Logger().Warnf("Unable to write preview file")
 	}
 }
 

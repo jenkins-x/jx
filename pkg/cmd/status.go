@@ -61,9 +61,9 @@ func (o *StatusOptions) Run() error {
 	client, namespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 
-		log.Logger().Warn("Unable to connect to Kubernetes cluster -  is one running ?")
-		log.Logger().Warn("you could try: jx create cluster - e.g: " + create.CreateClusterExample + "\n")
-		log.Logger().Warn(create.CreateClusterLong)
+		log.Logger().Warnf("Unable to connect to Kubernetes cluster -  is one running ?")
+		log.Logger().Warnf("you could try: jx create cluster - e.g: %s", create.CreateClusterExample)
+		log.Logger().Warnf(create.CreateClusterLong)
 
 		return err
 	}
@@ -73,19 +73,19 @@ func (o *StatusOptions) Run() error {
 	 */
 	clusterStatus, err := kube.GetClusterStatus(client, "", o.Verbose)
 	if err != nil {
-		log.Logger().Error("Failed to get cluster status " + err.Error() + " ")
+		log.Logger().Errorf("Failed to get cluster status %s", err.Error())
 		return err
 	}
 
 	deployList, err := client.AppsV1().Deployments(namespace).List(metav1.ListOptions{})
 	if err != nil {
-		log.Logger().Error("Failed to get deployed  status " + err.Error() + " ")
+		log.Logger().Errorf("Failed to get deployed  status %s", err.Error())
 		return err
 	}
 
 	if deployList == nil || len(deployList.Items) == 0 {
 		log.Logger().Warnf("Unable to find JX components in %s", clusterStatus.Info())
-		log.Logger().Info("you could try: " + create.InstalExample + "\n")
+		log.Logger().Infof("you could try: %s", create.InstalExample)
 		log.Logger().Info(create.InstalLong)
 		return fmt.Errorf("no deployments found in namespace %s", namespace)
 	}

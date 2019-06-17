@@ -31,15 +31,15 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -56,8 +56,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -827,16 +827,16 @@ func (options *InstallOptions) init() error {
 		ecConfig := &exposeController.Config
 		if ecConfig.Domain == "" && options.Flags.Domain != "" {
 			ecConfig.Domain = options.Flags.Domain
-			log.Logger().Info("set exposeController Config Domain " + ecConfig.Domain )
+			log.Logger().Infof("set exposeController Config Domain %s", ecConfig.Domain)
 		}
 		if ecConfig.PathMode == "" && options.Flags.ExposeControllerPathMode != "" {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
-			log.Logger().Info("set exposeController Config PathMode " + ecConfig.PathMode )
+			log.Logger().Infof("set exposeController Config PathMode %s", ecConfig.PathMode)
 		}
 		if (ecConfig.UrlTemplate == "" && options.Flags.ExposeControllerURLTemplate != "") ||
 			(options.Flags.ExposeControllerURLTemplate != "" && options.InitOptions.Flags.ExternalDNS) {
 			ecConfig.UrlTemplate = options.Flags.ExposeControllerURLTemplate
-			log.Logger().Info("set exposeController Config URLTemplate " + ecConfig.UrlTemplate )
+			log.Logger().Infof("set exposeController Config URLTemplate %s", ecConfig.UrlTemplate)
 		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
