@@ -920,7 +920,7 @@ func IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error) {
 // UserLabel returns a string identifying current user that can be used as a label
 func UserLabel() string {
 	user, err := osUser.Current()
-	if err == nil && user != nil {
+	if err == nil && user != nil && user.Username != "" {
 		return fmt.Sprintf("created-by:%s", user.Username)
 	}
 	return ""
