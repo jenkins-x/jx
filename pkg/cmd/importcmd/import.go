@@ -189,7 +189,7 @@ func (options *ImportOptions) Run() error {
 		}
 		log.Logger().Info("Available draft packs:")
 		for i := 0; i < len(packs); i++ {
-			log.Logger().Infof(packs[i] )
+			log.Logger().Infof(packs[i])
 		}
 		return nil
 	}

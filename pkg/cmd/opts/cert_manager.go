@@ -35,7 +35,7 @@ func (o *CommonOptions) EnsureCertManager() error {
 			if err != nil {
 				return errors.Wrapf(err, "installing the cert-manager CRDs from %q", pki.CertManagerCRDsFile)
 			}
-			log.Logger().Info(output )
+			log.Logger().Info(output)
 
 			log.Logger().Infof("Installing the chart %q in namespace %q...", pki.CertManagerChart, pki.CertManagerNamespace)
 			values := []string{
