@@ -390,8 +390,6 @@ func (o *StepCreateTaskOptions) Run() error {
 
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline
 func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*tekton.CRDWrapper, error) {
-	pipelineConfig := projectConfig.PipelineConfig
-
 	err := o.setBuildValues()
 	if err != nil {
 		return nil, err
@@ -427,6 +425,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	if projectConfig.NoReleasePrepare {
 		o.NoReleasePrepare = true
 	}
+	pipelineConfig := updatedProjectConfig.PipelineConfig
 	err = o.setVersionOnReleasePipelines(pipelineConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to set the version on release pipelines")
@@ -435,11 +434,11 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	var parsed *syntax.ParsedPipeline
 	switch o.PipelineKind {
 	case jenkinsfile.PipelineKindRelease:
-		parsed = updatedProjectConfig.PipelineConfig.Pipelines.Release.Pipeline
+		parsed = pipelineConfig.Pipelines.Release.Pipeline
 	case jenkinsfile.PipelineKindPullRequest:
-		parsed = updatedProjectConfig.PipelineConfig.Pipelines.PullRequest.Pipeline
+		parsed = pipelineConfig.Pipelines.PullRequest.Pipeline
 	case jenkinsfile.PipelineKindFeature:
-		parsed = updatedProjectConfig.PipelineConfig.Pipelines.Feature.Pipeline
+		parsed = pipelineConfig.Pipelines.Feature.Pipeline
 	default:
 		return nil, fmt.Errorf("unknown pipeline kind %s", o.PipelineKind)
 	}
@@ -460,7 +459,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, errors.Wrapf(err, "generation failed for Pipeline")
 	}
 
-	tasks, pipeline = o.EnhanceTasksAndPipeline(tasks, pipeline, updatedProjectConfig.PipelineConfig.Env)
+	tasks, pipeline = o.EnhanceTasksAndPipeline(tasks, pipeline, pipelineConfig.Env)
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(pipelineResourceName, o.GitInfo, o.Revision)}
 
 	var timeout *metav1.Duration
