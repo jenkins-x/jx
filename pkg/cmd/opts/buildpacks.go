@@ -41,10 +41,8 @@ func (o *CommonOptions) InitBuildPacks(i *InvokeDraftPack) (string, *v1.TeamSett
 		return "", settings, err
 	}
 	buildPackURL := settings.BuildPackURL
-	if i != nil {
-		if i.ProjectConfig.BuildPackGitURL != "" {
-			buildPackURL = i.ProjectConfig.BuildPackGitURL
-		}
+	if i != nil && i.ProjectConfig != nil && i.ProjectConfig.BuildPackGitURL != "" {
+		buildPackURL = i.ProjectConfig.BuildPackGitURL
 	}
 	dir, err := gitresolver.InitBuildPack(o.Git(), buildPackURL, settings.BuildPackRef)
 	return dir, settings, err
