@@ -21,3 +21,4 @@ codecov:
     - !tide
     - integration
     - bdd
+    - tekton
