@@ -1675,7 +1675,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		return errors.Wrap(err, "reading the team settings")
 	}
 
-	log.Logger().Infof("\nSetting up prow config into namespace %s", util.ColorInfo(devNamespace))
+	log.Logger().Infof("Setting up prow config into namespace %s", util.ColorInfo(devNamespace))
 
 	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
 	_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
@@ -1690,7 +1690,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	if !useTekton {
 		knativeOrTekton = "knative"
 	}
-	log.Logger().Infof("\nInstalling %s into namespace %s", knativeOrTekton, util.ColorInfo(devNamespace))
+	log.Logger().Infof("Installing %s into namespace %s", knativeOrTekton, util.ColorInfo(devNamespace))
 
 	ksecretValues := []string{}
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
@@ -1754,7 +1754,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		}
 	}
 
-	log.Logger().Infof("\nInstalling Prow into namespace %s", util.ColorInfo(devNamespace))
+	log.Logger().Infof("Installing Prow into namespace %s", util.ColorInfo(devNamespace))
 
 	for _, value := range valuesFiles {
 		log.Logger().Infof("with values file %s", util.ColorInfo(value))

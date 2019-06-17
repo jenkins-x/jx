@@ -37,7 +37,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			address = ip
 		} else {
 			info := util.ColorInfo
-			log.Logger().Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s",
+			log.Logger().Infof("\nWaiting to find the external host name of the ingress controller Service in namespace %s with name %s",
 				info(ingressNamespace), info(ingressService))
 			if provider == cloud.KUBERNETES {
 				log.Logger().Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s",
@@ -156,11 +156,11 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			log.Logger().Infof("No domain flag provided so using default %s to generate Ingress rules", defaultDomain)
 			return defaultDomain, nil
 		}
-		log.Logger().Infof("You can now configure a wildcard DNS pointing to the new Load Balancer address %s", address)
-		log.Logger().Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic DNS nip.io.")
-		log.Logger().Infof("\nOnce you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
+		log.Logger().Infof("You can now configure a wildcard DNS pointing to the new Load Balancer address %s", util.ColorInfo(address))
+		log.Logger().Infof("If you don't have a wildcard DNS setup then setup a DNS (A) record and point it at: %s, then use the DNS domain in the next input...", util.ColorInfo(address))
 
-		log.Logger().Infof("\nIf you don't have a wildcard DNS setup then setup a DNS (A) record and point it at: %s then use the DNS domain in the next input...", address)
+		log.Logger().Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic DNS nip.io.")
+		log.Logger().Infof("Once you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
 
 		if domain == "" {
 			prompt := &survey.Input{

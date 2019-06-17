@@ -82,10 +82,10 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 
 	skipTiller := config.SkipTiller
 	if config.Helm3 {
-		log.Logger().Infof("Using %s", util.ColorInfo("helm3"))
+		log.Logger().Debugf("Using %s", util.ColorInfo("helm3"))
 		skipTiller = true
 	} else {
-		log.Logger().Infof("Using %s", util.ColorInfo("helm2"))
+		log.Logger().Debugf("Using %s", util.ColorInfo("helm2"))
 	}
 	if !skipTiller {
 		log.Logger().Infof("Configuring %s", util.ColorInfo("tiller"))
@@ -210,7 +210,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 			return err
 		}
 	} else {
-		log.Logger().Infof("Skipping %s", util.ColorInfo("tiller"))
+		log.Logger().Debugf("Skipping %s", util.ColorInfo("tiller"))
 	}
 
 	if config.Helm3 {

@@ -318,13 +318,13 @@ func (o *InitOptions) EnableClusterAdminRole() error {
 	return o.Retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Logger().Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
+			log.Logger().Debugf("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 
 			_, err = clusterRoleBindingInterface.Create(clusterRoleBinding)
 			if err == nil {
-				log.Logger().Infof("Created ClusterRoleBinding %s", clusterRoleBindingName)
+				log.Logger().Debugf("Created ClusterRoleBinding %s", clusterRoleBindingName)
 			}
 		}
 		return err
@@ -567,7 +567,7 @@ controller:
 
 		i := 0
 		for {
-			log.Logger().Infof("Installing using helm binary: %s", util.ColorInfo(o.Helm().HelmBinary()))
+			log.Logger().Debugf("Installing using helm binary: %s", util.ColorInfo(o.Helm().HelmBinary()))
 			helmOptions := helm.InstallChartOptions{
 				Chart:       chartName,
 				ReleaseName: "jxing",
@@ -598,16 +598,15 @@ controller:
 	}
 
 	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.MINISHIFT && o.Flags.Provider != cloud.OPENSHIFT {
-
-		log.Logger().Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace", ingressNamespace)
-
 		if o.Flags.Provider == cloud.OKE {
 			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account")
 		}
 
 		if o.Flags.Provider == cloud.GKE {
-			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s", util.ColorInfo("gcloud compute project-info describe"))
+			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account.\nTo view quotas run: %s", util.ColorInfo("gcloud compute project-info describe"))
 		}
+
+		log.Logger().Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace", ingressNamespace)
 
 		externalIP := o.Flags.ExternalIP
 		if externalIP == "" && o.Flags.OnPremise {

@@ -626,7 +626,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "getting the helm value files")
 	}
 
-	log.Logger().Infof("Installing Jenkins X platform helm chart from: %s", providerEnvDir)
+	log.Logger().Debugf("Installing Jenkins X platform helm chart from: %s", providerEnvDir)
 
 	err = options.configureHelmRepo()
 	if err != nil {
@@ -756,7 +756,7 @@ func (options *InstallOptions) Run() error {
 
 	options.logNameServers()
 
-	log.Logger().Infof("\nYour Kubernetes context is now set to the namespace: %s ", util.ColorInfo(ns))
+	log.Logger().Infof("Your Kubernetes context is now set to the namespace: %s ", util.ColorInfo(ns))
 	log.Logger().Infof("To switch back to your original namespace use: %s", util.ColorInfo("jx namespace "+originalNs))
 	log.Logger().Infof("Or to use this context/namespace in just one terminal use: %s", util.ColorInfo("jx shell"))
 	log.Logger().Infof("For help on switching contexts see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
@@ -1219,7 +1219,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 		return valuesFiles, secretsFiles, temporaryFiles,
 			errors.Wrapf(err, "writing the helm config in the file '%s'", extraValuesFileName)
 	}
-	log.Logger().Infof("Generated helm values %s", util.ColorInfo(extraValuesFileName))
+	log.Logger().Debugf("Generated helm values %s", util.ColorInfo(extraValuesFileName))
 
 	err = options.modifySecrets(helmConfig, adminSecrets)
 	if err != nil {
@@ -1245,7 +1245,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 }
 
 func (options *InstallOptions) configureGitAuth() error {
-	log.Logger().Infof("Set up a Git username and API token to be able to perform CI/CD\n")
+	log.Logger().Infof("\nSet up a Git username and API token to be able to perform CI/CD")
 	gitUsername := options.GitRepositoryOptions.Username
 	gitServer := options.GitRepositoryOptions.ServerURL
 	gitAPIToken := options.GitRepositoryOptions.ApiToken
@@ -1386,7 +1386,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		util.ColorInfo(pipelineAuthServerURL), util.ColorInfo(pipelineAuthUsername))
 	authConfig.UpdatePipelineServer(pipelineAuthServer, pipelineUserAuth)
 
-	log.Logger().Infof("Saving the Git authentication configuration")
+	log.Logger().Debugf("Saving the Git authentication configuration")
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the Git authentication configuration")
@@ -1547,7 +1547,7 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 			if options.Flags.Tekton {
 				settings.ProwEngine = v1.ProwEngineTypeTekton
 			}
-			log.Logger().Infof("Configuring the TeamSettings for Prow with engine %s", string(settings.ProwEngine))
+			log.Logger().Debugf("Configuring the TeamSettings for Prow with engine %s", string(settings.ProwEngine))
 			return nil
 		}
 		err := options.ModifyDevEnvironment(callback)
@@ -2339,7 +2339,7 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 	if !options.BatchMode && !options.Flags.LongTermStorage {
 		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 		confirm := &survey.Confirm{
-			Message: fmt.Sprintf("Would you like to enable Long Term Storage?"+
+			Message: fmt.Sprintf("Would you like to enable long term logs storage?"+
 				" A bucket for provider %s will be created", options.Flags.Provider),
 			Default: true,
 		}
@@ -2383,7 +2383,7 @@ func (options *InstallOptions) assignBucketToTeamStorage(bucketURL string) error
 		},
 	}
 	infoBucketURL := util.ColorInfo(bucketURL)
-	log.Logger().Infof("Enabling default storage for current team in the bucket %s", infoBucketURL)
+	log.Logger().Debugf("Enabling default storage for current team in the bucket %s", infoBucketURL)
 	err := eso.Run()
 	if err != nil {
 		return errors.Wrapf(err, "there was a problem executing `jx edit -c default --bucket-url=%s",
@@ -2391,7 +2391,7 @@ func (options *InstallOptions) assignBucketToTeamStorage(bucketURL string) error
 	}
 
 	eso.StorageLocation.Classifier = "logs"
-	log.Logger().Infof("Enabling logs storage for current team in the bucket %s", infoBucketURL)
+	log.Logger().Debugf("Enabling logs storage for current team in the bucket %s", infoBucketURL)
 	//Only GCS seems to be supported atm
 	err = eso.Run()
 	if err != nil {
@@ -3135,16 +3135,16 @@ func (options *InstallOptions) configureTeamSettings() error {
 	callback := func(env *v1.Environment) error {
 		if env.Spec.TeamSettings.KubeProvider == "" {
 			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
-			log.Logger().Infof("Storing the kubernetes provider %s in the TeamSettings", env.Spec.TeamSettings.KubeProvider)
+			log.Logger().Debugf("Storing the kubernetes provider %s in the TeamSettings", env.Spec.TeamSettings.KubeProvider)
 		}
 
 		if initOpts.Flags.Helm3 {
 			env.Spec.TeamSettings.HelmTemplate = false
 			env.Spec.TeamSettings.HelmBinary = "helm3"
-			log.Logger().Info("Enabling helm3 / non template mode in the TeamSettings")
+			log.Logger().Debugf("Enabling helm3 / non template mode in the TeamSettings")
 		} else if initOpts.Flags.NoTiller {
 			env.Spec.TeamSettings.HelmTemplate = true
-			log.Logger().Info("Enabling helm template mode in the TeamSettings")
+			log.Logger().Debugf("Enabling helm template mode in the TeamSettings")
 		}
 
 		if options.Flags.DockerRegistryOrg != "" {
