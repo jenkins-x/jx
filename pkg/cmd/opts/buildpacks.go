@@ -91,7 +91,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	}
 
 	if len(customDraftPack) > 0 {
-		log.Logger().Info("trying to use draft pack: " + customDraftPack + "")
+		log.Logger().Info("trying to use draft pack: " + customDraftPack )
 		lpack = filepath.Join(packsDir, customDraftPack)
 		f, err := util.FileExists(lpack)
 		if err != nil {
@@ -189,7 +189,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 			}
 		}
 	}
-	log.Logger().Info("selected pack: " + lpack + "")
+	log.Logger().Info("selected pack: " + lpack )
 	draftPack := filepath.Base(lpack)
 	i.CustomDraftPack = draftPack
 

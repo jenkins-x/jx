@@ -827,16 +827,16 @@ func (options *InstallOptions) init() error {
 		ecConfig := &exposeController.Config
 		if ecConfig.Domain == "" && options.Flags.Domain != "" {
 			ecConfig.Domain = options.Flags.Domain
-			log.Logger().Info("set exposeController Config Domain " + ecConfig.Domain + "")
+			log.Logger().Info("set exposeController Config Domain " + ecConfig.Domain )
 		}
 		if ecConfig.PathMode == "" && options.Flags.ExposeControllerPathMode != "" {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
-			log.Logger().Info("set exposeController Config PathMode " + ecConfig.PathMode + "")
+			log.Logger().Info("set exposeController Config PathMode " + ecConfig.PathMode )
 		}
 		if (ecConfig.UrlTemplate == "" && options.Flags.ExposeControllerURLTemplate != "") ||
 			(options.Flags.ExposeControllerURLTemplate != "" && options.InitOptions.Flags.ExternalDNS) {
 			ecConfig.UrlTemplate = options.Flags.ExposeControllerURLTemplate
-			log.Logger().Info("set exposeController Config URLTemplate " + ecConfig.UrlTemplate + "")
+			log.Logger().Info("set exposeController Config URLTemplate " + ecConfig.UrlTemplate )
 		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
