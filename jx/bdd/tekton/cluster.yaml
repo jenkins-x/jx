@@ -5,7 +5,7 @@ clusters:
       - cluster
       - gke
       - --tekton
-      - --project-id=jenkins-x-bdd
+      - --project-id=jenkins-x-bdd2
       - -m=n1-standard-2
       - --min-num-nodes=3
       - --max-num-nodes=5
