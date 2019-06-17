@@ -958,7 +958,7 @@ func (b *BitbucketCloudProvider) UserAuth() auth.UserAuth {
 func (b *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 	user, _, err := b.Client.UsersApi.UsersUsernameGet(b.Context, username)
 	if err != nil {
-		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error() + "")
+		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error())
 		return nil
 	}
 

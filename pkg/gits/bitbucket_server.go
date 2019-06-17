@@ -1006,7 +1006,7 @@ func (b *BitbucketServerProvider) UserInfo(username string) *GitUser {
 	var user bitbucket.UserWithLinks
 	apiResponse, err := b.Client.DefaultApi.GetUser(username)
 	if err != nil {
-		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error() + "")
+		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error())
 		return nil
 	}
 	err = mapstructure.Decode(apiResponse.Values, &user)

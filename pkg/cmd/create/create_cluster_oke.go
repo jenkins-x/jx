@@ -213,7 +213,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	//Get node pool settings
 	if o.Flags.NodePoolName == "" {
 		o.Flags.NodePoolName = strings.ToLower(randomdata.SillyName())
-		log.Logger().Infof("No node pool name provided so using a generated one: " + o.Flags.NodePoolName + "")
+		log.Logger().Infof("No node pool name provided so using a generated one: %s", o.Flags.NodePoolName)
 	}
 
 	nodeImageName := o.Flags.NodeImageName

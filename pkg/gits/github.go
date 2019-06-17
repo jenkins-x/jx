@@ -719,7 +719,7 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 				}
 
 				if summary.Author.Email == "" {
-					log.Logger().Info("Commit author email is empty for: " + commit.GetSHA() + "")
+					log.Logger().Infof("Commit author email is empty for: %s", commit.GetSHA())
 					dir, err := os.Getwd()
 					if err != nil {
 						return answer, err
@@ -728,10 +728,10 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 					if err != nil {
 						return answer, err
 					}
-					log.Logger().Info("Looking for commits in: " + gitDir + "")
+					log.Logger().Infof("Looking for commits in: %s", gitDir)
 					email, err := p.Git.GetAuthorEmailForCommit(gitDir, commit.GetSHA())
 					if err != nil {
-						log.Logger().Warn("Commit not found: " + commit.GetSHA() + "")
+						log.Logger().Warnf("Commit not found: %s", commit.GetSHA())
 						continue
 					}
 					summary.Author.Email = email
@@ -739,10 +739,10 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 
 				answer = append(answer, summary)
 			} else {
-				log.Logger().Warn("No author for commit: " + commit.GetSHA() + "")
+				log.Logger().Warnf("No author for commit: %s", commit.GetSHA())
 			}
 		} else {
-			log.Logger().Warn("No Commit object for for commit: " + commit.GetSHA() + "")
+			log.Logger().Warnf("No Commit object for for commit: %s", commit.GetSHA())
 		}
 	}
 	return answer, nil
@@ -1199,7 +1199,7 @@ func (p *GitHubProvider) UserAuth() auth.UserAuth {
 func (p *GitHubProvider) UserInfo(username string) *GitUser {
 	user, _, err := p.Client.Users.Get(p.Context, username)
 	if user == nil || err != nil {
-		log.Logger().Error("Unable to fetch user info for " + username + "")
+		log.Logger().Errorf("Unable to fetch user info for %s", username)
 		return nil
 	}
 

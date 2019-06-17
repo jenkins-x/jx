@@ -525,7 +525,7 @@ func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, sele
 		} else {
 			output = strings.TrimSpace(output)
 			if output != "No resources found" {
-				log.Logger().Info(output + "")
+				log.Logger().Info(output)
 			}
 		}
 	}
@@ -1004,7 +1004,7 @@ func (h *HelmTemplate) runKubectl(args ...string) error {
 	h.Runner.SetName(h.Binary)
 	h.Runner.SetArgs(args)
 	output, err := h.Runner.RunWithoutRetry()
-	log.Logger().Debugf(output + "")
+	log.Logger().Debugf(output)
 	return err
 }
 

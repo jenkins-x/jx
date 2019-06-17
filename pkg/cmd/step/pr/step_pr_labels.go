@@ -93,7 +93,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	prNum, err := strconv.Atoi(o.PullRequest)
 	if err != nil {
-		log.Logger().Warn("Unable to convert PR " + o.PullRequest + " to a number" + "")
+		log.Logger().Warn("Unable to convert PR " + o.PullRequest + " to a number")
 	}
 
 	pr, err := provider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
