@@ -402,11 +402,11 @@ func (options *InstallOptions) CheckFlags() error {
 	}
 
 	if flags.KnativeBuild && flags.Tekton {
-		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
+		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is now deprecated")
 	}
 
 	if flags.KnativeBuild {
-		log.Logger().Warnf("Support for Knative Build is now deprecated. Please use --tekon instead. More details here: https://jenkins-x.io/architecture/jenkins-x-pipelines/\n")
+		log.Logger().Warnf("Support for Knative Build is now deprecated. Please use '--tekton' instead. More details here: https://jenkins-x.io/architecture/jenkins-x-pipelines/\n")
 	}
 	if flags.Prow {
 		flags.StaticJenkins = false
