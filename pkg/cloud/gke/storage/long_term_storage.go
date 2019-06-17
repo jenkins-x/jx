@@ -55,6 +55,7 @@ func createBucket(bucketName string, installValues map[string]string) (string, e
 	log.Logger().Infof("The bucket %s does not exist so lets create it", infoBucketURL)
 	region := gke.GetRegionFromZone(installValues[kube.Zone])
 	err := gke.CreateBucket(installValues[kube.ProjectID], bucketName, region)
+	gke.AddBucketLabel(bucketName, gke.UserLabel())
 	if err != nil {
 		return "", errors.Wrapf(err, "there was a problem creating the bucket %s in the GKE Project %s",
 			bucketName, installValues[kube.ProjectID])

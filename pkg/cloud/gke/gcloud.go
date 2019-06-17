@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	osUser "os/user"
 	"sigs.k8s.io/yaml"
 )
 
@@ -261,6 +262,26 @@ func CreateBucket(projectID string, bucketName string, location string) error {
 		return err
 	}
 	return nil
+}
+
+//AddBucketLabel adds a label to a Google Storage bucket
+func AddBucketLabel(bucketName string, label string) {
+	found := FindBucket(bucketName)
+	if found && label != "" {
+		fullBucketName := fmt.Sprintf("gs://%s", bucketName)
+		args := []string{"label", "ch", "-l", label}
+
+		args = append(args, fullBucketName)
+
+		cmd := util.Command{
+			Name: "gsutil",
+			Args: args,
+		}
+		output, err := cmd.RunWithoutRetry()
+		if err != nil {
+			log.Logger().Infof("Error adding bucket label: %s, %s", output, err)
+		}
+	}
 }
 
 // FindBucket finds a Google Storage bucket
@@ -894,4 +915,13 @@ func IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// UserLabel returns a string identifying current user that can be used as a label
+func UserLabel() string {
+	user, err := osUser.Current()
+	if err == nil && user != nil && user.Username != "" {
+		return fmt.Sprintf("created-by:%s", user.Username)
+	}
+	return ""
 }
