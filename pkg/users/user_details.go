@@ -37,7 +37,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 	user, err := this.jxClient.JenkinsV1().Users(this.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
 		// we get an error when not found
-		log.Logger().Info("Unable to find user: " + id + " -- " + err.Error() + "")
+		log.Logger().Info("Unable to find user: " + id + " -- " + err.Error() )
 	}
 
 	if user != nil && err == nil {
@@ -71,13 +71,13 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 		}
 
 		if changed {
-			log.Logger().Info("Updating modified user: " + existing.Email + "")
+			log.Logger().Info("Updating modified user: " + existing.Email )
 			_, err = this.jxClient.JenkinsV1().Users(this.namespace).Update(user)
 			if err != nil {
 				return err
 			}
 		} else {
-			log.Logger().Info("Existing user found: " + existing.Email + "")
+			log.Logger().Info("Existing user found: " + existing.Email )
 		}
 	} else {
 		user = &v1.User{
@@ -87,7 +87,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 			Spec: *u,
 		}
 
-		log.Logger().Info("Adding missing user: " + id + "")
+		log.Logger().Info("Adding missing user: " + id )
 		_, err = this.jxClient.JenkinsV1().Users(this.namespace).Create(user)
 		if err != nil {
 			return err
