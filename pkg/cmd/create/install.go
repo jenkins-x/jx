@@ -402,7 +402,7 @@ func (options *InstallOptions) CheckFlags() error {
 	}
 
 	if flags.KnativeBuild && flags.Tekton {
-		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is now deprecated")
+		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
 	}
 
 	if flags.KnativeBuild {
