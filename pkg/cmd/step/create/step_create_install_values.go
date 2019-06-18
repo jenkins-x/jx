@@ -185,7 +185,6 @@ func (o *StepCreateInstallValuesOptions) discoverIngressDomain(values map[string
 
 func (o *StepCreateInstallValuesOptions) waitForIngressControllerHost(kubeClient kubernetes.Interface, ns, serviceName string) (bool, error) {
 	loggedWait := false
-	ip := ""
 	serviceInterface := kubeClient.CoreV1().Services(ns)
 
 	if serviceName == "" || ns == "" {
@@ -204,8 +203,7 @@ func (o *StepCreateInstallValuesOptions) waitForIngressControllerHost(kubeClient
 
 		// lets get the ingress service status
 		for _, lb := range svc.Status.LoadBalancer.Ingress {
-			ip = lb.Hostname
-			if ip != "" {
+			if lb.Hostname != "" || lb.IP != "" {
 				return true, nil
 			}
 		}
