@@ -185,11 +185,7 @@ func GetServiceURL(svc *v1.Service) string {
 }
 
 func GetServiceURLFromName(c kubernetes.Interface, name, ns string) (string, error) {
-	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	return GetServiceURL(svc), nil
+	return FindServiceURL(c, ns, name)
 }
 
 func FindServiceURLs(client kubernetes.Interface, namespace string) ([]ServiceURL, error) {
@@ -201,6 +197,9 @@ func FindServiceURLs(client kubernetes.Interface, namespace string) ([]ServiceUR
 	}
 	for _, svc := range svcs.Items {
 		url := GetServiceURL(&svc)
+		if url == "" {
+			url, _ = FindServiceURL(client, namespace, svc.Name)
+		}
 		if len(url) > 0 {
 			urls = append(urls, ServiceURL{
 				Name: svc.Name,
