@@ -446,13 +446,25 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 	return nil
 }
 
+// IsLocal returns whether this chart is being installed from the local filesystem or not
+func IsLocal(chart string) bool {
+	b := strings.HasPrefix(chart, "/") || strings.HasPrefix(chart, ".") || strings.Count(chart, "/") > 1
+	if !b {
+		// check if file exists, then it's local
+		exists, err := util.FileExists(chart)
+		if err == nil {
+			return exists
+		}
+	}
+	return b
+}
+
 // InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
 func InspectChart(chart string, version string, repo string, username string, password string,
 	helmer Helmer, inspector func(dir string) error) error {
-	isLocal := false
+	isLocal := IsLocal(chart)
 	dirPrefix := fmt.Sprintf("jx-helm-fetch-%s-", chart)
-	if strings.HasPrefix(chart, "/") || strings.HasPrefix(chart, ".") || strings.Count(chart, "/") > 1 {
-		isLocal = true
+	if isLocal {
 		dirPrefix = "jx-helm-fetch"
 	}
 
@@ -470,11 +482,7 @@ func InspectChart(chart string, version string, repo string, username string, pa
 		if err != nil {
 			return errors.Wrapf(err, "copying %s to %s", chart, dir)
 		}
-		// We need to manually build the dependencies
-		err = helmer.BuildDependency()
-		if err != nil {
-			return errors.Wrapf(err, "building dependencies for %s", chart)
-		}
+		helmer.SetCWD(dir)
 		inspectPath = dir
 	} else {
 		err = helmer.FetchChart(chart, version, true, dir, repo, username, password)

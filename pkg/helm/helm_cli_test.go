@@ -151,6 +151,12 @@ func TestIsRepoMissing(t *testing.T) {
 
 	assert.NoError(t, err, "search missing repos should not return an error")
 	assert.True(t, missing, "should not find url '%s'", url)
+
+	url = "http://127.0.0.1:8879/chartsv2"
+	missing, _, err = helm.IsRepoMissing(url)
+
+	assert.NoError(t, err, "search missing repos should not return an error")
+	assert.True(t, missing, "should not find url '%s'", url)
 }
 
 func TestUpdateRepo(t *testing.T) {
