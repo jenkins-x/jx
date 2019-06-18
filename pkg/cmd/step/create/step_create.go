@@ -32,6 +32,7 @@ func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepCreateDevPodWorkpace(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateJenkinsConfig(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateTask(commonOpts))
+	cmd.AddCommand(NewCmdStepCreateInstallValues(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
 	return cmd
 }
