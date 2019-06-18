@@ -22,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -112,16 +113,29 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options.addCreateClusterFlags(cmd)
 
+	cmd.Flags().StringVarP(&options.InstallOptions.Flags.ConfigFile, "config-file", "c", "", "Config file")
+
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
+	_ = viper.BindPFlag(optionClusterName, cmd.Flags().Lookup(optionClusterName))
+
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
 	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "v", "", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
 	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
 	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
+
 	cmd.Flags().StringVarP(&options.Flags.MachineType, "machine-type", "m", "", "The type of machine to use for nodes")
+	_ = viper.BindPFlag("machine-type", cmd.Flags().Lookup("machine-type"))
+
 	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, "min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
+	_ = viper.BindPFlag("min-num-nodes", cmd.Flags().Lookup("min-num-nodes"))
+
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
+	_ = viper.BindPFlag("min-num-nodes", cmd.Flags().Lookup("max-num-nodes"))
+
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
+	_ = viper.BindPFlag("project-id", cmd.Flags().Lookup("project-id"))
+
+	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
@@ -159,6 +173,18 @@ func (o *CreateClusterGKEOptions) Run() error {
 }
 
 func (o *CreateClusterGKEOptions) createClusterGKE() error {
+	configFile := o.InstallOptions.Flags.ConfigFile
+	if configFile != "" {
+		viper.SetConfigFile(configFile)
+		viper.SetConfigType("yaml")
+
+		if err := viper.ReadInConfig(); err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				log.Logger().Warnf("Config file %s not found", configFile)
+			}
+		}
+	}
+
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var err error
 	if !o.Flags.SkipLogin {
@@ -168,12 +194,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	projectId := o.Flags.ProjectId
+	projectId := viper.GetString("project-id")
 	if projectId == "" {
 		projectId, err = o.GetGoogleProjectId()
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured project id", projectId))
 	}
 
 	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectId)
@@ -219,6 +247,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			o.Flags.ClusterName = defaultClusterName
 			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one", o.Flags.ClusterName))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured cluster name", o.Flags.ClusterName))
 	}
 
 	region := o.Flags.Region
@@ -268,7 +298,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	machineType := o.Flags.MachineType
+	machineType := viper.GetString("machine-type")
 	if machineType == "" {
 		defaultMachineType := "n1-standard-2"
 		if advancedMode {
@@ -288,9 +318,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			machineType = defaultMachineType
 			log.Logger().Infof(util.QuestionAnswer("Defaulting to machine type", machineType))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured to machine type", machineType))
 	}
 
-	minNumOfNodes := o.Flags.MinNumOfNodes
+	minNumOfNodes := viper.GetString("min-num-nodes")
 	if minNumOfNodes == "" {
 		defaultNodes := "3"
 		if region != "" {
@@ -311,9 +343,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			minNumOfNodes = defaultNodes
 			log.Logger().Infof(util.QuestionAnswer("Defaulting to minimum number of nodes", minNumOfNodes))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured to minimum number of nodes", minNumOfNodes))
 	}
 
-	maxNumOfNodes := o.Flags.MaxNumOfNodes
+	maxNumOfNodes := viper.GetString("max-num-nodes")
 	if maxNumOfNodes == "" {
 		defaultNodes := "5"
 		if region != "" {
@@ -334,6 +368,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			maxNumOfNodes = defaultNodes
 			log.Logger().Infof(util.QuestionAnswer("Defaulting to maxiumum number of nodes", maxNumOfNodes))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured to maximum number of nodes", minNumOfNodes))
 	}
 
 	if !o.BatchMode {

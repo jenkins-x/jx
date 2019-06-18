@@ -112,6 +112,7 @@ require (
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
+	github.com/spf13/viper v1.2.1
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/testify v1.3.0

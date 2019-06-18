@@ -91,6 +91,7 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
+	ConfigFile                  string
 	InstallOnly                 bool
 	Domain                      string
 	ExposeControllerURLTemplate string
