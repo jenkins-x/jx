@@ -70,16 +70,15 @@ func GetMapValueViaPath(m map[string]interface{}, path string) interface{} {
 	for i, key := range paths {
 		if i == last {
 			return dest[key]
+		}
+		entry := dest[key]
+		entryMap, ok := entry.(map[string]interface{})
+		if ok {
+			dest = entryMap
 		} else {
-			entry := dest[key]
-			entryMap, ok := entry.(map[string]interface{})
-			if ok {
-				dest = entryMap
-			} else {
-				entryMap = map[string]interface{}{}
-				dest[key] = entryMap
-				dest = entryMap
-			}
+			entryMap = map[string]interface{}{}
+			dest[key] = entryMap
+			dest = entryMap
 		}
 	}
 	return nil
