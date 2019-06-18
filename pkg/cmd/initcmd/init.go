@@ -75,11 +75,6 @@ const (
 
 	// JenkinsBuildPackURL URL of Draft packs for Jenkins X
 	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
-
-	// defaultIngressNamesapce default namesapce fro ingress controller
-	defaultIngressNamesapce = "kube-system"
-	// defaultIngressServiceName default name for ingress controller service and deployment
-	defaultIngressServiceName = "jxing-nginx-ingress-controller"
 )
 
 var (
@@ -141,9 +136,9 @@ func (o *InitOptions) AddInitFlags(cmd *cobra.Command) {
 func (o *InitOptions) AddIngressFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().StringVarP(&o.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
-	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", defaultIngressNamesapce, "The namespace for the Ingress controller")
-	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", defaultIngressServiceName, "The name of the Ingress controller Service")
-	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", defaultIngressServiceName, "The name of the Ingress controller Deployment")
+	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", opts.DefaultIngressNamesapce, "The namespace for the Ingress controller")
+	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", opts.DefaultIngressServiceName, "The name of the Ingress controller Service")
+	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", opts.DefaultIngressServiceName, "The name of the Ingress controller Deployment")
 	cmd.Flags().StringVarP(&o.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Skips the installation of ingress controller. Note that a ingress controller must already be installed into the cluster in order for the installation to succeed")
 	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
@@ -481,10 +476,10 @@ func (o *InitOptions) InitIngress() error {
 	}
 
 	if o.Flags.Provider == cloud.ALIBABA {
-		if o.Flags.IngressDeployment == defaultIngressServiceName {
+		if o.Flags.IngressDeployment == opts.DefaultIngressServiceName {
 			o.Flags.IngressDeployment = "nginx-ingress-controller"
 		}
-		if o.Flags.IngressService == defaultIngressServiceName {
+		if o.Flags.IngressService == opts.DefaultIngressServiceName {
 			o.Flags.IngressService = "nginx-ingress-lb"
 		}
 	}
@@ -513,7 +508,7 @@ func (o *InitOptions) InitIngress() error {
 			return nil
 		}
 
-		values := []string{"rbac.create=true", fmt.Sprintf("controller.extraArgs.publish-service=%s/%s", ingressNamespace, defaultIngressServiceName) /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
+		values := []string{"rbac.create=true", fmt.Sprintf("controller.extraArgs.publish-service=%s/%s", ingressNamespace, opts.DefaultIngressServiceName) /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
 		valuesFiles := []string{}
 		valuesFiles, err = helm.AppendMyValues(valuesFiles)
 		if err != nil {

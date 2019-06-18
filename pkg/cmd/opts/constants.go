@@ -14,4 +14,9 @@ const (
 target
 work
 `
+
+	// DefaultIngressNamesapce default namespace fro ingress controller
+	DefaultIngressNamesapce = "kube-system"
+	// DefaultIngressServiceName default name for ingress controller service and deployment
+	DefaultIngressServiceName = "jxing-nginx-ingress-controller"
 )
