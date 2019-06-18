@@ -53,14 +53,14 @@ func (o *StepVerifyGitOptions) Run() error {
 		annotations := secret.Annotations
 		data := secret.Data
 		if annotations == nil {
-			return fmt.Errorf("no annotations on Secret %s\n", secret.Name)
+			return fmt.Errorf("no annotations on Secret %s", secret.Name)
 		}
 		if data == nil {
-			return fmt.Errorf("no Data on Secret %s\n", secret.Name)
+			return fmt.Errorf("no Data on Secret %s", secret.Name)
 		}
 		u := annotations[kube.AnnotationURL]
 		if u == "" {
-			return fmt.Errorf("secret %s does not have a Git URL annotation %s\n", secret.Name, kube.AnnotationURL)
+			return fmt.Errorf("secret %s does not have a Git URL annotation %s", secret.Name, kube.AnnotationURL)
 		}
 		username := data[kube.SecretDataUsername]
 		pwd := data[kube.SecretDataPassword]
