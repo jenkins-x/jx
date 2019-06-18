@@ -79,7 +79,7 @@ func (o *StepVerifyGitOptions) Run() error {
 	}
 	servers := config.Servers
 	if len(servers) == 0 {
-		return fmt.Errorf("failed to find any Git servers from the Git Secrets")
+		return fmt.Errorf("failed to find any Git servers from the Git Secrets. There should be a Secret with label %s=%s", kube.LabelKind, kube.ValueKindGit)
 	}
 	for _, server := range servers {
 		log.Infof("verifying git server %s at %s\n", server.Name, server.URL)
