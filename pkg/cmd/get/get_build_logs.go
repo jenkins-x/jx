@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/knative/pkg/apis"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -324,14 +325,18 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	}
 
 	if tektonEnabled {
-		pr := build.(*tekton.PipelineRunInfo)
+		pri := build.(*tekton.PipelineRunInfo)
 		log.Logger().Infof("Build logs for %s", util.ColorInfo(name+suffix))
-		for _, stage := range pr.GetOrderedTaskStages() {
+		for _, stage := range pri.GetOrderedTaskStages() {
+			pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pri.PipelineRun, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
 			if stage.Pod == nil {
 				// The stage's pod hasn't been created yet, so let's wait a bit.
 				f := func() error {
 					selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: map[string]string{
-						pipeline.GroupName + pipeline.PipelineRunLabelKey: pr.PipelineRun,
+						pipeline.GroupName + pipeline.PipelineRunLabelKey: pri.PipelineRun,
 					}})
 					if err != nil {
 						return err
@@ -342,13 +347,18 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 					if err != nil {
 						return err
 					}
-					if err := stage.SetPodsForStageInfo(podList, pr.PipelineRun); err != nil {
+					if err := stage.SetPodsForStageInfo(podList, pri.PipelineRun); err != nil {
 						return err
 					}
 
 					if stage.Pod == nil {
-						log.Logger().Infof("no pod found yet for stage %s in build %s", util.ColorInfo(stage.Name), util.ColorInfo(pr.PipelineRun))
-						return fmt.Errorf("No pod for stage %s in build %s exists yet", stage.Name, pr.PipelineRun)
+						// If we haven't found a pod for this stage and the pipeline has failed, log and return nil.
+						if pr.Status.GetCondition(apis.ConditionSucceeded).IsFalse() {
+							log.Logger().Warnf("no pod created for stage %s in build %s due to earlier failure", util.ColorInfo(stage.Name), util.ColorInfo(pri.PipelineRun))
+							return nil
+						}
+						log.Logger().Infof("no pod found yet for stage %s in build %s", util.ColorInfo(stage.Name), util.ColorInfo(pri.PipelineRun))
+						return fmt.Errorf("No pod for stage %s in build %s exists yet", stage.Name, pri.PipelineRun)
 					}
 
 					return nil
@@ -356,6 +366,10 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 				err := util.Retry(o.WaitForPipelineDuration, f)
 				if err != nil {
 					return err
+				}
+				// If the pod is still nil, then the pipeline failed before executing this stage, so just continue.
+				if stage.Pod == nil {
+					continue
 				}
 			}
 			pod := stage.Pod
