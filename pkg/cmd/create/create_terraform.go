@@ -1038,7 +1038,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 
 	var serviceAccountPath string
 	if g.ServiceAccount == "" {
-		serviceAccountName := fmt.Sprintf("jx-%s-%s", options.Flags.OrganisationName, g.Name())
+		serviceAccountName := fmt.Sprintf("%s-%s-tf", options.Flags.OrganisationName, g.Name())
 		log.Logger().Infof("No GCP service account provided, creating %s", util.ColorInfo(serviceAccountName))
 
 		_, err := gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectID, filepath.Dir(path), gke.RequiredServiceAccountRoles)
