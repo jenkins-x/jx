@@ -23,7 +23,6 @@ debug
 #Various temporary created while building/running jx.
 /build/
 release/
-dist/
 scanning/
 .updatebot-repos/
 .terraform/
