@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/pborman/uuid"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +34,7 @@ func TestReplaceURIs(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
-	result, err := secreturl.ReplaceURIs(valuesyaml, vaultClient)
+	result, err := vaultClient.ReplaceURIs(valuesyaml)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(`foo:
@@ -63,7 +62,7 @@ func TestReplaceRealExampleURI(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
-	result, err := secreturl.ReplaceURIs(valuesyaml, vaultClient)
+	result, err := vaultClient.ReplaceURIs(valuesyaml)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(`foo:

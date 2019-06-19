@@ -1,13 +1,19 @@
 package helm
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/engine"
 
 	"github.com/ghodss/yaml"
 
@@ -26,7 +32,7 @@ var DefaultValuesTreeIgnores = []string{
 // Any keys used that match files with the same name in the directory (
 // and have empty values) will be inlined as block scalars.
 // Standard UNIX glob patterns can be passed to IgnoreFile directories.
-func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) {
+func GenerateValues(dir string, ignores []string, verbose bool, secretUrlClient secreturl.Client) ([]byte, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
 		return nil, err
@@ -35,6 +41,15 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 	} else if !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", dir)
 	}
+
+	// load the parameter values if there are any
+	params, err := LoadParameters(dir, secretUrlClient)
+	if err != nil {
+		return nil, err
+	}
+	funcMap := engine.FuncMap()
+	funcMap["hashPassword"] = util.HashPassword
+
 	if ignores == nil {
 		ignores = DefaultValuesTreeIgnores
 	}
@@ -54,7 +69,7 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 			if rDir != "" {
 				// If it's values.yaml, then read and parse it
 				if file == "values.yaml" {
-					b, err := ioutil.ReadFile(path)
+					b, err := ReadValuesYamlFileTemplateOutput(path, params, funcMap)
 					if err != nil {
 						return err
 					}
@@ -139,6 +154,25 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 		}
 	}
 	return yaml.Marshal(rootValues)
+}
+
+// ReadValuesYamlFileTemplateOutput evaluates the given values.yaml file as a go template and returns the output data
+func ReadValuesYamlFileTemplateOutput(templateFile string, params chartutil.Values, funcMap template.FuncMap) ([]byte, error) {
+	tmpl, err := template.New(ValuesFileName).Option("missingkey=error").Funcs(funcMap).ParseFiles(templateFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse Secrets template: %s", templateFile)
+	}
+
+	templateData := map[string]interface{}{
+		"Parameters": chartutil.Values(params),
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, templateData)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to execute Secrets template: %s", templateFile)
+	}
+	data := buf.Bytes()
+	return data, nil
 }
 
 // HandleExternalFileRefs recursively scans the element map structure,

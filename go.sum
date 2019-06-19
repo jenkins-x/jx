@@ -43,6 +43,7 @@ github.com/Masterminds/semver v1.3.1/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF0
 github.com/Masterminds/semver v1.4.2 h1:WBLTQ37jOCzSLtXNdoo8bNM8876KhNqOKvrlGITgsTc=
 github.com/Masterminds/semver v1.4.2/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=
 github.com/Masterminds/sprig v0.0.0-20180403013413-6b2a58267f6a/go.mod h1:y6hNFY5UBTIWBxnzTeuNhlNS5hqE0NB0E6fgfo2Br3o=
+github.com/Masterminds/sprig v2.15.0+incompatible h1:0gSxPGWS9PAr7U2NsQ2YQg6juRDINkUyuvbb4b2Xm8w=
 github.com/Masterminds/sprig v2.15.0+incompatible/go.mod h1:y6hNFY5UBTIWBxnzTeuNhlNS5hqE0NB0E6fgfo2Br3o=
 github.com/Microsoft/go-winio v0.4.6 h1:Tu8dlnF1wvUKKqr011GFneCoyIn7D+Q2uq6AKmQnGrA=
 github.com/Microsoft/go-winio v0.4.6/go.mod h1:VhR8bwka0BXejwEJY73c50VrPtXAaKcyvVC4A4RozmA=
@@ -85,6 +86,7 @@ github.com/antham/chyle v1.4.0 h1:RBCXpnmj3Wcl43bKbcuRU3LXkarhYwSigWAPUyWEjvY=
 github.com/antham/chyle v1.4.0/go.mod h1:D94Z4aE/ECudyNoTHwkhqu77mjGPZtfPG8dNoeIG9CU=
 github.com/antham/envh v1.2.0/go.mod h1:ocIRPHuwwjyBVBtuUJOJc2TYzGg+d23xSAZexl4y9hQ=
 github.com/antham/strumt v0.0.0-20171215230529-6776189777d3/go.mod h1:sE7EYIUE0nQzPiv5zQAmw2aVkei0j2xmb4gTIIqSFSI=
+github.com/aokoli/goutils v1.0.1 h1:7fpzNGoJ3VA8qcrm++XEE1QUe0mIwNeLa02Nwq7RDkg=
 github.com/aokoli/goutils v1.0.1/go.mod h1:SijmP0QR8LtwsmDs8Yii5Z/S4trXFGFC2oO5g9DP+DQ=
 github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/appscode/jsonpatch v0.0.0-20180911074601-5af499cf01c8/go.mod h1:4AJxUpXUhv4N+ziTvIcWWXgeorXpxPZOfk9HdEVr96M=
@@ -391,6 +393,7 @@ github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c h1:kp3AxgXgDOmIJFR7b
 github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c/go.mod h1:DqJ97dSdRW1W22yXSB90986pcOyQ7r45iio1KN2ez1A=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
+github.com/huandu/xstrings v1.0.0 h1:pO2K/gKgKaat5LdpAhxhluX2GPQMaI3W5FUz/I/UnWk=
 github.com/huandu/xstrings v1.0.0/go.mod h1:4qWG/gcEcfX4z/mBDHJ++3ReCw9ibxbsNJbcucJdbSo=
 github.com/iancoleman/orderedmap v0.0.0-20181121102841-22c6ecc9fe13 h1:0XE8qtre7NNhsKWo+PuYJNmoR3szkSzpDtZLEW+5HE0=
 github.com/iancoleman/orderedmap v0.0.0-20181121102841-22c6ecc9fe13/go.mod h1:N0Wam8K1arqPXNWjMo21EXnBPOPp36vB07FNRdD2geA=

@@ -47,6 +47,10 @@ const (
 	// TemplatesDirName is the default name for the templates directory
 	TemplatesDirName = "templates"
 
+	// ParametersYAMLFile contains logical parameters (values or secrets) which can be fetched from a Secret URL or
+	// inlined if not a secret which can be referenced from a 'values.yaml` file via a `{{ .Parameters.foo.bar }}` expression
+	ParametersYAMLFile = "parameters.yaml"
+
 	// InClusterHelmRepositoryURL is the default cluster local helm repo
 	InClusterHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
 
@@ -595,9 +599,12 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient secreturl.Cli
 			if err != nil {
 				return cleanup, errors.Wrapf(err, "reading file %s", valueFile)
 			}
-			newValues, err := vaultClient.ReplaceURIs(string(bytes))
-			if err != nil {
-				return cleanup, errors.Wrapf(err, "replacing vault URIs")
+			newValues := string(bytes)
+			if vaultClient != nil {
+				newValues, err = vaultClient.ReplaceURIs(newValues)
+				if err != nil {
+					return cleanup, errors.Wrapf(err, "replacing vault URIs")
+				}
 			}
 			err = ioutil.WriteFile(newValuesFile.Name(), []byte(newValues), 0600)
 			if err != nil {
@@ -608,6 +615,35 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient secreturl.Cli
 		options.ValueFiles = newValuesFiles
 	}
 	return cleanup, nil
+}
+
+// LoadParameters loads the 'parameters.yaml' file if it exists in the current directory
+func LoadParameters(dir string, vaultClient secreturl.Client) (chartutil.Values, error) {
+	fileName := filepath.Join(dir, ParametersYAMLFile)
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "checking %s exists", fileName)
+	}
+	m := map[string]interface{}{}
+	if exists {
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "reading %s", fileName)
+		}
+		if vaultClient != nil {
+			text, err := vaultClient.ReplaceURIs(string(data))
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to convert secret URLs in parameters file %s", fileName)
+			}
+			data = []byte(text)
+		}
+
+		m, err = LoadValues(data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unmarshaling %s", fileName)
+		}
+	}
+	return chartutil.Values(m), err
 }
 
 // AddHelmRepoIfMissing will add the helm repo if there is no helm repo with that url present.

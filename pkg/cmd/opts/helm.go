@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/pkg/secreturl"
+	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -403,11 +406,28 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 			return err
 		}
 	}
+	secretUrlClient, err := o.GetSecretURLClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create a Secret RL client")
+	}
+	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, secretUrlClient)
+}
+
+// GetSecretURLClient create a new secret URL client
+func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
+	if o.GetSecretsLocation() == secrets.FileSystemLocationKind {
+		clusterName, err := o.GetClusterName()
+		if err != nil {
+			return nil, err
+		}
+		dir, err := util.LocalFileSystemSecretsDir(clusterName)
+		return localvault.NewFileSystemClient(dir), nil
+	}
 	vaultClient, err := o.SystemVaultClient(o.devNamespace)
 	if err != nil {
 		vaultClient = nil
 	}
-	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, vaultClient)
+	return vaultClient, nil
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir
