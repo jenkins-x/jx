@@ -33,7 +33,6 @@ type ProjectConfig struct {
 	BuildPack           string                      `json:"buildPack,omitempty"`
 	BuildPackGitURL     string                      `json:"buildPackGitURL,omitempty"`
 	BuildPackGitURef    string                      `json:"buildPackGitRef,omitempty"`
-	Workflow            string                      `json:"workflow,omitempty"`
 	PipelineConfig      *jenkinsfile.PipelineConfig `json:"pipelineConfig,omitempty"`
 	NoReleasePrepare    bool                        `json:"noReleasePrepare,omitempty"`
 	DockerRegistryHost  string                      `json:"dockerRegistryHost,omitempty"`
@@ -67,52 +66,6 @@ type ChatConfig struct {
 type AddonConfig struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
-}
-
-type BranchBuild struct {
-	Build Build `json:"build,omitempty"`
-
-	// Jenkins X extensions to standard Knative builds:
-
-	// which kind of pipeline - like release, pullRequest, feature
-	Kind string `json:"kind,omitempty"`
-
-	// display name
-	Name string `json:"name,omitempty"`
-
-	// List of sources to populate environment variables in all the steps if there is not already
-	// an environment variable defined on that step
-	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
-
-	// List of environment variables to add to each step if there is not already a environment variable of that name
-	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	ExcludePodTemplateEnv     bool `json:"excludePodTemplateEnv,omitempty"`
-	ExcludePodTemplateVolumes bool `json:"excludePodTemplateVolumes,omitempty"`
-}
-
-type Build struct {
-	// Steps are the steps of the build; each step is run sequentially with the
-	// source mounted into /workspace.
-	Steps []corev1.Container `json:"steps,omitempty"`
-
-	// Volumes is a collection of volumes that are available to mount into the
-	// steps of the build.
-	Volumes []corev1.Volume `json:"volumes,omitempty"`
-
-	// The name of the service account as which to run this build.
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-
-	// Template, if specified, references a BuildTemplate resource to use to
-	// populate fields in the build, and optional Arguments to pass to the
-	// template.
-	//Template *TemplateInstantiationSpec `json:"template,omitempty"`
-
-	// NodeSelector is a selector which must be true for the pod to fit on a node.
-	// Selector which must match a node's labels for the pod to be scheduled on that node.
-	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // LoadProjectConfig loads the project configuration if there is a project configuration file
