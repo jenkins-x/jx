@@ -1,4 +1,4 @@
-package vaulturl
+package secreturl
 
 import (
 	"fmt"

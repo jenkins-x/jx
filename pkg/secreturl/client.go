@@ -1,4 +1,4 @@
-package vaulturl
+package secreturl
 
 // Client is a simple interface for Vault-like things such as `vault.Client` or a file system we can use to
 // access secret files and values in helm.

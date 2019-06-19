@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/vaulturl"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +17,7 @@ type FileSystemClient struct {
 }
 
 // NewFileSystemClient create a new local file system based client loading content from the given URL
-func NewFileSystemClient(dir string) vaulturl.Client {
+func NewFileSystemClient(dir string) secreturl.Client {
 	return &FileSystemClient{
 		Dir: dir,
 	}

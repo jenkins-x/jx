@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/vaulturl/localvault"
+	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/require"
