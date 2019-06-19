@@ -28,17 +28,17 @@ func ReplaceURIs(s string, client Client) (string, error) {
 				err = errors.Wrapf(err1, "reading %s from vault", parts[0])
 				return ""
 			}
-			if v, ok := secret[parts[1]]; !ok {
+			v, ok := secret[parts[1]]
+			if !ok {
 				err = errors.Errorf("unable to find %s in secret at %s", parts[1], parts[0])
 				return ""
-			} else {
-				result, err1 := util.AsString(v)
-				if err1 != nil {
-					err = errors.Wrapf(err1, "converting %v to string", v)
-					return ""
-				}
-				return result
 			}
+			result, err1 := util.AsString(v)
+			if err1 != nil {
+				err = errors.Wrapf(err1, "converting %v to string", v)
+				return ""
+			}
+			return result
 		}
 		return found
 	})
