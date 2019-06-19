@@ -21,9 +21,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// TemplateValuesFilename the name of the template file used to generate the `values.yaml` file
+const TemplateValuesFilename = "template-values.yaml"
+
 var (
 	createInstallValuesLong = templates.LongDesc(`
-		Creates the installation values.yaml file from an init-values.yaml defaulting any missing values from the cluster itself
+		Creates the installation values.yaml file from an template-values.yaml defaulting any missing values from the cluster itself
 `)
 
 	createInstallValuesExample = templates.Examples(`
@@ -62,7 +65,7 @@ func NewCmdStepCreateInstallValues(commonOpts *opts.CommonOptions) *cobra.Comman
 
 	cmd := &cobra.Command{
 		Use:     "install values",
-		Short:   "Creates the installation values.yaml file from an init-values.yaml defaulting any missing values from the cluster itself",
+		Short:   "Creates the installation values.yaml file from an template-values.yaml defaulting any missing values from the cluster itself",
 		Long:    createInstallValuesLong,
 		Example: createInstallValuesExample,
 		Aliases: []string{"version pullrequest"},
@@ -94,7 +97,7 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 		}
 	}
 	valuesFile := filepath.Join(o.Dir, "values.yaml")
-	initValuesFile := filepath.Join(o.Dir, "init-values.yaml")
+	initValuesFile := filepath.Join(o.Dir, TemplateValuesFilename)
 
 	exists, err := util.FileExists(initValuesFile)
 	if err != nil {
@@ -140,7 +143,7 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 			return values, errors.Wrapf(err, "failed to discover the Ingress domain")
 		}
 		if domain == "" {
-			return values, fmt.Errorf("could not detect a domain. Pleae configure one at 'cluster.domain' in the init-values.yaml")
+			return values, fmt.Errorf("could not detect a domain. Pleae configure one at 'cluster.domain' in the file %s", TemplateValuesFilename)
 		}
 		util.SetMapValueViaPath(values, "cluster.domain", domain)
 	}
