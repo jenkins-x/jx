@@ -25,9 +25,9 @@ func TestValuesTreeTemplates(t *testing.T) {
 	testData := path.Join("test_data", "tree_of_values_yaml_templates")
 
 	localVaultDir := path.Join(testData, "local_vault_files")
-	secretUrlClient := localvault.NewFileSystemClient(localVaultDir)
+	secretURLClient := localvault.NewFileSystemClient(localVaultDir)
 
-	result, err := helm.GenerateValues(testData, nil, true, secretUrlClient)
+	result, err := helm.GenerateValues(testData, nil, true, secretURLClient)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedTemplatedValuesTree, string(result))
 }

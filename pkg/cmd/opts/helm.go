@@ -406,11 +406,11 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 			return err
 		}
 	}
-	secretUrlClient, err := o.GetSecretURLClient()
+	secretURLClient, err := o.GetSecretURLClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
-	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, secretUrlClient)
+	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, secretURLClient)
 }
 
 // GetSecretURLClient create a new secret URL client

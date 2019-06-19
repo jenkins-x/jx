@@ -193,11 +193,11 @@ func (o *StepHelmApplyOptions) Run() error {
 		}()
 	}
 
-	secretUrlClient, err := o.GetSecretURLClient()
+	secretURLClient, err := o.GetSecretURLClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
-	chartValues, err := helm.GenerateValues(dir, nil, true, secretUrlClient)
+	chartValues, err := helm.GenerateValues(dir, nil, true, secretURLClient)
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}
