@@ -69,6 +69,7 @@ func (c *FileSystemClient) WriteObject(secretName string, secret interface{}) (m
 	return c.Read(secretName)
 }
 
+// ReplaceURIs will replace any local: URIs in a string
 func (c *FileSystemClient) ReplaceURIs(s string) (string, error) {
 	return secreturl.ReplaceURIs(s, c, localURIRegex, "local:")
 }

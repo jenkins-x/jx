@@ -179,6 +179,7 @@ func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 	return *parsed, v.client.Token(), err
 }
 
+// ReplaceURIs will replace any vault: URIs in a string (or whatever URL scheme the secret URL client supports
 func (v *client) ReplaceURIs(s string) (string, error) {
 	return secreturl.ReplaceURIs(s, v, vaultURIRegex, "vault:")
 }
