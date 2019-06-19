@@ -33,7 +33,7 @@ type Client interface {
 	// Read reads a named secret from the vault
 	Read(secretName string) (map[string]interface{}, error)
 
-	// ReadObject reads a generic named objec from vault.
+	// ReadObject reads a generic named object from vault.
 	// The secret _must_ be serializable to JSON.
 	ReadObject(secretName string, secret interface{}) error
 

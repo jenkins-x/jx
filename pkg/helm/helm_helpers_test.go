@@ -3,11 +3,14 @@ package helm_test
 import (
 	"fmt"
 	"io/ioutil"
+	"path"
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/vaulturl/localvault"
 	"github.com/pborman/uuid"
 	"github.com/petergtz/pegomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -196,6 +199,46 @@ func TestReplaceVaultURI(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
+	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
+	defer cleanup()
+	assert2.Len(t, options.ValueFiles, 1)
+	newValuesYaml, err := ioutil.ReadFile(options.ValueFiles[0])
+	assert2.NoError(t, err)
+	assert2.Equal(t, fmt.Sprintf(`foo:
+  bar: %s
+`, secret), string(newValuesYaml))
+}
+
+func TestReplaceVaultURIWithLocalFile(t *testing.T) {
+	vaultClient := localvault.NewFileSystemClient(path.Join("test_data", "local_vault_files"))
+	path := "/baz/qux"
+	key := "cheese"
+	secret := "Edam"
+	valuesyaml := fmt.Sprintf(`foo:
+  bar: vault:%s:%s
+`, path, key)
+	valuesFile, err := ioutil.TempFile("", "values.yaml")
+	defer func() {
+		err := util.DeleteFile(valuesFile.Name())
+		assert2.NoError(t, err)
+	}()
+	assert2.NoError(t, err)
+	err = ioutil.WriteFile(valuesFile.Name(), []byte(valuesyaml), 0600)
+	assert2.NoError(t, err)
+	options := helm.InstallChartOptions{
+		ValueFiles: []string{
+			valuesFile.Name(),
+		},
+	}
+
+	actual, err := vaultClient.Read(path)
+	expected := map[string]interface{}{
+		key: secret,
+	}
+
+	require.NoError(t, err, "reading vault client on path %s", path)
+	assert2.Equal(t, expected, actual, "vault read at path %s", path)
+
 	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
 	defer cleanup()
 	assert2.Len(t, options.ValueFiles, 1)

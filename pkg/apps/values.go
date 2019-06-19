@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/vaulturl"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ghodss/yaml"
@@ -187,7 +188,7 @@ func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath
 			secrets = append(secrets, secret)
 			if passthrough {
 				if useVault {
-					return vault.ToURI(secret.Path, secret.Key), nil
+					return vaulturl.ToURI(secret.Path, secret.Key), nil
 				}
 				return value, nil
 			}

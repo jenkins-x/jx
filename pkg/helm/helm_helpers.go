@@ -15,22 +15,21 @@ import (
 	"strconv"
 	"strings"
 
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pborman/uuid"
 
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/jenkins-x/jx/pkg/vault"
-
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/vaulturl"
 	"github.com/jenkins-x/jx/pkg/version"
 
-	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -518,7 +517,7 @@ type InstallChartOptions struct {
 // respecting the installTimeout, looking up or updating Vault with the username and password for the repo.
 // If vaultClient is nil then username and passwords for repos will not be looked up in Vault.
 func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeClient kubernetes.Interface,
-	installTimeout string, vaultClient vault.Client) error {
+	installTimeout string, vaultClient vaulturl.Client) error {
 	chart := options.Chart
 	if options.Version == "" {
 		versionsDir := options.VersionsDir
@@ -574,7 +573,7 @@ type HelmRepoCredential struct {
 
 // DecorateWithSecrets will replace any vault: URIs with the secret from vault. Safe to call with a nil client (
 // no replacement will take place).
-func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client) (func(), error) {
+func DecorateWithSecrets(options *InstallChartOptions, vaultClient vaulturl.Client) (func(), error) {
 	cleanup := func() {
 	}
 	if vaultClient != nil {
@@ -596,7 +595,7 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client)
 			if err != nil {
 				return cleanup, errors.Wrapf(err, "reading file %s", valueFile)
 			}
-			newValues, err := vault.ReplaceURIs(string(bytes), vaultClient)
+			newValues, err := vaulturl.ReplaceURIs(string(bytes), vaultClient)
 			if err != nil {
 				return cleanup, errors.Wrapf(err, "replacing vault URIs")
 			}
@@ -616,7 +615,7 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client)
 // The repo name may have a suffix added in order to prevent name collisions, and is returned for this reason.
 // The username and password will be stored in vault for the URL (if vault is enabled).
 func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer Helmer,
-	vaultClient vault.Client, in terminal.FileReader,
+	vaultClient vaulturl.Client, in terminal.FileReader,
 	out terminal.FileWriter, outErr io.Writer) (string, error) {
 	missing, existingName, err := helmer.IsRepoMissing(helmURL)
 	if err != nil {
@@ -663,7 +662,7 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 }
 
 // DecorateWithCredentials will, if vault is installed, store or replace the username or password
-func DecorateWithCredentials(repo string, username string, password string, vaultClient vault.Client, in terminal.FileReader,
+func DecorateWithCredentials(repo string, username string, password string, vaultClient vaulturl.Client, in terminal.FileReader,
 	out terminal.FileWriter, outErr io.Writer) (string,
 	string, error) {
 	if repo != "" && vaultClient != nil {
