@@ -2,7 +2,6 @@ package get
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -92,7 +91,8 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 	}
 	for _, env := range envList.Items {
 		if env.Spec.Kind == v1.EnvironmentKindTypePreview && env.Name == name {
-			log.Logger().Infof("%s", env.Spec.PreviewGitSpec.ApplicationURL)
+			// lets log directly to stdout for easy capture of the URL from shell scripts
+			fmt.Println(env.Spec.PreviewGitSpec.ApplicationURL)
 			return nil
 		}
 	}
