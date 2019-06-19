@@ -261,7 +261,7 @@ func PipelineOptionsRetry(count int8) PipelineOptionsOp {
 // PipelineEnvVar add an environment variable, with specified name and value, to the pipeline.
 func PipelineEnvVar(name, value string) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Env = append(parsed.GetEnv(), syntax.EnvVar{
+		parsed.Env = append(parsed.GetEnv(), corev1.EnvVar{
 			Name:  name,
 			Value: value,
 		})
@@ -382,7 +382,7 @@ func StageOptionsUnstash(name, dir string) StageOptionsOp {
 // StageEnvVar add an environment variable, with specified name and value, to the stage.
 func StageEnvVar(name, value string) StageOp {
 	return func(stage *syntax.Stage) {
-		stage.Env = append(stage.GetEnv(), syntax.EnvVar{
+		stage.Env = append(stage.GetEnv(), corev1.EnvVar{
 			Name:  name,
 			Value: value,
 		})
@@ -481,7 +481,7 @@ func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
 // StepEnvVar add an environment variable, with specified name and value, to the step.
 func StepEnvVar(name, value string) StepOp {
 	return func(step *syntax.Step) {
-		step.Env = append(step.Env, syntax.EnvVar{
+		step.Env = append(step.Env, corev1.EnvVar{
 			Name:  name,
 			Value: value,
 		})

@@ -36,15 +36,15 @@ const (
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
-	Agent      *Agent       `json:"agent,omitempty"`
-	Env        []EnvVar     `json:"env,omitempty"`
-	Options    *RootOptions `json:"options,omitempty"`
-	Stages     []Stage      `json:"stages"`
-	Post       []Post       `json:"post,omitempty"`
-	WorkingDir *string      `json:"dir,omitempty"`
+	Agent      *Agent          `json:"agent,omitempty"`
+	Env        []corev1.EnvVar `json:"env,omitempty"`
+	Options    *RootOptions    `json:"options,omitempty"`
+	Stages     []Stage         `json:"stages"`
+	Post       []Post          `json:"post,omitempty"`
+	WorkingDir *string         `json:"dir,omitempty"`
 
 	// Replaced by Env, retained for backwards compatibility
-	Environment []EnvVar `json:"environment,omitempty"`
+	Environment []corev1.EnvVar `json:"environment,omitempty"`
 }
 
 // Agent defines where the pipeline, stage, or step should run.
@@ -56,12 +56,6 @@ type Agent struct {
 	// Legacy fields from jenkinsfile.PipelineAgent
 	Container string `json:"container,omitempty"`
 	Dir       string `json:"dir,omitempty"`
-}
-
-// EnvVar is a key/value pair defining an environment variable
-type EnvVar struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
 }
 
 // TimeoutUnit is used for calculating timeout duration
@@ -175,7 +169,7 @@ type Step struct {
 	Image string `json:"image,omitempty"`
 
 	// env allows defining per-step environment variables
-	Env []EnvVar `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Legacy fields from jenkinsfile.PipelineStep before it was eliminated.
 	Comment   string  `json:"comment,omitempty"`
@@ -201,18 +195,18 @@ type Loop struct {
 // Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
 // parallel with common configuration.
 type Stage struct {
-	Name       string        `json:"name"`
-	Agent      *Agent        `json:"agent,omitempty"`
-	Env        []EnvVar      `json:"env,omitempty"`
-	Options    *StageOptions `json:"options,omitempty"`
-	Steps      []Step        `json:"steps,omitempty"`
-	Stages     []Stage       `json:"stages,omitempty"`
-	Parallel   []Stage       `json:"parallel,omitempty"`
-	Post       []Post        `json:"post,omitempty"`
-	WorkingDir *string       `json:"dir,omitempty"`
+	Name       string          `json:"name"`
+	Agent      *Agent          `json:"agent,omitempty"`
+	Env        []corev1.EnvVar `json:"env,omitempty"`
+	Options    *StageOptions   `json:"options,omitempty"`
+	Steps      []Step          `json:"steps,omitempty"`
+	Stages     []Stage         `json:"stages,omitempty"`
+	Parallel   []Stage         `json:"parallel,omitempty"`
+	Post       []Post          `json:"post,omitempty"`
+	WorkingDir *string         `json:"dir,omitempty"`
 
 	// Replaced by Env, retained for backwards compatibility
-	Environment []EnvVar `json:"environment,omitempty"`
+	Environment []corev1.EnvVar `json:"environment,omitempty"`
 }
 
 // PostCondition is used to specify under what condition a post action should be executed.
@@ -501,7 +495,7 @@ func MangleToRfc1035Label(body string, suffix string) string {
 }
 
 // GetEnv gets the environment for the ParsedPipeline, returning Env first and Environment if Env isn't populated.
-func (j *ParsedPipeline) GetEnv() []EnvVar {
+func (j *ParsedPipeline) GetEnv() []corev1.EnvVar {
 	if j != nil {
 		if len(j.Env) > 0 {
 			return j.Env
@@ -509,11 +503,11 @@ func (j *ParsedPipeline) GetEnv() []EnvVar {
 
 		return j.Environment
 	}
-	return []EnvVar{}
+	return []corev1.EnvVar{}
 }
 
 // GetEnv gets the environment for the Stage, returning Env first and Environment if Env isn't populated.
-func (s *Stage) GetEnv() []EnvVar {
+func (s *Stage) GetEnv() []corev1.EnvVar {
 	if len(s.Env) > 0 {
 		return s.Env
 	}
@@ -955,28 +949,16 @@ func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	return env
 }
 
-func toContainerEnvVars(origEnv []EnvVar) []corev1.EnvVar {
-	env := make([]corev1.EnvVar, 0, len(origEnv))
-	for _, e := range origEnv {
-		env = append(env, corev1.EnvVar{
-			Name:  e.Name,
-			Value: e.Value,
-		})
-	}
-
-	return env
-}
-
 // AddContainerEnvVarsToPipeline allows for adding a slice of container environment variables directly to the
 // pipeline, if they're not already defined.
 func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) {
 	if len(origEnv) > 0 {
-		envMap := make(map[string]EnvVar)
+		envMap := make(map[string]corev1.EnvVar)
 
 		// Add the container env vars first.
 		for _, e := range origEnv {
 			if e.ValueFrom == nil {
-				envMap[e.Name] = EnvVar{
+				envMap[e.Name] = corev1.EnvVar{
 					Name:  e.Name,
 					Value: e.Value,
 				}
@@ -988,7 +970,7 @@ func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) 
 			envMap[e.Name] = e
 		}
 
-		env := make([]EnvVar, 0, len(envMap))
+		env := make([]corev1.EnvVar, 0, len(envMap))
 
 		// Avoid nondeterministic results by sorting the keys and appending vars in that order.
 		var envVars []string
@@ -1017,16 +999,6 @@ func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVa
 
 	for _, e := range newEnv {
 		envMap[e.Name] = e
-	}
-
-	return EnvMapToSlice(envMap)
-}
-
-func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
-	envMap := make(map[string]corev1.EnvVar)
-
-	for _, e := range j.GetEnv() {
-		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
 	}
 
 	return EnvMapToSlice(envMap)
@@ -1182,7 +1154,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		stageContainer = merged
 	}
 
-	env := scopedEnv(toContainerEnvVars(s.GetEnv()), parentEnv)
+	env := scopedEnv(s.GetEnv(), parentEnv)
 
 	agent := s.Agent.DeepCopy()
 
@@ -1440,7 +1412,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 
 		c.Stdin = false
 		c.TTY = false
-		c.Env = scopedEnv(toContainerEnvVars(step.Env), scopedEnv(env, c.Env))
+		c.Env = scopedEnv(step.Env, scopedEnv(env, c.Env))
 
 		steps = append(steps, *c)
 	} else if step.Loop != nil {
@@ -1533,7 +1505,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 
 	var tasks []*tektonv1alpha1.Task
 
-	baseEnv := j.toStepEnvVars()
+	baseEnv := j.GetEnv()
 
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
