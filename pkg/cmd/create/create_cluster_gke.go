@@ -61,6 +61,10 @@ const (
 	enhancedAPIFlagName     = "enhanced-apis"
 	enhancedScopesFlagName  = "enhanced-scopes"
 	maxGKEClusterNameLength = 27
+	machineTypeFlagName     = "machine-type"
+	minNodesFlagName        = "min-num-nodes"
+	maxNodesFlagName        = "max-num-nodes"
+	projectIdFlagName       = "project-id"
 )
 
 var (
@@ -113,8 +117,6 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options.addCreateClusterFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.InstallOptions.Flags.ConfigFile, "config-file", "c", "", "Config file")
-
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	_ = viper.BindPFlag(optionClusterName, cmd.Flags().Lookup(optionClusterName))
 
@@ -123,23 +125,25 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
 	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
 
-	cmd.Flags().StringVarP(&options.Flags.MachineType, "machine-type", "m", "", "The type of machine to use for nodes")
-	_ = viper.BindPFlag("machine-type", cmd.Flags().Lookup("machine-type"))
+	cmd.Flags().StringVarP(&options.Flags.MachineType, machineTypeFlagName, "m", "", "The type of machine to use for nodes")
+	_ = viper.BindPFlag(machineTypeFlagName, cmd.Flags().Lookup(machineTypeFlagName))
 
-	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, "min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
-	_ = viper.BindPFlag("min-num-nodes", cmd.Flags().Lookup("min-num-nodes"))
+	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, minNodesFlagName, "", "", "The minimum number of nodes to be created in each of the cluster's zones")
+	_ = viper.BindPFlag(minNodesFlagName, cmd.Flags().Lookup(minNodesFlagName))
 
-	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	_ = viper.BindPFlag("min-num-nodes", cmd.Flags().Lookup("max-num-nodes"))
+	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, maxNodesFlagName, "", "", "The maximum number of nodes to be created in each of the cluster's zones")
+	_ = viper.BindPFlag(maxNodesFlagName, cmd.Flags().Lookup(maxNodesFlagName))
 
-	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
-	_ = viper.BindPFlag("project-id", cmd.Flags().Lookup("project-id"))
+	cmd.Flags().StringVarP(&options.Flags.ProjectId, projectIdFlagName, "p", "", "Google Project ID to create cluster in")
+	_ = viper.BindPFlag(projectIdFlagName, cmd.Flags().Lookup(projectIdFlagName))
 
 	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
+	_ = viper.BindPFlag("zone", cmd.Flags().Lookup("zone"))
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "Compute region (e.g. us-central1) for the cluster")
+	_ = viper.BindPFlag("region", cmd.Flags().Lookup("region"))
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
@@ -173,17 +177,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 }
 
 func (o *CreateClusterGKEOptions) createClusterGKE() error {
-	configFile := o.InstallOptions.Flags.ConfigFile
-	if configFile != "" {
-		viper.SetConfigFile(configFile)
-		viper.SetConfigType("yaml")
-
-		if err := viper.ReadInConfig(); err != nil {
-			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-				log.Logger().Warnf("Config file %s not found", configFile)
-			}
-		}
-	}
+	o.ReadConfigFile()
 
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var err error
@@ -251,8 +245,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		log.Logger().Infof(util.QuestionAnswer("Configured cluster name", o.Flags.ClusterName))
 	}
 
-	region := o.Flags.Region
-	zone := o.Flags.Zone
+	region := viper.GetString("region")
+	zone := viper.GetString("zone")
 
 	if o.InstallOptions.Flags.NextGeneration && region != "" {
 		return errors.New("cannot create a regional cluster with --ng")
@@ -291,6 +285,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					return err
 				}
 			}
+		} else if region != "" {
+			log.Logger().Infof(util.QuestionAnswer("Configured to cluster type", "Regional"))
+			log.Logger().Infof(util.QuestionAnswer("Configured Google Cloud Region", region))
+		} else {
+			log.Logger().Infof(util.QuestionAnswer("Configured to cluster type", "Zonal"))
+			log.Logger().Infof(util.QuestionAnswer("Configured Google Cloud Zone", zone))
 		}
 	} else {
 		if zone == "" && region == "" {
@@ -369,7 +369,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			log.Logger().Infof(util.QuestionAnswer("Defaulting to maxiumum number of nodes", maxNumOfNodes))
 		}
 	} else {
-		log.Logger().Infof(util.QuestionAnswer("Configured to maximum number of nodes", minNumOfNodes))
+		log.Logger().Infof(util.QuestionAnswer("Configured to maximum number of nodes", maxNumOfNodes))
 	}
 
 	if !o.BatchMode {

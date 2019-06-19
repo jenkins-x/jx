@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"io"
 	"os"
 	"strings"
@@ -142,6 +143,7 @@ type CommonOptions struct {
 	secretURLClient        secreturl.Client
 	vaultOperatorClient    vaultoperatorclient.Interface
 	AdvancedMode           bool
+	ConfigFile             string
 }
 
 type ServerFlags struct {
@@ -237,11 +239,26 @@ func (o *CommonOptions) AddBaseFlags(cmd *cobra.Command) {
 func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	o.AddBaseFlags(cmd)
 
+	cmd.PersistentFlags().StringVarP(&o.ConfigFile, "config-file", "", "", "Configuration file used for installation")
 	cmd.PersistentFlags().BoolVarP(&o.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
 	cmd.PersistentFlags().BoolVarP(&o.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
 	cmd.PersistentFlags().BoolVarP(&o.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
 
 	o.Cmd = cmd
+}
+
+func (o *CommonOptions) ReadConfigFile() {
+	configFile := o.ConfigFile
+	if configFile != "" {
+		viper.SetConfigFile(configFile)
+		viper.SetConfigType("yaml")
+
+		if err := viper.ReadInConfig(); err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				log.Logger().Warnf("Config file %s not found", configFile)
+			}
+		}
+	}
 }
 
 // ApiExtensionsClient return or creates the api extension client
