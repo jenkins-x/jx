@@ -40,11 +40,13 @@ go-generate:
 	@echo "Generating Mocks using pegomock"
 	$(GO) generate ./...
 
-generate-client: codegen-clientset fmt ## Generate the client
+generate-client: codegen-clientset codegen-config fmt ## Generate the client
 
 codegen-clientset: build-codegen ## Generate the k8s types and clients
 	@echo "Generating Kubernetes Clients for pkg/apis in pkg/client for jenkins.io:v1"
 	./build/$(CODE_GEN_BIN_NAME) --generator-version $(CLIENTSET_GENERATOR_VERSION) clientset --output-package=pkg/client --input-package=pkg/apis --group-with-version=jenkins.io:v1
+
+codegen-config: build-codegen ## Generate the deepcopy for the config, jenkinsfile, and tekton/syntax packages
 	./build/$(CODE_GEN_BIN_NAME) --generator-version $(CLIENTSET_GENERATOR_VERSION) clientset --generator deepcopy --output-package=pkg --input-package=pkg --group-with-version=config: --group-with-version=jenkinsfile: --group-with-version=tekton:syntax
 
 # Generated docs are not checked in
