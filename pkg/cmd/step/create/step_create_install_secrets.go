@@ -38,6 +38,8 @@ var (
 		e.g. you may inject your pipeline user name and token from your git provider into various charts like Tekton and Prow using the same values. Or you may want to use template functions to extract values for secrets from specific locations in the parameters file or from Vault locations etc.
 
 		So this templating mechanism lets us compose secret values from input parameters or arbitrary functions in a very similar way to the use of go templates inside YAML files in helm charts themselves.
+
+		You can then use the '.gitignore' rule of 'secrets*.yaml' to avoid ever checking in the 'secrets-parameters.yaml' or the generated 'secrets.yaml' files while safely adding your 'template-secrets.yaml' file.
 `)
 
 	createInstallSecretsExample = templates.Examples(`
