@@ -595,7 +595,7 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient secreturl.Cli
 			if err != nil {
 				return cleanup, errors.Wrapf(err, "reading file %s", valueFile)
 			}
-			newValues, err := secreturl.ReplaceURIs(string(bytes), vaultClient)
+			newValues, err := vaultClient.ReplaceURIs(string(bytes))
 			if err != nil {
 				return cleanup, errors.Wrapf(err, "replacing vault URIs")
 			}

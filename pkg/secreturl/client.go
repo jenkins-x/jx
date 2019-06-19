@@ -14,4 +14,7 @@ type Client interface {
 	// WriteObject writes a generic named object to the vault.
 	// The secret _must_ be serializable to JSON.
 	WriteObject(secretName string, secret interface{}) (map[string]interface{}, error)
+
+	// ReplaceURIs will replace any vault: URIs in a string (or whatever URL scheme the secret URL client supports
+	ReplaceURIs(text string) (string, error)
 }

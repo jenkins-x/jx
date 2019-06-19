@@ -9,15 +9,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-var vaultURIRegex = regexp.MustCompile(`vault:[-_\w\/:]*`)
-
-// ReplaceURIs will replace any vault: URIs in a string, using the vault client
-func ReplaceURIs(s string, client Client) (string, error) {
+// ReplaceURIs will replace any URIs with the given regular expression and scheme using the secret URL client
+func ReplaceURIs(s string, client Client, r *regexp.Regexp, schemePrefix string) (string, error) {
+	if !strings.HasSuffix(schemePrefix, ":") {
+		return s, fmt.Errorf("the scheme prefix should end with ':' but was %s", schemePrefix)
+	}
 	var err error
-	answer := vaultURIRegex.ReplaceAllStringFunc(s, func(found string) string {
+	answer := r.ReplaceAllStringFunc(s, func(found string) string {
 		// Stop once we have an error
 		if err == nil {
-			pathAndKey := strings.Trim(strings.TrimPrefix(found, "vault:"), "\"")
+			pathAndKey := strings.Trim(strings.TrimPrefix(found, schemePrefix), "\"")
 			parts := strings.Split(pathAndKey, ":")
 			if len(parts) != 2 {
 				err = errors.Errorf("cannot parse %s as path:key", pathAndKey)

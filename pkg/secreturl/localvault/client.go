@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
+
+var localURIRegex = regexp.MustCompile(`local:[-_\w\/:]*`)
 
 // FileSystemClient a local file system based client loading/saving content from the given URL
 type FileSystemClient struct {
@@ -64,6 +67,10 @@ func (c *FileSystemClient) WriteObject(secretName string, secret interface{}) (m
 		return nil, err
 	}
 	return c.Read(secretName)
+}
+
+func (c *FileSystemClient) ReplaceURIs(s string) (string, error) {
+	return secreturl.ReplaceURIs(s, c, localURIRegex, "local:")
 }
 
 func (c *FileSystemClient) fileName(secretName string) string {
