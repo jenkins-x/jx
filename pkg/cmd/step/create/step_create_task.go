@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -948,7 +949,7 @@ func (o *StepCreateTaskOptions) mergePullRefs(cloneDir string) (*prow.PullRefs, 
 			shas = append(shas, sha)
 		}
 
-		mergeOpts := opts.StepGitMergeOptions{
+		mergeOpts := git.StepGitMergeOptions{
 			StepOptions: opts.StepOptions{
 				CommonOptions: o.CommonOptions,
 			},
