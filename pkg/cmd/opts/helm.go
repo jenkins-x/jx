@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+	"github.com/jenkins-x/jx/pkg/secreturl"
+	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -24,8 +27,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -403,11 +406,32 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 			return err
 		}
 	}
+	secretURLClient, err := o.GetSecretURLClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create a Secret RL client")
+	}
+	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, secretURLClient)
+}
+
+// GetSecretURLClient create a new secret URL client
+func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
 	vaultClient, err := o.SystemVaultClient(o.devNamespace)
 	if err != nil {
 		vaultClient = nil
 	}
-	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, vaultClient)
+	if vaultClient != nil {
+		return vaultClient, nil
+	}
+	clusterName, err := cluster.Name(o.Kube())
+	if err != nil || clusterName == "" {
+		// we could be bootstrapping the cluster
+		clusterName = os.Getenv("JX_CLUSTER_NAME")
+		if clusterName == "" {
+			clusterName = "default-cluster"
+		}
+	}
+	dir, err := util.LocalFileSystemSecretsDir(clusterName)
+	return localvault.NewFileSystemClient(dir), nil
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir

@@ -3,15 +3,18 @@ package helm_test
 import (
 	"fmt"
 	"io/ioutil"
+	"path"
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
 	"github.com/petergtz/pegomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	secreturl_test "github.com/jenkins-x/jx/pkg/secreturl/mocks"
 	"github.com/jenkins-x/jx/pkg/util"
-	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
 	"github.com/magiconair/properties/assert"
 	assert2 "github.com/stretchr/testify/assert"
 )
@@ -96,7 +99,7 @@ func TestSetValuesToMap(t *testing.T) {
 
 func TestStoreCredentials(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
@@ -112,7 +115,7 @@ func TestStoreCredentials(t *testing.T) {
 
 func TestRetrieveCredentials(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
@@ -139,7 +142,7 @@ func TestRetrieveCredentials(t *testing.T) {
 
 func TestOverrideCredentials(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
@@ -173,7 +176,7 @@ func TestOverrideCredentials(t *testing.T) {
 
 func TestReplaceVaultURI(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	path := "/baz/qux"
 	key := "cheese"
 	secret := uuid.New()
@@ -196,6 +199,49 @@ func TestReplaceVaultURI(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
+	pegomock.When(vaultClient.ReplaceURIs(pegomock.EqString(valuesyaml))).ThenReturn(fmt.Sprintf(`foo:
+  bar: %s
+`, secret), nil)
+	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
+	defer cleanup()
+	assert2.Len(t, options.ValueFiles, 1)
+	newValuesYaml, err := ioutil.ReadFile(options.ValueFiles[0])
+	assert2.NoError(t, err)
+	assert2.Equal(t, fmt.Sprintf(`foo:
+  bar: %s
+`, secret), string(newValuesYaml))
+}
+
+func TestReplaceVaultURIWithLocalFile(t *testing.T) {
+	vaultClient := localvault.NewFileSystemClient(path.Join("test_data", "local_vault_files"))
+	path := "/baz/qux"
+	key := "cheese"
+	secret := "Edam"
+	valuesyaml := fmt.Sprintf(`foo:
+  bar: local:%s:%s
+`, path, key)
+	valuesFile, err := ioutil.TempFile("", "values.yaml")
+	defer func() {
+		err := util.DeleteFile(valuesFile.Name())
+		assert2.NoError(t, err)
+	}()
+	assert2.NoError(t, err)
+	err = ioutil.WriteFile(valuesFile.Name(), []byte(valuesyaml), 0600)
+	assert2.NoError(t, err)
+	options := helm.InstallChartOptions{
+		ValueFiles: []string{
+			valuesFile.Name(),
+		},
+	}
+
+	actual, err := vaultClient.Read(path)
+	expected := map[string]interface{}{
+		key: secret,
+	}
+
+	require.NoError(t, err, "reading vault client on path %s", path)
+	assert2.Equal(t, expected, actual, "vault read at path %s", path)
+
 	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
 	defer cleanup()
 	assert2.Len(t, options.ValueFiles, 1)

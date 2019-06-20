@@ -23,11 +23,11 @@ import (
 
 var (
 	createInstallValuesLong = templates.LongDesc(`
-		Creates the installation values.yaml file from an init-values.yaml defaulting any missing values from the cluster itself
+		Creates any mising cluster values into the cluster/values.yaml file 
 `)
 
 	createInstallValuesExample = templates.Examples(`
-		# create the values.yaml file in the current directory
+		# populate the cluster/values.yaml file
 		jx step create install vales
 	
 			`)
@@ -62,7 +62,7 @@ func NewCmdStepCreateInstallValues(commonOpts *opts.CommonOptions) *cobra.Comman
 
 	cmd := &cobra.Command{
 		Use:     "install values",
-		Short:   "Creates the installation values.yaml file from an init-values.yaml defaulting any missing values from the cluster itself",
+		Short:   "Creates any mising cluster values into the cluster/values.yaml file ",
 		Long:    createInstallValuesLong,
 		Example: createInstallValuesExample,
 		Aliases: []string{"version pullrequest"},
@@ -93,30 +93,28 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 			return err
 		}
 	}
-	valuesFile := filepath.Join(o.Dir, "values.yaml")
-	initValuesFile := filepath.Join(o.Dir, "init-values.yaml")
-
-	exists, err := util.FileExists(initValuesFile)
+	clusterDir := filepath.Join(o.Dir, "cluster")
+	err = os.MkdirAll(clusterDir, util.DefaultWritePermissions)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create cluster dir: %s", clusterDir)
 	}
-	if exists {
-		values, err := helm.LoadValuesFile(initValuesFile)
-		if err != nil {
-			return errors.Wrapf(err, "failed to load helm values: %s", initValuesFile)
-		}
 
-		values, err = o.defaultMissingValues(values)
-		if err != nil {
-			return errors.Wrapf(err, "failed to default helm values into: %s", initValuesFile)
-		}
-
-		err = helm.SaveFile(valuesFile, values)
-		if err != nil {
-			return errors.Wrapf(err, "failed to save helm values: %s", valuesFile)
-		}
-		log.Logger().Infof("wrote %s\n", util.ColorInfo(valuesFile))
+	valuesFile := filepath.Join(clusterDir, helm.ValuesFileName)
+	values, err := helm.LoadValuesFile(valuesFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load helm values: %s", valuesFile)
 	}
+
+	values, err = o.defaultMissingValues(values)
+	if err != nil {
+		return errors.Wrapf(err, "failed to default helm values into: %s", valuesFile)
+	}
+
+	err = helm.SaveFile(valuesFile, values)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save helm values: %s", valuesFile)
+	}
+	log.Logger().Infof("wrote %s\n", util.ColorInfo(valuesFile))
 	return nil
 }
 
@@ -126,23 +124,23 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		ns = os.Getenv("DEPLOY_NAMESPACE")
 	}
 	if ns != "" {
-		current := util.GetMapValueAsStringViaPath(values, "cluster.namespaceSubDomain")
+		current := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
 		if current == "" {
 			subDomain := "." + ns + "."
-			util.SetMapValueViaPath(values, "cluster.namespaceSubDomain", subDomain)
+			util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
 		}
 	}
 
-	domain := util.GetMapValueAsStringViaPath(values, "cluster.domain")
+	domain := util.GetMapValueAsStringViaPath(values, "domain")
 	if domain == "" {
 		domain, err := o.discoverIngressDomain(values)
 		if err != nil {
 			return values, errors.Wrapf(err, "failed to discover the Ingress domain")
 		}
 		if domain == "" {
-			return values, fmt.Errorf("could not detect a domain. Pleae configure one at 'cluster.domain' in the init-values.yaml")
+			return values, fmt.Errorf("could not detect a domain. Pleae configure one at 'domain' in the init-values.yaml")
 		}
-		util.SetMapValueViaPath(values, "cluster.domain", domain)
+		util.SetMapValueViaPath(values, "domain", domain)
 	}
 	return values, nil
 }

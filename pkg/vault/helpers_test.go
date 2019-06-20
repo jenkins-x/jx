@@ -7,8 +7,6 @@ import (
 
 	"github.com/pborman/uuid"
 
-	"github.com/jenkins-x/jx/pkg/vault"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -36,7 +34,10 @@ func TestReplaceURIs(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
-	result, err := vault.ReplaceURIs(valuesyaml, vaultClient)
+	pegomock.When(vaultClient.ReplaceURIs(pegomock.EqString(valuesyaml))).ThenReturn(fmt.Sprintf(`foo:
+  bar: %s
+`, secret), nil)
+	result, err := vaultClient.ReplaceURIs(valuesyaml)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(`foo:
@@ -64,7 +65,10 @@ func TestReplaceRealExampleURI(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
-	result, err := vault.ReplaceURIs(valuesyaml, vaultClient)
+	pegomock.When(vaultClient.ReplaceURIs(pegomock.EqString(valuesyaml))).ThenReturn(fmt.Sprintf(`foo:
+  bar: %s
+`, secret), nil)
+	result, err := vaultClient.ReplaceURIs(valuesyaml)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(`foo:

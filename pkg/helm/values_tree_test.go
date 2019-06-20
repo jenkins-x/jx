@@ -29,7 +29,7 @@ meat:
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	result, err := helm.GenerateValues(dir, nil, true)
+	result, err := helm.GenerateValues(dir, nil, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutput, string(result))
 }
@@ -55,7 +55,7 @@ people: pete
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	result, err := helm.GenerateValues(dir, nil, true)
+	result, err := helm.GenerateValues(dir, nil, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutput, string(result))
 }
@@ -84,7 +84,7 @@ func TestValuesTreeWithFileRefs(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	result, err := helm.GenerateValues(dir, nil, true)
+	result, err := helm.GenerateValues(dir, nil, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutput, string(result))
 }
