@@ -16,8 +16,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/vault"
-
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/iancoleman/orderedmap"
