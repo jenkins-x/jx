@@ -49,7 +49,7 @@ func TestReplaceRealExampleURI(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	vaultClient := vault_test.NewMockClient()
 	path := "secret/gitOps/jenkins-x/environment-tekton-mole-dev/connectors-github-config-clientid-secret"
-	key := "token-passthrough"
+	key := "token"
 	secret := uuid.New()
 	valuesyaml := fmt.Sprintf(`foo:
   bar: vault:%s:%s
