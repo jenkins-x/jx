@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
@@ -27,8 +26,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -415,19 +414,19 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 
 // GetSecretURLClient create a new secret URL client
 func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
-	if o.GetSecretsLocation() == secrets.FileSystemLocationKind {
-		clusterName, err := o.GetClusterName()
-		if err != nil {
-			return nil, err
-		}
-		dir, err := util.LocalFileSystemSecretsDir(clusterName)
-		return localvault.NewFileSystemClient(dir), nil
-	}
 	vaultClient, err := o.SystemVaultClient(o.devNamespace)
 	if err != nil {
 		vaultClient = nil
 	}
-	return vaultClient, nil
+	if vaultClient != nil {
+		return vaultClient, nil
+	}
+	clusterName, err := o.GetClusterName()
+	if err != nil {
+		return nil, err
+	}
+	dir, err := util.LocalFileSystemSecretsDir(clusterName)
+	return localvault.NewFileSystemClient(dir), nil
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir

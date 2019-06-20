@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	secreturl_test "github.com/jenkins-x/jx/pkg/secreturl/mocks"
 	"github.com/jenkins-x/jx/pkg/util"
-	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
 	"github.com/magiconair/properties/assert"
 	assert2 "github.com/stretchr/testify/assert"
 )
@@ -99,7 +99,7 @@ func TestSetValuesToMap(t *testing.T) {
 
 func TestStoreCredentials(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
@@ -115,7 +115,7 @@ func TestStoreCredentials(t *testing.T) {
 
 func TestRetrieveCredentials(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
@@ -142,7 +142,7 @@ func TestRetrieveCredentials(t *testing.T) {
 
 func TestOverrideCredentials(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
@@ -176,7 +176,7 @@ func TestOverrideCredentials(t *testing.T) {
 
 func TestReplaceVaultURI(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	vaultClient := vault_test.NewMockClient()
+	vaultClient := secreturl_test.NewMockClient()
 	path := "/baz/qux"
 	key := "cheese"
 	secret := uuid.New()
@@ -199,6 +199,9 @@ func TestReplaceVaultURI(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
+	pegomock.When(vaultClient.ReplaceURIs(pegomock.EqString(valuesyaml))).ThenReturn(fmt.Sprintf(`foo:
+  bar: %s
+`, secret), nil)
 	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
 	defer cleanup()
 	assert2.Len(t, options.ValueFiles, 1)
@@ -215,7 +218,7 @@ func TestReplaceVaultURIWithLocalFile(t *testing.T) {
 	key := "cheese"
 	secret := "Edam"
 	valuesyaml := fmt.Sprintf(`foo:
-  bar: vault:%s:%s
+  bar: local:%s:%s
 `, path, key)
 	valuesFile, err := ioutil.TempFile("", "values.yaml")
 	defer func() {
