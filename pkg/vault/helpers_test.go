@@ -34,6 +34,9 @@ func TestReplaceURIs(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
+	pegomock.When(vaultClient.ReplaceURIs(pegomock.EqString(valuesyaml))).ThenReturn(fmt.Sprintf(`foo:
+  bar: %s
+`, secret), nil)
 	result, err := vaultClient.ReplaceURIs(valuesyaml)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
@@ -62,6 +65,9 @@ func TestReplaceRealExampleURI(t *testing.T) {
 	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
 		key: secret,
 	}, nil)
+	pegomock.When(vaultClient.ReplaceURIs(pegomock.EqString(valuesyaml))).ThenReturn(fmt.Sprintf(`foo:
+  bar: %s
+`, secret), nil)
 	result, err := vaultClient.ReplaceURIs(valuesyaml)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
