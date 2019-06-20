@@ -37,8 +37,8 @@ import (
 
 const (
 	kanikoSecretMount = "/kaniko-secret/secret.json"
-	kanikoSecretName  = "kaniko-secret"
-	kanikoSecretKey   = "kaniko-secret"
+	kanikoSecretName  = kube.SecretKaniko
+	kanikoSecretKey   = kube.SecretKaniko
 )
 
 var (

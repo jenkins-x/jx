@@ -159,7 +159,7 @@ func (t *Items) UnmarshalJSON(b []byte) error {
 
 // JSONSchemaOptions are options for generating values from a schema
 type JSONSchemaOptions struct {
-	VaultClient         vault.Client
+	VaultClient         secreturl.Client
 	VaultBasePath       string
 	VaultScheme         string
 	AskExisting         bool

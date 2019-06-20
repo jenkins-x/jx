@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 
 	"io"
 	"io/ioutil"
@@ -17,10 +18,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/surveyutils"
-	"github.com/jenkins-x/jx/pkg/vault"
-
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/surveyutils"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -108,10 +107,10 @@ func AddValuesToChart(name string, values []byte, verbose bool) (string, func(),
 }
 
 //GenerateQuestions asks questions based on the schema
-func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath string, vaultClient vault.Client,
+func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath string, secretURLClient secreturl.Client,
 	existing map[string]interface{}, vaultScheme string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]byte, error) {
 	schemaOptions := surveyutils.JSONSchemaOptions{
-		VaultClient:         vaultClient,
+		VaultClient:         secretURLClient,
 		VaultScheme:         vaultScheme,
 		VaultBasePath:       basePath,
 		Out:                 out,
@@ -159,7 +158,7 @@ func ProcessValues(
 	teamName string,
 	batchMode bool,
 	askExisting bool,
-	vaultClient vault.Client,
+	secretURLClient secreturl.Client,
 	existing map[string]interface{},
 	vaultScheme string,
 	in terminal.FileReader,
@@ -178,7 +177,7 @@ func ProcessValues(
 	} else {
 		basepath = strings.Join([]string{"teams", teamName}, "/")
 	}
-	values, err = GenerateQuestions(schema, batchMode, askExisting, basepath, vaultClient, existing, vaultScheme, in, out, outErr)
+	values, err = GenerateQuestions(schema, batchMode, askExisting, basepath, secretURLClient, existing, vaultScheme, in, out, outErr)
 	if err != nil {
 		return "", func() {}, errors.Wrapf(err, "asking questions for schema")
 	}

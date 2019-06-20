@@ -55,7 +55,6 @@ type InstallOptions struct {
 	Err             io.Writer
 	GitOps          bool
 	TeamName        string
-	BasePath        string
 	VaultClient     vault.Client
 	AutoMerge       bool
 	SecretsScheme   string
@@ -574,7 +573,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				gitOpsURL = o.DevEnv.Spec.Source.URL
 			}
 			if schema != nil {
-				valuesFileName, cleanup, err := ProcessValues(schema, chartName, gitOpsURL, o.TeamName, o.BasePath, o.BatchMode, askExisting, o.VaultClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
+				valuesFileName, cleanup, err := ProcessValues(schema, chartName, gitOpsURL, o.TeamName, o.BatchMode, askExisting, o.VaultClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
 				chartDetails.Cleanup = cleanup
 				if err != nil {
 					return &chartDetails, errors.WithStack(err)
