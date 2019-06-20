@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/add"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -128,14 +129,15 @@ func (o *UpgradeAppsOptions) Run() error {
 	}
 
 	installOpts := apps.InstallOptions{
-		In:        o.In,
-		DevEnv:    o.DevEnv,
-		Verbose:   o.Verbose,
-		Err:       o.Err,
-		Out:       o.Out,
-		GitOps:    o.GitOps,
-		BatchMode: o.BatchMode,
-		AutoMerge: o.AutoMerge,
+		In:            o.In,
+		DevEnv:        o.DevEnv,
+		Verbose:       o.Verbose,
+		Err:           o.Err,
+		Out:           o.Out,
+		GitOps:        o.GitOps,
+		BatchMode:     o.BatchMode,
+		AutoMerge:     o.AutoMerge,
+		SecretsScheme: "vault",
 
 		Helmer:         o.Helm(),
 		Namespace:      o.Namespace,

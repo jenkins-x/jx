@@ -32,7 +32,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
@@ -58,6 +57,7 @@ type InstallOptions struct {
 	TeamName        string
 	VaultClient     vault.Client
 	AutoMerge       bool
+	SecretsScheme   string
 
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
@@ -568,40 +568,25 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 			if err != nil {
 				return &chartDetails, errors.Wrapf(err, "locating app resource for %s", chartName)
 			}
-			var secrets []*surveyutils.GeneratedSecret
-			var basepath string
+			gitOpsURL := ""
 			if o.GitOps {
-				gitInfo, err := gits.ParseGitURL(o.DevEnv.Spec.Source.URL)
+				gitOpsURL = o.DevEnv.Spec.Source.URL
+			}
+			if schema != nil {
+				valuesFileName, cleanup, err := ProcessValues(schema, chartName, gitOpsURL, o.TeamName, o.BatchMode, askExisting, o.VaultClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
+				chartDetails.Cleanup = cleanup
 				if err != nil {
-					return nil, err
+					return &chartDetails, errors.WithStack(err)
 				}
-				basepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
-			} else {
-				basepath = strings.Join([]string{"teams", o.TeamName}, "/")
+				if valuesFileName != "" {
+					o.valuesFiles.Items = append(o.valuesFiles.Items, valuesFileName)
+				}
+				values, err = ioutil.ReadFile(valuesFileName)
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "reading %s", valuesFileName)
+				}
 			}
-			values, secrets, err = GenerateQuestions(schema, o.BatchMode, askExisting, basepath, o.VaultClient != nil, existing, o.In, o.Out, o.Err)
-			if err != nil {
-				return &chartDetails, errors.Wrapf(err, "asking questions for schema %s", schemaFile)
-			}
-			cleanupValues, err := o.handleValues(chartDir, chartName, values)
-			chartDetails.Cleanup = func() {
-				cleanupValues()
-			}
-			if err != nil {
-				return &chartDetails, err
-			}
-			cleanupSecrets, err := o.handleSecrets(chartDir, chartName, secrets)
-			chartDetails.Cleanup = func() {
-				cleanupSecrets()
-				cleanupValues()
-			}
-			if err != nil {
-				return &chartDetails, err
-			}
-			chartDetails.Cleanup = func() {
-				cleanupSecrets()
-				cleanupValues()
-			}
+
 		}
 		chartDetails.Values = values
 		return &chartDetails, nil
@@ -615,36 +600,6 @@ func toValidName(appName string, name string, id string) string {
 		l = 20
 	}
 	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:l], id))
-}
-
-func (o *InstallOptions) handleValues(dir string, chartName string, values []byte) (func(), error) {
-	valuesFile, cleanup, err := AddValuesToChart(chartName, values, o.Verbose)
-	if err != nil {
-		return cleanup, err
-	}
-	if valuesFile != "" {
-		o.valuesFiles.Items = append(o.valuesFiles.Items, valuesFile)
-	}
-	return cleanup, nil
-}
-
-func (o *InstallOptions) handleSecrets(dir string, chartName string, generatedSecrets []*surveyutils.GeneratedSecret) (func(),
-	error) {
-	if o.VaultClient != nil {
-		f, err := AddSecretsToVault(generatedSecrets, o.VaultClient)
-		if err != nil {
-			return func() {}, errors.Wrapf(err, "adding secrets to vault for %s", chartName)
-		}
-		return f, nil
-	}
-	secretsFile, f, err := AddSecretsToTemplate(dir, chartName, generatedSecrets)
-	if err != nil {
-		return func() {}, errors.Wrapf(err, "adding secrets to template for %s", chartName)
-	}
-	if secretsFile != "" {
-		o.valuesFiles.Items = append(o.valuesFiles.Items, secretsFile)
-	}
-	return f, nil
 }
 
 func (o *InstallOptions) getPrefixes() []string {

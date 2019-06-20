@@ -4,13 +4,13 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/secreturl"
+
 	"io"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/secreturl"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ghodss/yaml"
@@ -92,56 +92,8 @@ func AddSecretsToVault(generatedSecrets []*surveyutils.GeneratedSecret, client v
 	return func() {}, nil
 }
 
-// AddSecretsToTemplate adds the generatedSecrets into the template (rooted at dir) as Kubernetes Secrets,
-// using app as the base of the name
-func AddSecretsToTemplate(dir string, chartName string, generatedSecrets []*surveyutils.GeneratedSecret) (string, func(),
-	error) {
-	// We write a secret template into the chart, append the values for the generated generatedSecrets to values.yaml
-	if len(generatedSecrets) > 0 {
-		// For each secret, we write a file into the chart
-		templatesDir := filepath.Join(dir, "templates")
-		err := os.MkdirAll(templatesDir, 0700)
-		if err != nil {
-			return "", func() {}, err
-		}
-		fileName := filepath.Join(templatesDir, "chartName-generated-secret-template.yaml")
-		err = ioutil.WriteFile(fileName, []byte(secretTemplate), 0755)
-		if err != nil {
-			return "", func() {}, err
-		}
-		allSecrets := map[string][]*surveyutils.GeneratedSecret{
-			appsGeneratedSecretKey: generatedSecrets,
-		}
-		secretsYaml, err := yaml.Marshal(allSecrets)
-		if err != nil {
-			return "", func() {}, err
-		}
-		secretsFile, err := ioutil.TempFile("", fmt.Sprintf("%s-generatedSecrets.yaml", ToValidFileSystemName(chartName)))
-		cleanup := func() {
-			err = secretsFile.Close()
-			if err != nil {
-				log.Logger().Warnf("Error closing %s because %v", secretsFile.Name(), err)
-			}
-			err = util.DeleteFile(secretsFile.Name())
-			if err != nil {
-				log.Logger().Warnf("Error deleting %s because %v", secretsFile.Name(), err)
-			}
-		}
-		if err != nil {
-			return "", func() {}, err
-		}
-		_, err = secretsFile.Write(secretsYaml)
-		if err != nil {
-			return "", func() {}, err
-		}
-		return secretsFile.Name(), cleanup, nil
-
-	}
-	return "", func() {}, nil
-}
-
 // AddValuesToChart adds a values file to the chart rooted at dir
-func AddValuesToChart(chartName string, values []byte, verbose bool) (string, func(), error) {
+func AddValuesToChart(name string, values []byte, verbose bool) (string, func(), error) {
 	valuesYaml, err := yaml.JSONToYAML(values)
 	if err != nil {
 		return "", func() {}, errors.Wrapf(err, "error converting values from json to yaml\n\n%v", values)
@@ -150,7 +102,7 @@ func AddValuesToChart(chartName string, values []byte, verbose bool) (string, fu
 		log.Logger().Infof("Generated values.yaml:\n\n%v", util.ColorInfo(string(valuesYaml)))
 	}
 
-	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(chartName)))
+	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(name)))
 	cleanup := func() {
 		err = valuesFile.Close()
 		if err != nil {
@@ -162,22 +114,22 @@ func AddValuesToChart(chartName string, values []byte, verbose bool) (string, fu
 		}
 	}
 	if err != nil {
-		return "", func() {}, errors.Wrapf(err, "creating tempfile to write values for %s", chartName)
+		return "", func() {}, errors.Wrapf(err, "creating tempfile to write values for %s", name)
 	}
 	_, err = valuesFile.Write(valuesYaml)
 	if err != nil {
-		return "", func() {}, errors.Wrapf(err, "writing values to %s for %s", valuesFile.Name(), chartName)
+		return "", func() {}, errors.Wrapf(err, "writing values to %s for %s", valuesFile.Name(), name)
 	}
 	return valuesFile.Name(), cleanup, nil
 }
 
 //GenerateQuestions asks questions based on the schema
 func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath string, useVault bool,
-	existing map[string]interface{}, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]byte,
+	existing map[string]interface{}, secretsScheme string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]byte,
 	[]*surveyutils.GeneratedSecret, error) {
 	secrets := make([]*surveyutils.GeneratedSecret, 0)
 	schemaOptions := surveyutils.JSONSchemaOptions{
-		CreateSecret: func(name string, key string, value string, passthrough bool) (interface{},
+		CreateSecret: func(name string, key string, value string) (interface{},
 			error) {
 			secret := &surveyutils.GeneratedSecret{
 				Name:  name,
@@ -186,16 +138,10 @@ func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath
 				Path:  strings.Join([]string{basePath, name}, "/"),
 			}
 			secrets = append(secrets, secret)
-			if passthrough {
-				if useVault {
-					return secreturl.ToURI(secret.Path, secret.Key), nil
-				}
-				return value, nil
+			if useVault {
+				return secreturl.ToURI(secret.Path, secret.Key, secretsScheme), nil
 			}
-			return map[string]interface{}{
-				"Name": name,
-				"Kind": "Secret",
-			}, nil
+			return value, nil
 		},
 		Out:                 out,
 		In:                  in,
@@ -227,4 +173,63 @@ func addApp(create bool, jxClient versioned.Interface, app *jenkinsv1.App) error
 		}
 	}
 	return nil
+}
+
+// ProcessValues is responsible for taking a schema, asking questions of the user (using in, out and outErr), and generating
+// a yaml file that contains the answers. The path to the yaml file is returned, along with a function to cleanup temporary
+// resources, including the yaml file. The gitOpsURL, if specified, is used to determine the path to store the secrets in the
+// vault, otherwise the team name is used. If batchMode is true, it alters the way questions are asked, trying to use existing answers or defaults
+// where possible. If askExisting is true then all questions, even those with existing answers are asked. The vault client is
+// used to store secrets, and the secretsScheme is used as the scheme part of the url to the secret.
+func ProcessValues(
+	schema []byte,
+	name string,
+	gitOpsURL string,
+	teamName string,
+	batchMode bool,
+	askExisting bool,
+	vaultClient vault.Client,
+	existing map[string]interface{},
+	secretsScheme string,
+	in terminal.FileReader,
+	out terminal.FileWriter,
+	outErr io.Writer,
+	verbose bool) (string, func(), error) {
+	var values []byte
+	var generatedSecrets []*surveyutils.GeneratedSecret
+	var basepath string
+	var err error
+	if gitOpsURL != "" {
+		gitInfo, err := gits.ParseGitURL(gitOpsURL)
+		if err != nil {
+			return "", func() {}, err
+		}
+		basepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
+	} else {
+		basepath = strings.Join([]string{"teams", teamName}, "/")
+	}
+	values, generatedSecrets, err = GenerateQuestions(schema, batchMode, askExisting, basepath, vaultClient != nil, existing, secretsScheme, in, out, outErr)
+	if err != nil {
+		return "", func() {}, errors.Wrapf(err, "asking questions for schema")
+	}
+	valuesFileName, cleanupValues, err := AddValuesToChart(name, values, verbose)
+	cleanup := func() {
+		cleanupValues()
+	}
+	if err != nil {
+		return "", cleanup, err
+	}
+	if vaultClient != nil {
+		cleanupSecrets, err := AddSecretsToVault(generatedSecrets, vaultClient)
+		cleanup = func() {
+			cleanupValues()
+			cleanupSecrets()
+		}
+		if err != nil {
+			return "", cleanup, errors.Wrapf(err, "adding generatedSecrets to vault for %s", name)
+		}
+	} else {
+		// TODO Add support local vault
+	}
+	return valuesFileName, cleanup, nil
 }
