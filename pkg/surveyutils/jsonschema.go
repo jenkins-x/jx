@@ -771,7 +771,9 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		}
 		if o.VaultClient != nil {
 			dereferencedFormat := util.DereferenceString(t.Format)
-			path := strings.Join([]string{o.VaultBasePath, strings.Join(prefixes, "-")}, "/")
+			// lets ignore the last prefix as we use it as a key in the data value
+			pathPrefixes := prefixes[0 : len(prefixes)-1]
+			path := strings.Join([]string{o.VaultBasePath, strings.Join(pathPrefixes, "-")}, "/")
 			secretReference := secreturl.ToURI(path, dereferencedFormat, o.VaultScheme)
 			output.Set(name, secretReference)
 			o.VaultClient.Write(path, map[string]interface{}{
