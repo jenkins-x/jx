@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +21,6 @@ Available generators include:
 * clientset - generates a Go CRUD client directly from custom resources
 
 `
-	logLevel string
 )
 
 // Run executes the Cobra root command.
@@ -34,7 +32,9 @@ func Run() error {
 		Run:   runHelp,
 	}
 
-	commonOpts := &CommonOptions{}
+	commonOpts := &CommonOptions{
+		Cmd: rootCommand,
+	}
 
 	genOpts := GenerateOptions{
 		CommonOptions: commonOpts,
@@ -43,12 +43,11 @@ func Run() error {
 	rootCommand.PersistentFlags().StringVarP(&commonOpts.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
 	rootCommand.PersistentFlags().StringVarP(&commonOpts.GeneratorVersion, "generator-version", "", "master",
 		"Version (really a commit-ish) of the generator tool to use. Allows to pin version using Go modules. Default is master.")
+	rootCommand.PersistentFlags().BoolVarP(&commonOpts.Verbose, optionVerbose, "", false, "Enable verbose logging (sets the logging level to debug)")
 
 	rootCommand.AddCommand(NewGenerateClientSetCmd(genOpts))
 	rootCommand.AddCommand(NewCmdCreateClientOpenAPI(genOpts))
 	rootCommand.AddCommand(NewCreateDocsCmd(genOpts))
-
-	util.SetLevel(logLevel)
 
 	return rootCommand.Execute()
 }
