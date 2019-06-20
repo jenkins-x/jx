@@ -502,9 +502,6 @@ func (options *InstallOptions) Run() error {
 
 	configStore := configio.NewFileStore()
 
-	// Default to verbose mode to get more information during the install
-	options.Verbose = true
-
 	ns, originalNs, err := options.setupNamespace()
 	if err != nil {
 		return errors.Wrap(err, "setting up current namespace")
