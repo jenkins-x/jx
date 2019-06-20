@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/secreturl"
 
 	"io"
 	"io/ioutil"
@@ -77,21 +76,6 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 	return create, app, nil
 }
 
-// AddSecretsToVault adds the generatedSecrets into the vault using client at basepath
-func AddSecretsToVault(generatedSecrets []*surveyutils.GeneratedSecret, client vault.Client) (func(), error) {
-	if len(generatedSecrets) > 0 {
-		for _, secret := range generatedSecrets {
-			err := vault.WriteMap(client, secret.Path, map[string]interface{}{
-				secret.Key: secret.Value,
-			})
-			if err != nil {
-				return func() {}, err
-			}
-		}
-	}
-	return func() {}, nil
-}
-
 // AddValuesToChart adds a values file to the chart rooted at dir
 func AddValuesToChart(name string, values []byte, verbose bool) (string, func(), error) {
 	valuesYaml, err := yaml.JSONToYAML(values)
@@ -124,25 +108,12 @@ func AddValuesToChart(name string, values []byte, verbose bool) (string, func(),
 }
 
 //GenerateQuestions asks questions based on the schema
-func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath string, useVault bool,
-	existing map[string]interface{}, secretsScheme string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]byte,
-	[]*surveyutils.GeneratedSecret, error) {
-	secrets := make([]*surveyutils.GeneratedSecret, 0)
+func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath string, vaultClient vault.Client,
+	existing map[string]interface{}, vaultScheme string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]byte, error) {
 	schemaOptions := surveyutils.JSONSchemaOptions{
-		CreateSecret: func(name string, key string, value string) (interface{},
-			error) {
-			secret := &surveyutils.GeneratedSecret{
-				Name:  name,
-				Key:   key,
-				Value: value,
-				Path:  strings.Join([]string{basePath, name}, "/"),
-			}
-			secrets = append(secrets, secret)
-			if useVault {
-				return secreturl.ToURI(secret.Path, secret.Key, secretsScheme), nil
-			}
-			return value, nil
-		},
+		VaultClient:         vaultClient,
+		VaultScheme:         vaultScheme,
+		VaultBasePath:       basePath,
 		Out:                 out,
 		In:                  in,
 		OutErr:              outErr,
@@ -155,9 +126,9 @@ func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath
 	// and whether we auto-accept defaults is determined by batch mode
 	values, err := schemaOptions.GenerateValues(schema, existing)
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
-	return values, secrets, nil
+	return values, nil
 }
 
 func addApp(create bool, jxClient versioned.Interface, app *jenkinsv1.App) error {
@@ -190,13 +161,12 @@ func ProcessValues(
 	askExisting bool,
 	vaultClient vault.Client,
 	existing map[string]interface{},
-	secretsScheme string,
+	vaultScheme string,
 	in terminal.FileReader,
 	out terminal.FileWriter,
 	outErr io.Writer,
 	verbose bool) (string, func(), error) {
 	var values []byte
-	var generatedSecrets []*surveyutils.GeneratedSecret
 	var basepath string
 	var err error
 	if gitOpsURL != "" {
@@ -208,7 +178,7 @@ func ProcessValues(
 	} else {
 		basepath = strings.Join([]string{"teams", teamName}, "/")
 	}
-	values, generatedSecrets, err = GenerateQuestions(schema, batchMode, askExisting, basepath, vaultClient != nil, existing, secretsScheme, in, out, outErr)
+	values, err = GenerateQuestions(schema, batchMode, askExisting, basepath, vaultClient, existing, vaultScheme, in, out, outErr)
 	if err != nil {
 		return "", func() {}, errors.Wrapf(err, "asking questions for schema")
 	}
@@ -218,18 +188,6 @@ func ProcessValues(
 	}
 	if err != nil {
 		return "", cleanup, err
-	}
-	if vaultClient != nil {
-		cleanupSecrets, err := AddSecretsToVault(generatedSecrets, vaultClient)
-		cleanup = func() {
-			cleanupValues()
-			cleanupSecrets()
-		}
-		if err != nil {
-			return "", cleanup, errors.Wrapf(err, "adding generatedSecrets to vault for %s", name)
-		}
-	} else {
-		// TODO Add support local vault
 	}
 	return valuesFileName, cleanup, nil
 }

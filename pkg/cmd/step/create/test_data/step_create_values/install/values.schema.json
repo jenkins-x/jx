@@ -20,7 +20,7 @@
         },
         "password": {
           "type": "string",
-          "format": "password-passthrough",
+          "format": "password",
           "title": "Jenkins X Admin Password",
           "description": "The Admin Password will be used by all services installed by Jenkins X"
         }
@@ -31,7 +31,7 @@
       "properties": {
         "hmacToken": {
           "type": "string",
-          "format": "token-passthrough",
+          "format": "token",
           "title": "HMAC token",
           "description": "The HMAC token is used to validate incoming webhooks, TODO"
         }
@@ -82,7 +82,7 @@
               },
               "password": {
                 "type": "string",
-                "format": "password-passthrough",
+                "format": "password",
                 "title": "Docker Registry password",
                 "description": "TODO"
               }
@@ -107,7 +107,7 @@
             "properties": {
               "passphrase": {
                 "type": "string",
-                "format": "password-passthrough",
+                "format": "password",
                 "title": "GPG Passphrase",
                 "description": "TODO"
               }
@@ -144,7 +144,7 @@
                   },
                   "password": {
                     "type": "string",
-                    "format": "token-passthrough",
+                    "format": "token",
                     "title": "Pipeline User password",
                     "description": "The Pipeline User is the user used to perform git operations inside a pipeline. This is normally a bot."
                   }

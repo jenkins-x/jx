@@ -310,14 +310,14 @@ func TestAddAppWithSecrets(t *testing.T) {
 				assert.NoError(r, err)
 				assert.Equal(r, `tokenValue:
   kind: Secret
-  name: tokenvalue-secret
+  name: tokenvalue
 `, string(bytes))
 				_, secretsFileName := filepath.Split(valuesFiles[1])
 				assert.Contains(r, secretsFileName, "generatedSecrets.yaml")
 				bytes, err = ioutil.ReadFile(valuesFiles[1])
 				assert.NoError(r, err)
 				assert.Equal(r, `appsGeneratedSecrets:
-- Name: tokenvalue-secret
+- Name: tokenvalue
   key: token
   value: abc
 `, string(bytes))
@@ -572,7 +572,7 @@ func TestStashValues(t *testing.T) {
 func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
 		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
@@ -656,10 +656,10 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		assert.NoError(r, err)
 		data, err := ioutil.ReadFile(valuesFromPrPath)
 		assert.NoError(r, err)
-		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:gitOps/%s/%s/tokenvalue-secret:token
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:gitOps/%s/%s/tokenValue:token
 `, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name), string(data))
 		// Validate that vault has had the secret added
-		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "tokenvalue-secret"},
+		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "tokenValue"},
 			"/")
 		value := map[string]interface{}{
 			"token": "abc",
@@ -1286,13 +1286,13 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 		data, err := ioutil.ReadFile(valuesFromPrPath)
 		assert.NoError(r, err)
 		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
-databasePassword: vault:gitOps/%s/%s/databasepassword-secret:password
+databasePassword: vault:gitOps/%s/%s/databasePassword:password
 databaseUsername: wensleydale
 enablePersistentStorage: true
 `, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name), string(data))
 
 		// Validate that vault has had the secret added
-		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasepassword-secret"},
+		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasePassword"},
 			"/")
 		value := map[string]interface{}{
 			"password": "cranberries",
