@@ -797,6 +797,30 @@ func TestToken(t *testing.T) {
 	})
 }
 
+func TestGeneratedToken(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
+		values, vaultClient, err := GenerateValuesAsYaml(r, "generatedToken.test.schema.json", make(map[string]interface{}), false,
+			false,
+			false, false,
+			func(console *tests.ConsoleWrapper, donec chan struct{}) {
+				defer close(donec)
+				// Test boolean type
+				console.ExpectString("Enter a value for tokenValue")
+				console.SendLine("")
+				console.ExpectEOF()
+			})
+		path := strings.Join([]string{vaultBasePath, "tokenValue"}, "/")
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:%s:token
+`, path), values)
+
+		secrets, err := vaultClient.Read(path)
+		assert.NoError(t, err)
+		assert.Len(t, secrets["token"], 20)
+		assert.NoError(r, err)
+	})
+}
+
 func TestEmail(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {

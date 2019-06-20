@@ -12,9 +12,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/secreturl"
 
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/pkg/util/secrets"
 
 	"github.com/pkg/errors"
+
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -23,6 +25,10 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+)
+
+var (
+	generatedPasswordValue = "<generated>"
 )
 
 // Type represents a JSON Schema object type current to https://www.ietf.org/archive/id/draft-handrews-json-schema-validation-01.txt
@@ -661,10 +667,10 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	// Custom format support for passwords
 	storeAsSecret := false
 	var err error
-	if util.DereferenceString(t.Format) == "password" || util.DereferenceString(t.Format) == "token" || util.DereferenceString(t.Format) == "password-passthrough" || util.DereferenceString(t.
-		Format) == "token-passthrough" {
+	dereferencedFormat := strings.TrimSuffix(util.DereferenceString(t.Format), "-passthrough")
+	if dereferencedFormat == "password" || dereferencedFormat == "token" {
 		storeAsSecret = true
-		result, err = handlePasswordProperty(message, help, ask, validator, surveyOpts, defaultValue,
+		result, err = handlePasswordProperty(message, help, dereferencedFormat, ask, validator, surveyOpts, defaultValue,
 			autoAcceptMessage, o.Out, t.Type)
 		if err != nil {
 			return errors.WithStack(err)
@@ -782,13 +788,24 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	return nil
 }
 
-func handlePasswordProperty(message string, help string, ask bool, validator survey.Validator,
+func handlePasswordProperty(message string, help string, kind string, ask bool, validator survey.Validator,
 	surveyOpts survey.AskOpt, defaultValue string, autoAcceptMessage string, out terminal.FileWriter,
 	t string) (interface{}, error) {
 	// Secret input
 	prompt := &survey.Password{
 		Message: message,
 		Help:    help,
+	}
+
+	generated := false
+	if defaultValue == generatedPasswordValue {
+		secret, err := secrets.DefaultGenerateSecret()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		defaultValue = secret
+		fmt.Fprintf(terminal.NewAnsiStdout(out), "Generated %s %s, to use it press enter.\nThis is the only time you will be shown it so remember to save it\n", kind, util.ColorInfo(secret))
+		generated = true
 	}
 
 	var answer string
@@ -804,6 +821,9 @@ func handlePasswordProperty(message string, help string, ask bool, validator sur
 		if err != nil {
 			return nil, errors.Wrapf(err, "writing %s to console", msg)
 		}
+	}
+	if answer == "" && generated {
+		answer = defaultValue
 	}
 	if answer != "" {
 		result, err := convertAnswer(answer, t)
