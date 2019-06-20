@@ -100,7 +100,18 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 	}
 	// Load the root values.yaml
 	rootValuesFileName := filepath.Join(dir, ValuesFileName)
-	rootValues, err := LoadValuesFile(rootValuesFileName)
+	rootData := []byte{}
+	exists, err := util.FileExists(rootValuesFileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
+	}
+	if exists {
+		rootData, err = ReadValuesYamlFileTemplateOutput(rootValuesFileName, params, funcMap)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to render template of file %s", rootValuesFileName)
+		}
+	}
+	rootValues, err := LoadValues(rootData)
 	if err != nil {
 		return nil, err
 	}

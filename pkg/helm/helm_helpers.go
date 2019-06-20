@@ -311,8 +311,10 @@ func LoadChart(data []byte) (*chart.Metadata, error) {
 
 // LoadValues loads the values from some data
 func LoadValues(data []byte) (map[string]interface{}, error) {
-	r := make(map[string]interface{})
-
+	r := map[string]interface{}{}
+	if data == nil || len(data) == 0 {
+		return r, nil
+	}
 	return r, yaml.Unmarshal(data, &r)
 }
 

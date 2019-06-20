@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var expectedTemplatedValuesTree = `dummy: cheese
+var expectedTemplatedValuesTree = `JenkinsXGitHub:
+  password: myPipelineUserToken
+  username: james
 prow:
   hmacToken: abc
 tekton:
