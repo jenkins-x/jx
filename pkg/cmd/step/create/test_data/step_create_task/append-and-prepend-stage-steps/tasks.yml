@@ -29,7 +29,7 @@ items:
             - --verbose
           command:
             - jx
-          image: gcr.io/jenkinsxio/builder-jx:0.1.477
+          image: gcr.io/jenkinsxio/builder-jx:0.1.527
           name: git-merge
           env:
             - name: FRUIT
