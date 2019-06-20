@@ -53,6 +53,22 @@ func (c *FileSystemClient) ReadObject(secretName string, secret interface{}) err
 	return nil
 }
 
+// Write writes a named secret to the vault with the data provided. Data can be a generic map of stuff, but at all points
+// in the map, keys _must_ be strings (not bool, int or even interface{}) otherwise you'll get an error
+func (c *FileSystemClient) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
+	path := c.fileName(secretName)
+	dir, _ := filepath.Split(path)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to ensure that parent directory exists %s", dir)
+	}
+	err = helm.SaveFile(path, data)
+	if err != nil {
+		return nil, err
+	}
+	return c.Read(secretName)
+}
+
 // WriteObject writes a generic named object to the vault.
 // The secret _must_ be serializable to JSON.
 func (c *FileSystemClient) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {

@@ -22,7 +22,7 @@ import (
 
 	"github.com/iancoleman/orderedmap"
 
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )

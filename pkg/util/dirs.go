@@ -46,12 +46,12 @@ func ConfigDir() (string, error) {
 }
 
 // LocalFileSystemSecretsDir returns the default local file system secrets location for the file system alternative to vault
-func LocalFileSystemSecretsDir(clusterName string) (string, error) {
+func LocalFileSystemSecretsDir() (string, error) {
 	home, err := ConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, "localSecrets", clusterName), nil
+	return filepath.Join(home, "localSecrets"), nil
 }
 
 // KubeConfigFile gets the .kube/config file
