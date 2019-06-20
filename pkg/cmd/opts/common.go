@@ -1142,16 +1142,3 @@ func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
 	o.Cmd.Flags().Visit(explicitlySetFunc)
 	return explicit
 }
-
-// GetClusterName returns the current cluster name
-func (o *CommonOptions) GetClusterName() (string, error) {
-	kubeClient, ns, err := o.KubeClientAndDevNamespace()
-	if err != nil {
-		return "", err
-	}
-	data, err := kube.ReadInstallValues(kubeClient, ns)
-	if err != nil {
-		return "", err
-	}
-	return data[kube.ClusterName], nil
-}
