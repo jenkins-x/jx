@@ -81,7 +81,7 @@ func TestCreateInstallValues(t *testing.T) {
 	err = o.Run()
 	require.NoError(t, err, "failed to run step")
 
-	fileName := filepath.Join(outputDir, "values.yaml")
+	fileName := filepath.Join(outputDir, "cluster", "values.yaml")
 
 	t.Logf("Generated values file at %s\n", fileName)
 
@@ -90,8 +90,8 @@ func TestCreateInstallValues(t *testing.T) {
 	values, err := helm.LoadValuesFile(fileName)
 	require.NoError(t, err, "failed to load file %s", fileName)
 
-	AssertMapPathValueAsString(t, values, "cluster.namespaceSubDomain", ".jx.")
-	AssertMapPathValueAsString(t, values, "cluster.domain", expectedDomain)
+	AssertMapPathValueAsString(t, values, "namespaceSubDomain", ".jx.")
+	AssertMapPathValueAsString(t, values, "domain", expectedDomain)
 }
 
 func AssertMapPathValueAsString(t *testing.T, values map[string]interface{}, path string, expected string) {
