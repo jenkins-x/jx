@@ -185,6 +185,7 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 	io.SetInstallValues(map[string]string{
 		kube.ClusterName: requirements.ClusterName,
 		kube.ProjectID:   requirements.ProjectID,
+		kube.Domain:      requirements.Ingress.Domain,
 	})
 	err := io.ConfigureKaniko()
 	if err != nil {
@@ -209,6 +210,7 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 			modifyMapIfNotBlank(configMap.Data, kube.KubeProvider, requirements.Provider)
 			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.ProjectID)
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.ClusterName)
+			modifyMapIfNotBlank(configMap.Data, kube.Domain, requirements.Ingress.Domain)
 			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
 			return nil
 		}, nil)

@@ -46,6 +46,16 @@ type EnvironmentConfig struct {
 	GitKind string `json:"gitKind,omitempty"`
 }
 
+// IngressConfig contains dns specific requirements
+type IngressConfig struct {
+	// Domain to expose ingress endpoints
+	Domain string `json:"domain"`
+	// TLS enable automated TLS using certmanager
+	TLS bool `json:"tls"`
+	// Email address to register with services like LetsEncrypt
+	Email string `json:"email"`
+}
+
 // RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
 	// Kaniko whether to enable kaniko for building docker images
@@ -68,6 +78,8 @@ type RequirementsConfig struct {
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
+	// Ingress contains dns specific requirements
+	Ingress IngressConfig `json:"ingress"`
 }
 
 // NewRequirementsConfig creates a default configuration file
@@ -187,6 +199,11 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 	}
 	log.Logger().Infof("Enviroments: %#v\n", answer)
 	return answer
+}
+
+// ToMap converts this object to a map of maps for use in helm templating
+func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
+	return toObjectMap(c)
 }
 
 func ensureHasFields(m map[string]interface{}, keys ...string) {
