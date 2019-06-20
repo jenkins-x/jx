@@ -769,14 +769,27 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		}
 		if o.VaultClient != nil {
 			dereferencedFormat := util.DereferenceString(t.Format)
-			// lets ignore the last prefix as we use it as a key in the data value
-			pathPrefixes := prefixes[0 : len(prefixes)-1]
+			// lets ignore the last prefix if its the same as the key
+			// to avoid redundant path
+			pathPrefixes := prefixes
+			lastIdx := len(prefixes) - 1
+			if prefixes[lastIdx] == dereferencedFormat {
+				pathPrefixes = prefixes[0:lastIdx]
+			}
 			path := strings.Join([]string{o.VaultBasePath, strings.Join(pathPrefixes, "-")}, "/")
 			secretReference := secreturl.ToURI(path, dereferencedFormat, o.VaultScheme)
 			output.Set(name, secretReference)
-			o.VaultClient.Write(path, map[string]interface{}{
-				dereferencedFormat: value,
-			})
+
+			// lets upsert the key
+			data, _ := o.VaultClient.Read(path)
+			if data == nil {
+				data = map[string]interface{}{}
+			}
+			data[dereferencedFormat] = value
+			_, err = o.VaultClient.Write(path, data)
+			if err != nil {
+				return errors.Wrapf(err, "failed to write to path %s with data %#v", path, data)
+			}
 		} else {
 			log.Logger().Warnf("Need to store a secret for %s but no secret store configured", name)
 		}
