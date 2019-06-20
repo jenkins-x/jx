@@ -156,6 +156,7 @@ func ProcessValues(
 	name string,
 	gitOpsURL string,
 	teamName string,
+	basepath string,
 	batchMode bool,
 	askExisting bool,
 	secretURLClient secreturl.Client,
@@ -166,16 +167,17 @@ func ProcessValues(
 	outErr io.Writer,
 	verbose bool) (string, func(), error) {
 	var values []byte
-	var basepath string
 	var err error
-	if gitOpsURL != "" {
-		gitInfo, err := gits.ParseGitURL(gitOpsURL)
-		if err != nil {
-			return "", func() {}, err
+	if basepath == "" {
+		if gitOpsURL != "" {
+			gitInfo, err := gits.ParseGitURL(gitOpsURL)
+			if err != nil {
+				return "", func() {}, err
+			}
+			basepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
+		} else {
+			basepath = strings.Join([]string{"teams", teamName}, "/")
 		}
-		basepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
-	} else {
-		basepath = strings.Join([]string{"teams", teamName}, "/")
 	}
 	values, err = GenerateQuestions(schema, batchMode, askExisting, basepath, secretURLClient, existing, vaultScheme, in, out, outErr)
 	if err != nil {

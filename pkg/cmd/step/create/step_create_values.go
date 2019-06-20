@@ -140,7 +140,7 @@ func (o *StepCreateValuesOptions) CreateValuesFile() error {
 		return err
 	}
 	existing := make(map[string]interface{})
-	valuesFileName, cleanup, err := apps.ProcessValues(schema, o.Name, gitOpsURL, teamName, o.BatchMode, false, secretURLClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
+	valuesFileName, cleanup, err := apps.ProcessValues(schema, o.Name, gitOpsURL, teamName, o.BasePath, o.BatchMode, false, secretURLClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
 	defer cleanup()
 	if err != nil {
 		return errors.WithStack(err)
