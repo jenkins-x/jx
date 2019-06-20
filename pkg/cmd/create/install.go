@@ -2349,8 +2349,13 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 				return errors.Wrap(err, "asking to enable Long Term Storage")
 			}
 		} else {
-			options.Flags.LongTermStorage = true
-			log.Logger().Infof(util.QuestionAnswer("Default enabling long term logs storage", util.YesNo(options.Flags.LongTermStorage)))
+			if options.Flags.Provider == cloud.GKE {
+				options.Flags.LongTermStorage = true
+				log.Logger().Infof(util.QuestionAnswer("Default enabling long term logs storage", util.YesNo(options.Flags.LongTermStorage)))
+			} else {
+				options.Flags.LongTermStorage = false
+				log.Logger().Debugf("Long Term Storage not supported by this provider, disabling this option")
+			}
 		}
 	}
 
