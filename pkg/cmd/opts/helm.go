@@ -422,8 +422,12 @@ func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
 		return vaultClient, nil
 	}
 	clusterName, err := o.GetClusterName()
-	if err != nil {
-		return nil, err
+	if err != nil || clusterName == "" {
+		// we could be bootstrapping the cluster
+		clusterName = os.Getenv("JX_CLUSTER_NAME")
+		if clusterName == "" {
+			clusterName = "default-cluster"
+		}
 	}
 	dir, err := util.LocalFileSystemSecretsDir(clusterName)
 	return localvault.NewFileSystemClient(dir), nil

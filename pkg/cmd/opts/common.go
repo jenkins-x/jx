@@ -1153,9 +1153,5 @@ func (o *CommonOptions) GetClusterName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	answer := data[kube.ClusterName]
-	if answer == "" {
-		answer = "default"
-	}
-	return answer, nil
+	return data[kube.ClusterName], nil
 }
