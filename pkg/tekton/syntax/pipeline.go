@@ -1920,6 +1920,9 @@ func OverrideStep(step Step, override *PipelineOverride) []Step {
 			var newSteps []Step
 
 			if override.Step != nil {
+				if override.Step.Name == "" {
+					override.Step.Name = step.Name
+				}
 				newSteps = append(newSteps, *override.Step)
 			}
 			if override.Steps != nil {
