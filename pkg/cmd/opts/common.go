@@ -245,18 +245,26 @@ func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	o.Cmd = cmd
 }
 
-func (o *CommonOptions) ReadConfigFile() {
+// GetConfiguration read the config file marshal into a config struct
+func (o *CommonOptions) GetConfiguration(config interface{}) error {
 	configFile := o.ConfigFile
 	if configFile != "" {
 		viper.SetConfigFile(configFile)
 		viper.SetConfigType("yaml")
-
 		if err := viper.ReadInConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 				log.Logger().Warnf("Config file %s not found", configFile)
+			} else {
+				return err
+			}
+		} else {
+			err = viper.Unmarshal(config)
+			if err != nil {
+				return errors.Wrap(err, "unable to decode into config struct")
 			}
 		}
 	}
+	return nil
 }
 
 // ApiExtensionsClient return or creates the api extension client
