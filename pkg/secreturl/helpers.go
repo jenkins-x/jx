@@ -50,6 +50,6 @@ func ReplaceURIs(s string, client Client, r *regexp.Regexp, schemePrefix string)
 }
 
 // ToURI constructs a vault: URI for the given path and key
-func ToURI(path string, key string) string {
-	return fmt.Sprintf("vault:%s:%s", path, key)
+func ToURI(path string, key string, scheme string) string {
+	return fmt.Sprintf("%s:%s:%s", scheme, path, key)
 }

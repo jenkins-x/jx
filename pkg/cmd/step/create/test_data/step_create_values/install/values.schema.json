@@ -1,0 +1,161 @@
+
+{
+  "$id": "https:/jenkins-x.io/tests/descriptionAndTitle.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "install values.yaml",
+  "type": "object",
+  "properties": {
+    "adminUser": {
+      "type": "object",
+      "required": [
+        "username",
+        "password"
+      ],
+      "properties": {
+        "username": {
+          "type": "string",
+          "title": "Jenkins X Admin Username",
+          "description": "The Admin Username will be used by all services installed by Jenkins X",
+          "default": "admin"
+        },
+        "password": {
+          "type": "string",
+          "format": "password-passthrough",
+          "title": "Jenkins X Admin Password",
+          "description": "The Admin Password will be used by all services installed by Jenkins X"
+        }
+      }
+    },
+    "prow": {
+      "type": "object",
+      "properties": {
+        "hmacToken": {
+          "type": "string",
+          "format": "token-passthrough",
+          "title": "HMAC token",
+          "description": "The HMAC token is used to validate incoming webhooks, TODO"
+        }
+      }
+    },
+    "gitProvider": {
+      "type": "string",
+      "title": "Select the git provider to use",
+      "enum": [
+        "github"
+      ]
+    },
+    "enableDocker": {
+      "type": "boolean",
+      "title": "Do you want to configure a Docker Registry?",
+      "description": "TODO"
+    },
+    "enableGpg": {
+      "type": "boolean",
+      "title": "Do you want to configure a GPG Key?",
+      "description": "TODO"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "enableDocker": {
+            "const": "true",
+            "type": "boolean"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "docker": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "title": "Docker Registry Url",
+                "default": "https://index.docker.io/v1/"
+              },
+              "username": {
+                "type": "string",
+                "title": "Docker Registry username",
+                "description": "TODO"
+              },
+              "password": {
+                "type": "string",
+                "format": "password-passthrough",
+                "title": "Docker Registry password",
+                "description": "TODO"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "enableGpg": {
+            "const": "true",
+            "type": "boolean"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "gpg": {
+            "type": "object",
+            "properties": {
+              "passphrase": {
+                "type": "string",
+                "format": "password-passthrough",
+                "title": "GPG Passphrase",
+                "description": "TODO"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "gitProvider": {
+            "const": "github",
+            "type": "string"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "pipelineUser": {
+            "type": "object",
+            "properties": {
+              "github": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "const": "github.com"
+                  },
+                  "username": {
+                    "type": "string",
+                    "title": "Pipeline User username",
+                    "description": "The Pipeline User is the user used to perform git operations inside a pipeline. This is normally a bot."
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "token-passthrough",
+                    "title": "Pipeline User password",
+                    "description": "The Pipeline User is the user used to perform git operations inside a pipeline. This is normally a bot."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+
+
+}

@@ -9,14 +9,33 @@
     }
   },
   "if": {
-    "properties": { "enablePersistentStorage": { "const": "true" } }
+    "properties": {
+      "enablePersistentStorage": {
+        "const": "true",
+        "type": "boolean"
+      }
+    }
   },
   "then": {
-    "properties": { "databaseConnectionUrl": { "type": "string" },
-      "databaseUsername": { "type": "string"},
-      "databasePassword": { "type": "string", "format" : "password"} }
+    "properties": {
+      "databaseConnectionUrl": {
+        "type": "string"
+      },
+      "databaseUsername": {
+        "type": "string"
+      },
+      "databasePassword": {
+        "type": "string",
+        "format": "password"
+      }
+    }
   },
   "else": {
-    "properties": { "enableInMemoryDB": { "type": "boolean", "default":  true} }
+    "properties": {
+      "enableInMemoryDB": {
+        "type": "boolean",
+        "default": true
+      }
+    }
   }
 }

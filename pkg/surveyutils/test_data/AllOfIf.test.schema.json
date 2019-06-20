@@ -16,7 +16,8 @@
       "if": {
         "properties": {
           "enablePersistentStorage": {
-            "const": "true"
+            "const": "true",
+            "type": "boolean"
           }
         }
       },
@@ -47,7 +48,8 @@
       "if": {
         "properties": {
           "enableCheese": {
-            "const": "true"
+            "const": "true",
+            "type": "boolean"
           }
         }
       },

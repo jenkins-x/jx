@@ -9,13 +9,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/add"
 
@@ -491,7 +492,7 @@ func TestStashValues(t *testing.T) {
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
 		testOptions := testhelpers.CreateAppTestOptions(false, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
@@ -563,7 +564,8 @@ func TestStashValues(t *testing.T) {
 		assert.True(r, ok)
 		dst, err := base64.StdEncoding.DecodeString(val)
 		assert.NoError(r, err)
-		assert.Equal(r, `{"name":"testing"}`, string(dst))
+		assert.Equal(r, `name: testing
+`, string(dst))
 	})
 }
 
@@ -654,10 +656,8 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		assert.NoError(r, err)
 		data, err := ioutil.ReadFile(valuesFromPrPath)
 		assert.NoError(r, err)
-		assert.Equal(r, `tokenValue:
-  Kind: Secret
-  Name: tokenvalue-secret
-`, string(data))
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:gitOps/%s/%s/tokenvalue-secret:token
+`, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name), string(data))
 		// Validate that vault has had the secret added
 		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "tokenvalue-secret"},
 			"/")
@@ -1194,7 +1194,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
 		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
@@ -1247,7 +1247,7 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
     }
     },
     "if": {
-      "properties": { "enablePersistentStorage": { "const": "true" } }
+      "properties": { "enablePersistentStorage": { "const": "true", "type": "boolean" } }
     },
     "then": {
       "properties": { "databaseConnectionUrl": { "type": "string" }, 
@@ -1285,13 +1285,11 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 		assert.NoError(r, err)
 		data, err := ioutil.ReadFile(valuesFromPrPath)
 		assert.NoError(r, err)
-		assert.Equal(r, `databaseConnectionUrl: abc
-databasePassword:
-  Kind: Secret
-  Name: databasepassword-secret
+		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
+databasePassword: vault:gitOps/%s/%s/databasepassword-secret:password
 databaseUsername: wensleydale
 enablePersistentStorage: true
-`, string(data))
+`, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name), string(data))
 
 		// Validate that vault has had the secret added
 		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasepassword-secret"},
