@@ -8,9 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/jenkins-x/jx/pkg/log"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/secreturl"
+
+	"github.com/jenkins-x/jx/pkg/vault"
+
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -73,14 +77,6 @@ type Type struct {
 	Format           *string      `json:"format,omitempty"`
 	ContentMediaType *string      `json:"contentMediaType,omitempty"`
 	ContentEncoding  *string      `json:"contentEncoding,omitempty"`
-}
-
-// GeneratedSecret is a secret that is generated from protected input (e.g. password, token)
-type GeneratedSecret struct {
-	Name  string `json: "name"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
-	Path  string `json:-'`
 }
 
 // Definitions hold schema definitions.
@@ -157,8 +153,9 @@ func (t *Items) UnmarshalJSON(b []byte) error {
 
 // JSONSchemaOptions are options for generating values from a schema
 type JSONSchemaOptions struct {
-	CreateSecret func(name string, key string, value string) (interface{},
-		error)
+	VaultClient         vault.Client
+	VaultBasePath       string
+	VaultScheme         string
 	AskExisting         bool
 	AutoAcceptDefaults  bool
 	NoAsk               bool
@@ -762,16 +759,22 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	}
 
 	if storeAsSecret && result != nil {
-		secretName := kube.ToValidName(strings.Join(append(prefixes, "secret"), "-"))
 		value, err := util.AsString(result)
 		if err != nil {
 			return err
 		}
-		secretReference, err := o.CreateSecret(secretName, util.DereferenceString(t.Format), value)
-		if err != nil {
-			return err
+		if o.VaultClient != nil {
+			dereferencedFormat := util.DereferenceString(t.Format)
+			path := strings.Join([]string{o.VaultBasePath, strings.Join(prefixes, "-")}, "/")
+			secretReference := secreturl.ToURI(path, dereferencedFormat, o.VaultScheme)
+			output.Set(name, secretReference)
+			o.VaultClient.Write(path, map[string]interface{}{
+				dereferencedFormat: value,
+			})
+		} else {
+			log.Logger().Warnf("Need to store a secret for %s but no secret store configured", name)
 		}
-		output.Set(name, secretReference)
+
 	} else if result != nil {
 		// Write the value to the output
 		output.Set(name, result)

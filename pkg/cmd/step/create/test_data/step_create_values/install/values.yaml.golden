@@ -1,8 +1,8 @@
 adminUser:
-  password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/adminuser-password-secret:password-passthrough
+  password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/adminUser-password:password
   username: admin
 docker:
-  password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/docker-password-secret:password-passthrough
+  password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/docker-password:password
   url: https://index.docker.io/v1/
   username: james
 enableDocker: true
@@ -11,7 +11,7 @@ gitProvider: github
 pipelineUser:
   github:
     host: github.com
-    password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/pipelineuser-github-password-secret:token-passthrough
+    password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/pipelineUser-github-password:token
     username: james
 prow:
-  hmacToken: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/prow-hmactoken-secret:token-passthrough
+  hmacToken: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/prow-hmacToken:token

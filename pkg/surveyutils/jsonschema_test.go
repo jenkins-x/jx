@@ -1,10 +1,16 @@
 package surveyutils_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/vault/fake"
+
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
@@ -15,13 +21,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 )
 
 // TODO Figure out how to test selects (affects arrays, enums, validation keywords for arrays)
 
 var timeout = 5 * time.Second
+
+const vaultBasePath = "fake"
 
 type GeneratedSecret struct {
 	Name  string
@@ -509,13 +516,12 @@ func TestIfThen(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		assert.Equal(r, `databaseConnectionUrl: abc
-databasePassword:
-  kind: Secret
-  name: databasepassword-secret
+		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
+		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
+databasePassword: vault:%s:password
 databaseUsername: wensleydale
 enablePersistentStorage: true
-`, values)
+`, path), values)
 	})
 }
 
@@ -600,15 +606,14 @@ func TestAllOf(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		assert.Equal(r, `cheeseType: Stilton
+		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
+		assert.Equal(r, fmt.Sprintf(`cheeseType: Stilton
 databaseConnectionUrl: abc
-databasePassword:
-  kind: Secret
-  name: databasepassword-secret
+databasePassword: vault:%s:password
 databaseUsername: wensleydale
 enableCheese: true
 enablePersistentStorage: true
-`, values)
+`, path), values)
 	})
 }
 
@@ -634,15 +639,14 @@ func TestAllOfThen(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		assert.Equal(r, `databaseConnectionUrl: abc
-databasePassword:
-  kind: Secret
-  name: databasepassword-secret
+		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
+		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
+databasePassword: vault:%s:password
 databaseUsername: wensleydale
 enableCheese: false
 enablePersistentStorage: true
 iDontLikeCheese: true
-`, values)
+`, path), values)
 	})
 }
 
@@ -751,7 +755,7 @@ func TestTime(t *testing.T) {
 func TestPassword(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		values, secrets, err := GenerateValuesAsYaml(r, "password.test.schema.json", make(map[string]interface{}), false,
+		values, vaultClient, err := GenerateValuesAsYaml(r, "password.test.schema.json", make(map[string]interface{}), false,
 			false, false, false,
 			func(console *tests.ConsoleWrapper, donec chan struct{}) {
 				defer close(donec)
@@ -760,15 +764,12 @@ func TestPassword(t *testing.T) {
 				console.SendLine("abc")
 				console.ExpectEOF()
 			})
-		assert.Equal(r, `passwordValue:
-  kind: Secret
-  name: passwordvalue-secret
-`, values)
-		assert.Contains(r, secrets, &GeneratedSecret{
-			Name:  "passwordvalue-secret",
-			Value: "abc",
-			Key:   "password",
-		})
+		path := strings.Join([]string{vaultBasePath, "passwordValue"}, "/")
+		assert.Equal(r, fmt.Sprintf(`passwordValue: vault:%s:password
+`, path), values)
+		secrets, err := vaultClient.Read(path)
+		assert.NoError(t, err)
+		assert.Equal(r, "abc", secrets["password"])
 		assert.NoError(r, err)
 	})
 }
@@ -776,7 +777,7 @@ func TestPassword(t *testing.T) {
 func TestToken(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		values, secrets, err := GenerateValuesAsYaml(r, "token.test.schema.json", make(map[string]interface{}), false,
+		values, vaultClient, err := GenerateValuesAsYaml(r, "token.test.schema.json", make(map[string]interface{}), false,
 			false,
 			false, false,
 			func(console *tests.ConsoleWrapper, donec chan struct{}) {
@@ -786,15 +787,12 @@ func TestToken(t *testing.T) {
 				console.SendLine("abc")
 				console.ExpectEOF()
 			})
-		assert.Equal(r, `tokenValue:
-  kind: Secret
-  name: tokenvalue-secret
-`, values)
-		assert.Contains(r, secrets, &GeneratedSecret{
-			Name:  "tokenvalue-secret",
-			Value: "abc",
-			Key:   "token",
-		})
+		path := strings.Join([]string{vaultBasePath, "tokenValue"}, "/")
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:%s:token
+`, path), values)
+		secrets, err := vaultClient.Read(path)
+		assert.NoError(t, err)
+		assert.Equal(r, "abc", secrets["token"])
 		assert.NoError(r, err)
 	})
 }
@@ -972,12 +970,12 @@ func TestJSONPointer(t *testing.T) {
 func GenerateValuesAsYaml(r *tests.R, schemaName string, existingValues map[string]interface{},
 	askExisting bool, noAsk bool, autoAcceptDefaults bool, ignoreMissingValues bool, answerQuestions func(
 		console *tests.
-			ConsoleWrapper, donec chan struct{})) (string, []*GeneratedSecret, error) {
+			ConsoleWrapper, donec chan struct{})) (string, vault.Client, error) {
 
 	//t.Parallel()
-	secrets := make([]*GeneratedSecret, 0)
 	console := tests.NewTerminal(r, &timeout)
 	defer console.Cleanup()
+	vaultClient := fake.NewFakeVaultClient()
 	options := surveyutils.JSONSchemaOptions{
 		Out:                 console.Out,
 		In:                  console.In,
@@ -986,18 +984,9 @@ func GenerateValuesAsYaml(r *tests.R, schemaName string, existingValues map[stri
 		AutoAcceptDefaults:  autoAcceptDefaults,
 		NoAsk:               noAsk,
 		IgnoreMissingValues: ignoreMissingValues,
-
-		CreateSecret: func(name string, key string, value string) (interface{}, error) {
-			secrets = append(secrets, &GeneratedSecret{
-				Name:  name,
-				Value: value,
-				Key:   key,
-			})
-			return &jenkinsv1.ResourceReference{
-				Name: name,
-				Kind: "Secret",
-			}, nil
-		},
+		VaultClient:         &vaultClient,
+		VaultBasePath:       vaultBasePath,
+		VaultScheme:         "vault",
 	}
 	data, err := ioutil.ReadFile(filepath.Join("test_data", schemaName))
 	assert.NoError(r, err)
@@ -1015,5 +1004,5 @@ func GenerateValuesAsYaml(r *tests.R, schemaName string, existingValues map[stri
 	consoleOut := expect.StripTrailingEmptyLines(console.CurrentState())
 	r.Logf(consoleOut)
 	assert.NoError(r, err)
-	return string(yaml), secrets, runErr
+	return string(yaml), &vaultClient, runErr
 }
