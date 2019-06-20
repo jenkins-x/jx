@@ -115,24 +115,25 @@ func (o *StartPipelineOptions) Run() error {
 	if o.JenkinsSelector.IsCustom() {
 		isProw = false
 	}
-	if len(args) == 0 {
-		if isProw {
-			names, err = o.ProwOptions.GetReleaseJobs()
-			if err != nil {
-				return err
-			}
-			names = util.StringsContaining(names, o.Filter)
-		} else {
-			jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.Filter)
-			if err != nil {
-				return err
-			}
-			o.Jobs = jobMap
-
-			for k := range o.Jobs {
-				names = append(names, k)
-			}
+	if isProw {
+		names, err = o.ProwOptions.GetReleaseJobs()
+		if err != nil {
+			return err
 		}
+		names = util.StringsContaining(names, o.Filter)
+	} else {
+		jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.Filter)
+		if err != nil {
+			return err
+		}
+		o.Jobs = jobMap
+
+		for k := range o.Jobs {
+			names = append(names, k)
+		}
+	}
+
+	if len(args) == 0 {
 		if len(names) == 0 {
 			return errors.New("no jobs found to trigger")
 		}
