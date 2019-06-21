@@ -661,7 +661,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 	}
 
 	if len(toEnableArray) == 0 {
-		log.Logger().Infof("No apis need to be enable as they are already enabled: %s", util.ColorInfo(strings.Join(apis, " ")))
+		log.Logger().Debugf("No apis need to be enable as they are already enabled: %s", util.ColorInfo(strings.Join(apis, " ")))
 		return nil
 	}
 
@@ -673,7 +673,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 		args = append(args, projectID)
 	}
 
-	log.Logger().Infof("Lets ensure we have %s enabled on your project via: %s", toEnableArray, util.ColorInfo("gcloud "+strings.Join(args, " ")))
+	log.Logger().Debugf("Lets ensure we have %s enabled on your project via: %s", toEnableArray, util.ColorInfo("gcloud "+strings.Join(args, " ")))
 
 	cmd := util.Command{
 		Name: "gcloud",

@@ -722,12 +722,12 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 }
 
 func (options *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
-	log.Logger().Infof("Creating/Updating %v clusters\n", util.ColorInfo(len(clusterDefinitions)))
+	log.Logger().Infof("Creating/Updating %v clusters", util.ColorInfo(len(clusterDefinitions)))
 	for _, c := range clusterDefinitions {
 		switch v := c.(type) {
 		case *GKECluster:
 			path := filepath.Join(dir, Clusters, v.Name(), Terraform)
-			log.Logger().Infof("\n\nCreating/Updating cluster %s", util.ColorInfo(c.Name()))
+			log.Logger().Infof("Creating/Updating cluster %s", util.ColorInfo(c.Name()))
 			err := options.applyTerraformGKE(v, path)
 			if err != nil {
 				return err

@@ -210,13 +210,13 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Logger().Infof("Setting the dev namespace to: %s", util.ColorInfo(ns))
+	log.Logger().Debugf("Setting the dev namespace to: %s", util.ColorInfo(ns))
 }
 
 func (o *CommonOptions) SetCurrentNamespace(ns string) {
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Logger().Infof("Setting the current namespace to: %s", util.ColorInfo(ns))
+	log.Logger().Debugf("Setting the current namespace to: %s", util.ColorInfo(ns))
 }
 
 // AddBaseFlags adds the base flags for all commands
