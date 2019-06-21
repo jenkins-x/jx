@@ -606,7 +606,7 @@ func TestAllOf(t *testing.T) {
 		assert.NoError(r, err)
 		assert.Equal(r, fmt.Sprintf(`cheeseType: Stilton
 databaseConnectionUrl: abc
-databasePassword: vault:%s:password
+databasePassword: vault:%s:databasePassword
 databaseUsername: wensleydale
 enableCheese: true
 enablePersistentStorage: true
