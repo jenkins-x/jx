@@ -3,6 +3,7 @@ package clients
 import (
 	"io"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 
@@ -14,10 +15,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -52,22 +51,22 @@ type Factory interface {
 	//
 
 	// CreateAuthConfigService creates a new authentication configuration service
-	CreateAuthConfigService(fileName string, namespace string) (auth.ConfigService, error)
+	CreateAuthConfigService(fileName string, namespace string, serverKind string, serviceKind string) (auth.ConfigService, error)
 
 	// CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
-	CreateJenkinsAuthConfigService(kubernetes.Interface, string, string) (auth.ConfigService, error)
+	CreateJenkinsAuthConfigService(namespace string) (auth.ConfigService, error)
 
 	// CreateChartmuseumAuthConfigService creates a new Chartmuseum authentication configuration service
 	CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error)
 
 	// CreateIssueTrackerAuthConfigService creates a new issuer tracker configuration service
-	CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateIssueTrackerAuthConfigService(namespace string) (auth.ConfigService, error)
 
 	// CreateChatAuthConfigService creates a new chat configuration service
-	CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateChatAuthConfigService(namespace string) (auth.ConfigService, error)
 
 	// CreateAddonAuthConfigService creates a new addon auth configuration service
-	CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateAddonAuthConfigService(namespace string) (auth.ConfigService, error)
 
 	//
 	// Generic clients
@@ -155,9 +154,6 @@ type Factory interface {
 
 	// IsInCDPipeline indicates if the execution takes place within a CD pipeline
 	IsInCDPipeline() bool
-
-	// AuthMergePipelineSecrets merges the current config with the pipeline secrets provided in k8s secrets
-	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
 
 	// SecretsLocation inidcates the location of the secrets
 	SecretsLocation() secrets.SecretsLocationKind

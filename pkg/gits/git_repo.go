@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -44,9 +45,11 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 
 func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
 	repoOptions *GitRepositoryOptions, server *auth.ServerAuth, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*CreateRepoData, error) {
-	config := authConfigSvc.Config()
+	config, err := authConfigSvc.Config()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting auth config")
+	}
 
-	var err error
 	if server == nil {
 		if repoOptions.ServerURL != "" {
 			server = config.GetOrCreateServer(repoOptions.ServerURL)

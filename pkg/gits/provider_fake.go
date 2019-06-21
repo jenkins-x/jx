@@ -65,14 +65,24 @@ type FakeRepository struct {
 }
 
 type FakeProvider struct {
-	Server             auth.ServerAuth
-	User               auth.UserAuth
+	configService      auth.ConfigService
 	Organizations      []GitOrganisation
 	Repositories       map[string][]*FakeRepository
 	ForkedRepositories map[string][]*FakeRepository
 	Type               FakeProviderType
 	Users              []*GitUser
 	WebHooks           []*GitWebHookArguments
+}
+
+func (f *FakeProvider) AuthConfigService() auth.ConfigService {
+	return f.configService
+}
+
+func (f *FakeProvider) server() (*auth.ServerAuth, error) {
+	config, err := f.configService.Config()
+	if err != nil {
+		return nil, err
+	}
 }
 
 func (f *FakeProvider) ListOrganisations() ([]GitOrganisation, error) {
@@ -654,14 +664,6 @@ func (f *FakeProvider) BranchArchiveURL(org string, name string, branch string) 
 	return util.UrlJoin(f.ServerURL(), org, name, "archive", branch+".zip")
 }
 
-func (f *FakeProvider) CurrentUsername() string {
-	return f.User.Username
-}
-
-func (f *FakeProvider) UserAuth() auth.UserAuth {
-	return f.User
-}
-
 func (f *FakeProvider) UserInfo(username string) *GitUser {
 	for _, user := range f.Users {
 		if user.Login == username {
@@ -722,9 +724,10 @@ func NewFakeRepository(owner string, repoName string) *FakeRepository {
 }
 
 // NewFakeRepository creates a new fake repository
-func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
+func NewFakeProvider(configService auth.ConfigService, repositories ...*FakeRepository) *FakeProvider {
 	provider := &FakeProvider{
-		Repositories: map[string][]*FakeRepository{},
+		configService: configService,
+		Repositories:  map[string][]*FakeRepository{},
 	}
 	for _, repo := range repositories {
 		owner := repo.Owner

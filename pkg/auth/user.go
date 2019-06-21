@@ -12,44 +12,44 @@ const (
 	DefaultUsername   = "dummy"
 )
 
-// UserAuth generic auth credentials for a user
-type UserAuth struct {
+// User generic auth credentials for a user
+type User struct {
 	Username    string `json:"username"`
 	ApiToken    string `json:"apitoken"`
 	BearerToken string `json:"bearertoken"`
 	Password    string `json:"password,omitempty"`
 }
 
-// UsernameEnv builds the username environment variable name
-func UsernameEnv(prefix string) string {
+// usernameEnv builds the username environment variable name
+func usernameEnv(prefix string) string {
 	prefix = strings.ToUpper(prefix)
 	return prefix + usernameSuffix
 }
 
-// ApiTokenEnv builds the api token environment variable name
-func ApiTokenEnv(prefix string) string {
+// apiTokenEnv builds the api token environment variable name
+func apiTokenEnv(prefix string) string {
 	prefix = strings.ToUpper(prefix)
 	return prefix + apiTokenSuffix
 }
 
-// BearerTokenEnv builds the bearer token environment variable name
-func BearerTokenEnv(prefix string) string {
+// bearerTokenEnv builds the bearer token environment variable name
+func bearerTokenEnv(prefix string) string {
 	prefix = strings.ToUpper(prefix)
 	return prefix + bearerTokenSuffix
 }
 
 // CreateAuthUserFromEnvironment creates a user auth from environment variables
-func CreateAuthUserFromEnvironment(prefix string) UserAuth {
-	user := UserAuth{}
-	username, set := os.LookupEnv(UsernameEnv(prefix))
+func CreateAuthUserFromEnvironment(prefix string) User {
+	user := User{}
+	username, set := os.LookupEnv(usernameEnv(prefix))
 	if set {
 		user.Username = username
 	}
-	apiToken, set := os.LookupEnv(ApiTokenEnv(prefix))
+	apiToken, set := os.LookupEnv(apiTokenEnv(prefix))
 	if set {
 		user.ApiToken = apiToken
 	}
-	bearerToken, set := os.LookupEnv(BearerTokenEnv(prefix))
+	bearerToken, set := os.LookupEnv(bearerTokenEnv(prefix))
 	if set {
 		user.BearerToken = bearerToken
 	}
@@ -64,6 +64,6 @@ func CreateAuthUserFromEnvironment(prefix string) UserAuth {
 }
 
 // IsInvalid returns true if the user auth has a valid token
-func (a *UserAuth) IsInvalid() bool {
-	return a.BearerToken == "" && (a.ApiToken == "" || a.Username == "")
+func (u User) IsInvalid() bool {
+	return u.BearerToken == "" && (u.ApiToken == "" || u.Username == "")
 }

@@ -26,6 +26,8 @@ type OrganisationChecker interface {
 type GitProvider interface {
 	OrganisationLister
 
+	AuthConfigService() auth.ConfigService
+
 	ListRepositories(org string) ([]*GitRepository, error)
 
 	CreateRepository(org string, name string, private bool) (*GitRepository, error)
@@ -135,12 +137,6 @@ type GitProvider interface {
 
 	// BranchArchiveURL returns a URL to the ZIP archive for the git branch
 	BranchArchiveURL(org string, name string, branch string) string
-
-	// Returns the current username
-	CurrentUsername() string
-
-	// Returns the current user auth
-	UserAuth() auth.UserAuth
 
 	// Returns user info, if possible
 	UserInfo(username string) *GitUser

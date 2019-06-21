@@ -7,20 +7,20 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// vaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
-type vaultAuthConfigSaver struct {
+// vaultConfigLoadSaver loads or store config into vault
+type vaultConfigLoadSaver struct {
 	vaultClient vault.Client
 	secretName  string
 }
 
 // LoadConfig loads the config from the vault
-func (v *vaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (v *vaultConfigLoadSaver) LoadConfig() (*Config, error) {
 	data, err := v.vaultClient.ReadYaml(vault.AuthSecretPath(v.secretName))
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading the auth config %q from vault", v.secretName)
 	}
 
-	var config AuthConfig
+	var config Config
 	if data == "" {
 		return &config, nil
 	}
@@ -32,7 +32,7 @@ func (v *vaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the config to the vault
-func (v *vaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
+func (v *vaultConfigLoadSaver) SaveConfig(config *Config) error {
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return errors.Wrap(err, "marshaling auth config")
@@ -43,15 +43,15 @@ func (v *vaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	return nil
 }
 
-// NewVaultAuthConfigService creates a new ConfigService that saves it config to a Vault
-func NewVaultAuthConfigService(secretName string, vaultClient vault.Client) ConfigService {
-	saver := newVaultAuthConfigSaver(secretName, vaultClient)
-	return NewAuthConfigService(&saver)
+// NewVaultConfigService creates a new ConfigService that saves it config to a Vault
+func NewVaultConfigService(secretName string, vaultClient vault.Client) ConfigService {
+	vls := newVaultConfigLoadSaver(secretName, vaultClient)
+	return newConfigService(&vls, &vls)
 }
 
-// newVaultAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
-func newVaultAuthConfigSaver(secretName string, vaultClient vault.Client) vaultAuthConfigSaver {
-	return vaultAuthConfigSaver{
+// newVaultConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
+func newVaultConfigLoadSaver(secretName string, vaultClient vault.Client) vaultConfigLoadSaver {
+	return vaultConfigLoadSaver{
 		secretName:  secretName,
 		vaultClient: vaultClient,
 	}

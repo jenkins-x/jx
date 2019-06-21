@@ -183,6 +183,9 @@ const (
 	// ValueKindJenkins an Jenkins App secret/credentials
 	ValueKindJenkins = "jenkins"
 
+	// ValueKindChartmuseum an chartmuseum secret/credentials
+	ValueKindChartmuseum = "chartmuseum"
+
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindPipelineEvent = "PipelineEvent"
 

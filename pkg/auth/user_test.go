@@ -1,9 +1,8 @@
-package auth_test
+package auth
 
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,23 +23,23 @@ func TestCreateAuthUserFromEnvironment(t *testing.T) {
 		prefix  string
 		setup   func(t *testing.T)
 		cleanup func(t *testing.T)
-		want    auth.UserAuth
+		want    User
 	}{
 		"create auth user from environment with api token": {
 			prefix: prefix,
 			setup: func(t *testing.T) {
 				setEnvs(t, map[string]string{
-					auth.UsernameEnv(prefix): "test",
-					auth.ApiTokenEnv(prefix): "test",
+					usernameEnv(prefix): "test",
+					apiTokenEnv(prefix): "test",
 				})
 			},
 			cleanup: func(t *testing.T) {
 				cleanEnvs(t, []string{
-					auth.UsernameEnv(prefix),
-					auth.ApiTokenEnv(prefix),
+					usernameEnv(prefix),
+					apiTokenEnv(prefix),
 				})
 			},
-			want: auth.UserAuth{
+			want: User{
 				Username:    "test",
 				ApiToken:    "test",
 				BearerToken: "",
@@ -51,17 +50,17 @@ func TestCreateAuthUserFromEnvironment(t *testing.T) {
 			prefix: prefix,
 			setup: func(t *testing.T) {
 				setEnvs(t, map[string]string{
-					auth.UsernameEnv(prefix):    "test",
-					auth.BearerTokenEnv(prefix): "test",
+					usernameEnv(prefix):    "test",
+					bearerTokenEnv(prefix): "test",
 				})
 			},
 			cleanup: func(t *testing.T) {
 				cleanEnvs(t, []string{
-					auth.UsernameEnv(prefix),
-					auth.BearerTokenEnv(prefix),
+					usernameEnv(prefix),
+					bearerTokenEnv(prefix),
 				})
 			},
-			want: auth.UserAuth{
+			want: User{
 				Username:    "test",
 				ApiToken:    "",
 				BearerToken: "test",
@@ -72,16 +71,16 @@ func TestCreateAuthUserFromEnvironment(t *testing.T) {
 			prefix: prefix,
 			setup: func(t *testing.T) {
 				setEnvs(t, map[string]string{
-					auth.ApiTokenEnv(prefix): "test",
+					apiTokenEnv(prefix): "test",
 				})
 			},
 			cleanup: func(t *testing.T) {
 				cleanEnvs(t, []string{
-					auth.ApiTokenEnv(prefix),
+					apiTokenEnv(prefix),
 				})
 			},
-			want: auth.UserAuth{
-				Username:    auth.DefaultUsername,
+			want: User{
+				Username:    DefaultUsername,
 				ApiToken:    "test",
 				BearerToken: "",
 				Password:    "",
@@ -95,7 +94,7 @@ func TestCreateAuthUserFromEnvironment(t *testing.T) {
 				tc.setup(t)
 			}
 
-			user := auth.CreateAuthUserFromEnvironment(prefix)
+			user := CreateAuthUserFromEnvironment(prefix)
 			assert.Equal(t, tc.want, user)
 
 			if tc.cleanup != nil {
@@ -107,47 +106,47 @@ func TestCreateAuthUserFromEnvironment(t *testing.T) {
 
 func TestIsInvalid(t *testing.T) {
 	tests := map[string]struct {
-		user *auth.UserAuth
+		user User
 		want bool
 	}{
 		"invalid user when empty": {
-			user: &auth.UserAuth{},
+			user: User{},
 			want: true,
 		},
 		"invalid user with only a username": {
-			user: &auth.UserAuth{
+			user: User{
 				Username: "test",
 			},
 			want: true,
 		},
 		"invalid user with only a api token": {
-			user: &auth.UserAuth{
+			user: User{
 				ApiToken: "test",
 			},
 			want: true,
 		},
 		"valid user with only a bearer token": {
-			user: &auth.UserAuth{
+			user: User{
 				BearerToken: "test",
 			},
 			want: false,
 		},
 		"valid user with api token": {
-			user: &auth.UserAuth{
+			user: User{
 				Username: "test",
 				ApiToken: "test",
 			},
 			want: false,
 		},
 		"valid user with bearer token": {
-			user: &auth.UserAuth{
+			user: User{
 				Username:    "test",
 				BearerToken: "test",
 			},
 			want: false,
 		},
 		"valid user with api token and bearer token": {
-			user: &auth.UserAuth{
+			user: User{
 				Username:    "test",
 				ApiToken:    "test",
 				BearerToken: "test",

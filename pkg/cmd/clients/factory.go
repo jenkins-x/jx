@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 
@@ -33,7 +32,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/util"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -49,8 +47,6 @@ import (
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type factory struct {
@@ -97,8 +93,9 @@ func (f *factory) WithBearerToken(token string) Factory {
 }
 
 // CreateJenkinsClient creates a new Jenkins client
-func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns, "")
+func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string,
+	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+	svc, err := f.CreateJenkinsAuthConfigService(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +107,9 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 }
 
 // CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
-func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns, jenkinsServiceName)
+func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string,
+	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+	svc, err := f.CreateJenkinsAuthConfigService(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -181,197 +179,68 @@ func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string
 	return url, err
 }
 
-func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string, jenkinsServiceName string) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile, ns)
-
-	if jenkinsServiceName == "" {
-		jenkinsServiceName = kube.SecretJenkins
-	}
-
+func (f *factory) CreateJenkinsAuthConfigService(namespace string) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile, namespace, kube.ValueKindJenkins, "")
 	if err != nil {
-		return authConfigSvc, err
-	}
-	config, err := authConfigSvc.LoadConfig()
-	if err != nil {
-		return authConfigSvc, err
+		return nil, errors.Wrap(err, "creating auth config service for jenkins")
 	}
 
-	customJenkins := jenkinsServiceName != kube.SecretJenkins
-
-	if len(config.Servers) == 0 || customJenkins {
-		secretName := jenkinsServiceName
-		if customJenkins {
-			secretName = jenkinsServiceName + "-auth"
-		}
-		userAuth := auth.UserAuth{}
-
-		s, err := c.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
-		if err != nil {
-			if !customJenkins {
-				return authConfigSvc, err
-			}
-		}
-		if s != nil {
-			userAuth.Username = string(s.Data[kube.JenkinsAdminUserField])
-			userAuth.ApiToken = string(s.Data[kube.JenkinsAdminApiToken])
-			userAuth.BearerToken = string(s.Data[kube.JenkinsBearTokenField])
-		}
-
-		if customJenkins {
-			s, err = c.CoreV1().Secrets(ns).Get(jenkinsServiceName, metav1.GetOptions{})
-			if err == nil {
-				if userAuth.Username == "" {
-					userAuth.Username = string(s.Data[kube.JenkinsAdminUserField])
-				}
-				userAuth.Password = string(s.Data[kube.JenkinsAdminPasswordField])
-			}
-		}
-
-		svcURL, err := services.FindServiceURL(c, ns, jenkinsServiceName)
-		if svcURL == "" {
-			return authConfigSvc, fmt.Errorf("unable to find external URL of service %s in namespace %s", jenkinsServiceName, ns)
-		}
-
-		u, err := url.Parse(svcURL)
-		if err != nil {
-			return authConfigSvc, err
-		}
-		if !userAuth.IsInvalid() || (customJenkins && userAuth.Password != "") {
-			if len(config.Servers) == 0 {
-				config.Servers = []*auth.ServerAuth{
-					{
-						Name:  u.Host,
-						URL:   svcURL,
-						Users: []*auth.UserAuth{&userAuth},
-					},
-				}
-			} else {
-				server := config.GetOrCreateServer(svcURL)
-				server.Name = u.Host
-				server.Users = []*auth.UserAuth{&userAuth}
-			}
-			// lets save the file so that if we call LoadConfig() again we still have this defaulted user auth
-			err = authConfigSvc.SaveConfig()
-			if err != nil {
-				return authConfigSvc, err
-			}
-		}
-	}
-	return authConfigSvc, err
+	return authConfigSvc, nil
 }
 
 func (f *factory) CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile, namespace)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile, namespace, kube.ValueKindChartmuseum, "")
 	if err != nil {
-		return authConfigSvc, err
+		return nil, errors.Wrap(err, "creating auth config service for chartmuseum")
 	}
-	_, err = authConfigSvc.LoadConfig()
-	if err != nil {
-		return authConfigSvc, err
-	}
-	return authConfigSvc, err
+	return authConfigSvc, nil
 }
 
-func (f *factory) CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile, namespace)
+func (f *factory) CreateIssueTrackerAuthConfigService(namespace string) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile, namespace, kube.ValueKindIssue, "")
 	if err != nil {
-		return authConfigSvc, err
+		return nil, errors.Wrap(err, "creating auth config service for tracker")
 	}
-	if secrets != nil {
-		config, err := authConfigSvc.LoadConfig()
-		if err != nil {
-			return authConfigSvc, err
-		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPipeline())
-	}
-	return authConfigSvc, err
+	return authConfigSvc, nil
 }
 
-func (f *factory) CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile, namespace)
+func (f *factory) CreateChatAuthConfigService(namespace string) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile, namespace, kube.ValueKindChat, "")
 	if err != nil {
-		return authConfigSvc, err
+		return nil, errors.Wrap(err, "creating auth config service for chat")
 	}
-	if secrets != nil {
-		config, err := authConfigSvc.LoadConfig()
-		if err != nil {
-			return authConfigSvc, err
-		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPipeline())
-	}
-	return authConfigSvc, err
+	return authConfigSvc, nil
 }
 
-func (f *factory) CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile, namespace)
+func (f *factory) CreateAddonAuthConfigService(namespace string) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile, namespace, kube.ValueKindAddon, "")
 	if err != nil {
-		return authConfigSvc, err
+		return nil, errors.Wrap(err, "creating augh config service for addon")
 	}
-	if secrets != nil {
-		config, err := authConfigSvc.LoadConfig()
-		if err != nil {
-			return authConfigSvc, err
-		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPipeline())
-	}
-	return authConfigSvc, err
+	return authConfigSvc, nil
 }
 
-func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error {
-	log.Logger().Debug("merging pipeline secrets with local secrets")
-	if config == nil || secrets == nil {
-		return nil
-	}
-	for _, secret := range secrets.Items {
-		labels := secret.Labels
-		annotations := secret.Annotations
-		data := secret.Data
-		if labels != nil && labels[kube.LabelKind] == kind && annotations != nil {
-			u := annotations[kube.AnnotationURL]
-			name := annotations[kube.AnnotationName]
-			k := labels[kube.LabelServiceKind]
-			if u != "" {
-				server := config.GetOrCreateServer(u)
-				if server != nil {
-					// lets use the latest values from the credential
-					if k != "" {
-						server.Kind = k
-					}
-					if name != "" {
-						server.Name = name
-					}
-					if data != nil {
-						username := data[kube.SecretDataUsername]
-						pwd := data[kube.SecretDataPassword]
-						if len(username) > 0 && isCDPipeline {
-							userAuth := config.FindUserAuth(u, string(username))
-							if userAuth == nil {
-								userAuth = &auth.UserAuth{
-									Username: string(username),
-									ApiToken: string(pwd),
-								}
-							} else if len(pwd) > 0 {
-								userAuth.ApiToken = string(pwd)
-							}
-							config.SetUserAuth(u, userAuth)
-						}
-					}
-				}
-			}
-		}
-	}
-	return nil
-}
-
-// CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
-// It will either save the config to the local file-system, or a Vault
-func (f *factory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
-	if f.SecretsLocation() == secrets.VaultLocationKind {
+// CreateAuthConfigService creates a new auth config service for the provided server and services. The config service location is read from
+// configuration. It could be one of: vault, k8s secrets, local file-system.
+func (f *factory) CreateAuthConfigService(fileName string, namespace string, serverKind string, serviceKind string) (auth.ConfigService, error) {
+	switch f.SecretsLocation() {
+	case secrets.VaultLocationKind:
 		vaultClient, err := f.CreateSystemVaultClient(namespace)
-		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
+		authService := auth.NewVaultAuthConfigService(fileName, vaultClient)
 		return authService, err
-	} else {
-		return auth.NewFileAuthConfigService(configName)
+	case secrets.KubeLocationKind:
+		client, _, err := f.CreateKubeClient()
+		if err != nil {
+			return nil, errors.Wrap(err, "creating kubernetes client")
+		}
+		devNs, _, err := kube.GetDevNamespace(client, namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting the dev namesapce")
+		}
+		authService := auth.NewKubeAuthConfigService(client, devNs, serverKind, serviceKind)
+		return authService, nil
+	default:
+		return auth.NewFileAuthConfigService(fileName)
 	}
 }
 

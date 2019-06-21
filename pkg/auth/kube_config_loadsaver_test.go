@@ -56,7 +56,7 @@ func TestLoadConfig(t *testing.T) {
 		url          string
 		username     string
 		password     string
-		want         AuthConfig
+		want         Config
 		err          bool
 	}{
 		"load config from k8s secret": {
@@ -68,11 +68,11 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "test",
 			password:     "test",
-			want: AuthConfig{
-				Servers: []*ServerAuth{
+			want: Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test",
 								ApiToken: "test",
@@ -96,11 +96,11 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "test",
 			password:     "test",
-			want: AuthConfig{
-				Servers: []*ServerAuth{
+			want: Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test",
 								ApiToken: "test",
@@ -124,11 +124,11 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "test",
 			password:     "test",
-			want: AuthConfig{
-				Servers: []*ServerAuth{
+			want: Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test",
 								ApiToken: "test",
@@ -152,11 +152,11 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "test",
 			password:     "test",
-			want: AuthConfig{
-				Servers: []*ServerAuth{
+			want: Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test",
 								ApiToken: "test",
@@ -180,11 +180,11 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "test",
 			password:     "test",
-			want: AuthConfig{
-				Servers: []*ServerAuth{
+			want: Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test",
 								ApiToken: "test",
@@ -208,7 +208,7 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "test",
 			password:     "test",
-			want:         AuthConfig{},
+			want:         Config{},
 			err:          false,
 		},
 		"load config from k8s secret without kind labels and annotations": {
@@ -220,7 +220,7 @@ func TestLoadConfig(t *testing.T) {
 			url:          "",
 			username:     "",
 			password:     "",
-			want:         AuthConfig{},
+			want:         Config{},
 			err:          false,
 		},
 		"load config from k8s secret without username": {
@@ -232,7 +232,7 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "",
 			password:     "test",
-			want:         AuthConfig{},
+			want:         Config{},
 			err:          false,
 		},
 		"load config from k8s secret without password": {
@@ -244,7 +244,7 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "test",
 			password:     "",
-			want:         AuthConfig{},
+			want:         Config{},
 			err:          false,
 		},
 		"load config from k8s secret without URL": {
@@ -256,7 +256,7 @@ func TestLoadConfig(t *testing.T) {
 			url:          "",
 			username:     "test",
 			password:     "test",
-			want:         AuthConfig{},
+			want:         Config{},
 			err:          false,
 		},
 		"load config from k8s secret with invalid user": {
@@ -268,7 +268,7 @@ func TestLoadConfig(t *testing.T) {
 			url:          "https://github.com",
 			username:     "",
 			password:     "",
-			want:         AuthConfig{},
+			want:         Config{},
 			err:          false,
 		},
 	}
@@ -282,8 +282,8 @@ func TestLoadConfig(t *testing.T) {
 			_, err := client.CoreV1().Secrets(tc.namespace).Create(secret)
 			assert.NoError(t, err, "should create secret without error")
 
-			svc := NewKubeAuthConfigService(client, tc.namespace, tc.serverKind, tc.serviceKind)
-			config, err := svc.LoadConfig()
+			svc := NewKubeConfigService(client, tc.namespace, tc.serverKind, tc.serviceKind)
+			config, err := svc.Config()
 			if tc.err {
 				assert.Error(t, err, "should load config from secret with an error")
 			} else {
@@ -307,7 +307,7 @@ func TestSaveConfig(t *testing.T) {
 	tests := map[string]struct {
 		namespace  string
 		serverKind string
-		config     *AuthConfig
+		config     *Config
 		setup      func(t *testing.T, client kubernetes.Interface, ns string)
 		err        bool
 		want       []*corev1.Secret
@@ -315,11 +315,11 @@ func TestSaveConfig(t *testing.T) {
 		"save config into kubernetes secret": {
 			namespace:  "test",
 			serverKind: "git",
-			config: &AuthConfig{
-				Servers: []*ServerAuth{
+			config: &Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test1",
 								ApiToken: "test1",
@@ -364,11 +364,11 @@ func TestSaveConfig(t *testing.T) {
 		"save config into kubernetes secret without API token": {
 			namespace:  "test",
 			serverKind: "git",
-			config: &AuthConfig{
-				Servers: []*ServerAuth{
+			config: &Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test1",
 								Password: "test1",
@@ -409,11 +409,11 @@ func TestSaveConfig(t *testing.T) {
 		"save config into multiple kubernetes secret": {
 			namespace:  "test",
 			serverKind: "git",
-			config: &AuthConfig{
-				Servers: []*ServerAuth{
+			config: &Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test1",
 								ApiToken: "test1",
@@ -429,7 +429,7 @@ func TestSaveConfig(t *testing.T) {
 					},
 					{
 						URL: "https://gitlab.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test1",
 								ApiToken: "test1",
@@ -495,11 +495,11 @@ func TestSaveConfig(t *testing.T) {
 		"save invalid config into kubernetes secret with empty credentials": {
 			namespace:  "test",
 			serverKind: "git",
-			config: &AuthConfig{
-				Servers: []*ServerAuth{
+			config: &Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test1",
 							},
@@ -516,11 +516,11 @@ func TestSaveConfig(t *testing.T) {
 		"save invalid config into kubernetes secret with empty username": {
 			namespace:  "test",
 			serverKind: "git",
-			config: &AuthConfig{
-				Servers: []*ServerAuth{
+			config: &Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								ApiToken: "test1",
 							},
@@ -562,11 +562,11 @@ func TestSaveConfig(t *testing.T) {
 				_, err := client.CoreV1().Secrets(ns).Create(secret)
 				assert.NoError(t, err, "should setup a secret without error")
 			},
-			config: &AuthConfig{
-				Servers: []*ServerAuth{
+			config: &Config{
+				Servers: []Server{
 					{
 						URL: "https://github.com",
-						Users: []*UserAuth{
+						Users: []User{
 							{
 								Username: "test1",
 								ApiToken: "test1",
@@ -615,7 +615,7 @@ func TestSaveConfig(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(t, client, tc.namespace)
 			}
-			svc := NewKubeAuthConfigService(client, tc.namespace, tc.serverKind, "")
+			svc := NewKubeConfigService(client, tc.namespace, tc.serverKind, "")
 			svc.SetConfig(tc.config)
 			err := svc.SaveConfig()
 			if tc.err {
@@ -633,5 +633,4 @@ func TestSaveConfig(t *testing.T) {
 			}
 		})
 	}
-
 }

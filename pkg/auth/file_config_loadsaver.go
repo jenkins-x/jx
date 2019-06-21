@@ -9,39 +9,39 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// fileAuthConfigSaver is a ConfigSaver that saves its config to the local filesystem
-type fileAuthConfigSaver struct {
-	FileName string
+// fileConfigSaver is a ConfigSaver that saves its config to the local filesystem
+type fileConfigLoadSaver struct {
+	fileName string
 }
 
-// NewFileAuthConfigService
-func NewFileAuthConfigService(filename string) (ConfigService, error) {
-	saver, err := newFileAuthSaver(filename)
-	return NewAuthConfigService(saver), err
+// NewFileConfigService
+func NewFileConfigService(filename string) (ConfigService, error) {
+	fls, err := newFileConfigLoadSaver(filename)
+	return newConfigService(fls, fls), err
 }
 
-// newFileBasedAuthConfigSaver creates a new FileBasedAuthConfigService that stores its data under the given filename
+// newFileConfigLoadSavercreates a new FileBasedAuthConfigService that stores its data under the given filename
 // If the fileName is an absolute path, it will be used. If it is a simple filename, it will be stored in the default
 // Config directory
-func newFileAuthSaver(fileName string) (ConfigSaver, error) {
-	svc := &fileAuthConfigSaver{}
+func newFileConfigLoadSaver(fileName string) (*fileConfigLoadSaver, error) {
+	svc := &fileConfigLoadSaver{}
 	// If the fileName is an absolute path, use that. Otherwise treat it as a config filename to be used in
 	if fileName == filepath.Base(fileName) {
 		dir, err := util.ConfigDir()
 		if err != nil {
 			return svc, err
 		}
-		svc.FileName = filepath.Join(dir, fileName)
+		svc.fileName = filepath.Join(dir, fileName)
 	} else {
-		svc.FileName = fileName
+		svc.fileName = fileName
 	}
 	return svc, nil
 }
 
-// LoadConfig loads the configuration from the users JX config directory
-func (s *fileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
-	config := &AuthConfig{}
-	fileName := s.FileName
+// LoadConfig loads the configuration
+func (s *fileConfigLoadSaver) LoadConfig() (*Config, error) {
+	config := &Config{}
+	fileName := s.fileName
 	if fileName != "" {
 		exists, err := util.FileExists(fileName)
 		if err != nil {
@@ -62,8 +62,8 @@ func (s *fileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the configuration to disk
-func (s *fileAuthConfigSaver) SaveConfig(config *AuthConfig) error {
-	fileName := s.FileName
+func (s *fileConfigLoadSaver) SaveConfig(config *Config) error {
+	fileName := s.fileName
 	if fileName == "" {
 		return fmt.Errorf("no filename defined")
 	}

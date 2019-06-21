@@ -38,27 +38,27 @@ const (
 	secretPrefix = "jx-pipeline"
 )
 
-// kubeAuthConfigSaver saves configs to Kubernetes secrets
-type kubeAuthConfigSaver struct {
+// kubeConfigSaver saves configs to Kubernetes secrets
+type kubeConfigLoadSaver struct {
 	client      kubernetes.Interface
 	namespace   string
 	serverKind  string
 	serviceKind string
 }
 
-// NewKubeAuthConfigSaver creates a new ConfigSaver that saves the configuration into Kubernetes secrets
-func NewKubeAuthConfigService(client kubernetes.Interface, namespace string, serverKind string, serviceKind string) ConfigService {
-	ks := kubeAuthConfigSaver{
+// NewKubeConfigSaver creates a new ConfigSaver that saves the configuration into Kubernetes secrets
+func NewKubeConfigService(client kubernetes.Interface, namespace string, serverKind string, serviceKind string) ConfigService {
+	ks := kubeConfigLoadSaver{
 		client:      client,
 		namespace:   namespace,
 		serverKind:  serverKind,
 		serviceKind: serviceKind,
 	}
-	return NewAuthConfigService(&ks)
+	return newConfigService(&ks, &ks)
 }
 
 // LoadConfig loads the config from Kubernetes secrets
-func (k *kubeAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (k *kubeConfigLoadSaver) LoadConfig() (*Config, error) {
 	secrets, err := k.secrets()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving config from k8s secrets")
@@ -66,7 +66,7 @@ func (k *kubeAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 	if secrets == nil {
 		return nil, errors.New("No secrets found with config")
 	}
-	config := &AuthConfig{}
+	config := &Config{}
 	for _, secret := range secrets.Items {
 		labels := secret.Labels
 		annotations := secret.Annotations
@@ -79,17 +79,17 @@ func (k *kubeAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 				if err != nil {
 					continue
 				}
-				server := &ServerAuth{
+				server := Server{
 					URL:  url,
 					Name: name,
 					Kind: serviceKind,
-					Users: []*UserAuth{
+					Users: []User{
 						user,
 					},
 					CurrentUser: user.Username,
 				}
 				if config.Servers == nil {
-					config.Servers = []*ServerAuth{}
+					config.Servers = []Server{}
 				}
 				config.Servers = append(config.Servers, server)
 				config.CurrentServer = server.URL
@@ -100,7 +100,7 @@ func (k *kubeAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the config to Kubernetes secrets. It will use one secret pre server configuration.
-func (k *kubeAuthConfigSaver) SaveConfig(config *AuthConfig) error {
+func (k *kubeConfigLoadSaver) SaveConfig(config *Config) error {
 	for _, server := range config.Servers {
 		name := k.secretName(server)
 		labels := k.labels(server)
@@ -121,7 +121,10 @@ func (k *kubeAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 			secret.Labels = util.MergeMaps(secret.Labels, labels)
 			secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
 		}
-		user := server.CurrentUserAuth()
+		user, err := server.GetCurrentUser()
+		if err != nil {
+			return errors.Wrap(err, "getting current user")
+		}
 		if user.Username == "" {
 			return errors.New("empty username")
 		}
@@ -148,12 +151,24 @@ func (k *kubeAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 }
 
 // secretName builds the secret name
-func (k *kubeAuthConfigSaver) secretName(server *ServerAuth) string {
-	return secretPrefix + "-" + strings.ToLower(k.serverKind) + "-" +
-		strings.ToLower(server.Kind) + "-" + strings.ToLower(server.Name)
+func (k *kubeConfigLoadSaver) secretName(server Server) string {
+	secretName := secretPrefix
+	serverKind := strings.ToLower(k.serverKind)
+	if serverKind != "" {
+		secretName += "-" + serverKind
+	}
+	serviceKind := strings.ToLower(server.Kind)
+	if serviceKind != "" {
+		secretName += "-" + serviceKind
+	}
+	name := strings.ToLower(server.Name)
+	if name != "" {
+		secretName += "-" + name
+	}
+	return secretName
 }
 
-func (k *kubeAuthConfigSaver) labels(server *ServerAuth) map[string]string {
+func (k *kubeConfigLoadSaver) labels(server Server) map[string]string {
 	return map[string]string{
 		labelCredentialsType: valueCredentialTypeUsernamePassword,
 		labelCreatedBy:       valueCreatedByJX,
@@ -162,7 +177,7 @@ func (k *kubeAuthConfigSaver) labels(server *ServerAuth) map[string]string {
 	}
 }
 
-func (k *kubeAuthConfigSaver) annotations(server *ServerAuth) map[string]string {
+func (k *kubeConfigLoadSaver) annotations(server Server) map[string]string {
 	return map[string]string{
 		annotationCredentialsDescription: fmt.Sprintf("Configuration and credentials for server %s", server.URL),
 		annotationURL:                    server.URL,
@@ -170,7 +185,7 @@ func (k *kubeAuthConfigSaver) annotations(server *ServerAuth) map[string]string 
 	}
 }
 
-func (k *kubeAuthConfigSaver) secrets() (*corev1.SecretList, error) {
+func (k *kubeConfigLoadSaver) secrets() (*corev1.SecretList, error) {
 	selector := labelKind + "=" + string(k.serverKind)
 	if k.serviceKind != "" {
 		selector = labelServiceKind + "=" + string(k.serviceKind)
@@ -181,21 +196,21 @@ func (k *kubeAuthConfigSaver) secrets() (*corev1.SecretList, error) {
 	return k.client.CoreV1().Secrets(k.namespace).List(opts)
 }
 
-func (k *kubeAuthConfigSaver) userFromSecret(secret corev1.Secret) (*UserAuth, error) {
+func (k *kubeConfigLoadSaver) userFromSecret(secret corev1.Secret) (User, error) {
 	data := secret.Data
 	if data == nil {
-		return nil, fmt.Errorf("No user auth credentials found in secret '%s'", secret.Name)
+		return User{}, fmt.Errorf("No user auth credentials found in secret '%s'", secret.Name)
 	}
 	username, ok := data[usernameKey]
 	if !ok || len(username) == 0 {
-		return nil, fmt.Errorf("No usernmae found in secret '%s'", secret.Name)
+		return User{}, fmt.Errorf("No usernmae found in secret '%s'", secret.Name)
 	}
 	password, ok := data[passwordKey]
 	if !ok || len(password) == 0 {
-		return nil, fmt.Errorf("No password found in secret '%s'", secret.Name)
+		return User{}, fmt.Errorf("No password found in secret '%s'", secret.Name)
 	}
 
-	return &UserAuth{
+	return User{
 		Username: string(username),
 		ApiToken: string(password),
 	}, nil

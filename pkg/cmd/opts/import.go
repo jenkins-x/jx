@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -19,11 +18,6 @@ import (
 // ImportProject imports a MultiBranchProject into Jenkins for the given git URL
 func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService, isEnvironment bool, batchMode bool) error {
 	jenk, err := o.JenkinsClient()
-	if err != nil {
-		return err
-	}
-
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
 	if err != nil {
 		return err
 	}
@@ -44,6 +38,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 		branchPattern = patterns.DefaultBranchPattern
 	}
+
 	if branchPattern == "" {
 		log.Logger().Infof("Querying if the repo is a fork at %s with kind %s", gitProvider.ServerURL(), gitProvider.Kind())
 		fork, err := o.Git().IsFork(dir)
@@ -156,7 +151,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		return nil
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating Jenkins folder")
 	}
 
 	err = o.Retry(10, time.Second*10, func() error {
@@ -190,10 +185,9 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		return nil
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating multi-branch project")
 	}
 
-	// register the webhook
 	suffix := gitProvider.JenkinsWebHookPath(gitURL, "")
 	jenkBaseURL := o.ExternalJenkinsBaseURL
 	if jenkBaseURL == "" {

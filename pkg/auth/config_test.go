@@ -1,11 +1,10 @@
-package auth_test
+package auth
 
 import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,15 +30,15 @@ func TestAuthConfig(t *testing.T) {
 	configTest := ConfigTest{
 		t: t,
 	}
-	configTest.svc, err = auth.NewFileAuthConfigService(fileName)
+	configTest.svc, err = NewFileConfigService(fileName)
 	assert.NoError(t, err, "should create file auth service")
 
-	config := configTest.Load()
+	config := configTest.Config()
 
 	assert.Equal(t, 0, len(config.Servers), "Should have no servers in config but got %v", config)
 	assertNoAuth(t, config, url1, userDoesNotExist)
 
-	auth1 := auth.UserAuth{
+	auth1 := User{
 		Username: user1,
 		ApiToken: "someToken",
 	}
@@ -47,17 +46,24 @@ func TestAuthConfig(t *testing.T) {
 
 	assert.Equal(t, 1, len(config.Servers), "Number of servers")
 	assert.Equal(t, 1, len(config.Servers[0].Users), "Number of auths")
-	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
-	assert.Equal(t, &auth1, config.FindUserAuth(url1, ""), "loaded auth for server %s and no user", url1)
+	foundAuth, err := config.GetUser(url1, user1)
+	assert.NoError(t, err)
+	assert.Equal(t, auth1, foundAuth, "loaded auth for server %s and user %s", url1, user1)
+	_, err = config.GetUser(url1, "")
+	assert.Error(t, err)
 
-	auth2 := auth.UserAuth{
+	auth2 := User{
 		Username: user2,
 		ApiToken: "anotherToken",
 	}
 	config = configTest.SetUserAuth(url1, auth2)
 
-	assert.Equal(t, &auth2, config.FindUserAuth(url1, user2), "Failed to find auth for server %s and user %s", url1, user2)
-	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
+	foundAuth2, err := config.GetUser(url1, user2)
+	assert.NoError(t, err)
+	assert.Equal(t, auth2, foundAuth2, "Failed to find auth for server %s and user %s", url1, user2)
+	foundAuth1, err := config.GetUser(url1, user1)
+	assert.NoError(t, err)
+	assert.Equal(t, auth1, foundAuth1, "loaded auth for server %s and user %s", url1, user1)
 	assert.Equal(t, 1, len(config.Servers), "Number of servers")
 	assert.Equal(t, 2, len(config.Servers[0].Users), "Number of auths")
 	assertNoAuth(t, config, url1, userDoesNotExist)
@@ -69,10 +75,14 @@ func TestAuthConfig(t *testing.T) {
 	assertNoAuth(t, config, url1, userDoesNotExist)
 	assert.Equal(t, 1, len(config.Servers), "Number of servers")
 	assert.Equal(t, 2, len(config.Servers[0].Users), "Number of auths")
-	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
-	assert.Equal(t, &auth2, config.FindUserAuth(url1, user2), "loaded auth for server %s and user %s", url1, user2)
+	foundUser1, err := config.GetUser(url1, user1)
+	assert.NoError(t, err)
+	assert.Equal(t, auth1, foundUser1, "loaded auth for server %s and user %s", url1, user1)
+	foundUser2, err := config.GetUser(url1, user2)
+	assert.NoError(t, err)
+	assert.Equal(t, auth2, foundUser2, "loaded auth for server %s and user %s", url1, user2)
 
-	auth3 := auth.UserAuth{
+	auth3 := User{
 		Username: user1,
 		ApiToken: "server2User1Token",
 	}
@@ -82,33 +92,45 @@ func TestAuthConfig(t *testing.T) {
 	assert.Equal(t, 2, len(config.Servers), "Number of servers")
 	assert.Equal(t, 2, len(config.Servers[0].Users), "Number of auths for server 0")
 	assert.Equal(t, 1, len(config.Servers[1].Users), "Number of auths for server 1")
-	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
-	assert.Equal(t, &auth2, config.FindUserAuth(url1, user2), "loaded auth for server %s and user %s", url1, user2)
-	assert.Equal(t, &auth3, config.FindUserAuth(url2, user1), "loaded auth for server %s and user %s", url2, user1)
+	foundUser1, err = config.GetUser(url1, user1)
+	assert.NoError(t, err)
+	assert.Equal(t, auth1, foundUser1, "loaded auth for server %s and user %s", url1, user1)
+	foundUser2, err = config.GetUser(url1, user2)
+	assert.NoError(t, err)
+	assert.Equal(t, auth2, foundUser2, "loaded auth for server %s and user %s", url1, user2)
+	foundUser3, err := config.GetUser(url2, user1)
+	assert.NoError(t, err)
+	assert.Equal(t, auth3, foundUser3, "loaded auth for server %s and user %s", url2, user1)
 }
 
 type ConfigTest struct {
 	t   *testing.T
-	svc auth.ConfigService
+	svc ConfigService
 }
 
-func (c *ConfigTest) Load() *auth.AuthConfig {
-	config, err := c.svc.LoadConfig()
+func (c *ConfigTest) SetUserAuth(url string, auth User) *Config {
+	config, err := c.svc.Config()
+	c.AssertNoError(err)
+	config.AddServer(url, "", "", false)
+	err = config.AddUserToServer(url, auth)
+	c.AssertNoError(err)
+	return c.SaveAndReload()
+}
+
+func (c *ConfigTest) SaveAndReload() *Config {
+	err := c.svc.SaveConfig()
+	c.AssertNoError(err)
+	err = c.svc.LoadConfig()
+	c.AssertNoError(err)
+	config, err := c.svc.Config()
 	c.AssertNoError(err)
 	return config
 }
 
-func (c *ConfigTest) SetUserAuth(url string, auth auth.UserAuth) *auth.AuthConfig {
-	copy := auth
-	c.svc.Config().SetUserAuth(url, &copy)
-	c.SaveAndReload()
-	return c.svc.Config()
-}
-
-func (c *ConfigTest) SaveAndReload() *auth.AuthConfig {
-	err := c.svc.SaveConfig()
+func (c *ConfigTest) Config() *Config {
+	config, err := c.svc.Config()
 	c.AssertNoError(err)
-	return c.Load()
+	return config
 }
 
 func (c *ConfigTest) AssertNoError(err error) {
@@ -117,9 +139,9 @@ func (c *ConfigTest) AssertNoError(err error) {
 	}
 }
 
-func assertNoAuth(t *testing.T, config *auth.AuthConfig, url string, user string) {
-	found := config.FindUserAuth(url, user)
-	if found != nil {
+func assertNoAuth(t *testing.T, config *Config, url string, user string) {
+	_, err := config.GetUser(url, user)
+	if err == nil {
 		assert.Fail(t, "Found auth when not expecting it for server %s and user %s", url, user)
 	}
 }
@@ -132,10 +154,12 @@ func assertNoError(t *testing.T, err error) {
 
 func TestAuthConfigGetsDefaultName(t *testing.T) {
 	t.Parallel()
-	c := &auth.AuthConfig{}
+	c := &Config{}
 
 	expectedURL := "https://foo.com"
-	server := c.GetOrCreateServer(expectedURL)
+	c.AddServer(expectedURL, "foo", "", false)
+	server, err := c.GetServer(expectedURL)
+	assert.NoError(t, err)
 	assert.NotNil(t, server, "No server found!")
 	assert.True(t, server.Name != "", "Should have a server name!")
 	assert.Equal(t, expectedURL, server.URL, "Server.URL")
@@ -143,9 +167,11 @@ func TestAuthConfigGetsDefaultName(t *testing.T) {
 
 func TestDeleteServer(t *testing.T) {
 	t.Parallel()
-	c := &auth.AuthConfig{}
+	c := &Config{}
 	url := "https://foo.com"
-	server := c.GetOrCreateServer(url)
+	c.AddServer(url, "", "", false)
+	server, err := c.GetServer(url)
+	assert.NoError(t, err)
 	assert.NotNil(t, server, "Failed to add the server to the configuration")
 	assert.Equal(t, 1, len(c.Servers), "No server found in the configuration")
 
@@ -156,12 +182,16 @@ func TestDeleteServer(t *testing.T) {
 
 func TestDeleteServer2(t *testing.T) {
 	t.Parallel()
-	c := &auth.AuthConfig{}
+	c := &Config{}
 	url1 := "https://foo1.com"
-	server1 := c.GetOrCreateServer(url1)
+	c.AddServer(url1, "", "", false)
+	server1, err := c.GetServer(url1)
+	assert.NoError(t, err)
 	assert.NotNil(t, server1, "Failed to add the server to the configuration")
 	url2 := "https://foo2.com"
-	server2 := c.GetOrCreateServer(url2)
+	c.AddServer(url2, "", "", false)
+	server2, err := c.GetServer(url2)
+	assert.NoError(t, err)
 	assert.NotNil(t, server2, "Failed to the server to the configuration!")
 	assert.Equal(t, 2, len(c.Servers), "Must have 2 servers in the configuration")
 	c.CurrentServer = url2
