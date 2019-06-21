@@ -13,6 +13,8 @@ import (
 	"io"
 )
 
+var MinTerraformVersion = "0.12.0"
+
 func Init(terraformDir string, serviceAccountPath string) error {
 	log.Logger().Infof("Initialising Terraform")
 
@@ -122,7 +124,7 @@ func ReadValueFromFile(path string, key string) (string, error) {
 	return "", nil
 }
 
-// CheckVersion checks the installed version of terraform to sure it is greater than 0.11.0
+// CheckVersion checks the installed version of terraform to sure it is greater than 0.12.0
 func CheckVersion() error {
 	log.Logger().Infof("Checking Terraform Version...")
 	cmd := util.Command{
@@ -143,10 +145,11 @@ func CheckVersion() error {
 	}
 
 	v, err := semver.Make(version)
+	versionClause := fmt.Sprintf(">= %s", MinTerraformVersion)
 
-	r, err := semver.ParseRange(">= 0.11.0")
+	r, err := semver.ParseRange(versionClause)
 	if !r(v) {
-		return errors.New("terraform version appears to be too old, please install a newer version '>= 0.11.0'")
+		return errors.Errorf("terraform version appears to be too old, please install a newer version '%s'", versionClause)
 	}
 
 	log.Logger().Infof("Terraform version appears to be valid")

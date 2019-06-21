@@ -318,6 +318,7 @@ func (f *factory) CreateAddonAuthConfigService(namespace string, secrets *corev1
 }
 
 func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error {
+	log.Logger().Warnf("AuthMergePipelineSecrets(%s, %s, %s, %s)", config, secrets, kind, isCDPipeline)
 	if config == nil || secrets == nil {
 		return nil
 	}

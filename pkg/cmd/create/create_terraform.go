@@ -249,7 +249,6 @@ var (
 		jx create terraform -c dev=gke -c stage=gke -c prod=gke
 
 `)
-	validTerraformVersions = "0.12.0"
 
 	gkeBucketConfiguration = `terraform {
   required_version = ">= %s"
@@ -987,7 +986,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 		return err
 	}
 
-	storageBucket := fmt.Sprintf(gkeBucketConfiguration, validTerraformVersions, g.ProjectID, options.Flags.OrganisationName, g.Name())
+	storageBucket := fmt.Sprintf(gkeBucketConfiguration, terraform.MinTerraformVersion, g.ProjectID, options.Flags.OrganisationName, g.Name())
 	log.Logger().Debugf("Using bucket configuration %s", storageBucket)
 
 	terraformTf := filepath.Join(path, "terraform.tf")
