@@ -36,7 +36,7 @@ var timeout = 5 * time.Second
 func TestCreateValuesFileWithVault(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
 		testOrgNameUUID, err := uuid.NewV4()
 		assert.NoError(t, err)
 		testOrgName := testOrgNameUUID.String()
