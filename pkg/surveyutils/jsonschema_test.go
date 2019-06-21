@@ -605,14 +605,13 @@ func TestAllOf(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
 		assert.Equal(r, fmt.Sprintf(`cheeseType: Stilton
 databaseConnectionUrl: abc
 databasePassword: vault:%s:password
 databaseUsername: wensleydale
 enableCheese: true
 enablePersistentStorage: true
-`, path), values)
+`, vaultBasePath), values)
 	})
 }
 
