@@ -32,6 +32,7 @@ func NewFakeVaultClient() FakeVaultClient {
 
 // Write a secret to vault
 func (f *FakeVaultClient) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
+	fmt.Printf("======= storing key at %s data: %#v\n", secretName, data)
 	f.Data[secretName] = data
 	return data, nil
 }
@@ -68,7 +69,7 @@ func (f *FakeVaultClient) List(path string) ([]string, error) {
 // Read a secret from vault
 func (f *FakeVaultClient) Read(secretName string) (map[string]interface{}, error) {
 	if answer, ok := f.Data[secretName]; !ok {
-		return nil, errors.Errorf("secret does not exist")
+		return nil, errors.Errorf("secret does not exist at key %s", secretName)
 	} else {
 		return answer, nil
 	}

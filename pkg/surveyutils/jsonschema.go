@@ -768,16 +768,17 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			return err
 		}
 		if o.VaultClient != nil {
-			dereferencedFormat := util.DereferenceString(t.Format)
-			// lets ignore the last prefix if its the same as the key
-			// to avoid redundant path
-			pathPrefixes := prefixes
+			// lets use the last path as the key. We don't need to use the format
+			// in the key or path
 			lastIdx := len(prefixes) - 1
-			if prefixes[lastIdx] == dereferencedFormat {
-				pathPrefixes = prefixes[0:lastIdx]
+			key := prefixes[lastIdx]
+			pathPrefixes := prefixes[0:lastIdx]
+			path := o.VaultBasePath
+			dir := strings.Join(pathPrefixes, "-")
+			if dir != "" {
+				path = strings.Join([]string{path, dir}, "/")
 			}
-			path := strings.Join([]string{o.VaultBasePath, strings.Join(pathPrefixes, "-")}, "/")
-			secretReference := secreturl.ToURI(path, dereferencedFormat, o.VaultScheme)
+			secretReference := secreturl.ToURI(path, key, o.VaultScheme)
 			output.Set(name, secretReference)
 
 			// lets upsert the key
@@ -785,7 +786,7 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			if data == nil {
 				data = map[string]interface{}{}
 			}
-			data[dereferencedFormat] = value
+			data[key] = value
 			_, err = o.VaultClient.Write(path, data)
 			if err != nil {
 				return errors.Wrapf(err, "failed to write to path %s with data %#v", path, data)
