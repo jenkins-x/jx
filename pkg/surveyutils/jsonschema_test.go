@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -516,12 +515,11 @@ func TestIfThen(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
 		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
-databasePassword: vault:%s:password
+databasePassword: vault:%s:databasePassword
 databaseUsername: wensleydale
 enablePersistentStorage: true
-`, path), values)
+`, vaultBasePath), values)
 	})
 }
 
@@ -606,14 +604,13 @@ func TestAllOf(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
 		assert.Equal(r, fmt.Sprintf(`cheeseType: Stilton
 databaseConnectionUrl: abc
-databasePassword: vault:%s:password
+databasePassword: vault:%s:databasePassword
 databaseUsername: wensleydale
 enableCheese: true
 enablePersistentStorage: true
-`, path), values)
+`, vaultBasePath), values)
 	})
 }
 
@@ -639,14 +636,13 @@ func TestAllOfThen(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
 		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
-databasePassword: vault:%s:password
+databasePassword: vault:%s:databasePassword
 databaseUsername: wensleydale
 enableCheese: false
 enablePersistentStorage: true
 iDontLikeCheese: true
-`, path), values)
+`, vaultBasePath), values)
 	})
 }
 
@@ -764,12 +760,11 @@ func TestPassword(t *testing.T) {
 				console.SendLine("abc")
 				console.ExpectEOF()
 			})
-		path := strings.Join([]string{vaultBasePath, "passwordValue"}, "/")
-		assert.Equal(r, fmt.Sprintf(`passwordValue: vault:%s:password
-`, path), values)
-		secrets, err := vaultClient.Read(path)
+		assert.Equal(r, fmt.Sprintf(`passwordValue: vault:%s:passwordValue
+`, vaultBasePath), values)
+		secrets, err := vaultClient.Read(vaultBasePath)
 		assert.NoError(t, err)
-		assert.Equal(r, "abc", secrets["password"])
+		assert.Equal(r, "abc", secrets["passwordValue"])
 		assert.NoError(r, err)
 	})
 }
@@ -787,12 +782,11 @@ func TestToken(t *testing.T) {
 				console.SendLine("abc")
 				console.ExpectEOF()
 			})
-		path := strings.Join([]string{vaultBasePath, "tokenValue"}, "/")
-		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:%s:token
-`, path), values)
-		secrets, err := vaultClient.Read(path)
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:%s:tokenValue
+`, vaultBasePath), values)
+		secrets, err := vaultClient.Read(vaultBasePath)
 		assert.NoError(t, err)
-		assert.Equal(r, "abc", secrets["token"])
+		assert.Equal(r, "abc", secrets["tokenValue"])
 		assert.NoError(r, err)
 	})
 }
@@ -810,13 +804,12 @@ func TestGeneratedToken(t *testing.T) {
 				console.SendLine("")
 				console.ExpectEOF()
 			})
-		path := strings.Join([]string{vaultBasePath, "tokenValue"}, "/")
-		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:%s:token
-`, path), values)
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:%s:tokenValue
+`, vaultBasePath), values)
 
-		secrets, err := vaultClient.Read(path)
+		secrets, err := vaultClient.Read(vaultBasePath)
 		assert.NoError(t, err)
-		assert.Len(t, secrets["token"], 20)
+		assert.Len(t, secrets["tokenValue"], 20)
 		assert.NoError(r, err)
 	})
 }

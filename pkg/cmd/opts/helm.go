@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
@@ -422,15 +421,7 @@ func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
 	if vaultClient != nil {
 		return vaultClient, nil
 	}
-	clusterName, err := cluster.Name(o.Kube())
-	if err != nil || clusterName == "" {
-		// we could be bootstrapping the cluster
-		clusterName = os.Getenv("JX_CLUSTER_NAME")
-		if clusterName == "" {
-			clusterName = "default-cluster"
-		}
-	}
-	dir, err := util.LocalFileSystemSecretsDir(clusterName)
+	dir, err := util.LocalFileSystemSecretsDir()
 	return localvault.NewFileSystemClient(dir), nil
 }
 

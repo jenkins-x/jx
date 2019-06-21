@@ -11,6 +11,9 @@ type Client interface {
 	// The secret _must_ be serializable to JSON.
 	ReadObject(secretName string, secret interface{}) error
 
+	// Write writes a named secret to the vault
+	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)
+
 	// WriteObject writes a generic named object to the vault.
 	// The secret _must_ be serializable to JSON.
 	WriteObject(secretName string, secret interface{}) (map[string]interface{}, error)

@@ -142,7 +142,7 @@
                     "title": "Pipeline User username",
                     "description": "The Pipeline User is the user used to perform git operations inside a pipeline. This is normally a bot."
                   },
-                  "password": {
+                  "token": {
                     "type": "string",
                     "format": "token",
                     "title": "Pipeline User password",

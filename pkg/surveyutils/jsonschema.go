@@ -16,13 +16,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/vault"
-
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/iancoleman/orderedmap"
 
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -159,7 +157,7 @@ func (t *Items) UnmarshalJSON(b []byte) error {
 
 // JSONSchemaOptions are options for generating values from a schema
 type JSONSchemaOptions struct {
-	VaultClient         vault.Client
+	VaultClient         secreturl.Client
 	VaultBasePath       string
 	VaultScheme         string
 	AskExisting         bool
@@ -770,13 +768,29 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			return err
 		}
 		if o.VaultClient != nil {
-			dereferencedFormat := util.DereferenceString(t.Format)
-			path := strings.Join([]string{o.VaultBasePath, strings.Join(prefixes, "-")}, "/")
-			secretReference := secreturl.ToURI(path, dereferencedFormat, o.VaultScheme)
+			// lets use the last path as the key. We don't need to use the format
+			// in the key or path
+			lastIdx := len(prefixes) - 1
+			key := prefixes[lastIdx]
+			pathPrefixes := prefixes[0:lastIdx]
+			path := o.VaultBasePath
+			dir := strings.Join(pathPrefixes, "-")
+			if dir != "" {
+				path = strings.Join([]string{path, dir}, "/")
+			}
+			secretReference := secreturl.ToURI(path, key, o.VaultScheme)
 			output.Set(name, secretReference)
-			o.VaultClient.Write(path, map[string]interface{}{
-				dereferencedFormat: value,
-			})
+
+			// lets upsert the key
+			data, _ := o.VaultClient.Read(path)
+			if data == nil {
+				data = map[string]interface{}{}
+			}
+			data[key] = value
+			_, err = o.VaultClient.Write(path, data)
+			if err != nil {
+				return errors.Wrapf(err, "failed to write to path %s with data %#v", path, data)
+			}
 		} else {
 			log.Logger().Warnf("Need to store a secret for %s but no secret store configured", name)
 		}

@@ -656,13 +656,13 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		assert.NoError(r, err)
 		data, err := ioutil.ReadFile(valuesFromPrPath)
 		assert.NoError(r, err)
-		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:gitOps/%s/%s/tokenValue:token
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:gitOps/%s/%s:tokenValue
 `, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name), string(data))
 		// Validate that vault has had the secret added
-		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "tokenValue"},
+		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name},
 			"/")
 		value := map[string]interface{}{
-			"token": "abc",
+			"tokenValue": "abc",
 		}
 		testOptions.MockVaultClient.VerifyWasCalledOnce().Write(path, value)
 	})
@@ -1286,16 +1286,16 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 		data, err := ioutil.ReadFile(valuesFromPrPath)
 		assert.NoError(r, err)
 		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
-databasePassword: vault:gitOps/%s/%s/databasePassword:password
+databasePassword: vault:gitOps/%s/%s:databasePassword
 databaseUsername: wensleydale
 enablePersistentStorage: true
 `, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name), string(data))
 
 		// Validate that vault has had the secret added
-		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasePassword"},
+		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name},
 			"/")
 		value := map[string]interface{}{
-			"password": "cranberries",
+			"databasePassword": "cranberries",
 		}
 		testOptions.MockVaultClient.VerifyWasCalledOnce().Write(path, value)
 	})
