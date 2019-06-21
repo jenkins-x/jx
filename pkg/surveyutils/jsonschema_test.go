@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/tests"
