@@ -1292,7 +1292,7 @@ enablePersistentStorage: true
 `, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name), string(data))
 
 		// Validate that vault has had the secret added
-		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasePassword"},
+		path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name},
 			"/")
 		value := map[string]interface{}{
 			"password": "cranberries",

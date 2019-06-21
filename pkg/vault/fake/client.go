@@ -32,7 +32,7 @@ func NewFakeVaultClient() FakeVaultClient {
 
 // Write a secret to vault
 func (f *FakeVaultClient) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
-	fmt.Printf("======= storing key at %s data: %#v\n", secretName, data)
+	fmt.Printf("fakeClient: storing key at %s data: %#v\n", secretName, data)
 	f.Data[secretName] = data
 	return data, nil
 }
