@@ -391,6 +391,7 @@ func (flags *InstallFlags) AddCloudEnvOptions(cmd *cobra.Command) {
 
 // CheckFlags validates & configures install flags
 func (options *InstallOptions) CheckFlags() error {
+	log.Logger().Debug("checking installation flags")
 	flags := &options.Flags
 
 	if flags.NextGeneration && flags.StaticJenkins {
@@ -407,7 +408,9 @@ func (options *InstallOptions) CheckFlags() error {
 
 	if flags.KnativeBuild {
 		log.Logger().Warnf("Support for Knative Build is now deprecated. Please use '--tekton' instead. More details here: https://jenkins-x.io/architecture/jenkins-x-pipelines/\n")
+		flags.Tekton = false
 	}
+
 	if flags.Prow {
 		flags.StaticJenkins = false
 	}
@@ -437,6 +440,14 @@ func (options *InstallOptions) CheckFlags() error {
 		flags.StaticJenkins = true
 	}
 
+	// only kaniko is supported as a builder in tekton
+	if flags.Tekton {
+		if !flags.Kaniko {
+			log.Logger().Warnf("When using tekton, only kaniko is supported as a builder")
+		}
+		flags.Kaniko = true
+	}
+
 	// check some flags combination for GitOps mode
 	if flags.GitOpsMode {
 		options.SkipAuthSecretsMerge = true
@@ -461,27 +472,28 @@ func (options *InstallOptions) CheckFlags() error {
 
 	// Make sure that the default environment prefix is configured. Typically it is the cluster
 	// name when the install command is called from create cluster.
-	if options.Flags.DefaultEnvironmentPrefix == "" {
-		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+	if flags.DefaultEnvironmentPrefix == "" {
+		flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
 	}
 
-	if options.Flags.NextGeneration || options.Flags.Tekton || options.Flags.Kaniko {
-		if options.Flags.Provider == cloud.GKE {
-			// lets default the docker registry to GCR
-			if options.Flags.DockerRegistry == "" {
-				options.Flags.DockerRegistry = "gcr.io"
-			}
-
-			// lets default the docker registry org to the project id
-			if options.Flags.DockerRegistryOrg == "" {
-				options.Flags.DockerRegistryOrg = options.installValues[kube.ProjectID]
-			}
+	if flags.DockerRegistry == "" {
+		dockerReg, err := options.dockerRegistryValue()
+		if err != nil {
+			log.Logger().Warnf("unable to calculate docker registry values - %s", err)
 		}
+		flags.DockerRegistry = dockerReg
 	}
 
-	if options.Flags.DefaultEnvironmentPrefix == "" {
-		options.Flags.DefaultEnvironmentPrefix = options.installValues[kube.ClusterName]
+	// lets default the docker registry org to the project id
+	if flags.DockerRegistryOrg == "" {
+		flags.DockerRegistryOrg = options.installValues[kube.ProjectID]
 	}
+
+	if flags.DefaultEnvironmentPrefix == "" {
+		flags.DefaultEnvironmentPrefix = options.installValues[kube.ClusterName]
+	}
+
+	log.Logger().Debugf("flags after checking - %+v", flags)
 
 	return nil
 }
@@ -504,6 +516,12 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
 	}
+
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+
 	if options.Flags.CloudBeesDomain != "" {
 		cloudbeesDomain := StripTrailingSlash(options.Flags.CloudBeesDomain)
 		cloudbeesAuth := options.Flags.CloudBeesAuth
@@ -512,10 +530,6 @@ func (options *InstallOptions) Run() error {
 			return errors.Wrap(err, "while configuring the tenant cluster")
 		}
 		options.Flags.Domain = domain
-	}
-	err = options.selectJenkinsInstallation()
-	if err != nil {
-		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
 	configStore := configio.NewFileStore()
@@ -2372,7 +2386,7 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 				log.Logger().Infof(util.QuestionAnswer("Default enabling long term logs storage", util.YesNo(options.Flags.LongTermStorage)))
 			} else {
 				options.Flags.LongTermStorage = false
-				log.Logger().Debugf("Long Term Storage not supported by this provider, disabling this option")
+				log.Logger().Debugf("Long Term Storage not supported by provider '%s', disabling this option", options.Flags.Provider)
 			}
 		}
 	}
@@ -3147,6 +3161,9 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 		return "docker-registry.default.svc:5000", nil
 	}
 	if options.Flags.Provider == cloud.GKE {
+		if !options.Flags.Kaniko {
+			return "jenkins-x-docker-registry:5000", nil
+		}
 		return "gcr.io", nil
 	}
 

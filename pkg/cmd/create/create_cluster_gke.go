@@ -205,6 +205,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					Message: "What cluster name would you like to use",
 					Help:    clusterNameHelp,
 					Default: defaultClusterName,
+
 				}
 
 				err = survey.AskOne(prompt, &o.Flags.ClusterName, nil, surveyOpts)
