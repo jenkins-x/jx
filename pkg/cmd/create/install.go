@@ -465,6 +465,24 @@ func (options *InstallOptions) CheckFlags() error {
 		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
 	}
 
+	if options.Flags.NextGeneration || options.Flags.Tekton || options.Flags.Kaniko {
+		if options.Flags.Provider == cloud.GKE {
+			// lets default the docker registry to GCR
+			if options.Flags.DockerRegistry == "" {
+				options.Flags.DockerRegistry = "gcr.io"
+			}
+
+			// lets default the docker registry org to the project id
+			if options.Flags.DockerRegistryOrg == "" {
+				options.Flags.DockerRegistryOrg = options.installValues[kube.ProjectID]
+			}
+		}
+	}
+
+	if options.Flags.DefaultEnvironmentPrefix == "" {
+		options.Flags.DefaultEnvironmentPrefix = options.installValues[kube.ClusterName]
+	}
+
 	return nil
 }
 
@@ -3128,6 +3146,12 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	if options.Flags.Provider == cloud.OPENSHIFT || options.Flags.Provider == cloud.MINISHIFT {
 		return "docker-registry.default.svc:5000", nil
 	}
+	if options.Flags.Provider == cloud.GKE {
+		return "gcr.io", nil
+	}
+
+	log.Logger().Warnf("unable to determine the dockerRegistryValue - provider=%s", options.Flags.Provider)
+
 	return "", nil
 }
 

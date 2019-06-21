@@ -192,8 +192,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	advancedMode := o.AdvancedMode
 
-	clusterName := o.Flags.ClusterName
-	if clusterName == "" {
+	if o.Flags.ClusterName == "" {
 		defaultClusterName := strings.ToLower(randomdata.SillyName())
 		if len(defaultClusterName) > maxGKEClusterNameLength {
 			defaultClusterName = strings.ToLower(randomdata.SillyName())
@@ -208,11 +207,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					Default: defaultClusterName,
 				}
 
-				err = survey.AskOne(prompt, &clusterName, nil, surveyOpts)
+				err = survey.AskOne(prompt, &o.Flags.ClusterName, nil, surveyOpts)
 				if err != nil {
 					return err
 				}
-				err = validateClusterName(clusterName)
+				err = validateClusterName(o.Flags.ClusterName)
 				if err != nil {
 					log.Logger().Infof(util.ColorAnswer(clusterNameHelp))
 				} else {
@@ -220,8 +219,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			}
 		} else {
-			clusterName = defaultClusterName
-			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one", clusterName))
+			o.Flags.ClusterName = defaultClusterName
+			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one", o.Flags.ClusterName))
 		}
 	}
 
@@ -359,6 +358,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
+	// this really shouldn't be here
 	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton {
 		o.Flags.EnhancedApis = true
 		o.Flags.EnhancedScopes = true
@@ -447,21 +447,9 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
-		// lets default the docker registry to GCR
-		if o.InstallOptions.Flags.DockerRegistry == "" {
-			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
-		}
-
-		// lets default the docker registry org to the project id
-		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
-			o.InstallOptions.Flags.DockerRegistryOrg = projectId
-		}
-	}
-
 	// mandatory flags are machine type, num-nodes, zone or region
 	args := []string{"container", "clusters", "create",
-		clusterName,
+		o.Flags.ClusterName,
 		"--num-nodes", minNumOfNodes,
 		"--machine-type", machineType,
 		"--enable-autoscaling",
@@ -530,15 +518,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	log.Logger().Info("Initialising cluster ...")
-	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
-		o.InstallOptions.Flags.DefaultEnvironmentPrefix = clusterName
-	}
 
 	o.InstallOptions.setInstallValues(map[string]string{
 		kube.Zone:        zone,
 		kube.Region:      region,
 		kube.ProjectID:   projectId,
-		kube.ClusterName: clusterName,
+		kube.ClusterName: o.Flags.ClusterName,
 	})
 
 	err = o.initAndInstall(cloud.GKE)
@@ -546,7 +531,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	getCredsCommand := []string{"container", "clusters", "get-credentials", clusterName}
+	getCredsCommand := []string{"container", "clusters", "get-credentials", o.Flags.ClusterName}
 	if "" != zone {
 		getCredsCommand = append(getCredsCommand, "--zone", zone)
 	} else if "" != region {
