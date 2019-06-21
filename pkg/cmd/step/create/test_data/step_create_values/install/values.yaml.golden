@@ -14,4 +14,4 @@ pipelineUser:
     token: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/pipelineUser-github:token
     username: james
 prow:
-  hmacToken: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/prow-hmacToken:token
+  hmacToken: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/prow-hmacToken

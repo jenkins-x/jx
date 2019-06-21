@@ -516,12 +516,11 @@ func TestIfThen(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
 		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
-databasePassword: vault:%s:password
+databasePassword: vault:%s:databasePassword
 databaseUsername: wensleydale
 enablePersistentStorage: true
-`, path), values)
+`, vaultBasePath), values)
 	})
 }
 
@@ -639,14 +638,13 @@ func TestAllOfThen(t *testing.T) {
 				console.ExpectEOF()
 			})
 		assert.NoError(r, err)
-		path := strings.Join([]string{vaultBasePath, "databasePassword"}, "/")
 		assert.Equal(r, fmt.Sprintf(`databaseConnectionUrl: abc
-databasePassword: vault:%s:password
+databasePassword: vault:%s:databasePassword
 databaseUsername: wensleydale
 enableCheese: false
 enablePersistentStorage: true
 iDontLikeCheese: true
-`, path), values)
+`, vaultBasePath), values)
 	})
 }
 
