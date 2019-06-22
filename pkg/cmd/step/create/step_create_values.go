@@ -8,9 +8,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/jenkins-x/jx/pkg/vault"
-
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/apps"
@@ -23,7 +20,7 @@ import (
 )
 
 var (
-	optionSecretsScheme = "secretsScheme"
+	optionSecretsScheme = "secrets-scheme"
 )
 
 var (
@@ -48,8 +45,9 @@ var (
 type StepCreateValuesOptions struct {
 	StepCreateOptions
 
-	Dir  string
-	Name string
+	Dir      string
+	Name     string
+	BasePath string
 
 	Schema     string
 	ValuesFile string
@@ -90,6 +88,7 @@ func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the <kind>.schema.json and write the <kind>.yaml, defaults to the current directory")
 	cmd.Flags().StringVarP(&options.Schema, "schema", "", "", "the path to the schema file, overrides --dir and --name")
 	cmd.Flags().StringVarP(&options.Name, "name", "", "values", "the kind of the file to create (and, by default, the schema name)")
+	cmd.Flags().StringVarP(&options.BasePath, "secret-base-path", "", "", "the secret path used to store secrets in vault / file system. Typically a unique name per cluster+team")
 	cmd.Flags().StringVarP(&options.ValuesFile, "out", "", "", "the path to the file to create, overrides --dir and --name")
 	cmd.Flags().StringVarP(&options.SecretsScheme, optionSecretsScheme, "", "vault", "the scheme to store/reference any secrets in, valid options are vault and local")
 	return cmd
@@ -136,18 +135,12 @@ func (o *StepCreateValuesOptions) CreateValuesFile() error {
 	if err != nil {
 		return errors.Wrapf(err, "getting team name")
 	}
-	var vaultClient vault.Client
-	if o.GetSecretsLocation() == secrets.VaultLocationKind {
-		if err != nil {
-			return err
-		}
-		vaultClient, err = o.SystemVaultClient(devEnv.Namespace)
-		if err != nil {
-			return err
-		}
+	secretURLClient, err := o.GetSecretURLClient()
+	if err != nil {
+		return err
 	}
 	existing := make(map[string]interface{})
-	valuesFileName, cleanup, err := apps.ProcessValues(schema, o.Name, gitOpsURL, teamName, o.BatchMode, false, vaultClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
+	valuesFileName, cleanup, err := apps.ProcessValues(schema, o.Name, gitOpsURL, teamName, o.BasePath, o.BatchMode, false, secretURLClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
 	defer cleanup()
 	if err != nil {
 		return errors.WithStack(err)

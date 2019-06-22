@@ -31,13 +31,14 @@ func NewFakeVaultClient() FakeVaultClient {
 }
 
 // Write a secret to vault
-func (f *FakeVaultClient) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
+func (f FakeVaultClient) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
+	fmt.Printf("fakeClient: storing key at %s data: %#v\n", secretName, data)
 	f.Data[secretName] = data
 	return data, nil
 }
 
 // WriteObject a secret to vault
-func (f *FakeVaultClient) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
+func (f FakeVaultClient) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
 	payload, err := util.ToMapStringInterfaceFromStruct(secret)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -46,7 +47,7 @@ func (f *FakeVaultClient) WriteObject(secretName string, secret interface{}) (ma
 }
 
 // WriteYaml a secret to vault
-func (f *FakeVaultClient) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
+func (f FakeVaultClient) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
 	data := base64.StdEncoding.EncodeToString([]byte(y))
 	secretMap := map[string]interface{}{
 		yamlDataKey: data,
@@ -55,7 +56,7 @@ func (f *FakeVaultClient) WriteYaml(secretName string, y string) (map[string]int
 }
 
 // List the secrets in vault
-func (f *FakeVaultClient) List(path string) ([]string, error) {
+func (f FakeVaultClient) List(path string) ([]string, error) {
 	secretNames := make([]string, 0)
 	for _, s := range f.Data[path] {
 		if orig, ok := s.(string); ok {
@@ -66,16 +67,16 @@ func (f *FakeVaultClient) List(path string) ([]string, error) {
 }
 
 // Read a secret from vault
-func (f *FakeVaultClient) Read(secretName string) (map[string]interface{}, error) {
+func (f FakeVaultClient) Read(secretName string) (map[string]interface{}, error) {
 	if answer, ok := f.Data[secretName]; !ok {
-		return nil, errors.Errorf("secret does not exist")
+		return nil, errors.Errorf("secret does not exist at key %s", secretName)
 	} else {
 		return answer, nil
 	}
 }
 
 // ReadObject a secret from vault
-func (f *FakeVaultClient) ReadObject(secretName string, secret interface{}) error {
+func (f FakeVaultClient) ReadObject(secretName string, secret interface{}) error {
 	m, err := f.Read(secretName)
 	if err != nil {
 		return errors.Wrapf(err, "reading the secret %q from vault", secretName)
@@ -89,7 +90,7 @@ func (f *FakeVaultClient) ReadObject(secretName string, secret interface{}) erro
 }
 
 // ReadYaml a secret from vault
-func (f *FakeVaultClient) ReadYaml(secretName string) (string, error) {
+func (f FakeVaultClient) ReadYaml(secretName string) (string, error) {
 	secretMap, err := f.Read(secretName)
 	if err != nil {
 		return "", errors.Wrapf(err, "reading secret %q from vault", secretName)
@@ -110,7 +111,7 @@ func (f *FakeVaultClient) ReadYaml(secretName string) (string, error) {
 }
 
 // Config shows the vault config
-func (f *FakeVaultClient) Config() (vaultURL url.URL, vaultToken string, err error) {
+func (f FakeVaultClient) Config() (vaultURL url.URL, vaultToken string, err error) {
 	u, err := url.Parse("https://fake.vault")
 	if err != nil {
 		return *u, "", errors.WithStack(err)
@@ -119,6 +120,6 @@ func (f *FakeVaultClient) Config() (vaultURL url.URL, vaultToken string, err err
 }
 
 // ReplaceURIs corrects the URIs
-func (f *FakeVaultClient) ReplaceURIs(text string) (string, error) {
+func (f FakeVaultClient) ReplaceURIs(text string) (string, error) {
 	return secreturl.ReplaceURIs(text, f, vaultURIRegex, "vault:")
 }

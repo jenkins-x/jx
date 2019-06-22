@@ -184,7 +184,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	log.Logger().Infof("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
+	log.Logger().Debugf("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
 	err = gke.EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
@@ -419,7 +419,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if o.Flags.EnhancedApis {
-		log.Logger().Infof("checking if we need to enable APIs for GCB and GCR")
+		log.Logger().Debugf("checking if we need to enable APIs for GCB and GCR")
 
 		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
@@ -491,7 +491,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if len(o.Flags.Scopes) > 0 {
-		log.Logger().Infof("using cluster scopes: %s", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
+		log.Logger().Debugf("using cluster scopes: %s", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
 
 		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
 	}
@@ -512,6 +512,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	log.Logger().Info("Creating cluster...")
+	log.Logger().Debugf("gcloud %s", strings.Join(args, " "))
+
 	err = o.RunCommand("gcloud", args...)
 	if err != nil {
 		return err

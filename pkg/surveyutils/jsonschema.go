@@ -8,15 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
-
 	"github.com/jenkins-x/jx/pkg/secreturl"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/util/secrets"
 
 	"github.com/pkg/errors"
-
-	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -159,7 +157,7 @@ func (t *Items) UnmarshalJSON(b []byte) error {
 
 // JSONSchemaOptions are options for generating values from a schema
 type JSONSchemaOptions struct {
-	VaultClient         vault.Client
+	VaultClient         secreturl.Client
 	VaultBasePath       string
 	VaultScheme         string
 	AskExisting         bool
@@ -627,6 +625,16 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		return o.handleConst(name, validators, t, output)
 	}
 
+	// lets use the last vaultPath as the vaultKey. We don't need to use the format
+	// in the vaultKey or vaultPath
+	lastIdx := len(prefixes) - 1
+	vaultKey := prefixes[lastIdx]
+	pathPrefixes := prefixes[0:lastIdx]
+	vaultPath := o.VaultBasePath
+	vaultDir := strings.Join(pathPrefixes, "-")
+	if vaultDir != "" {
+		vaultPath = strings.Join([]string{vaultPath, vaultDir}, "/")
+	}
 	ask := true
 	defaultValue := ""
 	autoAcceptMessage := ""
@@ -665,15 +673,53 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	validator := survey.ComposeValidators(validators...)
 	// Ask the question
 	// Custom format support for passwords
-	storeAsSecret := false
-	var err error
 	dereferencedFormat := strings.TrimSuffix(util.DereferenceString(t.Format), "-passthrough")
 	if dereferencedFormat == "password" || dereferencedFormat == "token" {
-		storeAsSecret = true
-		result, err = handlePasswordProperty(message, help, dereferencedFormat, ask, validator, surveyOpts, defaultValue,
+		if o.VaultClient != nil {
+			// the standard existing logic is not used in this case
+			secret, err := o.VaultClient.Read(vaultPath)
+			if err == nil {
+				if value, ok := secret[vaultKey]; ok {
+					if !o.AskExisting {
+						ask = false
+					}
+					defaultValue = fmt.Sprintf("%v", value)
+					autoAcceptMessage = "Automatically accepted existing value"
+				}
+			} else {
+				// If there is an error, just continue
+				log.Logger().Debugf("Error reading %s from vault %v", vaultPath, err)
+			}
+		}
+
+		secret, err := handlePasswordProperty(message, help, dereferencedFormat, ask, validator, surveyOpts, defaultValue,
 			autoAcceptMessage, o.Out, t.Type)
 		if err != nil {
 			return errors.WithStack(err)
+		}
+		if secret != nil {
+			value, err := util.AsString(secret)
+			if err != nil {
+				return err
+			}
+			if o.VaultClient != nil {
+
+				secretReference := secreturl.ToURI(vaultPath, vaultKey, o.VaultScheme)
+				output.Set(name, secretReference)
+
+				// lets upsert the vaultKey
+				data, _ := o.VaultClient.Read(vaultPath)
+				if data == nil {
+					data = map[string]interface{}{}
+				}
+				data[vaultKey] = value
+				_, err = o.VaultClient.Write(vaultPath, data)
+				if err != nil {
+					return errors.Wrapf(err, "failed to write to vaultPath %s with data %#v", vaultPath, data)
+				}
+			} else {
+				log.Logger().Warnf("Need to store a secret for %s but no secret store configured", name)
+			}
 		}
 	} else if t.Enum != nil {
 		var enumResult string
@@ -764,24 +810,7 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		}
 	}
 
-	if storeAsSecret && result != nil {
-		value, err := util.AsString(result)
-		if err != nil {
-			return err
-		}
-		if o.VaultClient != nil {
-			dereferencedFormat := util.DereferenceString(t.Format)
-			path := strings.Join([]string{o.VaultBasePath, strings.Join(prefixes, "-")}, "/")
-			secretReference := secreturl.ToURI(path, dereferencedFormat, o.VaultScheme)
-			output.Set(name, secretReference)
-			o.VaultClient.Write(path, map[string]interface{}{
-				dereferencedFormat: value,
-			})
-		} else {
-			log.Logger().Warnf("Need to store a secret for %s but no secret store configured", name)
-		}
-
-	} else if result != nil {
+	if result != nil {
 		// Write the value to the output
 		output.Set(name, result)
 	}
@@ -816,7 +845,7 @@ func handlePasswordProperty(message string, help string, kind string, ask bool, 
 		}
 	} else {
 		answer = defaultValue
-		msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
+		msg := fmt.Sprintf("%s *** [%s]\n", message, autoAcceptMessage)
 		_, err := fmt.Fprint(terminal.NewAnsiStdout(out), msg)
 		if err != nil {
 			return nil, errors.Wrapf(err, "writing %s to console", msg)

@@ -74,6 +74,9 @@ const (
 	DefaultExternalDNSReleaseName = "external-dns"
 	DefaultExternalDNSTag         = "1.5.2"
 
+	// SecretKaniko the name of the secret containing the kaniko service account
+	SecretKaniko = "kaniko-secret"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 

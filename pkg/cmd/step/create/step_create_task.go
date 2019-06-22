@@ -2,12 +2,13 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -37,8 +38,8 @@ import (
 
 const (
 	kanikoSecretMount = "/kaniko-secret/secret.json"
-	kanikoSecretName  = "kaniko-secret"
-	kanikoSecretKey   = "kaniko-secret"
+	kanikoSecretName  = kube.SecretKaniko
+	kanikoSecretKey   = kube.SecretKaniko
 )
 
 var (
@@ -732,11 +733,20 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			})
 		}
 	}
-	if kube.GetSliceEnvVar(envVars, "JX_BATCH_MODE") == nil {
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "JX_BATCH_MODE",
-			Value: "true",
-		})
+	if o.InterpretMode {
+		if kube.GetSliceEnvVar(envVars, "JX_INTERPRET_PIPELINE") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "JX_INTERPRET_PIPELINE",
+				Value: "true",
+			})
+		}
+	} else {
+		if kube.GetSliceEnvVar(envVars, "JX_BATCH_MODE") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "JX_BATCH_MODE",
+				Value: "true",
+			})
+		}
 	}
 
 	for _, param := range o.pipelineParams {
@@ -1248,6 +1258,7 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, task *pipelineapi.Task,
 		Dir:  dir,
 		Out:  os.Stdout,
 		Err:  os.Stdout,
+		In:   os.Stdin,
 		Env:  envMap,
 	}
 	_, err := cmd.RunWithoutRetry()
