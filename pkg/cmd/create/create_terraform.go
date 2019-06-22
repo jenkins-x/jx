@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/features"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -281,6 +282,19 @@ func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 		Use:     "terraform",
 		Short:   "Creates a Jenkins X Terraform plan",
 		Example: createTerraformExample,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := features.IsEnabled(cmd)
+			helper.CheckErr(err)
+			err = options.InstallOptions.CheckFeatures()
+			helper.CheckErr(err)
+
+			options.InstallOptions.Flags.Tekton = true
+			options.InstallOptions.Flags.Prow = true
+			options.InstallOptions.InitOptions.Flags.NoTiller = true
+
+			err = options.InstallOptions.CheckFlags()
+			helper.CheckErr(err)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -349,8 +363,6 @@ func (options *CreateTerraformOptions) Run() error {
 			return err
 		}
 	}
-
-	options.InstallOptions.Flags.NextGeneration = true
 
 	err = terraform.CheckVersion()
 	if err != nil {
