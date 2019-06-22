@@ -3161,13 +3161,12 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 		return "docker-registry.default.svc:5000", nil
 	}
 	if options.Flags.Provider == cloud.GKE {
-		if !options.Flags.Kaniko {
-			return "jenkins-x-docker-registry:5000", nil
+		if options.Flags.Kaniko {
+			return "gcr.io", nil
 		}
-		return "gcr.io", nil
 	}
 
-	log.Logger().Warnf("unable to determine the dockerRegistryValue - provider=%s", options.Flags.Provider)
+	log.Logger().Debugf("unable to determine the dockerRegistryValue - provider=%s, defaulting to in-cluster registry", options.Flags.Provider)
 
 	return "", nil
 }

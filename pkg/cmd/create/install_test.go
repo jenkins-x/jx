@@ -72,7 +72,7 @@ func TestCheckFlags(t *testing.T) {
 			staticJenkins:  true,
 			knativeBuild:   false,
 			kaniko:         false,
-			dockerRegistry: "jenkins-x-docker-registry:5000",
+			dockerRegistry: "",
 			err:            nil,
 		},
 		{
@@ -149,7 +149,7 @@ func TestCheckFlags(t *testing.T) {
 			staticJenkins:  false,
 			knativeBuild:   true,
 			kaniko:         false,
-			dockerRegistry: "jenkins-x-docker-registry:5000",
+			dockerRegistry: "",
 			err:            nil,
 		},
 		{
