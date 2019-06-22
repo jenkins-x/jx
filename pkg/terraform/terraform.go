@@ -13,6 +13,7 @@ import (
 	"io"
 )
 
+// MinTerraformVersion defines the minimum terraform version we support
 var MinTerraformVersion = "0.12.0"
 
 func Init(terraformDir string, serviceAccountPath string) error {
