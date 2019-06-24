@@ -176,7 +176,7 @@ func TestErrorMissingValues(t *testing.T) {
 			defer close(donec)
 			console.ExpectEOF()
 		}, nil)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 	})
 }
 
