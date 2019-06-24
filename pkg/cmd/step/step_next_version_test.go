@@ -56,5 +56,5 @@ func TestChart(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, "0.0.1-SNAPSHOT", v, "error with GetVersion for a pom.xml")
+	assert.Equal(t, "0.0.1-SNAPSHOT", v, "error with GetVersion for a Chart.yaml")
 }
