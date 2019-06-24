@@ -30,7 +30,7 @@ const (
 	OptionDependencyKind = "kind"
 	OptionType           = "type"
 
-	startSpringURL = "http://start.spring.io"
+	startSpringURL = "https://start.spring.io"
 )
 
 var (
