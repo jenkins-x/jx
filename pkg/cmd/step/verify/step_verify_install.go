@@ -1,6 +1,8 @@
 package verify
 
 import (
+	"fmt"
+
 	"github.com/cloudflare/cfssl/log"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -86,8 +88,8 @@ func (o *StepVerifyInstallOptions) validateKaniko() error {
 	if err != nil {
 		return errors.Wrapf(err, "could not find the Secret %s in the namespace %s", kube.SecretKaniko, ns)
 	}
-	if secret.Data == nil || len(secret.Data["kube.SecretKaniko"]) == 0 {
-		return errors.Wrapf(err, "the Secret %s in the namespace %s does not have a key %s", kube.SecretKaniko, ns, kube.SecretKaniko)
+	if secret.Data == nil || len(secret.Data[kube.SecretKaniko]) == 0 {
+		return fmt.Errorf("the Secret %s in the namespace %s does not have a key %s", kube.SecretKaniko, ns, kube.SecretKaniko)
 	}
 	log.Infof("kaniko is valid: there is a Secret %s in namespace %s\n", util.ColorInfo(kube.SecretKaniko), util.ColorInfo(ns))
 	return nil
