@@ -297,6 +297,26 @@ func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, strin
 	return kubeClient, o.devNamespace, err
 }
 
+// GetDeployNamespace returns the namespace option from the command line option if defined otherwise we try
+// the $DEPLOY_NAMESPACE environment variable. If none of those are found lets use the current
+// kubernetes namespace value
+func (o *CommonOptions) GetDeployNamespace(namespaceOption string) (string, error) {
+	ns := namespaceOption
+	if ns == "" {
+		ns = os.Getenv("DEPLOY_NAMESPACE")
+	}
+
+	if ns == "" {
+		var err error
+		_, ns, err = o.KubeClientAndNamespace()
+		if err != nil {
+			return ns, err
+		}
+		log.Logger().Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
+	}
+	return ns, nil
+}
+
 // SetJxClient set the jx client
 func (o *CommonOptions) SetJxClient(jxClient versioned.Interface) {
 	o.jxClient = jxClient

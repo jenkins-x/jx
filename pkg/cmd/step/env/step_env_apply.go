@@ -98,19 +98,15 @@ func (o *StepEnvApplyOptions) Run() error {
 		}
 	}
 
-	ns := o.Namespace
-	if ns == "" {
-		ns = os.Getenv("DEPLOY_NAMESPACE")
+	ns, err := o.GetDeployNamespace(o.Namespace)
+	if err != nil {
+		return err
 	}
-	if ns == "" {
-		return fmt.Errorf("no --namespace option specified or $DEPLOY_NAMESPACE environment variable available")
-	}
-
-	o.SetDevNamespace(ns)
 	kubeClient, err := o.KubeClient()
 	if err != nil {
-		return errors.Wrapf(err, "connecting to the kubernetes cluster")
+		return err
 	}
+	o.SetDevNamespace(ns)
 
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
