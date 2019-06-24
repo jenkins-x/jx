@@ -1128,7 +1128,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		log.Logger().Infof("Skipping Terraform apply")
 	}
 
-	options.InstallOptions.setInstallValues(map[string]string{
+	options.InstallOptions.SetInstallValues(map[string]string{
 		kube.Zone:        g.Zone,
 		kube.Region:      g.Region(),
 		kube.ProjectID:   g.ProjectID,

@@ -75,7 +75,7 @@ func (o *StepVerifyInstallOptions) Run() error {
 		return err
 	}
 	if requirements.Kaniko {
-		err = o.validateKaniko()
+		err = o.validateKaniko(ns)
 		if err != nil {
 			return err
 		}

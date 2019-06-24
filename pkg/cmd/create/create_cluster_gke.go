@@ -521,7 +521,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	log.Logger().Info("Initialising cluster ...")
 
-	o.InstallOptions.setInstallValues(map[string]string{
+	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Zone:        zone,
 		kube.Region:      region,
 		kube.ProjectID:   projectId,

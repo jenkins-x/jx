@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -99,17 +100,17 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if requirements.Kaniko {
 		log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
 
-		err = o.validateKaniko()
+		err = o.validateKaniko(ns)
 		if err != nil {
 			if o.LazyCreate {
 				log.Logger().Infof("attempting to lazily create the deploy namespace %s\n", info(ns))
 
-				err = o.lazyCreateKanikoSecret()
+				err = o.lazyCreateKanikoSecret(requirements, ns)
 				if err != nil {
 					return errors.Wrapf(err, "failed to lazily create the kaniko secret in: %s", ns)
 				}
 				// lets rerun the verify step to ensure its all sorted now
-				err = o.validateKaniko()
+				err = o.validateKaniko(ns)
 			}
 		}
 		if err != nil {
@@ -152,6 +153,24 @@ func (o *StepVerifyPreInstallOptions) verifyDevNamespace(kubeClient kubernetes.I
 	return nil
 }
 
-func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret() error {
-	return fmt.Errorf("TODO")
+func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *config.RequirementsConfig, ns string) error {
+	log.Logger().Infof("lazily creating the kaniko secret\n")
+	io := &create.InstallOptions{}
+	io.CommonOptions = o.CommonOptions
+	io.Flags.Kaniko = true
+	io.Flags.Namespace = ns
+	io.Flags.Provider = requirements.Provider
+	io.SetInstallValues(map[string]string{
+		kube.ClusterName: requirements.ClusterName,
+		kube.ProjectID:   requirements.ProjectID,
+	})
+	err := io.ConfigureKaniko()
+	if err != nil {
+		return err
+	}
+	data := io.AdminSecretsService.Flags.KanikoSecret
+	if data == "" {
+		return fmt.Errorf("failed to create the kaniko secret data")
+	}
+	return o.createKanikoSecret(ns, data)
 }

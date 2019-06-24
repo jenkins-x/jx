@@ -206,7 +206,7 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	}
 	log.Blank()
 
-	o.InstallOptions.setInstallValues(map[string]string{
+	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Region: region,
 	})
 
