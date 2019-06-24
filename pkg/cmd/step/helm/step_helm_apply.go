@@ -34,6 +34,7 @@ type StepHelmApplyOptions struct {
 	Force              bool
 	DisableHelmVersion bool
 	Vault              bool
+	UseTempDir         bool
 }
 
 var (
@@ -81,6 +82,7 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Helm secrets are stored in vault")
+	cmd.Flags().BoolVarP(&options.UseTempDir, "use-temp-dir", "", true, "Whether to build and apply the helm chart from a temporary directory - to avoid updating the local values.yaml file from the generated file as part of the apply which could get accidentally checked into git")
 
 	return cmd
 }
@@ -155,8 +157,35 @@ func (o *StepHelmApplyOptions) Run() error {
 			}
 		}
 	}
-
 	info := util.ColorInfo
+
+	path, err := filepath.Abs(dir)
+	if err != nil {
+		return errors.Wrapf(err, "could not find absolute path of dir %s", dir)
+	}
+	dir = path
+
+	if o.UseTempDir {
+		rootTmpDir, err := ioutil.TempDir("", "jx-helm-apply-")
+		if err != nil {
+			return errors.Wrapf(err, "failed to create a temporary directory to apply the helm chart")
+		}
+		defer os.RemoveAll(rootTmpDir)
+
+		// lets use the same child dir name as the original as helm is quite particular about the name of the directory it runs from
+		_, name := filepath.Split(dir)
+		if name == "" {
+			return fmt.Errorf("could not find the relative name of the directory %s", dir)
+		}
+		tmpDir := filepath.Join(rootTmpDir, name)
+		log.Logger().Infof("Copying the helm source directory %s to a temporary location for building and applying %s\n", info(dir), info(tmpDir))
+
+		err = util.CopyDir(dir, tmpDir, false)
+		if err != nil {
+			return errors.Wrapf(err, "failed to copy helm dir %s to temporary dir %s", dir, tmpDir)
+		}
+		dir = tmpDir
+	}
 	log.Logger().Infof("Applying helm chart at %s as release name %s to namespace %s", info(dir), info(releaseName), info(ns))
 
 	o.Helm().SetCWD(dir)
