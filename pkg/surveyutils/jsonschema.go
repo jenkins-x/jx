@@ -315,7 +315,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			BoolValidator(),
 		}
 		validators = append(validators, additionalValidators...)
-		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues)
+		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -402,7 +402,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 	case "number":
 		validators := additionalValidators
 		validators = append(validators, FloatValidator())
-		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output, existingValues)
+		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output, existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -451,7 +451,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			}
 		}
 		validators = append(validators, additionalValidators...)
-		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues)
+		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -459,7 +459,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 		validators := additionalValidators
 		validators = append(validators, IntegerValidator())
 		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output,
-			existingValues)
+			existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -620,7 +620,7 @@ func convertAnswer(answer string, t string) (interface{}, error) {
 }
 
 func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, validators []survey.Validator, t *Type,
-	output *orderedmap.OrderedMap, existingValues map[string]interface{}) error {
+	output *orderedmap.OrderedMap, existingValues map[string]interface{}, required bool) error {
 	if t.Const != nil {
 		return o.handleConst(name, validators, t, output)
 	}
@@ -666,7 +666,10 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	}
 
 	if !ask && !o.IgnoreMissingValues && defaultValue == "" {
-		return fmt.Errorf("no existing or default value in answer to question %s", message)
+		// lets not fail if in batch mode for non-required fields
+		if !o.NoAsk || required {
+			return fmt.Errorf("no existing or default value in answer to question %s", message)
+		}
 	}
 
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.OutErr)

@@ -530,6 +530,10 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "test values.yaml",
   "type": "object",
+  "required": [
+	"name",
+	"species"
+  ],
   "properties": {
     "name": {
       "type": "string"
