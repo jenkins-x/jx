@@ -267,7 +267,7 @@ func (o *CommonOptions) GetConfiguration(config interface{}) error {
 		}
 	}
 	if err := viper.WriteConfigAs("conf.yaml"); err != nil {
-		log.Logger().Debugf("Error writing config file", err)
+		log.Logger().Debugf("Error writing config file %s", err)
 	}
 	return nil
 }
