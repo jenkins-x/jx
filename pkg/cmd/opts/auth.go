@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -75,7 +75,6 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 	if !o.SkipAuthSecretsMerge {
 		secrets, err = o.LoadPipelineSecrets(kube.ValueKindGit, "")
 		if err != nil {
-
 			kubeConfig, _, configLoadErr := o.Kube().LoadConfig()
 			if configLoadErr != nil {
 				log.Logger().Warnf("WARNING: Could not load config: %s", configLoadErr)
@@ -98,7 +97,9 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.ConfigService, error) {
 	_, namespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to find development namespace")
+		// not returning an error here as we get this when attempting
+		// to create a cluster when still connected to an old cluster
+		log.Logger().Warnf("failed to find development namespace - %s", err)
 	}
 
 	authConfigSvc, err := o.factory.CreateAuthConfigService(fileName, namespace)
