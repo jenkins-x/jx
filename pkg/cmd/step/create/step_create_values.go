@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/prometheus/common/log"
 
 	"github.com/pkg/errors"
 
@@ -88,9 +90,9 @@ func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the <kind>.schema.json and write the <kind>.yaml, defaults to the current directory")
 	cmd.Flags().StringVarP(&options.Schema, "schema", "", "", "the path to the schema file, overrides --dir and --name")
 	cmd.Flags().StringVarP(&options.Name, "name", "", "values", "the kind of the file to create (and, by default, the schema name)")
-	cmd.Flags().StringVarP(&options.BasePath, "secret-base-path", "", "", "the secret path used to store secrets in vault / file system. Typically a unique name per cluster+team")
+	cmd.Flags().StringVarP(&options.BasePath, "secret-base-path", "", "", fmt.Sprintf("the secret path used to store secrets in vault / file system. Typically a unique name per cluster+team. If none is specified we will default it to the cluster name from the %s file in the current or a parent directory.", config.RequirementsConfigFileName))
 	cmd.Flags().StringVarP(&options.ValuesFile, "out", "", "", "the path to the file to create, overrides --dir and --name")
-	cmd.Flags().StringVarP(&options.SecretsScheme, optionSecretsScheme, "", "vault", "the scheme to store/reference any secrets in, valid options are vault and local")
+	cmd.Flags().StringVarP(&options.SecretsScheme, optionSecretsScheme, "", "", fmt.Sprintf("the scheme to store/reference any secrets in, valid options are vault and local. If none are specified we will default it from the %s file in the current or a parent directory.", config.RequirementsConfigFileName))
 	return cmd
 }
 
@@ -102,6 +104,33 @@ func (o *StepCreateValuesOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+	// lets default to the install requirements setting
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return err
+	}
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return err
+	}
+	info := util.ColorInfo
+	if o.SecretsScheme == "" {
+		if exists {
+			o.SecretsScheme = string(requirements.SecretStorage)
+			log.Infof("defaulting to secret storage scheme %s found from requirements file at %s\n", info(o.SecretsScheme), info(fileName))
+		} else {
+			log.Warnf("there is no requirements file at %s\n", fileName)
+		}
+	}
+	if o.BasePath == "" {
+		if exists {
+			o.BasePath = string(requirements.ClusterName)
+			log.Infof("defaulting to secret base path to the cluster name %s found from requirements file at %s\n", info(o.BasePath), info(fileName))
+		} else {
+			log.Warnf("there is no requirements file at %s\n", fileName)
+		}
+
 	}
 	if !(o.SecretsScheme == "vault" || o.SecretsScheme == "local") {
 		util.InvalidArgf(optionSecretsScheme, "Use one of vault or local")
