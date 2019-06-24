@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/prometheus/common/log"
 
@@ -168,7 +169,11 @@ func (o *StepCreateValuesOptions) CreateValuesFile() error {
 	if err != nil {
 		return err
 	}
-	existing := make(map[string]interface{})
+	existing, err := helm.LoadValuesFile(o.ValuesFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load vales file %s", o.ValuesFile)
+	}
+
 	valuesFileName, cleanup, err := apps.ProcessValues(schema, o.Name, gitOpsURL, teamName, o.BasePath, o.BatchMode, false, secretURLClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
 	defer cleanup()
 	if err != nil {
