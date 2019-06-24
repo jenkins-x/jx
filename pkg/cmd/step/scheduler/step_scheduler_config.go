@@ -40,6 +40,7 @@ func NewCmdStepSchedulerConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdStepSchedulerConfigApply(commonOpts))
+	cmd.AddCommand(NewCmdStepSchedulerConfigMigrate(commonOpts))
 	return cmd
 }
 

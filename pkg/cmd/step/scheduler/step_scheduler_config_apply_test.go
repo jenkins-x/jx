@@ -11,10 +11,13 @@ import (
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/pkg/prow"
 	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
+	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/test-infra/prow/plugins"
 	"os"
 	"path/filepath"
 	"strings"
@@ -195,14 +198,14 @@ func verifyProwConfigMap(err error, kubeClient kubernetes.Interface, devEnv *v1.
 	assert.NoError(t, err)
 	assert.NotNil(t, configConfigMap)
 	assert.NotNil(t, configConfigMap.Data)
-	expectedConfig, err := testOptions.loadExpectedConfig(testOptions.TestType, "config.yaml", "", "")
+	expectedConfig, err := testOptions.loadExpectedConfig(testOptions.TestType, "config.yaml", testOptions.DevEnvRepo.Owner, testOptions.DevRepoName)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedConfig, configConfigMap.Data["config.yaml"])
 	pluginsConfigMap, err := kubeClient.CoreV1().ConfigMaps(devEnv.Namespace).Get("plugins", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.NotNil(t, pluginsConfigMap)
 	assert.NotNil(t, pluginsConfigMap.Data)
-	expectedPluginConfig, err := testOptions.loadExpectedConfig(testOptions.TestType, "plugins.yaml", "", "")
+	expectedPluginConfig, err := testOptions.loadExpectedConfig(testOptions.TestType, "plugins.yaml", testOptions.DevEnvRepo.Owner, testOptions.DevRepoName)
 	assert.NoError(t, err)
 	assert.Equal(t, pluginsConfigMap.Data["plugins.yaml"], expectedPluginConfig)
 }
@@ -238,25 +241,40 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 	if sourceRepoGroups != nil {
 		jxResources = append(jxResources, sourceRepoGroups)
 	}
-	if gitOps {
-		testOrgNameUUID, err := uuid.NewV4()
-		assert.NoError(t, err)
-		// Fix the order so the generated config is consistent
-		testOrgName := "Z" + testOrgNameUUID.String()
-		testRepoNameUUID, err := uuid.NewV4()
-		assert.NoError(t, err)
-		testRepoName := testRepoNameUUID.String()
-		devEnvRepoName = fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
-		fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-		devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
+	testOrgNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	// Fix the order so the generated config is consistent
+	testOrgName := "Z" + testOrgNameUUID.String()
+	testRepoNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	testRepoName := testRepoNameUUID.String()
+	devEnvRepoName = fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
+	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
 
-		fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
-		fakeGitProvider.User.Username = testOrgName
-		devEnv := kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,
-			devEnvRepoName))
-		devEnv.Spec.Source.URL = devEnvRepo.GitRepo.CloneURL
-		devEnv.Spec.Source.Ref = "master"
-		devEnv.Spec.TeamSettings.DefaultScheduler.Name = "default-scheduler"
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
+	fakeGitProvider.User.Username = testOrgName
+	devEnv := kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,
+		devEnvRepoName))
+	if !gitOps {
+		devEnv.Spec.Source.URL = ""
+		devEnv.Spec.Source.Ref = ""
+	}
+	devEnv.Spec.TeamSettings.DefaultScheduler.Name = "default-scheduler"
+	sourceRepo := &v1.SourceRepository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devEnvRepo.Name(),
+			Namespace: devEnv.Namespace,
+		},
+		Spec: v1.SourceRepositorySpec{
+			Org:  devEnvRepo.Owner,
+			Repo: devEnvRepo.Name(),
+		},
+	}
+	jxResources = append(jxResources, devEnv, sourceRepo)
+	o.DevEnvRepo = devEnvRepo
+	o.DevRepoName = testRepoName
+	if gitOps {
 		o.StepSchedulerConfigApplyOptions.ConfigureGitCallback = func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
 			err := gitter.Init(dir)
 			if err != nil {
@@ -277,20 +295,27 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 			}
 			return gitter.AddCommit(dir, "Initial Commit")
 		}
-		sourceRepo := &v1.SourceRepository{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      devEnvRepo.Name(),
-				Namespace: devEnv.Namespace,
+		pluginConfig := &plugins.Configuration{}
+		pluginYAML, err := yaml.Marshal(pluginConfig)
+		assert.NoError(t, err)
+		data := make(map[string]string)
+		data[prow.ProwPluginsFilename] = string(pluginYAML)
+		cm := &v12.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ConfigMap",
+				APIVersion: "v1",
 			},
-			Spec: v1.SourceRepositorySpec{
-				Org:  devEnvRepo.Owner,
-				Repo: devEnvRepo.Name(),
+			Data: data,
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      prow.ProwPluginsConfigMapName,
+				Namespace: "jx",
 			},
 		}
-		jxResources = append(jxResources, devEnv, sourceRepo)
+		kubeResources := []runtime.Object{}
+		kubeResources = append(kubeResources, cm)
 		installerMock := resources_test.NewMockInstaller()
 		testhelpers.ConfigureTestOptionsWithResources(o.StepSchedulerConfigApplyOptions.CommonOptions,
-			[]runtime.Object{},
+			kubeResources,
 			jxResources,
 			gits.NewGitLocal(),
 			fakeGitProvider,
@@ -299,8 +324,6 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 		)
 		err = testhelpers.CreateTestEnvironmentDir(o.StepSchedulerConfigApplyOptions.CommonOptions)
 		assert.NoError(t, err)
-		o.DevEnvRepo = devEnvRepo
-		o.DevRepoName = testRepoName
 	} else {
 		installerMock := resources_test.NewMockInstaller()
 		testhelpers.ConfigureTestOptionsWithResources(o.StepSchedulerConfigApplyOptions.CommonOptions,

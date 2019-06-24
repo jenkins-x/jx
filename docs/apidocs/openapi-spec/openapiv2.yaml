@@ -1062,6 +1062,9 @@ definitions:
           Namespace is the namespace in which pods schedule.
             empty: results in scheduler.DefaultNamespace
         type: string
+      spec:
+        $ref: '#/definitions/io.k8s.api.core.v1.PodSpec'
+        description: Spec is the Kubernetes pod spec used if Agent is kubernetes.
     required:
     - name
     - agent
@@ -1153,6 +1156,36 @@ definitions:
         type: array
       url:
         type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodic:
+    description: Periodic defines a job to be run periodically
+    properties:
+      JobBase:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.JobBase'
+      cron:
+        description: Cron representation of job trigger time
+        type: string
+      interval:
+        description: Interval to wait between two runs of the job.
+        type: string
+      tags:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        description: Tags for config entries
+    required:
+    - interval
+    - cron
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodics:
+    description: Periodics is a list of jobs to be run periodically
+    properties:
+      entries:
+        description: Items are the post submit configurations
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodic'
+        type: array
+      replace:
+        description: Replace the existing entries
+        type: boolean
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivity:
     description: PipelineActivity represents pipeline activity for a particular run
@@ -1496,8 +1529,10 @@ definitions:
         type: boolean
       policy:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ProtectionPolicies'
-      query:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Query'
+      queries:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Query'
+        type: array
       report:
         description: Report enables reporting the job status on the git provider
         type: boolean
@@ -1976,6 +2011,10 @@ definitions:
     properties:
       approve:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Approve'
+      attachments:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Attachment'
+        type: array
       configUpdater:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigUpdater'
       externalPlugins:
@@ -1984,6 +2023,8 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Lgtm'
       merger:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Merger'
+      periodics:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodics'
       plugins:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
         description: Plugins is a list of plugin names enabled for a repo
@@ -1997,6 +2038,10 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SchedulerAgent'
       trigger:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Trigger'
+      welcome:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Welcome'
+        type: array
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepository:
     description: SourceRepository is the metadata for an Application/Project/SourceRepository
@@ -2423,6 +2468,12 @@ definitions:
       name:
         type: string
       username:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Welcome:
+    description: Welcome welcome plugin config
+    properties:
+      message_template:
         type: string
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Workflow:
