@@ -1907,6 +1907,7 @@ func (options *InstallOptions) installHelmBinaries() error {
 	return options.InstallMissingDependencies(dependencies)
 }
 
+// SetInstallValues sets the install values
 func (options *InstallOptions) SetInstallValues(values map[string]string) {
 	if values != nil {
 		if options.installValues == nil {
@@ -2163,6 +2164,7 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	return adminSecretsFileName, adminSecrets, nil
 }
 
+// ConfigureKaniko configures the kaniko SA and secret
 func (options *InstallOptions) ConfigureKaniko() error {
 	if options.Flags.Kaniko {
 		if options.Flags.Provider != cloud.GKE {
