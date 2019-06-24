@@ -302,6 +302,15 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "really-long",
 			kind:         "release",
 		},
+		{
+			name:         "containerOptions-at-top-level-of-buildpack",
+			language:     "maven-with-resource-limit",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+			useKaniko:    false,
+		},
 	}
 
 	k8sObjects := []runtime.Object{
