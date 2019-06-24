@@ -442,10 +442,12 @@ func (options *InstallOptions) CheckFlags() error {
 
 	// only kaniko is supported as a builder in tekton
 	if flags.Tekton {
-		if !flags.Kaniko {
-			log.Logger().Warnf("When using tekton, only kaniko is supported as a builder")
+		if flags.Provider == cloud.GKE {
+			if !flags.Kaniko {
+				log.Logger().Warnf("When using tekton, only kaniko is supported as a builder")
+			}
+			flags.Kaniko = true
 		}
-		flags.Kaniko = true
 	}
 
 	// check some flags combination for GitOps mode

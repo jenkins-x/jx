@@ -106,7 +106,7 @@ func TestCheckFlags(t *testing.T) {
 			err:            nil,
 		},
 		{
-			name: "tekton",
+			name: "tekton_and_gke",
 			in: &create.InstallFlags{
 				Tekton:   true,
 				Provider: cloud.GKE,
@@ -118,6 +118,37 @@ func TestCheckFlags(t *testing.T) {
 			knativeBuild:   false,
 			kaniko:         true,
 			dockerRegistry: "gcr.io",
+			err:            nil,
+		},
+		{
+			name: "tekton_and_eks",
+			in: &create.InstallFlags{
+				Tekton:   true,
+				Provider: cloud.EKS,
+			},
+			nextGeneration: false,
+			tekton:         true,
+			prow:           true,
+			staticJenkins:  false,
+			knativeBuild:   false,
+			kaniko:         false,
+			dockerRegistry: "",
+			err:            nil,
+		},
+		{
+			name: "tekton_and_eks_and_kaniko",
+			in: &create.InstallFlags{
+				Tekton:   true,
+				Provider: cloud.EKS,
+				Kaniko:   true,
+			},
+			nextGeneration: false,
+			tekton:         true,
+			prow:           true,
+			staticJenkins:  false,
+			knativeBuild:   false,
+			kaniko:         true,
+			dockerRegistry: "",
 			err:            nil,
 		},
 		{
