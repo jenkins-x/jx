@@ -5,7 +5,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"io/ioutil"
+	"os"
+	"path"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +25,10 @@ var (
 	cmdUnderTest        *cobra.Command
 	commonOptsUnderTest CommonOptions
 )
+
+type TestFlags struct {
+	Snafu bool `mapstructure:"snafu"`
+}
 
 func Test_FlagExplicitlySet_returns_true_if_flag_explicitly_set_to_false(t *testing.T) {
 	setupTestCommand()
@@ -89,6 +98,33 @@ func Test_JXNamespace(t *testing.T) {
 	assert.NoError(t, err, "Failed to create GitAuthConfigService")
 }
 
+func Test_GetConfiguration(t *testing.T) {
+	setupTestCommand()
+
+	configFileName := "config.yaml"
+	configKey := fmt.Sprintf("%s", testFlagName)
+
+	tmpDir, err := ioutil.TempDir("", "")
+	require.Nil(t, err)
+	configFile := path.Join(tmpDir, configFileName)
+	fileContent := fmt.Sprintf("%s: %t\n", configKey, true)
+	err = ioutil.WriteFile(configFile, []byte(fileContent), 0640)
+	require.Nil(t, err)
+
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
+
+	commonOptsUnderTest = CommonOptions{}
+	commonOptsUnderTest.ConfigFile = configFile
+
+	testFlags := TestFlags{}
+	err = commonOptsUnderTest.GetConfiguration(&testFlags)
+	assert.NoError(t, err, "Failed to GetConfiguration")
+
+	assert.Equal(t, true, testFlags.Snafu)
+}
+
 func setupTestCommand() {
 	var flag bool
 	cmdUnderTest = &cobra.Command{
@@ -99,6 +135,7 @@ func setupTestCommand() {
 		},
 	}
 	cmdUnderTest.Flags().BoolVar(&flag, testFlagName, false, "")
+	_ = viper.BindPFlag(testFlagName, cmdUnderTest.Flags().Lookup(testFlagName))
 
 	commonOptsUnderTest = CommonOptions{}
 	commonOptsUnderTest.Cmd = cmdUnderTest
