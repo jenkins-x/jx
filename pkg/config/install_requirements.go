@@ -31,6 +31,7 @@ const (
 	SecretStorageTypeLocal SecretStorageType = "Local"
 )
 
+// RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
 	// Kaniko whether to enable kaniko for building docker images
 	Kaniko bool `json:"kaniko,omitempty"`
