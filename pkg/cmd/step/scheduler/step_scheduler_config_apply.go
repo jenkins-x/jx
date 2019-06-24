@@ -68,10 +68,15 @@ func (o *StepSchedulerConfigApplyOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		cfg, plugs, err := pipelinescheduler.GenerateProw(gitOps, jxClient, ns, teamSettings.DefaultScheduler.Name, devEnv)
+		cfg, plugs, err := pipelinescheduler.GenerateProw(gitOps, true, jxClient, ns, teamSettings.DefaultScheduler.Name, devEnv, nil)
 		if err != nil {
 			return errors.Wrapf(err, "generating Prow config")
 		}
+		kubeClient, ns, err := o.KubeClientAndNamespace()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
 		if gitOps {
 			opts := pipelinescheduler.GitOpsOptions{
 				Verbose: o.Verbose,
@@ -91,15 +96,11 @@ func (o *StepSchedulerConfigApplyOptions) Run() error {
 			opts.ConfigureGitFn = o.ConfigureGitCallback
 			opts.Gitter = o.Git()
 			opts.Helmer = o.Helm()
-			err = opts.AddToEnvironmentRepo(cfg, plugs)
+			err = opts.AddToEnvironmentRepo(cfg, plugs, kubeClient, ns)
 			if err != nil {
 				return errors.Wrapf(err, "adding Prow config to environment repo")
 			}
 		} else {
-			kubeClient, ns, err := o.KubeClientAndNamespace()
-			if err != nil {
-				return errors.WithStack(err)
-			}
 			err = pipelinescheduler.ApplyDirectly(kubeClient, ns, cfg, plugs)
 			if err != nil {
 				return errors.Wrapf(err, "applying Prow config")

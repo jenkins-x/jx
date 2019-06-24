@@ -61,17 +61,17 @@ presubmits:
     context: integration
     rerunCommand: /test this
     trigger: (?m)^/test( all| this),?(\s+|$)
-    query:
-      labels:
-        entries:
-          - approved
-      missingLabels:
-        entries:
-        - do-not-merge
-        - do-not-merge/hold
-        - do-not-merge/work-in-progress
-        - needs-ok-to-test
-        - needs-rebase
+    queries:
+      - labels:
+          entries:
+            - approved
+        missingLabels:
+          entries:
+          - do-not-merge
+          - do-not-merge/hold
+          - do-not-merge/work-in-progress
+          - needs-ok-to-test
+          - needs-rebase
     policy:
       protect: true
       requiredStatusChecks:
