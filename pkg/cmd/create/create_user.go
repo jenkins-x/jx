@@ -123,7 +123,7 @@ func (o *CreateUserOptions) Run() error {
 	user.Spec.ExternalUser = spec.ExternalUser
 	_, err = jxClient.JenkinsV1().Users(ns).Create(user)
 	if err != nil {
-		return fmt.Errorf("Failed to create User %s: %s", login, err)
+		return fmt.Errorf("failed to create User %s: %s", login, err)
 	}
 	log.Logger().Infof("Created User: %s", util.ColorInfo(login))
 	log.Logger().Infof("You can configure the roles for the user via: %s", util.ColorInfo(fmt.Sprintf("jx edit userrole %s", login)))
