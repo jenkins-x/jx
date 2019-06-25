@@ -709,7 +709,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 		}
 	}
 
-	reqfile := filepath.Join(dir, "requirements.yaml")
+	reqfile := filepath.Join(dir, helm.RequirementsFileName)
 	exists, err := util.FileExists(reqfile)
 	if err != nil {
 		return errors.Wrapf(err, "requirements.yaml file not found in the chart directory '%s'", dir)
@@ -857,7 +857,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 		return errors.Wrapf(err, "failed to build the dependencies of chart '%s'", dir)
 	}
 
-	reqFilePath := filepath.Join(dir, "requirements.yaml")
+	reqFilePath := filepath.Join(dir, helm.RequirementsFileName)
 	reqs, err := helm.LoadRequirementsFile(reqFilePath)
 	if err != nil {
 		return errors.Wrap(err, "loading the requirements file")
@@ -896,7 +896,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 			if err != nil {
 				return errors.Wrap(err, "building Helm dependency")
 			}
-			chartReqFile := filepath.Join(chartPath, "requirements.yaml")
+			chartReqFile := filepath.Join(chartPath, helm.RequirementsFileName)
 			reqs, err := helm.LoadRequirementsFile(chartReqFile)
 			if err != nil {
 				return errors.Wrap(err, "loading the requirements file")
