@@ -97,6 +97,7 @@ type StepCreateTaskOptions struct {
 	ProjectID         string
 	DockerRegistry    string
 	DockerRegistryOrg string
+	AdditionalEnvVars map[string]string
 
 	PodTemplates        map[string]*corev1.Pod
 	missingPodTemplates map[string]bool
@@ -116,6 +117,12 @@ type StepCreateTaskOptions struct {
 
 // NewCmdStepCreateTask Creates a new Command object
 func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
+	cmd, _ := NewCmdStepCreateTaskAndOption(commonOpts)
+	return cmd
+}
+
+// NewCmdStepCreateTaskAndOption Creates a new Command object and returns the options
+func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Command, *StepCreateTaskOptions) {
 	options := &StepCreateTaskOptions{
 		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
@@ -152,7 +159,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.EffectivePipeline, "effective-pipeline", "", false, "Just view the effective pipeline definition that would be created")
 
 	options.AddCommonFlags(cmd)
-	return cmd
+	return cmd, options
 }
 
 // AddCommonFlags adds common CLI options
@@ -784,6 +791,14 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			Name:  "PREVIEW_VERSION",
 			Value: "${inputs.params.version}",
 		})
+	}
+	for k, v := range o.AdditionalEnvVars {
+		if kube.GetSliceEnvVar(envVars, k) == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  k,
+				Value: v,
+			})
+		}
 	}
 	container.Env = envVars
 }
