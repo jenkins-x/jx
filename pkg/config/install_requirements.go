@@ -35,8 +35,14 @@ const (
 type RequirementsConfig struct {
 	// Kaniko whether to enable kaniko for building docker images
 	Kaniko bool `json:"kaniko,omitempty"`
+	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
+	Terraform bool `json:"terraform,omitempty"`
 	// SecretStorage how should we store secrets for the cluster
 	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
+	// Provider the kubernetes provider (e.g. gke)
+	Provider string `json:"provider,omitempty"`
+	// ProjectID the cloud project ID e.g. on GCP
+	ProjectID string `json:"project,omitempty"`
 	// ClusterName the logical name of the cluster
 	ClusterName string `json:"clusterName,omitempty"`
 }

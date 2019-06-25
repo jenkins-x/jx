@@ -1,0 +1,3 @@
+kaniko: false
+secretStorage: local
+clusterName: my-cluster-name

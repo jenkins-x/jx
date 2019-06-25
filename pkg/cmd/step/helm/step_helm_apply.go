@@ -123,17 +123,13 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
-	ns := o.Namespace
-	if ns == "" {
-		ns = os.Getenv("DEPLOY_NAMESPACE")
-	}
-	kubeClient, curNs, err := o.KubeClientAndNamespace()
+	ns, err := o.GetDeployNamespace(o.Namespace)
 	if err != nil {
 		return err
 	}
-	if ns == "" {
-		ns = curNs
-		log.Logger().Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
 	}
 
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)

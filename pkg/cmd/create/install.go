@@ -641,7 +641,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
 	}
 
-	err = options.configureKaniko()
+	err = options.ConfigureKaniko()
 	if err != nil {
 		return errors.Wrap(err, "unable to generate the Kaniko configuration")
 	}
@@ -1907,7 +1907,8 @@ func (options *InstallOptions) installHelmBinaries() error {
 	return options.InstallMissingDependencies(dependencies)
 }
 
-func (options *InstallOptions) setInstallValues(values map[string]string) {
+// SetInstallValues sets the install values
+func (options *InstallOptions) SetInstallValues(values map[string]string) {
 	if values != nil {
 		if options.installValues == nil {
 			options.installValues = map[string]string{}
@@ -2163,7 +2164,8 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	return adminSecretsFileName, adminSecrets, nil
 }
 
-func (options *InstallOptions) configureKaniko() error {
+// ConfigureKaniko configures the kaniko SA and secret
+func (options *InstallOptions) ConfigureKaniko() error {
 	if options.Flags.Kaniko {
 		if options.Flags.Provider != cloud.GKE {
 			return fmt.Errorf("Kaniko is not supported for %s provider", options.Flags.Provider)
