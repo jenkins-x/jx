@@ -627,6 +627,11 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 	} else if base.Agent.Dir == "" && c.Agent.Dir != "" {
 		base.Agent.Dir = c.Agent.Dir
 	}
+	mergedContainer, err := syntax.MergeContainers(base.ContainerOptions, c.ContainerOptions)
+	if err != nil {
+		return err
+	}
+	c.ContainerOptions = mergedContainer
 	base.defaultContainerAndDir()
 	c.defaultContainerAndDir()
 	c.Pipelines.Extend(&base.Pipelines)
