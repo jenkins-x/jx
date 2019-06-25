@@ -856,3 +856,15 @@ func (g *GitCLI) ResetHard(dir string, commitish string) error {
 func (g *GitCLI) MergeTheirs(dir string, commitish string) error {
 	return g.gitCmd(dir, "merge", "--strategy-option=theirs", commitish)
 }
+
+// Rebase runs git rebase upstream branch
+func (g *GitCLI) Rebase(dir string, upstream string, branch string) error {
+	args := []string{
+		"rebase",
+		upstream,
+	}
+	if branch != "" {
+		args = append(args, branch)
+	}
+	return g.gitCmd(dir, args...)
+}

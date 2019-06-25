@@ -19,7 +19,7 @@ import (
 
 var (
 	createPullRequestDockerLong = templates.LongDesc(`
-		Creates a Pull Request on a git repository updating any lines that start with FROM, ENV or ARG=
+		Creates a Pull Request on a git repository updating any lines in the Dockerfile that start with FROM, ENV or ARG=
 `)
 
 	createPullRequestDockerExample = templates.Examples(`
