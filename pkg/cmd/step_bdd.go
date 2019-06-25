@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -497,6 +498,8 @@ func (o *StepBDDOptions) reportStatus(testDir string, err error) error {
 	}
 
 	for _, cmd := range commands {
+		fmt.Println("")
+		fmt.Printf("Running %s\n\n", cmd.String())
 		cmd.Dir = testDir
 		cmd.Out = os.Stdout
 		cmd.Err = os.Stdout
