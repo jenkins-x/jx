@@ -7,9 +7,9 @@ package v1
 import (
 	time "time"
 
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	batch_v1 "k8s.io/api/batch/v1"
+	core_v1 "k8s.io/api/core/v1"
+	rbac_v1 "k8s.io/api/rbac/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -94,13 +94,21 @@ func (in *AppSpec) DeepCopyInto(out *AppSpec) {
 	*out = *in
 	if in.SchemaPreprocessor != nil {
 		in, out := &in.SchemaPreprocessor, &out.SchemaPreprocessor
-		*out = new(corev1.Container)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(core_v1.Container)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.SchemaPreprocessorRole != nil {
 		in, out := &in.SchemaPreprocessorRole, &out.SchemaPreprocessorRole
-		*out = new(rbacv1.Role)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(rbac_v1.Role)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -120,23 +128,39 @@ func (in *Approve) DeepCopyInto(out *Approve) {
 	*out = *in
 	if in.IssueRequired != nil {
 		in, out := &in.IssueRequired, &out.IssueRequired
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.RequireSelfApproval != nil {
 		in, out := &in.RequireSelfApproval, &out.RequireSelfApproval
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.LgtmActsAsApprove != nil {
 		in, out := &in.LgtmActsAsApprove, &out.LgtmActsAsApprove
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.IgnoreReviewState != nil {
 		in, out := &in.IgnoreReviewState, &out.IgnoreReviewState
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	return
 }
@@ -214,13 +238,21 @@ func (in *BranchProtectionContextPolicy) DeepCopyInto(out *BranchProtectionConte
 	*out = *in
 	if in.Contexts != nil {
 		in, out := &in.Contexts, &out.Contexts
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Strict != nil {
 		in, out := &in.Strict, &out.Strict
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	return
 }
@@ -240,13 +272,21 @@ func (in *Brancher) DeepCopyInto(out *Brancher) {
 	*out = *in
 	if in.SkipBranches != nil {
 		in, out := &in.SkipBranches, &out.SkipBranches
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Branches != nil {
 		in, out := &in.Branches, &out.Branches
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -503,13 +543,21 @@ func (in *CommitSummary) DeepCopyInto(out *CommitSummary) {
 	*out = *in
 	if in.Author != nil {
 		in, out := &in.Author, &out.Author
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Committer != nil {
 		in, out := &in.Committer, &out.Committer
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.IssueIDs != nil {
 		in, out := &in.IssueIDs, &out.IssueIDs
@@ -562,7 +610,9 @@ func (in *ConfigUpdater) DeepCopyInto(out *ConfigUpdater) {
 		in, out := &in.Map, &out.Map
 		*out = make(map[string]ConfigMapSpec, len(*in))
 		for key, val := range *in {
-			(*out)[key] = *val.DeepCopy()
+			newVal := new(ConfigMapSpec)
+			val.DeepCopyInto(newVal)
+			(*out)[key] = *newVal
 		}
 	}
 	in.ConfigMap.DeepCopyInto(&out.ConfigMap)
@@ -584,28 +634,48 @@ func (in *ContextPolicy) DeepCopyInto(out *ContextPolicy) {
 	*out = *in
 	if in.SkipUnknownContexts != nil {
 		in, out := &in.SkipUnknownContexts, &out.SkipUnknownContexts
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.RequiredContexts != nil {
 		in, out := &in.RequiredContexts, &out.RequiredContexts
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.RequiredIfPresentContexts != nil {
 		in, out := &in.RequiredIfPresentContexts, &out.RequiredIfPresentContexts
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.OptionalContexts != nil {
 		in, out := &in.OptionalContexts, &out.OptionalContexts
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.FromBranchProtection != nil {
 		in, out := &in.FromBranchProtection, &out.FromBranchProtection
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	return
 }
@@ -625,11 +695,19 @@ func (in *CoreActivityStep) DeepCopyInto(out *CoreActivityStep) {
 	*out = *in
 	if in.StartedTimestamp != nil {
 		in, out := &in.StartedTimestamp, &out.StartedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.CompletedTimestamp != nil {
 		in, out := &in.CompletedTimestamp, &out.CompletedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	return
 }
@@ -813,7 +891,7 @@ func (in *EnvironmentRoleBindingSpec) DeepCopyInto(out *EnvironmentRoleBindingSp
 	*out = *in
 	if in.Subjects != nil {
 		in, out := &in.Subjects, &out.Subjects
-		*out = make([]rbacv1.Subject, len(*in))
+		*out = make([]rbac_v1.Subject, len(*in))
 		copy(*out, *in)
 	}
 	out.RoleRef = in.RoleRef
@@ -1265,18 +1343,30 @@ func (in *ExternalPlugin) DeepCopyInto(out *ExternalPlugin) {
 	*out = *in
 	if in.Name != nil {
 		in, out := &in.Name, &out.Name
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Endpoint != nil {
 		in, out := &in.Endpoint, &out.Endpoint
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Events != nil {
 		in, out := &in.Events, &out.Events
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -1502,13 +1592,21 @@ func (in *GlobalProtectionPolicy) DeepCopyInto(out *GlobalProtectionPolicy) {
 	*out = *in
 	if in.ProtectionPolicy != nil {
 		in, out := &in.ProtectionPolicy, &out.ProtectionPolicy
-		*out = new(ProtectionPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ProtectionPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.ProtectTested != nil {
 		in, out := &in.ProtectTested, &out.ProtectTested
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	return
 }
@@ -1544,8 +1642,12 @@ func (in *IssueSummary) DeepCopyInto(out *IssueSummary) {
 	*out = *in
 	if in.User != nil {
 		in, out := &in.User, &out.User
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Assignees != nil {
 		in, out := &in.Assignees, &out.Assignees
@@ -1556,12 +1658,20 @@ func (in *IssueSummary) DeepCopyInto(out *IssueSummary) {
 	}
 	if in.ClosedBy != nil {
 		in, out := &in.ClosedBy, &out.ClosedBy
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.CreationTimestamp != nil {
 		in, out := &in.CreationTimestamp, &out.CreationTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
@@ -1586,38 +1696,66 @@ func (in *JobBase) DeepCopyInto(out *JobBase) {
 	*out = *in
 	if in.Name != nil {
 		in, out := &in.Name, &out.Name
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
-		*out = new(ReplaceableMapOfStringString)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableMapOfStringString)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.MaxConcurrency != nil {
 		in, out := &in.MaxConcurrency, &out.MaxConcurrency
-		*out = new(int)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(int)
+			**out = **in
+		}
 	}
 	if in.Agent != nil {
 		in, out := &in.Agent, &out.Agent
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Cluster != nil {
 		in, out := &in.Cluster, &out.Cluster
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Namespace != nil {
 		in, out := &in.Namespace, &out.Namespace
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Spec != nil {
 		in, out := &in.Spec, &out.Spec
-		*out = new(corev1.PodSpec)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(core_v1.PodSpec)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -1637,18 +1775,30 @@ func (in *Lgtm) DeepCopyInto(out *Lgtm) {
 	*out = *in
 	if in.ReviewActsAsLgtm != nil {
 		in, out := &in.ReviewActsAsLgtm, &out.ReviewActsAsLgtm
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.StoreTreeHash != nil {
 		in, out := &in.StoreTreeHash, &out.StoreTreeHash
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.StickyLgtmTeam != nil {
 		in, out := &in.StickyLgtmTeam, &out.StickyLgtmTeam
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	return
 }
@@ -1689,48 +1839,84 @@ func (in *Merger) DeepCopyInto(out *Merger) {
 	*out = *in
 	if in.SyncPeriod != nil {
 		in, out := &in.SyncPeriod, &out.SyncPeriod
-		*out = new(time.Duration)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(time.Duration)
+			**out = **in
+		}
 	}
 	if in.StatusUpdatePeriod != nil {
 		in, out := &in.StatusUpdatePeriod, &out.StatusUpdatePeriod
-		*out = new(time.Duration)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(time.Duration)
+			**out = **in
+		}
 	}
 	if in.TargetURL != nil {
 		in, out := &in.TargetURL, &out.TargetURL
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.PRStatusBaseURL != nil {
 		in, out := &in.PRStatusBaseURL, &out.PRStatusBaseURL
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.BlockerLabel != nil {
 		in, out := &in.BlockerLabel, &out.BlockerLabel
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.SquashLabel != nil {
 		in, out := &in.SquashLabel, &out.SquashLabel
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.MaxGoroutines != nil {
 		in, out := &in.MaxGoroutines, &out.MaxGoroutines
-		*out = new(int)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(int)
+			**out = **in
+		}
 	}
 	if in.MergeType != nil {
 		in, out := &in.MergeType, &out.MergeType
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.ContextPolicy != nil {
 		in, out := &in.ContextPolicy, &out.ContextPolicy
-		*out = new(ContextPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ContextPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -1771,23 +1957,39 @@ func (in *Periodic) DeepCopyInto(out *Periodic) {
 	*out = *in
 	if in.JobBase != nil {
 		in, out := &in.JobBase, &out.JobBase
-		*out = new(JobBase)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(JobBase)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Interval != nil {
 		in, out := &in.Interval, &out.Interval
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Cron != nil {
 		in, out := &in.Cron, &out.Cron
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -1809,10 +2011,11 @@ func (in *Periodics) DeepCopyInto(out *Periodics) {
 		in, out := &in.Items, &out.Items
 		*out = make([]*Periodic, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Periodic)
-				(*in).DeepCopyInto(*out)
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(Periodic)
+				(*in)[i].DeepCopyInto((*out)[i])
 			}
 		}
 	}
@@ -1895,11 +2098,19 @@ func (in *PipelineActivitySpec) DeepCopyInto(out *PipelineActivitySpec) {
 	*out = *in
 	if in.StartedTimestamp != nil {
 		in, out := &in.StartedTimestamp, &out.StartedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.CompletedTimestamp != nil {
 		in, out := &in.CompletedTimestamp, &out.CompletedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.Steps != nil {
 		in, out := &in.Steps, &out.Steps
@@ -1957,18 +2168,30 @@ func (in *PipelineActivityStep) DeepCopyInto(out *PipelineActivityStep) {
 	*out = *in
 	if in.Stage != nil {
 		in, out := &in.Stage, &out.Stage
-		*out = new(StageActivityStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(StageActivityStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Promote != nil {
 		in, out := &in.Promote, &out.Promote
-		*out = new(PromoteActivityStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromoteActivityStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Preview != nil {
 		in, out := &in.Preview, &out.Preview
-		*out = new(PreviewActivityStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PreviewActivityStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -2021,13 +2244,21 @@ func (in *PipelineStructure) DeepCopyInto(out *PipelineStructure) {
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	if in.PipelineRef != nil {
 		in, out := &in.PipelineRef, &out.PipelineRef
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.PipelineRunRef != nil {
 		in, out := &in.PipelineRunRef, &out.PipelineRunRef
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Stages != nil {
 		in, out := &in.Stages, &out.Stages
@@ -2095,13 +2326,21 @@ func (in *PipelineStructureStage) DeepCopyInto(out *PipelineStructureStage) {
 	*out = *in
 	if in.TaskRef != nil {
 		in, out := &in.TaskRef, &out.TaskRef
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.TaskRunRef != nil {
 		in, out := &in.TaskRunRef, &out.TaskRunRef
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Stages != nil {
 		in, out := &in.Stages, &out.Stages
@@ -2115,18 +2354,30 @@ func (in *PipelineStructureStage) DeepCopyInto(out *PipelineStructureStage) {
 	}
 	if in.Parent != nil {
 		in, out := &in.Parent, &out.Parent
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Previous != nil {
 		in, out := &in.Previous, &out.Previous
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Next != nil {
 		in, out := &in.Next, &out.Next
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	return
 }
@@ -2227,28 +2478,48 @@ func (in *Postsubmit) DeepCopyInto(out *Postsubmit) {
 	*out = *in
 	if in.JobBase != nil {
 		in, out := &in.JobBase, &out.JobBase
-		*out = new(JobBase)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(JobBase)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.RegexpChangeMatcher != nil {
 		in, out := &in.RegexpChangeMatcher, &out.RegexpChangeMatcher
-		*out = new(RegexpChangeMatcher)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(RegexpChangeMatcher)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Brancher != nil {
 		in, out := &in.Brancher, &out.Brancher
-		*out = new(Brancher)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Brancher)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Context != nil {
 		in, out := &in.Context, &out.Context
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Report != nil {
 		in, out := &in.Report, &out.Report
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	return
 }
@@ -2270,10 +2541,11 @@ func (in *Postsubmits) DeepCopyInto(out *Postsubmits) {
 		in, out := &in.Items, &out.Items
 		*out = make([]*Postsubmit, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Postsubmit)
-				(*in).DeepCopyInto(*out)
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(Postsubmit)
+				(*in)[i].DeepCopyInto((*out)[i])
 			}
 		}
 	}
@@ -2295,74 +2567,123 @@ func (in *Presubmit) DeepCopyInto(out *Presubmit) {
 	*out = *in
 	if in.JobBase != nil {
 		in, out := &in.JobBase, &out.JobBase
-		*out = new(JobBase)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(JobBase)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Brancher != nil {
 		in, out := &in.Brancher, &out.Brancher
-		*out = new(Brancher)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Brancher)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.RegexpChangeMatcher != nil {
 		in, out := &in.RegexpChangeMatcher, &out.RegexpChangeMatcher
-		*out = new(RegexpChangeMatcher)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(RegexpChangeMatcher)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.AlwaysRun != nil {
 		in, out := &in.AlwaysRun, &out.AlwaysRun
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.Context != nil {
 		in, out := &in.Context, &out.Context
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Optional != nil {
 		in, out := &in.Optional, &out.Optional
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.Report != nil {
 		in, out := &in.Report, &out.Report
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.Trigger != nil {
 		in, out := &in.Trigger, &out.Trigger
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.RerunCommand != nil {
 		in, out := &in.RerunCommand, &out.RerunCommand
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.MergeType != nil {
 		in, out := &in.MergeType, &out.MergeType
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.Queries != nil {
 		in, out := &in.Queries, &out.Queries
 		*out = make([]*Query, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Query)
-				(*in).DeepCopyInto(*out)
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(Query)
+				(*in)[i].DeepCopyInto((*out)[i])
 			}
 		}
 	}
 	if in.Policy != nil {
 		in, out := &in.Policy, &out.Policy
-		*out = new(ProtectionPolicies)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ProtectionPolicies)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.ContextPolicy != nil {
 		in, out := &in.ContextPolicy, &out.ContextPolicy
-		*out = new(RepoContextPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(RepoContextPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -2384,10 +2705,11 @@ func (in *Presubmits) DeepCopyInto(out *Presubmits) {
 		in, out := &in.Items, &out.Items
 		*out = make([]*Presubmit, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Presubmit)
-				(*in).DeepCopyInto(*out)
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(Presubmit)
+				(*in)[i].DeepCopyInto((*out)[i])
 			}
 		}
 	}
@@ -2444,13 +2766,21 @@ func (in *PromoteActivityStep) DeepCopyInto(out *PromoteActivityStep) {
 	in.CoreActivityStep.DeepCopyInto(&out.CoreActivityStep)
 	if in.PullRequest != nil {
 		in, out := &in.PullRequest, &out.PullRequest
-		*out = new(PromotePullRequestStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromotePullRequestStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Update != nil {
 		in, out := &in.Update, &out.Update
-		*out = new(PromoteUpdateStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromoteUpdateStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -2525,22 +2855,23 @@ func (in *ProtectionPolicies) DeepCopyInto(out *ProtectionPolicies) {
 	*out = *in
 	if in.ProtectionPolicy != nil {
 		in, out := &in.ProtectionPolicy, &out.ProtectionPolicy
-		*out = new(ProtectionPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ProtectionPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make(map[string]*ProtectionPolicy, len(*in))
 		for key, val := range *in {
-			var outVal *ProtectionPolicy
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
-				*out = new(ProtectionPolicy)
-				(*in).DeepCopyInto(*out)
+				(*out)[key] = new(ProtectionPolicy)
+				val.DeepCopyInto((*out)[key])
 			}
-			(*out)[key] = outVal
 		}
 	}
 	return
@@ -2561,28 +2892,48 @@ func (in *ProtectionPolicy) DeepCopyInto(out *ProtectionPolicy) {
 	*out = *in
 	if in.Protect != nil {
 		in, out := &in.Protect, &out.Protect
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.RequiredStatusChecks != nil {
 		in, out := &in.RequiredStatusChecks, &out.RequiredStatusChecks
-		*out = new(BranchProtectionContextPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(BranchProtectionContextPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Admins != nil {
 		in, out := &in.Admins, &out.Admins
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.Restrictions != nil {
 		in, out := &in.Restrictions, &out.Restrictions
-		*out = new(Restrictions)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Restrictions)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.RequiredPullRequestReviews != nil {
 		in, out := &in.RequiredPullRequestReviews, &out.RequiredPullRequestReviews
-		*out = new(ReviewPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReviewPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -2618,33 +2969,57 @@ func (in *Query) DeepCopyInto(out *Query) {
 	*out = *in
 	if in.ExcludedBranches != nil {
 		in, out := &in.ExcludedBranches, &out.ExcludedBranches
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.IncludedBranches != nil {
 		in, out := &in.IncludedBranches, &out.IncludedBranches
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.MissingLabels != nil {
 		in, out := &in.MissingLabels, &out.MissingLabels
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Milestone != nil {
 		in, out := &in.Milestone, &out.Milestone
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.ReviewApprovedRequired != nil {
 		in, out := &in.ReviewApprovedRequired, &out.ReviewApprovedRequired
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	return
 }
@@ -2690,8 +3065,12 @@ func (in *RegexpChangeMatcher) DeepCopyInto(out *RegexpChangeMatcher) {
 	*out = *in
 	if in.RunIfChanged != nil {
 		in, out := &in.RunIfChanged, &out.RunIfChanged
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	return
 }
@@ -2827,15 +3206,12 @@ func (in *ReplaceableMapOfStringContextPolicy) DeepCopyInto(out *ReplaceableMapO
 		in, out := &in.Items, &out.Items
 		*out = make(map[string]*ContextPolicy, len(*in))
 		for key, val := range *in {
-			var outVal *ContextPolicy
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
-				*out = new(ContextPolicy)
-				(*in).DeepCopyInto(*out)
+				(*out)[key] = new(ContextPolicy)
+				val.DeepCopyInto((*out)[key])
 			}
-			(*out)[key] = outVal
 		}
 	}
 	return
@@ -2881,10 +3257,11 @@ func (in *ReplaceableSliceOfExternalPlugins) DeepCopyInto(out *ReplaceableSliceO
 		in, out := &in.Items, &out.Items
 		*out = make([]*ExternalPlugin, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(ExternalPlugin)
-				(*in).DeepCopyInto(*out)
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(ExternalPlugin)
+				(*in)[i].DeepCopyInto((*out)[i])
 			}
 		}
 	}
@@ -2927,13 +3304,21 @@ func (in *RepoContextPolicy) DeepCopyInto(out *RepoContextPolicy) {
 	*out = *in
 	if in.ContextPolicy != nil {
 		in, out := &in.ContextPolicy, &out.ContextPolicy
-		*out = new(ContextPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ContextPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Branches != nil {
 		in, out := &in.Branches, &out.Branches
-		*out = new(ReplaceableMapOfStringContextPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableMapOfStringContextPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -2969,13 +3354,21 @@ func (in *Restrictions) DeepCopyInto(out *Restrictions) {
 	*out = *in
 	if in.Users != nil {
 		in, out := &in.Users, &out.Users
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Teams != nil {
 		in, out := &in.Teams, &out.Teams
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -2995,23 +3388,39 @@ func (in *ReviewPolicy) DeepCopyInto(out *ReviewPolicy) {
 	*out = *in
 	if in.DismissalRestrictions != nil {
 		in, out := &in.DismissalRestrictions, &out.DismissalRestrictions
-		*out = new(Restrictions)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Restrictions)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.DismissStale != nil {
 		in, out := &in.DismissStale, &out.DismissStale
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.RequireOwners != nil {
 		in, out := &in.RequireOwners, &out.RequireOwners
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.Approvals != nil {
 		in, out := &in.Approvals, &out.Approvals
-		*out = new(int)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(int)
+			**out = **in
+		}
 	}
 	return
 }
@@ -3058,8 +3467,12 @@ func (in *SchedulerAgent) DeepCopyInto(out *SchedulerAgent) {
 	*out = *in
 	if in.Agent != nil {
 		in, out := &in.Agent, &out.Agent
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	return
 }
@@ -3112,83 +3525,133 @@ func (in *SchedulerSpec) DeepCopyInto(out *SchedulerSpec) {
 	*out = *in
 	if in.ScehdulerAgent != nil {
 		in, out := &in.ScehdulerAgent, &out.ScehdulerAgent
-		*out = new(SchedulerAgent)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(SchedulerAgent)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Policy != nil {
 		in, out := &in.Policy, &out.Policy
-		*out = new(GlobalProtectionPolicy)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(GlobalProtectionPolicy)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Presubmits != nil {
 		in, out := &in.Presubmits, &out.Presubmits
-		*out = new(Presubmits)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Presubmits)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Postsubmits != nil {
 		in, out := &in.Postsubmits, &out.Postsubmits
-		*out = new(Postsubmits)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Postsubmits)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Trigger != nil {
 		in, out := &in.Trigger, &out.Trigger
-		*out = new(Trigger)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Trigger)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Approve != nil {
 		in, out := &in.Approve, &out.Approve
-		*out = new(Approve)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Approve)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.LGTM != nil {
 		in, out := &in.LGTM, &out.LGTM
-		*out = new(Lgtm)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Lgtm)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.ExternalPlugins != nil {
 		in, out := &in.ExternalPlugins, &out.ExternalPlugins
-		*out = new(ReplaceableSliceOfExternalPlugins)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfExternalPlugins)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Merger != nil {
 		in, out := &in.Merger, &out.Merger
-		*out = new(Merger)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Merger)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Plugins != nil {
 		in, out := &in.Plugins, &out.Plugins
-		*out = new(ReplaceableSliceOfStrings)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ReplaceableSliceOfStrings)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.ConfigUpdater != nil {
 		in, out := &in.ConfigUpdater, &out.ConfigUpdater
-		*out = new(ConfigUpdater)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ConfigUpdater)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Welcome != nil {
 		in, out := &in.Welcome, &out.Welcome
 		*out = make([]*Welcome, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Welcome)
-				(*in).DeepCopyInto(*out)
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(Welcome)
+				(*in)[i].DeepCopyInto((*out)[i])
 			}
 		}
 	}
 	if in.Periodics != nil {
 		in, out := &in.Periodics, &out.Periodics
-		*out = new(Periodics)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(Periodics)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Attachments != nil {
 		in, out := &in.Attachments, &out.Attachments
 		*out = make([]*Attachment, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Attachment)
-				(*in).DeepCopyInto(*out)
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(Attachment)
+				(*in)[i].DeepCopyInto((*out)[i])
 			}
 		}
 	}
@@ -3500,7 +3963,7 @@ func (in *TeamSettings) DeepCopyInto(out *TeamSettings) {
 	}
 	if in.PostPreviewJobs != nil {
 		in, out := &in.PostPreviewJobs, &out.PostPreviewJobs
-		*out = make([]batchv1.Job, len(*in))
+		*out = make([]batch_v1.Job, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -3571,23 +4034,39 @@ func (in *Trigger) DeepCopyInto(out *Trigger) {
 	*out = *in
 	if in.TrustedOrg != nil {
 		in, out := &in.TrustedOrg, &out.TrustedOrg
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.JoinOrgURL != nil {
 		in, out := &in.JoinOrgURL, &out.JoinOrgURL
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	if in.OnlyOrgMembers != nil {
 		in, out := &in.OnlyOrgMembers, &out.OnlyOrgMembers
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	if in.IgnoreOkToTest != nil {
 		in, out := &in.IgnoreOkToTest, &out.IgnoreOkToTest
-		*out = new(bool)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(bool)
+			**out = **in
+		}
 	}
 	return
 }
@@ -3635,7 +4114,11 @@ func (in *UserDetails) DeepCopyInto(out *UserDetails) {
 	*out = *in
 	if in.CreationTimestamp != nil {
 		in, out := &in.CreationTimestamp, &out.CreationTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.Accounts != nil {
 		in, out := &in.Accounts, &out.Accounts
@@ -3709,8 +4192,12 @@ func (in *Welcome) DeepCopyInto(out *Welcome) {
 	*out = *in
 	if in.MessageTemplate != nil {
 		in, out := &in.MessageTemplate, &out.MessageTemplate
-		*out = new(string)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 	return
 }
@@ -3852,8 +4339,12 @@ func (in *WorkflowStep) DeepCopyInto(out *WorkflowStep) {
 	in.Preconditions.DeepCopyInto(&out.Preconditions)
 	if in.Promote != nil {
 		in, out := &in.Promote, &out.Promote
-		*out = new(PromoteWorkflowStep)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromoteWorkflowStep)
+			**out = **in
+		}
 	}
 	return
 }
