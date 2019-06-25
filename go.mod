@@ -69,6 +69,7 @@ require (
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jetstack/cert-manager v0.5.2
+	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/knative/build v0.5.0
 	github.com/knative/pkg v0.0.0-20190402181056-ff46edef0ae5

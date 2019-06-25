@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -50,6 +52,8 @@ func NewCmdStepCreatePr(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.AddCommand(NewCmdStepCreatePullRequestDocker(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
+	cmd.AddCommand(NewCmdStepCreatePullRequestChart(commonOpts))
+	cmd.AddCommand(NewCmdStepCreatePullRequestRegex(commonOpts))
 	return cmd
 }
 
@@ -68,6 +72,26 @@ func AddStepCreatePrFlags(cmd *cobra.Command, o *StepCreatePrOptions) {
 
 // ValidateOptions validates the common options for all PR creation steps
 func (o *StepCreatePrOptions) ValidateOptions() error {
+	if o.SrcGitURL == "" {
+		o.SrcGitURL = os.Getenv("REPO_URL")
+		if o.SrcGitURL != "" {
+			log.Logger().Infof("Using %s as source for change discovered from env var REPO_URL", o.SrcGitURL)
+		} else {
+			// see if we're in a git repo and use it
+			wd, err := os.Getwd()
+			if err != nil {
+				return errors.Wrapf(err, "getting working directory")
+			}
+			gitInfo, err := o.FindGitInfo(wd)
+			if err != nil {
+				log.Logger().Debugf("Unable to discover git info from current directory because %v", err)
+			} else {
+				o.SrcGitURL = gitInfo.HttpsURL()
+				log.Logger().Infof("Using %s as source for change discovered from git repo in %s", o.SrcGitURL, wd)
+			}
+		}
+
+	}
 	if o.GitURL == "" {
 		return util.MissingOption("repo")
 	}

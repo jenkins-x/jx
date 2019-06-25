@@ -10,6 +10,8 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/jpillora/longestcommon"
+
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -288,12 +290,23 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 				if err != nil {
 					return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, existingBranchName)
 				}
+				err = gitter.Rebase(dir, fmt.Sprintf("origin/%s", existingBranchName), "")
+				if err != nil {
+					return nil, errors.WithStack(err)
+				}
 				err = gitter.ForcePushBranch(dir, prDetails.BranchName, existingBranchName)
 				if err != nil {
 					return nil, errors.Wrapf(err, "pushing merged branch %s", existingBranchName)
 				}
 
 				gha.Head = headPrefix + existingBranchName
+				// work out the minimal similar title
+				gha.Title = longestcommon.Prefix([]string{pr.Title, prDetails.Title})
+				if len(gha.Title) <= len("chore(dependencies): update ") {
+					gha.Title = "chore(dependencies): update dependency versions"
+				}
+				gha.Title = strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(gha.Title), " to"), " from")
+				gha.Body = fmt.Sprintf("%s\n<hr />\n%s", prDetails.Message, pr.Body)
 
 				pr, err := provider.UpdatePullRequest(gha, *pr.Number)
 				if err != nil {

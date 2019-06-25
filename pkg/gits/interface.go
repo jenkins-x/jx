@@ -219,6 +219,7 @@ type Gitter interface {
 	FetchBranchUnshallow(dir string, repo string, refspec ...string) error
 	Merge(dir string, commitish string) error
 	ResetHard(dir string, commitish string) error
+	Rebase(dir string, upstream string, branch string) error
 
 	Stash(dir string) error
 
