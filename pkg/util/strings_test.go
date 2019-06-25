@@ -87,6 +87,38 @@ func TestYesNo(t *testing.T) {
 	assert.Equal(t, "No", util.YesNo(false), "No boolean conversion")
 }
 
+func TestExtractKeyValuePairs(t *testing.T) {
+	type testData struct {
+		keyValueArray []string
+		keyValueMap   map[string]string
+		expectError   bool
+	}
+
+	testCases := []testData{
+		{
+			[]string{}, map[string]string{}, false,
+		},
+		{
+			[]string{"foo=bar"}, map[string]string{"foo": "bar"}, false,
+		},
+		{
+			[]string{"foo=bar", "snafu=tarfu"}, map[string]string{"foo": "bar", "snafu": "tarfu"}, false,
+		},
+		{
+			[]string{"foo=bar", "snafu"}, map[string]string{}, true,
+		},
+	}
+	for _, data := range testCases {
+		actual, err := util.ExtractKeyValuePairs(data.keyValueArray, "=")
+		if data.expectError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+		assert.Equal(t, data.keyValueMap, actual)
+	}
+}
+
 func TestQuestionAnswer(t *testing.T) {
 	assert.Equal(t, "? This is a question: and answer", util.QuestionAnswer("This is a question", "and answer"))
 }

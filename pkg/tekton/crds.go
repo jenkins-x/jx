@@ -53,8 +53,6 @@ func (crds *CRDWrapper) Name() string {
 	return crds.pipeline.Name
 }
 
-// TODO Should probably return values not pointers in these methods, but requires changes of all test data as well (HF)
-
 // Pipeline returns a pointer to the Tekton Pipeline.
 func (crds *CRDWrapper) Pipeline() *pipelineapi.Pipeline {
 	return crds.pipeline

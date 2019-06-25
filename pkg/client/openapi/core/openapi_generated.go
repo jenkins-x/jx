@@ -88,6 +88,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec":                schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep":                schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension":                   schema_pkg_apis_jenkinsio_v1_PipelineExtension(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure":                   schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureList":               schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage":              schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
@@ -285,11 +286,16 @@ func schema_pkg_apis_jenkinsio_v1_AppSpec(ref common.ReferenceCallback) common.O
 							Ref: ref("k8s.io/api/rbac/v1.Role"),
 						},
 					},
+					"pipelineExtension": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.Container", "k8s.io/api/rbac/v1.Role"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension", "k8s.io/api/core/v1.Container", "k8s.io/api/rbac/v1.Role"},
 	}
 }
 
@@ -3404,6 +3410,56 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineExtension(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineExtension defines the image and command of an app which wants to modify/extend the pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the container specified as a DNS_LABEL.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Docker image name.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Entrypoint array. Not executed within a shell.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Arguments to the entrypoint.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 

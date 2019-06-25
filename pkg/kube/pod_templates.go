@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// LoadPodTemplates loads the Jenkins pod templates from the given namepace
+// LoadPodTemplates loads the Jenkins pod templates from the given namespace
 func LoadPodTemplates(kubeClient kubernetes.Interface, ns string) (map[string]*corev1.Pod, error) {
 	answer := map[string]*corev1.Pod{}
 

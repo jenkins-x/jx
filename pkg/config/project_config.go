@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -128,4 +129,37 @@ func (c *ProjectConfig) GetOrCreatePipelineConfig() *jenkinsfile.PipelineConfig 
 		c.PipelineConfig = &jenkinsfile.PipelineConfig{}
 	}
 	return c.PipelineConfig
+}
+
+// GetPipeline retrieves the parsed pipeline for the specified type
+func (c *ProjectConfig) GetPipeline(kind string) (*syntax.ParsedPipeline, error) {
+	var parsed *syntax.ParsedPipeline
+
+	if c.PipelineConfig == nil {
+		return nil, nil
+	}
+
+	switch kind {
+	case jenkinsfile.PipelineKindRelease:
+		if c.PipelineConfig.Pipelines.Release == nil {
+			parsed = nil
+		} else {
+			parsed = c.PipelineConfig.Pipelines.Release.Pipeline
+		}
+	case jenkinsfile.PipelineKindPullRequest:
+		if c.PipelineConfig.Pipelines.PullRequest == nil {
+			parsed = nil
+		} else {
+			parsed = c.PipelineConfig.Pipelines.PullRequest.Pipeline
+		}
+	case jenkinsfile.PipelineKindFeature:
+		if c.PipelineConfig.Pipelines.Feature == nil {
+			parsed = nil
+		} else {
+			parsed = c.PipelineConfig.Pipelines.Feature.Pipeline
+		}
+	default:
+		return nil, fmt.Errorf("unknown pipeline kind %s", kind)
+	}
+	return parsed, nil
 }
