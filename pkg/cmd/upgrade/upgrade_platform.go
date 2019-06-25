@@ -52,8 +52,6 @@ type UpgradePlatformOptions struct {
 	Set           string
 	AlwaysUpgrade bool
 	UpdateSecrets bool
-
-	InstallFlags create.InstallFlags
 }
 
 // NewCmdUpgradePlatform defines the command
@@ -86,7 +84,7 @@ func NewCmdUpgradePlatform(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true].")
 	cmd.Flags().BoolVarP(&options.UpdateSecrets, "update-secrets", "", false, "Regenerate adminSecrets.yaml on upgrade")
 
-	options.InstallFlags.AddCloudEnvOptions(cmd)
+	options.Flags.AddCloudEnvOptions(cmd)
 
 	return cmd
 }
@@ -150,8 +148,8 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	io := &create.InstallOptions{}
 	io.CommonOptions = o.CommonOptions
-	io.Flags = o.InstallFlags
-	versionsDir, err := io.CloneJXVersionsRepo(o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
+	io.Flags = o.Flags
+	versionsDir, err := io.CloneJXVersionsRepo(io.Flags.VersionsRepository, io.Flags.VersionsGitRef)
 	if err != nil {
 		return err
 	}
