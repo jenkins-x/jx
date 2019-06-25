@@ -3,9 +3,10 @@ package create
 import (
 	"encoding/base64"
 	"fmt"
+	"regexp"
+
 	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"regexp"
 
 	"github.com/jenkins-x/jx/pkg/tenant"
 
@@ -36,10 +37,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -2258,6 +2259,12 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			}
 			if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
 				defaultRegion := options.installValues[kube.Region]
+
+				// If no parameters required for creating the vault was provided switch to auto create
+				if cvo.DynamoDBTable == "" && cvo.KMSKeyID == "" && cvo.S3Bucket == "" && cvo.AccessKeyID == "" && cvo.SecretAccessKey == "" {
+					cvo.AutoCreate = true
+				}
+
 				if cvo.DynamoDBRegion == "" {
 					cvo.DynamoDBRegion = defaultRegion
 					log.Logger().Infof("Region not specified for DynamoDB, defaulting to %s", util.ColorInfo(defaultRegion))

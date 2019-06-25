@@ -64,6 +64,7 @@ type GCSConfig struct {
 // AWSConfig keeps the vault configuration for AWS
 type AWSConfig struct {
 	v1alpha1.AWSUnsealConfig
+	AutoCreate      bool
 	DynamoDBTable   string
 	DynamoDBRegion  string
 	AccessKeyID     string

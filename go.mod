@@ -18,6 +18,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/antham/chyle v1.4.0
 	github.com/aws/aws-sdk-go v1.17.10
+	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
 	github.com/banzaicloud/bank-vaults v0.0.0-00010101000000-000000000000
 	github.com/beevik/etree v1.0.1
 	github.com/blang/semver v3.5.1+incompatible
