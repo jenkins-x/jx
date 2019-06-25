@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -179,12 +180,16 @@ func (o *StepBDDOptions) Run() error {
 			return err
 		}
 
-		defer o.deleteCluster(cluster)
-
 		err = o.runTests(o.Flags.GoPath)
 		if err != nil {
 			log.Logger().Warnf("Failed to perform tests on cluster %s: %s", cluster.Name, err)
 			errors = append(errors, err)
+		} else {
+			err = o.deleteCluster(cluster)
+			if err != nil {
+				log.Logger().Warnf("Failed to delete cluster %s: %s", cluster.Name, err)
+				errors = append(errors, err)
+			}
 		}
 	}
 	return util.CombineErrors(errors...)
@@ -768,6 +773,25 @@ func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.Req
 }
 
 func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {
+	projectID := ""
+	for _, arg := range cluster.Args {
+		if strings.Contains(arg, "project-id=") {
+			projectID = strings.Split(arg, "=")[1]
+			break
+		}
+	}
+	if projectID != "" {
+		labelOptions := e2e.StepE2ELabelOptions{
+			ProjectID: projectID,
+			Delete:    true,
+			StepOptions: opts.StepOptions{
+				CommonOptions: &opts.CommonOptions{},
+			},
+		}
+		labelOptions.Args = []string{cluster.Name}
+		return labelOptions.Run()
+	}
+	log.Logger().Warningf("Automated cluster cleanup is not supported for cluster %s", cluster.Name)
 	return nil
 }
 
