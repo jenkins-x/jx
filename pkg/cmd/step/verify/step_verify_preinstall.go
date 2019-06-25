@@ -135,7 +135,8 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
-	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!\n\n", info("jx boot"))
+	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!\n", info("jx boot"))
+	fmt.Println()
 	return nil
 }
 

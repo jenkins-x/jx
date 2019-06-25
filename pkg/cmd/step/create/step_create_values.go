@@ -142,12 +142,12 @@ func (o *StepCreateValuesOptions) Run() error {
 	if o.ValuesFile == "" {
 		o.ValuesFile = filepath.Join(o.Dir, fmt.Sprintf("%s.yaml", o.Name))
 	}
-	log.Infof("\n")
+	fmt.Println()
 	err = o.CreateValuesFile()
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	log.Infof("\n")
+	fmt.Println()
 	return nil
 }
 
