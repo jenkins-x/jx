@@ -416,6 +416,7 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
 	vaultClient, err := o.SystemVaultClient(o.devNamespace)
 	if err != nil {
+		log.Logger().Warnf("failed to create system vault in namespace %s due to %s\n", o.devNamespace, err.Error())
 		vaultClient = nil
 	}
 	if vaultClient != nil {

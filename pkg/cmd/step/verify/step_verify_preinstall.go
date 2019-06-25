@@ -9,11 +9,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -115,6 +117,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	err = o.verifyInstallConfig(kubeClient, ns, requirements)
+	if err != nil {
+		return err
+	}
+
 	if requirements.Kaniko {
 		if requirements.Provider == cloud.GKE {
 			log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
@@ -177,4 +184,30 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 		return fmt.Errorf("failed to create the kaniko secret data")
 	}
 	return o.createKanikoSecret(ns, data)
+}
+
+// verifyInstallConfig lets ensure we modify the install ConfigMap with the requirements
+func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig) error {
+	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
+		func(configMap *corev1.ConfigMap) error {
+			secretsLocation := string(secrets.FileSystemLocationKind)
+			if requirements.SecretStorage == config.SecretStorageTypeVault {
+				secretsLocation = string(secrets.VaultLocationKind)
+			}
+
+			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.ProjectID)
+			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.ClusterName)
+			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
+			return nil
+		}, nil)
+	if err != nil {
+		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
+	}
+	return nil
+}
+
+func modifyMapIfNotBlank(m map[string]string, key string, value string) {
+	if value != "" {
+		m[key] = value
+	}
 }
