@@ -1,6 +1,8 @@
-FROM centos:7
+FROM alpine:3.10
 
-RUN yum install -y git
+RUN apk --no-cache --update add \
+    git \
+    bash
 
 ENTRYPOINT ["jx", "version"]
 
