@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -115,23 +116,25 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	if requirements.Kaniko {
-		log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
+		if requirements.Provider == cloud.GKE {
+			log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
 
-		err = o.validateKaniko(ns)
-		if err != nil {
-			if o.LazyCreate {
-				log.Logger().Infof("attempting to lazily create the deploy namespace %s\n", info(ns))
+			err = o.validateKaniko(ns)
+			if err != nil {
+				if o.LazyCreate {
+					log.Logger().Infof("attempting to lazily create the deploy namespace %s\n", info(ns))
 
-				err = o.lazyCreateKanikoSecret(requirements, ns)
-				if err != nil {
-					return errors.Wrapf(err, "failed to lazily create the kaniko secret in: %s", ns)
+					err = o.lazyCreateKanikoSecret(requirements, ns)
+					if err != nil {
+						return errors.Wrapf(err, "failed to lazily create the kaniko secret in: %s", ns)
+					}
+					// lets rerun the verify step to ensure its all sorted now
+					err = o.validateKaniko(ns)
 				}
-				// lets rerun the verify step to ensure its all sorted now
-				err = o.validateKaniko(ns)
 			}
-		}
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 
