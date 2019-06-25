@@ -181,6 +181,12 @@ func (c *Command) RunWithoutRetry() (string, error) {
 
 func (c *Command) String() string {
 	var builder strings.Builder
+	for k, v := range c.Env {
+		builder.WriteString(k)
+		builder.WriteString("=")
+		builder.WriteString(v)
+		builder.WriteString(" ")
+	}
 	builder.WriteString(c.Name)
 	for _, arg := range c.Args {
 		builder.WriteString(" ")
