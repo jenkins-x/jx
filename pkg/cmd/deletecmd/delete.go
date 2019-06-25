@@ -56,6 +56,7 @@ func NewCmdDelete(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(newCmdDeleteEks(commonOpts))
 	cmd.AddCommand(NewCmdDeleteEnv(commonOpts))
 	cmd.AddCommand(NewCmdDeleteGit(commonOpts))
+	cmd.AddCommand(NewCmdDeleteGke(commonOpts))
 	cmd.AddCommand(NewCmdDeleteJenkins(commonOpts))
 	cmd.AddCommand(NewCmdDeleteNamespace(commonOpts))
 	cmd.AddCommand(NewCmdDeletePostPreviewJob(commonOpts))
