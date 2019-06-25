@@ -26,13 +26,6 @@ generate: build-codegen install-generate-deps generate-mocks generate-openapi ge
 
 install-generate-deps:
 	$(GO) get github.com/petergtz/pegomock/...@$(PEGOMOCK_VERSION)
-	$(GO) get k8s.io/code-generator/cmd/client-gen@$(CLIENTSET_GENERATOR_VERSION)
-	$(GO) get k8s.io/code-generator/cmd/defaulter-gen@$(CLIENTSET_GENERATOR_VERSION)
-	$(GO) get k8s.io/code-generator/cmd/lister-gen@$(CLIENTSET_GENERATOR_VERSION)
-	$(GO) get k8s.io/code-generator/cmd/informer-gen@$(CLIENTSET_GENERATOR_VERSION)
-	$(GO) get k8s.io/code-generator/cmd/deepcopy-gen@$(CLIENTSET_GENERATOR_VERSION)
-	$(GO) get github.com/kubernetes-incubator/reference-docs/gen-apidocs@$(GEN_APIDOCS_VERSION)
-	$(GO) get k8s.io/kube-openapi/cmd/openapi-gen@$(OPENAPI_GEN_VERSION)
 
 generate-mocks: install-generate-deps go-generate fmt ## Generate the mocks
 

@@ -32,8 +32,8 @@ func InstallCodeGenerators(version string, gopath string) error {
 	}
 	for _, generator := range allGenerators {
 		path := fmt.Sprintf("%s/%s", basePath, generator)
-		util.AppLogger().Infof("installing %s in version %s via 'go get'", path, version)
-		err := util.GoGet(path, version, gopath, true, false)
+		util.AppLogger().Infof("installing %s version %s into %s", path, version, gopath)
+		err := util.GoGet(path, version, gopath, false, false)
 		if err != nil {
 			return err
 		}

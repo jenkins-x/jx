@@ -8,7 +8,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -86,11 +85,11 @@ func GoGet(path string, version string, gopath string, goModules bool, sourceOnl
 		"get",
 		"-u",
 	}
-	if sourceOnly {
+	if sourceOnly || !goModules {
 		args = append(args, "-d")
 	}
 	args = append(args, fullPath)
-	goGetCmd := util.Command{
+	goGetCmd := Command{
 		Name: "go",
 		Args: args,
 		Env: map[string]string{
@@ -102,13 +101,13 @@ func GoGet(path string, version string, gopath string, goModules bool, sourceOnl
 	if err != nil {
 		return errors.Wrapf(err, "error running %s, output %s", goGetCmd.String(), out)
 	}
+	parts := []string{
+		GoPathSrc(gopath),
+	}
+	parts = append(parts, strings.Split(path, "/")...)
+	dir := filepath.Join(parts...)
 	if !goModules && version != "" {
-		parts := []string{
-			GoPathSrc(gopath),
-		}
-		parts = append(parts, strings.Split(path, "/")...)
-		dir := filepath.Join(parts...)
-		AppLogger().Infof("adding %s to %s\n", path, dir)
+
 		branchNameUUID, err := uuid.NewV4()
 		if err != nil {
 			return errors.WithStack(err)
@@ -132,6 +131,24 @@ func GoGet(path string, version string, gopath string, goModules bool, sourceOnl
 		if err != nil {
 			return errors.Wrapf(err, "checking out branch from %s", branchName)
 		}
+
+	}
+	if !sourceOnly && !goModules {
+		cmd := Command{
+			Dir:  dir,
+			Name: "go",
+			Args: []string{
+				"install",
+			},
+			Env: map[string]string{
+				"GO111MODULE": modulesMode,
+				"GOPATH":      gopath,
+			},
+		}
+		out, err = cmd.RunWithoutRetry()
+		if err != nil {
+			return errors.Wrapf(err, "error running %s, output %s", goGetCmd.String(), out)
+		}
 	}
 	return nil
 }
@@ -151,7 +168,7 @@ func createBranchFrom(dir string, branchName string, startPoint string) error {
 }
 
 func gitCmd(dir string, args ...string) error {
-	cmd := util.Command{
+	cmd := Command{
 		Dir:  dir,
 		Name: "git",
 		Args: args,
@@ -162,7 +179,7 @@ func gitCmd(dir string, args ...string) error {
 }
 
 func gitCmdWithOutput(dir string, args ...string) (string, error) {
-	cmd := util.Command{
+	cmd := Command{
 		Dir:  dir,
 		Name: "git",
 		Args: args,
@@ -202,6 +219,10 @@ func GetModuleRequirements(dir string, gopath string) (map[string]map[string]str
 
 	answer := make(map[string]map[string]string)
 	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, "go: ") {
+			// lines that start with go: are things like module download messages
+			continue
+		}
 		parts := strings.Split(line, " ")
 		if len(parts) != 2 {
 			return nil, errors.Errorf("line of go mod graph should be like '<module> <requirement>' but was %s",
@@ -224,7 +245,7 @@ func GetModuleRequirements(dir string, gopath string) (map[string]map[string]str
 }
 
 func getModGraph(dir string, gopath string) (string, error) {
-	cmd := util.Command{
+	cmd := Command{
 		Dir:  dir,
 		Name: "go",
 		Args: []string{

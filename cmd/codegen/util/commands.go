@@ -168,6 +168,8 @@ func (c *Command) RunWithoutRetry() (string, error) {
 	var r string
 	var e error
 
+	AppLogger().Debugf("Running %s %s %s", JoinMap(c.Env, " ", "="), c.Name, strings.Join(c.Args, " "))
+
 	r, e = c.run()
 	c.attempts++
 	if e != nil {
