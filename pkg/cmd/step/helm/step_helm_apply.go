@@ -166,7 +166,9 @@ func (o *StepHelmApplyOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to create a temporary directory to apply the helm chart")
 		}
-		defer os.RemoveAll(rootTmpDir)
+		if os.Getenv("JX_NO_DELETE_TMP_DIR") != "true" {
+			defer os.RemoveAll(rootTmpDir)
+		}
 
 		// lets use the same child dir name as the original as helm is quite particular about the name of the directory it runs from
 		_, name := filepath.Split(dir)
@@ -176,7 +178,11 @@ func (o *StepHelmApplyOptions) Run() error {
 		tmpDir := filepath.Join(rootTmpDir, name)
 		log.Logger().Infof("Copying the helm source directory %s to a temporary location for building and applying %s\n", info(dir), info(tmpDir))
 
-		err = util.CopyDir(dir, tmpDir, false)
+		err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to helm temporary dir %s", tmpDir)
+		}
+		err = util.CopyDir(dir, tmpDir, true)
 		if err != nil {
 			return errors.Wrapf(err, "failed to copy helm dir %s to temporary dir %s", dir, tmpDir)
 		}
@@ -263,6 +269,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		Ns:          ns,
 		NoForce:     !o.Force,
 		ValueFiles:  valueFiles,
+		Dir:         dir,
 	}
 	if o.Wait {
 		helmOptions.Wait = true

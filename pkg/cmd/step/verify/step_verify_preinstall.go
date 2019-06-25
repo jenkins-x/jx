@@ -97,6 +97,23 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	}
 
+	err = o.verifyDevNamespace(kubeClient, ns)
+	if err != nil {
+		if o.LazyCreate {
+			log.Logger().Infof("attempting to lazily create the deploy namespace %s\n", info(ns))
+
+			err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
+			if err != nil {
+				return errors.Wrapf(err, "failed to lazily create the namespace %s", ns)
+			}
+			// lets rerun the verify step to ensure its all sorted now
+			err = o.verifyDevNamespace(kubeClient, ns)
+		}
+	}
+	if err != nil {
+		return err
+	}
+
 	if requirements.Kaniko {
 		log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
 
@@ -118,24 +135,8 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
-	err = o.verifyDevNamespace(kubeClient, ns)
-	if err != nil {
-		if o.LazyCreate {
-			log.Logger().Infof("attempting to lazily create the deploy namespace %s\n", info(ns))
-
-			err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
-			if err != nil {
-				return errors.Wrapf(err, "failed to lazily create the namespace %s", ns)
-			}
-			// lets rerun the verify step to ensure its all sorted now
-			err = o.verifyDevNamespace(kubeClient, ns)
-		}
-	}
-	if err != nil {
-		return err
-	}
-
 	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!\n", info("jx boot"))
+	fmt.Println()
 	return nil
 }
 
