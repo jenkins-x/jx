@@ -2317,6 +2317,12 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			}
 			if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
 				defaultRegion := options.installValues[kube.Region]
+
+				// If no parameters required for creating the vault was provided switch to auto create
+				if cvo.DynamoDBTable == "" && cvo.KMSKeyID == "" && cvo.S3Bucket == "" && cvo.AccessKeyID == "" && cvo.SecretAccessKey == "" {
+					cvo.AutoCreate = true
+				}
+
 				if cvo.DynamoDBRegion == "" {
 					cvo.DynamoDBRegion = defaultRegion
 					log.Logger().Infof("Region not specified for DynamoDB, defaulting to %s", util.ColorInfo(defaultRegion))

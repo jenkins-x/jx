@@ -36,6 +36,10 @@ const (
 	exposedVaultPort = "8200"
 )
 
+const (
+	autoCreateTableName = "vault-data"
+)
+
 var (
 	createVaultLong = templates.LongDesc(`
 		Creates a Vault using the vault-operator
@@ -110,6 +114,7 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func awsCreateVaultOptions(cmd *cobra.Command, options *kubevault.AWSConfig) {
 	// AWS flags
+	cmd.Flags().BoolVarP(&options.AutoCreate, "aws-auto-create", "", false, "Whether to skip creating resource preresiquites automatically")
 	cmd.Flags().StringVarP(&options.DynamoDBRegion, "aws-dynamodb-region", "", "", "The region to use for storing values in AWS DynamoDB")
 	cmd.Flags().StringVarP(&options.DynamoDBTable, "aws-dynamodb-table", "", "vault-data", "The table in AWS DynamoDB to use for storing values")
 	cmd.Flags().StringVarP(&options.KMSRegion, "aws-kms-region", "", "", "The region of the AWS KMS key to encrypt values")
@@ -325,34 +330,69 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 
 func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interface, vaultName string,
 	kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
-	if o.S3Bucket == "" {
-		return fmt.Errorf("Missing S3 bucket flag")
-	}
-	if o.KMSKeyID == "" {
-		return fmt.Errorf("Missing AWS KMS key id flag")
-	}
-	if o.AccessKeyID == "" {
-		return fmt.Errorf("Missing AWS access key id flag")
-	}
-	if o.SecretAccessKey == "" {
-		return fmt.Errorf("Missing AWS secret access key flag")
-	}
-	if o.DynamoDBRegion == "" || o.KMSRegion == "" || o.S3Region == "" {
+
+	if o.AutoCreate == true {
+		o.DynamoDBTable = autoCreateTableName
+
 		defaultRegion, err := amazon.ResolveRegionWithoutOptions()
 		if err != nil {
 			return errors.Wrap(err, "finding default AWS region")
 		}
-		log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
-		if o.DynamoDBRegion == "" {
-			o.DynamoDBRegion = defaultRegion
+
+		o.DynamoDBRegion = defaultRegion
+		o.KMSRegion = defaultRegion
+		o.S3Region = defaultRegion
+
+		domain := "jenkins-x-domain"
+		username := "vault_" + defaultRegion
+
+		accessKey, keySecret, kmsID, s3Name, err := awsvault.CreateVaultResources(awsvault.ResourceCreationOpts{
+			Region:    defaultRegion,
+			Domain:    domain,
+			Username:  username,
+			TableName: o.DynamoDBTable,
+		})
+
+		if err != nil {
+			return errors.Wrap(err, "An error occurred while creating the vault resources")
 		}
-		if o.KMSRegion == "" {
-			o.KMSRegion = defaultRegion
+
+		o.S3Bucket = *s3Name
+		o.KMSKeyID = *kmsID
+		o.AccessKeyID = *accessKey
+		o.SecretAccessKey = *keySecret
+
+	} else {
+		if o.S3Bucket == "" {
+			return fmt.Errorf("Missing S3 bucket flag")
 		}
-		if o.S3Region == "" {
-			o.S3Region = defaultRegion
+		if o.KMSKeyID == "" {
+			return fmt.Errorf("Missing AWS KMS key id flag")
+		}
+		if o.AccessKeyID == "" {
+			return fmt.Errorf("Missing AWS access key id flag")
+		}
+		if o.SecretAccessKey == "" {
+			return fmt.Errorf("Missing AWS secret access key flag")
+		}
+		if o.DynamoDBRegion == "" || o.KMSRegion == "" || o.S3Region == "" {
+			defaultRegion, err := amazon.ResolveRegionWithoutOptions()
+			if err != nil {
+				return errors.Wrap(err, "finding default AWS region")
+			}
+			log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
+			if o.DynamoDBRegion == "" {
+				o.DynamoDBRegion = defaultRegion
+			}
+			if o.KMSRegion == "" {
+				o.KMSRegion = defaultRegion
+			}
+			if o.S3Region == "" {
+				o.S3Region = defaultRegion
+			}
 		}
 	}
+
 	awsServiceAccountSecretName, err := awsvault.StoreAWSCredentialsIntoSecret(kubeClient, o.AccessKeyID, o.SecretAccessKey, vaultName, o.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "storing the service account credentials into a secret")
