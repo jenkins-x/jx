@@ -1,0 +1,5 @@
+provider: gke
+kaniko: true
+secretStorage: local
+project: my-project-id
+clusterName: my-cluster-name
