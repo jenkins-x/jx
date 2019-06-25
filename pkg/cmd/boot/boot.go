@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 )
 
+// BootOptions options for the command
 type BootOptions struct {
 	*opts.CommonOptions
 
@@ -42,6 +43,7 @@ var (
 `)
 )
 
+// NewCmdBoot creates the command
 func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &BootOptions{
 		CommonOptions: commonOpts,
@@ -63,6 +65,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
+// Run runs this command
 func (o *BootOptions) Run() error {
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
