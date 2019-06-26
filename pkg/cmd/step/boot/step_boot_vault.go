@@ -2,6 +2,8 @@ package boot
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
@@ -12,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -82,16 +85,23 @@ func (o *StepBootVaultOptions) Run() error {
 		return nil
 	}
 
+	ic, err := o.loadIngressConfig()
+	if err != nil {
+		return err
+	}
+
 	// verify configuration
+	copyOptions := *o.CommonOptions
+	copyOptions.BatchMode = true
+
 	cvo := &create.CreateVaultOptions{
 		CreateOptions: create.CreateOptions{
-			CommonOptions: o.CommonOptions,
+			CommonOptions: &copyOptions,
 		},
 		Namespace:           ns,
 		RecreateVaultBucket: true,
-		// TODO
-		//IngressConfig:       *ic,
-		// TODO
+		IngressConfig:       ic,
+		// TODO - load from a local yaml file if available?
 		// AWSConfig:           o.AWSConfig,
 	}
 	cvo.SetDevNamespace(ns)
@@ -176,4 +186,34 @@ func (o *StepBootVaultOptions) Run() error {
 			util.ColorInfo(systemVaultName), util.ColorInfo(ns))
 	}
 	return nil
+}
+
+func (o *StepBootVaultOptions) loadIngressConfig() (kube.IngressConfig, error) {
+	ic := kube.IngressConfig{}
+
+	// lets try load the generated ingress `env/cluster/values.yaml` file
+	fileName := filepath.Join(o.Dir, "..", "..", "env", "cluster", "values.yaml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return ic, errors.Wrapf(err, "failed to check for file %s", fileName)
+	}
+	if exists {
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return ic, errors.Wrapf(err, "failed to load file %s", fileName)
+		}
+		err = yaml.Unmarshal(data, &ic)
+		if err != nil {
+			return ic, errors.Wrapf(err, "failed to unmarshal YAML file %s due to %s\n", fileName, err.Error())
+		}
+	} else {
+		log.Logger().Warnf("No ingress cluster configuration file exists at %s\n", fileName)
+	}
+
+	if ic.Exposer == "" {
+		ic.Exposer = "Ingress"
+	}
+	log.Logger().Infof("loaded ingres config: %#v\n", ic)
+	return ic, nil
+
 }
