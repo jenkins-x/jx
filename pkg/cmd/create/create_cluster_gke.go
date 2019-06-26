@@ -29,21 +29,21 @@ import (
 type CreateClusterGKEOptions struct {
 	CreateClusterOptions
 
-	Flags CreateClusterGKEFlags
+	Flags CreateClusterGKEFlags `mapstructure:"cluster"`
 }
 
 type CreateClusterGKEFlags struct {
 	AutoUpgrade     bool
-	ClusterName     string
+	ClusterName     string `mapstructure:"cluster-name"`
 	ClusterIpv4Cidr string
 	ClusterVersion  string
 	DiskSize        string
 	ImageType       string
-	MachineType     string
-	MinNumOfNodes   string
-	MaxNumOfNodes   string
+	MachineType     string `mapstructure:"machine-type"`
+	MinNumOfNodes   string `mapstructure:"min-num-nodes"`
+	MaxNumOfNodes   string `mapstructure:"max-num-nodes"`
 	Network         string
-	ProjectId       string
+	ProjectId       string `mapstructure:"project-id"`
 	SkipLogin       bool
 	SubNetwork      string
 	Region          string
@@ -65,6 +65,8 @@ const (
 	minNodesFlagName        = "min-num-nodes"
 	maxNodesFlagName        = "max-num-nodes"
 	projectIDFlagName       = "project-id"
+	zoneFlagName            = "zone"
+	regionFlagName          = "region"
 )
 
 var (
@@ -118,7 +120,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.addCreateClusterFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
-	_ = viper.BindPFlag("clusterName", cmd.Flags().Lookup(optionClusterName))
+	_ = viper.BindPFlag(optionClusterName, cmd.Flags().Lookup(optionClusterName))
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
 	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "v", "", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
@@ -126,28 +128,29 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
 
 	cmd.Flags().StringVarP(&options.Flags.MachineType, machineTypeFlagName, "m", "", "The type of machine to use for nodes")
-	_ = viper.BindPFlag("machineType", cmd.Flags().Lookup(machineTypeFlagName))
+	_ = viper.BindPFlag(machineTypeFlagName, cmd.Flags().Lookup(machineTypeFlagName))
 
 	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, minNodesFlagName, "", "", "The minimum number of nodes to be created in each of the cluster's zones")
-	_ = viper.BindPFlag("minNumOfNodes", cmd.Flags().Lookup(minNodesFlagName))
+	_ = viper.BindPFlag(minNodesFlagName, cmd.Flags().Lookup(minNodesFlagName))
 
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, maxNodesFlagName, "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	_ = viper.BindPFlag("maxNumOfNodes", cmd.Flags().Lookup(maxNodesFlagName))
+	_ = viper.BindPFlag(maxNodesFlagName, cmd.Flags().Lookup(maxNodesFlagName))
 
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
-	_ = viper.BindPFlag("projectId", cmd.Flags().Lookup(projectIDFlagName))
+	_ = viper.BindPFlag(projectIDFlagName, cmd.Flags().Lookup(projectIDFlagName))
 
 	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
-	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
-	_ = viper.BindPFlag("zone", cmd.Flags().Lookup("zone"))
-	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "Compute region (e.g. us-central1) for the cluster")
-	_ = viper.BindPFlag("region", cmd.Flags().Lookup("region"))
+	cmd.Flags().StringVarP(&options.Flags.Zone, zoneFlagName, "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
+	_ = viper.BindPFlag(zoneFlagName, cmd.Flags().Lookup(zoneFlagName))
+	cmd.Flags().StringVarP(&options.Flags.Region, regionFlagName, "r", "", "Compute region (e.g. us-central1) for the cluster")
+	_ = viper.BindPFlag(regionFlagName, cmd.Flags().Lookup(regionFlagName))
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
+	_ = viper.BindPFlag(preemptibleFlagName, cmd.Flags().Lookup(preemptibleFlagName))
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 
@@ -167,7 +170,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 		return err
 	}
 
-	err = o.GetConfiguration(&o.Flags)
+	err = o.GetConfiguration(&o)
 	if err != nil {
 		return err
 	}
@@ -376,7 +379,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if !o.BatchMode {
-		if !o.IsFlagExplicitlySet(preemptibleFlagName) {
+		if !o.IsConfigExplicitlySet("cluster", preemptibleFlagName) {
 			if advancedMode {
 				prompt := &survey.Confirm{
 					Message: "Would you like to use preemptible VMs?",
@@ -391,6 +394,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				o.Flags.Preemptible = false
 				log.Logger().Infof(util.QuestionAnswer("Defaulting use of preemptible VMs", util.YesNo(o.Flags.Preemptible)))
 			}
+		} else {
+			log.Logger().Infof(util.QuestionAnswer("Configured use of preemptible VMs", util.YesNo(o.Flags.Preemptible)))
 		}
 	}
 

@@ -55,7 +55,7 @@ func Test_FlagExplicitlySet_returns_false_if_flag_is_not_set(t *testing.T) {
 	assert.False(t, explicit, "the flag should not be explicitly set")
 }
 
-func Test_FlagExplicitlySet_returns_false_if_flag_is_unkown(t *testing.T) {
+func Test_FlagExplicitlySet_returns_false_if_flag_is_unknown(t *testing.T) {
 	setupTestCommand()
 
 	explicit := commonOptsUnderTest.IsFlagExplicitlySet("fubar")
@@ -105,11 +105,11 @@ func Test_GetConfiguration(t *testing.T) {
 	configKey := fmt.Sprintf("%s", testFlagName)
 
 	tmpDir, err := ioutil.TempDir("", "")
-	require.Nil(t, err)
+	require.Nil(t, err, "Failed creating tmp dir")
 	configFile := path.Join(tmpDir, configFileName)
 	fileContent := fmt.Sprintf("%s: %t\n", configKey, true)
 	err = ioutil.WriteFile(configFile, []byte(fileContent), 0640)
-	require.Nil(t, err)
+	require.Nil(t, err, "Failed writing config yaml file")
 
 	defer func() {
 		_ = os.RemoveAll(tmpDir)

@@ -1183,7 +1183,7 @@ func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
 	return istioclient.NewForConfig(config)
 }
 
-// IsFlagExplicitlySet checks whether the flag with the specified name is explicitly set by the uer.
+// IsFlagExplicitlySet checks whether the flag with the specified name is explicitly set by the user.
 // If so, true is returned, false otherwise.
 func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
 	explicit := false
@@ -1194,4 +1194,33 @@ func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
 	}
 	o.Cmd.Flags().Visit(explicitlySetFunc)
 	return explicit
+}
+
+// IsConfigExplicitlySet checks whether the flag or config with the specified name is explicitly set by the user.
+// If so, true is returned, false otherwise.
+func (o *CommonOptions) IsConfigExplicitlySet(configPath, configKey string) bool {
+	if o.IsFlagExplicitlySet(configKey) || o.configExists(configPath, configKey) {
+		return true
+	}
+	return false
+}
+
+func (o *CommonOptions) configExists(configPath, configKey string) bool {
+	path := append(strings.Split(configPath, "."), configKey)
+	configMap := viper.GetStringMap(path[0])
+	m := map[string]interface{}{path[0]: configMap}
+	for _, k := range path {
+		m2, ok := m[k]
+		if !ok {
+			return false
+		}
+		m3, ok := m2.(map[string]interface{})
+		if !ok {
+			if k != configKey {
+				return false
+			}
+		}
+		m = m3
+	}
+	return true
 }
