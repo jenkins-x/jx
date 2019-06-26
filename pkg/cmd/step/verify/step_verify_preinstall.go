@@ -88,15 +88,6 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 	o.SetDevNamespace(ns)
 
-	no := &namespace.NamespaceOptions{}
-	no.CommonOptions = o.CommonOptions
-	no.Args = []string{ns}
-	log.Logger().Infof("setting the local kubernetes context to the deploy namespace %s\n", info(ns), info("jx"))
-	err = no.Run()
-	if err != nil {
-		return err
-	}
-
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -123,6 +114,15 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 			err = o.verifyDevNamespace(kubeClient, ns)
 		}
 	}
+	if err != nil {
+		return err
+	}
+
+	no := &namespace.NamespaceOptions{}
+	no.CommonOptions = o.CommonOptions
+	no.Args = []string{ns}
+	log.Logger().Infof("setting the local kubernetes context to the deploy namespace %s\n", info(ns))
+	err = no.Run()
 	if err != nil {
 		return err
 	}
