@@ -1,6 +1,8 @@
 package metapipeline
 
 import (
+	"testing"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -13,7 +15,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	"testing"
 )
 
 func TestMetaPipeline(t *testing.T) {
@@ -34,9 +35,14 @@ var _ = Describe("Meta pipeline", func() {
 		BeforeEach(func() {
 			gitInfo, _ := gits.NewGitFake().Info("/acme")
 			testParams = CRDCreationParameters{
-				PipelineName: "test-pipeline",
-				Trigger:      "manual",
-				GitInfo:      gitInfo,
+				PipelineName:   "test-pipeline",
+				Trigger:        "manual",
+				GitInfo:        gitInfo,
+				Labels:         []string{"someLabel=someValue"},
+				EnvVars:        []string{"SOME_VAR=SOME_VAL"},
+				BuildNumber:    "1",
+				SourceDir:      "source",
+				ServiceAccount: "tekton-bot",
 			}
 		})
 
@@ -64,6 +70,11 @@ var _ = Describe("Meta pipeline", func() {
 				Expect(steps[0].Name).Should(Equal("git-merge"))
 				Expect(steps[1].Name).Should(Equal(createEffectivePipelineStepName))
 				Expect(steps[2].Name).Should(Equal(createTektonCRDsStepName))
+			})
+
+			It("should have correct step create task args", func() {
+				step := actualCRDs.Tasks()[0].Spec.Steps[2]
+				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --build-number 1 --trigger manual --service-account tekton-bot --source source --label someLabel=someValue --env SOME_VAR=SOME_VAL"}))
 			})
 		})
 

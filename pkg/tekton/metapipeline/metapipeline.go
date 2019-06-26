@@ -2,6 +2,9 @@ package metapipeline
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -10,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
-	"path/filepath"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -44,8 +46,8 @@ type CRDCreationParameters struct {
 	PodTemplates   map[string]*corev1.Pod
 	Trigger        string
 	ServiceAccount string
-	Labels         map[string]string
-	EnvVars        []corev1.EnvVar
+	Labels         []string
+	EnvVars        []string
 	DefaultImage   string
 	Apps           []jenkinsv1.App
 }
@@ -61,13 +63,17 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		return nil, err
 	}
 
-	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(params.PipelineName, params.BuildNumber, params.Namespace, params.PodTemplates, nil, params.SourceDir, params.Labels, params.DefaultImage)
+	labels, err := buildLabels(params)
+	if err != nil {
+		return nil, err
+	}
+	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(params.PipelineName, params.BuildNumber, params.Namespace, params.PodTemplates, nil, params.SourceDir, labels, params.DefaultImage)
 	if err != nil {
 		return nil, err
 	}
 
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, params.GitInfo, "")}
-	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, params.Labels, params.Trigger, params.ServiceAccount, nil, nil)
+	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.Trigger, params.ServiceAccount, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
 	if err != nil {
@@ -84,7 +90,7 @@ func GetExtendingApps(jxClient versioned.Interface, namespace string) ([]jenkins
 	listOptions.LabelSelector = fmt.Sprintf(apps.AppTypeLabel+" in (%s)", apps.PipelineExtension)
 	appsList, err := jxClient.JenkinsV1().Apps(namespace).List(listOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "error  retrieving pipeline contributor apps")
+		return nil, errors.Wrap(err, "error retrieving pipeline contributor apps")
 	}
 	return appsList.Items, nil
 }
@@ -164,8 +170,17 @@ func stepEffectivePipeline(params CRDCreationParameters) syntax.Step {
 func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	args := []string{"--clone-dir", filepath.Join(tektonBaseDir, params.SourceDir)}
 	args = append(args, "--build-number", params.BuildNumber)
+	args = append(args, "--trigger", params.Trigger)
+	args = append(args, "--service-account", params.ServiceAccount)
+	args = append(args, "--source", params.SourceDir)
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
+	}
+	if len(params.Labels) > 0 {
+		args = append(args, "--label", strings.Join(params.Labels, ","))
+	}
+	if len(params.EnvVars) > 0 {
+		args = append(args, "--env", strings.Join(params.EnvVars, ","))
 	}
 	step := syntax.Step{
 		Name:      createTektonCRDsStepName,
@@ -274,7 +289,42 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 		}
 	}
 
-	envVars = append(envVars, params.EnvVars...)
+	envVars = append(envVars, buildEnvVars(params)...)
 	log.Logger().Debugf("step environment variables: %s", util.PrettyPrint(envVars))
+	return envVars
+}
+
+// TODO: Merge this with step_create_task's setBuildValues equivalent somewhere.
+func buildLabels(params CRDCreationParameters) (map[string]string, error) {
+	labels := map[string]string{}
+	if params.GitInfo != nil {
+		labels[tekton.LabelOwner] = params.GitInfo.Organisation
+		labels[tekton.LabelRepo] = params.GitInfo.Name
+	}
+	labels[tekton.LabelBranch] = params.Branch
+	if params.Context != "" {
+		labels[tekton.LabelContext] = params.Context
+	}
+	labels[tekton.LabelBuild] = params.BuildNumber
+
+	// add any custom labels
+	customLabels, err := util.ExtractKeyValuePairs(params.Labels, "=")
+	if err != nil {
+		return nil, err
+	}
+	return util.MergeMaps(labels, customLabels), nil
+}
+
+func buildEnvVars(params CRDCreationParameters) []corev1.EnvVar {
+	var envVars []corev1.EnvVar
+
+	vars, _ := util.ExtractKeyValuePairs(params.EnvVars, "=")
+	for key, value := range vars {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+
 	return envVars
 }
