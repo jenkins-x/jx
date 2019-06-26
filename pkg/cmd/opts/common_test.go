@@ -27,7 +27,12 @@ var (
 )
 
 type TestFlags struct {
-	Snafu bool `mapstructure:"snafu"`
+	Snafu      bool       `mapstructure:"snafu"`
+	ChildFlags ChildFlags `mapstructure:"children"`
+}
+
+type ChildFlags struct {
+	Child string `mapstructure:"child"`
 }
 
 func Test_FlagExplicitlySet_returns_true_if_flag_explicitly_set_to_false(t *testing.T) {
@@ -101,28 +106,73 @@ func Test_JXNamespace(t *testing.T) {
 func Test_GetConfiguration(t *testing.T) {
 	setupTestCommand()
 
-	configFileName := "config.yaml"
-	configKey := fmt.Sprintf("%s", testFlagName)
+	fileContent := fmt.Sprintf("%s: %t\n", testFlagName, true)
+	configFile, removeTmp := setupTestConfig(t, fileContent)
+
+	defer removeTmp(configFile)
+
+	commonOptsUnderTest = CommonOptions{}
+	commonOptsUnderTest.ConfigFile = configFile
+
+	testFlags := TestFlags{}
+	err := commonOptsUnderTest.GetConfiguration(&testFlags)
+	assert.NoError(t, err, "Failed to GetConfiguration")
+
+	assert.Equal(t, true, testFlags.Snafu)
+}
+
+func Test_configExists_child(t *testing.T) {
+	setupTestCommand()
+
+	valuesYaml := fmt.Sprintf("children:\n  child: foo")
+	configFile, removeTmp := setupTestConfig(t, valuesYaml)
+
+	defer removeTmp(configFile)
+
+	assert.True(t, commonOptsUnderTest.configExists("children", "child"))
+}
+
+func Test_configExists_no_path(t *testing.T) {
+	setupTestCommand()
+
+	valuesYaml := fmt.Sprintf("snafu: true")
+	configFile, removeTmp := setupTestConfig(t, valuesYaml)
+
+	defer removeTmp(configFile)
+
+	assert.True(t, commonOptsUnderTest.configExists("", "snafu"))
+}
+
+func Test_configNotExists(t *testing.T) {
+	setupTestCommand()
+
+	valuesYaml := fmt.Sprintf("children:\n  child: foo")
+	configFile, removeTmp := setupTestConfig(t, valuesYaml)
+
+	defer removeTmp(configFile)
+
+	assert.False(t, commonOptsUnderTest.configExists("children", "son"))
+}
+
+func setupTestConfig(t *testing.T, config string) (string, func(string)) {
+	setupTestCommand()
 
 	tmpDir, err := ioutil.TempDir("", "")
 	require.Nil(t, err, "Failed creating tmp dir")
-	configFile := path.Join(tmpDir, configFileName)
-	fileContent := fmt.Sprintf("%s: %t\n", configKey, true)
-	err = ioutil.WriteFile(configFile, []byte(fileContent), 0640)
+	configFile := path.Join(tmpDir, "config.yaml")
+	err = ioutil.WriteFile(configFile, []byte(config), 0640)
 	require.Nil(t, err, "Failed writing config yaml file")
 
-	defer func() {
-		_ = os.RemoveAll(tmpDir)
-	}()
-
-	commonOptsUnderTest = CommonOptions{}
 	commonOptsUnderTest.ConfigFile = configFile
 
 	testFlags := TestFlags{}
 	err = commonOptsUnderTest.GetConfiguration(&testFlags)
 	assert.NoError(t, err, "Failed to GetConfiguration")
 
-	assert.Equal(t, true, testFlags.Snafu)
+	removeAllFunc := func(configFile string) {
+		_ = os.RemoveAll(configFile)
+	}
+	return configFile, removeAllFunc
 }
 
 func setupTestCommand() {

@@ -1206,21 +1206,26 @@ func (o *CommonOptions) IsConfigExplicitlySet(configPath, configKey string) bool
 }
 
 func (o *CommonOptions) configExists(configPath, configKey string) bool {
-	path := append(strings.Split(configPath, "."), configKey)
-	configMap := viper.GetStringMap(path[0])
-	m := map[string]interface{}{path[0]: configMap}
-	for _, k := range path {
-		m2, ok := m[k]
-		if !ok {
-			return false
-		}
-		m3, ok := m2.(map[string]interface{})
-		if !ok {
-			if k != configKey {
+	if configPath != "" {
+		path := append(strings.Split(configPath, "."), configKey)
+		configMap := viper.GetStringMap(path[0])
+		m := map[string]interface{}{path[0]: configMap}
+
+		for _, k := range path {
+			m2, ok := m[k]
+			if !ok {
 				return false
 			}
+			m3, ok := m2.(map[string]interface{})
+			if !ok {
+				if k != configKey {
+					return false
+				}
+			}
+			m = m3
 		}
-		m = m3
+		return true
+	} else {
+		return viper.InConfig(configKey)
 	}
-	return true
 }
