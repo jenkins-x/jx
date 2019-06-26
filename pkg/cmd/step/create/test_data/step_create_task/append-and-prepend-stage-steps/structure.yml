@@ -3,6 +3,7 @@ metadata:
   name: abayer-jx-demo-qs-master-1
   labels:
     branch: master
+    build: "1"
     owner: abayer
     repo: jx-demo-qs
 pipelineRef: null

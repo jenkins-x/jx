@@ -4,6 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     branch: master
+    build: "1"
     owner: abayer
     repo: golang-qs-test
   name: abayer-golang-qs-test-master-1

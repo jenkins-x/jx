@@ -676,13 +676,14 @@ func (o *StepCreateTaskOptions) createPipelineTaskParams() []pipelineapi.Param {
 func (o *StepCreateTaskOptions) setBuildValues() error {
 	labels := map[string]string{}
 	if o.GitInfo != nil {
-		labels["owner"] = o.GitInfo.Organisation
-		labels["repo"] = o.GitInfo.Name
+		labels[tekton.LabelOwner] = o.GitInfo.Organisation
+		labels[tekton.LabelRepo] = o.GitInfo.Name
 	}
-	labels["branch"] = o.Branch
+	labels[tekton.LabelBranch] = o.Branch
 	if o.Context != "" {
-		labels["context"] = o.Context
+		labels[tekton.LabelContext] = o.Context
 	}
+	labels[tekton.LabelBuild] = o.BuildNumber
 	return o.combineLabels(labels)
 }
 
