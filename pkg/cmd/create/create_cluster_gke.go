@@ -16,8 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/kube"
 
-	"regexp"
-
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -85,7 +83,6 @@ var (
 		jx create cluster gke
 
 `)
-	disallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
 )
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
@@ -575,18 +572,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 // AddLabel adds the given label key and value to the label string
 func AddLabel(labels string, name string, value string) string {
-	username := sanitizeLabel(value)
+	username := util.SanitizeLabel(value)
 	if username != "" {
 		sep := ""
 		if labels != "" {
 			sep = ","
 		}
-		labels += sep + sanitizeLabel(name) + "=" + username
+		labels += sep + util.SanitizeLabel((name)+"="+username)
 	}
 	return labels
-}
-
-func sanitizeLabel(username string) string {
-	sanitized := strings.ToLower(username)
-	return disallowedLabelCharacters.ReplaceAllString(sanitized, "-")
 }

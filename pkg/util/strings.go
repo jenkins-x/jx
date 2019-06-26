@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+//DisallowedLabelCharacters regex of chars not allowed in lables
+var DisallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
+
 // RegexpSplit splits a string into an array using the regexSep as a separator
 func RegexpSplit(text string, regexSeperator string) []string {
 	reg := regexp.MustCompile(regexSeperator)
@@ -223,4 +226,10 @@ func YesNo(t bool) string {
 // QuestionAnswer returns strings like Cobra question/answers for default cli options
 func QuestionAnswer(question string, answer string) string {
 	return fmt.Sprintf("%s %s: %s", ColorBold(ColorInfo("?")), ColorBold(question), ColorAnswer(answer))
+}
+
+//SanitizeLabel returns a label with disallowed characters removed
+func SanitizeLabel(label string) string {
+	sanitized := strings.ToLower(label)
+	return DisallowedLabelCharacters.ReplaceAllString(sanitized, "-")
 }

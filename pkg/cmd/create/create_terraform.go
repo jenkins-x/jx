@@ -136,7 +136,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		username = "unknown"
 	} else {
-		username = sanitizeLabel(user.Username)
+		username = util.SanitizeLabel(user.Username)
 	}
 
 	tf := terraformFileWriter{}
