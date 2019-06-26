@@ -52,9 +52,9 @@ var (
 
 		This commands effectively runs:
 
-		git commit -a -m "release $(VERSION)" --allow-empty
-		git tag -fa v$(VERSION) -m "Release version $(VERSION)"
-		git push origin v$(VERSION)
+		    $ git commit -a -m "release $(VERSION)" --allow-empty
+		    $ git tag -fa v$(VERSION) -m "Release version $(VERSION)"
+		    $ git push origin v$(VERSION)
 
 `)
 

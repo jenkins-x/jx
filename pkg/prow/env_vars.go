@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// PullRefs is the result of parsing the prow PULL_REFS
+// PullRefs is the result of parsing the Prow PULL_REFS
 type PullRefs struct {
 	BaseBranch string
 	BaseSha    string
@@ -31,4 +31,12 @@ func ParsePullRefs(pullRefs string) (*PullRefs, error) {
 		}
 	}
 	return &answer, nil
+}
+
+func (pr *PullRefs) String() string {
+	s := fmt.Sprintf("%s:%s", pr.BaseBranch, pr.BaseSha)
+	for key, value := range pr.ToMerge {
+		s = fmt.Sprintf("%s,%s:%s", s, key, value)
+	}
+	return s
 }

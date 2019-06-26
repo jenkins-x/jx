@@ -165,10 +165,6 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		o.returnError(err, "failed to unmarshal the JSON request body: "+err.Error(), w, r)
 		return
 	}
-	if err != nil {
-		o.returnError(err, "could not parse body: "+err.Error(), w, r)
-		return
-	}
 	log.Logger().Debugf("got payload %#v", arguments)
 	pj := arguments.ProwJobSpec
 

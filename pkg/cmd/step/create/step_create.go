@@ -29,6 +29,7 @@ func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepCreateJenkinsConfig(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateTask(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateInstallValues(commonOpts))
+	cmd.AddCommand(NewCmdCreateMetaPipeline(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateValues(commonOpts))
 	cmd.AddCommand(pr.NewCmdStepCreatePr(commonOpts))
 	return cmd

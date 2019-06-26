@@ -24,3 +24,12 @@ func TestParsePullRefs(t *testing.T) {
 
 	assert.Equal(t, expected, shas)
 }
+
+func Test_pull_ref_to_string(t *testing.T) {
+	originalRefs := "master:ef08a,2739:5b351,2822:bac2a"
+
+	pr, err := prow.ParsePullRefs(originalRefs)
+	assert.NoError(t, err)
+
+	assert.Equal(t, originalRefs, pr.String())
+}

@@ -14,9 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProjectConfigMarshal(t *testing.T) {
-	t.Parallel()
-	projectConfig := &config.ProjectConfig{
+var (
+	testProjectConfigMaven = &config.ProjectConfig{
 		BuildPack: "maven",
 		Env: []corev1.EnvVar{
 			{
@@ -53,6 +52,7 @@ func TestProjectConfigMarshal(t *testing.T) {
 							},
 						},
 					},
+					Pipeline: &syntax.ParsedPipeline{},
 				},
 			},
 			Env: []corev1.EnvVar{
@@ -63,8 +63,12 @@ func TestProjectConfigMarshal(t *testing.T) {
 			},
 		},
 	}
+)
 
-	data, err := yaml.Marshal(projectConfig)
+func TestProjectConfigMarshal(t *testing.T) {
+	t.Parallel()
+
+	data, err := yaml.Marshal(testProjectConfigMaven)
 	assert.NoError(t, err)
 
 	if tests.IsDebugLog() {
@@ -77,8 +81,22 @@ func TestProjectConfigMarshal(t *testing.T) {
 	err = yaml.Unmarshal(data, copy)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, len(projectConfig.Env), "len(projectConfig.Env)")
-	assert.NotNil(t, projectConfig.PipelineConfig, "projectConfig.PipelineConfig")
-	assert.NotNil(t, projectConfig.PipelineConfig.Pipelines.Release, "projectConfig.PipelineConfig.Pipelines.Release")
-	assert.Equal(t, 1, len(projectConfig.PipelineConfig.Env), "len(projectConfig.PipelineConfig.Env)")
+	assert.Equal(t, 2, len(testProjectConfigMaven.Env), "len(testProjectConfigMaven.Env)")
+	assert.NotNil(t, testProjectConfigMaven.PipelineConfig, "testProjectConfigMaven.PipelineConfig")
+	assert.NotNil(t, testProjectConfigMaven.PipelineConfig.Pipelines.Release, "testProjectConfigMaven.PipelineConfig.Pipelines.Release")
+	assert.Equal(t, 1, len(testProjectConfigMaven.PipelineConfig.Env), "len(testProjectConfigMaven.PipelineConfig.Env)")
+}
+
+func TestGetPipeline(t *testing.T) {
+	releasePipeline, err := testProjectConfigMaven.GetPipeline(jenkinsfile.PipelineKindRelease)
+	assert.NoError(t, err)
+	assert.NotNil(t, releasePipeline)
+
+	pullRequestPipeline, err := testProjectConfigMaven.GetPipeline(jenkinsfile.PipelineKindPullRequest)
+	assert.NoError(t, err)
+	assert.Nil(t, pullRequestPipeline)
+
+	featurePipeline, err := testProjectConfigMaven.GetPipeline(jenkinsfile.PipelineKindFeature)
+	assert.NoError(t, err)
+	assert.Nil(t, featurePipeline)
 }
