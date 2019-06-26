@@ -596,13 +596,8 @@ github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+v
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
 github.com/petergtz/pegomock v2.2.0+incompatible h1:UjfRYEyjM8X8lNPuZs8FKakZI1pD7FqMRYc6KfLFNJU=
 github.com/petergtz/pegomock v2.2.0+incompatible/go.mod h1:nuBLWZpVyv/fLo56qTwt/AUau7jgouO1h7bEvZCq82o=
-<<<<<<< HEAD
-||||||| merged common ancestors
-github.com/petergtz/pegomock v2.3.0+incompatible h1:kcZy3H5eNyitPhWxrUQOuEoEcKqH/D5SiytA7x9snVI=
-=======
 github.com/petergtz/pegomock v2.3.0+incompatible h1:kcZy3H5eNyitPhWxrUQOuEoEcKqH/D5SiytA7x9snVI=
 github.com/petergtz/pegomock v2.5.0+incompatible h1:NgwX1/qc+tsl7I45OkDxYZ1mIonYWbOESnpZcd20sR0=
->>>>>>> refactor: cleanup and refactor the git providers and gitter to use only the auth.Server configuration
 github.com/pierrec/lz4 v0.0.0-20181005164709-635575b42742/go.mod h1:3/3N9NVKO0jef7pBehbT1qWhCMrIgbYNnFAZCqQ5LRc=
 github.com/pierrec/lz4 v2.0.5+incompatible h1:2xWsjqPFWcplujydGg4WmhC/6fZqK42wMM8aXeqhl0I=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=

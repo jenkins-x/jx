@@ -237,9 +237,9 @@ func (p *GitHubProvider) ListReleases(org string, name string) ([]*GitRelease, e
 func (p *GitHubProvider) GetRelease(org string, name string, tag string) (*GitRelease, error) {
 	owner := org
 	if owner == "" {
-		owner = p.Username
+		owner = p.server.CurrentUser
 	}
-	repo, _, err := p.Client.Repositories.GetReleaseByTag(p.Context, owner, name, tag)
+	repo, _, err := p.client.Repositories.GetReleaseByTag(p.context, owner, name, tag)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +569,7 @@ func (p *GitHubProvider) UpdatePullRequest(data *GitPullRequestArguments, number
 	if base != "" {
 		config.Base.Ref = github.String(base)
 	}
-	pr, resp, err := p.Client.PullRequests.Edit(p.Context, owner, repo, number, config)
+	pr, resp, err := p.client.PullRequests.Edit(p.context, owner, repo, number, config)
 	if err != nil {
 		if resp != nil && resp.Body != nil {
 			data, err2 := ioutil.ReadAll(resp.Body)
