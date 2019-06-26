@@ -1,4 +1,4 @@
-package kube
+package jenkins
 
 import (
 	"strings"
@@ -22,7 +22,7 @@ const (
 )
 
 // UpdateJenkinsGitServers update the Jenkins ConfigMap with any missing Git server configurations for the given server and token
-func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.ServerAuth, userAuth *auth.UserAuth, credentials string) (bool, error) {
+func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server auth.Server, credentials string) (bool, error) {
 	if gits.IsGitHubServerURL(server.URL) {
 		return false, nil
 	}
@@ -33,19 +33,19 @@ func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.ServerAuth, user
 	case gits.KindBitBucketCloud:
 		key = BitbucketConfigMapKey
 		v1 = cm.Data[key]
-		v2, err = createBitbucketCloudConfig(v1, server, userAuth, credentials)
+		v2, err = createBitbucketCloudConfig(v1, server, credentials)
 	case gits.KindBitBucketServer:
 		key = BitbucketConfigMapKey
 		v1 = cm.Data[key]
-		v2, err = createBitbucketServerConfig(v1, server, userAuth, credentials)
+		v2, err = createBitbucketServerConfig(v1, server, credentials)
 	case gits.KindGitHub:
 		key = GithubConfigMapKey
 		v1 = cm.Data[key]
-		v2, err = createGitHubConfig(v1, server, userAuth, credentials)
+		v2, err = createGitHubConfig(v1, server, credentials)
 	case gits.KindGitea:
 		key = GiteaConfigMapKey
 		v1 = cm.Data[key]
-		v2, err = createGiteaConfig(v1, server, userAuth, credentials)
+		v2, err = createGiteaConfig(v1, server, credentials)
 	}
 	if err != nil {
 		return false, err
@@ -71,7 +71,7 @@ func ParseXml(xml string) (*etree.Document, string, error) {
 	return doc, prefix, err
 }
 
-func createGitHubConfig(xml string, server *auth.ServerAuth, userAuth *auth.UserAuth, credentials string) (string, error) {
+func createGitHubConfig(xml string, server auth.Server, credentials string) (string, error) {
 	u := gits.GitHubEnterpriseApiEndpointURL(server.URL)
 	if strings.TrimSpace(xml) == "" {
 		xml = `<?xml version='1.1' encoding='UTF-8'?>
@@ -114,7 +114,7 @@ func createGitHubConfig(xml string, server *auth.ServerAuth, userAuth *auth.User
 
 }
 
-func createGiteaConfig(xml string, server *auth.ServerAuth, userAuth *auth.UserAuth, credentials string) (string, error) {
+func createGiteaConfig(xml string, server auth.Server, credentials string) (string, error) {
 	u := server.URL
 	if strings.TrimSpace(xml) == "" {
 		xml = `<?xml version='1.1' encoding='UTF-8'?>
@@ -161,7 +161,7 @@ func createGiteaConfig(xml string, server *auth.ServerAuth, userAuth *auth.UserA
 	return xml, nil
 }
 
-func createBitbucketCloudConfig(xml string, server *auth.ServerAuth, userAuth *auth.UserAuth, credentials string) (string, error) {
+func createBitbucketCloudConfig(xml string, server auth.Server, credentials string) (string, error) {
 	elementName := bitbucketCloudElementName
 	if strings.TrimSpace(xml) == "" {
 		xml = defaultBitbucketXml
@@ -206,7 +206,7 @@ func createBitbucketCloudConfig(xml string, server *auth.ServerAuth, userAuth *a
 	return xml, nil
 }
 
-func createBitbucketServerConfig(xml string, server *auth.ServerAuth, userAuth *auth.UserAuth, credentials string) (string, error) {
+func createBitbucketServerConfig(xml string, server auth.Server, credentials string) (string, error) {
 	elementName := bitbucketServerElementName
 	u := server.URL
 	if strings.TrimSpace(xml) == "" {

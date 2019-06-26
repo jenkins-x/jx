@@ -32,19 +32,22 @@ type Index struct {
 
 // ElasticsearchProvider implements PipelineEventsProvider interface for elasticsearch
 type ElasticsearchProvider struct {
-	Client    *http.Client
-	BasicAuth string
-	BaseURL   string
+	client    *http.Client
+	basicAuth string
+	baseURL   string
 }
 
-func NewElasticsearchProvider(server *auth.ServerAuth, user *auth.UserAuth) (PipelineEventsProvider, error) {
-
+func NewElasticsearchProvider(server auth.Server) (PipelineEventsProvider, error) {
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return nil, err
+	}
 	basicAuth := util.BasicAuth(user.Username, user.Password)
 
 	provider := ElasticsearchProvider{
-		BaseURL:   server.URL,
-		BasicAuth: basicAuth,
-		Client:    http.DefaultClient,
+		baseURL:   server.URL,
+		basicAuth: basicAuth,
+		client:    http.DefaultClient,
 	}
 
 	return &provider, nil
@@ -90,7 +93,9 @@ func (e ElasticsearchProvider) SendRelease(r *v1.Release) error {
 				r.Namespace: r.CreationTimestamp.String(),
 			},
 		}
-		e.SendIssue(&esissue)
+		if err := e.SendIssue(&esissue); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -118,13 +123,16 @@ func (e ElasticsearchProvider) SendIssue(i *ESIssue) error {
 }
 func (e ElasticsearchProvider) post(index, indexID string, body []byte, rs result) error {
 
-	url := fmt.Sprintf("%s/%s/event/%s", e.BaseURL, index, indexID)
+	url := fmt.Sprintf("%s/%s/event/%s", e.baseURL, index, indexID)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
-	req.Header.Add("Authorization", "Basic "+e.BasicAuth)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", "Basic "+e.basicAuth)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := e.Client.Do(req)
+	resp, err := e.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error POSTing to elasticsearch %v", err)
 	}
@@ -134,6 +142,9 @@ func (e ElasticsearchProvider) post(index, indexID string, body []byte, rs resul
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	err = json.Unmarshal(data, &rs)
 	if err != nil {
 		return fmt.Errorf("error unmarshalling %v", err)

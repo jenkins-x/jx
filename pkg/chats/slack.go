@@ -11,25 +11,27 @@ import (
 )
 
 type SlackChatProvider struct {
-	SlackClient *slack.Client
-	Server      *auth.ServerAuth
-	UserAuth    *auth.UserAuth
+	slackClient *slack.Client
+	server      auth.Server
 }
 
-func CreateSlackChatProvider(server *auth.ServerAuth, userAuth *auth.UserAuth, batchMode bool) (ChatProvider, error) {
+func CreateSlackChatProvider(server auth.Server, batchMode bool) (ChatProvider, error) {
 	u := server.URL
 	if u == "" {
 		return nil, fmt.Errorf("No base URL for server!")
 	}
-	if userAuth == nil || userAuth.IsInvalid() || userAuth.ApiToken == "" {
-		return nil, fmt.Errorf("No authentication found for Slack server %s", u)
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return nil, err
 	}
-	slackClient := slack.New(userAuth.ApiToken)
+	if user.IsInvalid() {
+		return nil, fmt.Errorf("no authentication found for Slack server %s", u)
+	}
+	slackClient := slack.New(user.ApiToken)
 
 	return &SlackChatProvider{
-		SlackClient: slackClient,
-		Server:      server,
-		UserAuth:    userAuth,
+		slackClient: slackClient,
+		server:      server,
 	}, nil
 }
 
@@ -40,7 +42,7 @@ func (c *SlackChatProvider) GetChannelMetrics(name string) (*ChannelMetrics, err
 	name = strings.TrimPrefix(name, "#")
 	id := name
 
-	channels, err := c.SlackClient.GetChannels(true)
+	channels, err := c.slackClient.GetChannels(true)
 	if err != nil {
 		return metrics, err
 	}
@@ -51,7 +53,7 @@ func (c *SlackChatProvider) GetChannelMetrics(name string) (*ChannelMetrics, err
 			break
 		}
 	}
-	info, err := c.SlackClient.GetChannelInfo(id)
+	info, err := c.slackClient.GetChannelInfo(id)
 	if err != nil {
 		return metrics, err
 	}
@@ -59,6 +61,6 @@ func (c *SlackChatProvider) GetChannelMetrics(name string) (*ChannelMetrics, err
 	metrics.ID = info.ID
 	metrics.Name = info.Name
 	metrics.Members = info.Members
-	metrics.URL = util.UrlJoin(c.Server.URL, "messages", info.ID)
+	metrics.URL = util.UrlJoin(c.server.URL, "messages", info.ID)
 	return metrics, nil
 }

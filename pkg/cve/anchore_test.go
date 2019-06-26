@@ -54,18 +54,20 @@ func (suite *AnchoreProviderTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(suite.mux)
 	suite.Require().NotNil(suite.server)
 
-	as := auth.ServerAuth{
+	as := auth.Server{
 		URL:         suite.server.URL,
 		Name:        "Test Anchore Server",
 		Kind:        "anchore-anchore-engine-core",
 		CurrentUser: "admin",
-	}
-	ua := auth.UserAuth{
-		Username: "admin",
-		ApiToken: "admin",
+		Users: []auth.User{
+			{
+				Username: "admin",
+				ApiToken: "admin",
+			},
+		},
 	}
 
-	a, err := cve.NewAnchoreProvider(&as, &ua)
+	a, err := cve.NewAnchoreProvider(as)
 	suite.Require().NotNil(a)
 	suite.Require().Nil(err)
 

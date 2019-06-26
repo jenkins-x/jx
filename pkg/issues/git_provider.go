@@ -74,5 +74,6 @@ func (i *GitIssueProvider) CreateIssueComment(key string, comment string) error 
 }
 
 func (i *GitIssueProvider) HomeURL() string {
-	return util.UrlJoin(i.GitProvider.ServerURL(), i.Owner, i.Repository)
+	server := i.GitProvider.Server()
+	return util.UrlJoin(server.URL, i.Owner, i.Repository)
 }

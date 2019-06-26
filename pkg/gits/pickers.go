@@ -10,7 +10,40 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-func PickGitRepoName(batchMode, allowExistingRepo bool, provider GitProvider, defaultRepoName, owner string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func PickRepository(batchMode bool, defaultOrgName string, defaultRepoName string, private bool,
+	provider GitProvider, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, string, bool, error) {
+	if defaultOrgName == "" {
+		server := provider.Server()
+		defaultOrgName = server.CurrentUser
+	}
+	if defaultRepoName == "" {
+		defaultRepoName = "dummy"
+	}
+	surveyOpts := survey.WithStdio(in, out, errOut)
+	if batchMode {
+		return defaultOrgName, defaultRepoName, private, nil
+	}
+	org, err := PickOrganisation(provider, defaultOrgName, in, out, errOut)
+	if err != nil {
+		return defaultOrgName, defaultRepoName, private, err
+	}
+	repoName, err := PickGitRepoName(batchMode, false, provider, defaultRepoName, org, in, out, errOut)
+	if err != nil {
+		return defaultOrgName, defaultRepoName, private, err
+	}
+	confirm := &survey.Confirm{
+		Message: "Is this repository private",
+		Default: false,
+	}
+	err = survey.AskOne(confirm, &private, nil, surveyOpts)
+	if err != nil {
+		return defaultOrgName, defaultRepoName, private, err
+	}
+	return org, repoName, private, nil
+}
+
+func PickGitRepoName(batchMode, allowExistingRepo bool, provider GitProvider, defaultRepoName, owner string,
+	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
 	surveyOpts := survey.WithStdio(in, out, errOut)
 	repoName := ""
 	if batchMode {
@@ -47,7 +80,8 @@ func PickGitRepoName(batchMode, allowExistingRepo bool, provider GitProvider, de
 	return repoName, nil
 }
 
-func PickGitRepoOwner(batchMode bool, provider GitProvider, gitUsername string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func PickGitRepoOwner(batchMode bool, provider GitProvider, gitUsername string,
+	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
 	owner := ""
 	if batchMode {
 		owner = gitUsername
@@ -64,7 +98,8 @@ func PickGitRepoOwner(batchMode bool, provider GitProvider, gitUsername string, 
 	return owner, nil
 }
 
-func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) ([]*GitRepository, error) {
+func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string,
+	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) ([]*GitRepository, error) {
 	answer := []*GitRepository{}
 	repos, err := provider.ListRepositories(owner)
 	if err != nil {
@@ -105,7 +140,8 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 	return answer, err
 }
 
-func PickOrganisation(orgLister OrganisationLister, userName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func PickOrganisation(orgLister OrganisationLister, userName string,
+	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
 	prompt := &survey.Select{
 		Message: "Which organisation do you want to use?",
 		Options: GetOrganizations(orgLister, userName),

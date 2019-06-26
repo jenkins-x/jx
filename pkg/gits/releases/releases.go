@@ -2,11 +2,16 @@ package releases
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/pkg/errors"
+)
+
+var (
+	dependencyUpdateRegex = regexp.MustCompile(`^(?m:chore\(dependencies\): update (.*) from ([\w\.]*) to ([\w\.]*)$)`)
+	slugLinkRegex         = regexp.MustCompile(`^(?:([\w-]*?)?\/?([\w-]+)|(https?):\/\/([\w\.]*)\/([\w-]*)\/([\w-]*))$`)
 )
 
 // ReleaseDownloadCount returns the total number of downloads for the given set of releases

@@ -58,8 +58,11 @@ type AnchoreProvider struct {
 	BaseURL   string
 }
 
-func NewAnchoreProvider(server *auth.ServerAuth, user *auth.UserAuth) (CVEProvider, error) {
-
+func NewAnchoreProvider(server auth.Server) (CVEProvider, error) {
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return nil, err
+	}
 	basicAuth := util.BasicAuth(user.Username, user.Password)
 
 	provider := AnchoreProvider{

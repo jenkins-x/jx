@@ -3,8 +3,6 @@ package issues
 import (
 	"bytes"
 	"fmt"
-	"net/http"
-	"strings"
 	"time"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -15,50 +13,41 @@ import (
 )
 
 type JiraService struct {
-	JiraClient *jira.Client
-	Server     *auth.ServerAuth
-	UserAuth   *auth.UserAuth
-	Project    string
-	Git        gits.Gitter
+	jiraClient *jira.Client
+	server     auth.Server
+	project    string
+	git        gits.Gitter
 }
 
-func CreateJiraIssueProvider(server *auth.ServerAuth, userAuth *auth.UserAuth, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
+func CreateJiraIssueProvider(server auth.Server, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
 	u := server.URL
 	if u == "" {
 		return nil, fmt.Errorf("No base URL for server!")
 	}
-	var httpClient *http.Client
-	if userAuth != nil && !userAuth.IsInvalid() {
-		username := userAuth.Username
-		tp := jira.BasicAuthTransport{
-			Username: username,
-			Password: userAuth.ApiToken,
-		}
-		httpClient = tp.Client()
-		if batchMode {
-			log.Logger().Infof("Using JIRA server %s user name %s and API token %s", u, username, strings.Repeat("*", len(userAuth.ApiToken)))
-		}
-	} else {
-		if batchMode {
-			if userAuth != nil && userAuth.Username != "" {
-				log.Logger().Warnf("No API token found for JIRA server %s user %s so using anonymous access", u, userAuth.Username)
-			} else {
-				log.Logger().Warnf("No authentication found for JIRA server %s so using anonymous access", u)
-			}
-		}
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return nil, err
 	}
+	if user.IsInvalid() {
+		log.Logger().Warnf("No valid authentication found for JIRA server %s so using anonymous access", u)
+	}
+
+	tp := jira.BasicAuthTransport{
+		Username: user.Username,
+		Password: user.ApiToken,
+	}
+	httpClient := tp.Client()
 	jiraClient, _ := jira.NewClient(httpClient, u)
 	return &JiraService{
-		JiraClient: jiraClient,
-		Server:     server,
-		UserAuth:   userAuth,
-		Project:    project,
-		Git:        git,
+		jiraClient: jiraClient,
+		server:     server,
+		project:    project,
+		git:        git,
 	}, nil
 }
 
 func (i *JiraService) GetIssue(key string) (*gits.GitIssue, error) {
-	issue, _, err := i.JiraClient.Issue.Get(key, nil)
+	issue, _, err := i.jiraClient.Issue.Get(key, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +55,12 @@ func (i *JiraService) GetIssue(key string) (*gits.GitIssue, error) {
 }
 
 func (i *JiraService) SearchIssues(query string) ([]*gits.GitIssue, error) {
-	jql := "project = " + i.Project + " AND status NOT IN (Closed, Resolved)"
+	jql := "project = " + i.project + " AND status NOT IN (Closed, Resolved)"
 	if query != "" {
 		jql += " AND text ~ " + query
 	}
 	answer := []*gits.GitIssue{}
-	issues, _, err := i.JiraClient.Issue.Search(jql, nil)
+	issues, _, err := i.jiraClient.Issue.Search(jql, nil)
 	if err != nil {
 		return answer, err
 	}
@@ -87,9 +76,9 @@ func (i *JiraService) SearchIssuesClosedSince(t time.Time) ([]*gits.GitIssue, er
 }
 
 func (i *JiraService) CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error) {
-	project, _, err := i.JiraClient.Project.Get(i.Project)
+	project, _, err := i.jiraClient.Project.Get(i.project)
 	if err != nil {
-		return nil, fmt.Errorf("Could not find project %s: %s", i.Project, err)
+		return nil, fmt.Errorf("Could not find project %s: %s", i.project, err)
 	}
 	ji := i.gitToJiraIssue(issue)
 	issueTypes := project.IssueTypes
@@ -97,10 +86,12 @@ func (i *JiraService) CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error) 
 		it := issueTypes[0]
 		ji.Fields.Type.Name = it.Name
 	}
-	jira, resp, err := i.JiraClient.Issue.Create(ji)
+	jira, resp, err := i.jiraClient.Issue.Create(ji)
 	if err != nil {
 		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
+		if _, err := buf.ReadFrom(resp.Body); err != nil {
+			return nil, err
+		}
 		msg := buf.String()
 		return nil, fmt.Errorf("Failed to create issue: %s due to: %s", msg, err)
 	}
@@ -112,7 +103,7 @@ func (i *JiraService) CreateIssueComment(key string, comment string) error {
 }
 
 func (i *JiraService) IssueURL(key string) string {
-	return util.UrlJoin(i.Server.URL, "browse", key)
+	return util.UrlJoin(i.server.URL, "browse", key)
 }
 
 func (i *JiraService) jiraToGitIssue(issue *jira.Issue) *gits.GitIssue {
@@ -173,7 +164,7 @@ func (i *JiraService) gitToJiraIssue(issue *gits.GitIssue) *jira.Issue {
 	answer := &jira.Issue{
 		Fields: &jira.IssueFields{
 			Project: jira.Project{
-				Key: i.Project,
+				Key: i.project,
 			},
 			Summary:     issue.Title,
 			Description: issue.Body,
@@ -186,9 +177,9 @@ func (i *JiraService) gitToJiraIssue(issue *gits.GitIssue) *jira.Issue {
 }
 
 func (i *JiraService) ServerName() string {
-	return i.Server.URL
+	return i.server.URL
 }
 
 func (i *JiraService) HomeURL() string {
-	return util.UrlJoin(i.Server.URL, "browse", i.Project)
+	return util.UrlJoin(i.server.URL, "browse", i.project)
 }
