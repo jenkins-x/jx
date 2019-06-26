@@ -274,20 +274,13 @@ darwin: ## Build for OSX
 	chmod +x build/darwin/$(NAME)
 
 .PHONY: release
-release: clean build test-slow-integration linux darwin win arm ## Release the binary
-	mkdir release
-	zip --junk-paths release/$(NAME)-windows-amd64.zip build/win/$(NAME)-windows-amd64.exe README.md LICENSE
-
-	cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
-	cd ./build/linux; tar -zcvf ../../release/jx-linux-amd64.tar.gz jx
-	@if [[ -z "${DISTRO}" ]]; then \
-		cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx; \
-	fi
-
-	GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) goreleaser release --config=.goreleaser.yml --rm-dist
+release: clean build test-slow-integration # Release the binary
+	git fetch --tags
+	git checkout tags/v$(VERSION)
+	GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser release --config=.goreleaser.yml --rm-dist
 	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
-		./build/linux/jx step changelog  --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA); \
+		./dist/jx-linux-amd64/jx step changelog  --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA); \
 	fi
 
 .PHONY: release-distro
