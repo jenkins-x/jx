@@ -17,23 +17,23 @@ import (
 )
 
 type GiteaProvider struct {
-	Username string
-	Client   *gitea.Client
+	client *gitea.Client
 
-	Server auth.ServerAuth
-	User   auth.UserAuth
-	Git    Gitter
+	server auth.Server
+	git    Gitter
 }
 
-func NewGiteaProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func NewGiteaProvider(server auth.Server, git Gitter) (GitProvider, error) {
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return nil, err
+	}
 	client := gitea.NewClient(server.URL, user.ApiToken)
 
 	provider := GiteaProvider{
-		Client:   client,
-		Server:   *server,
-		User:     *user,
-		Username: user.Username,
-		Git:      git,
+		client: client,
+		server: server,
+		git:    git,
 	}
 
 	return &provider, nil
@@ -41,7 +41,7 @@ func NewGiteaProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) 
 
 func (p *GiteaProvider) ListOrganisations() ([]GitOrganisation, error) {
 	answer := []GitOrganisation{}
-	orgs, err := p.Client.ListMyOrgs()
+	orgs, err := p.client.ListMyOrgs()
 	if err != nil {
 		return answer, err
 	}
@@ -61,7 +61,7 @@ func (p *GiteaProvider) ListOrganisations() ([]GitOrganisation, error) {
 func (p *GiteaProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	answer := []*GitRepository{}
 	if org == "" {
-		repos, err := p.Client.ListMyRepos()
+		repos, err := p.client.ListMyRepos()
 		if err != nil {
 			return answer, err
 		}
@@ -70,7 +70,7 @@ func (p *GiteaProvider) ListRepositories(org string) ([]*GitRepository, error) {
 		}
 		return answer, nil
 	}
-	repos, err := p.Client.ListOrgRepos(org)
+	repos, err := p.client.ListOrgRepos(org)
 	if err != nil {
 		return answer, err
 	}
@@ -83,10 +83,10 @@ func (p *GiteaProvider) ListRepositories(org string) ([]*GitRepository, error) {
 func (p *GiteaProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	owner := org
 	if owner == "" {
-		owner = p.Username
+		owner = p.server.CurrentUser
 	}
 	answer := []*GitRelease{}
-	repos, err := p.Client.ListReleases(owner, name)
+	repos, err := p.client.ListReleases(owner, name)
 	if err != nil {
 		return answer, err
 	}
@@ -136,7 +136,7 @@ func (p *GiteaProvider) CreateRepository(org string, name string, private bool) 
 		Name:    name,
 		Private: private,
 	}
-	repo, err := p.Client.CreateRepo(options)
+	repo, err := p.client.CreateRepo(options)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", org, name, err)
 	}
@@ -144,7 +144,7 @@ func (p *GiteaProvider) CreateRepository(org string, name string, private bool) 
 }
 
 func (p *GiteaProvider) GetRepository(org string, name string) (*GitRepository, error) {
-	repo, err := p.Client.GetRepo(org, name)
+	repo, err := p.client.GetRepo(org, name)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get repository %s/%s due to: %s", org, name, err)
 	}
@@ -154,9 +154,9 @@ func (p *GiteaProvider) GetRepository(org string, name string) (*GitRepository, 
 func (p *GiteaProvider) DeleteRepository(org string, name string) error {
 	owner := org
 	if owner == "" {
-		owner = p.Username
+		owner = p.server.CurrentUser
 	}
-	err := p.Client.DeleteRepo(owner, name)
+	err := p.client.DeleteRepo(owner, name)
 	if err != nil {
 		return fmt.Errorf("Failed to delete repository %s/%s due to: %s", owner, name, err)
 	}
@@ -178,7 +178,7 @@ func (p *GiteaProvider) ForkRepository(originalOrg string, name string, destinat
 	repoConfig := gitea.CreateForkOption{
 		Organization: &destinationOrg,
 	}
-	repo, err := p.Client.CreateFork(originalOrg, name, repoConfig)
+	repo, err := p.client.CreateFork(originalOrg, name, repoConfig)
 	if err != nil {
 		msg := ""
 		if destinationOrg != "" {
@@ -186,7 +186,7 @@ func (p *GiteaProvider) ForkRepository(originalOrg string, name string, destinat
 		}
 		owner := destinationOrg
 		if owner == "" {
-			owner = p.Username
+			owner = p.server.CurrentUser
 		}
 		if strings.Contains(err.Error(), "try again later") {
 			log.Logger().Warnf("Waiting for the fork of %s/%s to appear...", owner, name)
@@ -195,7 +195,7 @@ func (p *GiteaProvider) ForkRepository(originalOrg string, name string, destinat
 			deadline := start.Add(time.Minute)
 			for {
 				time.Sleep(5 * time.Second)
-				repo, err = p.Client.GetRepo(owner, name)
+				repo, err = p.client.GetRepo(owner, name)
 				if repo != nil && err == nil {
 					break
 				}
@@ -214,7 +214,7 @@ func (p *GiteaProvider) ForkRepository(originalOrg string, name string, destinat
 func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 	owner := data.Owner
 	if owner == "" {
-		owner = p.Username
+		owner = p.server.CurrentUser
 	}
 	repo := data.Repo.Name
 	if repo == "" {
@@ -224,7 +224,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 	if repo == "" {
 		return fmt.Errorf("Missing property URL")
 	}
-	hooks, err := p.Client.ListRepoHooks(owner, repo)
+	hooks, err := p.client.ListRepoHooks(owner, repo)
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Active: true,
 	}
 	log.Logger().Infof("Creating Gitea webhook for %s/%s for url %s", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
-	_, err = p.Client.CreateRepoHook(owner, repo, hook)
+	_, err = p.client.CreateRepoHook(owner, repo, hook)
 	if err != nil {
 		return fmt.Errorf("Failed to create webhook for %s/%s with %#v due to: %s", owner, repo, hook, err)
 	}
@@ -285,7 +285,7 @@ func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPu
 	if base != "" {
 		config.Base = base
 	}
-	pr, err := p.Client.CreatePullRequest(owner, repo, config)
+	pr, err := p.client.CreatePullRequest(owner, repo, config)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +312,7 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
 	}
 	n := *pr.Number
-	result, err := p.Client.GetPullRequest(pr.Owner, pr.Repo, int64(n))
+	result, err := p.client.GetPullRequest(pr.Owner, pr.Repo, int64(n))
 	if err != nil {
 		return fmt.Errorf("Could not find pull request for %s/%s #%d: %s", pr.Owner, pr.Repo, n, err)
 	}
@@ -367,7 +367,7 @@ func (p *GiteaProvider) ListOpenPullRequests(owner string, repo string) ([]*GitP
 	opt := gitea.ListPullRequestsOptions{}
 	answer := []*GitPullRequest{}
 	for {
-		prs, err := p.Client.ListRepoPullRequests(owner, repo, opt)
+		prs, err := p.client.ListRepoPullRequests(owner, repo, opt)
 		if err != nil {
 			return answer, err
 		}
@@ -404,7 +404,7 @@ func (p *GiteaProvider) GetPullRequestCommits(owner string, repository *GitRepos
 }
 
 func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
-	i, err := p.Client.GetIssue(org, name, int64(number))
+	i, err := p.client.GetIssue(org, name, int64(number))
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
 			return nil, nil
@@ -415,8 +415,8 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 }
 
 func (p *GiteaProvider) IssueURL(org string, name string, number int, isPull bool) string {
-	serverPrefix := p.Server.URL
-	if strings.Index(serverPrefix, "://") < 0 {
+	serverPrefix := p.server.URL
+	if !strings.Contains(serverPrefix, "://") {
 		serverPrefix = "https://" + serverPrefix
 	}
 	path := "issues"
@@ -445,7 +445,7 @@ func (p *GiteaProvider) SearchIssuesClosedSince(org string, name string, t time.
 func (p *GiteaProvider) searchIssuesWithOptions(org string, name string, opts gitea.ListIssueOption) ([]*GitIssue, error) {
 	opts.Page = 0
 	answer := []*GitIssue{}
-	issues, err := p.Client.ListRepoIssues(org, name, opts)
+	issues, err := p.client.ListRepoIssues(org, name, opts)
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
 			return answer, nil
@@ -495,7 +495,7 @@ func (p *GiteaProvider) CreateIssue(owner string, repo string, issue *GitIssue) 
 		Title: issue.Title,
 		Body:  issue.Body,
 	}
-	i, err := p.Client.CreateIssue(owner, repo, config)
+	i, err := p.client.CreateIssue(owner, repo, config)
 	if err != nil {
 		return nil, err
 	}
@@ -524,7 +524,7 @@ func (p *GiteaProvider) MergePullRequest(pr *GitPullRequest, message string) err
 		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
 	}
 	n := *pr.Number
-	return p.Client.MergePullRequest(pr.Owner, pr.Repo, int64(n))
+	return p.client.MergePullRequest(pr.Owner, pr.Repo, int64(n))
 }
 
 func (p *GiteaProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
@@ -532,7 +532,7 @@ func (p *GiteaProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string,
 	if ref == "" {
 		return "", fmt.Errorf("Missing String for LastCommitSha %#v", pr)
 	}
-	results, err := p.Client.ListStatuses(pr.Owner, pr.Repo, ref, gitea.ListStatusesOption{})
+	results, err := p.client.ListStatuses(pr.Owner, pr.Repo, ref, gitea.ListStatusesOption{})
 	if err != nil {
 		return "", err
 	}
@@ -553,7 +553,7 @@ func (p *GiteaProvider) AddPRComment(pr *GitPullRequest, comment string) error {
 	prComment := gitea.CreateIssueCommentOption{
 		Body: asText(&comment),
 	}
-	_, err := p.Client.CreateIssueComment(pr.Owner, pr.Repo, int64(n), prComment)
+	_, err := p.client.CreateIssueComment(pr.Owner, pr.Repo, int64(n), prComment)
 	return err
 }
 
@@ -561,7 +561,7 @@ func (p *GiteaProvider) CreateIssueComment(owner string, repo string, number int
 	issueComment := gitea.CreateIssueCommentOption{
 		Body: comment,
 	}
-	_, err := p.Client.CreateIssueComment(owner, repo, int64(number), issueComment)
+	_, err := p.client.CreateIssueComment(owner, repo, int64(number), issueComment)
 	if err != nil {
 		return err
 	}
@@ -570,7 +570,7 @@ func (p *GiteaProvider) CreateIssueComment(owner string, repo string, number int
 
 func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
 	answer := []*GitRepoStatus{}
-	results, err := p.Client.ListStatuses(org, repo, sha, gitea.ListStatusesOption{})
+	results, err := p.client.ListStatuses(org, repo, sha, gitea.ListStatusesOption{})
 	if err != nil {
 		return answer, fmt.Errorf("Could not find a status for repository %s/%s with ref %s", org, repo, sha)
 	}
@@ -597,9 +597,9 @@ func (p *GiteaProvider) RenameRepository(org string, name string, newName string
 }
 
 func (p *GiteaProvider) ValidateRepositoryName(org string, name string) error {
-	_, err := p.Client.GetRepo(org, name)
+	_, err := p.client.GetRepo(org, name)
 	if err == nil {
-		return fmt.Errorf("Repository %s already exists", p.Git.RepoName(org, name))
+		return fmt.Errorf("Repository %s already exists", p.git.RepoName(org, name))
 	}
 	if strings.Contains(err.Error(), "404") {
 		return nil
@@ -609,7 +609,7 @@ func (p *GiteaProvider) ValidateRepositoryName(org string, name string) error {
 
 func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	var release *gitea.Release
-	releases, err := p.Client.ListReleases(owner, repo)
+	releases, err := p.client.ListReleases(owner, repo)
 	found := false
 	for _, rel := range releases {
 		if rel.TagName == tag {
@@ -629,7 +629,7 @@ func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, rel
 			IsDraft:      flag,
 			IsPrerelease: flag,
 		}
-		_, err = p.Client.CreateRelease(owner, repo, createRelease)
+		_, err = p.client.CreateRelease(owner, repo, createRelease)
 		return err
 	} else {
 		editRelease := gitea.EditReleaseOption{
@@ -648,7 +648,7 @@ func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, rel
 		if editRelease.Note == "" && releaseInfo.Body != "" {
 			editRelease.Note = releaseInfo.Body
 		}
-		r2, err := p.Client.EditRelease(owner, repo, release.ID, editRelease)
+		r2, err := p.client.EditRelease(owner, repo, release.ID, editRelease)
 		if err != nil {
 			return err
 		}
@@ -695,28 +695,16 @@ func GiteaAccessTokenURL(url string) string {
 	return util.UrlJoin(url, "/user/settings/applications")
 }
 
-func (p *GiteaProvider) Label() string {
-	return p.Server.Label()
-}
-
-func (p *GiteaProvider) ServerURL() string {
-	return p.Server.URL
+func (p *GiteaProvider) Server() auth.Server {
+	return p.server
 }
 
 func (p *GiteaProvider) BranchArchiveURL(org string, name string, branch string) string {
-	return util.UrlJoin(p.ServerURL(), org, name, "archive", branch+".zip")
-}
-
-func (p *GiteaProvider) UserAuth() auth.UserAuth {
-	return p.User
-}
-
-func (p *GiteaProvider) CurrentUsername() string {
-	return p.Username
+	return util.UrlJoin(p.server.URL, org, name, "archive", branch+".zip")
 }
 
 func (p *GiteaProvider) UserInfo(username string) *GitUser {
-	user, err := p.Client.GetUserInfo(username)
+	user, err := p.client.GetUserInfo(username)
 
 	if err != nil {
 		return nil
@@ -728,22 +716,22 @@ func (p *GiteaProvider) UserInfo(username string) *GitUser {
 		AvatarURL: user.AvatarURL,
 		Email:     user.Email,
 		// TODO figure the Gitea user url
-		URL: p.Server.URL + "/" + username,
+		URL: p.server.URL + "/" + username,
 	}
 }
 
 func (p *GiteaProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea. Please add user: %v as a collaborator to this project.", user)
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for Gitea. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 func (p *GiteaProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.")
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for Gitea.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (p *GiteaProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.")
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for Gitea.")
 	return &github.Response{}, nil
 }
 

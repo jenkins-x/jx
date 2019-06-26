@@ -46,7 +46,7 @@ func (v *vaultConfigLoadSaver) SaveConfig(config *Config) error {
 // NewVaultConfigService creates a new ConfigService that saves it config to a Vault
 func NewVaultConfigService(secretName string, vaultClient vault.Client) ConfigService {
 	vls := newVaultConfigLoadSaver(secretName, vaultClient)
-	return newConfigService(&vls, &vls)
+	return NewConfigService(&vls, &vls)
 }
 
 // newVaultConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault

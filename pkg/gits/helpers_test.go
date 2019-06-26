@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 )
 
@@ -79,7 +80,7 @@ func TestFetchAndMergeSHAAgainstNonHEADSHA(t *testing.T) {
 }
 
 type FetchAndMergeTestEnv struct {
-	Gitter     *gits.GitCLI
+	Gitter     gits.Gitter
 	BaseSha    string
 	LocalDir   string
 	Sha1       string
@@ -90,7 +91,7 @@ type FetchAndMergeTestEnv struct {
 }
 
 func prepareFetchAndMergeTests(t *testing.T) FetchAndMergeTestEnv {
-	gitter := gits.NewGitCLI()
+	gitter := gits.NewGitCLI(auth.Server{})
 
 	// Prepare a git repo to test - this is our "remote"
 	remoteDir, err := ioutil.TempDir("", "remote")

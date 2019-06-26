@@ -4,11 +4,10 @@
 package auth_test
 
 import (
-	"reflect"
-	"time"
-
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	pegomock "github.com/petergtz/pegomock"
+	"reflect"
+	"time"
 )
 
 type MockConfigSaver struct {
@@ -25,25 +24,6 @@ func NewMockConfigSaver(options ...pegomock.Option) *MockConfigSaver {
 
 func (mock *MockConfigSaver) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
 func (mock *MockConfigSaver) FailHandler() pegomock.FailHandler      { return mock.fail }
-
-func (mock *MockConfigSaver) LoadConfig() (*auth.Config, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockConfigSaver().")
-	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("LoadConfig", params, []reflect.Type{reflect.TypeOf((**auth.Config)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *auth.Config
-	var ret1 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(*auth.Config)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
-		}
-	}
-	return ret0, ret1
-}
 
 func (mock *MockConfigSaver) SaveConfig(_param0 *auth.Config) error {
 	if mock == nil {
@@ -95,23 +75,6 @@ type VerifierMockConfigSaver struct {
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
-}
-
-func (verifier *VerifierMockConfigSaver) LoadConfig() *MockConfigSaver_LoadConfig_OngoingVerification {
-	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "LoadConfig", params, verifier.timeout)
-	return &MockConfigSaver_LoadConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockConfigSaver_LoadConfig_OngoingVerification struct {
-	mock              *MockConfigSaver
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockConfigSaver_LoadConfig_OngoingVerification) GetCapturedArguments() {
-}
-
-func (c *MockConfigSaver_LoadConfig_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockConfigSaver) SaveConfig(_param0 *auth.Config) *MockConfigSaver_SaveConfig_OngoingVerification {

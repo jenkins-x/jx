@@ -14,10 +14,10 @@ type fileConfigLoadSaver struct {
 	fileName string
 }
 
-// NewFileConfigService
+// NewFileConfigService creates a new file config service
 func NewFileConfigService(filename string) (ConfigService, error) {
 	fls, err := newFileConfigLoadSaver(filename)
-	return newConfigService(fls, fls), err
+	return NewConfigService(fls, fls), err
 }
 
 // newFileConfigLoadSavercreates a new FileBasedAuthConfigService that stores its data under the given filename

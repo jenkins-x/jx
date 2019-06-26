@@ -113,19 +113,20 @@ var bitbucketRouter = util.Router{
 }
 
 func setupGitProvider(url, name, user string) (gits.GitProvider, error) {
-	as := auth.ServerAuth{
+	as := auth.Server{
 		URL:         url,
 		Name:        "Test Auth Server",
 		Kind:        "Oauth2",
 		CurrentUser: user,
+		Users: []auth.User{
+			{
+				Username: user,
+				ApiToken: "0123456789abdef",
+			},
+		},
 	}
-	ua := auth.UserAuth{
-		Username: user,
-		ApiToken: "0123456789abdef",
-	}
-
-	git := gits.NewGitCLI()
-	bp, err := gits.NewBitbucketCloudProvider(&as, &ua, git)
+	git := gits.NewGitCLI(as)
+	bp, err := gits.NewBitbucketCloudProvider(as, git)
 
 	return bp, err
 }
@@ -157,7 +158,7 @@ func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
 
 		suite.Require().NotNil(bp)
 		suite.Require().True(ok)
-		bp.Client = clientSingleton
+		bp.SetClient(clientSingleton)
 
 		suite.providers[profile.username] = *bp
 	}
@@ -166,6 +167,10 @@ func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
 
 }
 
+func (suite *BitbucketCloudProviderTestSuite) CurrentUser() string {
+	server := suite.provider.Server()
+	return server.CurrentUser
+}
 func (suite *BitbucketCloudProviderTestSuite) TestListRepositories() {
 
 	for username, provider := range suite.providers {
@@ -184,7 +189,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestListRepositories() {
 func (suite *BitbucketCloudProviderTestSuite) TestGetRepository() {
 
 	repo, err := suite.provider.GetRepository(
-		suite.provider.Username,
+		suite.CurrentUser(),
 		"test-repo",
 	)
 
@@ -197,7 +202,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestGetRepository() {
 func (suite *BitbucketCloudProviderTestSuite) TestDeleteRepository() {
 
 	err := suite.provider.DeleteRepository(
-		suite.provider.Username,
+		suite.CurrentUser(),
 		"test-repo",
 	)
 
@@ -207,7 +212,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestDeleteRepository() {
 func (suite *BitbucketCloudProviderTestSuite) TestForkRepository() {
 
 	fork, err := suite.provider.ForkRepository(
-		suite.provider.Username,
+		suite.CurrentUser(),
 		"test-repo",
 		"",
 	)
@@ -220,18 +225,18 @@ func (suite *BitbucketCloudProviderTestSuite) TestForkRepository() {
 
 func (suite *BitbucketCloudProviderTestSuite) TestValidateRepositoryName() {
 
-	err := suite.provider.ValidateRepositoryName(suite.provider.Username, "test-repo")
+	err := suite.provider.ValidateRepositoryName(suite.CurrentUser(), "test-repo")
 
 	suite.Require().NotNil(err)
 
-	err = suite.provider.ValidateRepositoryName(suite.provider.Username, "foo-repo")
+	err = suite.provider.ValidateRepositoryName(suite.CurrentUser(), "foo-repo")
 
 	suite.Require().Nil(err)
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestRenameRepository() {
 
-	repo, err := suite.provider.RenameRepository(suite.provider.Username, "test-repo", "test-repo-renamed")
+	repo, err := suite.provider.RenameRepository(suite.CurrentUser(), "test-repo", "test-repo-renamed")
 
 	suite.Require().Nil(err)
 	suite.Require().NotNil(repo)

@@ -79,19 +79,21 @@ func (suite *BitbucketServerProviderTestSuite) SetupSuite() {
 		suite.mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/bitbucket_server", methodMap))
 	}
 
-	as := auth.ServerAuth{
+	as := auth.Server{
 		URL:         "http://auth.example.com",
 		Name:        "Test Auth Server",
 		Kind:        "Oauth2",
 		CurrentUser: "test-user",
-	}
-	ua := auth.UserAuth{
-		Username: "test-user",
-		ApiToken: "0123456789abdef",
+		Users: []auth.User{
+			{
+				Username: "test-user",
+				ApiToken: "0123456789abdef",
+			},
+		},
 	}
 
-	git := gits.NewGitCLI()
-	bp, err := gits.NewBitbucketServerProvider(&as, &ua, git)
+	git := gits.NewGitCLI(as)
+	bp, err := gits.NewBitbucketServerProvider(as, git)
 
 	suite.Require().NotNil(bp)
 	suite.Require().Nil(err)
@@ -107,8 +109,10 @@ func (suite *BitbucketServerProviderTestSuite) SetupSuite() {
 	cfg := bitbucket.NewConfiguration(suite.server.URL + "/rest")
 	ctx := context.Background()
 
-	apiKeyAuthContext := context.WithValue(ctx, bitbucket.ContextAccessToken, ua.ApiToken)
-	suite.provider.Client = bitbucket.NewAPIClient(apiKeyAuthContext, cfg)
+	user, err := as.GetCurrentUser()
+	suite.Require().Nil(err)
+	apiKeyAuthContext := context.WithValue(ctx, bitbucket.ContextAccessToken, user.ApiToken)
+	suite.provider.SetClient(bitbucket.NewAPIClient(apiKeyAuthContext, cfg))
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestGetRepository() {

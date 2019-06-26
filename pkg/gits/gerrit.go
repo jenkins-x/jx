@@ -14,32 +14,32 @@ import (
 )
 
 type GerritProvider struct {
-	Client   *gerrit.Client
-	Username string
-	Context  context.Context
+	client  *gerrit.Client
+	context context.Context
 
-	Server auth.ServerAuth
-	User   auth.UserAuth
-	Git    Gitter
+	server auth.Server
+	git    Gitter
 }
 
-func NewGerritProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func NewGerritProvider(server auth.Server, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
 	provider := GerritProvider{
-		Server:   *server,
-		User:     *user,
-		Context:  ctx,
-		Username: user.Username,
-		Git:      git,
+		server:  server,
+		context: ctx,
+		git:     git,
 	}
 
 	client, err := gerrit.NewClient(server.URL, nil)
 	if err != nil {
 		return nil, err
 	}
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return nil, err
+	}
 	client.Authentication.SetBasicAuth(user.Username, user.ApiToken)
-	provider.Client = client
+	provider.client = client
 
 	return &provider, nil
 }
@@ -52,7 +52,7 @@ func buildEncodedProjectName(org, name string) string {
 	if org != "" {
 		fullName = fmt.Sprintf("%s/%s", org, name)
 	} else {
-		fullName = fmt.Sprintf("%s", name)
+		fullName = name
 	}
 
 	fullNamePathUnescaped, err := url.PathUnescape(fullName)
@@ -67,8 +67,8 @@ func buildEncodedProjectName(org, name string) string {
 func (p *GerritProvider) projectInfoToGitRepository(project *gerrit.ProjectInfo) *GitRepository {
 	return &GitRepository{
 		Name:     project.Name,
-		CloneURL: fmt.Sprintf("%s/%s", p.Server.URL, project.Name),
-		SSHURL:   fmt.Sprintf("%s:%s", p.Server.URL, project.Name),
+		CloneURL: fmt.Sprintf("%s/%s", p.server.URL, project.Name),
+		SSHURL:   fmt.Sprintf("%s:%s", p.server.URL, project.Name),
 	}
 }
 
@@ -78,7 +78,7 @@ func (p *GerritProvider) ListRepositories(org string) ([]*GitRepository, error) 
 		Prefix:      url.PathEscape(org),
 	}
 
-	gerritProjects, _, err := p.Client.Projects.ListProjects(options)
+	gerritProjects, _, err := p.client.Projects.ListProjects(options)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (p *GerritProvider) CreateRepository(org string, name string, private bool)
 	}
 
 	fullNamePathEscaped := buildEncodedProjectName(org, name)
-	project, _, err := p.Client.Projects.CreateProject(fullNamePathEscaped, input)
+	project, _, err := p.client.Projects.CreateProject(fullNamePathEscaped, input)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (p *GerritProvider) CreateRepository(org string, name string, private bool)
 func (p *GerritProvider) GetRepository(org string, name string) (*GitRepository, error) {
 	fullName := buildEncodedProjectName(org, name)
 
-	project, _, err := p.Client.Projects.GetProject(fullName)
+	project, _, err := p.client.Projects.GetProject(fullName)
 	if err != nil {
 		return nil, err
 	}
@@ -280,24 +280,12 @@ func (p *GerritProvider) JenkinsWebHookPath(gitURL string, secret string) string
 	return ""
 }
 
-func (p *GerritProvider) Label() string {
-	return ""
-}
-
-func (p *GerritProvider) ServerURL() string {
-	return ""
+func (p *GerritProvider) Server() auth.Server {
+	return p.server
 }
 
 func (p *GerritProvider) BranchArchiveURL(org string, name string, branch string) string {
 	return ""
-}
-
-func (p *GerritProvider) CurrentUsername() string {
-	return ""
-}
-
-func (p *GerritProvider) UserAuth() auth.UserAuth {
-	return auth.UserAuth{}
 }
 
 func (p *GerritProvider) UserInfo(username string) *GitUser {
@@ -305,17 +293,17 @@ func (p *GerritProvider) UserInfo(username string) *GitUser {
 }
 
 func (p *GerritProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit. Please add user: %v as a collaborator to this project.", user)
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for gerrit. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 func (p *GerritProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.")
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for gerrit.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (p *GerritProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.")
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for gerrit.")
 	return &github.Response{}, nil
 }
 

@@ -53,20 +53,22 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *gits.
 
 	// Gitlab client
 	client := gitlab.NewClient(nil, "")
-	client.SetBaseURL(server.URL)
+	err := client.SetBaseURL(server.URL)
+	suite.Require().Nil(err)
 
-	userAuth := &auth.UserAuth{
+	userAuth := auth.User{
 		Username: gitlabUserName,
 		ApiToken: "test",
 	}
 
-	authServer := &auth.ServerAuth{
-		URL:   server.URL,
-		Users: []*auth.UserAuth{userAuth},
+	authServer := auth.Server{
+		URL:         server.URL,
+		Users:       []auth.User{userAuth},
+		CurrentUser: userAuth.Username,
 	}
 	// Gitlab provider that we want to test
-	git := gits.NewGitCLI()
-	provider, _ := gits.WithGitlabClient(authServer, userAuth, client, git)
+	git := gits.NewGitCLI(authServer)
+	provider, _ := gits.WithGitlabClient(authServer, client, git)
 
 	return mux, server, provider.(*gits.GitlabProvider)
 }
@@ -76,21 +78,24 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 		src, err := ioutil.ReadFile("test_data/gitlab/groups.json")
 
 		suite.Require().Nil(err)
-		w.Write(src)
+		_, err = w.Write(src)
+		suite.Require().Nil(err)
 	})
 
 	mux.HandleFunc(fmt.Sprintf("/api/v4/groups/%s/projects", gitlabOrgName), func(w http.ResponseWriter, r *http.Request) {
 		src, err := ioutil.ReadFile("test_data/gitlab/group-projects.json")
 
 		suite.Require().Nil(err)
-		w.Write(src)
+		_, err = w.Write(src)
+		suite.Require().Nil(err)
 	})
 
 	mux.HandleFunc(fmt.Sprintf("/api/v4/users/%s/projects", gitlabUserName), func(w http.ResponseWriter, r *http.Request) {
 		src, err := ioutil.ReadFile("test_data/gitlab/user-projects.json")
 
 		suite.Require().Nil(err)
-		w.Write(src)
+		_, err = w.Write(src)
+		suite.Require().Nil(err)
 	})
 
 	gitlabRouter := util.Router{

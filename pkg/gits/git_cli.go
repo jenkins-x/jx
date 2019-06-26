@@ -26,11 +26,13 @@ const (
 )
 
 // GitCLI implements common git actions based on git CLI
-type GitCLI struct{}
+type GitCLI struct {
+	server auth.Server
+}
 
 // NewGitCLI creates a new GitCLI instance
-func NewGitCLI() *GitCLI {
-	return &GitCLI{}
+func NewGitCLI(server auth.Server) Gitter {
+	return &GitCLI{server: server}
 }
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -97,7 +99,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 			if err != nil {
 				return errors.Wrapf(err, "converting %s to a pull request number", pullRequest)
 			}
-			fmt.Sprintf("refs/pull/%d/head", pullRequestNumber)
+			commitish = fmt.Sprintf("refs/pull/%d/head", pullRequestNumber)
 		}
 	} else if pullRequest != "" {
 		return errors.Errorf("cannot specify both pull request and commitish")
@@ -407,17 +409,21 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 }
 
 // CreatePushURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
-func (g *GitCLI) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
+func (g *GitCLI) CreatePushURL(cloneURL string) (string, error) {
 	u, err := url.Parse(cloneURL)
 	if err != nil {
 		// already a git/ssh url?
 		return cloneURL, nil
 	}
-	if userAuth.Username != "" || userAuth.ApiToken != "" {
-		u.User = url.UserPassword(userAuth.Username, userAuth.ApiToken)
-		return u.String(), nil
+	user, err := g.server.GetCurrentUser()
+	if err != nil {
+		return "", err
 	}
-	return cloneURL, nil
+	if user.IsInvalid() {
+		return "", fmt.Errorf("invalid user credentials")
+	}
+	u.User = url.UserPassword(user.Username, user.ApiToken)
+	return u.String(), nil
 }
 
 // RepoName formats the repository names based on the organization
@@ -452,6 +458,9 @@ func (g *GitCLI) Info(dir string) (*GitRepository, error) {
 		}
 	} else {
 		text, err = g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
+		if err != nil {
+			return nil, err
+		}
 		rUrl = strings.TrimSpace(text)
 	}
 
@@ -526,9 +535,7 @@ func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, shallow bo
 	if unshallow {
 		args = append(args, "--unshallow")
 	}
-	for _, refspec := range refspecs {
-		args = append(args, refspec)
-	}
+	args = append(args, refspecs...)
 	err := g.gitCmd(dir, args...)
 	if err != nil {
 		return errors.WithStack(err)
@@ -622,7 +629,7 @@ func (g *GitCLI) DiscoverUpstreamGitURL(gitConf string) (string, error) {
 func (g *GitCLI) firstRemoteUrl(remote *gitcfg.RemoteConfig) string {
 	if remote != nil {
 		urls := remote.URLs
-		if urls != nil && len(urls) > 0 {
+		if len(urls) > 0 {
 			return urls[0]
 		}
 	}
@@ -721,10 +728,10 @@ func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
-func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer) {
-	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
+func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(o io.Writer) {
+	tokenUrl := ProviderAccessTokenURL(g.server.Kind, g.server.URL, g.server.CurrentUser)
 
-	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
+	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", g.server.Label())
 	fmt.Fprintf(o, "Please click this URL and generate a token \n%s\n\n", util.ColorInfo(tokenUrl))
 	fmt.Fprint(o, "Then COPY the token and enter it below:\n\n")
 }

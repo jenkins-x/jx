@@ -1,6 +1,7 @@
 package auth
 
 // ConfigService is a service for handing the config of auth tokens
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/auth ConfigService -o mocks/config_service.go
 type ConfigService interface {
 	// Config returns the current config
 	Config() (*Config, error)

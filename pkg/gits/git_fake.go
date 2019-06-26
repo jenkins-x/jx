@@ -40,12 +40,12 @@ type GitFake struct {
 	Changes        bool
 	GitTags        []GitTag
 	Revision       string
-	serverURL      string
+	server         auth.Server
 }
 
 // NewGitFake creates a new fake Gitter
-func NewGitFake() Gitter {
-	return &GitFake{}
+func NewGitFake(server auth.Server) Gitter {
+	return &GitFake{server: server}
 }
 
 // FindGitConfigDir finds the git config dir
@@ -54,7 +54,7 @@ func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the generate access token URL
-func (g *GitFake) PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer) {
+func (g *GitFake) PrintCreateRepositoryGenerateAccessToken(o io.Writer) {
 	fmt.Fprintf(o, "Access token URL: %s\n\n", g.AccessTokenURL)
 }
 
@@ -159,16 +159,20 @@ func (g *GitFake) PushTag(dir string, tag string) error {
 }
 
 // CreatePushURL creates a Push URL
-func (g *GitFake) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
+func (g *GitFake) CreatePushURL(cloneURL string) (string, error) {
+	user, err := g.server.GetCurrentUser()
+	if err != nil {
+		return "", err
+	}
 	u, err := url.Parse(cloneURL)
 	if err != nil {
 		return cloneURL, nil
 	}
-	if userAuth.Username != "" || userAuth.ApiToken != "" {
-		u.User = url.UserPassword(userAuth.Username, userAuth.ApiToken)
-		return u.String(), nil
+	if user.IsInvalid() {
+		return "", fmt.Errorf("invalid user")
 	}
-	return cloneURL, nil
+	u.User = url.UserPassword(user.Username, user.ApiToken)
+	return u.String(), nil
 }
 
 // ForcePushBranch force push a branch
@@ -505,10 +509,6 @@ func (g *GitFake) ListChangedFilesFromBranch(dir string, branch string) (string,
 // LoadFileFromBranch returns a files's contents from a branch
 func (g *GitFake) LoadFileFromBranch(dir string, branch string, file string) (string, error) {
 	return "", nil
-}
-
-func (g *GitFake) notFound() error {
-	return fmt.Errorf("Not found")
 }
 
 // FetchUnshallow deepens a shallow git clone

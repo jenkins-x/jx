@@ -52,6 +52,6 @@ func (s *configService) SaveConfig() error {
 }
 
 // newConfigService generates a ConfigService with a custom saver and loader
-func newConfigService(saver ConfigSaver, loader ConfigLoader) ConfigService {
+func NewConfigService(saver ConfigSaver, loader ConfigLoader) ConfigService {
 	return &configService{saver: saver, loader: loader}
 }

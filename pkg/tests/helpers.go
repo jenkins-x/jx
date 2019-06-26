@@ -10,13 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/petergtz/pegomock"
-
 	expect "github.com/Netflix/go-expect"
 	"github.com/acarl005/stripansi"
 	"github.com/hinshun/vt10x"
 	"github.com/jenkins-x/jx/pkg/auth"
-	auth_test "github.com/jenkins-x/jx/pkg/auth/mocks"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -60,27 +57,27 @@ func TestShouldDisableMaven() bool {
 
 // CreateAuthConfigService creates and returns a fixture ConfigService
 func CreateAuthConfigService() auth.ConfigService {
-	userAuth := auth.UserAuth{
+	userAuth := auth.User{
 		Username:    "jx-testing-user",
 		ApiToken:    "someapitoken",
 		BearerToken: "somebearertoken",
 		Password:    "password",
 	}
-	authServer := auth.ServerAuth{
-		Users:       []*auth.UserAuth{&userAuth},
+	authServer := auth.Server{
+		Users:       []auth.User{userAuth},
 		CurrentUser: userAuth.Username,
 		URL:         "https://github.com",
 		Kind:        gits.KindGitHub,
 		Name:        "jx-testing-server",
 	}
-	authConfig := auth.AuthConfig{
-		Servers:       []*auth.ServerAuth{&authServer},
+	authConfig := auth.Config{
+		Servers:       []auth.Server{authServer},
 		CurrentServer: authServer.URL,
 	}
-	saver := auth_test.NewMockConfigSaver()
-	pegomock.When(saver.LoadConfig()).ThenReturn(&authConfig, nil)
-	authConfigSvc := auth.NewAuthConfigService(saver)
-	authConfigSvc.SetConfig(&authConfig)
+	authConfigSvc, err := auth.NewMemConfigService(authConfig)
+	if err != nil {
+		return nil
+	}
 	return authConfigSvc
 }
 

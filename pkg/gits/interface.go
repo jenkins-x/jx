@@ -26,8 +26,6 @@ type OrganisationChecker interface {
 type GitProvider interface {
 	OrganisationLister
 
-	AuthConfigService() auth.ConfigService
-
 	ListRepositories(org string) ([]*GitRepository, error)
 
 	CreateRepository(org string, name string, private bool) (*GitRepository, error)
@@ -129,11 +127,8 @@ type GitProvider interface {
 
 	JenkinsWebHookPath(gitURL string, secret string) string
 
-	// Label returns the Git service label or name
-	Label() string
-
-	// ServerURL returns the Git server URL
-	ServerURL() string
+	// Server returns the server auth configuration
+	Server() auth.Server
 
 	// BranchArchiveURL returns a URL to the ZIP archive for the git branch
 	BranchArchiveURL(org string, name string, branch string) string
@@ -156,7 +151,7 @@ type GitProvider interface {
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
 type Gitter interface {
 	FindGitConfigDir(dir string) (string, string, error)
-	PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer)
+	PrintCreateRepositoryGenerateAccessToken(o io.Writer)
 
 	Status(dir string) error
 	Server(dir string) (string, error)
@@ -182,7 +177,7 @@ type Gitter interface {
 	Push(dir string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error
-	CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error)
+	CreatePushURL(cloneURL string) (string, error)
 	ForcePushBranch(dir string, localBranch string, remoteBranch string) error
 	CloneOrPull(url string, directory string) error
 	Pull(dir string) error

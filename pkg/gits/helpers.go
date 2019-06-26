@@ -14,8 +14,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -183,7 +181,8 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 // SourceRepositoryProviderURL returns the git provider URL for the SourceRepository which is something like
 // either `https://hostname` or `http://hostname`
 func SourceRepositoryProviderURL(gitProvider GitProvider) string {
-	return GitProviderURL(gitProvider.ServerURL())
+	server := gitProvider.Server()
+	return GitProviderURL(server.URL)
 }
 
 // GitProviderURL returns the git provider host URL for the SourceRepository which is something like
@@ -236,12 +235,13 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 
 	headPrefix := ""
 
-	username := provider.CurrentUsername()
-	if username == "" {
-		return nil, fmt.Errorf("no git user name found")
+	server := provider.Server()
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return nil, err
 	}
-	if gitInfo.Organisation != username && gitInfo.Fork {
-		headPrefix = username + ":"
+	if gitInfo.Organisation != user.Username && gitInfo.Fork {
+		headPrefix = user.Username + ":"
 	}
 
 	gha := &GitPullRequestArguments{
@@ -365,7 +365,6 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 	}
 
 	username := ""
-	userDetails := auth.UserAuth{}
 	originalOrg := gitInfo.Organisation
 	originalRepo := gitInfo.Name
 
@@ -373,8 +372,12 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 		log.Logger().Warnf("No GitProvider specified!")
 		debug.PrintStack()
 	} else {
-		userDetails = provider.UserAuth()
-		username = provider.CurrentUsername()
+		server := provider.Server()
+		user, err := server.GetCurrentUser()
+		if err != nil {
+			return "", "", nil, err
+		}
+		username = user.Username
 
 		// lets check if we need to fork the repository...
 		if originalOrg != username && username != "" && originalOrg != "" && provider.ShouldForkForPullRequest(originalOrg, originalRepo, username) {
@@ -415,7 +418,7 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 			if err != nil {
 				return "", "", nil, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 			}
-			cloneGitURL, err := gitter.CreatePushURL(repo.CloneURL, &userDetails)
+			cloneGitURL, err := gitter.CreatePushURL(repo.CloneURL)
 			if err != nil {
 				return "", "", nil, errors.Wrapf(err, "failed to get clone URL from %s and user %s", repo.CloneURL, username)
 			}
@@ -509,7 +512,7 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 		if err != nil {
 			return "", "", nil, fmt.Errorf("failed to create directory %s due to %s", dir, err)
 		}
-		cloneGitURL, err := gitter.CreatePushURL(gitURL, &userDetails)
+		cloneGitURL, err := gitter.CreatePushURL(gitURL)
 		if err != nil {
 			return "", "", nil, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
 		}

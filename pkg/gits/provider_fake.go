@@ -32,9 +32,9 @@ type CommitStatus string
 
 const (
 	CommitStatusPending CommitStatus = "pending"
-	CommitSatusSuccess               = "success"
-	CommitStatusError                = "error"
-	CommitStatusFailure              = "failure"
+	CommitSatusSuccess  CommitStatus = "success"
+	CommitStatusError   CommitStatus = "error"
+	CommitStatusFailure CommitStatus = "failure"
 )
 
 type FakeCommit struct {
@@ -64,25 +64,58 @@ type FakeRepository struct {
 	PullRequestCounter int
 }
 
+func (r *FakeRepository) String() string {
+	return r.Owner + "/" + r.Name()
+}
+
+func (r *FakeRepository) Name() string {
+	return r.GitRepo.Name
+}
+
+// NewFakeRepository creates a new fake repository
+func NewFakeRepository(owner string, repoName string) *FakeRepository {
+	return &FakeRepository{
+		Owner: owner,
+		GitRepo: &GitRepository{
+			Name:         repoName,
+			CloneURL:     "https://fake.git/" + owner + "/" + repoName + ".git",
+			HTMLURL:      "https://fake.git/" + owner + "/" + repoName,
+			Organisation: owner,
+		},
+		PullRequests: map[int]*FakePullRequest{},
+		Commits:      []*FakeCommit{},
+	}
+}
+
 type FakeProvider struct {
-	configService      auth.ConfigService
 	Organizations      []GitOrganisation
 	Repositories       map[string][]*FakeRepository
 	ForkedRepositories map[string][]*FakeRepository
 	Type               FakeProviderType
 	Users              []*GitUser
 	WebHooks           []*GitWebHookArguments
+	server             auth.Server
 }
 
-func (f *FakeProvider) AuthConfigService() auth.ConfigService {
-	return f.configService
-}
-
-func (f *FakeProvider) server() (*auth.ServerAuth, error) {
-	config, err := f.configService.Config()
+// NewFakeRepository creates a new fake repository
+func NewFakeProvider(server auth.Server, repositories ...*FakeRepository) (GitProvider, error) {
+	_, err := server.GetCurrentUser()
 	if err != nil {
 		return nil, err
 	}
+	provider := &FakeProvider{
+		server:       server,
+		Repositories: map[string][]*FakeRepository{},
+	}
+	for _, repo := range repositories {
+		owner := repo.Owner
+		if owner == "" {
+			log.Logger().Warnf("Missing owner for Repository %s", repo.Name())
+		}
+		s := append(provider.Repositories[owner], repo)
+		provider.Repositories[owner] = s
+	}
+	return provider, nil
 }
 
 func (f *FakeProvider) ListOrganisations() ([]GitOrganisation, error) {
@@ -379,18 +412,12 @@ func (f *FakeProvider) UpdateCommitStatus(org string, repo string, sha string, s
 	if err != nil {
 		return &GitRepoStatus{}, err
 	}
-	updated := false
 	for i, s := range repoStatus {
 		if s.ID == status.ID {
 			repoStatus[i] = status
-			updated = true
 		}
 	}
-	if !updated {
-		repoStatus = append(repoStatus, status)
-	}
 	return status, nil
-
 }
 
 func (f *FakeProvider) MergePullRequest(pr *GitPullRequest, message string) error {
@@ -492,7 +519,7 @@ func (f *FakeProvider) GetIssue(org string, name string, number int) (*GitIssue,
 }
 
 func (f *FakeProvider) IssueURL(org string, name string, number int, isPull bool) string {
-	serverPrefix := f.Server.URL
+	serverPrefix := f.server.URL
 	if !strings.HasPrefix(serverPrefix, "https://") {
 		serverPrefix = "https://" + serverPrefix
 	}
@@ -652,16 +679,12 @@ func (f *FakeProvider) JenkinsWebHookPath(gitURL string, secret string) string {
 	return jenkinsWebhookPath
 }
 
-func (f *FakeProvider) Label() string {
-	return f.Server.Label()
-}
-
-func (f *FakeProvider) ServerURL() string {
-	return f.Server.URL
+func (f *FakeProvider) Server() auth.Server {
+	return f.server
 }
 
 func (f *FakeProvider) BranchArchiveURL(org string, name string, branch string) string {
-	return util.UrlJoin(f.ServerURL(), org, name, "archive", branch+".zip")
+	return util.UrlJoin(f.server.URL, org, name, "archive", branch+".zip")
 }
 
 func (f *FakeProvider) UserInfo(username string) *GitUser {
@@ -674,17 +697,17 @@ func (f *FakeProvider) UserInfo(username string) *GitUser {
 }
 
 func (f *FakeProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake. Please add user: %v as a collaborator to this project.", user)
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for git fake. Please add user: %v as a collaborator to this project.", user)
 	return nil
 }
 
 func (f *FakeProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake.")
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for git fake.")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake.")
+	log.Logger().Infof("Automatically adding the user as a collaborator is currently not implemented for git fake.")
 	return &github.Response{}, nil
 }
 
@@ -698,49 +721,6 @@ func (f *FakeProvider) GetContent(org string, name string, path string, ref stri
 func (r *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
 	// TODO assuming forking doesn't work yet?
 	return false
-}
-
-func (r *FakeRepository) String() string {
-	return r.Owner + "/" + r.Name()
-}
-
-func (r *FakeRepository) Name() string {
-	return r.GitRepo.Name
-}
-
-// NewFakeRepository creates a new fake repository
-func NewFakeRepository(owner string, repoName string) *FakeRepository {
-	return &FakeRepository{
-		Owner: owner,
-		GitRepo: &GitRepository{
-			Name:         repoName,
-			CloneURL:     "https://fake.git/" + owner + "/" + repoName + ".git",
-			HTMLURL:      "https://fake.git/" + owner + "/" + repoName,
-			Organisation: owner,
-		},
-		PullRequests: map[int]*FakePullRequest{},
-		Commits:      []*FakeCommit{},
-	}
-}
-
-// NewFakeRepository creates a new fake repository
-func NewFakeProvider(configService auth.ConfigService, repositories ...*FakeRepository) *FakeProvider {
-	provider := &FakeProvider{
-		configService: configService,
-		Repositories:  map[string][]*FakeRepository{},
-	}
-	for _, repo := range repositories {
-		owner := repo.Owner
-		if provider.User.Username == "" {
-			provider.User.Username = owner
-		}
-		if owner == "" {
-			log.Logger().Warnf("Missing owner for Repository %s", repo.Name())
-		}
-		s := append(provider.Repositories[owner], repo)
-		provider.Repositories[owner] = s
-	}
-	return provider
 }
 
 // ListCommits returns the list of commits in the master brach only (TODO: read opt param to apply to other branches)

@@ -14,15 +14,15 @@ import (
 // real one on your disk (as it will get changed!).
 // Faked out methods have the comment "Faked out"
 type GitLocal struct {
-	GitCLI  *GitCLI
-	GitFake *GitFake
+	GitCLI  Gitter
+	GitFake Gitter
 }
 
 // NewGitLocal creates a new GitLocal instance
-func NewGitLocal() *GitLocal {
+func NewGitLocal(server auth.Server) Gitter {
 	return &GitLocal{
-		GitCLI:  NewGitCLI(),
-		GitFake: &GitFake{},
+		GitCLI:  NewGitCLI(server),
+		GitFake: NewGitFake(server),
 	}
 }
 
@@ -137,7 +137,7 @@ func (g *GitLocal) RemoveForce(dir, fileName string) error {
 
 // CleanForce cleans a git repository located at a given directory
 func (g *GitLocal) CleanForce(dir, fileName string) error {
-	return g.CleanForce(dir, fileName)
+	return g.GitCLI.CleanForce(dir, fileName)
 }
 
 // Status returns the status of the git repository at the given directory
@@ -200,8 +200,8 @@ func (g *GitLocal) AddCommit(dir string, msg string) error {
 }
 
 // CreatePushURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
-func (g *GitLocal) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
-	return g.GitCLI.CreatePushURL(cloneURL, userAuth)
+func (g *GitLocal) CreatePushURL(cloneURL string) (string, error) {
+	return g.GitCLI.CreatePushURL(cloneURL)
 }
 
 // RepoName formats the repository names based on the organization
@@ -315,8 +315,8 @@ func (g *GitLocal) CreateTag(dir string, tag string, msg string) error {
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
-func (g *GitLocal) PrintCreateRepositoryGenerateAccessToken(server *auth.ServerAuth, username string, o io.Writer) {
-	g.GitCLI.PrintCreateRepositoryGenerateAccessToken(server, username, o)
+func (g *GitLocal) PrintCreateRepositoryGenerateAccessToken(o io.Writer) {
+	g.GitCLI.PrintCreateRepositoryGenerateAccessToken(o)
 }
 
 // IsFork indicates if the repository at the given directory is a fork

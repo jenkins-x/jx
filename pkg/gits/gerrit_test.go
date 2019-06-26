@@ -39,19 +39,20 @@ func (suite *GerritProviderTestSuite) SetupSuite() {
 		suite.mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/gerrit", methodMap))
 	}
 
-	as := auth.ServerAuth{
+	as := auth.Server{
 		URL:         suite.server.URL,
 		Name:        "Test Server",
 		Kind:        "Oauth2",
 		CurrentUser: "test-user",
+		Users: []auth.User{
+			{
+				Username: "test-user",
+				ApiToken: "0123456789abdef",
+			},
+		},
 	}
-	ua := auth.UserAuth{
-		Username: "test-user",
-		ApiToken: "0123456789abdef",
-	}
-
-	gitter := gits.NewGitCLI()
-	provider, err := gits.NewGerritProvider(&as, &ua, gitter)
+	gitter := gits.NewGitCLI(as)
+	provider, err := gits.NewGerritProvider(as, gitter)
 
 	suite.Require().NotNil(provider)
 	suite.Require().Nil(err)
@@ -60,7 +61,6 @@ func (suite *GerritProviderTestSuite) SetupSuite() {
 	suite.provider, ok = provider.(*gits.GerritProvider)
 	suite.Require().True(ok)
 	suite.Require().NotNil(suite.provider)
-	suite.Require().NotNil(suite.provider.Client)
 }
 
 func (suite *GerritProviderTestSuite) TestListRepositories() {

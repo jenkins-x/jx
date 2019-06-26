@@ -2,7 +2,6 @@ package gits
 
 import (
 	"fmt"
-	"io"
 	"net/url"
 	"sort"
 	"strconv"
@@ -10,8 +9,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type GitOrganisation struct {
@@ -214,22 +211,22 @@ func (pr *GitPullRequest) NumberString() string {
 	return "#" + strconv.Itoa(*n)
 }
 
-func CreateProvider(server *auth.ServerAuth, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+func CreateProvider(server auth.Server, git Gitter) (GitProvider, error) {
 	if server.Kind == "" {
 		server.Kind = SaasGitKind(server.URL)
 	}
 	if server.Kind == KindBitBucketCloud {
-		return NewBitbucketCloudProvider(server, user, git)
+		return NewBitbucketCloudProvider(server, git)
 	} else if server.Kind == KindBitBucketServer {
-		return NewBitbucketServerProvider(server, user, git)
+		return NewBitbucketServerProvider(server, git)
 	} else if server.Kind == KindGitea {
-		return NewGiteaProvider(server, user, git)
+		return NewGiteaProvider(server, git)
 	} else if server.Kind == KindGitlab {
-		return NewGitlabProvider(server, user, git)
+		return NewGitlabProvider(server, git)
 	} else if server.Kind == KindGitFake {
-		return NewFakeProvider(), nil
+		return NewFakeProvider(server)
 	} else {
-		return NewGitHubProvider(server, user, git)
+		return NewGitHubProvider(server, git)
 	}
 }
 
@@ -238,11 +235,11 @@ func GetHost(gitProvider GitProvider) (string, error) {
 	if gitProvider == nil {
 		return "", fmt.Errorf("no Git provider")
 	}
-
-	if gitProvider.ServerURL() == "" {
+	server := gitProvider.Server()
+	if server.URL == "" {
 		return "", fmt.Errorf("no Git provider server URL found")
 	}
-	url, err := url.Parse(gitProvider.ServerURL())
+	url, err := url.Parse(server.URL)
 	if err != nil {
 		return "", fmt.Errorf("error parsing ")
 	}
@@ -252,7 +249,6 @@ func GetHost(gitProvider GitProvider) (string, error) {
 func ProviderAccessTokenURL(kind string, url string, username string) string {
 	switch kind {
 	case KindBitBucketCloud:
-		// TODO pass in the username
 		return BitBucketCloudAccessTokenURL(url, username)
 	case KindBitBucketServer:
 		return BitBucketServerAccessTokenURL(url)
@@ -263,26 +259,6 @@ func ProviderAccessTokenURL(kind string, url string, username string) string {
 	default:
 		return GitHubAccessTokenURL(url)
 	}
-}
-
-// PickOrganisation picks an organisations login if there is one available
-func PickOrganisation(orgLister OrganisationLister, userName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
-	prompt := &survey.Select{
-		Message: "Which organisation do you want to use?",
-		Options: GetOrganizations(orgLister, userName),
-		Default: userName,
-	}
-
-	orgName := ""
-	surveyOpts := survey.WithStdio(in, out, errOut)
-	err := survey.AskOne(prompt, &orgName, nil, surveyOpts)
-	if err != nil {
-		return "", err
-	}
-	if orgName == userName {
-		return "", nil
-	}
-	return orgName, nil
 }
 
 // GetOrganizations gets the organisation
@@ -301,47 +277,6 @@ func GetOrganizations(orgLister OrganisationLister, userName string) []string {
 	}
 	sort.Strings(orgNames)
 	return orgNames
-}
-
-func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) ([]*GitRepository, error) {
-	answer := []*GitRepository{}
-	repos, err := provider.ListRepositories(owner)
-	if err != nil {
-		return answer, err
-	}
-
-	repoMap := map[string]*GitRepository{}
-	allRepoNames := []string{}
-	for _, repo := range repos {
-		n := repo.Name
-		if n != "" && (filter == "" || strings.Contains(n, filter)) {
-			allRepoNames = append(allRepoNames, n)
-			repoMap[n] = repo
-		}
-	}
-	if len(allRepoNames) == 0 {
-		return answer, fmt.Errorf("No matching repositories could be found!")
-	}
-	sort.Strings(allRepoNames)
-
-	prompt := &survey.MultiSelect{
-		Message: message,
-		Options: allRepoNames,
-	}
-	if selectAll {
-		prompt.Default = allRepoNames
-	}
-	repoNames := []string{}
-	surveyOpts := survey.WithStdio(in, out, errOut)
-	err = survey.AskOne(prompt, &repoNames, nil, surveyOpts)
-
-	for _, n := range repoNames {
-		repo := repoMap[n]
-		if repo != nil {
-			answer = append(answer, repo)
-		}
-	}
-	return answer, err
 }
 
 // IsGitRepoStatusSuccess returns true if all the statuses are successful
@@ -372,41 +307,6 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
-	config, err := authConfigSvc.Config()
-	if err != nil {
-		return nil, err
-	}
-	hostUrl := i.HostURLWithoutUser()
-	server := config.GetOrCreateServer(hostUrl)
-	if server.Kind == "" {
-		server.Kind = gitKind
-	}
-	userAuth, err := config.PickServerUserAuth(server, message, batchMode, "", in, out, errOut)
-	if err != nil {
-		return nil, err
-	}
-	if userAuth.IsInvalid() {
-		userAuth, err = createUserForServer(batchMode, userAuth, authConfigSvc, server, git, in, out, errOut)
-	}
-	return i.CreateProviderForUser(server, userAuth, gitKind, git)
-}
-
-func (i *GitRepository) CreateProviderForUser(server *auth.ServerAuth, user *auth.UserAuth, gitKind string, git Gitter) (GitProvider, error) {
-	if i.Host == GitHubHost {
-		return NewGitHubProvider(server, user, git)
-	}
-	if gitKind != "" && server.Kind != gitKind {
-		server.Kind = gitKind
-	}
-	return CreateProvider(server, user, git)
-}
-
-func (i *GitRepository) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
-	hostUrl := i.HostURLWithoutUser()
-	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
-}
-
 // ProviderURL returns the git provider URL
 func (i *GitRepository) ProviderURL() string {
 	scheme := i.Scheme
@@ -414,68 +314,6 @@ func (i *GitRepository) ProviderURL() string {
 		scheme = "https"
 	}
 	return scheme + "://" + i.Host
-}
-
-// CreateProviderForURL creates the Git provider for the given git kind and host URL
-func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool,
-	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
-	config, err := authConfigSvc.Config()
-	if err != nil {
-		return nil, err
-	}
-	server := config.GetOrCreateServer(hostUrl)
-	if gitKind != "" {
-		server.Kind = gitKind
-	}
-
-	userAuth := server.CurrentUserAuth()
-	if userAuth != nil && !userAuth.IsInvalid() {
-		return CreateProvider(server, userAuth, git)
-	}
-
-	kind := server.Kind
-	if kind == "" {
-		kind = "GIT"
-	}
-	userAuthVar := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
-	if !userAuthVar.IsInvalid() {
-		return CreateProvider(server, &userAuthVar, git)
-	}
-	userAuth, err = createUserForServer(batchMode, &userAuthVar, authConfigSvc, server, git, in, out, errOut)
-	if err != nil {
-		return nil, err
-	}
-	return CreateProvider(server, userAuth, git)
-}
-
-func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.ServerAuth,
-	git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*auth.UserAuth, error) {
-
-	f := func(username string) error {
-		git.PrintCreateRepositoryGenerateAccessToken(server, username, out)
-		return nil
-	}
-
-	defaultUserName := ""
-	config, err := authConfigSvc.Config()
-	if err != nil {
-		return nil, err
-	}
-	err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, batchMode, f, in, out, errOut)
-	if err != nil {
-		return userAuth, err
-	}
-
-	// TODO lets verify the auth works
-
-	err = authConfigSvc.SaveUserAuth(server.URL, userAuth)
-	if err != nil {
-		return userAuth, fmt.Errorf("failed to store git auth configuration %s", err)
-	}
-	if userAuth.IsInvalid() {
-		return userAuth, fmt.Errorf("you did not properly define the user authentication")
-	}
-	return userAuth, nil
 }
 
 // ToGitLabels converts the list of label names into an array of GitLabels

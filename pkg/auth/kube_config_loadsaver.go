@@ -54,7 +54,7 @@ func NewKubeConfigService(client kubernetes.Interface, namespace string, serverK
 		serverKind:  serverKind,
 		serviceKind: serviceKind,
 	}
-	return newConfigService(&ks, &ks)
+	return NewConfigService(&ks, &ks)
 }
 
 // LoadConfig loads the config from Kubernetes secrets
