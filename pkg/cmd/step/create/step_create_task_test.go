@@ -380,7 +380,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			if effectiveProjectConfig != nil {
 				createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
 			}
-			pipelineName := tekton.PipelineResourceName(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline)
+			pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline)
 			crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
 			if tt.expectingError {
 				if err == nil {

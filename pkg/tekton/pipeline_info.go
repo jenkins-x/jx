@@ -141,7 +141,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	}
 
 	pri := &PipelineRunInfo{
-		Name:        prName,
+		Name:        PipelineResourceName(pr.Labels[LabelOwner], pr.Labels[LabelRepo], pr.Labels[LabelBranch], pr.Labels[LabelContext], BuildPipeline),
 		PipelineRun: pr.Name,
 		Pipeline:    pr.Spec.PipelineRef.Name,
 	}

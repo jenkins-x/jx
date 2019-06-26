@@ -141,7 +141,7 @@ func (o *StepCreatePipelineOptions) Run() error {
 		return errors.Wrap(err, "unable to retrieve pod templates")
 	}
 
-	pipelineName := tekton.PipelineResourceName(gitInfo, o.Branch, o.Context, tekton.MetaPipeline)
+	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, o.Branch, o.Context, tekton.MetaPipeline)
 	buildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, gitInfo, o.Branch, retryDuration, pipelineName)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine next build number")
