@@ -1,8 +1,10 @@
 package verify_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/tests"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/verify"
@@ -17,12 +19,14 @@ const (
 )
 
 func TestStepVerifyPreInstallTerraformKaniko(t *testing.T) {
-	t.Parallel()
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		t.Parallel()
 
-	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "terraform_kaniko"))
-	err := options.Run()
+		options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "terraform_kaniko"))
+		err := options.Run()
 
-	assert.Errorf(t, err, "the command should have failed for terraform and kaniko with a missing kaniko secret")
+		assert.Errorf(r, err, "the command should have failed for terraform and kaniko with a missing kaniko secret")
+	})
 }
 
 func TestStepVerifyPreInstallNoKanikoNoLazyCreate(t *testing.T) {
