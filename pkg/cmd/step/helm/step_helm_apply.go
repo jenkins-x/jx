@@ -127,6 +127,8 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	o.SetDevNamespace(ns)
+
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err

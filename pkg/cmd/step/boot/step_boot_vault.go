@@ -94,6 +94,7 @@ func (o *StepBootVaultOptions) Run() error {
 		// TODO
 		// AWSConfig:           o.AWSConfig,
 	}
+	cvo.SetDevNamespace(ns)
 
 	provider := requirements.Provider
 	if provider == cloud.GKE {

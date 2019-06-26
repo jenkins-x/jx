@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -86,6 +87,15 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 	o.SetDevNamespace(ns)
+
+	no := &namespace.NamespaceOptions{}
+	no.CommonOptions = o.CommonOptions
+	no.Args = []string{ns}
+	log.Logger().Infof("setting the local kubernetes context to the deploy namespace %s\n", info(ns), info("jx"))
+	err = no.Run()
+	if err != nil {
+		return err
+	}
 
 	kubeClient, err := o.KubeClient()
 	if err != nil {
