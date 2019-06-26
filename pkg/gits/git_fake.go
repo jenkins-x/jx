@@ -550,3 +550,8 @@ func (g *GitFake) RemoteUpdate(dir string) error {
 func (g *GitFake) LocalBranches(dir string) ([]string, error) {
 	return g.Branches, nil
 }
+
+//MergeTheirs does nothing
+func (g *GitFake) MergeTheirs(dir string, commitish string) error {
+	return nil
+}

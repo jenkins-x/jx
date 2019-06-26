@@ -41,6 +41,7 @@ type GitProvider interface {
 	ValidateRepositoryName(org string, name string) error
 
 	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
+	UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error)
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
 
@@ -99,6 +100,8 @@ type GitProvider interface {
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
+
+	GetRelease(org string, name string, id string) (*GitRelease, error)
 
 	GetContent(org string, name string, path string, ref string) (*GitFileContent, error)
 
@@ -243,6 +246,8 @@ type Gitter interface {
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
 	DeleteRemoteBranch(dir string, remoteName string, branch string) error
+
+	MergeTheirs(dir string, commitish string) error
 }
 
 // ConfigureGitFn callback to optionally configure git before its used for creating commits and PRs

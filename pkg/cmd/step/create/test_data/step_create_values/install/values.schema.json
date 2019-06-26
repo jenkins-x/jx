@@ -72,7 +72,7 @@
             "properties": {
               "url": {
                 "type": "string",
-                "title": "Docker Registry Url",
+                "title": "Docker Registry URL",
                 "default": "https://index.docker.io/v1/"
               },
               "username": {

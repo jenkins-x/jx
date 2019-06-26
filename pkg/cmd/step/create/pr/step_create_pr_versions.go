@@ -1,4 +1,4 @@
-package create
+package pr
 
 import (
 	"fmt"
@@ -29,25 +29,25 @@ var (
 
 	createVersionPullRequestExample = templates.Examples(`
 		# create a Pull Request to update a chart version
-		jx step create version pr -n jenkins-x/prow -v 1.2.3
+		jx step create pr versions -n jenkins-x/prow -v 1.2.3
 
 		# create a Pull Request to update a chart version to the latest found in the helm repo
-		jx step create version pr -n jenkins-x/prow 
+		jx step create pr versions -n jenkins-x/prow 
 
 		# create a Pull Request to update all charts matching a filter to the latest found in the helm repo
-		jx step create version pr -f "*"
+		jx step create pr versions pr -f "*"
 
 		# create a Pull Request to update all charts in the 'jenkins-x' chart repository to the latest found in the helm repo
-		jx step create version pr -f "jenkins-x/*"
+		jx step create pr versions -f "jenkins-x/*"
 
 		# create a Pull Request to update all charts in the 'jenkins-x' chart repository and update the BDD test images
-		jx step create version pr -f "jenkins-x/*" --images
+		jx step create pr versions -f "jenkins-x/*" --images
 
 			`)
 )
 
-// StepCreateVersionPullRequestOptions contains the command line flags
-type StepCreateVersionPullRequestOptions struct {
+// StepCreatePullRequestVersionsOptions contains the command line flags
+type StepCreatePullRequestVersionsOptions struct {
 	opts.StepOptions
 
 	Kind               string
@@ -64,7 +64,7 @@ type StepCreateVersionPullRequestOptions struct {
 }
 
 // StepCreateVersionPullRequestResults stores the generated results
-type StepCreateVersionPullRequestResults struct {
+type StepCreatePullRequestVersionsResults struct {
 	Pipeline    *pipelineapi.Pipeline
 	Task        *pipelineapi.Task
 	PipelineRun *pipelineapi.PipelineRun
@@ -72,14 +72,14 @@ type StepCreateVersionPullRequestResults struct {
 
 // NewCmdStepCreateVersionPullRequest Creates a new Command object
 func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &StepCreateVersionPullRequestOptions{
+	options := &StepCreatePullRequestVersionsOptions{
 		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
 
 	cmd := &cobra.Command{
-		Use:     "version pr",
+		Use:     "versions",
 		Short:   "Creates a Pull Request on the versions git repository for a new version of a chart/package",
 		Long:    createVersionPullRequestLong,
 		Example: createVersionPullRequestExample,
@@ -104,7 +104,7 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.C
 }
 
 // Run implements this command
-func (o *StepCreateVersionPullRequestOptions) Run() error {
+func (o *StepCreatePullRequestVersionsOptions) Run() error {
 	if o.Kind == "" {
 		return util.MissingOption("kind")
 	}
@@ -127,7 +127,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 			return err
 		}
 
-		log.Logger().Infof("the latest builder image version is %s", util.ColorInfo(o.builderImageVersion))
+		log.Logger().Infof("the latest builder image version is %s\n", util.ColorInfo(o.builderImageVersion))
 	}
 
 	if len(o.Includes) == 0 {
@@ -140,7 +140,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 			if err != nil {
 				return errors.Wrapf(err, "failed to find latest chart version for %s", o.Name)
 			}
-			log.Logger().Infof("found latest version %s for chart %s", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
+			log.Logger().Infof("found latest version %s for chart %s\n", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
 		}
 		if o.Version == "" {
 			return util.MissingOption("version")
@@ -164,7 +164,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	})
 }
 
-func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
+func (o *StepCreatePullRequestVersionsOptions) modifyFiles(dir string) error {
 	if version.VersionKind(o.Kind) == version.KindChart {
 		err := o.ensureHelmReposSetup(dir)
 		if err != nil {
@@ -217,14 +217,14 @@ func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
 	return nil
 }
 
-func (o *StepCreateVersionPullRequestOptions) findLatestChartVersions(dir string) error {
+func (o *StepCreatePullRequestVersionsOptions) findLatestChartVersions(dir string) error {
 	callback := func(kind version.VersionKind, name string, stableVersion *version.StableVersion) (bool, error) {
 		if !util.StringMatchesAny(name, o.Includes, o.Excludes) {
 			return true, nil
 		}
 		v, err := o.findLatestChartVersion(name)
 		if err != nil {
-			log.Logger().Warnf("failed to find latest version of %s: %s", name, err.Error())
+			log.Logger().Warnf("failed to find latest version of %s: %s\n", name, err.Error())
 			return true, nil
 		}
 		if v != stableVersion.Version {
@@ -242,7 +242,7 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersions(dir string
 	return err
 }
 
-func (o *StepCreateVersionPullRequestOptions) modifyVersionYamlFiles(globPattern string, newVersion string, excludeFiles ...string) error {
+func (o *StepCreatePullRequestVersionsOptions) modifyVersionYamlFiles(globPattern string, newVersion string, excludeFiles ...string) error {
 	files, err := filepath.Glob(globPattern)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create glob from pattern %s", globPattern)
@@ -269,7 +269,7 @@ func (o *StepCreateVersionPullRequestOptions) modifyVersionYamlFiles(globPattern
 	return nil
 }
 
-func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string) (string, error) {
+func (o *StepCreatePullRequestVersionsOptions) findLatestChartVersion(name string) (string, error) {
 	err := o.updateHelmRepo()
 	if err != nil {
 		return "", err
@@ -281,19 +281,21 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string
 	if len(info) == 0 {
 		return "", fmt.Errorf("no version found for chart %s", name)
 	}
-	log.Logger().Debugf("found %d versions:", len(info))
-	for _, v := range info {
-		log.Logger().Debugf("    %s:", v)
+	if o.Verbose {
+		log.Logger().Infof("found %d versions:\n", len(info))
+		for _, v := range info {
+			log.Logger().Infof("    %s:\n", v)
+		}
 	}
 	return info[0], nil
 }
 
 // updateHelmRepo updates the helm repos if required
-func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
+func (o *StepCreatePullRequestVersionsOptions) updateHelmRepo() error {
 	if o.updatedHelmRepo {
 		return nil
 	}
-	log.Logger().Info("updating helm repositories to find the latest chart versions...")
+	log.Logger().Info("updating helm repositories to find the latest chart versions...\n")
 	err := o.Helm().UpdateRepo()
 	if err != nil {
 		return errors.Wrap(err, "failed to update helm repos")
@@ -302,7 +304,7 @@ func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
 	return nil
 }
 
-func (o *StepCreateVersionPullRequestOptions) findLatestBuilderImageVersion() (string, error) {
+func (o *StepCreatePullRequestVersionsOptions) findLatestBuilderImageVersion() (string, error) {
 	output, err := o.GetCommandOutput("", "gcloud", "container", "images", "list-tags", "gcr.io/jenkinsxio/builder-maven", "--format", "json")
 	if err != nil {
 		return "", err
@@ -311,7 +313,7 @@ func (o *StepCreateVersionPullRequestOptions) findLatestBuilderImageVersion() (s
 }
 
 // modifyRegex performs a search and replace of the given regular expression with the replacement in the given set of globPattern files
-func (o *StepCreateVersionPullRequestOptions) modifyRegex(globPattern string, regexPattern string, replacement string) error {
+func (o *StepCreatePullRequestVersionsOptions) modifyRegex(globPattern string, regexPattern string, replacement string) error {
 	files, err := filepath.Glob(globPattern)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find glob pattern %s", globPattern)
@@ -335,7 +337,7 @@ func (o *StepCreateVersionPullRequestOptions) modifyRegex(globPattern string, re
 	return nil
 }
 
-func (o *StepCreateVersionPullRequestOptions) ensureHelmReposSetup(dir string) error {
+func (o *StepCreatePullRequestVersionsOptions) ensureHelmReposSetup(dir string) error {
 	_, err := o.HelmInitDependency(dir, o.DefaultReleaseCharts())
 	return errors.Wrap(err, "failed to ensure the helm repositories were setup")
 }

@@ -250,6 +250,8 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "Unable to merge PULL_REFS in %s", o.cloneDir)
 		}
+		// Add the REPO_URL env var
+		o.CustomEnvs = append(o.CustomEnvs, fmt.Sprintf("%s=%s", "REPO_URL", o.CloneGitURL))
 	}
 
 	log.Logger().Debugf("setting up docker registry for %s", o.CloneGitURL)

@@ -851,3 +851,8 @@ func (g *GitCLI) GetLatestCommitSha(dir string) (string, error) {
 func (g *GitCLI) ResetHard(dir string, commitish string) error {
 	return g.gitCmd(dir, "reset", "--hard", commitish)
 }
+
+// MergeTheirs will do a recursive merge of commitish with the option theirs
+func (g *GitCLI) MergeTheirs(dir string, commitish string) error {
+	return g.gitCmd(dir, "merge", "--strategy-option=theirs", commitish)
+}

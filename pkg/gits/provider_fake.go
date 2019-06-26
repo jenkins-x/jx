@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	errors2 "github.com/pkg/errors"
 )
 
 const jenkinsWebhookPath = "/jenkins-webhook/"
@@ -222,6 +223,11 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 	}
 	repo.PullRequests[number] = fakePr
 	return pr, nil
+}
+
+// UpdatePullRequest updates the pull request number with the new data
+func (f *FakeProvider) UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error) {
+	return nil, errors2.Errorf("Not yet implemented for fake")
 }
 
 func (f *FakeProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
@@ -616,6 +622,20 @@ func (f *FakeProvider) ListReleases(org string, name string) ([]*GitRelease, err
 		}
 	}
 	return nil, fmt.Errorf("repository with name '%s' not found", name)
+}
+
+// GetRelease returns the release info for the org, repository name and tag, or nil if no release is found
+func (f *FakeProvider) GetRelease(org string, name string, tag string) (*GitRelease, error) {
+	releases, err := f.ListReleases(org, name)
+	if err != nil {
+		return nil, errors2.WithStack(err)
+	}
+	for _, release := range releases {
+		if release.TagName == tag {
+			return release, nil
+		}
+	}
+	return nil, nil
 }
 
 func (f *FakeProvider) JenkinsWebHookPath(gitURL string, secret string) string {
