@@ -43,6 +43,7 @@ import (
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
+// FakeFactory points to a fake factory implementation
 type FakeFactory struct {
 	Batch bool
 
@@ -74,7 +75,7 @@ func NewFakeFactory() clients.Factory {
 	return f
 }
 
-// NewFakeFactory creates a fake factory which uses fake k8s clients for testing
+// NewFakeFactoryFromClients creates a fake factory which uses fake k8s clients for testing
 func NewFakeFactoryFromClients(apiClient apiextensionsclientset.Interface,
 	jxClient versioned.Interface,
 	kubeClient kubernetes.Interface) *FakeFactory {
@@ -106,10 +107,12 @@ func (f *FakeFactory) SetNamespace(ns string) {
 	f.namespace = ns
 }
 
+// SetBatch sets batch
 func (f *FakeFactory) SetBatch(batch bool) {
 	f.Batch = batch
 }
 
+// SetOffline sets offline
 func (f *FakeFactory) SetOffline(offline bool) {
 	f.offline = offline
 }
@@ -329,6 +332,7 @@ func (f *FakeFactory) CreateApiExtensionsClient() (apiextensionsclientset.Interf
 	return f.apiClient, nil
 }
 
+// CreateKnativeBuildClient creates knative build client
 func (f *FakeFactory) CreateKnativeBuildClient() (build.Interface, string, error) {
 	if f.buildClient == nil {
 		f.buildClient = buildfake.NewSimpleClientset()
