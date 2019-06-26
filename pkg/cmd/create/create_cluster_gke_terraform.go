@@ -278,7 +278,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if err != nil {
 		return err
 	}
-	username := sanitizeLabel(user.Username)
+	username := util.SanitizeLabel(user.Username)
 
 	// create .tfvars file in .jx folder
 	terraformVars := filepath.Join(terraformDir, "terraform.tfvars")
@@ -340,7 +340,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 
 	labels := o.Flags.Labels
 	if err == nil && user != nil {
-		username := sanitizeLabel(user.Username)
+		username := util.SanitizeLabel(user.Username)
 		if username != "" {
 			sep := ""
 			if labels != "" {

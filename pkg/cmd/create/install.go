@@ -3264,7 +3264,7 @@ func validateClusterName(clustername string) error {
 	}
 	// Now we need only make sure that clustername is limited to
 	// lowercase alphanumerics and dashes.
-	if disallowedLabelCharacters.MatchString(clustername) {
+	if util.DisallowedLabelCharacters.MatchString(clustername) {
 		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
 		return err
 	}
