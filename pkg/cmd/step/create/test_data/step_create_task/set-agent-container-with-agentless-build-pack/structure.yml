@@ -3,6 +3,7 @@ metadata:
   name: abayer-js-test-repo-no-default-1
   labels:
     branch: no-default-agent
+    build: "1"
     owner: abayer
     repo: js-test-repo
 pipelineRef: null

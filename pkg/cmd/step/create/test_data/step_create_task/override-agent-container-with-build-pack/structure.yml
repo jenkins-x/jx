@@ -3,6 +3,7 @@ metadata:
   name: abayer-js-test-repo-override-de-1
   labels:
     branch: override-default-agent
+    build: "1"
     owner: abayer
     repo: js-test-repo
 pipelineRef: null

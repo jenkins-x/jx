@@ -4,6 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     branch: master
+    build: "1"
     owner: abayer
     repo: jx-demo-qs
   name: abayer-jx-demo-qs-master-1

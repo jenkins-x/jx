@@ -6,6 +6,7 @@ items:
       labels:
         jenkins.io/task-stage-name: from-build-pack
         branch: master
+        build: "1"
         owner: abayer
         repo: jx-demo-qs
       name: abayer-jx-demo-qs-master-from-build-pack-1

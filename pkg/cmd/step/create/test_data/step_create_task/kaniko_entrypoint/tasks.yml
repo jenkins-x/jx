@@ -6,6 +6,7 @@ items:
       labels:
         jenkins.io/task-stage-name: ci
         branch: fix-kaniko-special-casing
+        build: "1"
         owner: jenkins-x
         repo: jx
       name: jenkins-x-jx-fix-kaniko-special-ci-1
