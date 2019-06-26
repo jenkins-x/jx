@@ -66,6 +66,8 @@ func TestCreateValuesFileWithVault(t *testing.T) {
 			mockHelmer,
 			installerMock,
 		)
+		testhelpers.MockFactoryWithKubeClients(mockFactory, &commonOpts)
+
 		console := tests.NewTerminal(r, &timeout)
 		defer console.Cleanup()
 		commonOpts.In = console.In

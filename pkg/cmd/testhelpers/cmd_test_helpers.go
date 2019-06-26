@@ -10,11 +10,14 @@ import (
 
 	//"github.com/jenkins-x/jx/pkg/cmd/controller"
 
+	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	fakefactory "github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+	clients_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -23,14 +26,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	kservefake "github.com/knative/serving/pkg/client/clientset/versioned/fake"
+	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
-
-	"github.com/ghodss/yaml"
 )
 
 // ConfigureTestOptions lets configure the options for use in tests
@@ -109,6 +111,35 @@ func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runti
 	}
 	o.SetHelm(helm)
 	o.SetResourcesInstaller(resourcesInstaller)
+}
+
+// SetFakeFactoryFromKubeClients registers a factory from the existing clients so that if a client is nilled we reuse the same one again
+func SetFakeFactoryFromKubeClients(o *opts.CommonOptions) {
+	apiClient, _ := o.ApiExtensionsClient()
+	jxClient, _, _ := o.JXClient()
+	kubeClient, _ := o.KubeClient()
+	f := fakefactory.NewFakeFactoryFromClients(apiClient, jxClient, kubeClient)
+	f.SetDelegateFactory(o.GetFactory())
+	o.SetFactory(f)
+}
+
+// MockFactoryWithKubeClients registers the fake clients with the mock factory so they return the same instances
+func MockFactoryWithKubeClients(mockFactory *clients_test.MockFactory, o *opts.CommonOptions) {
+	apiClient, _ := o.ApiExtensionsClient()
+	jxClient, _, _ := o.JXClient()
+	kubeClient, _ := o.KubeClient()
+
+	pegomock.When(mockFactory.CreateKubeClient()).ThenReturn(pegomock.ReturnValue(kubeClient), pegomock.ReturnValue("jx"), pegomock.ReturnValue(nil))
+	pegomock.When(mockFactory.CreateJXClient()).ThenReturn(pegomock.ReturnValue(jxClient), pegomock.ReturnValue("jx"), pegomock.ReturnValue(nil))
+	pegomock.When(mockFactory.CreateApiExtensionsClient()).ThenReturn(pegomock.ReturnValue(apiClient), pegomock.ReturnValue(nil))
+}
+
+// MockFactoryFakeClients lets add the fake k8s clients to the factory
+func MockFactoryFakeClients(mockFactory *clients_test.MockFactory) {
+	pegomock.When(mockFactory.CreateKubeClient()).ThenReturn(pegomock.ReturnValue(fake.NewSimpleClientset()), pegomock.ReturnValue("jx"), pegomock.ReturnValue(nil))
+	pegomock.When(mockFactory.CreateJXClient()).ThenReturn(pegomock.ReturnValue(v1fake.NewSimpleClientset()), pegomock.ReturnValue("jx"), pegomock.ReturnValue(nil))
+	pegomock.When(mockFactory.CreateApiExtensionsClient()).ThenReturn(pegomock.ReturnValue(apifake.NewSimpleClientset()), pegomock.ReturnValue(nil))
+	pegomock.When(mockFactory.CreateKnativeServeClient()).ThenReturn(pegomock.ReturnValue(kservefake.NewSimpleClientset()), pegomock.ReturnValue("jx"), pegomock.ReturnValue(nil))
 }
 
 // CreateTestJxHomeDir creates a temporary JX_HOME directory for the tests, copying over any existing config, returning

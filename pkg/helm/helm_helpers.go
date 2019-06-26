@@ -44,6 +44,8 @@ const (
 	SecretsFileName = "secrets.yaml"
 	// ValuesFileName the file name for values
 	ValuesFileName = "values.yaml"
+	// ValuesTemplateFileName a templated values.yaml file which can refer to parameter expressions
+	ValuesTemplateFileName = "values.tmpl.yaml"
 	// TemplatesDirName is the default name for the templates directory
 	TemplatesDirName = "templates"
 

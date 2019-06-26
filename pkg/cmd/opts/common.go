@@ -273,6 +273,9 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, error) {
 			o.currentNamespace = currentNs
 		}
 	}
+	if o.kubeClient == nil {
+		return o.kubeClient, fmt.Errorf("failed to create KubeClient")
+	}
 	return o.kubeClient, nil
 }
 

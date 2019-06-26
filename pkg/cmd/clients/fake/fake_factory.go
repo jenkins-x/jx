@@ -2,9 +2,10 @@ package fake
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"io"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/cmd/clients"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
@@ -42,9 +43,10 @@ import (
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
-type fakefactory struct {
+type FakeFactory struct {
 	Batch bool
 
+	delegate        clients.Factory
 	namespace       string
 	kubeConfig      kube.Kuber
 	impersonateUser string
@@ -61,97 +63,124 @@ type fakefactory struct {
 	tektonClient tektonclient.Interface
 }
 
-var _ clients.Factory = (*fakefactory)(nil)
+var _ clients.Factory = (*FakeFactory)(nil)
 
 // NewFakeFactory creates a fake factory which uses fake k8s clients for testing
 func NewFakeFactory() clients.Factory {
-	f := &fakefactory{
+	f := &FakeFactory{
 		namespace: "jx",
 	}
 	f.kubeConfig = kube.NewKubeConfig()
 	return f
 }
 
+// NewFakeFactory creates a fake factory which uses fake k8s clients for testing
+func NewFakeFactoryFromClients(apiClient apiextensionsclientset.Interface,
+	jxClient versioned.Interface,
+	kubeClient kubernetes.Interface) *FakeFactory {
+	f := &FakeFactory{
+		namespace:  "jx",
+		apiClient:  apiClient,
+		jxClient:   jxClient,
+		kubeClient: kubeClient,
+	}
+	f.kubeConfig = kube.NewKubeConfig()
+	return f
+}
+
+// SetDelegateFactory sets the delegate factory
+func (f *FakeFactory) SetDelegateFactory(factory clients.Factory) {
+	f.delegate = factory
+}
+
+// GetDelegateFactory returns the delegate factory
+func (f *FakeFactory) GetDelegateFactory() clients.Factory {
+	if f.delegate == nil {
+		f.delegate = clients.NewFactory()
+	}
+	return f.delegate
+}
+
 // SetNamespace sets the default namespace
-func (f *fakefactory) SetNamespace(ns string) {
+func (f *FakeFactory) SetNamespace(ns string) {
 	f.namespace = ns
 }
 
-func (f *fakefactory) SetBatch(batch bool) {
+func (f *FakeFactory) SetBatch(batch bool) {
 	f.Batch = batch
 }
 
-func (f *fakefactory) SetOffline(offline bool) {
+func (f *FakeFactory) SetOffline(offline bool) {
 	f.offline = offline
 }
 
 // ImpersonateUser returns a new factory impersonating the given user
-func (f *fakefactory) ImpersonateUser(user string) clients.Factory {
+func (f *FakeFactory) ImpersonateUser(user string) clients.Factory {
 	copy := *f
 	copy.impersonateUser = user
 	return &copy
 }
 
 // WithBearerToken returns a new factory with bearer token
-func (f *fakefactory) WithBearerToken(token string) clients.Factory {
+func (f *FakeFactory) WithBearerToken(token string) clients.Factory {
 	copy := *f
 	copy.bearerToken = token
 	return &copy
 }
 
 // CreateJenkinsClient creates a new Jenkins client
-func (f *fakefactory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	return clients.NewFactory().CreateJenkinsClient(kubeClient, ns, in, out, errOut)
+func (f *FakeFactory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+	return f.GetDelegateFactory().CreateJenkinsClient(kubeClient, ns, in, out, errOut)
 }
 
 // CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
-func (f *fakefactory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	return clients.NewFactory().CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName, in, out, errOut)
+func (f *FakeFactory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+	return f.GetDelegateFactory().CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName, in, out, errOut)
 }
 
 // GetJenkinsURL gets the Jenkins URL for the given namespace
-func (f *fakefactory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
-	return clients.NewFactory().GetJenkinsURL(kubeClient, ns)
+func (f *FakeFactory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
+	return f.GetDelegateFactory().GetJenkinsURL(kubeClient, ns)
 }
 
 // GetCustomJenkinsURL gets a custom jenkins App service URL
-func (f *fakefactory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string) (string, error) {
-	return clients.NewFactory().GetCustomJenkinsURL(kubeClient, ns, jenkinsServiceName)
+func (f *FakeFactory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string) (string, error) {
+	return f.GetDelegateFactory().GetCustomJenkinsURL(kubeClient, ns, jenkinsServiceName)
 }
 
 // CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
-func (f *fakefactory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string, jenkinsServiceName string) (auth.ConfigService, error) {
-	return clients.NewFactory().CreateJenkinsAuthConfigService(c, ns, jenkinsServiceName)
+func (f *FakeFactory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string, jenkinsServiceName string) (auth.ConfigService, error) {
+	return f.GetDelegateFactory().CreateJenkinsAuthConfigService(c, ns, jenkinsServiceName)
 }
 
 // CreateChartmuseumAuthConfigService creates a new Chartmuseum authentication configuration service
-func (f *fakefactory) CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error) {
-	return clients.NewFactory().CreateChartmuseumAuthConfigService(namespace)
+func (f *FakeFactory) CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error) {
+	return f.GetDelegateFactory().CreateChartmuseumAuthConfigService(namespace)
 }
 
 // CreateIssueTrackerAuthConfigService creates a new issuer tracker configuration service
-func (f *fakefactory) CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	return clients.NewFactory().CreateIssueTrackerAuthConfigService(namespace, secrets)
+func (f *FakeFactory) CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	return f.GetDelegateFactory().CreateIssueTrackerAuthConfigService(namespace, secrets)
 }
 
 // CreateChatAuthConfigService creates a new chat configuration service
-func (f *fakefactory) CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	return clients.NewFactory().CreateChatAuthConfigService(namespace, secrets)
+func (f *FakeFactory) CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	return f.GetDelegateFactory().CreateChatAuthConfigService(namespace, secrets)
 }
 
 // CreateAddonAuthConfigService creates a new addon auth configuration service
-func (f *fakefactory) CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	return clients.NewFactory().CreateAddonAuthConfigService(namespace, secrets)
+func (f *FakeFactory) CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	return f.GetDelegateFactory().CreateAddonAuthConfigService(namespace, secrets)
 }
 
 // AuthMergePipelineSecrets merges the current config with the pipeline secrets provided in k8s secrets
-func (f *fakefactory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error {
-	return clients.NewFactory().AuthMergePipelineSecrets(config, secrets, kind, isCDPipeline)
+func (f *FakeFactory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error {
+	return f.GetDelegateFactory().AuthMergePipelineSecrets(config, secrets, kind, isCDPipeline)
 }
 
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
-func (f *fakefactory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
+func (f *FakeFactory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
 		vaultClient, err := f.CreateSystemVaultClient(namespace)
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
@@ -161,7 +190,7 @@ func (f *fakefactory) CreateAuthConfigService(configName string, namespace strin
 }
 
 // SecretsLocation indicates the location where the secrets are stored
-func (f *fakefactory) SecretsLocation() secrets.SecretsLocationKind {
+func (f *FakeFactory) SecretsLocation() secrets.SecretsLocationKind {
 	client, namespace, err := f.CreateKubeClient()
 	if err != nil {
 		return secrets.FileSystemLocationKind
@@ -178,7 +207,7 @@ func (f *fakefactory) SecretsLocation() secrets.SecretsLocationKind {
 
 // SetSecretsLocation configures the secrets location. It will persist the value in a config map
 // if the persist flag is set.
-func (f *fakefactory) SetSecretsLocation(location secrets.SecretsLocationKind, persist bool) error {
+func (f *FakeFactory) SetSecretsLocation(location secrets.SecretsLocationKind, persist bool) error {
 	if f.secretLocation == nil {
 		client, namespace, err := f.CreateKubeClient()
 		if err != nil {
@@ -194,12 +223,12 @@ func (f *fakefactory) SetSecretsLocation(location secrets.SecretsLocationKind, p
 }
 
 // ResetSecretsLocation resets the location of the secrets stored in memory
-func (f *fakefactory) ResetSecretsLocation() {
+func (f *FakeFactory) ResetSecretsLocation() {
 	f.secretLocation = nil
 }
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
-func (f *fakefactory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
+func (f *FakeFactory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
 	name, err := f.getVaultName(namespace)
 	if err != nil {
 		return nil, err
@@ -209,7 +238,7 @@ func (f *fakefactory) CreateSystemVaultClient(namespace string) (vault.Client, e
 
 // getVaultName gets the vault name from install configuration or builds a new name from
 // cluster name
-func (f *fakefactory) getVaultName(namespace string) (string, error) {
+func (f *FakeFactory) getVaultName(namespace string) (string, error) {
 	kubeClient, _, err := f.CreateKubeClient()
 	if err != nil {
 		return "", err
@@ -236,7 +265,7 @@ func (f *fakefactory) getVaultName(namespace string) (string, error) {
 
 // CreateVaultClient returns the given vault client for managing secrets
 // Will use default values for name and namespace if nil values are applied
-func (f *fakefactory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
+func (f *FakeFactory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the vault operator client")
@@ -277,7 +306,7 @@ func (f *fakefactory) CreateVaultClient(name string, namespace string) (vault.Cl
 }
 
 // CreateKubeClient creates a new Kubernetes client
-func (f *fakefactory) CreateKubeClient() (kubernetes.Interface, string, error) {
+func (f *FakeFactory) CreateKubeClient() (kubernetes.Interface, string, error) {
 	if f.kubeClient == nil {
 		f.kubeClient = fake.NewSimpleClientset()
 	}
@@ -285,7 +314,7 @@ func (f *fakefactory) CreateKubeClient() (kubernetes.Interface, string, error) {
 }
 
 // CreateJXClient creates a new Kubernetes client for Jenkins X CRDs
-func (f *fakefactory) CreateJXClient() (versioned.Interface, string, error) {
+func (f *FakeFactory) CreateJXClient() (versioned.Interface, string, error) {
 	if f.jxClient == nil {
 		f.jxClient = v1fake.NewSimpleClientset()
 	}
@@ -293,14 +322,14 @@ func (f *fakefactory) CreateJXClient() (versioned.Interface, string, error) {
 }
 
 // CreateApiExtensionsClient creates a new Kubernetes ApiExtensions client
-func (f *fakefactory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
+func (f *FakeFactory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	if f.apiClient == nil {
 		f.apiClient = apifake.NewSimpleClientset()
 	}
 	return f.apiClient, nil
 }
 
-func (f *fakefactory) CreateKnativeBuildClient() (build.Interface, string, error) {
+func (f *FakeFactory) CreateKnativeBuildClient() (build.Interface, string, error) {
 	if f.buildClient == nil {
 		f.buildClient = buildfake.NewSimpleClientset()
 	}
@@ -308,7 +337,7 @@ func (f *fakefactory) CreateKnativeBuildClient() (build.Interface, string, error
 }
 
 // CreateKnativeServeClient create a new Kubernetes client for Knative serve resources
-func (f *fakefactory) CreateKnativeServeClient() (kserve.Interface, string, error) {
+func (f *FakeFactory) CreateKnativeServeClient() (kserve.Interface, string, error) {
 	if f.kserveClient == nil {
 		f.kserveClient = kservefake.NewSimpleClientset()
 	}
@@ -316,7 +345,7 @@ func (f *fakefactory) CreateKnativeServeClient() (kserve.Interface, string, erro
 }
 
 // CreateTektonClient create a new Kubernetes client for Tekton resources
-func (f *fakefactory) CreateTektonClient() (tektonclient.Interface, string, error) {
+func (f *FakeFactory) CreateTektonClient() (tektonclient.Interface, string, error) {
 	if f.tektonClient == nil {
 		f.tektonClient = tektonfake.NewSimpleClientset()
 	}
@@ -324,7 +353,7 @@ func (f *fakefactory) CreateTektonClient() (tektonclient.Interface, string, erro
 }
 
 // CreateDynamicClient creates a new Kubernetes Dynamic client
-func (f *fakefactory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
+func (f *FakeFactory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -342,7 +371,7 @@ func (f *fakefactory) CreateDynamicClient() (*dynamic.APIHelper, string, error) 
 }
 
 // CreateMetricsClient creates a new Kubernetes metrics client
-func (f *fakefactory) CreateMetricsClient() (*metricsclient.Clientset, error) {
+func (f *FakeFactory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
@@ -351,16 +380,16 @@ func (f *fakefactory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 }
 
 // CreateGitProvider creates a new Git provider
-func (f *fakefactory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
-	return clients.NewFactory().CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, in, out, errOut)
+func (f *FakeFactory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+	return f.GetDelegateFactory().CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, in, out, errOut)
 }
 
 // CreateKubeConfig creates the kubernetes configuration
-func (f *fakefactory) CreateKubeConfig() (*rest.Config, error) {
-	return clients.NewFactory().CreateKubeConfig()
+func (f *FakeFactory) CreateKubeConfig() (*rest.Config, error) {
+	return f.GetDelegateFactory().CreateKubeConfig()
 }
 
-func (f *fakefactory) getImpersonateUser() string {
+func (f *FakeFactory) getImpersonateUser() string {
 	user := f.impersonateUser
 	if user == "" {
 		// this is really only used for testing really
@@ -370,13 +399,13 @@ func (f *fakefactory) getImpersonateUser() string {
 }
 
 // CreateTable creates a new table
-func (f *fakefactory) CreateTable(out io.Writer) table.Table {
+func (f *FakeFactory) CreateTable(out io.Writer) table.Table {
 	return table.CreateTable(out)
 }
 
 // IsInCDPipeline we should only load the git / issue tracker API tokens if the current pod
 // is in a pipeline and running as the Jenkins service account
-func (f *fakefactory) IsInCDPipeline() bool {
+func (f *FakeFactory) IsInCDPipeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	buildNumber := builds.GetBuildNumber()
@@ -384,7 +413,7 @@ func (f *fakefactory) IsInCDPipeline() bool {
 }
 
 // function to tell if we are running incluster
-func (f *fakefactory) IsInCluster() bool {
+func (f *FakeFactory) IsInCluster() bool {
 	_, err := rest.InClusterConfig()
 	if err != nil {
 		return false
@@ -393,7 +422,7 @@ func (f *fakefactory) IsInCluster() bool {
 }
 
 // CreateComplianceClient creates a new Sonobuoy compliance client
-func (f *fakefactory) CreateComplianceClient() (*client.SonobuoyClient, error) {
+func (f *FakeFactory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
@@ -406,7 +435,7 @@ func (f *fakefactory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 }
 
 // CreateVaultOperatorClient creates a new vault operator client
-func (f *fakefactory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
+func (f *FakeFactory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
@@ -415,19 +444,19 @@ func (f *fakefactory) CreateVaultOperatorClient() (vaultoperatorclient.Interface
 }
 
 // CreateHelm creates a new Helm client
-func (f *fakefactory) CreateHelm(verbose bool,
+func (f *FakeFactory) CreateHelm(verbose bool,
 	helmBinary string,
 	noTiller bool,
 	helmTemplate bool) helm.Helmer {
 
-	return clients.NewFactory().CreateHelm(verbose,
+	return f.GetDelegateFactory().CreateHelm(verbose,
 		helmBinary,
 		noTiller,
 		helmTemplate)
 }
 
 // CreateCertManagerClient creates a new Kuberntes client for cert-manager resources
-func (f *fakefactory) CreateCertManagerClient() (certmngclient.Interface, error) {
+func (f *FakeFactory) CreateCertManagerClient() (certmngclient.Interface, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err

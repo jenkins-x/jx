@@ -86,12 +86,12 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.SetDevNamespace(ns)
-
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
+
+	o.SetDevNamespace(ns)
 
 	log.Logger().Infof("verifying the kubernetes cluster before we try to boot Jenkins X in namespace: %s\n", info(ns))
 	if o.LazyCreate {

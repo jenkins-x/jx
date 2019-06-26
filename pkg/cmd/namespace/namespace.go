@@ -96,12 +96,20 @@ func (o *NamespaceOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", info(ctx.Namespace), info(kube.Server(config, ctx)))
-
+		if ctx == nil {
+			_, _ = fmt.Fprintf(o.Out, "No kube context - probably in a unit test or pod?\n")
+		} else {
+			_, _ = fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", info(ctx.Namespace), info(kube.Server(config, ctx)))
+		}
 	} else {
 		ns := kube.CurrentNamespace(config)
 		server := kube.CurrentServer(config)
-		_, _ = fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
+		if config == nil {
+			_, _ = fmt.Fprintf(o.Out, "Using namespace '%s' on server '%s'. No context - probably a unit test or pod?\n", info(ns), info(server))
+
+		} else {
+			_, _ = fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
+		}
 	}
 	return nil
 }

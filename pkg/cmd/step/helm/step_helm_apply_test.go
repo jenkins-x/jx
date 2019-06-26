@@ -57,6 +57,7 @@ func TestApplyAppsTemplateOverrides(t *testing.T) {
 		},
 		ReleaseName: "jx-app-dummy",
 	}
+
 	err = sto.Run()
 	assert.NoError(t, err)
 

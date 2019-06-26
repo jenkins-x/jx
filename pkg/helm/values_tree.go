@@ -67,8 +67,8 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 			rDir, file := filepath.Split(rPath)
 			// For the root dir we just consider directories (which the walk func does for us)
 			if rDir != "" {
-				// If it's values.yaml, then read and parse it
-				if file == "values.yaml" {
+				// If it's values.tmpl.yaml, then evalate it as a go template and parse it
+				if file == ValuesTemplateFileName {
 					b, err := ReadValuesYamlFileTemplateOutput(path, params, funcMap)
 					if err != nil {
 						return err
@@ -78,6 +78,24 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 					err = yaml.Unmarshal(b, &v)
 					if err != nil {
 						return err
+					}
+					if values[rDir] != nil {
+						return fmt.Errorf("already has a nested values map at %s when processing file %s", rDir, rPath)
+					}
+					values[rDir] = v
+				} else if file == ValuesFileName {
+					b, err := ioutil.ReadFile(path)
+					if err != nil {
+						return err
+					}
+					v := make(map[string]interface{})
+
+					err = yaml.Unmarshal(b, &v)
+					if err != nil {
+						return err
+					}
+					if values[rDir] != nil {
+						return fmt.Errorf("already has a nested values map at %s when processing file %s", rDir, rPath)
 					}
 					values[rDir] = v
 				} else {
@@ -99,8 +117,9 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 		return nil, err
 	}
 	// Load the root values.yaml
-	rootValuesFileName := filepath.Join(dir, ValuesFileName)
 	rootData := []byte{}
+
+	rootValuesFileName := filepath.Join(dir, ValuesTemplateFileName)
 	exists, err := util.FileExists(rootValuesFileName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
@@ -109,6 +128,18 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 		rootData, err = ReadValuesYamlFileTemplateOutput(rootValuesFileName, params, funcMap)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to render template of file %s", rootValuesFileName)
+		}
+	} else {
+		rootValuesFileName = filepath.Join(dir, ValuesFileName)
+		exists, err = util.FileExists(rootValuesFileName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
+		}
+		if exists {
+			rootData, err = ioutil.ReadFile(rootValuesFileName)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to load file %s", rootValuesFileName)
+			}
 		}
 	}
 	rootValues, err := LoadValues(rootData)
@@ -169,7 +200,7 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 
 // ReadValuesYamlFileTemplateOutput evaluates the given values.yaml file as a go template and returns the output data
 func ReadValuesYamlFileTemplateOutput(templateFile string, params chartutil.Values, funcMap template.FuncMap) ([]byte, error) {
-	tmpl, err := template.New(ValuesFileName).Option("missingkey=error").Funcs(funcMap).ParseFiles(templateFile)
+	tmpl, err := template.New(ValuesTemplateFileName).Option("missingkey=error").Funcs(funcMap).ParseFiles(templateFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse Secrets template: %s", templateFile)
 	}
