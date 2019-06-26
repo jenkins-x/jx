@@ -6,8 +6,7 @@ before:
   - go mod download
 
 builds:
-  # You can have multiple builds defined as a yaml list
-  -
+  - id: jx-linux-amd64
     # Path to main.go file or main package.
     # Default is `.`.
     main: ./cmd/jx/jx.go
@@ -26,17 +25,103 @@ builds:
      - -X "{{.Env.ROOTPACKAGE}}/pkg/version.BuildDate={{.Env.BUILDDATE}}"
      - -X "{{.Env.ROOTPACKAGE}}/pkg/version.GoVersion={{.Env.GOVERSION}}"
 
-    # Custom environment variables to be set during the builds.
-    # Default is empty.
-    env:
-      - CGO_ENABLED=0
+    # GOOS list to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    # Defaults are darwin and linux.
+    goos:
+      - linux
+
+    # GOARCH to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    # Defaults are 386 and amd64.
+    goarch:
+      - amd64
+
+  - id: jx-linux-arm
+    # Path to main.go file or main package.
+    # Default is `.`.
+    main: ./cmd/jx/jx.go
+
+    # Binary name.
+    # Can be a path (e.g. `bin/app`) to wrap the binary in a directory.
+    # Default is the name of the project directory.
+    binary: jx
+
+    # Custom ldflags templates.
+    # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
+    ldflags:
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Version={{.Env.VERSION}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Revision={{.Env.REV}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Branch={{.Env.BRANCH}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.BuildDate={{.Env.BUILDDATE}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.GoVersion={{.Env.GOVERSION}}"
+
+    # GOOS list to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    # Defaults are darwin and linux.
+    goos:
+      - linux
+
+    # GOARCH to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    # Defaults are 386 and amd64.
+    goarch:
+      - arm
+
+  - id: jx-darwin-amd64
+    # Path to main.go file or main package.
+    # Default is `.`.
+    main: ./cmd/jx/jx.go
+
+    # Binary name.
+    # Can be a path (e.g. `bin/app`) to wrap the binary in a directory.
+    # Default is the name of the project directory.
+    binary: jx
+
+    # Custom ldflags templates.
+    # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
+    ldflags:
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Version={{.Env.VERSION}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Revision={{.Env.REV}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Branch={{.Env.BRANCH}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.BuildDate={{.Env.BUILDDATE}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.GoVersion={{.Env.GOVERSION}}"
 
     # GOOS list to build for.
     # For more info refer to: https://golang.org/doc/install/source#environment
     # Defaults are darwin and linux.
     goos:
       - darwin
-      - linux
+
+    # GOARCH to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    # Defaults are 386 and amd64.
+    goarch:
+      - amd64
+
+  - id: jx-windows-amd64
+    # Path to main.go file or main package.
+    # Default is `.`.
+    main: ./cmd/jx/jx.go
+
+    # Binary name.
+    # Can be a path (e.g. `bin/app`) to wrap the binary in a directory.
+    # Default is the name of the project directory.
+    binary: jx
+
+    # Custom ldflags templates.
+    # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
+    ldflags:
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Version={{.Env.VERSION}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Revision={{.Env.REV}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.Branch={{.Env.BRANCH}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.BuildDate={{.Env.BUILDDATE}}"
+     - -X "{{.Env.ROOTPACKAGE}}/pkg/version.GoVersion={{.Env.GOVERSION}}"
+
+    # GOOS list to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    # Defaults are darwin and linux.
+    goos:
       - windows
 
     # GOARCH to build for.
@@ -44,15 +129,6 @@ builds:
     # Defaults are 386 and amd64.
     goarch:
       - amd64
-      - arm
-
-    # List of combinations of GOOS + GOARCH + GOARM to ignore.
-    # Default is empty.
-    ignore:
-      - goos: darwin
-        goarch: arm
-      - goos: windows
-        goarch: arm
 
 archives:
   -
