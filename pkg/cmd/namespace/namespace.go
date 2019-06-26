@@ -2,9 +2,11 @@ package namespace
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 
 	"github.com/pkg/errors"
@@ -139,7 +141,8 @@ func changeNamespace(client kubernetes.Interface, config *api.Config, pathOption
 	newConfig := *config
 	ctx := kube.CurrentContext(config)
 	if ctx == nil {
-		return nil, errors.New("there is no context defined in your Kubernetes configuration")
+		log.Warnf("there is no context defined in your Kubernetes configuration - we may be inside a test case or pod?\n")
+		return ctx, nil
 	}
 	if ctx.Namespace == ns {
 		return ctx, nil
