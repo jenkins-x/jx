@@ -34,9 +34,8 @@ var (
 type StepCreatePullRequestRegexOptions struct {
 	StepCreatePrOptions
 
-	Version string
-	Regexp  string
-	Files   string
+	Regexp string
+	Files  string
 }
 
 // StepCreatePullRequestRegexResults stores the generated results
@@ -73,7 +72,6 @@ func NewCmdStepCreatePullRequestRegex(commonOpts *opts.CommonOptions) *cobra.Com
 	}
 	AddStepCreatePrFlags(cmd, &options.StepCreatePrOptions)
 	cmd.Flags().StringVarP(&options.Regexp, "regex", "", "", "The regex to use when doing updates")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
 	cmd.Flags().StringVarP(&options.Files, "files", "", "", "A glob describing the files to change")
 	return cmd
 }
@@ -100,12 +98,12 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 	if o.SrcGitURL == "" {
 		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
 	}
-	err = o.CreatePullRequest(
-		func(dir string, gitInfo *gits.GitRepository) (s string, details *gits.PullRequestDetails, e error) {
+	err = o.CreatePullRequest("regex",
+		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 			oldVersions := make([]string, 0)
 			matches, err := filepath.Glob(filepath.Join(dir, o.Files))
 			if err != nil {
-				return "", nil, errors.Wrapf(err, "applying glob %s", o.Files)
+				return nil, errors.Wrapf(err, "applying glob %s", o.Files)
 			}
 
 			// iterate over the glob matches
@@ -113,11 +111,11 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 
 				data, err := ioutil.ReadFile(path)
 				if err != nil {
-					return "", nil, errors.Wrapf(err, "reading %s", path)
+					return nil, errors.Wrapf(err, "reading %s", path)
 				}
 				info, err := os.Stat(path)
 				if err != nil {
-					return "", nil, errors.WithStack(err)
+					return nil, errors.WithStack(err)
 				}
 				s := string(data)
 				answer := util.ReplaceAllStringSubmatchFunc(regexp, s, func(groups []util.Group) []string {
@@ -130,17 +128,13 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 				})
 				err = ioutil.WriteFile(path, []byte(answer), info.Mode())
 				if err != nil {
-					return "", nil, errors.Wrapf(err, "writing %s", path)
+					return nil, errors.Wrapf(err, "writing %s", path)
 				}
 			}
 			if err != nil {
-				return "", nil, errors.WithStack(err)
+				return nil, errors.WithStack(err)
 			}
-			commitMessage, details, err := o.CreateDependencyUpdatePRDetails("regexp", o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version, o.Component)
-			if err != nil {
-				return "", nil, errors.WithStack(err)
-			}
-			return commitMessage, details, nil
+			return oldVersions, nil
 		})
 	if err != nil {
 		return errors.WithStack(err)

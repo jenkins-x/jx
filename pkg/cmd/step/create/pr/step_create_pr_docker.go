@@ -1,8 +1,6 @@
 package pr
 
 import (
-	"strings"
-
 	"github.com/jenkins-x/jx/pkg/docker"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -30,8 +28,7 @@ var (
 type StepCreatePullRequestDockersOptions struct {
 	StepCreatePrOptions
 
-	Version string
-	Name    string
+	Name string
 }
 
 // StepCreatePullRequestDockerResults stores the generated results
@@ -68,7 +65,6 @@ func NewCmdStepCreatePullRequestDocker(commonOpts *opts.CommonOptions) *cobra.Co
 	}
 	AddStepCreatePrFlags(cmd, &options.StepCreatePrOptions)
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the property to update")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
 	return cmd
 }
 
@@ -86,17 +82,13 @@ func (o *StepCreatePullRequestDockersOptions) Run() error {
 	if o.SrcGitURL == "" {
 		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
 	}
-	err := o.CreatePullRequest(
-		func(dir string, gitInfo *gits.GitRepository) (s string, details *gits.PullRequestDetails, e error) {
+	err := o.CreatePullRequest("docker",
+		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 			oldVersions, err := docker.UpdateVersions(dir, o.Version, o.Name)
 			if err != nil {
-				return "", nil, errors.Wrapf(err, "updating %s to %s", o.Name, o.Version)
+				return nil, errors.Wrapf(err, "updating %s to %s", o.Name, o.Version)
 			}
-			commitMessage, details, err := o.CreateDependencyUpdatePRDetails("docker", o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version, o.Component)
-			if err != nil {
-				return "", nil, errors.WithStack(err)
-			}
-			return commitMessage, details, nil
+			return oldVersions, nil
 		})
 	if err != nil {
 		return errors.WithStack(err)

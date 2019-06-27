@@ -852,15 +852,16 @@ func (g *GitCLI) ResetHard(dir string, commitish string) error {
 	return g.gitCmd(dir, "reset", "--hard", commitish)
 }
 
-// MergeTheirs will do a recursive merge of commitish with the option theirs
+// MergeTheirs will do a recursive merge of commitish with the strategy option theirs
 func (g *GitCLI) MergeTheirs(dir string, commitish string) error {
 	return g.gitCmd(dir, "merge", "--strategy-option=theirs", commitish)
 }
 
-// Rebase runs git rebase upstream branch
-func (g *GitCLI) Rebase(dir string, upstream string, branch string) error {
+// RebaseTheirs runs git rebase upstream branch with the strategy option theirs
+func (g *GitCLI) RebaseTheirs(dir string, upstream string, branch string) error {
 	args := []string{
 		"rebase",
+		"--strategy-option=theirs",
 		upstream,
 	}
 	if branch != "" {
