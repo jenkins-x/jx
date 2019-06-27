@@ -38,6 +38,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater":                       schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy":                       schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep":                    schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate":                    schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment":                         schema_pkg_apis_jenkinsio_v1_Environment(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter":                   schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentList":                     schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
@@ -1129,6 +1130,81 @@ func schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DependencyUpdate describes an dependency update message from the commit log",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"URL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Owner": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Host": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Repo": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"FromVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"FromReleaseHTMLURL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"FromReleaseName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ToVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ToReleaseHTMLURL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ToReleaseName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"URL", "Owner", "Host", "Repo", "FromVersion", "FromReleaseHTMLURL", "FromReleaseName", "ToVersion", "ToReleaseHTMLURL", "ToReleaseName"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -4737,6 +4813,18 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 							},
 						},
 					},
+					"dependencyUpdates": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate"),
+									},
+								},
+							},
+						},
+					},
 					"releaseNotesURL": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -4759,7 +4847,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary"},
 	}
 }
 
