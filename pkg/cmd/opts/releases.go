@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/jenkins-x/jx/pkg/gits/releases"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -12,7 +14,7 @@ import (
 
 var (
 	dependencyUpdateRegex = regexp.MustCompile(`^(?m:chore\(dependencies\): update (.*) from ([\w\.]*) to ([\w\.]*)$)`)
-	slugLinkRegex         = regexp.MustCompile(`^(?:([\w-]*?)?\/?([\w-]+)|(https?):\/\/([\w\.]*)\/([\w-]*)\/([\w-]*))$`)
+	slugLinkRegex         = regexp.MustCompile(`^(?:([\w-]*?)?\/?([\w-]+)|(https?):\/\/([\w\.]*)\/([\w-]*)\/([\w-]*))(?::([\w-]*))?$`)
 	//slugLinkRegex = regexp.MustCompile(``)
 	slugRegex = regexp.MustCompile(`^(\w*)?\/(\w*)$`)
 )
@@ -39,7 +41,7 @@ func (o *CommonOptions) ParseDependencyUpdateMessage(msg string, commitURL strin
 	slug := matches[1]
 	var urlScheme, urlHost, owner, repo string
 	slugMatches := slugLinkRegex.FindStringSubmatch(slug)
-	if len(slugMatches) == 7 {
+	if len(slugMatches) == 8 {
 		commitInfo, err := gits.ParseGitURL(commitURL)
 		if err != nil {
 			return nil, errors.Wrapf(err, "parsing %s", commitURL)
@@ -69,25 +71,14 @@ func (o *CommonOptions) ParseDependencyUpdateMessage(msg string, commitURL strin
 			URL:         fmt.Sprintf("%s://%s/%s/%s", urlScheme, urlHost, owner, repo),
 			FromVersion: matches[2],
 			ToVersion:   matches[3],
+			Component:   slugMatches[7],
 		}
 		provider, _, err := o.CreateGitProviderForURLWithoutKind(update.URL)
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating git provider for %s", update.URL)
 		}
-		getReleaseFunc := func(version string) (*gits.GitRelease, error) {
 
-			release, err := provider.GetRelease(update.Owner, update.Repo, version)
-			if err != nil {
-				// normally tags are v<version> so try that
-				tag := fmt.Sprintf("v%s", version)
-				release, err = provider.GetRelease(update.Owner, update.Repo, tag)
-				if err != nil {
-					return nil, errors.Wrapf(err, "getting release for %s (tried %s and %s)", version, version, tag)
-				}
-			}
-			return release, nil
-		}
-		toRelease, err := getReleaseFunc(update.ToVersion)
+		toRelease, err := releases.GetRelease(update.ToVersion, update.Owner, update.Repo, provider)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -95,7 +86,7 @@ func (o *CommonOptions) ParseDependencyUpdateMessage(msg string, commitURL strin
 			update.ToReleaseHTMLURL = toRelease.HTMLURL
 			update.ToReleaseName = toRelease.Name
 		}
-		fromRelease, err := getReleaseFunc(update.FromVersion)
+		fromRelease, err := releases.GetRelease(update.FromVersion, update.Owner, update.Repo, provider)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

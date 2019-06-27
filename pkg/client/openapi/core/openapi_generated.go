@@ -1200,8 +1200,14 @@ func schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref common.ReferenceCallback)
 							Format: "",
 						},
 					},
+					"Component": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
-				Required: []string{"URL", "Owner", "Host", "Repo", "FromVersion", "FromReleaseHTMLURL", "FromReleaseName", "ToVersion", "ToReleaseHTMLURL", "ToReleaseName"},
+				Required: []string{"URL", "Owner", "Host", "Repo", "FromVersion", "FromReleaseHTMLURL", "FromReleaseName", "ToVersion", "ToReleaseHTMLURL", "ToReleaseName", "Component"},
 			},
 		},
 		Dependencies: []string{},
