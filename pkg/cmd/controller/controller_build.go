@@ -648,47 +648,53 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 	if allCompleted {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
+		} else if pri.Type == tekton.MetaPipeline {
+			spec.Status = v1.ActivityStatusTypePending
 		} else {
 			spec.Status = v1.ActivityStatusTypeSucceeded
 		}
-		if !biggestFinishedAt.IsZero() {
-			spec.CompletedTimestamp = &biggestFinishedAt
-		}
 
-		// log that the build completed
-		logJobCompletedState(activity)
-
-		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
-		if spec.BuildLogsURL == "" {
-			podInterface := kubeClient.CoreV1().Pods(ns)
-
-			envName := kube.LabelValueDevEnvironment
-			devEnv := o.EnvironmentCache.Item(envName)
-			location := v1.StorageLocation{}
-			settings := &devEnv.Spec.TeamSettings
-			if devEnv == nil {
-				log.Logger().Warnf("No Environment %s found", envName)
-			} else {
-				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
+		if pri.Type != tekton.MetaPipeline {
+			if !biggestFinishedAt.IsZero() {
+				spec.CompletedTimestamp = &biggestFinishedAt
 			}
-			if location.IsEmpty() {
-				location.GitURL = activity.Spec.GitURL
-				if location.GitURL == "" {
-					log.Logger().Warnf("No GitURL on PipelineActivity %s", activity.Name)
+
+			// log that the build completed
+			logJobCompletedState(activity)
+
+			// TODO: This will need to be reworked for per-step logs, so leaving alone as part of metapipeline work
+			// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
+			if spec.BuildLogsURL == "" {
+				podInterface := kubeClient.CoreV1().Pods(ns)
+
+				envName := kube.LabelValueDevEnvironment
+				devEnv := o.EnvironmentCache.Item(envName)
+				location := v1.StorageLocation{}
+				settings := &devEnv.Spec.TeamSettings
+				if devEnv == nil {
+					log.Logger().Warnf("No Environment %s found", envName)
+				} else {
+					location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
 				}
-			}
+				if location.IsEmpty() {
+					location.GitURL = activity.Spec.GitURL
+					if location.GitURL == "" {
+						log.Logger().Warnf("No GitURL on PipelineActivity %s", activity.Name)
+					}
+				}
 
-			masker, err := kube.NewLogMasker(kubeClient, ns)
-			if err != nil {
-				log.Logger().Warnf("Failed to create LogMasker in namespace %s: %s", ns, err.Error())
-			}
+				masker, err := kube.NewLogMasker(kubeClient, ns)
+				if err != nil {
+					log.Logger().Warnf("Failed to create LogMasker in namespace %s: %s", ns, err.Error())
+				}
 
-			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials, masker)
-			if err != nil {
-				log.Logger().Warnf("%s", err)
-			}
-			if logURL != "" {
-				spec.BuildLogsURL = logURL
+				logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials, masker)
+				if err != nil {
+					log.Logger().Warnf("%s", err)
+				}
+				if logURL != "" {
+					spec.BuildLogsURL = logURL
+				}
 			}
 		}
 
