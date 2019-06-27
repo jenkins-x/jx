@@ -2,8 +2,10 @@ package prow_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,10 +28,12 @@ func TestParsePullRefs(t *testing.T) {
 }
 
 func Test_pull_ref_to_string(t *testing.T) {
-	originalRefs := "master:ef08a,2739:5b351,2822:bac2a"
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		originalRefs := "master:ef08a,2739:5b351,2822:bac2a"
 
-	pr, err := prow.ParsePullRefs(originalRefs)
-	assert.NoError(t, err)
+		pr, err := prow.ParsePullRefs(originalRefs)
+		assert.NoError(r, err)
 
-	assert.Equal(t, originalRefs, pr.String())
+		assert.Equal(r, originalRefs, pr.String())
+	})
 }
