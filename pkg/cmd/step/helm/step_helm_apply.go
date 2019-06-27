@@ -37,6 +37,7 @@ type StepHelmApplyOptions struct {
 	Vault              bool
 	UseTempDir         bool
 	NoVault            bool
+	NoMasking          bool
 }
 
 var (
@@ -85,6 +86,7 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Helm secrets are stored in vault")
 	cmd.Flags().BoolVarP(&options.NoVault, "no-vault", "", false, "Disables loading secrets from Vault. e.g. if bootstrapping core services like Ingress before we have a Vault")
+	cmd.Flags().BoolVarP(&options.NoMasking, "no-masking", "", false, "The effective 'values.yaml' file is output to the console with parameters masked. Enabling this flag will show the unmasked secrets in the console output")
 	cmd.Flags().BoolVarP(&options.UseTempDir, "use-temp-dir", "", true, "Whether to build and apply the helm chart from a temporary directory - to avoid updating the local values.yaml file from the generated file as part of the apply which could get accidentally checked into git")
 
 	return cmd
@@ -237,7 +239,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
-	chartValues, err := helm.GenerateValues(dir, nil, true, secretURLClient)
+	chartValues, params, err := helm.GenerateValues(dir, nil, true, secretURLClient)
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}
@@ -253,7 +255,14 @@ func (o *StepHelmApplyOptions) Run() error {
 		log.Logger().Warnf("failed to load file %s: %s", chartValuesFile, err.Error())
 	} else {
 		log.Logger().Infof("generated helm %s", chartValuesFile)
-		log.Logger().Infof("\n%s\n", util.ColorStatus(string(data)))
+
+		valuesText := string(data)
+		if !o.NoMasking {
+			masker := kube.NewLogMaskerFromMap(params.AsMap())
+			valuesText = masker.MaskLog(valuesText)
+		}
+
+		log.Logger().Infof("\n%s\n", util.ColorStatus(valuesText))
 	}
 
 	log.Logger().Infof("Using values files: %s", strings.Join(valueFiles, ", "))

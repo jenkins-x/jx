@@ -44,3 +44,33 @@ func TestLogMasker(t *testing.T) {
 		assert.True(t, index < 0, "found text %s at index %d in masked log: %s", hideValue, index, actual)
 	}
 }
+
+func TestLogMaskerFromMap(t *testing.T) {
+	hideValues := []string{
+		"fakeuser",
+		"fakepwd",
+	}
+
+	m := map[string]interface{}{
+		"cheese": map[string]interface{}{
+			"userName": hideValues[0],
+			"password": hideValues[1],
+		},
+	}
+
+	var buffer bytes.Buffer
+	for i, hideValue := range hideValues {
+		buffer.WriteString(fmt.Sprintf("%d: hide: %s\n", i+1, hideValue))
+	}
+	text := buffer.String()
+
+	logMasker := kube.NewLogMaskerFromMap(m)
+	actual := logMasker.MaskLog(text)
+
+	t.Logf("created masked text: %s\n", actual)
+
+	for _, hideValue := range hideValues {
+		index := strings.Index(actual, hideValue)
+		assert.True(t, index < 0, "found text %s at index %d in masked log: %s", hideValue, index, actual)
+	}
+}

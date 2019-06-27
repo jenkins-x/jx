@@ -32,20 +32,20 @@ var DefaultValuesTreeIgnores = []string{
 // Any keys used that match files with the same name in the directory (
 // and have empty values) will be inlined as block scalars.
 // Standard UNIX glob patterns can be passed to IgnoreFile directories.
-func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient secreturl.Client) ([]byte, error) {
+func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient secreturl.Client) ([]byte, chartutil.Values, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	} else if os.IsNotExist(err) {
-		return nil, fmt.Errorf("%s does not exist", dir)
+		return nil, nil, fmt.Errorf("%s does not exist", dir)
 	} else if !info.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", dir)
+		return nil, nil, fmt.Errorf("%s is not a directory", dir)
 	}
 
 	// load the parameter values if there are any
 	params, err := LoadParameters(dir, secretURLClient)
 	if err != nil {
-		return nil, err
+		return nil, params, err
 	}
 	funcMap := engine.FuncMap()
 	funcMap["hashPassword"] = util.HashPassword
@@ -114,7 +114,7 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, params, err
 	}
 	// Load the root values.yaml
 	rootData := []byte{}
@@ -122,29 +122,29 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 	rootValuesFileName := filepath.Join(dir, ValuesTemplateFileName)
 	exists, err := util.FileExists(rootValuesFileName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
+		return nil, params, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
 	}
 	if exists {
 		rootData, err = ReadValuesYamlFileTemplateOutput(rootValuesFileName, params, funcMap)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to render template of file %s", rootValuesFileName)
+			return nil, params, errors.Wrapf(err, "failed to render template of file %s", rootValuesFileName)
 		}
 	} else {
 		rootValuesFileName = filepath.Join(dir, ValuesFileName)
 		exists, err = util.FileExists(rootValuesFileName)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
+			return nil, params, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
 		}
 		if exists {
 			rootData, err = ioutil.ReadFile(rootValuesFileName)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to load file %s", rootValuesFileName)
+				return nil, params, errors.Wrapf(err, "failed to load file %s", rootValuesFileName)
 			}
 		}
 	}
 	rootValues, err := LoadValues(rootData)
 	if err != nil {
-		return nil, err
+		return nil, params, err
 	}
 
 	// externalFileHandler is used to read any inline any files that match into the values.yaml
@@ -161,7 +161,7 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 		if dirFiles := files[p]; dirFiles != nil && len(dirFiles) > 0 {
 			err := HandleExternalFileRefs(v, dirFiles, "", externalFileHandler)
 			if err != nil {
-				return nil, err
+				return nil, params, err
 			}
 		}
 
@@ -185,7 +185,7 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 					v2, ok2 := v1.(map[string]interface{})
 
 					if !ok2 {
-						return nil, fmt.Errorf("%s is not an associative array", jsonPath)
+						return nil, params, fmt.Errorf("%s is not an associative array", jsonPath)
 					}
 					x = v2
 				}
@@ -195,7 +195,8 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 			}
 		}
 	}
-	return yaml.Marshal(rootValues)
+	data, err := yaml.Marshal(rootValues)
+	return data, params, err
 }
 
 // ReadValuesYamlFileTemplateOutput evaluates the given values.yaml file as a go template and returns the output data
