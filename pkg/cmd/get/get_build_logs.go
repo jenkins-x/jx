@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -295,6 +296,21 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 				return err
 			}
 			if len(pipelineMap[name]) == 0 {
+				// Look for pipelines that match the given name with a build number afterwards, and then set the name
+				// to the most recent one, if there are any candidates.
+				var candidateNames []string
+				for k, v := range pipelineMap {
+					if strings.HasPrefix(k, name+" #") && len(v) > 0 {
+						candidateNames = append(candidateNames, k)
+					}
+				}
+				if len(candidateNames) > 0 {
+					sort.Slice(candidateNames, func(i, j int) bool {
+						return buildNumberFromBaseBuildInfo(pipelineMap[candidateNames[i]][0]) > buildNumberFromBaseBuildInfo(pipelineMap[candidateNames[j]][0])
+					})
+					name = candidateNames[0]
+					return nil
+				}
 				log.Logger().Infof("no build found in: %s", util.ColorInfo(strings.Join(names, ", ")))
 				return fmt.Errorf("No pipeline exists yet: %s", name)
 			}
@@ -433,6 +449,15 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		}
 	}
 	return nil
+}
+
+func buildNumberFromBaseBuildInfo(info builds.BaseBuildInfo) int {
+	n, err := strconv.Atoi(info.GetBuild())
+	if err != nil {
+		// If there's an error, just fall back on 0 so this gets ranked last.
+		return 0
+	}
+	return n
 }
 
 func waitForContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod, idx int) (*corev1.Pod, error) {
