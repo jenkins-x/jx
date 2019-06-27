@@ -330,6 +330,9 @@ func (t *TeamSettings) SetStorageLocation(classifier string, storage StorageLoca
 // GetImportMode returns the import mode - returning a default value if it has not been populated yet
 func (t *TeamSettings) GetImportMode() ImportModeType {
 	if string(t.ImportMode) == "" {
+		if t.IsJenkinsXPipelines() {
+			return ImportModeTypeYAML
+		}
 		return ImportModeTypeJenkinsfile
 	}
 	return t.ImportMode
