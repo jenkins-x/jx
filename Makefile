@@ -182,7 +182,7 @@ tidy-deps: ## Cleans up dependencies
 make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
-test: make-reports-dir ## Run the unit tests
+test: make-reports-dir ## Run ONLY the tests that have no build flags, such as the build tag "integration"
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
 
 test-report: make-reports-dir get-test-deps test ## Create the test report
@@ -218,8 +218,7 @@ test-integration-report: make-reports-dir get-test-deps test-integration ## Crea
 test-integration-report-html: make-reports-dir get-test-deps test-integration
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
-
-test-slow-integration: make-reports-dir ## Run the integration tests sequentially
+test-slow-integration: make-reports-dir ## Run the any tests without a build tag as well as those that have the "integration" build tag. This target is run during CI.
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration $(COVERFLAGS) ./...
 
 test-slow-integration-report: make-reports-dir get-test-deps test-slow-integration
