@@ -50,36 +50,39 @@ type Factory interface {
 	// Configuration services
 	//
 
-	// CreateAuthConfigService creates a new authentication configuration service
-	CreateAuthConfigService(fileName string, namespace string, serverKind string, serviceKind string) (auth.ConfigService, error)
+	// CreateConfigService creates a new authentication configuration service
+	CreateConfigService(fileName string, serverKind string, serviceKind string) (auth.ConfigService, error)
 
-	// CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
-	CreateJenkinsAuthConfigService(namespace string) (auth.ConfigService, error)
+	// CreateGitConfigService creates a new git config service
+	CreateGitConfigService() (auth.ConfigService, error)
 
-	// CreateChartmuseumAuthConfigService creates a new Chartmuseum authentication configuration service
-	CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error)
+	// CreateJenkinsConfigService creates a new Jenkins authentication configuration service
+	CreateJenkinsConfigService() (auth.ConfigService, error)
 
-	// CreateIssueTrackerAuthConfigService creates a new issuer tracker configuration service
-	CreateIssueTrackerAuthConfigService(namespace string) (auth.ConfigService, error)
+	// CreateChartmuseumConfigService creates a new Chartmuseum authentication configuration service
+	CreateChartmuseumConfigService() (auth.ConfigService, error)
 
-	// CreateChatAuthConfigService creates a new chat configuration service
-	CreateChatAuthConfigService(namespace string) (auth.ConfigService, error)
+	// CreateIssueTrackerConfigService creates a new issuer tracker configuration service
+	CreateIssueTrackerConfigService() (auth.ConfigService, error)
 
-	// CreateAddonAuthConfigService creates a new addon auth configuration service
-	CreateAddonAuthConfigService(namespace string) (auth.ConfigService, error)
+	// CreateChatConfigService creates a new chat configuration service
+	CreateChatConfigService() (auth.ConfigService, error)
+
+	// CreateAddonConfigService creates a new addon auth configuration service
+	CreateAddonConfigService() (auth.ConfigService, error)
 
 	//
 	// Generic clients
 	//
+
+	// CreateGitProvider creates a new Git provider
+	CreateGitProvider(gitURL string, git gits.Gitter) (gits.GitProvider, error)
 
 	// CreateJenkinsClient creates a new Jenkins client
 	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error)
 
 	// CreateCustomJenkinsClient creates a new Jenkins client for the custom Jenkins App with the jenkinsServiceName
 	CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error)
-
-	// CreateGitProvider creates a new Git provider
-	CreateGitProvider(string, string, auth.ConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) (gits.GitProvider, error)
 
 	// CreateComplianceClient creates a new compliance client
 	CreateComplianceClient() (*client.SonobuoyClient, error)
@@ -151,9 +154,6 @@ type Factory interface {
 
 	// IsInCluster indicates if the execution takes place within a Kubernetes cluster
 	IsInCluster() bool
-
-	// IsInCDPipeline indicates if the execution takes place within a CD pipeline
-	IsInCDPipeline() bool
 
 	// SecretsLocation inidcates the location of the secrets
 	SecretsLocation() secrets.SecretsLocationKind
