@@ -53,7 +53,7 @@ func NewCmdStepSchedulerConfigApply(commonOpts *opts.CommonOptions) *cobra.Comma
 	}
 	options.AddCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Agent, "agent", "", "prow", "The scheduler agent to use e.g. Prow")
-	cmd.Flags().BoolVarP(&options.ApplyDirectly, "applyDirectly", "", false, "Skip generating a PR and apply the pipeline config directly to the cluster when using gitops mode.")
+	cmd.Flags().BoolVarP(&options.ApplyDirectly, "direct", "", false, "Skip generating a PR and apply the pipeline config directly to the cluster when using gitops mode.")
 	return cmd
 }
 
