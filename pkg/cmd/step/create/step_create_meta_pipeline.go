@@ -141,7 +141,7 @@ func (o *StepCreatePipelineOptions) Run() error {
 		return errors.Wrap(err, "unable to retrieve pod templates")
 	}
 
-	pipelineName := tekton.PipelineResourceName(gitInfo, o.Branch, o.Context, tekton.MetaPipeline)
+	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, o.Branch, o.Context, tekton.MetaPipeline)
 	buildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, gitInfo, o.Branch, retryDuration, pipelineName)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine next build number")
@@ -155,8 +155,6 @@ func (o *StepCreatePipelineOptions) Run() error {
 		return err
 	}
 
-	labels := o.buildLabels(gitInfo)
-	envVars := o.buildEnvVars()
 	crdCreationParams := metapipeline.CRDCreationParameters{
 		Namespace:      ns,
 		Context:        o.Context,
@@ -170,8 +168,8 @@ func (o *StepCreatePipelineOptions) Run() error {
 		PodTemplates:   podTemplates,
 		Trigger:        string(pipelineapi.PipelineTriggerTypeManual),
 		ServiceAccount: o.ServiceAccount,
-		Labels:         labels,
-		EnvVars:        envVars,
+		Labels:         o.CustomLabels,
+		EnvVars:        o.CustomEnvs,
 		DefaultImage:   o.DefaultImage,
 		Apps:           extendingApps,
 	}
@@ -291,36 +289,6 @@ func (o *StepCreatePipelineOptions) getClientsAndNamespace() (tektonclient.Inter
 	}
 
 	return tektonClient, jxClient, kubeClient, ns, nil
-}
-
-func (o *StepCreatePipelineOptions) buildLabels(gitInfo *gits.GitRepository) map[string]string {
-	// start with custom labels
-	labels, _ := util.ExtractKeyValuePairs(o.CustomLabels, "=")
-
-	// add labels we always want to have based on the build information available
-	labels["prowJobName"] = o.Job
-	labels["owner"] = gitInfo.Organisation
-	labels["repo"] = gitInfo.Name
-	labels["branch"] = o.Branch
-	if o.Context != "" {
-		labels["context"] = o.Context
-	}
-
-	return labels
-}
-
-func (o *StepCreatePipelineOptions) buildEnvVars() []corev1.EnvVar {
-	var envVars []corev1.EnvVar
-
-	vars, _ := util.ExtractKeyValuePairs(o.CustomEnvs, "=")
-	for key, value := range vars {
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
-
-	return envVars
 }
 
 func (o *StepCreatePipelineOptions) buildPullRevs(pullRefs string) (*prow.PullRefs, error) {
