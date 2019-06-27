@@ -280,7 +280,7 @@ release: clean build test-slow-integration # Release the binary
 	GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser release --config=.goreleaser.yml --rm-dist
 	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
-		./dist/jx-linux-amd64/jx step changelog  --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA); \
+		./dist/jx-linux-amd64_linux_amd64/jx step changelog --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA); \
 	fi
 
 .PHONY: release-distro
@@ -289,7 +289,7 @@ release-distro:
 
 .PHONY: clean
 clean: ## Clean the generated artifacts
-	rm -rf build release
+	rm -rf build release dist
 
 .PHONY: codecov-upload
 codecov-upload:
