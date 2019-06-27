@@ -13,7 +13,8 @@ import (
 // StepSchedulerConfigApplyOptions contains the command line flags
 type StepSchedulerConfigApplyOptions struct {
 	opts.StepOptions
-	Agent string
+	Agent         string
+	ApplyDirectly bool
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback gits.ConfigureGitFn
 }
@@ -52,6 +53,7 @@ func NewCmdStepSchedulerConfigApply(commonOpts *opts.CommonOptions) *cobra.Comma
 	}
 	options.AddCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Agent, "agent", "", "prow", "The scheduler agent to use e.g. Prow")
+	cmd.Flags().BoolVarP(&options.ApplyDirectly, "direct", "", false, "Skip generating a PR and apply the pipeline config directly to the cluster when using gitops mode.")
 	return cmd
 }
 
@@ -77,7 +79,7 @@ func (o *StepSchedulerConfigApplyOptions) Run() error {
 			return errors.WithStack(err)
 		}
 
-		if gitOps {
+		if gitOps && !o.ApplyDirectly {
 			opts := pipelinescheduler.GitOpsOptions{
 				Verbose: o.Verbose,
 				DevEnv:  devEnv,
