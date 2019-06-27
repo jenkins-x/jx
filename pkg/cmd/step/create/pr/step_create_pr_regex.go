@@ -60,7 +60,7 @@ func NewCmdStepCreatePullRequestRegex(commonOpts *opts.CommonOptions) *cobra.Com
 
 	cmd := &cobra.Command{
 		Use:     "regex",
-		Short:   "Creates a Pull Request on a git repository, doing an update using the provided",
+		Short:   "Creates a Pull Request on a git repository, doing an update using the provided regex",
 		Long:    createPullRequestRegexLong,
 		Example: createPullRequestRegexExample,
 		Aliases: []string{"version pullrequest"},
@@ -136,7 +136,7 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 			if err != nil {
 				return "", nil, errors.WithStack(err)
 			}
-			commitMessage, details, err := CreateDependencyUpdatePRDetails("regexp", o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version)
+			commitMessage, details, err := o.CreateDependencyUpdatePRDetails("regexp", o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version, o.Component)
 			if err != nil {
 				return "", nil, errors.WithStack(err)
 			}

@@ -3,6 +3,7 @@ package gits
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -204,17 +205,43 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepository) (stri
 		}
 	}
 
-	if len(releaseSpec.DependencyUpdates) > 0 {
+	ups := releaseSpec.DependencyUpdates
+
+	sort.Slice(ups, func(i, j int) bool {
+		if ups[i].Owner == ups[j].Owner {
+			if ups[i].Repo == ups[j].Repo {
+				if ups[i].Component == ups[j].Component {
+					if ups[i].FromVersion == ups[j].FromVersion {
+						return ups[i].ToVersion < ups[j].ToVersion
+					}
+					return ups[i].FromVersion < ups[j].FromVersion
+				}
+				return ups[i].Component < ups[j].Component
+			}
+			return ups[i].Repo < ups[j].Repo
+		}
+		return ups[i].Owner < ups[j].Owner
+	})
+
+	if len(ups) > 0 {
 		buffer.WriteString("\n### Dependency Updates\n\n")
-		previous := ""
+		var previous v1.DependencyUpdate
+		sequence := make([]v1.DependencyUpdate, 0)
 		buffer.WriteString("| Dependency | Component | New Version | Old Version |\n")
 		buffer.WriteString("| ---------- | --------- | ----------- | ----------- |\n")
-		for _, du := range releaseSpec.DependencyUpdates {
-			msg := describeDependencyUpdate(gitInfo, &du)
-			if msg != previous {
-				buffer.WriteString(msg + "\n")
-				previous = msg
+		for i, du := range releaseSpec.DependencyUpdates {
+			sequence = append(sequence, du)
+			// If it's the last element, or if the owner/repo:component changes, then print - this logic relies of the sort
+			// being owner, repo, component, fromVersion, ToVersion, which is done above
+			if i == len(releaseSpec.DependencyUpdates)-1 || du.Owner != previous.Owner || du.Repo != previous.Repo || du.Component != previous.Component {
+				// find the earliest from version
+				fromDu := sequence[0]
+				toDu := sequence[len(sequence)-1]
+				msg := fmt.Sprintf("| [%s/%s](%s) | %s | [%s](%s) | [%s](%s)|\n", toDu.Owner, toDu.Repo, toDu.URL, toDu.Component, toDu.ToVersion, toDu.ToReleaseHTMLURL, fromDu.FromVersion, fromDu.FromReleaseHTMLURL)
+				buffer.WriteString(msg)
+				sequence = make([]v1.DependencyUpdate, 0)
 			}
+			previous = du
 		}
 	}
 	return buffer.String(), nil
@@ -235,10 +262,6 @@ func describeIssueShort(info *GitRepository, issue *v1.IssueSummary) string {
 		}
 	}
 	return "[" + prefix + issue.ID + "](" + issue.URL + ") "
-}
-
-func describeDependencyUpdate(info *GitRepository, du *v1.DependencyUpdate) string {
-	return fmt.Sprintf("| [%s/%s](%s) | | [%s](%s) | [%s](%s)| ", du.Owner, du.Repo, du.URL, du.ToVersion, du.ToReleaseHTMLURL, du.FromVersion, du.FromReleaseHTMLURL)
 }
 
 func describeUser(info *GitRepository, user *v1.UserDetails) string {
