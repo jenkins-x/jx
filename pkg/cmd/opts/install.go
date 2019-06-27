@@ -1266,6 +1266,9 @@ func (o *CommonOptions) InstallMinikube() error {
 		return err
 	}
 	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	if runtime.GOOS == "windows" {
+		clientURL += ".exe"
+	}
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
 	err = packages.DownloadFile(clientURL, tmpFile)
