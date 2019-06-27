@@ -28,7 +28,7 @@ var (
 
 	createInstallValuesExample = templates.Examples(`
 		# populate the cluster/values.yaml file
-		jx step create install vales
+		jx step create install values
 	
 			`)
 )
