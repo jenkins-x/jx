@@ -274,13 +274,16 @@ darwin: ## Build for OSX
 	chmod +x build/darwin/$(NAME)
 
 .PHONY: release
-release: clean build test-slow-integration # Release the binary
+release: clean build test-slow-integration linux # Release the binary
 	git fetch --tags
 	git checkout tags/v$(VERSION)
 	GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser release --config=.goreleaser.yml --rm-dist
 	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
-		./dist/jx-linux-amd64_linux_amd64/jx step changelog --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA) --update-release; \
+		./build/linux/jx step changelog --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA) --output-markdown changelog.md; \
+		GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser release --config=.goreleaser.yml --rm-dist --release-notes=./changelog.md; \
+	else \
+		GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser release --config=.goreleaser.yml --rm-dist; \
 	fi
 
 .PHONY: release-distro
