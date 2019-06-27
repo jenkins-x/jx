@@ -3,8 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"time"
 
@@ -113,101 +115,130 @@ func (o *PipelineRunnerOptions) Run() error {
 	mux.Handle(o.Path, http.HandlerFunc(o.pipelineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
-	log.Logger().Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	log.Logger().Infof("waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
 // health returns either HTTP 204 if the service is healthy, otherwise nothing ('cos it's dead).
 func (o *PipelineRunnerOptions) health(w http.ResponseWriter, r *http.Request) {
-	log.Logger().Debug("Health check")
+	log.Logger().Trace("health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the service is ready to serve requests, otherwise HTTP 503.
 func (o *PipelineRunnerOptions) ready(w http.ResponseWriter, r *http.Request) {
-	log.Logger().Debug("Ready check")
-	if o.isReady() {
-		w.WriteHeader(http.StatusNoContent)
-	} else {
-		w.WriteHeader(http.StatusServiceUnavailable)
-	}
+	log.Logger().Trace("ready check")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // handle request for pipeline runs
 func (o *PipelineRunnerOptions) pipelineRunMethods(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		fmt.Fprintf(w, "Please POST JSON to this endpoint!\n")
+		_, err := fmt.Fprintf(w, "please POST JSON to this endpoint!\n")
+		if err != nil {
+			log.Logger().Errorf("unable to write response to GET request: %s", err.Error())
+		}
 	case http.MethodHead:
 		log.Logger().Info("HEAD Todo...")
 	case http.MethodPost:
-		o.startPipelineRun(w, r)
+		o.handlePostRequest(r, w)
 	default:
-		log.Logger().Errorf("Unsupported method %s for %s", r.Method, o.Path)
+		log.Logger().Errorf("unsupported method %s for %s", r.Method, o.Path)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
 
-// handle request for pipeline runs
-func (o *PipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
+func (o *PipelineRunnerOptions) handlePostRequest(r *http.Request, w http.ResponseWriter) {
+	requestDump, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		log.Logger().Warn("Unable to dump request for debugging purposes")
+	}
+	log.Logger().Info(string(requestDump))
+	requestParams, err := o.parsePipelineRequestParams(r)
+	if err != nil {
+		o.returnError(err, "could not read the JSON request body: "+err.Error(), w)
+		return
+	}
+
+	pipelineRunResponse, err := o.startPipeline(requestParams)
+	if err != nil {
+		o.returnError(err, "could not start pipeline: "+err.Error(), w)
+		return
+	}
+
+	data, err := o.marshalPayload(pipelineRunResponse)
+	if err != nil {
+		o.returnError(err, "failed to marshal payload", w)
+		return
+	}
+	_, err = w.Write(data)
+	if err != nil {
+		log.Logger().Errorf("error writing PipelineRunResponse: %s", err.Error())
+	}
+}
+
+func (o *PipelineRunnerOptions) parsePipelineRequestParams(r *http.Request) (PipelineRunRequest, error) {
+	request := PipelineRunRequest{}
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return request, errors.Wrapf(err, fmt.Sprintf("could not read the JSON request body: %s", err.Error()))
+	}
+	err = json.Unmarshal(data, &request)
+	if err != nil {
+		return request, errors.Wrapf(err, fmt.Sprintf("failed to unmarshal the JSON request body: %s", err.Error()))
+	}
+	log.Logger().Debugf("got payload %s", util.PrettyPrint(request))
+	return request, nil
+}
+
+// startPipeline handles an incoming request to start a pipeline.
+func (o *PipelineRunnerOptions) startPipeline(requestParams PipelineRunRequest) (PipelineRunResponse, error) {
 	err := o.stepGitCredentials()
 	if err != nil {
 		log.Logger().Warn(err.Error())
 	}
-	arguments := &PipelineRunRequest{}
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		o.returnError(err, "could not read the JSON request body: "+err.Error(), w, r)
-		return
-	}
-	err = json.Unmarshal(data, arguments)
-	if err != nil {
-		o.returnError(err, "failed to unmarshal the JSON request body: "+err.Error(), w, r)
-		return
-	}
-	log.Logger().Debugf("got payload %#v", arguments)
-	pj := arguments.ProwJobSpec
 
+	response := PipelineRunResponse{}
 	var revision string
 	var prNumber string
 
-	if pj.Refs == nil {
-		o.returnError(err, "no prowJobSpec.refs passed in so cannot determine git repository. Input: "+string(data), w, r)
-		return
+	prowJobSpec := requestParams.ProwJobSpec
+	if prowJobSpec.Refs == nil {
+		return response, errors.New(fmt.Sprintf("no prowJobSpec.refs passed in so cannot determine git repository: %s", util.PrettyPrint(requestParams)))
 	}
 
 	// Only if there is one Pull in Refs, it's a PR build so we are going to pass it
-	if len(pj.Refs.Pulls) == 1 {
-		revision = pj.Refs.Pulls[0].SHA
-		prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
+	if len(prowJobSpec.Refs.Pulls) == 1 {
+		revision = prowJobSpec.Refs.Pulls[0].SHA
+		prNumber = strconv.Itoa(prowJobSpec.Refs.Pulls[0].Number)
 	} else {
 		//Otherwise it's a Master / Batch build, and we handle it later
-		revision = pj.Refs.BaseSHA
+		revision = prowJobSpec.Refs.BaseSHA
 	}
 
-	envs, err := downwardapi.EnvForSpec(downwardapi.NewJobSpec(pj, "", ""))
+	envs, err := downwardapi.EnvForSpec(downwardapi.NewJobSpec(prowJobSpec, "", ""))
 	if err != nil {
-		o.returnError(err, "failed to get env vars from prowjob", w, r)
-		return
+		return response, errors.Wrap(err, "failed to get env vars from prowjob")
 	}
 
-	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", pj.Refs.Org, pj.Refs.Repo)
+	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", prowJobSpec.Refs.Org, prowJobSpec.Refs.Repo)
 	if sourceURL == "" {
-		o.returnError(err, "missing sourceURL property", w, r)
-		return
+		return response, errors.Wrap(err, "missing sourceURL property")
 	}
+
 	if revision == "" {
 		revision = "master"
 	}
 
 	pr := &create.StepCreateTaskOptions{}
-	if pj.Type == prowapi.PostsubmitJob {
+	if prowJobSpec.Type == prowapi.PostsubmitJob {
 		pr.PipelineKind = jenkinsfile.PipelineKindRelease
 	} else {
 		pr.PipelineKind = jenkinsfile.PipelineKindPullRequest
 	}
 
-	branch := getBranch(pj)
+	branch := getBranch(prowJobSpec)
 	if branch == "" {
 		branch = "master"
 	}
@@ -222,13 +253,13 @@ func (o *PipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.
 	pr.PullRequestNumber = prNumber
 	pr.CloneGitURL = sourceURL
 	pr.DeleteTempDir = true
-	pr.Context = pj.Context
+	pr.Context = prowJobSpec.Context
 	pr.Branch = branch
 	pr.Revision = revision
 	pr.ServiceAccount = o.ServiceAccount
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
-	for key, value := range arguments.Labels {
+	for key, value := range requestParams.Labels {
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
 
@@ -237,61 +268,29 @@ func (o *PipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.
 		pr.CustomEnvs = append(pr.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	log.Logger().Infof("triggering pipeline for repo %s branch %s revision %s context %s", sourceURL, branch, revision, pj.Context)
+	log.Logger().Infof("triggering pipeline for repo %s branch %s revision %s context %s", sourceURL, branch, revision, prowJobSpec.Context)
 
 	err = pr.Run()
 	if err != nil {
-		o.returnError(err, err.Error(), w, r)
-		return
+		return response, errors.Wrap(err, "error triggering the pipeline run")
 	}
 
-	results := &PipelineRunResponse{
+	results := PipelineRunResponse{
 		Resources: pr.Results.ObjectReferences(),
 	}
-	err = o.marshalPayload(w, r, results)
-	if err != nil {
-		o.returnError(err, "failed to marshal payload", w, r)
-	}
-	return
+	return results, nil
 }
 
-func (o *PipelineRunnerOptions) isReady() bool {
-	// TODO a better readiness check
-	return true
-}
-
-func (o *PipelineRunnerOptions) unmarshalBody(w http.ResponseWriter, r *http.Request, result interface{}) error {
-	// TODO assume JSON for now
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return errors.Wrap(err, "reading the JSON request body")
-	}
-	err = json.Unmarshal(data, result)
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling the JSON request body")
-	}
-	return nil
-}
-
-func (o *PipelineRunnerOptions) marshalPayload(w http.ResponseWriter, r *http.Request, payload interface{}) error {
+func (o *PipelineRunnerOptions) marshalPayload(payload interface{}) ([]byte, error) {
 	data, err := json.Marshal(payload)
 	if err != nil {
-		return errors.Wrapf(err, "marshalling the JSON payload %#v", payload)
+		return nil, errors.Wrapf(err, "marshalling the JSON payload %#v", payload)
 	}
-	w.Write(data)
-	return nil
+	return data, nil
 }
 
-func (o *PipelineRunnerOptions) onError(err error) {
-	if err != nil {
-		log.Logger().Errorf("%v", err)
-	}
-}
-
-func (o *PipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
+func (o *PipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter) {
 	log.Logger().Errorf("%v %s", err, message)
-
-	o.onError(err)
 	w.WriteHeader(400)
 	w.Write([]byte(message))
 }
@@ -307,7 +306,7 @@ func (o *PipelineRunnerOptions) stepGitCredentials() error {
 		}
 		err := gsc.Run()
 		if err != nil {
-			return errors.Wrapf(err, "failed to run: jx step gc credentials")
+			return errors.Wrapf(err, "failed to run: jx step git credentials")
 		}
 	}
 	return nil
