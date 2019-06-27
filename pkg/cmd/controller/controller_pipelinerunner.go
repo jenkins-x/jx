@@ -33,8 +33,8 @@ const (
 	ReadyPath = "/ready"
 )
 
-// ControllerPipelineRunnerOptions holds the command line arguments
-type ControllerPipelineRunnerOptions struct {
+// PipelineRunnerOptions holds the command line arguments
+type PipelineRunnerOptions struct {
 	*opts.CommonOptions
 	BindAddress          string
 	Path                 string
@@ -75,7 +75,7 @@ var (
 
 // NewCmdControllerPipelineRunner creates the command
 func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := ControllerPipelineRunnerOptions{
+	options := PipelineRunnerOptions{
 		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
@@ -102,7 +102,7 @@ func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Comma
 }
 
 // Run will implement this command
-func (o *ControllerPipelineRunnerOptions) Run() error {
+func (o *PipelineRunnerOptions) Run() error {
 	if !o.NoGitCredentialsInit {
 		err := o.InitGitConfigAndUser()
 		if err != nil {
@@ -118,13 +118,13 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 }
 
 // health returns either HTTP 204 if the service is healthy, otherwise nothing ('cos it's dead).
-func (o *ControllerPipelineRunnerOptions) health(w http.ResponseWriter, r *http.Request) {
+func (o *PipelineRunnerOptions) health(w http.ResponseWriter, r *http.Request) {
 	log.Logger().Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the service is ready to serve requests, otherwise HTTP 503.
-func (o *ControllerPipelineRunnerOptions) ready(w http.ResponseWriter, r *http.Request) {
+func (o *PipelineRunnerOptions) ready(w http.ResponseWriter, r *http.Request) {
 	log.Logger().Debug("Ready check")
 	if o.isReady() {
 		w.WriteHeader(http.StatusNoContent)
@@ -134,7 +134,7 @@ func (o *ControllerPipelineRunnerOptions) ready(w http.ResponseWriter, r *http.R
 }
 
 // handle request for pipeline runs
-func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWriter, r *http.Request) {
+func (o *PipelineRunnerOptions) pipelineRunMethods(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		fmt.Fprintf(w, "Please POST JSON to this endpoint!\n")
@@ -149,7 +149,7 @@ func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWrit
 }
 
 // handle request for pipeline runs
-func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
+func (o *PipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
 	err := o.stepGitCredentials()
 	if err != nil {
 		log.Logger().Warn(err.Error())
@@ -255,12 +255,12 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	return
 }
 
-func (o *ControllerPipelineRunnerOptions) isReady() bool {
+func (o *PipelineRunnerOptions) isReady() bool {
 	// TODO a better readiness check
 	return true
 }
 
-func (o *ControllerPipelineRunnerOptions) unmarshalBody(w http.ResponseWriter, r *http.Request, result interface{}) error {
+func (o *PipelineRunnerOptions) unmarshalBody(w http.ResponseWriter, r *http.Request, result interface{}) error {
 	// TODO assume JSON for now
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -273,7 +273,7 @@ func (o *ControllerPipelineRunnerOptions) unmarshalBody(w http.ResponseWriter, r
 	return nil
 }
 
-func (o *ControllerPipelineRunnerOptions) marshalPayload(w http.ResponseWriter, r *http.Request, payload interface{}) error {
+func (o *PipelineRunnerOptions) marshalPayload(w http.ResponseWriter, r *http.Request, payload interface{}) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return errors.Wrapf(err, "marshalling the JSON payload %#v", payload)
@@ -282,13 +282,13 @@ func (o *ControllerPipelineRunnerOptions) marshalPayload(w http.ResponseWriter, 
 	return nil
 }
 
-func (o *ControllerPipelineRunnerOptions) onError(err error) {
+func (o *PipelineRunnerOptions) onError(err error) {
 	if err != nil {
 		log.Logger().Errorf("%v", err)
 	}
 }
 
-func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
+func (o *PipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
 	log.Logger().Errorf("%v %s", err, message)
 
 	o.onError(err)
@@ -296,7 +296,7 @@ func (o *ControllerPipelineRunnerOptions) returnError(err error, message string,
 	w.Write([]byte(message))
 }
 
-func (o *ControllerPipelineRunnerOptions) stepGitCredentials() error {
+func (o *PipelineRunnerOptions) stepGitCredentials() error {
 	if !o.NoGitCredentialsInit {
 		copy := *o.CommonOptions
 		copy.BatchMode = true
