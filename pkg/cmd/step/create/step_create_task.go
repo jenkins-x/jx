@@ -204,6 +204,33 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
+	exists, err := o.effectiveProjectConfigExists()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		// TODO this branch all things depending on it can be removed once the meta pipeline is working
+		// TODO keeping this to keep existing behavior until then (HF)
+		if o.CloneGitURL != "" {
+			o.CloneDir = o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
+			if o.DeleteTempDir {
+				defer func() {
+					log.Logger().Infof("removing the temp directory %s", o.CloneDir)
+					err := os.RemoveAll(o.CloneDir)
+					if err != nil {
+						log.Logger().Warnf("failed to delete dir %s: %s", o.CloneDir, err.Error())
+					}
+				}()
+			}
+			// Add the REPO_URL env var
+			o.CustomEnvs = append(o.CustomEnvs, fmt.Sprintf("%s=%s", "REPO_URL", o.CloneGitURL))
+			err = o.mergePullRefs(pr, o.CloneDir)
+			if err != nil {
+				return errors.Wrapf(err, "Unable to merge PULL_REFS %s in %s", pr, o.CloneDir)
+			}
+		}
+	}
+
 	o.GitInfo, err = o.FindGitInfo(o.CloneDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find git information from dir %s", o.CloneDir)
@@ -228,7 +255,7 @@ func (o *StepCreateTaskOptions) Run() error {
 
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline)
 
-	exists, err := o.effectiveProjectConfigExists()
+	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {
 		return err
 	}
@@ -236,27 +263,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		effectiveProjectConfig, err = o.loadEffectiveProjectConfig()
 		log.Logger().Debug("loaded effective project configuration from file")
 	} else {
-		// TODO this branch all things depending on it can be removed once the meta pipeline is working
-		// TODO keeping this to keep existing behavior until then (HF)
-		if o.CloneGitURL != "" {
-			o.CloneDir = o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
-			if o.DeleteTempDir {
-				defer func() {
-					log.Logger().Infof("removing the temp directory %s", o.CloneDir)
-					err := os.RemoveAll(o.CloneDir)
-					if err != nil {
-						log.Logger().Warnf("failed to delete dir %s: %s", o.CloneDir, err.Error())
-					}
-				}()
-			}
-			// Add the REPO_URL env var
-			o.CustomEnvs = append(o.CustomEnvs, fmt.Sprintf("%s=%s", "REPO_URL", o.CloneGitURL))
-			err = o.mergePullRefs(pr, o.CloneDir)
-			if err != nil {
-				return errors.Wrapf(err, "Unable to merge PULL_REFS %s in %s", pr, o.CloneDir)
-			}
-		}
-
+		// TODO: This branch also goes away when the metapipeline is actually in place in pipelinerunner (AB)
 		log.Logger().Debug("creating effective project configuration")
 		effectiveProjectConfig, err = o.createEffectiveProjectConfigFromOptions(tektonClient, jxClient, kubeClient, ns, pipelineName)
 		if err != nil {
