@@ -23,7 +23,7 @@ import (
 
 var (
 	createInstallValuesLong = templates.LongDesc(`
-		Creates any mising cluster values into the cluster/values.yaml file 
+		Creates any missing cluster values into the cluster/values.yaml file 
 `)
 
 	createInstallValuesExample = templates.Examples(`
@@ -62,7 +62,7 @@ func NewCmdStepCreateInstallValues(commonOpts *opts.CommonOptions) *cobra.Comman
 
 	cmd := &cobra.Command{
 		Use:     "install values",
-		Short:   "Creates any mising cluster values into the cluster/values.yaml file ",
+		Short:   "Creates any missing cluster values into the cluster/values.yaml file ",
 		Long:    createInstallValuesLong,
 		Example: createInstallValuesExample,
 		Aliases: []string{"version pullrequest"},
