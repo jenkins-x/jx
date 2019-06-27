@@ -13,7 +13,7 @@ func TestGetOrgOrUserFromOptions_orgIsSet(t *testing.T) {
 		Org:           "MyOrg",
 		CommonOptions: &opts.CommonOptions{Username: "MyUser"},
 	}
-	owner := GetOrgOrUserFromOptions(options)
+	owner := options.GetOrgOrUserFromOptions()
 	assert.Equal(t, options.Org, owner, "The Owner should be the Org name")
 }
 
@@ -23,7 +23,7 @@ func TestGetOrgOrUserFromOptions_orgNotSetUserIsSet(t *testing.T) {
 		Org:           "",
 		CommonOptions: &opts.CommonOptions{Username: "MyUser"},
 	}
-	owner := GetOrgOrUserFromOptions(options)
+	owner := options.GetOrgOrUserFromOptions()
 	assert.Equal(t, options.Username, owner, "The Owner should be the Username")
 }
 
@@ -33,6 +33,6 @@ func TestGetOrgOrUserFromOptions_orgNotSetUserNotSet(t *testing.T) {
 		Org:           "",
 		CommonOptions: &opts.CommonOptions{Username: ""},
 	}
-	owner := GetOrgOrUserFromOptions(options)
+	owner := options.GetOrgOrUserFromOptions()
 	assert.Equal(t, "", owner, "The Owner should be empty")
 }
