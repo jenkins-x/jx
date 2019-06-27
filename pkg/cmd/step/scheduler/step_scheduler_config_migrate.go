@@ -25,13 +25,23 @@ type StepSchedulerConfigMigrateOptions struct {
 
 var (
 	stepSchedulerConfigMigrateLong = templates.LongDesc(`
-        This command will transform your pipeline schedulers in to prow config. 
-        If you are using gitops the prow config will be added to your environment repository. 
-        For non-gitops environments the prow config maps will applied to your dev environment.
+        This command will generate pipeline scheduler resources from either the prow config maps or prow config files.
+        For gitops users they will be added to the dev environment git repository.
+        For non gitops users they will be applied directly to the cluster if --dryRun=false.
 `)
 	stepSchedulerConfigMigrateExample = templates.Examples(`
-	
+	# Test the migration but do not apply
 	jx step scheduler config migrate
+
+    # Generate the pipeline schedulers and apply them either via gitops or directly to the cluster
+    jx step scheduler config migrate --dryRun=false
+
+    # Generate the pipeline schedulers from files instead of the existing configmaps in the cluster
+    jx step scheduler config migrate --prow-config-file=config.yaml --prow-plugins-file=plugins.yaml
+
+    # Disable validation checks when migrating to pipeline schedulers
+    jx step scheduler config migrate --skipVerification=true
+    
 `)
 )
 
