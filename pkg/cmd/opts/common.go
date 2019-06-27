@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -264,10 +265,24 @@ func (o *CommonOptions) GetConfiguration(config interface{}) error {
 			}
 		}
 	}
-	if err := viper.WriteConfigAs("conf.yaml"); err != nil {
-		log.Logger().Debugf("Error writing config file %s", err)
-	}
+	createDebugConfigFile("debug", "config.yaml")
 	return nil
+}
+
+func createDebugConfigFile(dir string, file string) {
+	wkDir, err := util.ConfigDir()
+	if err != nil {
+		log.Logger().Debugf("error determining config dir %v", err)
+	} else {
+		dir := filepath.Join(wkDir, dir)
+		if err = os.MkdirAll(dir, util.DefaultWritePermissions); err != nil {
+			log.Logger().Warnf("Error making directory: %s %s", dir, err)
+		}
+		configFile := filepath.Join(dir, file)
+		if err = viper.WriteConfigAs(configFile); err != nil {
+			log.Logger().Warnf("Error writing config file %s", err)
+		}
+	}
 }
 
 // ApiExtensionsClient return or creates the api extension client
@@ -1220,7 +1235,6 @@ func (o *CommonOptions) configExists(configPath, configKey string) bool {
 			m = m3
 		}
 		return true
-	} else {
-		return viper.InConfig(configKey)
 	}
+	return viper.InConfig(configKey)
 }
