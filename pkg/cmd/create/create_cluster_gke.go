@@ -578,7 +578,7 @@ func AddLabel(labels string, name string, value string) string {
 		if labels != "" {
 			sep = ","
 		}
-		labels += sep + util.SanitizeLabel((name)+"="+username)
+		labels += sep + util.SanitizeLabel(name)+"="+util.SanitizeLabel(username)
 	}
 	return labels
 }
