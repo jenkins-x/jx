@@ -390,6 +390,42 @@ definitions:
       status:
         type: string
     type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdate:
+    description: DependencyUpdate describes an dependency update message from the
+      commit log
+    properties:
+      FromReleaseHTMLURL:
+        type: string
+      FromReleaseName:
+        type: string
+      FromVersion:
+        type: string
+      Host:
+        type: string
+      Owner:
+        type: string
+      Repo:
+        type: string
+      ToReleaseHTMLURL:
+        type: string
+      ToReleaseName:
+        type: string
+      ToVersion:
+        type: string
+      URL:
+        type: string
+    required:
+    - URL
+    - Owner
+    - Host
+    - Repo
+    - FromVersion
+    - FromReleaseHTMLURL
+    - FromReleaseName
+    - ToVersion
+    - ToReleaseHTMLURL
+    - ToReleaseName
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Environment:
     description: Environment represents an environment like Dev, Test, Staging, Production
       where code lives
@@ -1834,6 +1870,10 @@ definitions:
       commits:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitSummary'
+        type: array
+      dependencyUpdates:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdate'
         type: array
       gitCloneUrl:
         type: string

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/gits/releases"
 
 	"github.com/pkg/errors"
 
@@ -572,6 +571,16 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	if committer != nil {
 		committerDetails = committer.Spec
 	}
+	dependencyUpdate, err := o.ParseDependencyUpdateMessage(commit.Message, spec.GitCloneURL)
+	if err != nil {
+		log.Logger().Infof("Parsing %s for dependency updates", commit.Message)
+	}
+	if dependencyUpdate != nil {
+		if spec.DependencyUpdates == nil {
+			spec.DependencyUpdates = make([]v1.DependencyUpdate, 0)
+		}
+		spec.DependencyUpdates = append(spec.DependencyUpdates, *dependencyUpdate)
+	}
 	commitSummary := v1.CommitSummary{
 		Message:   commit.Message,
 		URL:       url,
@@ -580,6 +589,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 		Branch:    branch,
 		Committer: &committerDetails,
 	}
+
 	err = o.addIssuesAndPullRequests(spec, &commitSummary, commit)
 	if err != nil {
 		log.Logger().Warnf("Failed to enrich commit %s with issues: %s", sha, err)
@@ -605,17 +615,6 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		regex = JIRAIssueRegex
 	}
 	message := fullCommitMessageText(rawCommit)
-
-	dependencyUpdate, err := releases.ParseDependencyUpdateMessage(message)
-	if err != nil {
-		log.Logger().Infof("Parsing %s for dependency updates", message)
-	}
-	if dependencyUpdate != nil {
-		message, err = o.inlineDependencyUpdateMessage(message, dependencyUpdate)
-		if err != nil {
-			log.Logger().Warnf("Unable to inline dependency update message for %s %v", dependencyUpdate.String(), err)
-		}
-	}
 
 	matches := regex.FindAllStringSubmatch(message, -1)
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -705,37 +704,6 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		}
 	}
 	return nil
-}
-
-func (o *StepChangelogOptions) inlineDependencyUpdateMessage(msg string, update *releases.DependencyUpdate) (string, error) {
-	if update.Owner == "" {
-		update.Owner = o.State.GitInfo.Organisation
-	}
-	if update.Host == "" {
-		update.Host = o.State.GitInfo.Host
-	}
-	if update.URL == "" {
-		update.URL = fmt.Sprintf("https://%s/%s/%s", update.Host, update.Owner, update.Repo)
-	}
-	provider, _, err := o.CreateGitProviderForURLWithoutKind(update.URL)
-	if err != nil {
-		return "", errors.Wrapf(err, "creating git provider for %s", update.URL)
-	}
-	release, err := provider.GetRelease(update.Owner, update.Repo, update.ToVersion)
-	if err != nil {
-		// normally tags are v<version> so try that
-		tag := fmt.Sprintf("v%s", update.ToVersion)
-		release, err = provider.GetRelease(update.Owner, update.Repo, tag)
-		if err != nil {
-			return "", errors.Wrapf(err, "getting release for %s (tried %s and v%s)", update.ToVersion, update.ToVersion, update.ToVersion)
-		}
-	}
-	return fmt.Sprintf(`%s
-
-<details open>
-%s
-</details>
-`, msg, release.Body), nil
 }
 
 // toV1Labels converts git labels to IssueLabel

@@ -2,6 +2,7 @@ package gits
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -69,16 +70,17 @@ func ParseCommit(message string) *CommitInfo {
 
 	idx := strings.Index(message, ":")
 	if idx > 0 {
-		answer.Kind = message[0:idx]
-
-		rest := strings.TrimSpace(message[idx+1:])
-		if strings.HasPrefix(rest, "(") {
-			idx = strings.Index(rest, ")")
+		kind := message[0:idx]
+		if strings.HasSuffix(kind, ")") {
+			idx := strings.Index(kind, "(")
 			if idx > 0 {
-				answer.Feature = strings.TrimSpace(rest[1:idx])
-				rest = strings.TrimSpace(rest[idx+1:])
+				answer.Feature = strings.TrimSpace(kind[idx+1 : len(kind)-1])
+				kind = strings.TrimSpace(kind[0:idx])
 			}
 		}
+		answer.Kind = kind
+		rest := strings.TrimSpace(message[idx+1:])
+
 		answer.Message = rest
 	}
 	return answer
@@ -199,6 +201,20 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepository) (stri
 			}
 		}
 	}
+
+	if len(releaseSpec.DependencyUpdates) > 0 {
+		buffer.WriteString("\n### Dependency Updates\n\n")
+		previous := ""
+		buffer.WriteString("| Dependency | Component | New Version | Old Version |\n")
+		buffer.WriteString("| ---------- | --------- | ----------- | ----------- |\n")
+		for _, du := range releaseSpec.DependencyUpdates {
+			msg := describeDependencyUpdate(gitInfo, &du)
+			if msg != previous {
+				buffer.WriteString(msg + "\n")
+				previous = msg
+			}
+		}
+	}
 	return buffer.String(), nil
 }
 
@@ -217,6 +233,10 @@ func describeIssueShort(info *GitRepository, issue *v1.IssueSummary) string {
 		}
 	}
 	return "[" + prefix + issue.ID + "](" + issue.URL + ") "
+}
+
+func describeDependencyUpdate(info *GitRepository, du *v1.DependencyUpdate) string {
+	return fmt.Sprintf("| [%s/%s](%s) | | [%s](%s) | [%s](%s)| ", du.Owner, du.Repo, du.URL, du.ToVersion, du.ToReleaseHTMLURL, du.FromVersion, du.FromReleaseHTMLURL)
 }
 
 func describeUser(info *GitRepository, user *v1.UserDetails) string {
