@@ -5,7 +5,7 @@ package gits_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/stretchr/testify/assert"
 )
@@ -68,7 +68,7 @@ func TestChangelogMarkdownWithConventionalCommits(t *testing.T) {
 				},
 			},
 			{
-				Message: "feat:(has actual feature name) some commit 3\nfixes #456",
+				Message: "feat(has actual feature name): some commit 3\nfixes #456",
 				SHA:     "567",
 				Author: &v1.UserDetails{
 					Name:  "James Rawlings",
