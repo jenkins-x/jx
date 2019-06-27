@@ -591,7 +591,7 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		URL:           versionRepository,
 		ReferenceName: plumbing.ReferenceName(referenceName),
 		SingleBranch:  true,
-		Progress:      fw,
+		Progress:      nil,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone reference: %s", referenceName)
