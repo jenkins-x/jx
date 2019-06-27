@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -968,8 +968,8 @@ func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (
 
 // CreatePipelineForBuildPack translates a set of lifecycles into a full pipeline.
 func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments) (*syntax.ParsedPipeline, int, error) {
-	args.GitOrg = kube.ToValidName(strings.ToLower(args.GitOrg))
-	args.GitName = kube.ToValidName(strings.ToLower(args.GitName))
+	args.GitOrg = naming.ToValidName(strings.ToLower(args.GitOrg))
+	args.GitName = naming.ToValidName(strings.ToLower(args.GitName))
 	args.DockerRegistryOrg = strings.ToLower(args.DockerRegistryOrg)
 
 	stage, newCounter, err := c.createStageForBuildPack(args)

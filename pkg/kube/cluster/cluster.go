@@ -3,6 +3,7 @@ package cluster
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
 
@@ -44,7 +45,7 @@ func ShortName(kuber kube.Kuber) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "retrieving the cluster name")
 	}
-	return kube.ToValidNameTruncated(clusterName, 16), nil
+	return naming.ToValidNameTruncated(clusterName, 16), nil
 }
 
 // SimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated

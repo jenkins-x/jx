@@ -2,17 +2,19 @@ package pipelinescheduler
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -653,7 +655,7 @@ func (o *GitOpsOptions) AddSchedulersToEnvironmentRepo(sourceRepositoryGroups []
 		}
 
 		for _, repo := range sourceRepositories {
-			repoName := kube.ToValidName(repo.Spec.Org + "-" + repo.Spec.Repo)
+			repoName := naming.ToValidName(repo.Spec.Org + "-" + repo.Spec.Repo)
 			if repo.Name == "" {
 				repo.Name = repoName
 			}

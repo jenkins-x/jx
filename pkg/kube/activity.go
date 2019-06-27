@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -192,7 +193,7 @@ func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, ac
 
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, bool, error) {
-	name := ToValidName(k.Name)
+	name := naming.ToValidName(k.Name)
 	create := false
 	defaultActivity := &v1.PipelineActivity{
 		ObjectMeta: metav1.ObjectMeta{
@@ -438,7 +439,7 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 
 	updateActivitySpec(k, &activity.Spec)
 
-	activity.Labels[v1.LabelSourceRepository] = ToValidName(activity.Spec.GitOwner + "-" + activity.RepositoryName())
+	activity.Labels[v1.LabelSourceRepository] = naming.ToValidName(activity.Spec.GitOwner + "-" + activity.RepositoryName())
 	activity.Labels[v1.LabelProvider] = ToProviderName(activity.Spec.GitURL)
 	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 	activity.Labels[v1.LabelRepository] = activity.RepositoryName()

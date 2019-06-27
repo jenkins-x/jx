@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	jenkinsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 
@@ -114,7 +115,7 @@ func (o *StepPreExtendOptions) Run() error {
 		build := o.GetBuildNumber()
 		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 		if pipeline != "" && build != "" {
-			name := kube.ToValidName(pipeline + "-" + build)
+			name := naming.ToValidName(pipeline + "-" + build)
 			key := &kube.PromoteStepActivityKey{
 				PipelineActivityKey: kube.PipelineActivityKey{
 					Name:     name,

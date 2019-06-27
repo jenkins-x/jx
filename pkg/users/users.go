@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -38,7 +38,7 @@ func GetUsers(jxClient versioned.Interface, ns string) (map[string]*jenkinsv1.Us
 
 // CreateUser creates a new default User
 func CreateUser(ns string, login string, name string, email string) *jenkinsv1.User {
-	id := kube.ToValidName(login)
+	id := naming.ToValidName(login)
 	user := &jenkinsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
@@ -71,7 +71,7 @@ func AddAccountReference(user *jenkinsv1.User, gitProviderKey string, id string)
 
 // DeleteUser deletes the user resource but does not uninstall the underlying namespaces
 func DeleteUser(jxClient versioned.Interface, ns string, userName string) error {
-	id := kube.ToValidName(userName)
+	id := naming.ToValidName(userName)
 	userInterface := jxClient.JenkinsV1().Users(ns)
 	_, err := userInterface.Get(id, metav1.GetOptions{})
 	if err == nil {

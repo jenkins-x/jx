@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/start"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/cenkalti/backoff"
 	"github.com/denormal/go-gitignore"
@@ -358,7 +359,7 @@ func (options *ImportOptions) Run() error {
 		}
 		_, options.AppName = filepath.Split(dir)
 	}
-	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
+	options.AppName = naming.ToValidName(strings.ToLower(options.AppName))
 
 	if !options.DisableDraft {
 		err = options.DraftCreate()
@@ -992,7 +993,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 
 // ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryOrg string) error {
-	options.Organisation = kube.ToValidName(strings.ToLower(options.Organisation))
+	options.Organisation = naming.ToValidName(strings.ToLower(options.Organisation))
 	log.Logger().Infof("replacing placeholders in directory %s", options.Dir)
 	log.Logger().Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
 

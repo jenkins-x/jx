@@ -5,6 +5,8 @@ package importcmd_test
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
+
 	"io/ioutil"
 	"os"
 	"path"
@@ -24,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -160,7 +161,7 @@ func createFakeGitProvider() *gits.FakeProvider {
 
 func assertImport(t *testing.T, testDir string, testcase string, withRename bool, nextGenPipeline bool) error {
 	_, dirName := filepath.Split(testDir)
-	dirName = kube.ToValidName(dirName)
+	dirName = naming.ToValidName(dirName)
 	o := &importcmd.ImportOptions{
 		CommonOptions: &opts.CommonOptions{},
 	}

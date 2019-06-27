@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,7 +157,7 @@ func EnsureEditEnvironmentSetup(kubeClient kubernetes.Interface, jxClient versio
 		}
 	}
 
-	editNS := ToValidName(ns + "-edit-" + username)
+	editNS := naming.ToValidName(ns + "-edit-" + username)
 	labels := map[string]string{
 		LabelTeam:        ns,
 		LabelEnvironment: username,

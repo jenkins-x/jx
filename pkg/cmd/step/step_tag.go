@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -213,13 +213,13 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 	for idx, line := range lines {
 		if chartValueRepository != "" && strings.HasPrefix(line, ValuesYamlRepositoryPrefix) && !changedRepository {
 			// lets ensure we use a valid docker image name
-			chartValueRepository = kube.ToValidImageName(chartValueRepository)
+			chartValueRepository = naming.ToValidImageName(chartValueRepository)
 			updated = true
 			changedRepository = true
 			log.Logger().Infof("Updating repository in %s to %s", valuesFile, chartValueRepository)
 			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
 		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) && !changedTag {
-			version = kube.ToValidImageVersion(version)
+			version = naming.ToValidImageVersion(version)
 			updated = true
 			changedTag = true
 			log.Logger().Infof("Updating tag in %s to %s", valuesFile, version)

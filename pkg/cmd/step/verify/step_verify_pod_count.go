@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -156,7 +157,7 @@ func (o *StepVerifyPodCountOptions) detectPipelineActivity(jxClient versioned.In
 	if pipeline == "" || build == "" {
 		return nil, errors.New("JOB_NAME or BUILD_NUMBER environment variables not set")
 	}
-	name := kube.ToValidName(pipeline + "-" + build)
+	name := naming.ToValidName(pipeline + "-" + build)
 	activities := jxClient.JenkinsV1().PipelineActivities(namespace)
 	activity, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {

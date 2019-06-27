@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -218,7 +219,7 @@ func (o *StepStashOptions) Run() error {
 	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
 
 	if pipeline != "" && buildNo != "" {
-		name := kube.ToValidName(pipeline)
+		name := naming.ToValidName(pipeline)
 		key := &kube.PromoteStepActivityKey{
 			PipelineActivityKey: kube.PipelineActivityKey{
 				Name:     name,

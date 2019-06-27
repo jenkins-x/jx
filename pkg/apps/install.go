@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -600,7 +601,7 @@ func toValidName(appName string, name string, id string) string {
 	if l > 20 {
 		l = 20
 	}
-	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:l], id))
+	return naming.ToValidName(fmt.Sprintf("%s-%s", base[0:l], id))
 }
 
 func (o *InstallOptions) getPrefixes() []string {

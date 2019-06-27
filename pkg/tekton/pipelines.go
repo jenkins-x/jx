@@ -7,6 +7,7 @@ import (
 	"time"
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -123,7 +124,7 @@ func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxCli
 	nextBuildNumber := ""
 	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
 	// TODO: How does SourceRepository handle name overlap?
-	sourceRepoName := kube.ToValidName(gitInfo.Organisation + "-" + gitInfo.Name)
+	sourceRepoName := naming.ToValidName(gitInfo.Organisation + "-" + gitInfo.Name)
 
 	f := func() error {
 		sourceRepo, err := kube.GetOrCreateSourceRepository(jxClient, ns, gitInfo.Name, gitInfo.Organisation, gitInfo.ProviderURL())
@@ -134,7 +135,7 @@ func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxCli
 		if sourceRepo.Annotations == nil {
 			sourceRepo.Annotations = make(map[string]string, 1)
 		}
-		annKey := LastBuildNumberAnnotationPrefix + kube.ToValidName(branch)
+		annKey := LastBuildNumberAnnotationPrefix + naming.ToValidName(branch)
 		annVal := sourceRepo.Annotations[annKey]
 		lastBuildNumber := 0
 		if annVal != "" {
@@ -313,7 +314,7 @@ func PipelineResourceName(organisation string, name string, branch string, conte
 	// characters, which is not allowed. Longest known prefix for now is 28
 	// chars (build-step-artifact-copy-to-), so we truncate to 35 so the
 	// generated container names are no more than 63 chars.
-	resourceName := kube.ToValidNameTruncated(dirtyName, 31)
+	resourceName := naming.ToValidNameTruncated(dirtyName, 31)
 	return resourceName
 }
 

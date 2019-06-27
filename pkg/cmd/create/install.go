@@ -3,22 +3,23 @@ package create
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"regexp"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/tenant"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/env"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
-	"time"
 
 	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
@@ -2206,7 +2207,7 @@ func (options *InstallOptions) ConfigureKaniko() error {
 			}
 		}
 
-		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("%s-ko", clusterName), 30)
+		serviceAccountName := naming.ToValidNameTruncated(fmt.Sprintf("%s-ko", clusterName), 30)
 		log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
