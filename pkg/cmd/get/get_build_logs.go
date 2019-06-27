@@ -7,17 +7,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/knative/pkg/apis"
-
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
@@ -251,14 +250,13 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 
 	var names []string
 	var defaultName string
-	var buildMap map[string][]builds.BaseBuildInfo
 	var pipelineMap map[string][]builds.BaseBuildInfo
 
 	var err error
 	if tektonEnabled {
-		names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+		names, defaultName, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
 	} else {
-		names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
+		names, defaultName, pipelineMap, err = o.loadBuilds(kubeClient, ns)
 	}
 	// If there's an error and we're waiting, ignore it.
 	if err != nil && !o.Wait {
@@ -282,28 +280,21 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		return fmt.Errorf("No pipeline chosen")
 	}
 	name := args[0]
-	suffix := ""
-	if len(buildMap[name]) == 0 && len(pipelineMap[name]) > 0 {
-		suffix = " #" + pipelineMap[name][0].GetBuild()
-	}
-	if len(buildMap[name]) == 0 && len(pipelineMap[name]) == 0 && !pickedPipeline && o.Wait {
+	if len(pipelineMap[name]) == 0 && !pickedPipeline && o.Wait {
 		log.Logger().Infof("waiting for pipeline %s to start...", util.ColorInfo(name))
 
 		// there's no pipeline with yet called 'name' so lets wait for it to start...
 		f := func() error {
 			var err error
 			if tektonEnabled {
-				names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+				names, defaultName, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
 			} else {
-				names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
+				names, defaultName, pipelineMap, err = o.loadBuilds(kubeClient, ns)
 			}
 			if err != nil {
 				return err
 			}
-			if len(buildMap[name]) == 0 && len(pipelineMap[name]) > 0 {
-				suffix = " #" + pipelineMap[name][0].GetBuild()
-			}
-			if len(buildMap[name]) == 0 && len(pipelineMap[name]) == 0 {
+			if len(pipelineMap[name]) == 0 {
 				log.Logger().Infof("no build found in: %s", util.ColorInfo(strings.Join(names, ", ")))
 				return fmt.Errorf("No pipeline exists yet: %s", name)
 			}
@@ -314,7 +305,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 			return err
 		}
 	}
-	if len(buildMap[name]) == 0 && len(pipelineMap[name]) == 0 {
+	if len(pipelineMap[name]) == 0 {
 		return fmt.Errorf("No Pipeline found for name %s in values: %s", name, strings.Join(names, ", "))
 	}
 
@@ -326,7 +317,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		sort.Slice(pipelines, func(i, j int) bool {
 			return pipelines[i].CreatedTime.Before(pipelines[j].CreatedTime)
 		})
-		log.Logger().Infof("Build logs for %s", util.ColorInfo(name+suffix))
+		log.Logger().Infof("Build logs for %s", util.ColorInfo(name))
 		for _, pri := range pipelines {
 			for _, stage := range pri.GetOrderedTaskStages() {
 				pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pri.PipelineRun, metav1.GetOptions{})
@@ -397,7 +388,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 					if err != nil {
 						return err
 					}
-					err = o.getStageLog(ns, name+suffix, stage.GetStageNameIncludingParents(), pod, ic)
+					err = o.getStageLog(ns, name, stage.GetStageNameIncludingParents(), pod, ic)
 					if err != nil {
 						return err
 					}
@@ -405,7 +396,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 			}
 		}
 	} else {
-		b := buildMap[name][0].(*builds.BuildPodInfo)
+		b := pipelineMap[name][0].(*builds.BuildPodInfo)
 		pod := b.Pod
 		if pod == nil {
 			return fmt.Errorf("No Pod found for name %s", name)
@@ -415,7 +406,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 			return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
 		}
 
-		log.Logger().Infof("Build logs for %s", util.ColorInfo(name+suffix))
+		log.Logger().Infof("Build logs for %s", util.ColorInfo(name))
 		for i, ic := range containers {
 			pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 			if err != nil {
@@ -481,16 +472,15 @@ func (o *GetBuildLogsOptions) getStageLog(ns, build, stageName string, pod *core
 	return o.TailLogs(ns, pod.Name, container.Name)
 }
 
-func (o *GetBuildLogsOptions) loadBuilds(kubeClient kubernetes.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, map[string][]builds.BaseBuildInfo, error) {
+func (o *GetBuildLogsOptions) loadBuilds(kubeClient kubernetes.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, error) {
 	defaultName := ""
 	names := []string{}
 	buildMap := map[string][]builds.BaseBuildInfo{}
-	pipelineMap := map[string][]builds.BaseBuildInfo{}
 
 	pods, err := builds.GetBuildPods(kubeClient, ns)
 	if err != nil {
 		log.Logger().Warnf("Failed to query pods %s", err)
-		return names, defaultName, buildMap, pipelineMap, err
+		return names, defaultName, buildMap, err
 	}
 
 	buildInfos := []*builds.BuildPodInfo{}
@@ -505,26 +495,24 @@ func (o *GetBuildLogsOptions) loadBuilds(kubeClient kubernetes.Interface, ns str
 	}
 	builds.SortBuildPodInfos(buildInfos)
 	if len(buildInfos) == 0 {
-		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no knative builds have been triggered which match the current filter")
+		return names, defaultName, buildMap, fmt.Errorf("no knative builds have been triggered which match the current filter")
 	}
 
 	for _, build := range buildInfos {
 		name := build.Pipeline + " #" + build.Build
 		names = append(names, name)
 		buildMap[name] = append(buildMap[name], build)
-		pipelineMap[build.Pipeline] = append(pipelineMap[build.Pipeline], build)
 
 		if build.Branch == "master" {
 			defaultName = name
 		}
 	}
-	return names, defaultName, buildMap, pipelineMap, nil
+	return names, defaultName, buildMap, nil
 }
 
-func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, map[string][]builds.BaseBuildInfo, error) {
+func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, error) {
 	defaultName := ""
 	names := []string{}
-	buildMap := map[string][]builds.BaseBuildInfo{}
 	pipelineMap := map[string][]builds.BaseBuildInfo{}
 
 	labelSelectors := o.BuildFilter.LabelSelectorsForBuild()
@@ -537,20 +525,20 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(listOptions)
 	if err != nil {
 		log.Logger().Warnf("Failed to query PipelineRuns %s", err)
-		return names, defaultName, buildMap, pipelineMap, err
+		return names, defaultName, pipelineMap, err
 	}
 
 	structures, err := jxClient.JenkinsV1().PipelineStructures(ns).List(listOptions)
 	if err != nil {
 		log.Logger().Warnf("Failed to query PipelineStructures %s", err)
-		return names, defaultName, buildMap, pipelineMap, err
+		return names, defaultName, pipelineMap, err
 	}
-	// TODO: Remove this eventually - it's only here for structures created before we started applying labels to them.
+	// TODO: Remove this eventually - it's only here for structures created before we started applying labels to them in v2.0.216.
 	if len(prList.Items) > len(structures.Items) && len(labelSelectors) != 0 {
 		structures, err = jxClient.JenkinsV1().PipelineStructures(ns).List(metav1.ListOptions{})
 		if err != nil {
 			log.Logger().Warnf("Failed to query PipelineStructures %s", err)
-			return names, defaultName, buildMap, pipelineMap, err
+			return names, defaultName, pipelineMap, err
 		}
 	}
 
@@ -564,7 +552,7 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 		LabelSelector: podLabelSelector,
 	})
 	if err != nil {
-		return names, defaultName, buildMap, pipelineMap, err
+		return names, defaultName, pipelineMap, err
 	}
 	for _, pr := range prList.Items {
 		var ps v1.PipelineStructure
@@ -584,21 +572,21 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 
 	tekton.SortPipelineRunInfos(buildInfos)
 	if len(buildInfos) == 0 {
-		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no Tekton pipelines have been triggered which match the current filter")
+		return names, defaultName, pipelineMap, fmt.Errorf("no Tekton pipelines have been triggered which match the current filter")
 	}
 
 	for _, build := range buildInfos {
-		name := build.Pipeline + " #" + build.Build
+		buildName := build.Pipeline + " #" + build.Build
 		if build.Context != "" {
-			name += " " + build.Context
+			buildName += " " + build.Context
 		}
-		names = append(names, name)
-		buildMap[name] = append(buildMap[name], build)
-		pipelineMap[build.Pipeline] = append(pipelineMap[build.Pipeline], build)
+		names = append(names, buildName)
+		pipelineMap[buildName] = append(pipelineMap[buildName], build)
 
 		if build.Branch == "master" {
-			defaultName = name
+			defaultName = buildName
 		}
 	}
-	return names, defaultName, buildMap, pipelineMap, nil
+
+	return names, defaultName, pipelineMap, nil
 }
