@@ -182,7 +182,7 @@ tidy-deps: ## Cleans up dependencies
 make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
-test: make-reports-dir ## Run ONLY the tests that have no build flags, such as the build tag "integration"
+test: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
 
 test-report: make-reports-dir get-test-deps test ## Create the test report
