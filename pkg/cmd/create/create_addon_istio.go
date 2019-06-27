@@ -205,6 +205,10 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 	if err != nil {
 		return answer, err
 	}
+	cacheDir, err := util.CacheDir()
+	if err != nil {
+		return answer, err
+	}
 
 	binaryFile := "istioctl"
 	extension := ""
@@ -220,7 +224,7 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 
 	clientURL := fmt.Sprintf("https://github.com/istio/istio/releases/download/%s/istio-%s-%s", actualVersion, actualVersion, extension)
 
-	outputDir := filepath.Join(binDir, "istio-"+actualVersion.String())
+	outputDir := filepath.Join(cacheDir, "istio-"+actualVersion.String())
 	os.RemoveAll(outputDir)
 
 	answer = outputDir
@@ -230,22 +234,24 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 		return answer, err
 	}
 
-	tarPath := filepath.Join(binDir, "istio-"+extension)
-	os.Remove(tarPath)
-	err = packages.DownloadFile(clientURL, tarPath)
-	if err != nil {
-		return answer, err
-	}
-
-	defer os.Remove(tarPath)
-
-	if strings.HasSuffix(extension, ".zip") {
-		err = util.Unzip(tarPath, binDir)
+	tarPath := filepath.Join(cacheDir, fmt.Sprintf("istio-%s-%s", actualVersion, extension))
+	fi, err := os.Stat(tarPath)
+	if os.IsNotExist(err) || fi.Size() == 0 {
+		err = packages.DownloadFile(clientURL, tarPath)
 		if err != nil {
 			return answer, err
 		}
 	} else {
-		err = util.UnTargzAll(tarPath, binDir)
+		log.Logger().Infof("Istio package already downloaded: %s", tarPath)
+	}
+
+	if strings.HasSuffix(extension, ".zip") {
+		err = util.Unzip(tarPath, cacheDir)
+		if err != nil {
+			return answer, err
+		}
+	} else {
+		err = util.UnTargzAll(tarPath, cacheDir)
 		if err != nil {
 			return answer, err
 		}
