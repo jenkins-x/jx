@@ -30,6 +30,7 @@ scanning/
 myvalues.yaml
 myvalues.yml
 **/extraValues.yaml
+changelog.md
 
 # vim swap files
 *.swp
