@@ -82,6 +82,7 @@ func createUpdateWebhooksOptions(commonOpts *opts.CommonOptions) UpdateWebhooksO
 	return options
 }
 
+// Run runs the command
 func (o *UpdateWebhooksOptions) Run() error {
 	client, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
