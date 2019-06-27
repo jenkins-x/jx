@@ -424,7 +424,7 @@ func (g *GitLocal) MergeTheirs(dir string, commitish string) error {
 	return g.GitCLI.MergeTheirs(dir, commitish)
 }
 
-// Rebase runs git rebase upstream branch
-func (g *GitLocal) Rebase(dir string, upstream string, branch string) error {
-	return g.GitCLI.Rebase(dir, upstream, branch)
+// RebaseTheirs runs git rebase upstream branch
+func (g *GitLocal) RebaseTheirs(dir string, upstream string, branch string) error {
+	return g.GitCLI.RebaseTheirs(dir, upstream, branch)
 }

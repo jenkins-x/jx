@@ -290,7 +290,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 				if err != nil {
 					return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, existingBranchName)
 				}
-				err = gitter.Rebase(dir, fmt.Sprintf("origin/%s", existingBranchName), "")
+				err = gitter.RebaseTheirs(dir, fmt.Sprintf("origin/%s", existingBranchName), "")
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}

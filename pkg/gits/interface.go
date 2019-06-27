@@ -218,8 +218,9 @@ type Gitter interface {
 	FetchBranchShallow(dir string, repo string, refspec ...string) error
 	FetchBranchUnshallow(dir string, repo string, refspec ...string) error
 	Merge(dir string, commitish string) error
+	MergeTheirs(dir string, commitish string) error
 	ResetHard(dir string, commitish string) error
-	Rebase(dir string, upstream string, branch string) error
+	RebaseTheirs(dir string, upstream string, branch string) error
 
 	Stash(dir string) error
 
@@ -247,8 +248,6 @@ type Gitter interface {
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
 	DeleteRemoteBranch(dir string, remoteName string, branch string) error
-
-	MergeTheirs(dir string, commitish string) error
 }
 
 // ConfigureGitFn callback to optionally configure git before its used for creating commits and PRs
