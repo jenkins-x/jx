@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/promote"
 	"github.com/jenkins-x/jx/pkg/cmd/step/pr"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/pkg/errors"
 
@@ -521,7 +522,7 @@ func (o *PreviewOptions) Run() error {
 
 	if url != "" || o.PullRequestURL != "" {
 		if pipeline != "" && build != "" {
-			name := kube.ToValidName(pipeline + "-" + build)
+			name := naming.ToValidName(pipeline + "-" + build)
 			// lets see if we can update the pipeline
 			activities := jxClient.JenkinsV1().PipelineActivities(ns)
 			key := &kube.PromoteStepActivityKey{
@@ -832,7 +833,7 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 			}
 		}
 	}
-	o.Name = kube.ToValidName(o.Name)
+	o.Name = naming.ToValidName(o.Name)
 	if o.Name == "" {
 		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
 	}
@@ -854,7 +855,7 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 	if len(o.Namespace) > 63 {
 		return fmt.Errorf("Preview namespace %s is too long. Must be no more than 63 character", o.Namespace)
 	}
-	o.Namespace = kube.ToValidName(o.Namespace)
+	o.Namespace = naming.ToValidName(o.Namespace)
 	if o.Label == "" {
 		o.Label = o.Name
 	}

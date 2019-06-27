@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/pkg/errors"
 
@@ -483,7 +484,7 @@ func (o *StepChangelogOptions) Run() error {
 		devRelease := *release
 		devRelease.ResourceVersion = ""
 		devRelease.Namespace = devNs
-		devRelease.Name = kube.ToValidName(appName + "-" + cleanVersion)
+		devRelease.Name = naming.ToValidName(appName + "-" + cleanVersion)
 		devRelease.Spec.Name = appName
 		_, err := kube.GetOrCreateRelease(jxClient, devNs, &devRelease)
 		if err != nil {
@@ -497,7 +498,7 @@ func (o *StepChangelogOptions) Run() error {
 	build := o.Build
 	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
-		name := kube.ToValidName(pipeline + "-" + build)
+		name := naming.ToValidName(pipeline + "-" + build)
 		// lets see if we can update the pipeline
 		activities := jxClient.JenkinsV1().PipelineActivities(devNs)
 		lastCommitSha := ""

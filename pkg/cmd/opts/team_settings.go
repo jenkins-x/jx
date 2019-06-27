@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/builds"
@@ -376,7 +377,7 @@ func (o *CommonOptions) GetUsername(userName string) (string, error) {
 		}
 		userName = u.Username
 	}
-	return kube.ToValidNameTruncated(userName, 63), nil
+	return naming.ToValidNameTruncated(userName, 63), nil
 }
 
 // EnableRemoteKubeCluster lets setup this command to work with a remote cluster without a jx install

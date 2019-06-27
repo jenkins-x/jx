@@ -2,14 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/rsh"
-	"github.com/jenkins-x/jx/pkg/cmd/sync"
-
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
-	"github.com/jenkins-x/jx/pkg/gits"
-	v12 "k8s.io/client-go/kubernetes/typed/core/v1"
-
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,6 +9,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/rsh"
+	"github.com/jenkins-x/jx/pkg/cmd/sync"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/step/git"
+	"github.com/jenkins-x/jx/pkg/gits"
+	v12 "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -233,7 +234,7 @@ func (o *CreateDevPodOptions) Run() error {
 			log.Logger().Warnf("could not parse the git URL %s: %s", importURL, err.Error())
 		} else {
 			gitLabelKey = fmt.Sprintf("%s-%s-%s-%s", kube.LabelDevPodGitPrefix, gitInfo.Host, gitInfo.Organisation, gitInfo.Name)
-			gitLabelValue = kube.ToValidNameWithDots(importURL)
+			gitLabelValue = naming.ToValidNameWithDots(importURL)
 			// lets query to see if there is a DevPod already for t
 			// his URL
 			matchLabels := map[string]string{
@@ -314,7 +315,7 @@ func (o *CreateDevPodOptions) Run() error {
 			pod.Annotations = map[string]string{}
 		}
 
-		name = kube.ToValidName(userName + "-" + label)
+		name = naming.ToValidName(userName + "-" + label)
 		if o.Suffix != "" {
 			name += "-" + o.Suffix
 		}

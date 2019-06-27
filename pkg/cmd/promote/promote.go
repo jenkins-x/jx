@@ -9,9 +9,10 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -873,7 +874,7 @@ func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStep
 			}
 		}
 	}
-	name = kube.ToValidName(name)
+	name = naming.ToValidName(name)
 	log.Logger().Debugf("Using pipeline: %s build: %s", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
@@ -939,7 +940,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		return err
 	}
 
-	releaseName := kube.ToValidNameWithDots(app + "-" + version)
+	releaseName := naming.ToValidNameWithDots(app + "-" + version)
 	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return err

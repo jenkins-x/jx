@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -287,9 +288,9 @@ func (o *InitOptions) EnableClusterAdminRole() error {
 	if o.Username == "" {
 		return util.MissingOption(optionUsername)
 	}
-	userFormatted := kube.ToValidName(o.Username)
+	userFormatted := naming.ToValidName(o.Username)
 
-	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + o.Flags.UserClusterRole + "-binding")
+	clusterRoleBindingName := naming.ToValidName(userFormatted + "-" + o.Flags.UserClusterRole + "-binding")
 
 	clusterRoleBindingInterface := client.RbacV1().ClusterRoleBindings()
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{

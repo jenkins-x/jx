@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -92,7 +93,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 	}
 	options := metav1.GetOptions{}
 	serverName := server.Name
-	name := kube.ToValidName(kube.SecretJenkinsPipelineGitCredentials + server.Kind + "-" + serverName)
+	name := naming.ToValidName(kube.SecretJenkinsPipelineGitCredentials + server.Kind + "-" + serverName)
 	secrets := client.CoreV1().Secrets(ns)
 	secret, err := secrets.Get(name, options)
 	create := false

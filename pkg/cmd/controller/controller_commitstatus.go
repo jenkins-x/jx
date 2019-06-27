@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/prow/config"
@@ -271,7 +272,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 					buildNumber = buildId
 				}
 
-				pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
+				pipelineActName := naming.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
 
 				// PLM TODO This is a bit of hack, we need a working build controller
 				// Try to add the lastCommitSha and gitUrl to the PipelineActivity
@@ -311,7 +312,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 
 						for _, ctx := range contexts {
 							if pullRequest != "" {
-								name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
+								name := naming.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
 
 								err = o.UpsertCommitStatusCheck(name, pipelineActName, sourceUrl, sha, pullRequest, ctx, pod.Status.Phase, jxClient, ns)
 								if err != nil {

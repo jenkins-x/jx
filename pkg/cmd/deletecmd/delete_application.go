@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -235,7 +236,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 		}
 		deletedApplications = append(deletedApplications, applicationName)
 
-		srName := kube.ToValidName(org + "-" + applicationName)
+		srName := naming.ToValidName(org + "-" + applicationName)
 		err := repoService.Delete(srName, nil)
 		if err != nil {
 			log.Logger().Warnf("Unable to find application metadata for %s to remove", applicationName)

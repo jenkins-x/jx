@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -213,7 +214,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		if o.InstallOptions.Flags.Tekton {
 			teamPrefix += "tekton-"
 		}
-		team := kube.ToValidName(teamPrefix + gitProviderName + "-" + o.teamNameSuffix())
+		team := naming.ToValidName(teamPrefix + gitProviderName + "-" + o.teamNameSuffix())
 		log.Logger().Infof("Creating team %s", util.ColorInfo(team))
 
 		installOptions := o.InstallOptions
@@ -538,7 +539,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if buildNum == "" {
 		log.Logger().Warnf("No build number could be found from the environment variable $BUILD_NUMBER!")
 	}
-	baseClusterName := kube.ToValidName(cluster.Name)
+	baseClusterName := naming.ToValidName(cluster.Name)
 	revision := os.Getenv("PULL_PULL_SHA")
 	branch := o.GetBranchName(o.Flags.VersionsDir)
 	if branch == "" {
@@ -558,7 +559,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 
 	log.Logger().Infof("using versions git repo %s and ref %s", o.InstallOptions.Flags.VersionsRepository, o.InstallOptions.Flags.VersionsGitRef)
 
-	cluster.Name = kube.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
+	cluster.Name = naming.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
 	log.Logger().Infof("\nCreating cluster %s", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
 	args := cluster.Args

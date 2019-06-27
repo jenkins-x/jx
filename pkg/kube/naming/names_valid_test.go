@@ -1,9 +1,9 @@
-package kube_test
+package naming_test
 
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,16 +36,16 @@ func TestToValidNameTruncated(t *testing.T) {
 }
 
 func assertToValidNameWithDots(t *testing.T, input string, expected string) {
-	actual := kube.ToValidNameWithDots(input)
+	actual := naming.ToValidNameWithDots(input)
 	assert.Equal(t, expected, actual, "ToValidNameWithDots for input %s", input)
 }
 
 func assertToValidName(t *testing.T, input string, expected string) {
-	actual := kube.ToValidName(input)
+	actual := naming.ToValidName(input)
 	assert.Equal(t, expected, actual, "ToValidName for input %s", input)
 }
 
 func assertToValidNameTruncated(t *testing.T, input string, maxLength int, expected string) {
-	actual := kube.ToValidNameTruncated(input, maxLength)
+	actual := naming.ToValidNameTruncated(input, maxLength)
 	assert.Equal(t, expected, actual, "ToValidNameTruncated for input %s", input)
 }

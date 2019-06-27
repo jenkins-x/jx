@@ -3,7 +3,7 @@ package users
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -31,7 +31,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 
 	log.Logger().Infof("CreateOrUpdateUser: %s <%s>", u.Login, u.Email)
 
-	id := kube.ToValidName(u.Login)
+	id := naming.ToValidName(u.Login)
 
 	// check for an existing user by email
 	user, err := this.jxClient.JenkinsV1().Users(this.namespace).Get(id, metav1.GetOptions{})

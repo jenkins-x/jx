@@ -8,6 +8,7 @@ import (
 	vaultapi "github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -169,9 +170,9 @@ func SystemVaultName(kuber kube.Kuber) (string, error) {
 
 // SystemVaultNameForCluster returns the system vault name from a given cluster name
 func SystemVaultNameForCluster(clusterName string) string {
-	shortClusterName := kube.ToValidNameTruncated(clusterName, 16)
+	shortClusterName := naming.ToValidNameTruncated(clusterName, 16)
 	fullName := fmt.Sprintf("%s-%s", vault.SystemVaultNamePrefix, shortClusterName)
-	return kube.ToValidNameTruncated(fullName, 22)
+	return naming.ToValidNameTruncated(fullName, 22)
 }
 
 // CreateGKEVault creates a new vault backed by GCP KMS and storage

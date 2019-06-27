@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -81,7 +82,7 @@ func (o *DeleteDevPodOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	name := kube.ToValidName(userName)
+	name := naming.ToValidName(userName)
 	names, err := kube.GetPodNames(client, ns, name)
 	if err != nil {
 		return err
