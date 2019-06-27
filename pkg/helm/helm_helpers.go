@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pborman/uuid"
@@ -892,4 +892,36 @@ func RenderReleasesAsTable(releases map[string]ReleaseSummary, sortedKeys []stri
 	t.Render()
 	writer.Flush()
 	return buffer.String(), nil
+}
+
+// UpdateRequirementsToNewVersion update dependencies with name to newVersion, returning the oldVersions
+func UpdateRequirementsToNewVersion(requirements *Requirements, name string, newVersion string) []string {
+	answer := make([]string, 0)
+	for _, dependency := range requirements.Dependencies {
+		if dependency.Name == name {
+			answer = append(answer, dependency.Version)
+			dependency.Version = newVersion
+		}
+	}
+	return answer
+}
+
+// UpdateImagesInValuesToNewVersion update a (values) file, replacing that start with "Image: <name>:" to "Image: <name>:<newVersion>",
+// returning the oldVersions
+func UpdateImagesInValuesToNewVersion(data []byte, name string, newVersion string) ([]byte, []string) {
+	oldVersions := make([]string, 0)
+	var answer strings.Builder
+	linePrefix := fmt.Sprintf("Image: %s:", name)
+	for _, line := range strings.Split(string(data), "\n") {
+		trimmedLine := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmedLine, linePrefix) {
+			oldVersions = append(oldVersions, strings.TrimPrefix(trimmedLine, linePrefix))
+			answer.WriteString(linePrefix)
+			answer.WriteString(newVersion)
+		} else {
+			answer.WriteString(line)
+		}
+		answer.WriteString("\n")
+	}
+	return []byte(answer.String()), oldVersions
 }
