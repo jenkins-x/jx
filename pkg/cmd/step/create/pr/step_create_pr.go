@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/gits/releases"
+
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -27,6 +29,7 @@ type StepCreatePrOptions struct {
 	Base        string
 	Fork        bool
 	SrcGitURL   string
+	Component   string
 }
 
 // NewCmdStepCreatePr Steps a command object for the "step" command
@@ -68,6 +71,7 @@ func AddStepCreatePrFlags(cmd *cobra.Command, o *StepCreatePrOptions) {
 	cmd.Flags().StringVarP(&o.BranchName, "branch", "", "master", "Branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&o.Base, "base", "", "master", "The branch to create the pull request into")
 	cmd.Flags().StringVarP(&o.SrcGitURL, "srcRepo", "", "", "The git repo which caused this change; if this is a dependency update this will cause commit messages to be generated which can be parsed by jx step changelog. By default this will be read from the environment variable REPO_URL")
+	cmd.Flags().StringVarP(&o.Component, "component", "", "", "The component of the git repo which caused this change; useful if you have a complex or monorepo setup and want to differentiate between different components from the same repo")
 }
 
 // ValidateOptions validates the common options for all PR creation steps
@@ -135,31 +139,74 @@ func (o *StepCreatePrOptions) CreatePullRequest(update func(dir string, gitInfo 
 
 // CreateDependencyUpdatePRDetails creates the PullRequestDetails for a pull request, taking the kind of change it is (an id)
 // the srcRepoUrl for the repo that caused the change, the destRepo for the repo receiving the change, the fromVersion and the toVersion
-func CreateDependencyUpdatePRDetails(kind string, srcRepoUrl string, destRepo *gits.GitRepository, fromVersion string, toVersion string) (string, *gits.PullRequestDetails, error) {
-	prDetails := gits.PullRequestDetails{}
-	prDetails.BranchName = fmt.Sprintf("update-%s-version-%s", kind, string(uuid.NewUUID()))
-	fromText := ""
-	if fromVersion != "" {
-		fromText = fmt.Sprintf("from %s ", fromVersion)
-	}
+func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRepoURL string, destRepo *gits.GitRepository, fromVersion string, toVersion string, component string) (string, *gits.PullRequestDetails, error) {
 
-	commitRepo := ""
-	repoText := ""
-	if srcRepoUrl != "" {
-		srcRepo, err := gits.ParseGitURL(srcRepoUrl)
+	var commitMessage, title, message strings.Builder
+	commitMessage.WriteString("chore(dependencies): update ")
+	title.WriteString("chore(dependencies): update ")
+	message.WriteString("Update ")
+	if srcRepoURL != "" {
+		provider, srcRepo, err := o.CreateGitProviderForURLWithoutKind(srcRepoURL)
 		if err != nil {
-			return "", nil, errors.Wrapf(err, "parsing %s as git url", srcRepoUrl)
-		}
-		if srcRepo.Host != destRepo.Host {
-			commitRepo = fmt.Sprintf("%s ", srcRepoUrl)
-		} else {
-			commitRepo = fmt.Sprintf("%s/%s ", srcRepo.Organisation, srcRepo.Name)
+			return "", nil, errors.Wrapf(err, "creating git provider for %s", srcRepoURL)
 		}
 
-		repoText = fmt.Sprintf("%s/%s ", srcRepo.Organisation, srcRepo.Name)
+		if srcRepo.Host != destRepo.Host {
+			commitMessage.WriteString(srcRepoURL)
+			title.WriteString(srcRepoURL)
+		} else {
+			titleStr := fmt.Sprintf("%s/%s", srcRepo.Organisation, srcRepo.Name)
+			commitMessage.WriteString(titleStr)
+			title.WriteString(titleStr)
+		}
+		repoStr := fmt.Sprintf("[%s/%s](%s)", srcRepo.Organisation, srcRepo.Name, srcRepoURL)
+		message.WriteString(repoStr)
+
+		if component != "" {
+			componentStr := fmt.Sprintf(":%s", component)
+			commitMessage.WriteString(componentStr)
+			title.WriteString(componentStr)
+			message.WriteString(componentStr)
+		}
+		commitMessage.WriteString(" ")
+		title.WriteString(" ")
+		message.WriteString(" ")
+
+		if fromVersion != "" {
+			fromText := fmt.Sprintf("from %s ", fromVersion)
+			commitMessage.WriteString(fromText)
+			title.WriteString(fromText)
+			release, err := releases.GetRelease(fromVersion, srcRepo.Organisation, srcRepo.Name, provider)
+			if err != nil {
+				return "", nil, errors.Wrapf(err, "getting release from %s/%s", srcRepo.Organisation, srcRepo.Name)
+			}
+			if release != nil {
+				message.WriteString(fmt.Sprintf("from [%s](%s) ", fromVersion, release.HTMLURL))
+			} else {
+				message.WriteString(fmt.Sprintf("from %s ", fromVersion))
+			}
+		}
+		if toVersion != "" {
+			toText := fmt.Sprintf("to %s", toVersion)
+			commitMessage.WriteString(toText)
+			title.WriteString(toText)
+			release, err := releases.GetRelease(toVersion, srcRepo.Organisation, srcRepo.Name, provider)
+			if err != nil {
+				return "", nil, errors.Wrapf(err, "getting release from %s/%s", srcRepo.Organisation, srcRepo.Name)
+			}
+
+			if release != nil {
+				message.WriteString(fmt.Sprintf("to [%s](%s)", toVersion, release.HTMLURL))
+			} else {
+				message.WriteString(fmt.Sprintf("to %s", toVersion))
+			}
+		}
+
 	}
-	commitMessage := fmt.Sprintf("chore(dependencies): update %s%sto %s", commitRepo, fromText, toVersion)
-	prDetails.Title = fmt.Sprintf("chore(dependencies): update %s%sto %s", repoText, fromText, toVersion)
-	prDetails.Message = fmt.Sprintf("Update %s%sto %s.\n\nCommand run was `%s`", repoText, fromText, toVersion, strings.Join(os.Args, " "))
-	return commitMessage, &prDetails, nil
+	message.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
+	return commitMessage.String(), &gits.PullRequestDetails{
+		BranchName: fmt.Sprintf("update-%s-version-%s", kind, string(uuid.NewUUID())),
+		Title:      title.String(),
+		Message:    message.String(),
+	}, nil
 }

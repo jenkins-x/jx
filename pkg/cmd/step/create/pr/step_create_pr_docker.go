@@ -92,7 +92,7 @@ func (o *StepCreatePullRequestDockersOptions) Run() error {
 			if err != nil {
 				return "", nil, errors.Wrapf(err, "updating %s to %s", o.Name, o.Version)
 			}
-			commitMessage, details, err := CreateDependencyUpdatePRDetails("docker", o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version)
+			commitMessage, details, err := o.CreateDependencyUpdatePRDetails("docker", o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version, o.Component)
 			if err != nil {
 				return "", nil, errors.WithStack(err)
 			}

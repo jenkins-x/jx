@@ -394,6 +394,8 @@ definitions:
     description: DependencyUpdate describes an dependency update message from the
       commit log
     properties:
+      Component:
+        type: string
       FromReleaseHTMLURL:
         type: string
       FromReleaseName:
@@ -425,6 +427,7 @@ definitions:
     - ToVersion
     - ToReleaseHTMLURL
     - ToReleaseName
+    - Component
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Environment:
     description: Environment represents an environment like Dev, Test, Staging, Production

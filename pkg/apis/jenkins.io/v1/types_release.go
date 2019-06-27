@@ -151,6 +151,7 @@ type DependencyUpdate struct {
 	ToVersion          string
 	ToReleaseHTMLURL   string
 	ToReleaseName      string
+	Component          string
 }
 
 func (d *DependencyUpdate) String() string {
