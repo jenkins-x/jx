@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/spf13/pflag"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -138,6 +139,7 @@ type CommonOptions struct {
 	systemVaultClient      vault.Client
 	tektonClient           tektonclient.Interface
 	vaultClient            vault.Client
+	secretURLClient        secreturl.Client
 	vaultOperatorClient    vaultoperatorclient.Interface
 	AdvancedMode           bool
 }
@@ -270,6 +272,9 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, error) {
 		if o.currentNamespace == "" {
 			o.currentNamespace = currentNs
 		}
+	}
+	if o.kubeClient == nil {
+		return o.kubeClient, fmt.Errorf("failed to create KubeClient")
 	}
 	return o.kubeClient, nil
 }

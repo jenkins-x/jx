@@ -48,9 +48,10 @@ var (
 type StepCreateValuesOptions struct {
 	opts.StepCreateOptions
 
-	Dir      string
-	Name     string
-	BasePath string
+	Dir       string
+	Namespace string
+	Name      string
+	BasePath  string
 
 	Schema     string
 	ValuesFile string
@@ -89,6 +90,7 @@ func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the <kind>.schema.json and write the <kind>.yaml, defaults to the current directory")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace Jenkins X is installed into. If not specified it defaults to $DEPLOY_NAMESPACE or else defaults to the current kubernetes namespace")
 	cmd.Flags().StringVarP(&options.Schema, "schema", "", "", "the path to the schema file, overrides --dir and --name")
 	cmd.Flags().StringVarP(&options.Name, "name", "", "values", "the kind of the file to create (and, by default, the schema name)")
 	cmd.Flags().StringVarP(&options.BasePath, "secret-base-path", "", "", fmt.Sprintf("the secret path used to store secrets in vault / file system. Typically a unique name per cluster+team. If none is specified we will default it to the cluster name from the %s file in the current or a parent directory.", config.RequirementsConfigFileName))
@@ -99,7 +101,12 @@ func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepCreateValuesOptions) Run() error {
-	var err error
+	ns, err := o.GetDeployNamespace(o.Namespace)
+	if err != nil {
+		return err
+	}
+	o.SetDevNamespace(ns)
+
 	if o.Dir == "" {
 		o.Dir, err = os.Getwd()
 		if err != nil {

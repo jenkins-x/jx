@@ -125,18 +125,14 @@ func (o *BootOptions) Run() error {
 func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig, requirementsFile string) error {
 	provider := requirements.Provider
 	if provider == "" {
-		return o.missingRequirement("provider", requirementsFile)
+		return config.MissingRequirement("provider", requirementsFile)
 	}
 	if provider == "" {
 		if requirements.ProjectID == "" {
-			return o.missingRequirement("project", requirementsFile)
+			return config.MissingRequirement("project", requirementsFile)
 		}
 	}
 	return nil
-}
-
-func (o *BootOptions) missingRequirement(property string, fileName string) error {
-	return fmt.Errorf("missing property: %s in file %s", property, fileName)
 }
 
 // FindBootNamespace finds the namespace to boot Jenkins X into based on the pipeline and requirements

@@ -2,6 +2,7 @@ package verify_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/tests"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -63,7 +64,10 @@ func createTestStepVerifyPreInstallOptions(dir string) *verify.StepVerifyPreInst
 	commonOpts := opts.NewCommonOptionsWithFactory(nil)
 	options.CommonOptions = &commonOpts
 	testhelpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	testhelpers.SetFakeFactoryFromKubeClients(options.CommonOptions)
 	options.Dir = dir
 	options.Namespace = testDeployNamespace
+	options.Err = os.Stdout
+	options.Out = os.Stdout
 	return options
 }

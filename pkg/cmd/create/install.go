@@ -1652,7 +1652,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 				}
 				vaultClient, err := options.SystemVaultClient(devNamespace)
 				if err != nil {
-					return nil, errors.Wrap(err, "retrieving the system vault client")
+					return nil, errors.Wrapf(err, "retrieving the system vault client in namespace %s", devNamespace)
 				}
 				vaultConfigStore := configio.NewVaultStore(vaultClient, vault.GitOpsSecretsPath)
 				return gitOpsModifySecret(vault.GitOpsTemplatesPath, name, nil, vaultConfigStore, callback)
@@ -2168,7 +2168,8 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 func (options *InstallOptions) ConfigureKaniko() error {
 	if options.Flags.Kaniko {
 		if options.Flags.Provider != cloud.GKE {
-			return fmt.Errorf("Kaniko is not supported for %s provider", options.Flags.Provider)
+			log.Logger().Infof("we are assuming your IAM roles are setup so that Kaniko can push images to your docker registry\n")
+			return nil
 		}
 
 		serviceAccountDir, err := ioutil.TempDir("", "gke")
@@ -2294,7 +2295,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
 			log.Logger().Info("Creating new system vault")
-			err = cvo.createVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
+			err = cvo.CreateVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
 			if err != nil {
 				return err
 			}
@@ -2320,7 +2321,7 @@ func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ..
 	}
 	vaultClient, err := options.SystemVaultClient(devNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieving the system vault client")
+		return errors.Wrapf(err, "retrieving the system vault client in namespace %s", devNamespace)
 	}
 
 	err = vault.WriteYamlFiles(vaultClient, path, files...)
@@ -2338,7 +2339,7 @@ func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSec
 	}
 	vaultClient, err := options.SystemVaultClient(devNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieving the system vault client")
+		return errors.Wrapf(err, "retrieving the system vault client in namespace %s", devNamespace)
 	}
 	secrets := map[vault.AdminSecret]config.BasicAuth{
 		vault.JenkinsAdminSecret:     svc.JenkinsAuth(),

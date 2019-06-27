@@ -25,10 +25,10 @@ type SecretStorageType string
 
 const (
 	// SecretStorageTypeVault specifies that we use vault to store secrets
-	SecretStorageTypeVault SecretStorageType = "Vault"
+	SecretStorageTypeVault SecretStorageType = "vault"
 	// SecretStorageTypeLocal specifies that we use the local file system in
-	// `~/.jx/localSecrets` to store secretst
-	SecretStorageTypeLocal SecretStorageType = "Local"
+	// `~/.jx/localSecrets` to store secrets
+	SecretStorageTypeLocal SecretStorageType = "local"
 )
 
 // RequirementsConfig contains the logical installation requirements
@@ -45,6 +45,10 @@ type RequirementsConfig struct {
 	ProjectID string `json:"project,omitempty"`
 	// ClusterName the logical name of the cluster
 	ClusterName string `json:"clusterName,omitempty"`
+	// Region the cloud region being used
+	Region string `json:"region,omitempty"`
+	// Zone the cloud zone being used
+	Zone string `json:"zone,omitempty"`
 }
 
 // NewRequirementsConfig creates a default configuration file
@@ -142,4 +146,9 @@ func (c *RequirementsConfig) SaveConfig(fileName string) error {
 		return errors.Wrapf(err, "failed to save file %s", fileName)
 	}
 	return nil
+}
+
+// MissingRequirement returns an error if there is a missing property in the requirements
+func MissingRequirement(property string, fileName string) error {
+	return fmt.Errorf("missing property: %s in file %s", property, fileName)
 }

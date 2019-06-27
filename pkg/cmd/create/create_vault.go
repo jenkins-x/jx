@@ -159,12 +159,12 @@ func (o *CreateVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	return o.createVault(vaultOperatorClient, vaultName, teamSettings.KubeProvider)
+	return o.CreateVault(vaultOperatorClient, vaultName, teamSettings.KubeProvider)
 }
 
-// DoCreateVault creates a vault in the existing namespace.
+// CreateVault creates a vault in the existing namespace.
 // If the vault already exists, it will error
-func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface, vaultName string, kubeProvider string) error {
+func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface, vaultName string, kubeProvider string) error {
 	// Checks if the vault already exists
 	found := kubevault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if found {

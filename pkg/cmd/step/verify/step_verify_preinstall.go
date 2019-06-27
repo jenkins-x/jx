@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -82,12 +86,12 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.SetDevNamespace(ns)
-
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
+
+	o.SetDevNamespace(ns)
 
 	log.Logger().Infof("verifying the kubernetes cluster before we try to boot Jenkins X in namespace: %s\n", info(ns))
 	if o.LazyCreate {
@@ -114,24 +118,40 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	no := &namespace.NamespaceOptions{}
+	no.CommonOptions = o.CommonOptions
+	no.Args = []string{ns}
+	log.Logger().Infof("setting the local kubernetes context to the deploy namespace %s\n", info(ns))
+	err = no.Run()
+	if err != nil {
+		return err
+	}
+
+	err = o.verifyInstallConfig(kubeClient, ns, requirements)
+	if err != nil {
+		return err
+	}
+
 	if requirements.Kaniko {
-		log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
+		if requirements.Provider == cloud.GKE {
+			log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
 
-		err = o.validateKaniko(ns)
-		if err != nil {
-			if o.LazyCreate {
-				log.Logger().Infof("attempting to lazily create the deploy namespace %s\n", info(ns))
+			err = o.validateKaniko(ns)
+			if err != nil {
+				if o.LazyCreate {
+					log.Logger().Infof("attempting to lazily create the deploy namespace %s\n", info(ns))
 
-				err = o.lazyCreateKanikoSecret(requirements, ns)
-				if err != nil {
-					return errors.Wrapf(err, "failed to lazily create the kaniko secret in: %s", ns)
+					err = o.lazyCreateKanikoSecret(requirements, ns)
+					if err != nil {
+						return errors.Wrapf(err, "failed to lazily create the kaniko secret in: %s", ns)
+					}
+					// lets rerun the verify step to ensure its all sorted now
+					err = o.validateKaniko(ns)
 				}
-				// lets rerun the verify step to ensure its all sorted now
-				err = o.validateKaniko(ns)
 			}
-		}
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -174,4 +194,30 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 		return fmt.Errorf("failed to create the kaniko secret data")
 	}
 	return o.createKanikoSecret(ns, data)
+}
+
+// verifyInstallConfig lets ensure we modify the install ConfigMap with the requirements
+func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig) error {
+	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
+		func(configMap *corev1.ConfigMap) error {
+			secretsLocation := string(secrets.FileSystemLocationKind)
+			if requirements.SecretStorage == config.SecretStorageTypeVault {
+				secretsLocation = string(secrets.VaultLocationKind)
+			}
+
+			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.ProjectID)
+			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.ClusterName)
+			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
+			return nil
+		}, nil)
+	if err != nil {
+		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
+	}
+	return nil
+}
+
+func modifyMapIfNotBlank(m map[string]string, key string, value string) {
+	if value != "" {
+		m[key] = value
+	}
 }

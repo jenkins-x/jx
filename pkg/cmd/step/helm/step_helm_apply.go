@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/mholt/archiver"
@@ -35,6 +36,7 @@ type StepHelmApplyOptions struct {
 	DisableHelmVersion bool
 	Vault              bool
 	UseTempDir         bool
+	NoVault            bool
 }
 
 var (
@@ -82,6 +84,7 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Helm secrets are stored in vault")
+	cmd.Flags().BoolVarP(&options.NoVault, "no-vault", "", false, "Disables loading secrets from Vault. e.g. if bootstrapping core services like Ingress before we have a Vault")
 	cmd.Flags().BoolVarP(&options.UseTempDir, "use-temp-dir", "", true, "Whether to build and apply the helm chart from a temporary directory - to avoid updating the local values.yaml file from the generated file as part of the apply which could get accidentally checked into git")
 
 	return cmd
@@ -127,6 +130,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -201,7 +205,12 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	if (o.GetSecretsLocation() == secrets.VaultLocationKind) || o.Vault {
+	vaultSecretLocation := o.GetSecretsLocation() == secrets.VaultLocationKind
+	if vaultSecretLocation && o.NoVault {
+		// lets install a fake secret URL client to avoid spurious vault errors
+		o.SetSecretURLClient(fakevault.NewFakeClient())
+	}
+	if (vaultSecretLocation || o.Vault) && !o.NoVault {
 		store := configio.NewFileStore()
 		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
 		if err != nil {

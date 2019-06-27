@@ -414,15 +414,27 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 
 // GetSecretURLClient create a new secret URL client
 func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
-	vaultClient, err := o.SystemVaultClient(o.devNamespace)
-	if err != nil {
-		vaultClient = nil
+	if o.secretURLClient == nil {
+		var err error
+		o.secretURLClient, err = o.SystemVaultClient(o.devNamespace)
+		if err != nil {
+			log.Logger().Warnf("failed to create system vault in namespace %s due to %s\n", o.devNamespace, err.Error())
+			o.secretURLClient = nil
+		}
 	}
-	if vaultClient != nil {
-		return vaultClient, nil
+	if o.secretURLClient == nil {
+		dir, err := util.LocalFileSystemSecretsDir()
+		if err != nil {
+			return o.secretURLClient, err
+		}
+		o.secretURLClient = localvault.NewFileSystemClient(dir)
 	}
-	dir, err := util.LocalFileSystemSecretsDir()
-	return localvault.NewFileSystemClient(dir), nil
+	return o.secretURLClient, nil
+}
+
+// SetSecretURLClient sets the Secret URL Client
+func (o *CommonOptions) SetSecretURLClient(client secreturl.Client) {
+	o.secretURLClient = client
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir
