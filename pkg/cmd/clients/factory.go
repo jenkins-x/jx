@@ -98,6 +98,9 @@ func (f *factory) WithBearerToken(token string) Factory {
 
 // CreateJenkinsClient creates a new Jenkins client
 func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateJenkinsClient() cannot be called in unit tests")
+	}
 	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns, "")
 	if err != nil {
 		return nil, err
@@ -367,6 +370,9 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateAuthConfigService() cannot be called in unit tests")
+	}
 	if f.SecretsLocation() == secrets.VaultLocationKind {
 		vaultClient, err := f.CreateSystemVaultClient(namespace)
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
@@ -416,6 +422,9 @@ func (f *factory) ResetSecretsLocation() {
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateSystemVaultClient() cannot be called in unit tests")
+	}
 	name, err := f.getVaultName(namespace)
 	if err != nil {
 		return nil, err
@@ -453,6 +462,9 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 // CreateVaultClient returns the given vault client for managing secrets
 // Will use default values for name and namespace if nil values are applied
 func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateVaultClient() cannot be called in unit tests")
+	}
 	vopClient, err := f.CreateVaultOperatorClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the vault operator client")
@@ -493,6 +505,9 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateJXClient() cannot be called in unit tests")
+	}
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -511,6 +526,9 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 }
 
 func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateKnativeBuildClient() cannot be called in unit tests")
+	}
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -528,6 +546,9 @@ func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
 }
 
 func (f *factory) CreateKnativeServeClient() (kserve.Interface, string, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateKnativeServeClient() cannot be called in unit tests")
+	}
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -545,6 +566,9 @@ func (f *factory) CreateKnativeServeClient() (kserve.Interface, string, error) {
 }
 
 func (f *factory) CreateTektonClient() (tektonclient.Interface, string, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateTektonClient() cannot be called in unit tests")
+	}
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -562,6 +586,9 @@ func (f *factory) CreateTektonClient() (tektonclient.Interface, string, error) {
 }
 
 func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateDynamicClient() cannot be called in unit tests")
+	}
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -579,6 +606,9 @@ func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
 }
 
 func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateApiExtensionsClient() cannot be called in unit tests")
+	}
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
@@ -587,6 +617,9 @@ func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface,
 }
 
 func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateMetricsClient() cannot be called in unit tests")
+	}
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
@@ -595,6 +628,9 @@ func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 }
 
 func (f *factory) CreateKubeClient() (kubernetes.Interface, string, error) {
+	if f.isRunningInUnitTests() {
+		log.Logger().Fatal("Function CreateKubeClient() cannot be called in unit tests")
+	}
 	cfg, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -785,4 +821,9 @@ func (f *factory) CreateCertManagerClient() (certmngclient.Interface, error) {
 		return nil, err
 	}
 	return certmngclient.NewForConfig(config)
+}
+
+func (f *factory) isRunningInUnitTests() bool {
+	_, isSet := os.LookupEnv("UNIT_TEST")
+	return isSet
 }

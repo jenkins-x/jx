@@ -183,7 +183,7 @@ make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
 test: make-reports-dir ## Run the unit tests
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
+	UNIT_TEST=true CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
 
 test-report: make-reports-dir get-test-deps test ## Create the test report
 	@gocov convert $(COVER_OUT) | gocov report
