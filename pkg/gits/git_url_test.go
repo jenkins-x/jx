@@ -108,6 +108,12 @@ func TestParseGitURL(t *testing.T) {
 			"git@github.com:bar/foo", "github.com", "bar", "foo",
 		},
 		{
+			"git@gitlab.com:bar/subgroup/foo", "gitlab.com", "bar", "foo",
+		},
+		{
+			"https://gitlab.com/bar/subgroup/foo", "gitlab.com", "bar", "foo",
+		},
+		{
 			"bar/foo", "github.com", "bar", "foo",
 		},
 		{
