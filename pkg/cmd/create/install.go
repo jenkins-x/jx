@@ -15,6 +15,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
+	"github.com/spf13/viper"
+
 	"github.com/jenkins-x/jx/pkg/tenant"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/env"
@@ -82,7 +84,7 @@ type InstallOptions struct {
 	kubevault.AWSConfig
 
 	InitOptions initcmd.InitOptions
-	Flags       InstallFlags
+	Flags       InstallFlags `mapstructure:"install"`
 
 	modifyConfigMapCallback ModifyConfigMapCallback
 	modifySecretCallback    ModifySecretCallback
@@ -230,6 +232,7 @@ This repository contains the source code for the Jenkins X Development Environme
 }
 `
 	longTermStorageFlagName = "long-term-storage"
+	kanikoFlagName          = "kaniko"
 )
 
 var (
@@ -371,7 +374,8 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().BoolVarP(&flags.RecreateVaultBucket, "vault-bucket-recreate", "", true, "If the vault bucket already exists delete it then create it empty")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
-	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
+	cmd.Flags().BoolVarP(&flags.Kaniko, kanikoFlagName, "", false, "Use Kaniko for building docker images")
+	_ = viper.BindPFlag(installConfigKey(kanikoFlagName), cmd.Flags().Lookup(kanikoFlagName))
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
@@ -515,8 +519,13 @@ func (options *InstallOptions) CheckFeatures() error {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
+
+	err := options.GetConfiguration(&options)
+	if err != nil {
+		return errors.Wrap(err, "getting install configuration")
+	}
 	// Check the provided flags before starting any installation
-	err := options.CheckFlags()
+	err = options.CheckFlags()
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
 	}
@@ -3356,4 +3365,8 @@ func StripTrailingSlash(url string) string {
 		return url[0 : len(url)-1]
 	}
 	return url
+}
+
+func installConfigKey(key string) string {
+	return fmt.Sprintf("install.%s", key)
 }

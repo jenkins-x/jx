@@ -44,19 +44,20 @@ type CreateClusterGKEFlags struct {
 	MaxNumOfNodes   string `mapstructure:"max-num-nodes"`
 	Network         string
 	ProjectID       string `mapstructure:"project-id"`
-	SkipLogin       bool
+	SkipLogin       bool   `mapstructure:"skip-login"`	
 	SubNetwork      string
 	Region          string
 	Zone            string
 	Namespace       string
 	Labels          string
-	EnhancedScopes  bool
+	EnhancedScopes  bool `mapstructure:"enhanced-scopes"`
 	Scopes          []string
 	Preemptible     bool
-	EnhancedApis    bool
+	EnhancedApis    bool `mapstructure:"enhanced-apis"`
 }
 
 const (
+	skipLoginFlagName       = "skip-login"
 	preemptibleFlagName     = "preemptible"
 	enhancedAPIFlagName     = "enhanced-apis"
 	enhancedScopesFlagName  = "enhanced-scopes"
@@ -146,13 +147,16 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	_ = viper.BindPFlag(clusterConfigKey(zoneFlagName), cmd.Flags().Lookup(zoneFlagName))
 	cmd.Flags().StringVarP(&options.Flags.Region, regionFlagName, "r", "", "Compute region (e.g. us-central1) for the cluster")
 	_ = viper.BindPFlag(clusterConfigKey(regionFlagName), cmd.Flags().Lookup(regionFlagName))
-	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, skipLoginFlagName, "", false, "Skip Google auth if already logged in via gcloud auth")
+	_ = viper.BindPFlag(clusterConfigKey(skipLoginFlagName), cmd.Flags().Lookup(skipLoginFlagName))
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
 	_ = viper.BindPFlag(clusterConfigKey(preemptibleFlagName), cmd.Flags().Lookup(preemptibleFlagName))
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
+	_ = viper.BindPFlag(clusterConfigKey(enhancedScopesFlagName), cmd.Flags().Lookup(enhancedScopesFlagName))
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
+	_ = viper.BindPFlag(clusterConfigKey(enhancedAPIFlagName), cmd.Flags().Lookup(enhancedAPIFlagName))
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
@@ -172,7 +176,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 
 	err = o.GetConfiguration(&o)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting gke cluster configuration")
 	}
 
 	err = o.createClusterGKE()
@@ -409,7 +413,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// if scopes is empty &
-		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
+		if len(o.Flags.Scopes) == 0 && !o.IsConfigExplicitlySet("cluster", enhancedScopesFlagName) {
 			if advancedMode {
 				prompt := &survey.Confirm{
 					Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
@@ -424,6 +428,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				o.Flags.EnhancedScopes = true
 				log.Logger().Infof(util.QuestionAnswer("Defaulting access to Google Cloud Storage / Google Container Registry", util.YesNo(o.Flags.EnhancedScopes)))
 			}
+		} else {
+			log.Logger().Infof(util.QuestionAnswer("Configured access to Google Cloud Storage / Google Container Registry", util.YesNo(o.Flags.EnhancedScopes)))
 		}
 	}
 
@@ -440,7 +446,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes {
-			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
+			if !o.IsConfigExplicitlySet("cluster", enhancedAPIFlagName) {
 				if advancedMode {
 					prompt := &survey.Confirm{
 						Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
@@ -455,6 +461,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					o.Flags.EnhancedApis = true
 					log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Cloud Build, Container Registry & Container Analysis API's", util.YesNo(o.Flags.EnhancedApis)))
 				}
+			} else {
+				log.Logger().Infof(util.QuestionAnswer("Configured access to Cloud Build, Container Registry & Container Analysis API's", util.YesNo(o.Flags.EnhancedApis)))
 			}
 		}
 	}
@@ -470,20 +478,24 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
-		if o.Flags.EnhancedScopes && !o.InstallOptions.Flags.Kaniko {
-			if advancedMode {
-				prompt := &survey.Confirm{
-					Message: "Would you like to enable Kaniko for building container images",
-					Default: o.Flags.EnhancedScopes,
-					Help:    "Use Kaniko for docker images",
-				}
-				err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
-				if err != nil {
-					return err
+		if o.Flags.EnhancedScopes {
+			if !o.IsConfigExplicitlySet("install", "kaniko") {
+				if advancedMode {
+					prompt := &survey.Confirm{
+						Message: "Would you like to enable Kaniko for building container images",
+						Default: o.Flags.EnhancedScopes,
+						Help:    "Use Kaniko for docker images",
+					}
+					err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+					if err != nil {
+						return err
+					}
+				} else {
+					o.InstallOptions.Flags.Kaniko = false
+					log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Kaniko for building container images", util.YesNo(o.InstallOptions.Flags.Kaniko)))
 				}
 			} else {
-				o.InstallOptions.Flags.Kaniko = false
-				log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Kaniko for building container images", util.YesNo(o.InstallOptions.Flags.Kaniko)))
+				log.Logger().Infof(util.QuestionAnswer("Configured enabling Kaniko for building container images", util.YesNo(o.InstallOptions.Flags.Kaniko)))
 			}
 		}
 	}
