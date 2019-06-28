@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -665,10 +666,19 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		help = t.Description
 	}
 
-	if !ask && !o.IgnoreMissingValues && defaultValue == "" {
-		// lets not fail if in batch mode for non-required fields
-		if !o.NoAsk || required {
-			return fmt.Errorf("no existing or default value in answer to question %s", message)
+	if !ask {
+		envVar := strings.ToUpper("JX_VALUE_" + strings.Join(prefixes, "_"))
+		if defaultValue == "" {
+			defaultValue = os.Getenv(envVar)
+			if defaultValue != "" {
+				log.Logger().Infof("defaulting value from $%s\n", envVar)
+			}
+		}
+		if !o.IgnoreMissingValues && defaultValue == "" {
+			// lets not fail if in batch mode for non-required fields
+			if !o.NoAsk || required {
+				return fmt.Errorf("no existing or default value in answer to question %s and no value for $%s", message, envVar)
+			}
 		}
 	}
 
