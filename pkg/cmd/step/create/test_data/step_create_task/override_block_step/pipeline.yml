@@ -6,6 +6,7 @@ metadata:
   namespace: jx
   labels:
     branch: master
+    build: "1"
     owner: abayer
     repo: golang-qs-test
 spec:

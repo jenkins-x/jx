@@ -107,12 +107,12 @@ pipelineConfig:
               - name: release
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.502
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: make
                 args: ['release']
 
               - name: codecov-upload
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: make
                 args: ['codecov-upload']
 
@@ -122,7 +122,7 @@ pipelineConfig:
                 args: ['--dockerfile=/workspace/source/Dockerfile','--destination=docker.io/jenkinsxio/jx:${inputs.params.version}','--context=/workspace/source','--cache-dir=/workspace']
 
               - name: release-charts
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: make
                 args:
                 - "release"
@@ -130,23 +130,23 @@ pipelineConfig:
                 - /workspace/source/charts/jx/Makefile
 
               - name: update-bot
-                image: gcr.io/jenkinsxio/builder-jx:0.1.332
+                image: gcr.io/jenkinsxio/builder-jx:0.1.537
                 command: ./jx/scripts/update-bot.sh
 
               #- name: distro
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-              #  image: gcr.io/jenkinsxio/builder-go:0.1.332
+              #  image: gcr.io/jenkinsxio/builder-go:0.1.537
               #  command: make
               #  args: ['release-distro']
 
               - name: update-docs
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: ./jx/scripts/update-website.sh
 
               - name: update-clients
                 # Needs maven as openapi tools are written in Java!
-                image: gcr.io/jenkinsxio/builder-maven:0.1.462
+                image: gcr.io/jenkinsxio/builder-maven:0.1.537
                 command: ./jx/scripts/update-clients.sh
           - name: bdd-baseline
             environment:
@@ -223,7 +223,7 @@ pipelineConfig:
               args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
             - name: e2e-tests
-              image: gcr.io/jenkinsxio/builder-go:0.1.332
+              image: gcr.io/jenkinsxio/builder-go:0.1.537
               command: ./jx/scripts/ci.sh
 
             - name: stash-test-results

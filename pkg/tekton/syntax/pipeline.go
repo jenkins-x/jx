@@ -28,7 +28,7 @@ import (
 
 const (
 	// GitMergeImage is the default image name that is used in the git merge step of a pipeline
-	GitMergeImage = "gcr.io/jenkinsxio/builder-jx:0.1.477"
+	GitMergeImage = "gcr.io/jenkinsxio/builder-jx:0.1.527"
 
 	// WorkingDirRoot is the root directory for working directories.
 	WorkingDirRoot = "/workspace"
@@ -36,15 +36,15 @@ const (
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
-	Agent      *Agent       `json:"agent,omitempty"`
-	Env        []EnvVar     `json:"env,omitempty"`
-	Options    *RootOptions `json:"options,omitempty"`
-	Stages     []Stage      `json:"stages"`
-	Post       []Post       `json:"post,omitempty"`
-	WorkingDir *string      `json:"dir,omitempty"`
+	Agent      *Agent          `json:"agent,omitempty"`
+	Env        []corev1.EnvVar `json:"env,omitempty"`
+	Options    *RootOptions    `json:"options,omitempty"`
+	Stages     []Stage         `json:"stages"`
+	Post       []Post          `json:"post,omitempty"`
+	WorkingDir *string         `json:"dir,omitempty"`
 
 	// Replaced by Env, retained for backwards compatibility
-	Environment []EnvVar `json:"environment,omitempty"`
+	Environment []corev1.EnvVar `json:"environment,omitempty"`
 }
 
 // Agent defines where the pipeline, stage, or step should run.
@@ -56,12 +56,6 @@ type Agent struct {
 	// Legacy fields from jenkinsfile.PipelineAgent
 	Container string `json:"container,omitempty"`
 	Dir       string `json:"dir,omitempty"`
-}
-
-// EnvVar is a key/value pair defining an environment variable
-type EnvVar struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
 }
 
 // TimeoutUnit is used for calculating timeout duration
@@ -175,7 +169,7 @@ type Step struct {
 	Image string `json:"image,omitempty"`
 
 	// env allows defining per-step environment variables
-	Env []EnvVar `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Legacy fields from jenkinsfile.PipelineStep before it was eliminated.
 	Comment   string  `json:"comment,omitempty"`
@@ -201,18 +195,18 @@ type Loop struct {
 // Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
 // parallel with common configuration.
 type Stage struct {
-	Name       string        `json:"name"`
-	Agent      *Agent        `json:"agent,omitempty"`
-	Env        []EnvVar      `json:"env,omitempty"`
-	Options    *StageOptions `json:"options,omitempty"`
-	Steps      []Step        `json:"steps,omitempty"`
-	Stages     []Stage       `json:"stages,omitempty"`
-	Parallel   []Stage       `json:"parallel,omitempty"`
-	Post       []Post        `json:"post,omitempty"`
-	WorkingDir *string       `json:"dir,omitempty"`
+	Name       string          `json:"name"`
+	Agent      *Agent          `json:"agent,omitempty"`
+	Env        []corev1.EnvVar `json:"env,omitempty"`
+	Options    *StageOptions   `json:"options,omitempty"`
+	Steps      []Step          `json:"steps,omitempty"`
+	Stages     []Stage         `json:"stages,omitempty"`
+	Parallel   []Stage         `json:"parallel,omitempty"`
+	Post       []Post          `json:"post,omitempty"`
+	WorkingDir *string         `json:"dir,omitempty"`
 
 	// Replaced by Env, retained for backwards compatibility
-	Environment []EnvVar `json:"environment,omitempty"`
+	Environment []corev1.EnvVar `json:"environment,omitempty"`
 }
 
 // PostCondition is used to specify under what condition a post action should be executed.
@@ -501,7 +495,7 @@ func MangleToRfc1035Label(body string, suffix string) string {
 }
 
 // GetEnv gets the environment for the ParsedPipeline, returning Env first and Environment if Env isn't populated.
-func (j *ParsedPipeline) GetEnv() []EnvVar {
+func (j *ParsedPipeline) GetEnv() []corev1.EnvVar {
 	if j != nil {
 		if len(j.Env) > 0 {
 			return j.Env
@@ -509,11 +503,11 @@ func (j *ParsedPipeline) GetEnv() []EnvVar {
 
 		return j.Environment
 	}
-	return []EnvVar{}
+	return []corev1.EnvVar{}
 }
 
 // GetEnv gets the environment for the Stage, returning Env first and Environment if Env isn't populated.
-func (s *Stage) GetEnv() []EnvVar {
+func (s *Stage) GetEnv() []corev1.EnvVar {
 	if len(s.Env) > 0 {
 		return s.Env
 	}
@@ -955,28 +949,16 @@ func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	return env
 }
 
-func toContainerEnvVars(origEnv []EnvVar) []corev1.EnvVar {
-	env := make([]corev1.EnvVar, 0, len(origEnv))
-	for _, e := range origEnv {
-		env = append(env, corev1.EnvVar{
-			Name:  e.Name,
-			Value: e.Value,
-		})
-	}
-
-	return env
-}
-
 // AddContainerEnvVarsToPipeline allows for adding a slice of container environment variables directly to the
 // pipeline, if they're not already defined.
 func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) {
 	if len(origEnv) > 0 {
-		envMap := make(map[string]EnvVar)
+		envMap := make(map[string]corev1.EnvVar)
 
 		// Add the container env vars first.
 		for _, e := range origEnv {
 			if e.ValueFrom == nil {
-				envMap[e.Name] = EnvVar{
+				envMap[e.Name] = corev1.EnvVar{
 					Name:  e.Name,
 					Value: e.Value,
 				}
@@ -988,7 +970,7 @@ func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) 
 			envMap[e.Name] = e
 		}
 
-		env := make([]EnvVar, 0, len(envMap))
+		env := make([]corev1.EnvVar, 0, len(envMap))
 
 		// Avoid nondeterministic results by sorting the keys and appending vars in that order.
 		var envVars []string
@@ -1017,16 +999,6 @@ func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVa
 
 	for _, e := range newEnv {
 		envMap[e.Name] = e
-	}
-
-	return EnvMapToSlice(envMap)
-}
-
-func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
-	envMap := make(map[string]corev1.EnvVar)
-
-	for _, e := range j.GetEnv() {
-		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
 	}
 
 	return EnvMapToSlice(envMap)
@@ -1142,7 +1114,7 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, labels map[string]string) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, labels map[string]string, defaultImage string) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
@@ -1182,7 +1154,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		stageContainer = merged
 	}
 
-	env := scopedEnv(toContainerEnvVars(s.GetEnv()), parentEnv)
+	env := scopedEnv(s.GetEnv(), parentEnv)
 
 	agent := s.Agent.DeepCopy()
 
@@ -1191,7 +1163,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	stepCounter := 0
-	defaultTaskSpec, err := getDefaultTaskSpec(env, stageContainer)
+	defaultTaskSpec, err := getDefaultTaskSpec(env, stageContainer, defaultImage)
 	if err != nil {
 		return nil, err
 	}
@@ -1276,7 +1248,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates, labels)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates, labels, defaultImage)
 			if err != nil {
 				return nil, err
 			}
@@ -1293,7 +1265,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 
 		for _, nested := range s.Parallel {
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates, labels)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates, labels, defaultImage)
 			if err != nil {
 				return nil, err
 			}
@@ -1440,7 +1412,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 
 		c.Stdin = false
 		c.TTY = false
-		c.Env = scopedEnv(toContainerEnvVars(step.Env), scopedEnv(env, c.Env))
+		c.Env = scopedEnv(step.Env, scopedEnv(env, c.Env))
 
 		steps = append(steps, *c)
 	} else if step.Loop != nil {
@@ -1481,7 +1453,7 @@ func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string, labels map[string]string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string, labels map[string]string, defaultImage string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -1533,12 +1505,12 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 
 	var tasks []*tektonv1alpha1.Task
 
-	baseEnv := j.toStepEnvVars()
+	baseEnv := j.GetEnv()
 
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
 
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates, labels)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates, labels, defaultImage)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -1789,16 +1761,18 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 }
 
 // todo JR lets remove this when we switch tekton to using git merge type pipelineresources
-func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container) (tektonv1alpha1.TaskSpec, error) {
-	v := os.Getenv("BUILDER_JX_IMAGE")
-	if v == "" {
-		v = GitMergeImage
+func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container, defaultImage string) (tektonv1alpha1.TaskSpec, error) {
+	image := defaultImage
+	if image == "" {
+		image = os.Getenv("BUILDER_JX_IMAGE")
+		if image == "" {
+			image = GitMergeImage
+		}
 	}
 
 	childContainer := &corev1.Container{
-		Name: "git-merge",
-		//Image:   "gcr.io/jenkinsxio/builder-jx:0.1.297",
-		Image:      v,
+		Name:       "git-merge",
+		Image:      image,
 		Command:    []string{"jx"},
 		Args:       []string{"step", "git", "merge", "--verbose"},
 		WorkingDir: "/workspace/source",
@@ -1948,6 +1922,9 @@ func OverrideStep(step Step, override *PipelineOverride) []Step {
 			var newSteps []Step
 
 			if override.Step != nil {
+				if override.Step.Name == "" {
+					override.Step.Name = step.Name
+				}
 				newSteps = append(newSteps, *override.Step)
 			}
 			if override.Steps != nil {

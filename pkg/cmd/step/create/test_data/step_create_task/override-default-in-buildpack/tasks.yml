@@ -6,6 +6,7 @@ items:
       labels:
         jenkins.io/task-stage-name: from-build-pack
         branch: master
+        build: "1"
         owner: abayer
         repo: golang-qs-test
       name: abayer-golang-qs-test-master-from-build-pack-1
@@ -29,7 +30,7 @@ items:
             - --verbose
           command:
             - jx
-          image: gcr.io/jenkinsxio/builder-jx:0.1.477
+          image: gcr.io/jenkinsxio/builder-jx:0.1.527
           name: git-merge
           env:
             - name: FRUIT
@@ -114,7 +115,7 @@ items:
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
           image: jenkinsxio/builder-nodejs:0.1.235
-          name: step2
+          name: build
           resources:
             requests:
               cpu: 400m

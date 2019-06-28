@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/secreturl"
+	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -24,8 +26,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -403,11 +405,36 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 			return err
 		}
 	}
-	vaultClient, err := o.SystemVaultClient("")
+	secretURLClient, err := o.GetSecretURLClient()
 	if err != nil {
-		vaultClient = nil
+		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
-	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, vaultClient)
+	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, secretURLClient)
+}
+
+// GetSecretURLClient create a new secret URL client
+func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
+	if o.secretURLClient == nil {
+		var err error
+		o.secretURLClient, err = o.SystemVaultClient(o.devNamespace)
+		if err != nil {
+			log.Logger().Warnf("failed to create system vault in namespace %s due to %s\n", o.devNamespace, err.Error())
+			o.secretURLClient = nil
+		}
+	}
+	if o.secretURLClient == nil {
+		dir, err := util.LocalFileSystemSecretsDir()
+		if err != nil {
+			return o.secretURLClient, err
+		}
+		o.secretURLClient = localvault.NewFileSystemClient(dir)
+	}
+	return o.secretURLClient, nil
+}
+
+// SetSecretURLClient sets the Secret URL Client
+func (o *CommonOptions) SetSecretURLClient(client secreturl.Client) {
+	o.secretURLClient = client
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir
@@ -694,7 +721,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 		}
 	}
 
-	reqfile := filepath.Join(dir, "requirements.yaml")
+	reqfile := filepath.Join(dir, helm.RequirementsFileName)
 	exists, err := util.FileExists(reqfile)
 	if err != nil {
 		return errors.Wrapf(err, "requirements.yaml file not found in the chart directory '%s'", dir)
@@ -842,7 +869,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 		return errors.Wrapf(err, "failed to build the dependencies of chart '%s'", dir)
 	}
 
-	reqFilePath := filepath.Join(dir, "requirements.yaml")
+	reqFilePath := filepath.Join(dir, helm.RequirementsFileName)
 	reqs, err := helm.LoadRequirementsFile(reqFilePath)
 	if err != nil {
 		return errors.Wrap(err, "loading the requirements file")
@@ -881,7 +908,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 			if err != nil {
 				return errors.Wrap(err, "building Helm dependency")
 			}
-			chartReqFile := filepath.Join(chartPath, "requirements.yaml")
+			chartReqFile := filepath.Join(chartPath, helm.RequirementsFileName)
 			reqs, err := helm.LoadRequirementsFile(chartReqFile)
 			if err != nil {
 				return errors.Wrap(err, "loading the requirements file")

@@ -4,13 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/jenkins-x/jx/pkg/util/secrets"
+
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -19,6 +24,10 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+)
+
+var (
+	generatedPasswordValue = "<generated>"
 )
 
 // Type represents a JSON Schema object type current to https://www.ietf.org/archive/id/draft-handrews-json-schema-validation-01.txt
@@ -73,14 +82,6 @@ type Type struct {
 	Format           *string      `json:"format,omitempty"`
 	ContentMediaType *string      `json:"contentMediaType,omitempty"`
 	ContentEncoding  *string      `json:"contentEncoding,omitempty"`
-}
-
-// GeneratedSecret is a secret that is generated from protected input (e.g. password, token)
-type GeneratedSecret struct {
-	Name  string `json: "name"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
-	Path  string `json:-'`
 }
 
 // Definitions hold schema definitions.
@@ -157,8 +158,9 @@ func (t *Items) UnmarshalJSON(b []byte) error {
 
 // JSONSchemaOptions are options for generating values from a schema
 type JSONSchemaOptions struct {
-	CreateSecret func(name string, key string, value string, passthrough bool) (interface{},
-		error)
+	VaultClient         secreturl.Client
+	VaultBasePath       string
+	VaultScheme         string
 	AskExisting         bool
 	AutoAcceptDefaults  bool
 	NoAsk               bool
@@ -235,15 +237,21 @@ func (o *JSONSchemaOptions) handleIf(prefixes []string, requiredFields []string,
 			if detypedCondition != nil {
 				condition := detypedCondition.(*Type)
 				if condition.Const != nil {
-					var err error
-					desiredState, err = util.AsBool(*condition.Const)
+					stringConst, err := util.AsString(*condition.Const)
 					if err != nil {
-						return errors.Wrapf(err, "const %v must be of type bool", condition.Const)
+						return errors.Wrapf(err, "converting %s to string", *condition.Const)
+					}
+					typedConst, err := convertAnswer(stringConst, condition.Type)
+					if err != nil {
+						return errors.Wrapf(err, "converting %s to %s", stringConst, condition.Type)
+					}
+					if typedConst != selectedValue {
+						desiredState = false
 					}
 				}
 			}
 			result := orderedmap.New()
-			if selectedValue == desiredState {
+			if desiredState {
 				if parentType.Then != nil {
 					parentType.Then.Type = "object"
 					err := o.processThenElse(result, output, requiredFields, parentType.Then, parentType, existingValues)
@@ -308,7 +316,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			BoolValidator(),
 		}
 		validators = append(validators, additionalValidators...)
-		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues)
+		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -395,7 +403,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 	case "number":
 		validators := additionalValidators
 		validators = append(validators, FloatValidator())
-		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output, existingValues)
+		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output, existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -444,7 +452,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			}
 		}
 		validators = append(validators, additionalValidators...)
-		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues)
+		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -452,7 +460,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 		validators := additionalValidators
 		validators = append(validators, IntegerValidator())
 		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output,
-			existingValues)
+			existingValues, required)
 		if err != nil {
 			return err
 		}
@@ -464,36 +472,21 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 // According to the spec, "An instance validates successfully against this keyword if its value
 // is equal to the value of the keyword." which we interpret for questions as "this is the value of this keyword"
 func (o *JSONSchemaOptions) handleConst(name string, validators []survey.Validator, t *Type, output *orderedmap.OrderedMap) error {
-	message := fmt.Sprintf("Do you want to set %s to %v", name, *t.Const)
-	help := ""
+	message := fmt.Sprintf("Set %s to %v", name, *t.Const)
 	if t.Title != "" {
 		message = t.Title
 	}
+	// These are console output, not logging - DO NOT CHANGE THEM TO log statements
+	fmt.Fprint(o.Out, message)
 	if t.Description != "" {
-		help = t.Description
+		fmt.Fprint(o.Out, t.Description)
 	}
-	prompt := &survey.Confirm{
-		Help:    help,
-		Message: message,
-		Default: true,
-	}
-	answer := false
-	surveyOpts := survey.WithStdio(o.In, o.Out, o.OutErr)
-	validator := survey.ComposeValidators(validators...)
-
-	err := survey.AskOne(prompt, &answer, NoopValidator(), surveyOpts)
+	stringConst, err := util.AsString(*t.Const)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "converting %s to string", *t.Const)
 	}
-	err = validator(t.Const)
-	if answer {
-		constAsString := fmt.Sprintf("%v", *t.Const)
-		v, err := convertAnswer(constAsString, t.Type)
-		if err != nil {
-			return err
-		}
-		output.Set(name, v)
-	}
+	typedConst, err := convertAnswer(stringConst, t.Type)
+	output.Set(name, typedConst)
 	return nil
 }
 
@@ -628,11 +621,21 @@ func convertAnswer(answer string, t string) (interface{}, error) {
 }
 
 func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, validators []survey.Validator, t *Type,
-	output *orderedmap.OrderedMap, existingValues map[string]interface{}) error {
+	output *orderedmap.OrderedMap, existingValues map[string]interface{}, required bool) error {
 	if t.Const != nil {
 		return o.handleConst(name, validators, t, output)
 	}
 
+	// lets use the last vaultPath as the vaultKey. We don't need to use the format
+	// in the vaultKey or vaultPath
+	lastIdx := len(prefixes) - 1
+	vaultKey := prefixes[lastIdx]
+	pathPrefixes := prefixes[0:lastIdx]
+	vaultPath := o.VaultBasePath
+	vaultDir := strings.Join(pathPrefixes, "-")
+	if vaultDir != "" {
+		vaultPath = strings.Join([]string{vaultPath, vaultDir}, "/")
+	}
 	ask := true
 	defaultValue := ""
 	autoAcceptMessage := ""
@@ -663,34 +666,76 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		help = t.Description
 	}
 
-	if !ask && !o.IgnoreMissingValues && defaultValue == "" {
-		return fmt.Errorf("no existing or default value in answer to question %s", message)
+	if !ask {
+		envVar := strings.ToUpper("JX_VALUE_" + strings.Join(prefixes, "_"))
+		if defaultValue == "" {
+			defaultValue = os.Getenv(envVar)
+			if defaultValue != "" {
+				log.Logger().Infof("defaulting value from $%s\n", envVar)
+			}
+		}
+		if !o.IgnoreMissingValues && defaultValue == "" {
+			// lets not fail if in batch mode for non-required fields
+			if !o.NoAsk || required {
+				return fmt.Errorf("no existing or default value in answer to question %s and no value for $%s", message, envVar)
+			}
+		}
 	}
 
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.OutErr)
 	validator := survey.ComposeValidators(validators...)
 	// Ask the question
 	// Custom format support for passwords
-	storeAsSecret := false
-	passthrough := false
-	var err error
-	if util.DereferenceString(t.Format) == "password" || util.DereferenceString(t.Format) == "token" {
-		storeAsSecret = true
-		result, err = handlePasswordProperty(message, help, ask, validator, surveyOpts, defaultValue,
+	dereferencedFormat := strings.TrimSuffix(util.DereferenceString(t.Format), "-passthrough")
+	if dereferencedFormat == "password" || dereferencedFormat == "token" {
+		if o.VaultClient != nil {
+			// the standard existing logic is not used in this case
+			secret, err := o.VaultClient.Read(vaultPath)
+			if err == nil {
+				if value, ok := secret[vaultKey]; ok {
+					if !o.AskExisting {
+						ask = false
+					}
+					defaultValue = fmt.Sprintf("%v", value)
+					autoAcceptMessage = "Automatically accepted existing value"
+				}
+			} else {
+				// If there is an error, just continue
+				log.Logger().Debugf("Error reading %s from vault %v", vaultPath, err)
+			}
+		}
+
+		secret, err := handlePasswordProperty(message, help, dereferencedFormat, ask, validator, surveyOpts, defaultValue,
 			autoAcceptMessage, o.Out, t.Type)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-	} else if util.DereferenceString(t.Format) == "password-passthrough" || util.DereferenceString(t.
-		Format) == "token-passthrough" {
-		storeAsSecret = true
-		passthrough = true
-		result, err = handlePasswordProperty(message, help, ask, validator, surveyOpts, defaultValue,
-			autoAcceptMessage, o.Out, t.Type)
-		if err != nil {
-			return errors.WithStack(err)
+		if secret != nil {
+			value, err := util.AsString(secret)
+			if err != nil {
+				return err
+			}
+			if o.VaultClient != nil {
+
+				secretReference := secreturl.ToURI(vaultPath, vaultKey, o.VaultScheme)
+				output.Set(name, secretReference)
+
+				// lets upsert the vaultKey
+				data, _ := o.VaultClient.Read(vaultPath)
+				if data == nil {
+					data = map[string]interface{}{}
+				}
+				data[vaultKey] = value
+				_, err = o.VaultClient.Write(vaultPath, data)
+				if err != nil {
+					return errors.Wrapf(err, "failed to write to vaultPath %s with data %#v", vaultPath, data)
+				}
+			} else {
+				log.Logger().Warnf("Need to store a secret for %s but no secret store configured", name)
+			}
 		}
 	} else if t.Enum != nil {
+		var enumResult string
 		// Support for selects
 		names := make([]string, 0)
 		for _, e := range t.Enum {
@@ -703,10 +748,11 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			Help:    help,
 		}
 		if ask {
-			err := survey.AskOne(prompt, &result, validator, surveyOpts)
+			err := survey.AskOne(prompt, &enumResult, validator, surveyOpts)
 			if err != nil {
 				return err
 			}
+			result = enumResult
 		} else {
 			result = defaultValue
 			msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(result), autoAcceptMessage)
@@ -777,31 +823,31 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		}
 	}
 
-	if storeAsSecret {
-		secretName := kube.ToValidName(strings.Join(append(prefixes, "secret"), "-"))
-		value, err := util.AsString(result)
-		if err != nil {
-			return err
-		}
-		secretReference, err := o.CreateSecret(secretName, util.DereferenceString(t.Format), value, passthrough)
-		if err != nil {
-			return err
-		}
-		output.Set(name, secretReference)
-	} else if result != nil {
+	if result != nil {
 		// Write the value to the output
 		output.Set(name, result)
 	}
 	return nil
 }
 
-func handlePasswordProperty(message string, help string, ask bool, validator survey.Validator,
+func handlePasswordProperty(message string, help string, kind string, ask bool, validator survey.Validator,
 	surveyOpts survey.AskOpt, defaultValue string, autoAcceptMessage string, out terminal.FileWriter,
 	t string) (interface{}, error) {
 	// Secret input
 	prompt := &survey.Password{
 		Message: message,
 		Help:    help,
+	}
+
+	generated := false
+	if defaultValue == generatedPasswordValue {
+		secret, err := secrets.DefaultGenerateSecret()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		defaultValue = secret
+		fmt.Fprintf(terminal.NewAnsiStdout(out), "Generated %s %s, to use it press enter.\nThis is the only time you will be shown it so remember to save it\n", kind, util.ColorInfo(secret))
+		generated = true
 	}
 
 	var answer string
@@ -812,11 +858,14 @@ func handlePasswordProperty(message string, help string, ask bool, validator sur
 		}
 	} else {
 		answer = defaultValue
-		msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
+		msg := fmt.Sprintf("%s *** [%s]\n", message, autoAcceptMessage)
 		_, err := fmt.Fprint(terminal.NewAnsiStdout(out), msg)
 		if err != nil {
 			return nil, errors.Wrapf(err, "writing %s to console", msg)
 		}
+	}
+	if answer == "" && generated {
+		answer = defaultValue
 	}
 	if answer != "" {
 		result, err := convertAnswer(answer, t)

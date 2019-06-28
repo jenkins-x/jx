@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -18,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/mholt/archiver"
@@ -35,6 +35,9 @@ type StepHelmApplyOptions struct {
 	Force              bool
 	DisableHelmVersion bool
 	Vault              bool
+	UseTempDir         bool
+	NoVault            bool
+	NoMasking          bool
 }
 
 var (
@@ -82,6 +85,9 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Helm secrets are stored in vault")
+	cmd.Flags().BoolVarP(&options.NoVault, "no-vault", "", false, "Disables loading secrets from Vault. e.g. if bootstrapping core services like Ingress before we have a Vault")
+	cmd.Flags().BoolVarP(&options.NoMasking, "no-masking", "", false, "The effective 'values.yaml' file is output to the console with parameters masked. Enabling this flag will show the unmasked secrets in the console output")
+	cmd.Flags().BoolVarP(&options.UseTempDir, "use-temp-dir", "", true, "Whether to build and apply the helm chart from a temporary directory - to avoid updating the local values.yaml file from the generated file as part of the apply which could get accidentally checked into git")
 
 	return cmd
 }
@@ -122,17 +128,14 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
-	ns := o.Namespace
-	if ns == "" {
-		ns = os.Getenv("DEPLOY_NAMESPACE")
-	}
-	kubeClient, curNs, err := o.KubeClientAndNamespace()
+	ns, err := o.GetDeployNamespace(o.Namespace)
 	if err != nil {
 		return err
 	}
-	if ns == "" {
-		ns = curNs
-		log.Logger().Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
+
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
 	}
 
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
@@ -156,8 +159,41 @@ func (o *StepHelmApplyOptions) Run() error {
 			}
 		}
 	}
-
 	info := util.ColorInfo
+
+	path, err := filepath.Abs(dir)
+	if err != nil {
+		return errors.Wrapf(err, "could not find absolute path of dir %s", dir)
+	}
+	dir = path
+
+	if o.UseTempDir {
+		rootTmpDir, err := ioutil.TempDir("", "jx-helm-apply-")
+		if err != nil {
+			return errors.Wrapf(err, "failed to create a temporary directory to apply the helm chart")
+		}
+		if os.Getenv("JX_NO_DELETE_TMP_DIR") != "true" {
+			defer os.RemoveAll(rootTmpDir)
+		}
+
+		// lets use the same child dir name as the original as helm is quite particular about the name of the directory it runs from
+		_, name := filepath.Split(dir)
+		if name == "" {
+			return fmt.Errorf("could not find the relative name of the directory %s", dir)
+		}
+		tmpDir := filepath.Join(rootTmpDir, name)
+		log.Logger().Infof("Copying the helm source directory %s to a temporary location for building and applying %s\n", info(dir), info(tmpDir))
+
+		err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to helm temporary dir %s", tmpDir)
+		}
+		err = util.CopyDir(dir, tmpDir, true)
+		if err != nil {
+			return errors.Wrapf(err, "failed to copy helm dir %s to temporary dir %s", dir, tmpDir)
+		}
+		dir = tmpDir
+	}
 	log.Logger().Infof("Applying helm chart at %s as release name %s to namespace %s", info(dir), info(releaseName), info(ns))
 
 	o.Helm().SetCWD(dir)
@@ -171,7 +207,12 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	if (o.GetSecretsLocation() == secrets.VaultLocationKind) || o.Vault {
+	vaultSecretLocation := o.GetSecretsLocation() == secrets.VaultLocationKind
+	if vaultSecretLocation && o.NoVault {
+		// lets install a fake secret URL client to avoid spurious vault errors
+		o.SetSecretURLClient(fakevault.NewFakeClient())
+	}
+	if (vaultSecretLocation || o.Vault) && !o.NoVault {
 		store := configio.NewFileStore()
 		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
 		if err != nil {
@@ -194,7 +235,11 @@ func (o *StepHelmApplyOptions) Run() error {
 		}()
 	}
 
-	chartValues, err := helm.GenerateValues(dir, nil, true)
+	secretURLClient, err := o.GetSecretURLClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create a Secret RL client")
+	}
+	chartValues, params, err := helm.GenerateValues(dir, nil, true, secretURLClient)
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}
@@ -210,7 +255,14 @@ func (o *StepHelmApplyOptions) Run() error {
 		log.Logger().Warnf("failed to load file %s: %s", chartValuesFile, err.Error())
 	} else {
 		log.Logger().Infof("generated helm %s", chartValuesFile)
-		log.Logger().Infof("\n%s\n", util.ColorStatus(string(data)))
+
+		valuesText := string(data)
+		if !o.NoMasking {
+			masker := kube.NewLogMaskerFromMap(params.AsMap())
+			valuesText = masker.MaskLog(valuesText)
+		}
+
+		log.Logger().Infof("\n%s\n", util.ColorStatus(valuesText))
 	}
 
 	log.Logger().Infof("Using values files: %s", strings.Join(valueFiles, ", "))
@@ -235,6 +287,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		Ns:          ns,
 		NoForce:     !o.Force,
 		ValueFiles:  valueFiles,
+		Dir:         dir,
 	}
 	if o.Wait {
 		helmOptions.Wait = true

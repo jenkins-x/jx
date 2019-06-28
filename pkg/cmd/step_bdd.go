@@ -2,14 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -212,7 +214,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		if o.InstallOptions.Flags.Tekton {
 			teamPrefix += "tekton-"
 		}
-		team := kube.ToValidName(teamPrefix + gitProviderName + "-" + o.teamNameSuffix())
+		team := naming.ToValidName(teamPrefix + gitProviderName + "-" + o.teamNameSuffix())
 		log.Logger().Infof("Creating team %s", util.ColorInfo(team))
 
 		installOptions := o.InstallOptions
@@ -497,6 +499,8 @@ func (o *StepBDDOptions) reportStatus(testDir string, err error) error {
 	}
 
 	for _, cmd := range commands {
+		fmt.Println("")
+		fmt.Printf("Running %s\n\n", cmd.String())
 		cmd.Dir = testDir
 		cmd.Out = os.Stdout
 		cmd.Err = os.Stdout
@@ -535,7 +539,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if buildNum == "" {
 		log.Logger().Warnf("No build number could be found from the environment variable $BUILD_NUMBER!")
 	}
-	baseClusterName := kube.ToValidName(cluster.Name)
+	baseClusterName := naming.ToValidName(cluster.Name)
 	revision := os.Getenv("PULL_PULL_SHA")
 	branch := o.GetBranchName(o.Flags.VersionsDir)
 	if branch == "" {
@@ -555,7 +559,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 
 	log.Logger().Infof("using versions git repo %s and ref %s", o.InstallOptions.Flags.VersionsRepository, o.InstallOptions.Flags.VersionsGitRef)
 
-	cluster.Name = kube.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
+	cluster.Name = naming.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
 	log.Logger().Infof("\nCreating cluster %s", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
 	args := cluster.Args
@@ -656,6 +660,29 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	err := e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", binary, strings.Join(safeArgs, " "))
+	}
+	if err != nil {
+		return err
+	}
+
+	for _, c := range cluster.Commands {
+		e := exec.Command(c.Command, c.Args...)
+		e.Stdout = o.Out
+		e.Stderr = o.Err
+		os.Setenv("PATH", util.PathWithBinary())
+
+		// work around for helm apply with GitOps using a k8s local Service URL
+		os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
+
+		log.Logger().Infof("running command: %s", util.ColorInfo(fmt.Sprintf("%s %s", c.Command, strings.Join(c.Args, " "))))
+
+		err := e.Run()
+		if err != nil {
+			log.Logger().Errorf("Error: Command failed  %s %s", c.Command, strings.Join(c.Args, " "))
+		}
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }

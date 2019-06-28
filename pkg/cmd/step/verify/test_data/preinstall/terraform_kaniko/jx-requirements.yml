@@ -1,0 +1,4 @@
+kaniko: true
+terraform: true
+secretStorage: local
+clusterName: my-cluster-name

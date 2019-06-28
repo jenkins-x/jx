@@ -53,14 +53,14 @@ pipelineConfig:
               - name: build
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: make
                 args: ['build']
 
               - name: test-integration
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.477
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: make
                 args: ['test-slow-integration']
 
@@ -71,6 +71,6 @@ pipelineConfig:
                 args: ['step', 'stash', '-c', 'integration-tests', '-p', 'build/reports/*.junit.xml', '--bucket-url', 'gs://jx-prod-logs']
 
               - name: codecov-upload
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: make
                 args: ['codecov-upload']

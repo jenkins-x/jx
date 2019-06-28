@@ -10,6 +10,8 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/jpillora/longestcommon"
+
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -208,7 +210,7 @@ func GitProviderURL(text string) string {
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
 func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base string, prDetails *PullRequestDetails,
-	prInfo *PullRequestInfo, commit bool, push bool, autoMerge bool, provider GitProvider, gitter Gitter) (*PullRequestInfo, error) {
+	filter *PullRequestFilter, commit bool, commitMessage string, push bool, autoMerge bool, provider GitProvider, gitter Gitter) (*PullRequestInfo, error) {
 	if commit {
 
 		err := gitter.Add(dir, "-A")
@@ -223,23 +225,12 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 			log.Logger().Warnf("No changes made to the source code in %s. Code must be up to date!", dir)
 			return nil, nil
 		}
-		err = gitter.CommitDir(dir, prDetails.Message)
+		if commitMessage == "" {
+			commitMessage = prDetails.Message
+		}
+		err = gitter.CommitDir(dir, commitMessage)
 		if err != nil {
 			return nil, errors.WithStack(err)
-		}
-	}
-	if push {
-		// lets rebase an existing PR
-		if prInfo != nil && prInfo.PullRequestArguments.Head != "" {
-			err := gitter.ForcePushBranch(dir, prDetails.BranchName, prInfo.PullRequestArguments.Head)
-			if err != nil {
-				return nil, errors.Wrapf(err, "rebasing existing PR on %s", prInfo.PullRequestArguments.Head)
-			}
-		}
-
-		err := gitter.Push(dir)
-		if err != nil {
-			return nil, err
 		}
 	}
 
@@ -258,7 +249,88 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 		Title:         prDetails.Title,
 		Body:          prDetails.Message,
 		Base:          base,
-		Head:          headPrefix + prDetails.BranchName,
+	}
+
+	if filter != nil && push {
+
+		// lets rebase an existing PR
+		existingPrs, err := FilterOpenPullRequests(provider, gitInfo.Organisation, gitInfo.Name, *filter)
+		if err != nil {
+			return nil, errors.Wrapf(err, "finding existing PRs using filter %s on repo %s/%s", filter.String(), gitInfo.Organisation, gitInfo.Name)
+		}
+
+		if len(existingPrs) > 1 {
+			prs := make([]string, 0)
+			for _, pr := range existingPrs {
+				prs = append(prs, pr.URL)
+			}
+			log.Logger().Debugf("Found more than one PR %s using filter %s on repo %s/%s so unable to rebase existing PR, creating new PR", strings.Join(prs, ", "), filter.String(), gitInfo.Organisation, gitInfo.Name)
+		} else if len(existingPrs) == 1 {
+			pr := existingPrs[0]
+			if pr.HeadRef != nil && pr.Number != nil {
+				changeBranch, err := gitter.Branch(dir)
+				if err != nil {
+					return nil, errors.WithStack(err)
+				}
+				existingBranchName := *pr.HeadRef
+				err = gitter.FetchBranch(dir, "origin", existingBranchName)
+				if err != nil {
+					return nil, errors.Wrapf(err, "fetching branch %s for merge", existingBranchName)
+				}
+
+				err = gitter.CreateBranchFrom(dir, prDetails.BranchName, fmt.Sprintf("origin/%s", existingBranchName))
+				if err != nil {
+					return nil, errors.Wrapf(err, "creating branch %s from %s", prDetails.BranchName, existingBranchName)
+				}
+				err = gitter.Checkout(dir, prDetails.BranchName)
+				if err != nil {
+					return nil, errors.Wrapf(err, "checking out branch %s", prDetails.BranchName)
+				}
+				err = gitter.MergeTheirs(dir, changeBranch)
+				if err != nil {
+					return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, existingBranchName)
+				}
+				err = gitter.RebaseTheirs(dir, fmt.Sprintf("origin/%s", existingBranchName), "")
+				if err != nil {
+					return nil, errors.WithStack(err)
+				}
+				err = gitter.ForcePushBranch(dir, prDetails.BranchName, existingBranchName)
+				if err != nil {
+					return nil, errors.Wrapf(err, "pushing merged branch %s", existingBranchName)
+				}
+
+				gha.Head = headPrefix + existingBranchName
+				// work out the minimal similar title
+				gha.Title = longestcommon.Prefix([]string{pr.Title, prDetails.Title})
+				if len(gha.Title) <= len("chore(dependencies): update ") {
+					gha.Title = "chore(dependencies): update dependency versions"
+				}
+				gha.Title = strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(gha.Title), " to"), " from")
+				gha.Body = fmt.Sprintf("%s\n<hr />\n%s", prDetails.Message, pr.Body)
+
+				pr, err := provider.UpdatePullRequest(gha, *pr.Number)
+				if err != nil {
+					return nil, errors.Wrapf(err, "updating pull request %s", pr.URL)
+				}
+				log.Logger().Infof("Updated Pull Request: %s", util.ColorInfo(pr.URL))
+				return &PullRequestInfo{
+					GitProvider:          provider,
+					PullRequest:          pr,
+					PullRequestArguments: gha,
+				}, nil
+			}
+		} else {
+			log.Logger().Debugf("Did not find any PRs to rebase, creating a new one")
+		}
+	}
+
+	gha.Head = headPrefix + prDetails.BranchName
+
+	if push {
+		err := gitter.ForcePushBranch(dir, "HEAD", prDetails.BranchName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	pr, err := provider.CreatePullRequest(gha)
@@ -469,6 +541,48 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 		}
 	}
 	return dir, baseRef, gitInfo, nil
+}
+
+// A PullRequestFilter defines a filter for finding pull requests
+type PullRequestFilter struct {
+	Labels []string
+	Number *int
+}
+
+func (f *PullRequestFilter) String() string {
+	return strings.Join(f.Labels, ", ")
+}
+
+// FilterOpenPullRequests looks for any pull requests on the owner/repo where all the labels match
+func FilterOpenPullRequests(provider GitProvider, owner string, repo string, filter PullRequestFilter) ([]*GitPullRequest, error) {
+	openPRs, err := provider.ListOpenPullRequests(owner, repo)
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing open pull requests on %s/%s", owner, repo)
+	}
+	answer := make([]*GitPullRequest, 0)
+	for _, pr := range openPRs {
+		if len(filter.Labels) > 0 {
+			found := 0
+			for _, label := range filter.Labels {
+				f := false
+				for _, prLabel := range pr.Labels {
+					if label == util.DereferenceString(prLabel.Name) {
+						f = true
+					}
+				}
+				if f {
+					found++
+				}
+			}
+			if len(filter.Labels) == found {
+				answer = append(answer, pr)
+			}
+		}
+		if filter.Number != nil && filter.Number == pr.Number {
+			answer = append(answer, pr)
+		}
+	}
+	return answer, nil
 }
 
 func computeBranchName(baseRef string, branchName string, dir string, gitter Gitter) (string, error) {

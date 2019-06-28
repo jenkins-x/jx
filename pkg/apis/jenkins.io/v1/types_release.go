@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,16 +36,17 @@ type ReleaseList struct {
 
 // ReleaseSpec is the specification of the Release
 type ReleaseSpec struct {
-	Name            string          `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
-	Version         string          `json:"version,omitempty"  protobuf:"bytes,2,opt,name=version"`
-	GitHTTPURL      string          `json:"gitHttpUrl,omitempty"  protobuf:"bytes,3,opt,name=gitHttpUrl"`
-	GitCloneURL     string          `json:"gitCloneUrl,omitempty"  protobuf:"bytes,4,opt,name=gitCloneUrl"`
-	Commits         []CommitSummary `json:"commits,omitempty" protobuf:"bytes,5,opt,name=commits"`
-	Issues          []IssueSummary  `json:"issues,omitempty" protobuf:"bytes,6,opt,name=issues"`
-	PullRequests    []IssueSummary  `json:"pullRequests,omitempty" protobuf:"bytes,7,opt,name=pullRequests"`
-	ReleaseNotesURL string          `json:"releaseNotesURL,omitempty" protobuf:"bytes,8,opt,name=releaseNotesURL"`
-	GitRepository   string          `json:"gitRepository,omitempty" protobuf:"bytes,9,opt,name=gitRepository"`
-	GitOwner        string          `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
+	Name              string             `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
+	Version           string             `json:"version,omitempty"  protobuf:"bytes,2,opt,name=version"`
+	GitHTTPURL        string             `json:"gitHttpUrl,omitempty"  protobuf:"bytes,3,opt,name=gitHttpUrl"`
+	GitCloneURL       string             `json:"gitCloneUrl,omitempty"  protobuf:"bytes,4,opt,name=gitCloneUrl"`
+	Commits           []CommitSummary    `json:"commits,omitempty" protobuf:"bytes,5,opt,name=commits"`
+	Issues            []IssueSummary     `json:"issues,omitempty" protobuf:"bytes,6,opt,name=issues"`
+	PullRequests      []IssueSummary     `json:"pullRequests,omitempty" protobuf:"bytes,7,opt,name=pullRequests"`
+	DependencyUpdates []DependencyUpdate `json:"dependencyUpdates,omitempty" protobuf:"bytes,11,opt,name=dependencyUpdates"`
+	ReleaseNotesURL   string             `json:"releaseNotesURL,omitempty" protobuf:"bytes,8,opt,name=releaseNotesURL"`
+	GitRepository     string             `json:"gitRepository,omitempty" protobuf:"bytes,9,opt,name=gitRepository"`
+	GitOwner          string             `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
 }
 
 // ReleaseStatus is the status of a release
@@ -135,4 +137,23 @@ type GitServiceList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []GitService `json:"items"`
+}
+
+//DependencyUpdate describes an dependency update message from the commit log
+type DependencyUpdate struct {
+	URL                string
+	Owner              string
+	Host               string
+	Repo               string
+	FromVersion        string
+	FromReleaseHTMLURL string
+	FromReleaseName    string
+	ToVersion          string
+	ToReleaseHTMLURL   string
+	ToReleaseName      string
+	Component          string
+}
+
+func (d *DependencyUpdate) String() string {
+	return fmt.Sprintf("%s/%s %s", d.Owner, d.Host, d.ToVersion)
 }

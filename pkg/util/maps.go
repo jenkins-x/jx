@@ -60,6 +60,52 @@ func CombineMapTrees(destination map[string]interface{}, input map[string]interf
 	}
 }
 
+// GetMapValueViaPath returns the value at the given path
+// mean `m["foo"]["bar"]["whatnot"]`
+func GetMapValueViaPath(m map[string]interface{}, path string) interface{} {
+	dest := m
+	paths := strings.Split(path, ".")
+
+	last := len(paths) - 1
+	for i, key := range paths {
+		if i == last {
+			return dest[key]
+		}
+		entry := dest[key]
+		entryMap, ok := entry.(map[string]interface{})
+		if ok {
+			dest = entryMap
+		} else {
+			entryMap = map[string]interface{}{}
+			dest[key] = entryMap
+			dest = entryMap
+		}
+	}
+	return nil
+}
+
+// GetMapValueAsStringViaPath returns the string value at the given path
+// mean `m["foo"]["bar"]["whatnot"]`
+func GetMapValueAsStringViaPath(m map[string]interface{}, path string) string {
+	value := GetMapValueViaPath(m, path)
+	text, ok := value.(string)
+	if !ok {
+		return ""
+	}
+	return text
+}
+
+// GetMapValueAsMapViaPath returns the map value at the given path
+// mean `m["foo"]["bar"]["whatnot"]`
+func GetMapValueAsMapViaPath(m map[string]interface{}, path string) map[string]interface{} {
+	value := GetMapValueViaPath(m, path)
+	answer, ok := value.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return answer
+}
+
 // SetMapValueViaPath sets the map key using the given path which supports the form `foo.bar.whatnot` to
 // mean `m["foo"]["bar"]["whatnot"]` lazily creating maps as the path is navigated
 func SetMapValueViaPath(m map[string]interface{}, path string, value interface{}) {

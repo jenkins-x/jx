@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/pkg/errors"
 
@@ -339,8 +340,8 @@ func (o *StepChangelogOptions) Run() error {
 		for _, commit := range *commits {
 			log.Logger().Debugf("  commit %s", commit.Hash)
 			log.Logger().Debugf("  Author: %s <%s>", commit.Author.Name, commit.Author.Email)
-			log.Logger().Debugf("  Date: %s", commit.Committer.When.Format("Wed Sep 26 12:57:08 2018 +0100"))
-			log.Logger().Debugf("\n      %s", commit.Message)
+			log.Logger().Debugf("  Date: %s", commit.Committer.When.Format(time.ANSIC))
+			log.Logger().Debugf("      %s\n\n\n", commit.Message)
 		}
 	}
 	version := o.Version
@@ -483,7 +484,7 @@ func (o *StepChangelogOptions) Run() error {
 		devRelease := *release
 		devRelease.ResourceVersion = ""
 		devRelease.Namespace = devNs
-		devRelease.Name = kube.ToValidName(appName + "-" + cleanVersion)
+		devRelease.Name = naming.ToValidName(appName + "-" + cleanVersion)
 		devRelease.Spec.Name = appName
 		_, err := kube.GetOrCreateRelease(jxClient, devNs, &devRelease)
 		if err != nil {
@@ -497,7 +498,7 @@ func (o *StepChangelogOptions) Run() error {
 	build := o.Build
 	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
-		name := kube.ToValidName(pipeline + "-" + build)
+		name := naming.ToValidName(pipeline + "-" + build)
 		// lets see if we can update the pipeline
 		activities := jxClient.JenkinsV1().PipelineActivities(devNs)
 		lastCommitSha := ""
@@ -571,6 +572,16 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	if committer != nil {
 		committerDetails = committer.Spec
 	}
+	dependencyUpdate, err := o.ParseDependencyUpdateMessage(commit.Message, spec.GitCloneURL)
+	if err != nil {
+		log.Logger().Infof("Parsing %s for dependency updates", commit.Message)
+	}
+	if dependencyUpdate != nil {
+		if spec.DependencyUpdates == nil {
+			spec.DependencyUpdates = make([]v1.DependencyUpdate, 0)
+		}
+		spec.DependencyUpdates = append(spec.DependencyUpdates, *dependencyUpdate)
+	}
 	commitSummary := v1.CommitSummary{
 		Message:   commit.Message,
 		URL:       url,
@@ -579,6 +590,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 		Branch:    branch,
 		Committer: &committerDetails,
 	}
+
 	err = o.addIssuesAndPullRequests(spec, &commitSummary, commit)
 	if err != nil {
 		log.Logger().Warnf("Failed to enrich commit %s with issues: %s", sha, err)
@@ -604,6 +616,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		regex = JIRAIssueRegex
 	}
 	message := fullCommitMessageText(rawCommit)
+
 	matches := regex.FindAllStringSubmatch(message, -1)
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {

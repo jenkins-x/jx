@@ -1,13 +1,11 @@
-package create_test
+package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
-
 	"io/ioutil"
 	"os"
 	"path"
@@ -302,6 +300,15 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "really-long",
 			kind:         "release",
 		},
+		{
+			name:         "containerOptions-at-top-level-of-buildpack",
+			language:     "maven-with-resource-limit",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+			useKaniko:    false,
+		},
 	}
 
 	k8sObjects := []runtime.Object{
@@ -337,7 +344,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
 			}
 
-			createTask := &create.StepCreateTaskOptions{
+			createTask := &StepCreateTaskOptions{
 				Pack:         tt.language,
 				DryRun:       true,
 				SourceName:   "source",
@@ -368,7 +375,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			}
 			testhelpers.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
-			crds, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
+			ns := "jx"
+			effectiveProjectConfig, _ := createTask.createEffectiveProjectConfig(packsDir, projectConfig, projectConfigFile, resolver, ns)
+			if effectiveProjectConfig != nil {
+				createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
+			}
+			pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline)
+			crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
 			if tt.expectingError {
 				if err == nil {
 					t.Fatalf("Expected an error generating CRDs")
@@ -405,7 +418,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 				}
 
-				pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, &prow.PullRefs{})
+				pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, &prow.PullRefs{}, tekton.BuildPipeline)
 
 				expectedActivityKey := &kube.PromoteStepActivityKey{
 					PipelineActivityKey: kube.PipelineActivityKey{

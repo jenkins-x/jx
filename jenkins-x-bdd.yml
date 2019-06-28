@@ -81,7 +81,7 @@ pipelineConfig:
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
               - name: e2e-tests
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: ./jx/scripts/ci.sh
 
               - name: stash-test-results

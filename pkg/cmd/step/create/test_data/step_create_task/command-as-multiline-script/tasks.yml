@@ -6,6 +6,7 @@ items:
       labels:
         jenkins.io/task-stage-name: build-a-really-long-stage-name-please-but-not-too-long-thanks
         branch: really-long
+        build: "1"
         owner: abayer
         repo: js-test-repo
       name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
@@ -60,7 +61,7 @@ items:
               value: ${inputs.params.version}
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
-          image: gcr.io/jenkinsxio/builder-jx:0.1.477
+          image: gcr.io/jenkinsxio/builder-jx:0.1.527
           name: git-merge
           resources:
             requests:
@@ -163,6 +164,7 @@ items:
       labels:
         jenkins.io/task-stage-name: second
         branch: really-long
+        build: "1"
         owner: abayer
         repo: js-test-repo
       name: abayer-js-test-repo-really-long-second-1

@@ -3,11 +3,17 @@ package verify
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/log"
+	"strings"
+	"time"
 
 	"os"
 	"os/exec"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/table"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -31,6 +37,8 @@ var (
 type StepVerifyPodReadyOptions struct {
 	opts.StepOptions
 	Debug bool
+
+	WaitDuration time.Duration
 }
 
 // NewCmdStepVerifyPodReady creates the `jx step verify pod` command
@@ -56,6 +64,7 @@ func NewCmdStepVerifyPodReady(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&options.Debug, "debug", "", false, "Output logs of any failed pod")
+	cmd.Flags().DurationVarP(&options.WaitDuration, "wait-time", "w", time.Second, "The default wait time to wait for the pods to be ready")
 
 	return cmd
 }
@@ -67,14 +76,35 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 		return errors.Wrap(err, "failed to get the Kube client")
 	}
 
-	pods, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return errors.Wrapf(err, "failed to list the PODs in namespace '%s'", ns)
-	}
-
 	log.Logger().Infof("Checking pod statuses")
 
+	table, err := o.waitForReadyPods(kubeClient, ns)
+	table.Render()
+	if err != nil {
+		if o.WaitDuration.Seconds() == 0 {
+			return err
+		}
+		log.Logger().Warnf("%s\n", err.Error())
+		log.Logger().Infof("\nWaiting %s for the pods to become Ready...\n\n", o.WaitDuration.String())
+
+		err = o.RetryQuietlyUntilTimeout(o.WaitDuration, time.Second*10, func() error {
+			var err error
+			table, err = o.waitForReadyPods(kubeClient, ns)
+			return err
+		})
+		table.Render()
+	}
+	return err
+}
+
+func (o *StepVerifyPodReadyOptions) waitForReadyPods(kubeClient kubernetes.Interface, ns string) (table.Table, error) {
 	table := o.CreateTable()
+
+	pods, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return table, errors.Wrapf(err, "failed to list the PODs in namespace '%s'", ns)
+	}
+
 	table.AddRow("POD", "STATUS")
 
 	var f *os.File
@@ -83,10 +113,14 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 		log.Logger().Infof("Creating verify-pod.log file")
 		f, err = os.Create("verify-pod.log")
 		if err != nil {
-			return errors.Wrap(err, "error creating log file")
+			return table, errors.Wrap(err, "error creating log file")
 		}
 		defer f.Close()
 	}
+
+	notReadyPods := []string{}
+
+	notReadyPhases := map[string][]string{}
 
 	for _, pod := range pods.Items {
 		podName := pod.ObjectMeta.Name
@@ -101,19 +135,31 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 			e.Stdout = &out
 			err := e.Run()
 			if err != nil {
-				return errors.Wrap(err, "failed to get the Kube pod logs")
+				return table, errors.Wrap(err, "failed to get the Kube pod logs")
 			}
 			_, err = f.WriteString(fmt.Sprintf("Logs for pod %s:\n", podName))
 			if err != nil {
-				return errors.Wrap(err, "error writing log file")
+				return table, errors.Wrap(err, "error writing log file")
 			}
 			_, err = f.Write(out.Bytes())
 			if err != nil {
-				return errors.Wrap(err, "error writing log file")
+				return table, errors.Wrap(err, "error writing log file")
 			}
 		}
 		table.AddRow(podName, string(phase))
+
+		if !kube.IsPodCompleted(&pod) && !kube.IsPodReady(&pod) {
+			notReadyPods = append(notReadyPods, pod.Name)
+			key := string(phase)
+			notReadyPhases[key] = append(notReadyPhases[key], pod.Name)
+		}
 	}
-	table.Render()
-	return nil
+	if len(notReadyPods) > 0 {
+		phaseSlice := []string{}
+		for k, list := range notReadyPhases {
+			phaseSlice = append(phaseSlice, fmt.Sprintf("%s: %s", k, strings.Join(list, ", ")))
+		}
+		return table, fmt.Errorf("the following pods are not Ready:\n%s", strings.Join(phaseSlice, "\n"))
+	}
+	return table, nil
 }

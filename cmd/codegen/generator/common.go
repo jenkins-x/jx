@@ -52,7 +52,6 @@ func defaultGenerate(generator string, name string, groupsWithVersions []string,
 		generateCommand.Args = append(generateCommand.Args, arg)
 	}
 
-	util.AppLogger().Infof("running %s\n", generateCommand.String())
 	out, err := generateCommand.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "running %s, output %s", generateCommand.String(), out)

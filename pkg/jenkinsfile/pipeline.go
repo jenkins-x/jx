@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -627,6 +628,11 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 	} else if base.Agent.Dir == "" && c.Agent.Dir != "" {
 		base.Agent.Dir = c.Agent.Dir
 	}
+	mergedContainer, err := syntax.MergeContainers(base.ContainerOptions, c.ContainerOptions)
+	if err != nil {
+		return err
+	}
+	c.ContainerOptions = mergedContainer
 	base.defaultContainerAndDir()
 	c.defaultContainerAndDir()
 	c.Pipelines.Extend(&base.Pipelines)
@@ -792,8 +798,8 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	return nil
 }
 
-// CreatePipelineSteps translates a step into one or more steps that can be used in jenkins-x.yml pipeline syntax.
-func (c *PipelineConfig) CreatePipelineSteps(step *syntax.Step, prefixPath string, args CreatePipelineArguments) ([]syntax.Step, int) {
+// createPipelineSteps translates a step into one or more steps that can be used in jenkins-x.yml pipeline syntax.
+func (c *PipelineConfig) createPipelineSteps(step *syntax.Step, prefixPath string, args CreatePipelineArguments) ([]syntax.Step, int) {
 	steps := []syntax.Step{}
 
 	containerName := c.Agent.GetImage()
@@ -812,8 +818,8 @@ func (c *PipelineConfig) CreatePipelineSteps(step *syntax.Step, prefixPath strin
 
 	dir = strings.Replace(dir, util.PlaceHolderAppName, args.GitName, -1)
 	dir = strings.Replace(dir, util.PlaceHolderOrg, args.GitOrg, -1)
-	dir = strings.Replace(dir, util.PlaceHolderGitProvider, args.GitHost, -1)
-	dir = strings.Replace(dir, util.PlaceHolderDockerRegistryOrg, strings.ToLower(args.DockerRegistryOrg), -1)
+	dir = strings.Replace(dir, util.PlaceHolderGitProvider, strings.ToLower(args.GitHost), -1)
+	dir = strings.Replace(dir, util.PlaceHolderDockerRegistryOrg, args.DockerRegistryOrg, -1)
 
 	if strings.HasPrefix(dir, "./") {
 		dir = args.WorkspaceDir + strings.TrimPrefix(dir, ".")
@@ -860,7 +866,7 @@ func (c *PipelineConfig) CreatePipelineSteps(step *syntax.Step, prefixPath strin
 		// TODO add child prefix?
 		childPrefixPath := prefixPath
 		args.WorkspaceDir = dir
-		nestedSteps, nestedCounter := c.CreatePipelineSteps(s, childPrefixPath, args)
+		nestedSteps, nestedCounter := c.createPipelineSteps(s, childPrefixPath, args)
 		args.StepCounter = nestedCounter
 		steps = append(steps, nestedSteps...)
 	}
@@ -917,8 +923,8 @@ func (c *PipelineConfig) modifyStep(parsedStep syntax.Step, workspaceDir, docker
 	return parsedStep
 }
 
-// CreateStageForBuildPack generates the Task for a build pack
-func (c *PipelineConfig) CreateStageForBuildPack(args CreatePipelineArguments) (*syntax.Stage, int, error) {
+// createStageForBuildPack generates the Task for a build pack
+func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (*syntax.Stage, int, error) {
 	if args.Lifecycles == nil {
 		return nil, args.StepCounter, errors.New("generatePipeline: no lifecycles")
 	}
@@ -943,7 +949,7 @@ func (c *PipelineConfig) CreateStageForBuildPack(args CreatePipelineArguments) (
 		}
 
 		for _, s := range l.Steps {
-			newSteps, newCounter := c.CreatePipelineSteps(s, n.Name, args)
+			newSteps, newCounter := c.createPipelineSteps(s, n.Name, args)
 			args.StepCounter = newCounter
 			steps = append(steps, newSteps...)
 		}
@@ -962,7 +968,11 @@ func (c *PipelineConfig) CreateStageForBuildPack(args CreatePipelineArguments) (
 
 // CreatePipelineForBuildPack translates a set of lifecycles into a full pipeline.
 func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments) (*syntax.ParsedPipeline, int, error) {
-	stage, newCounter, err := c.CreateStageForBuildPack(args)
+	args.GitOrg = naming.ToValidName(strings.ToLower(args.GitOrg))
+	args.GitName = naming.ToValidName(strings.ToLower(args.GitName))
+	args.DockerRegistryOrg = strings.ToLower(args.DockerRegistryOrg)
+
+	stage, newCounter, err := c.createStageForBuildPack(args)
 	if err != nil {
 		return nil, args.StepCounter, errors.Wrapf(err, "Failed to generate stage from build pack")
 	}

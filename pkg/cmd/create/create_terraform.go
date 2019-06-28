@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/features"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -135,7 +136,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		username = "unknown"
 	} else {
-		username = sanitizeLabel(user.Username)
+		username = util.SanitizeLabel(user.Username)
 	}
 
 	tf := terraformFileWriter{}
@@ -249,7 +250,6 @@ var (
 		jx create terraform -c dev=gke -c stage=gke -c prod=gke
 
 `)
-	validTerraformVersions = "0.12.0"
 
 	gkeBucketConfiguration = `terraform {
   required_version = ">= %s"
@@ -282,6 +282,19 @@ func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 		Use:     "terraform",
 		Short:   "Creates a Jenkins X Terraform plan",
 		Example: createTerraformExample,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := features.IsEnabled(cmd)
+			helper.CheckErr(err)
+			err = options.InstallOptions.CheckFeatures()
+			helper.CheckErr(err)
+
+			options.InstallOptions.Flags.Tekton = true
+			options.InstallOptions.Flags.Prow = true
+			options.InstallOptions.InitOptions.Flags.NoTiller = true
+
+			err = options.InstallOptions.CheckFlags()
+			helper.CheckErr(err)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -350,8 +363,6 @@ func (options *CreateTerraformOptions) Run() error {
 			return err
 		}
 	}
-
-	options.InstallOptions.Flags.NextGeneration = true
 
 	err = terraform.CheckVersion()
 	if err != nil {
@@ -722,12 +733,12 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 }
 
 func (options *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
-	log.Logger().Infof("Creating/Updating %v clusters\n", util.ColorInfo(len(clusterDefinitions)))
+	log.Logger().Infof("Creating/Updating %v clusters", util.ColorInfo(len(clusterDefinitions)))
 	for _, c := range clusterDefinitions {
 		switch v := c.(type) {
 		case *GKECluster:
 			path := filepath.Join(dir, Clusters, v.Name(), Terraform)
-			log.Logger().Infof("\n\nCreating/Updating cluster %s", util.ColorInfo(c.Name()))
+			log.Logger().Infof("Creating/Updating cluster %s", util.ColorInfo(c.Name()))
 			err := options.applyTerraformGKE(v, path)
 			if err != nil {
 				return err
@@ -987,7 +998,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 		return err
 	}
 
-	storageBucket := fmt.Sprintf(gkeBucketConfiguration, validTerraformVersions, g.ProjectID, options.Flags.OrganisationName, g.Name())
+	storageBucket := fmt.Sprintf(gkeBucketConfiguration, terraform.MinTerraformVersion, g.ProjectID, options.Flags.OrganisationName, g.Name())
 	log.Logger().Debugf("Using bucket configuration %s", storageBucket)
 
 	terraformTf := filepath.Join(path, "terraform.tf")
@@ -1038,7 +1049,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 
 	var serviceAccountPath string
 	if g.ServiceAccount == "" {
-		serviceAccountName := fmt.Sprintf("jx-%s-%s", options.Flags.OrganisationName, g.Name())
+		serviceAccountName := fmt.Sprintf("%s-%s-tf", options.Flags.OrganisationName, g.Name())
 		log.Logger().Infof("No GCP service account provided, creating %s", util.ColorInfo(serviceAccountName))
 
 		_, err := gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectID, filepath.Dir(path), gke.RequiredServiceAccountRoles)
@@ -1117,7 +1128,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		log.Logger().Infof("Skipping Terraform apply")
 	}
 
-	options.InstallOptions.setInstallValues(map[string]string{
+	options.InstallOptions.SetInstallValues(map[string]string{
 		kube.Zone:        g.Zone,
 		kube.Region:      g.Region(),
 		kube.ProjectID:   g.ProjectID,

@@ -22,13 +22,7 @@ const KmsLocation = "global"
 
 var (
 	// RequiredServiceAccountRoles the roles required to create a cluster with terraform
-	RequiredServiceAccountRoles = []string{"roles/compute.instanceAdmin.v1",
-		"roles/iam.serviceAccountActor",
-		"roles/container.clusterAdmin",
-		"roles/container.admin",
-		"roles/container.developer",
-		"roles/storage.objectAdmin",
-		"roles/editor"}
+	RequiredServiceAccountRoles = []string{"roles/owner"}
 
 	// KanikoServiceAccountRoles the roles required to run kaniko with GCS
 	KanikoServiceAccountRoles = []string{"roles/storage.admin",
@@ -661,7 +655,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 	}
 
 	if len(toEnableArray) == 0 {
-		log.Logger().Infof("No apis need to be enable as they are already enabled: %s", util.ColorInfo(strings.Join(apis, " ")))
+		log.Logger().Debugf("No apis need to be enable as they are already enabled: %s", util.ColorInfo(strings.Join(apis, " ")))
 		return nil
 	}
 
@@ -673,7 +667,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 		args = append(args, projectID)
 	}
 
-	log.Logger().Infof("Lets ensure we have %s enabled on your project via: %s", toEnableArray, util.ColorInfo("gcloud "+strings.Join(args, " ")))
+	log.Logger().Debugf("Lets ensure we have %s enabled on your project via: %s", toEnableArray, util.ColorInfo("gcloud "+strings.Join(args, " ")))
 
 	cmd := util.Command{
 		Name: "gcloud",
@@ -921,7 +915,8 @@ func IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error) {
 func UserLabel() string {
 	user, err := osUser.Current()
 	if err == nil && user != nil && user.Username != "" {
-		return fmt.Sprintf("created-by:%s", user.Username)
+		userLabel := util.SanitizeLabel(user.Username)
+		return fmt.Sprintf("created-by:%s", userLabel)
 	}
 	return ""
 }

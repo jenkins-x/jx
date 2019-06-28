@@ -74,6 +74,9 @@ const (
 	DefaultExternalDNSReleaseName = "external-dns"
 	DefaultExternalDNSTag         = "1.5.2"
 
+	// SecretKaniko the name of the secret containing the kaniko service account
+	SecretKaniko = "kaniko-secret"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -152,6 +155,9 @@ const (
 
 	// AnnotationDescription the tooltip / texual description of an resource
 	AnnotationDescription = "description"
+
+	// LabelGitSync to indicate whether or not to sync this resource to GitOps
+	LabelGitSync = "jenkins.io/gitSync"
 
 	// LabelKind to indicate the kind of auth, such as Git or Issue
 	LabelKind = "jenkins.io/kind"

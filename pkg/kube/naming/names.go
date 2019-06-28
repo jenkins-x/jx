@@ -1,9 +1,11 @@
-package kube
+package naming
 
 import (
 	"bytes"
+	"fmt"
 	"math"
 	"strings"
+	"unicode"
 )
 
 // ToValidImageName converts the given string into a valid docker image name
@@ -36,8 +38,19 @@ func toValidName(name string, allowDots bool, maxLength int) string {
 	var buffer bytes.Buffer
 	first := true
 	lastCharDash := false
-	lower := strings.ToLower(name)
-	for _, ch := range lower {
+	hasLetter := false
+	for _, ch := range name {
+		ch = unicode.ToLower(ch)
+		if ch >= 'a' && ch <= 'z' {
+			hasLetter = true
+			break
+		}
+	}
+	if !hasLetter {
+		name = fmt.Sprintf("x%s", name)
+	}
+	for _, ch := range name {
+		ch = unicode.ToLower(ch)
 		if buffer.Len()+1 > maxLength {
 			break
 		}

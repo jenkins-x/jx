@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/pkg/errors"
 	"math/rand"
 	"regexp"
 	"sort"
@@ -10,6 +11,9 @@ import (
 	"strings"
 	"time"
 )
+
+//DisallowedLabelCharacters regex of chars not allowed in lables
+var DisallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
 
 // RegexpSplit splits a string into an array using the regexSep as a separator
 func RegexpSplit(text string, regexSeperator string) []string {
@@ -220,7 +224,27 @@ func YesNo(t bool) string {
 	return "No"
 }
 
+// ExtractKeyValuePairs creates a map of an string array assuming that each array element is of the form <key><sep><value>.
+// An error is returned is a array element cannot be split into a key/value pair using the specified separator.
+func ExtractKeyValuePairs(values []string, sep string) (map[string]string, error) {
+	pairs := make(map[string]string)
+	for _, value := range values {
+		parts := strings.Split(value, sep)
+		if len(parts) != 2 {
+			return map[string]string{}, errors.Errorf("expected 2 parts for key value pair '%s', but got %v", value, len(parts))
+		}
+		pairs[parts[0]] = parts[1]
+	}
+	return pairs, nil
+}
+
 // QuestionAnswer returns strings like Cobra question/answers for default cli options
 func QuestionAnswer(question string, answer string) string {
 	return fmt.Sprintf("%s %s: %s", ColorBold(ColorInfo("?")), ColorBold(question), ColorAnswer(answer))
+}
+
+//SanitizeLabel returns a label with disallowed characters removed
+func SanitizeLabel(label string) string {
+	sanitized := strings.ToLower(label)
+	return DisallowedLabelCharacters.ReplaceAllString(sanitized, "-")
 }

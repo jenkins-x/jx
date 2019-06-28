@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -86,7 +87,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 	build := o.GetBuildNumber()
 	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
-		name := kube.ToValidName(pipeline + "-" + build)
+		name := naming.ToValidName(pipeline + "-" + build)
 		key := &kube.PromoteStepActivityKey{
 			PipelineActivityKey: kube.PipelineActivityKey{
 				Name:     name,

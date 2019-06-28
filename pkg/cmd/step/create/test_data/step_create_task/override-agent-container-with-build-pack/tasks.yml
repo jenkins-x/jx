@@ -6,6 +6,7 @@ items:
       labels:
         jenkins.io/task-stage-name: from-build-pack
         branch: override-default-agent
+        build: "1"
         owner: abayer
         repo: js-test-repo
       name: abayer-js-test-repo-override-de-from-build-pack-1
@@ -69,7 +70,7 @@ items:
               value: ${inputs.params.version}
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
-          image: gcr.io/jenkinsxio/builder-jx:0.1.477
+          image: gcr.io/jenkinsxio/builder-jx:0.1.527
           name: git-merge
           resources:
             requests:

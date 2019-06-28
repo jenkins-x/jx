@@ -5,7 +5,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"io/ioutil"
+	"os"
+	"path"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +25,15 @@ var (
 	cmdUnderTest        *cobra.Command
 	commonOptsUnderTest CommonOptions
 )
+
+type TestFlags struct {
+	Snafu      bool       `mapstructure:"snafu"`
+	ChildFlags ChildFlags `mapstructure:"children"`
+}
+
+type ChildFlags struct {
+	Child string `mapstructure:"child"`
+}
 
 func Test_FlagExplicitlySet_returns_true_if_flag_explicitly_set_to_false(t *testing.T) {
 	setupTestCommand()
@@ -46,7 +60,7 @@ func Test_FlagExplicitlySet_returns_false_if_flag_is_not_set(t *testing.T) {
 	assert.False(t, explicit, "the flag should not be explicitly set")
 }
 
-func Test_FlagExplicitlySet_returns_false_if_flag_is_unkown(t *testing.T) {
+func Test_FlagExplicitlySet_returns_false_if_flag_is_unknown(t *testing.T) {
 	setupTestCommand()
 
 	explicit := commonOptsUnderTest.IsFlagExplicitlySet("fubar")
@@ -89,6 +103,78 @@ func Test_JXNamespace(t *testing.T) {
 	assert.NoError(t, err, "Failed to create GitAuthConfigService")
 }
 
+func Test_GetConfiguration(t *testing.T) {
+	setupTestCommand()
+
+	fileContent := fmt.Sprintf("%s: %t\n", testFlagName, true)
+	configFile, removeTmp := setupTestConfig(t, fileContent)
+
+	defer removeTmp(configFile)
+
+	commonOptsUnderTest = CommonOptions{}
+	commonOptsUnderTest.ConfigFile = configFile
+
+	testFlags := TestFlags{}
+	err := commonOptsUnderTest.GetConfiguration(&testFlags)
+	assert.NoError(t, err, "Failed to GetConfiguration")
+
+	assert.Equal(t, true, testFlags.Snafu)
+}
+
+func Test_configExists_child(t *testing.T) {
+	setupTestCommand()
+
+	valuesYaml := fmt.Sprintf("children:\n  child: foo")
+	configFile, removeTmp := setupTestConfig(t, valuesYaml)
+
+	defer removeTmp(configFile)
+
+	assert.True(t, commonOptsUnderTest.configExists("children", "child"))
+}
+
+func Test_configExists_no_path(t *testing.T) {
+	setupTestCommand()
+
+	valuesYaml := fmt.Sprintf("snafu: true")
+	configFile, removeTmp := setupTestConfig(t, valuesYaml)
+
+	defer removeTmp(configFile)
+
+	assert.True(t, commonOptsUnderTest.configExists("", "snafu"))
+}
+
+func Test_configNotExists(t *testing.T) {
+	setupTestCommand()
+
+	valuesYaml := fmt.Sprintf("children:\n  child: foo")
+	configFile, removeTmp := setupTestConfig(t, valuesYaml)
+
+	defer removeTmp(configFile)
+
+	assert.False(t, commonOptsUnderTest.configExists("children", "son"))
+}
+
+func setupTestConfig(t *testing.T, config string) (string, func(string)) {
+	setupTestCommand()
+
+	tmpDir, err := ioutil.TempDir("", "")
+	require.Nil(t, err, "Failed creating tmp dir")
+	configFile := path.Join(tmpDir, "config.yaml")
+	err = ioutil.WriteFile(configFile, []byte(config), 0640)
+	require.Nil(t, err, "Failed writing config yaml file")
+
+	commonOptsUnderTest.ConfigFile = configFile
+
+	testFlags := TestFlags{}
+	err = commonOptsUnderTest.GetConfiguration(&testFlags)
+	assert.NoError(t, err, "Failed to GetConfiguration")
+
+	removeAllFunc := func(configFile string) {
+		_ = os.RemoveAll(configFile)
+	}
+	return configFile, removeAllFunc
+}
+
 func setupTestCommand() {
 	var flag bool
 	cmdUnderTest = &cobra.Command{
@@ -99,6 +185,7 @@ func setupTestCommand() {
 		},
 	}
 	cmdUnderTest.Flags().BoolVar(&flag, testFlagName, false, "")
+	_ = viper.BindPFlag(testFlagName, cmdUnderTest.Flags().Lookup(testFlagName))
 
 	commonOptsUnderTest = CommonOptions{}
 	commonOptsUnderTest.Cmd = cmdUnderTest

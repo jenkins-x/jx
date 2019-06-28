@@ -2,6 +2,8 @@ package gits
 
 import (
 	"bytes"
+	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -69,16 +71,17 @@ func ParseCommit(message string) *CommitInfo {
 
 	idx := strings.Index(message, ":")
 	if idx > 0 {
-		answer.Kind = message[0:idx]
-
-		rest := strings.TrimSpace(message[idx+1:])
-		if strings.HasPrefix(rest, "(") {
-			idx = strings.Index(rest, ")")
+		kind := message[0:idx]
+		if strings.HasSuffix(kind, ")") {
+			idx := strings.Index(kind, "(")
 			if idx > 0 {
-				answer.Feature = strings.TrimSpace(rest[1:idx])
-				rest = strings.TrimSpace(rest[idx+1:])
+				answer.Feature = strings.TrimSpace(kind[idx+1 : len(kind)-1])
+				kind = strings.TrimSpace(kind[0:idx])
 			}
 		}
+		answer.Kind = kind
+		rest := strings.TrimSpace(message[idx+1:])
+
 		answer.Message = rest
 	}
 	return answer
@@ -197,6 +200,46 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepository) (stri
 				buffer.WriteString("* " + msg + "\n")
 				previous = msg
 			}
+		}
+	}
+
+	ups := releaseSpec.DependencyUpdates
+
+	sort.Slice(ups, func(i, j int) bool {
+		if ups[i].Owner == ups[j].Owner {
+			if ups[i].Repo == ups[j].Repo {
+				if ups[i].Component == ups[j].Component {
+					if ups[i].FromVersion == ups[j].FromVersion {
+						return ups[i].ToVersion < ups[j].ToVersion
+					}
+					return ups[i].FromVersion < ups[j].FromVersion
+				}
+				return ups[i].Component < ups[j].Component
+			}
+			return ups[i].Repo < ups[j].Repo
+		}
+		return ups[i].Owner < ups[j].Owner
+	})
+
+	if len(ups) > 0 {
+		buffer.WriteString("\n### Dependency Updates\n\n")
+		var previous v1.DependencyUpdate
+		sequence := make([]v1.DependencyUpdate, 0)
+		buffer.WriteString("| Dependency | Component | New Version | Old Version |\n")
+		buffer.WriteString("| ---------- | --------- | ----------- | ----------- |\n")
+		for i, du := range releaseSpec.DependencyUpdates {
+			sequence = append(sequence, du)
+			// If it's the last element, or if the owner/repo:component changes, then print - this logic relies of the sort
+			// being owner, repo, component, fromVersion, ToVersion, which is done above
+			if i == len(releaseSpec.DependencyUpdates)-1 || du.Owner != previous.Owner || du.Repo != previous.Repo || du.Component != previous.Component {
+				// find the earliest from version
+				fromDu := sequence[0]
+				toDu := sequence[len(sequence)-1]
+				msg := fmt.Sprintf("| [%s/%s](%s) | %s | [%s](%s) | [%s](%s)|\n", toDu.Owner, toDu.Repo, toDu.URL, toDu.Component, toDu.ToVersion, toDu.ToReleaseHTMLURL, fromDu.FromVersion, fromDu.FromReleaseHTMLURL)
+				buffer.WriteString(msg)
+				sequence = make([]v1.DependencyUpdate, 0)
+			}
+			previous = du
 		}
 	}
 	return buffer.String(), nil

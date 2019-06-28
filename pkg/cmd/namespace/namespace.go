@@ -2,9 +2,11 @@ package namespace
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 
 	"github.com/pkg/errors"
@@ -96,12 +98,20 @@ func (o *NamespaceOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", info(ctx.Namespace), info(kube.Server(config, ctx)))
-
+		if ctx == nil {
+			_, _ = fmt.Fprintf(o.Out, "No kube context - probably in a unit test or pod?\n")
+		} else {
+			_, _ = fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", info(ctx.Namespace), info(kube.Server(config, ctx)))
+		}
 	} else {
 		ns := kube.CurrentNamespace(config)
 		server := kube.CurrentServer(config)
-		_, _ = fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
+		if config == nil {
+			_, _ = fmt.Fprintf(o.Out, "Using namespace '%s' on server '%s'. No context - probably a unit test or pod?\n", info(ns), info(server))
+
+		} else {
+			_, _ = fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
+		}
 	}
 	return nil
 }
@@ -131,7 +141,8 @@ func changeNamespace(client kubernetes.Interface, config *api.Config, pathOption
 	newConfig := *config
 	ctx := kube.CurrentContext(config)
 	if ctx == nil {
-		return nil, errors.New("there is no context defined in your Kubernetes configuration")
+		log.Warnf("there is no context defined in your Kubernetes configuration - we may be inside a test case or pod?\n")
+		return ctx, nil
 	}
 	if ctx.Namespace == ns {
 		return ctx, nil

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -145,7 +146,7 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 		return err
 	}
 	options := metav1.GetOptions{}
-	name := kube.ToValidName(kube.SecretJenkinsPipelineIssueCredentials + server.Kind + "-" + server.Name)
+	name := naming.ToValidName(kube.SecretJenkinsPipelineIssueCredentials + server.Kind + "-" + server.Name)
 	secrets := client.CoreV1().Secrets(ns)
 	secret, err := secrets.Get(name, options)
 	create := false

@@ -4,8 +4,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"regexp"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
@@ -13,6 +15,8 @@ import (
 const (
 	yamlDataKey = "yaml"
 )
+
+var vaultURIRegex = regexp.MustCompile(`vault:[-_\w\/:]*`)
 
 // Client is an interface for interacting with Vault
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/vault Client -o mocks/vault_client.go
@@ -33,7 +37,7 @@ type Client interface {
 	// Read reads a named secret from the vault
 	Read(secretName string) (map[string]interface{}, error)
 
-	// ReadObject reads a generic named objec from vault.
+	// ReadObject reads a generic named object from vault.
 	// The secret _must_ be serializable to JSON.
 	ReadObject(secretName string, secret interface{}) error
 
@@ -42,6 +46,9 @@ type Client interface {
 
 	// Config gets the config required for configuring the official Vault CLI
 	Config() (vaultURL url.URL, vaultToken string, err error)
+
+	// ReplaceURIs will replace any vault: URIs in a string (or whatever URL scheme the secret URL client supports
+	ReplaceURIs(text string) (string, error)
 }
 
 // client is a hand wrapper around the official Vault API
@@ -170,4 +177,9 @@ func (v *client) List(path string) ([]string, error) {
 func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 	parsed, err := url.Parse(v.client.Address())
 	return *parsed, v.client.Token(), err
+}
+
+// ReplaceURIs will replace any vault: URIs in a string (or whatever URL scheme the secret URL client supports
+func (v *client) ReplaceURIs(s string) (string, error) {
+	return secreturl.ReplaceURIs(s, v, vaultURIRegex, "vault:")
 }

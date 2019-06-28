@@ -3,22 +3,25 @@ package create
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"regexp"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
+
+	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/tenant"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/env"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
-	"time"
 
 	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
@@ -81,7 +84,7 @@ type InstallOptions struct {
 	kubevault.AWSConfig
 
 	InitOptions initcmd.InitOptions
-	Flags       InstallFlags
+	Flags       InstallFlags `mapstructure:"install"`
 
 	modifyConfigMapCallback ModifyConfigMapCallback
 	modifySecretCallback    ModifySecretCallback
@@ -91,6 +94,7 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
+	ConfigFile                  string
 	InstallOnly                 bool
 	Domain                      string
 	ExposeControllerURLTemplate string
@@ -228,6 +232,8 @@ This repository contains the source code for the Jenkins X Development Environme
 }
 `
 	longTermStorageFlagName = "long-term-storage"
+	kanikoFlagName          = "kaniko"
+	namespaceFlagName       = "namespace"
 )
 
 var (
@@ -345,7 +351,7 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
 	cmd.Flags().BoolVarP(&flags.RemoteEnvironments, "remote-environments", "", false, "Indicates you intend Staging and Production environments to run in remote clusters. See https://jenkins-x.io/getting-started/multi-cluster/")
 	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your Git repos will be of the form 'environment-$prefix-$envName'")
-	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
+	cmd.Flags().StringVarP(&flags.Namespace, namespaceFlagName, "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", opts.DefaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 	cmd.Flags().StringVarP(&flags.EnvironmentGitOwner, "environment-git-owner", "", "", "The Git provider organisation to create the environment Git repositories in")
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X ChartMuseum registry with your helm client [default false]")
@@ -369,17 +375,23 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().BoolVarP(&flags.RecreateVaultBucket, "vault-bucket-recreate", "", true, "If the vault bucket already exists delete it then create it empty")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
-	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
+	cmd.Flags().BoolVarP(&flags.Kaniko, kanikoFlagName, "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, "lts-bucket", "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
 	cmd.Flags().StringVarP(&options.Flags.CloudBeesDomain, "cloudbees-domain", "", "", "When setting up a letter/tenant cluster, this creates a tenant cluster on the cloudbees domain which is retrieved via the required URL")
 	cmd.Flags().StringVarP(&options.Flags.CloudBeesAuth, "cloudbees-auth", "", "", "Auth used when setting up a letter/tenant cluster, format: 'username:password'")
+	bindInstallConfigToFlags(cmd)
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
 	options.AdminSecretsService.AddAdminSecretsValues(cmd)
 	options.InitOptions.AddInitFlags(cmd)
+}
+
+func bindInstallConfigToFlags(cmd *cobra.Command) {
+	_ = viper.BindPFlag(installConfigKey(namespaceFlagName), cmd.Flags().Lookup(namespaceFlagName))
+	_ = viper.BindPFlag(installConfigKey(kanikoFlagName), cmd.Flags().Lookup(kanikoFlagName))
 }
 
 func (flags *InstallFlags) AddCloudEnvOptions(cmd *cobra.Command) {
@@ -391,6 +403,7 @@ func (flags *InstallFlags) AddCloudEnvOptions(cmd *cobra.Command) {
 
 // CheckFlags validates & configures install flags
 func (options *InstallOptions) CheckFlags() error {
+	log.Logger().Debug("checking installation flags")
 	flags := &options.Flags
 
 	if flags.NextGeneration && flags.StaticJenkins {
@@ -407,7 +420,9 @@ func (options *InstallOptions) CheckFlags() error {
 
 	if flags.KnativeBuild {
 		log.Logger().Warnf("Support for Knative Build is now deprecated. Please use '--tekton' instead. More details here: https://jenkins-x.io/architecture/jenkins-x-pipelines/\n")
+		flags.Tekton = false
 	}
+
 	if flags.Prow {
 		flags.StaticJenkins = false
 	}
@@ -437,6 +452,16 @@ func (options *InstallOptions) CheckFlags() error {
 		flags.StaticJenkins = true
 	}
 
+	// only kaniko is supported as a builder in tekton
+	if flags.Tekton {
+		if flags.Provider == cloud.GKE {
+			if !flags.Kaniko {
+				log.Logger().Warnf("When using tekton, only kaniko is supported as a builder")
+			}
+			flags.Kaniko = true
+		}
+	}
+
 	// check some flags combination for GitOps mode
 	if flags.GitOpsMode {
 		options.SkipAuthSecretsMerge = true
@@ -461,10 +486,36 @@ func (options *InstallOptions) CheckFlags() error {
 
 	// Make sure that the default environment prefix is configured. Typically it is the cluster
 	// name when the install command is called from create cluster.
-	if options.Flags.DefaultEnvironmentPrefix == "" {
-		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+	if flags.DefaultEnvironmentPrefix == "" {
+		clusterName := options.installValues[kube.ClusterName]
+		if clusterName == "" {
+			flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+		} else {
+			flags.DefaultEnvironmentPrefix = clusterName
+		}
 	}
 
+	if flags.DockerRegistry == "" {
+		dockerReg, err := options.dockerRegistryValue()
+		if err != nil {
+			log.Logger().Warnf("unable to calculate docker registry values - %s", err)
+		}
+		flags.DockerRegistry = dockerReg
+	}
+
+	// lets default the docker registry org to the project id
+	if flags.DockerRegistryOrg == "" {
+		flags.DockerRegistryOrg = options.installValues[kube.ProjectID]
+	}
+
+	log.Logger().Debugf("flags after checking - %+v", flags)
+
+	if flags.Tekton {
+		kind := options.GitRepositoryOptions.ServerKind
+		if kind != "" && kind != gits.KindGitHub {
+			return fmt.Errorf("Git provider: %s is not yet supported for Tekton.\nYou can work around this with '--static-jenkins'\nFor more details see: https://jenkins-x.io/about/status/", kind)
+		}
+	}
 	return nil
 }
 
@@ -481,11 +532,22 @@ func (options *InstallOptions) CheckFeatures() error {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
+
+	err := options.GetConfiguration(&options)
+	if err != nil {
+		return errors.Wrap(err, "getting install configuration")
+	}
 	// Check the provided flags before starting any installation
-	err := options.CheckFlags()
+	err = options.CheckFlags()
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
 	}
+
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+
 	if options.Flags.CloudBeesDomain != "" {
 		cloudbeesDomain := StripTrailingSlash(options.Flags.CloudBeesDomain)
 		cloudbeesAuth := options.Flags.CloudBeesAuth
@@ -495,15 +557,8 @@ func (options *InstallOptions) Run() error {
 		}
 		options.Flags.Domain = domain
 	}
-	err = options.selectJenkinsInstallation()
-	if err != nil {
-		return errors.Wrap(err, "selecting the Jenkins installation type")
-	}
 
 	configStore := configio.NewFileStore()
-
-	// Default to verbose mode to get more information during the install
-	options.Verbose = true
 
 	ns, originalNs, err := options.setupNamespace()
 	if err != nil {
@@ -610,7 +665,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
 	}
 
-	err = options.configureKaniko()
+	err = options.ConfigureKaniko()
 	if err != nil {
 		return errors.Wrap(err, "unable to generate the Kaniko configuration")
 	}
@@ -1621,7 +1676,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 				}
 				vaultClient, err := options.SystemVaultClient(devNamespace)
 				if err != nil {
-					return nil, errors.Wrap(err, "retrieving the system vault client")
+					return nil, errors.Wrapf(err, "retrieving the system vault client in namespace %s", devNamespace)
 				}
 				vaultConfigStore := configio.NewVaultStore(vaultClient, vault.GitOpsSecretsPath)
 				return gitOpsModifySecret(vault.GitOpsTemplatesPath, name, nil, vaultConfigStore, callback)
@@ -1876,7 +1931,8 @@ func (options *InstallOptions) installHelmBinaries() error {
 	return options.InstallMissingDependencies(dependencies)
 }
 
-func (options *InstallOptions) setInstallValues(values map[string]string) {
+// SetInstallValues sets the install values
+func (options *InstallOptions) SetInstallValues(values map[string]string) {
 	if values != nil {
 		if options.installValues == nil {
 			options.installValues = map[string]string{}
@@ -2132,10 +2188,12 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	return adminSecretsFileName, adminSecrets, nil
 }
 
-func (options *InstallOptions) configureKaniko() error {
+// ConfigureKaniko configures the kaniko SA and secret
+func (options *InstallOptions) ConfigureKaniko() error {
 	if options.Flags.Kaniko {
 		if options.Flags.Provider != cloud.GKE {
-			return fmt.Errorf("Kaniko is not supported for %s provider", options.Flags.Provider)
+			log.Logger().Infof("we are assuming your IAM roles are setup so that Kaniko can push images to your docker registry\n")
+			return nil
 		}
 
 		serviceAccountDir, err := ioutil.TempDir("", "gke")
@@ -2171,7 +2229,7 @@ func (options *InstallOptions) configureKaniko() error {
 			}
 		}
 
-		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("%s-ko", clusterName), 30)
+		serviceAccountName := naming.ToValidNameTruncated(fmt.Sprintf("%s-ko", clusterName), 30)
 		log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
@@ -2261,7 +2319,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
 			log.Logger().Info("Creating new system vault")
-			err = cvo.createVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
+			err = cvo.CreateVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
 			if err != nil {
 				return err
 			}
@@ -2287,7 +2345,7 @@ func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ..
 	}
 	vaultClient, err := options.SystemVaultClient(devNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieving the system vault client")
+		return errors.Wrapf(err, "retrieving the system vault client in namespace %s", devNamespace)
 	}
 
 	err = vault.WriteYamlFiles(vaultClient, path, files...)
@@ -2305,7 +2363,7 @@ func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSec
 	}
 	vaultClient, err := options.SystemVaultClient(devNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieving the system vault client")
+		return errors.Wrapf(err, "retrieving the system vault client in namespace %s", devNamespace)
 	}
 	secrets := map[vault.AdminSecret]config.BasicAuth{
 		vault.JenkinsAdminSecret:     svc.JenkinsAuth(),
@@ -2352,8 +2410,13 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 				return errors.Wrap(err, "asking to enable Long Term Storage")
 			}
 		} else {
-			options.Flags.LongTermStorage = true
-			log.Logger().Infof(util.QuestionAnswer("Default enabling long term logs storage", util.YesNo(options.Flags.LongTermStorage)))
+			if options.Flags.Provider == cloud.GKE {
+				options.Flags.LongTermStorage = true
+				log.Logger().Infof(util.QuestionAnswer("Default enabling long term logs storage", util.YesNo(options.Flags.LongTermStorage)))
+			} else {
+				options.Flags.LongTermStorage = false
+				log.Logger().Debugf("Long Term Storage not supported by provider '%s', disabling this option", options.Flags.Provider)
+			}
 		}
 	}
 
@@ -3126,6 +3189,14 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	if options.Flags.Provider == cloud.OPENSHIFT || options.Flags.Provider == cloud.MINISHIFT {
 		return "docker-registry.default.svc:5000", nil
 	}
+	if options.Flags.Provider == cloud.GKE {
+		if options.Flags.Kaniko {
+			return "gcr.io", nil
+		}
+	}
+
+	log.Logger().Debugf("unable to determine the dockerRegistryValue - provider=%s, defaulting to in-cluster registry", options.Flags.Provider)
+
 	return "", nil
 }
 
@@ -3218,7 +3289,7 @@ func validateClusterName(clustername string) error {
 	}
 	// Now we need only make sure that clustername is limited to
 	// lowercase alphanumerics and dashes.
-	if disallowedLabelCharacters.MatchString(clustername) {
+	if util.DisallowedLabelCharacters.MatchString(clustername) {
 		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
 		return err
 	}
@@ -3307,4 +3378,8 @@ func StripTrailingSlash(url string) string {
 		return url[0 : len(url)-1]
 	}
 	return url
+}
+
+func installConfigKey(key string) string {
+	return fmt.Sprintf("install.%s", key)
 }

@@ -379,6 +379,11 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 	return newPR, nil
 }
 
+// UpdatePullRequest updates pull request number with data
+func (b *BitbucketCloudProvider) UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error) {
+	return nil, errors.Errorf("Not yet implemented for bitbucket")
+}
+
 func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 
 	prID := int32(*pr.Number)
@@ -980,6 +985,12 @@ func (b *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRe
 	answer := []*GitRelease{}
 	log.Logger().Warn("Bitbucket Cloud doesn't support releases")
 	return answer, nil
+}
+
+// GetRelease is not supported on BitBucket Cloud
+func (b *BitbucketCloudProvider) GetRelease(org string, name string, tag string) (*GitRelease, error) {
+	log.Logger().Warn("Bitbucket Cloud doesn't support releases")
+	return nil, nil
 }
 
 func (b *BitbucketCloudProvider) AddCollaborator(user string, organisation string, repo string) error {

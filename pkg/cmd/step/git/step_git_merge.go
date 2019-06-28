@@ -41,13 +41,20 @@ master:ef08a6cd194c2687d4bc12df6bb8a86f53c348ba,2739:5b351f4eae3c4afbb90dd7787f8
 `)
 )
 
-type StepGitMergeCommand struct {
-	opts.StepGitMergeOptions
+// StepGitMergeOptions contains the command line flags
+type StepGitMergeOptions struct {
+	opts.StepOptions
+
+	SHAs       []string
+	Remote     string
+	Dir        string
+	BaseBranch string
+	BaseSHA    string
 }
 
 // NewCmdStepGitMerge create the 'step git envs' command
 func NewCmdStepGitMerge(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := opts.StepGitMergeOptions{
+	options := StepGitMergeOptions{
 		StepOptions: opts.StepOptions{
 			CommonOptions: commonOpts,
 		},
@@ -78,7 +85,7 @@ func NewCmdStepGitMerge(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // Run implements the command
-func (o *StepGitMergeCommand) Run() error {
+func (o *StepGitMergeOptions) Run() error {
 	if o.Remote == "" {
 		o.Remote = "origin"
 	}
@@ -117,7 +124,7 @@ func (o *StepGitMergeCommand) Run() error {
 	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git(), o.Verbose)
 }
 
-func (o *StepGitMergeCommand) setGitConfig() error {
+func (o *StepGitMergeOptions) setGitConfig() error {
 	user, err := o.GetCommandOutput(o.Dir, "git", "config", "user.name")
 	if err != nil || user == "" {
 		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")

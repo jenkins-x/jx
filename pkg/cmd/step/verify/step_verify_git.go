@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -48,8 +49,9 @@ func (o *StepVerifyGitOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	info := util.ColorInfo
 	for _, secret := range secrets.Items {
-		log.Infof("verifying git Secret %s\n", secret.Name)
+		log.Infof("verifying git Secret %s\n", info(secret.Name))
 		annotations := secret.Annotations
 		data := secret.Data
 		if annotations == nil {
@@ -79,10 +81,10 @@ func (o *StepVerifyGitOptions) Run() error {
 	}
 	servers := config.Servers
 	if len(servers) == 0 {
-		return fmt.Errorf("failed to find any Git servers from the Git Secrets")
+		return fmt.Errorf("failed to find any Git servers from the Git Secrets. There should be a Secret with label %s=%s", kube.LabelKind, kube.ValueKindGit)
 	}
 	for _, server := range servers {
-		log.Infof("verifying git server %s at %s\n", server.Name, server.URL)
+		log.Infof("verifying git server %s at %s\n", info(server.Name), info(server.URL))
 
 		pipelineUser := config.PipeLineUsername
 		if pipelineUser == "" {
@@ -107,7 +109,7 @@ func (o *StepVerifyGitOptions) Run() error {
 			orgNames = append(orgNames, org.Login)
 		}
 		sort.Strings(orgNames)
-		log.Infof("found %d organisations in git server %s: %s\n", len(orgs), server.URL, strings.Join(orgNames, ", "))
+		log.Infof("found %d organisations in git server %s: %s\n", len(orgs), info(server.URL), info(strings.Join(orgNames, ", ")))
 	}
 
 	log.Infof("git tokens seem to be setup correctly\n")

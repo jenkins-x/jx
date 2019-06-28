@@ -1201,7 +1201,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				}
 			}
 
-			pipeline, tasks, structure, err := parsed.GenerateCRDs("somepipeline", "1", "jx", nil, nil, "source", nil)
+			pipeline, tasks, structure, err := parsed.GenerateCRDs("somepipeline", "1", "jx", nil, nil, "source", nil, "")
 
 			if err != nil {
 				if tt.expectedErrorMsg != "" {
@@ -1743,7 +1743,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				Unit: syntax.TimeoutUnitSeconds,
 			},
 		},
-		Env: []syntax.EnvVar{
+		Env: []corev1.EnvVar{
 			{
 				Name:  "ANIMAL",
 				Value: "MONKEY",
@@ -1816,7 +1816,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 								Image: "some-other-image",
 							},
 						}},
-						Env: []syntax.EnvVar{
+						Env: []corev1.EnvVar{
 							{
 								Name:  "STAGE_VAR_ONE",
 								Value: "some value",

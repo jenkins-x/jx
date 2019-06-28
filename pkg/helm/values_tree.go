@@ -1,13 +1,19 @@
 package helm
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/engine"
 
 	"github.com/ghodss/yaml"
 
@@ -26,15 +32,24 @@ var DefaultValuesTreeIgnores = []string{
 // Any keys used that match files with the same name in the directory (
 // and have empty values) will be inlined as block scalars.
 // Standard UNIX glob patterns can be passed to IgnoreFile directories.
-func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) {
+func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient secreturl.Client) ([]byte, chartutil.Values, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	} else if os.IsNotExist(err) {
-		return nil, fmt.Errorf("%s does not exist", dir)
+		return nil, nil, fmt.Errorf("%s does not exist", dir)
 	} else if !info.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", dir)
+		return nil, nil, fmt.Errorf("%s is not a directory", dir)
 	}
+
+	// load the parameter values if there are any
+	params, err := LoadParameters(dir, secretURLClient)
+	if err != nil {
+		return nil, params, err
+	}
+	funcMap := engine.FuncMap()
+	funcMap["hashPassword"] = util.HashPassword
+
 	if ignores == nil {
 		ignores = DefaultValuesTreeIgnores
 	}
@@ -52,8 +67,23 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 			rDir, file := filepath.Split(rPath)
 			// For the root dir we just consider directories (which the walk func does for us)
 			if rDir != "" {
-				// If it's values.yaml, then read and parse it
-				if file == "values.yaml" {
+				// If it's values.tmpl.yaml, then evalate it as a go template and parse it
+				if file == ValuesTemplateFileName {
+					b, err := ReadValuesYamlFileTemplateOutput(path, params, funcMap)
+					if err != nil {
+						return err
+					}
+					v := make(map[string]interface{})
+
+					err = yaml.Unmarshal(b, &v)
+					if err != nil {
+						return err
+					}
+					if values[rDir] != nil {
+						return fmt.Errorf("already has a nested values map at %s when processing file %s", rDir, rPath)
+					}
+					values[rDir] = v
+				} else if file == ValuesFileName {
 					b, err := ioutil.ReadFile(path)
 					if err != nil {
 						return err
@@ -63,6 +93,9 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 					err = yaml.Unmarshal(b, &v)
 					if err != nil {
 						return err
+					}
+					if values[rDir] != nil {
+						return fmt.Errorf("already has a nested values map at %s when processing file %s", rDir, rPath)
 					}
 					values[rDir] = v
 				} else {
@@ -81,13 +114,37 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, params, err
 	}
 	// Load the root values.yaml
-	rootValuesFileName := filepath.Join(dir, ValuesFileName)
-	rootValues, err := LoadValuesFile(rootValuesFileName)
+	rootData := []byte{}
+
+	rootValuesFileName := filepath.Join(dir, ValuesTemplateFileName)
+	exists, err := util.FileExists(rootValuesFileName)
 	if err != nil {
-		return nil, err
+		return nil, params, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
+	}
+	if exists {
+		rootData, err = ReadValuesYamlFileTemplateOutput(rootValuesFileName, params, funcMap)
+		if err != nil {
+			return nil, params, errors.Wrapf(err, "failed to render template of file %s", rootValuesFileName)
+		}
+	} else {
+		rootValuesFileName = filepath.Join(dir, ValuesFileName)
+		exists, err = util.FileExists(rootValuesFileName)
+		if err != nil {
+			return nil, params, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
+		}
+		if exists {
+			rootData, err = ioutil.ReadFile(rootValuesFileName)
+			if err != nil {
+				return nil, params, errors.Wrapf(err, "failed to load file %s", rootValuesFileName)
+			}
+		}
+	}
+	rootValues, err := LoadValues(rootData)
+	if err != nil {
+		return nil, params, err
 	}
 
 	// externalFileHandler is used to read any inline any files that match into the values.yaml
@@ -104,7 +161,7 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 		if dirFiles := files[p]; dirFiles != nil && len(dirFiles) > 0 {
 			err := HandleExternalFileRefs(v, dirFiles, "", externalFileHandler)
 			if err != nil {
-				return nil, err
+				return nil, params, err
 			}
 		}
 
@@ -128,7 +185,7 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 					v2, ok2 := v1.(map[string]interface{})
 
 					if !ok2 {
-						return nil, fmt.Errorf("%s is not an associative array", jsonPath)
+						return nil, params, fmt.Errorf("%s is not an associative array", jsonPath)
 					}
 					x = v2
 				}
@@ -138,7 +195,27 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 			}
 		}
 	}
-	return yaml.Marshal(rootValues)
+	data, err := yaml.Marshal(rootValues)
+	return data, params, err
+}
+
+// ReadValuesYamlFileTemplateOutput evaluates the given values.yaml file as a go template and returns the output data
+func ReadValuesYamlFileTemplateOutput(templateFile string, params chartutil.Values, funcMap template.FuncMap) ([]byte, error) {
+	tmpl, err := template.New(ValuesTemplateFileName).Option("missingkey=error").Funcs(funcMap).ParseFiles(templateFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse Secrets template: %s", templateFile)
+	}
+
+	templateData := map[string]interface{}{
+		"Parameters": chartutil.Values(params),
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, templateData)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to execute Secrets template: %s", templateFile)
+	}
+	data := buf.Bytes()
+	return data, nil
 }
 
 // HandleExternalFileRefs recursively scans the element map structure,

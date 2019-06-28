@@ -13,7 +13,8 @@ import (
 // StepSchedulerConfigApplyOptions contains the command line flags
 type StepSchedulerConfigApplyOptions struct {
 	opts.StepOptions
-	Agent string
+	Agent         string
+	ApplyDirectly bool
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback gits.ConfigureGitFn
 }
@@ -52,6 +53,7 @@ func NewCmdStepSchedulerConfigApply(commonOpts *opts.CommonOptions) *cobra.Comma
 	}
 	options.AddCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Agent, "agent", "", "prow", "The scheduler agent to use e.g. Prow")
+	cmd.Flags().BoolVarP(&options.ApplyDirectly, "direct", "", false, "Skip generating a PR and apply the pipeline config directly to the cluster when using gitops mode.")
 	return cmd
 }
 
@@ -68,11 +70,16 @@ func (o *StepSchedulerConfigApplyOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		cfg, plugs, err := pipelinescheduler.GenerateProw(gitOps, jxClient, ns, teamSettings.DefaultScheduler.Name, devEnv)
+		cfg, plugs, err := pipelinescheduler.GenerateProw(gitOps, true, jxClient, ns, teamSettings.DefaultScheduler.Name, devEnv, nil)
 		if err != nil {
 			return errors.Wrapf(err, "generating Prow config")
 		}
-		if gitOps {
+		kubeClient, ns, err := o.KubeClientAndNamespace()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if gitOps && !o.ApplyDirectly {
 			opts := pipelinescheduler.GitOpsOptions{
 				Verbose: o.Verbose,
 				DevEnv:  devEnv,
@@ -91,15 +98,11 @@ func (o *StepSchedulerConfigApplyOptions) Run() error {
 			opts.ConfigureGitFn = o.ConfigureGitCallback
 			opts.Gitter = o.Git()
 			opts.Helmer = o.Helm()
-			err = opts.AddToEnvironmentRepo(cfg, plugs)
+			err = opts.AddToEnvironmentRepo(cfg, plugs, kubeClient, ns)
 			if err != nil {
 				return errors.Wrapf(err, "adding Prow config to environment repo")
 			}
 		} else {
-			kubeClient, ns, err := o.KubeClientAndNamespace()
-			if err != nil {
-				return errors.WithStack(err)
-			}
 			err = pipelinescheduler.ApplyDirectly(kubeClient, ns, cfg, plugs)
 			if err != nil {
 				return errors.Wrapf(err, "applying Prow config")

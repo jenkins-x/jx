@@ -23,12 +23,14 @@ debug
 #Various temporary created while building/running jx.
 /build/
 release/
+dist/
 scanning/
 .updatebot-repos/
 .terraform/
 myvalues.yaml
 myvalues.yml
 **/extraValues.yaml
+changelog.md
 
 # vim swap files
 *.swp

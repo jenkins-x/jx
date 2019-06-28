@@ -38,6 +38,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater":                       schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy":                       schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep":                    schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate":                    schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment":                         schema_pkg_apis_jenkinsio_v1_Environment(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter":                   schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentList":                     schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
@@ -81,11 +82,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement":                         schema_pkg_apis_jenkinsio_v1_Measurement(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger":                              schema_pkg_apis_jenkinsio_v1_Merger(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original":                            schema_pkg_apis_jenkinsio_v1_Original(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodic":                            schema_pkg_apis_jenkinsio_v1_Periodic(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodics":                           schema_pkg_apis_jenkinsio_v1_Periodics(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity":                    schema_pkg_apis_jenkinsio_v1_PipelineActivity(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityList":                schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec":                schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep":                schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension":                   schema_pkg_apis_jenkinsio_v1_PipelineExtension(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure":                   schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureList":               schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage":              schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
@@ -143,6 +147,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails":                         schema_pkg_apis_jenkinsio_v1_UserDetails(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserList":                            schema_pkg_apis_jenkinsio_v1_UserList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserSpec":                            schema_pkg_apis_jenkinsio_v1_UserSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Welcome":                             schema_pkg_apis_jenkinsio_v1_Welcome(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Workflow":                            schema_pkg_apis_jenkinsio_v1_Workflow(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowList":                        schema_pkg_apis_jenkinsio_v1_WorkflowList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowPreconditions":               schema_pkg_apis_jenkinsio_v1_WorkflowPreconditions(ref),
@@ -282,11 +287,16 @@ func schema_pkg_apis_jenkinsio_v1_AppSpec(ref common.ReferenceCallback) common.O
 							Ref: ref("k8s.io/api/rbac/v1.Role"),
 						},
 					},
+					"pipelineExtension": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.Container", "k8s.io/api/rbac/v1.Role"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension", "k8s.io/api/core/v1.Container", "k8s.io/api/rbac/v1.Role"},
 	}
 }
 
@@ -1120,6 +1130,87 @@ func schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DependencyUpdate describes an dependency update message from the commit log",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"URL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Owner": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Host": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Repo": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"FromVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"FromReleaseHTMLURL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"FromReleaseName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ToVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ToReleaseHTMLURL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ToReleaseName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Component": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"URL", "Owner", "Host", "Repo", "FromVersion", "FromReleaseHTMLURL", "FromReleaseName", "ToVersion", "ToReleaseHTMLURL", "ToReleaseName", "Component"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -2802,12 +2893,18 @@ func schema_pkg_apis_jenkinsio_v1_JobBase(ref common.ReferenceCallback) common.O
 							Format:      "",
 						},
 					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec is the Kubernetes pod spec used if Agent is kubernetes.",
+							Ref:         ref("k8s.io/api/core/v1.PodSpec"),
+						},
+					},
 				},
 				Required: []string{"name", "agent"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString", "k8s.io/api/core/v1.PodSpec"},
 	}
 }
 
@@ -2991,6 +3088,82 @@ func schema_pkg_apis_jenkinsio_v1_Original(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Periodic(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Periodic defines a job to be run periodically",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"JobBase": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase"),
+						},
+					},
+					"interval": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Interval to wait between two runs of the job.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cron": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Cron representation of job trigger time",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"tags": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tags for config entries",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+						},
+					},
+				},
+				Required: []string{"interval", "cron"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Periodics(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Periodics is a list of jobs to be run periodically",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"entries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Items are the post submit configurations",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodic"),
+									},
+								},
+							},
+						},
+					},
+					"replace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replace the existing entries",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodic"},
 	}
 }
 
@@ -3319,6 +3492,56 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineExtension(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineExtension defines the image and command of an app which wants to modify/extend the pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the container specified as a DNS_LABEL.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Docker image name.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Entrypoint array. Not executed within a shell.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Arguments to the entrypoint.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -3809,9 +4032,16 @@ func schema_pkg_apis_jenkinsio_v1_Presubmit(ref common.ReferenceCallback) common
 							Format:      "",
 						},
 					},
-					"query": {
+					"queries": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query"),
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query"),
+									},
+								},
+							},
 						},
 					},
 					"policy": {
@@ -4589,6 +4819,18 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 							},
 						},
 					},
+					"dependencyUpdates": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate"),
+									},
+								},
+							},
+						},
+					},
 					"releaseNotesURL": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -4611,7 +4853,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary"},
 	}
 }
 
@@ -5080,11 +5322,40 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref common.ReferenceCallback) co
 							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater"),
 						},
 					},
+					"welcome": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Welcome"),
+									},
+								},
+							},
+						},
+					},
+					"periodics": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodics"),
+						},
+					},
+					"attachments": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodics", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Welcome"},
 	}
 }
 
@@ -5806,6 +6077,13 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
+					"prowConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProwConfig is the way we manage prow configurations",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -6114,6 +6392,26 @@ func schema_pkg_apis_jenkinsio_v1_UserSpec(ref common.ReferenceCallback) common.
 						},
 					},
 					"imageUrl": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_Welcome(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Welcome welcome plugin config",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"message_template": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",

@@ -1,0 +1,17 @@
+adminUser:
+  password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/adminUser:password
+  username: admin
+docker:
+  password: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/docker:password
+  url: https://index.docker.io/v1/
+  username: james
+enableDocker: true
+enableGpg: false
+gitProvider: github
+pipelineUser:
+  github:
+    host: github.com
+    token: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/pipelineUser-github:token
+    username: james
+prow:
+  hmacToken: vault:gitOps/{{ .org }}/environment-{{ .org }}-{{ .repo }}-dev/prow:hmacToken

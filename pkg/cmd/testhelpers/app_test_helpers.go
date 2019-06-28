@@ -219,6 +219,8 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
 	fakeGitProvider.User.Username = testOrgName
 
+	MockFactoryFakeClients(mockFactory)
+
 	var devEnv *jenkinsv1.Environment
 	if gitOps {
 		devEnv = kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,

@@ -6,6 +6,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ClassicWorkloadBuildPackURL the git URL for classic workload build packs
+	ClassicWorkloadBuildPackURL = "https://github.com/jenkins-x-buildpacks/jenkins-x-classic.git"
+	// ClassicWorkloadBuildPackRef the git reference/version for the classic workloads build packs
+	ClassicWorkloadBuildPackRef = "master"
+	// KubernetesWorkloadBuildPackURL the git URL for kubernetes workloads build packs
+	KubernetesWorkloadBuildPackURL = "https://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes.git"
+	// KubernetesWorkloadBuildPackRef the git reference/version for the kubernetes workloads build packs
+	KubernetesWorkloadBuildPackRef = "master"
+)
+
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -114,6 +125,17 @@ const (
 	ProwEngineTypeTekton ProwEngineType = "Tekton"
 )
 
+// ProwConfigType is the type of prow configuration
+type ProwConfigType string
+
+const (
+	// ProwConfigScheduler when we use the Scheduler CRDs to generate the Prow ConfigMaps
+	ProwConfigScheduler ProwConfigType = "Scheduler"
+
+	// ProwConfigLegacy when we manually modify the Prow ConfigMaps 'config' and 'plugins' by hand
+	ProwConfigLegacy ProwConfigType = "Legacy"
+)
+
 // WebHookEngineType is the type of webhook processing implementation the team uses
 type WebHookEngineType string
 
@@ -196,6 +218,9 @@ type TeamSettings struct {
 	// AppsPrefixes is the list of prefixes for appNames
 	AppsPrefixes     []string          `json:"appPrefixes,omitempty" protobuf:"bytes,27,opt,name=appPrefixes"`
 	DefaultScheduler ResourceReference `json:"defaultScheduler,omitempty" protobuf:"bytes,28,opt,name=defaultScheduler"`
+
+	// ProwConfig is the way we manage prow configurations
+	ProwConfig ProwConfigType `json:"prowConfig,omitempty" protobuf:"bytes,29,opt,name=prowConfig"`
 }
 
 // StorageLocation
@@ -330,7 +355,11 @@ func (t *TeamSettings) SetStorageLocation(classifier string, storage StorageLoca
 // GetImportMode returns the import mode - returning a default value if it has not been populated yet
 func (t *TeamSettings) GetImportMode() ImportModeType {
 	if string(t.ImportMode) == "" {
-		return ImportModeTypeJenkinsfile
+		if t.IsJenkinsXPipelines() {
+			t.ImportMode = ImportModeTypeYAML
+		} else {
+			t.ImportMode = ImportModeTypeJenkinsfile
+		}
 	}
 	return t.ImportMode
 }
@@ -338,13 +367,42 @@ func (t *TeamSettings) GetImportMode() ImportModeType {
 // GetProwEngine returns the import mode - returning a default value if it has not been populated yet
 func (t *TeamSettings) GetProwEngine() ProwEngineType {
 	if string(t.ProwEngine) == "" {
-		return ProwEngineTypeTekton
+		t.ProwEngine = ProwEngineTypeTekton
 	}
 	return t.ProwEngine
 }
 
+// GetProwConfig returns the kind of prow configuration
+func (t *TeamSettings) GetProwConfig() ProwConfigType {
+	if string(t.ProwConfig) == "" {
+		t.ProwConfig = ProwConfigLegacy
+	}
+	return t.ProwConfig
+}
+
+// DefaultMissingValues defaults any missing values
+func (t *TeamSettings) DefaultMissingValues() {
+	if t.BuildPackURL == "" {
+		t.BuildPackURL = KubernetesWorkloadBuildPackURL
+	}
+	if t.BuildPackRef == "" {
+		t.BuildPackRef = KubernetesWorkloadBuildPackRef
+	}
+
+	// lets invoke the getters to lazily populate any missing values
+	t.GetProwConfig()
+	t.GetProwConfig()
+	t.GetImportMode()
+}
+
 // IsJenkinsXPipelines returns true if using tekton
 func (t *TeamSettings) IsJenkinsXPipelines() bool {
+	return t.IsProw() && t.GetProwEngine() == ProwEngineTypeTekton
+}
+
+// IsSchedulerMode returns true if we setup Prow configuration via the Scheduler CRDs
+// rather than directly modifying the Prow ConfigMaps directly
+func (t *TeamSettings) IsSchedulerMode() bool {
 	return t.IsProw() && t.GetProwEngine() == ProwEngineTypeTekton
 }
 

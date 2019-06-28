@@ -6,6 +6,7 @@ items:
       labels:
         jenkins.io/task-stage-name: from-build-pack
         branch: master
+        build: "1"
         owner: abayer
         repo: jx-demo-qs
       name: abayer-jx-demo-qs-master-from-build-pack-1
@@ -75,7 +76,7 @@ items:
               value: ${inputs.params.version}
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
-          image: gcr.io/jenkinsxio/builder-jx:0.1.477
+          image: gcr.io/jenkinsxio/builder-jx:0.1.527
           name: git-merge
           resources:
             requests:
@@ -224,7 +225,7 @@ items:
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
           image: jenkinsxio/builder-maven-java11:0.1.235
-          name: build-step3
+          name: build-before-mvn-deploy
           resources:
             requests:
               cpu: 400m
@@ -321,7 +322,7 @@ items:
               readOnly: true
           workingDir: /workspace/source
         - args:
-            - skaffold version
+            - echo goodbye
           command:
             - /bin/sh
             - -c
@@ -446,7 +447,7 @@ items:
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
           image: jenkinsxio/builder-maven-java11:0.1.235
-          name: build-step6
+          name: build-after-skaffold-version
           resources:
             requests:
               cpu: 400m

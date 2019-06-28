@@ -166,7 +166,7 @@ type schemaWriterTemplateData struct {
 // InstallOpenApiGen installs the openapi-gen tool from the github.com/kubernetes/kube-openapi repository.
 func InstallOpenApiGen(version string, gopath string) error {
 	util.AppLogger().Infof("installing %s with version %s via 'go get' to %s", openApiGen, version, gopath)
-	err := util.GoGet(openApiGen, version, gopath, true, false)
+	err := util.GoGet(openApiGen, version, gopath, false, false)
 	if err != nil {
 		return err
 	}

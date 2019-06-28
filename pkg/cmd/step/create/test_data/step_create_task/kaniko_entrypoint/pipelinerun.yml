@@ -4,6 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     branch: fix-kaniko-special-casing
+    build: "1"
     owner: jenkins-x
     repo: jx
   name: jenkins-x-jx-fix-kaniko-special-1

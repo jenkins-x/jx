@@ -2,11 +2,14 @@ package opts
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/spf13/pflag"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -138,8 +141,10 @@ type CommonOptions struct {
 	systemVaultClient      vault.Client
 	tektonClient           tektonclient.Interface
 	vaultClient            vault.Client
+	secretURLClient        secreturl.Client
 	vaultOperatorClient    vaultoperatorclient.Interface
 	AdvancedMode           bool
+	ConfigFile             string
 }
 
 type ServerFlags struct {
@@ -210,13 +215,13 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Logger().Infof("Setting the dev namespace to: %s", util.ColorInfo(ns))
+	log.Logger().Debugf("Setting the dev namespace to: %s", util.ColorInfo(ns))
 }
 
 func (o *CommonOptions) SetCurrentNamespace(ns string) {
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Logger().Infof("Setting the current namespace to: %s", util.ColorInfo(ns))
+	log.Logger().Debugf("Setting the current namespace to: %s", util.ColorInfo(ns))
 }
 
 // AddBaseFlags adds the base flags for all commands
@@ -235,11 +240,51 @@ func (o *CommonOptions) AddBaseFlags(cmd *cobra.Command) {
 func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	o.AddBaseFlags(cmd)
 
+	cmd.PersistentFlags().StringVarP(&o.ConfigFile, "config-file", "", "", "Configuration file used for installation")
 	cmd.PersistentFlags().BoolVarP(&o.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
 	cmd.PersistentFlags().BoolVarP(&o.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
 	cmd.PersistentFlags().BoolVarP(&o.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
 
 	o.Cmd = cmd
+}
+
+// GetConfiguration read the config file marshal into a config struct
+func (o *CommonOptions) GetConfiguration(config interface{}) error {
+	configFile := o.ConfigFile
+	if configFile != "" {
+		viper.SetConfigFile(configFile)
+		viper.SetConfigType("yaml")
+		if err := viper.ReadInConfig(); err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				log.Logger().Warnf("Config file %s not found", configFile)
+			} else {
+				return err
+			}
+		} else {
+			err = viper.Unmarshal(config)
+			if err != nil {
+				return errors.Wrap(err, "unable to decode into config struct")
+			}
+		}
+	}
+	createDebugConfigFile("debug", "config.yaml")
+	return nil
+}
+
+func createDebugConfigFile(dir string, file string) {
+	wkDir, err := util.ConfigDir()
+	if err != nil {
+		log.Logger().Debugf("error determining config dir %v", err)
+	} else {
+		dir := filepath.Join(wkDir, dir)
+		if err = os.MkdirAll(dir, util.DefaultWritePermissions); err != nil {
+			log.Logger().Warnf("Error making directory: %s %s", dir, err)
+		}
+		configFile := filepath.Join(dir, file)
+		if err = viper.WriteConfigAs(configFile); err != nil {
+			log.Logger().Warnf("Error writing config file %s", err)
+		}
+	}
 }
 
 // ApiExtensionsClient return or creates the api extension client
@@ -271,6 +316,9 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, error) {
 			o.currentNamespace = currentNs
 		}
 	}
+	if o.kubeClient == nil {
+		return o.kubeClient, fmt.Errorf("failed to create KubeClient")
+	}
 	return o.kubeClient, nil
 }
 
@@ -295,6 +343,26 @@ func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, strin
 		o.devNamespace, _, err = kube.GetDevNamespace(kubeClient, curNs)
 	}
 	return kubeClient, o.devNamespace, err
+}
+
+// GetDeployNamespace returns the namespace option from the command line option if defined otherwise we try
+// the $DEPLOY_NAMESPACE environment variable. If none of those are found lets use the current
+// kubernetes namespace value
+func (o *CommonOptions) GetDeployNamespace(namespaceOption string) (string, error) {
+	ns := namespaceOption
+	if ns == "" {
+		ns = os.Getenv("DEPLOY_NAMESPACE")
+	}
+
+	if ns == "" {
+		var err error
+		_, ns, err = o.KubeClientAndNamespace()
+		if err != nil {
+			return ns, err
+		}
+		log.Logger().Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
+	}
+	return ns, nil
 }
 
 // SetJxClient set the jx client
@@ -1130,7 +1198,7 @@ func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
 	return istioclient.NewForConfig(config)
 }
 
-// IsFlagExplicitlySet checks whether the flag with the specified name is explicitly set by the uer.
+// IsFlagExplicitlySet checks whether the flag with the specified name is explicitly set by the user.
 // If so, true is returned, false otherwise.
 func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
 	explicit := false
@@ -1141,4 +1209,37 @@ func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
 	}
 	o.Cmd.Flags().Visit(explicitlySetFunc)
 	return explicit
+}
+
+// IsConfigExplicitlySet checks whether the flag or config with the specified name is explicitly set by the user.
+// If so, true is returned, false otherwise.
+func (o *CommonOptions) IsConfigExplicitlySet(configPath, configKey string) bool {
+	if o.IsFlagExplicitlySet(configKey) || o.configExists(configPath, configKey) {
+		return true
+	}
+	return false
+}
+
+func (o *CommonOptions) configExists(configPath, configKey string) bool {
+	if configPath != "" {
+		path := append(strings.Split(configPath, "."), configKey)
+		configMap := viper.GetStringMap(path[0])
+		m := map[string]interface{}{path[0]: configMap}
+
+		for _, k := range path {
+			m2, ok := m[k]
+			if !ok {
+				return false
+			}
+			m3, ok := m2.(map[string]interface{})
+			if !ok {
+				if k != configKey {
+					return false
+				}
+			}
+			m = m3
+		}
+		return true
+	}
+	return viper.InConfig(configKey)
 }

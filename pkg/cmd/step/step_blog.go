@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	releases2 "github.com/jenkins-x/jx/pkg/gits/releases"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/chats"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -175,7 +176,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 	release := o.State.Release
 	history := o.State.History
 	if history != nil {
-		history.DownloadMetrics(o.ToDate, gits.ReleaseDownloadCount(releases))
+		history.DownloadMetrics(o.ToDate, releases2.ReleaseDownloadCount(releases))
 		if release != nil {
 			spec := &release.Spec
 			issuesClosed := len(spec.Issues)

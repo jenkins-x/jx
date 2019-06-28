@@ -2,14 +2,13 @@ package get
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -79,7 +78,7 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 	if pipeline == "" {
 		return fmt.Errorf("No $JOB_NAME defined for the current pipeline job to use")
 	}
-	name := kube.ToValidName(pipeline)
+	name := naming.ToValidName(pipeline)
 
 	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
@@ -92,7 +91,8 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 	}
 	for _, env := range envList.Items {
 		if env.Spec.Kind == v1.EnvironmentKindTypePreview && env.Name == name {
-			log.Logger().Infof("%s", env.Spec.PreviewGitSpec.ApplicationURL)
+			// lets log directly to stdout for easy capture of the URL from shell scripts
+			fmt.Println(env.Spec.PreviewGitSpec.ApplicationURL)
 			return nil
 		}
 	}

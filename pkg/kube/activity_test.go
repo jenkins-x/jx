@@ -2,10 +2,12 @@ package kube_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -98,7 +100,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	)
 	expectedPipeline := expectedOrganisation + "/" + expectedName + "/master"
 
-	sourceRepoName := kube.ToValidName(expectedOrganisation + "-" + expectedName)
+	sourceRepoName := naming.ToValidName(expectedOrganisation + "-" + expectedName)
 
 	key := kube.PipelineActivityKey{
 		Name:     expectedName,

@@ -24,3 +24,8 @@ type StepGitMergeOptions struct {
 	BaseBranch string
 	BaseSHA    string
 }
+
+// StepCreateOptions contains the command line flags
+type StepCreateOptions struct {
+	StepOptions
+}

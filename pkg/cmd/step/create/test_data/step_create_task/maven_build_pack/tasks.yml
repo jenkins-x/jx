@@ -6,6 +6,7 @@ items:
       labels:
         jenkins.io/task-stage-name: from-build-pack
         branch: master
+        build: "1"
         owner: abayer
         repo: jx-demo-qs
       name: abayer-jx-demo-qs-master-from-build-pack-1
@@ -75,7 +76,7 @@ items:
               value: ${inputs.params.version}
             - name: PREVIEW_VERSION
               value: ${inputs.params.version}
-          image: gcr.io/jenkinsxio/builder-jx:0.1.477
+          image: gcr.io/jenkinsxio/builder-jx:0.1.527
           name: git-merge
           resources:
             requests:

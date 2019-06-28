@@ -2,6 +2,7 @@ package create_test
 
 import (
 	"errors"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"os"
@@ -55,40 +56,115 @@ func TestCheckFlags(t *testing.T) {
 		prow           bool
 		staticJenkins  bool
 		knativeBuild   bool
+		kaniko         bool
+		provider       string
+		dockerRegistry string
 		err            error
 	}{
 		{
-			name:           "default",
-			in:             &create.InstallFlags{},
+			name: "default",
+			in: &create.InstallFlags{
+				Provider: cloud.GKE,
+			},
 			nextGeneration: false,
 			tekton:         false,
 			prow:           false,
 			staticJenkins:  true,
 			knativeBuild:   false,
+			kaniko:         false,
+			dockerRegistry: "",
 			err:            nil,
 		},
 		{
 			name: "next_generation",
 			in: &create.InstallFlags{
 				NextGeneration: true,
+				Provider:       cloud.GKE,
 			},
 			nextGeneration: true,
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
 			knativeBuild:   false,
+			kaniko:         true,
+			dockerRegistry: "gcr.io",
 			err:            nil,
 		},
 		{
 			name: "prow",
 			in: &create.InstallFlags{
-				Prow: true,
+				Prow:     true,
+				Provider: cloud.GKE,
 			},
 			nextGeneration: false,
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
 			knativeBuild:   false,
+			kaniko:         true,
+			dockerRegistry: "gcr.io",
+			err:            nil,
+		},
+		{
+			name: "tekton_and_gke",
+			in: &create.InstallFlags{
+				Tekton:   true,
+				Provider: cloud.GKE,
+			},
+			nextGeneration: false,
+			tekton:         true,
+			prow:           true,
+			staticJenkins:  false,
+			knativeBuild:   false,
+			kaniko:         true,
+			dockerRegistry: "gcr.io",
+			err:            nil,
+		},
+		{
+			name: "tekton_and_eks",
+			in: &create.InstallFlags{
+				Tekton:   true,
+				Provider: cloud.EKS,
+			},
+			nextGeneration: false,
+			tekton:         true,
+			prow:           true,
+			staticJenkins:  false,
+			knativeBuild:   false,
+			kaniko:         false,
+			dockerRegistry: "",
+			err:            nil,
+		},
+		{
+			name: "tekton_and_eks_and_kaniko",
+			in: &create.InstallFlags{
+				Tekton:   true,
+				Provider: cloud.EKS,
+				Kaniko:   true,
+			},
+			nextGeneration: false,
+			tekton:         true,
+			prow:           true,
+			staticJenkins:  false,
+			knativeBuild:   false,
+			kaniko:         true,
+			dockerRegistry: "",
+			err:            nil,
+		},
+		{
+			name: "tekton_with_a_custom_docker_registry",
+			in: &create.InstallFlags{
+				Tekton:         true,
+				Provider:       cloud.GKE,
+				DockerRegistry: "my.docker.registry.io",
+			},
+			nextGeneration: false,
+			tekton:         true,
+			prow:           true,
+			staticJenkins:  false,
+			knativeBuild:   false,
+			kaniko:         true,
+			dockerRegistry: "my.docker.registry.io",
 			err:            nil,
 		},
 		{
@@ -96,12 +172,32 @@ func TestCheckFlags(t *testing.T) {
 			in: &create.InstallFlags{
 				Prow:         true,
 				KnativeBuild: true,
+				Provider:     cloud.GKE,
 			},
 			nextGeneration: false,
 			tekton:         false,
 			prow:           true,
 			staticJenkins:  false,
 			knativeBuild:   true,
+			kaniko:         false,
+			dockerRegistry: "",
+			err:            nil,
+		},
+		{
+			name: "prow_and_knative_and_kaniko",
+			in: &create.InstallFlags{
+				Prow:         true,
+				KnativeBuild: true,
+				Kaniko:       true,
+				Provider:     cloud.GKE,
+			},
+			nextGeneration: false,
+			tekton:         false,
+			prow:           true,
+			staticJenkins:  false,
+			knativeBuild:   true,
+			kaniko:         true,
+			dockerRegistry: "gcr.io",
 			err:            nil,
 		},
 		{
@@ -144,6 +240,7 @@ func TestCheckFlags(t *testing.T) {
 			if tt.err != nil {
 				assert.Equal(t, tt.err, err)
 			} else {
+
 				assert.NoError(t, err)
 
 				assert.Equal(t, tt.nextGeneration, opts.Flags.NextGeneration, "NextGeneration flag is not as expected")
@@ -151,23 +248,13 @@ func TestCheckFlags(t *testing.T) {
 				assert.Equal(t, tt.prow, opts.Flags.Prow, "Prow flag is not as expected")
 				assert.Equal(t, tt.staticJenkins, opts.Flags.StaticJenkins, "StaticJenkins flag is not as expected")
 				assert.Equal(t, tt.knativeBuild, opts.Flags.KnativeBuild, "KnativeBuild flag is not as expected")
+				assert.Equal(t, tt.kaniko, opts.Flags.Kaniko, "Kaniko flag is not as expected")
+				if tt.dockerRegistry != "" {
+					assert.Equal(t, tt.dockerRegistry, opts.Flags.DockerRegistry, "DockerRegistry flag is not as expected")
+				}
 			}
 		})
 	}
-}
-
-func TestInstallRun(t *testing.T) {
-	// Create mocks...
-	//factory := cmd_mocks.NewMockFactory()
-	//kubernetesInterface := kube_mocks.NewSimpleClientset()
-	//// Override CreateKubeClient to return mock Kubernetes interface
-	//When(factory.CreateKubeClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
-
-	//options := cmd.CreateInstallOptions(factory, os.Stdin, os.Stdout, os.Stderr)
-
-	//err := options.Run()
-
-	//assert.NoError(t, err, "Should not error")
 }
 
 func TestVerifyDomainName(t *testing.T) {

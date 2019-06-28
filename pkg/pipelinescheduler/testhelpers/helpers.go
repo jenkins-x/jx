@@ -57,14 +57,14 @@ func CompleteScheduler() *v1.SchedulerSpec {
 							},
 						},
 					},
-					Query: &v1.Query{
+					Queries: []*v1.Query{{
 						Labels:                 PointerToReplaceableSliceOfStrings(),
 						ExcludedBranches:       PointerToReplaceableSliceOfStrings(),
 						IncludedBranches:       PointerToReplaceableSliceOfStrings(),
 						MissingLabels:          PointerToReplaceableSliceOfStrings(),
 						Milestone:              pointerToUUID(),
 						ReviewApprovedRequired: pointerToTrue(),
-					},
+					}},
 					Brancher:     pointerToBrancher(),
 					RerunCommand: pointerToUUID(),
 					Trigger:      pointerToUUID(),
@@ -275,6 +275,9 @@ func BuildAndValidateProwConfig(t *testing.T, baseDir string, expectedConfigFile
 	cfg, plugs, err := pipelinescheduler.BuildProwConfig(schedulerLeaves)
 	assert.NoError(t, err)
 	if expectedConfigFilename != "" {
+		expected, err := yaml.Marshal(cfg)
+		assert.NoError(t, err)
+		assert.NotNil(t, expected)
 		assert.Equal(t, &expectedConfig, cfg)
 	}
 	if expectedPluginsFilename != "" {

@@ -41,6 +41,7 @@ type GitProvider interface {
 	ValidateRepositoryName(org string, name string) error
 
 	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
+	UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error)
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
 
@@ -99,6 +100,8 @@ type GitProvider interface {
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
+
+	GetRelease(org string, name string, id string) (*GitRelease, error)
 
 	GetContent(org string, name string, path string, ref string) (*GitFileContent, error)
 
@@ -215,7 +218,9 @@ type Gitter interface {
 	FetchBranchShallow(dir string, repo string, refspec ...string) error
 	FetchBranchUnshallow(dir string, repo string, refspec ...string) error
 	Merge(dir string, commitish string) error
+	MergeTheirs(dir string, commitish string) error
 	ResetHard(dir string, commitish string) error
+	RebaseTheirs(dir string, upstream string, branch string) error
 
 	Stash(dir string) error
 

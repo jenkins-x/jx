@@ -378,6 +378,9 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
 
 	if pipelineConfig.ContainerOptions != nil {
+		if parsed.Options == nil {
+			parsed.Options = &syntax.RootOptions{}
+		}
 		mergedContainer, err := syntax.MergeContainers(pipelineConfig.ContainerOptions, parsed.Options.ContainerOptions)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Could not merge containerOptions from parent")

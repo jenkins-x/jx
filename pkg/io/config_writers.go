@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -107,7 +108,7 @@ func (k *KubeSecretsConfigWriter) Write(config *auth.Config) error {
 }
 
 func (k *KubeSecretsConfigWriter) secretName(server *auth.Server) string {
-	return kube.ToValidName(kube.SecretJenkinsPipelinePrefix + string(server.Kind) + "-" + string(server.ServiceKind) + "-" + server.Name)
+	return naming.ToValidName(kube.SecretJenkinsPipelinePrefix + string(server.Kind) + "-" + string(server.ServiceKind) + "-" + server.Name)
 }
 
 func (k *KubeSecretsConfigWriter) labels(server *auth.Server) map[string]string {

@@ -16,52 +16,66 @@ import (
 	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/kube"
 
-	"regexp"
-
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // CreateClusterOptions the flags for running create cluster
 type CreateClusterGKEOptions struct {
 	CreateClusterOptions
 
-	Flags CreateClusterGKEFlags
+	Flags CreateClusterGKEFlags `mapstructure:"cluster"`
 }
 
 type CreateClusterGKEFlags struct {
-	AutoUpgrade     bool
-	ClusterName     string
-	ClusterIpv4Cidr string
-	ClusterVersion  string
-	DiskSize        string
-	ImageType       string
-	MachineType     string
-	MinNumOfNodes   string
-	MaxNumOfNodes   string
+	AutoUpgrade     bool   `mapstructure:"enable-autoupgrade"`
+	ClusterName     string `mapstructure:"cluster-name"`
+	ClusterIpv4Cidr string `mapstructure:"cluster-ipv4-cidr"`
+	ClusterVersion  string `mapstructure:"kubernetes-version"`
+	DiskSize        string `mapstructure:"disk-size"`
+	ImageType       string `mapstructure:"image-type"`
+	MachineType     string `mapstructure:"machine-type"`
+	MinNumOfNodes   string `mapstructure:"min-num-nodes"`
+	MaxNumOfNodes   string `mapstructure:"max-num-nodes"`
 	Network         string
-	ProjectId       string
-	SkipLogin       bool
+	ProjectId       string `mapstructure:"project-id"`
+	SkipLogin       bool   `mapstructure:"skip-login"`
 	SubNetwork      string
 	Region          string
 	Zone            string
 	Namespace       string
 	Labels          string
-	EnhancedScopes  bool
+	EnhancedScopes  bool `mapstructure:"enhanced-scopes"`
 	Scopes          []string
 	Preemptible     bool
-	EnhancedApis    bool
+	EnhancedApis    bool `mapstructure:"enhanced-apis"`
 }
 
 const (
-	preemptibleFlagName     = "preemptible"
-	enhancedAPIFlagName     = "enhanced-apis"
-	enhancedScopesFlagName  = "enhanced-scopes"
-	maxGKEClusterNameLength = 27
+	skipLoginFlagName         = "skip-login"
+	preemptibleFlagName       = "preemptible"
+	enhancedAPIFlagName       = "enhanced-apis"
+	enhancedScopesFlagName    = "enhanced-scopes"
+	maxGKEClusterNameLength   = 27
+	machineTypeFlagName       = "machine-type"
+	minNodesFlagName          = "min-num-nodes"
+	maxNodesFlagName          = "max-num-nodes"
+	projectIDFlagName         = "project-id"
+	zoneFlagName              = "zone"
+	regionFlagName            = "region"
+	diskSizeFlagName          = "disk-size"
+	imageTypeFlagName         = "image-type"
+	clusterIpv4CidrFlagName   = "cluster-ipv4-cidr"
+	enableAutoupgradeFlagName = "enable-autoupgrade"
+	networkFlagName           = "network"
+	subNetworkFlagName        = "subnetwork"
+	labelsFlagName            = "labels"
+	scopeFlagName             = "scope"
 )
 
 var (
@@ -85,7 +99,6 @@ var (
 		jx create cluster gke
 
 `)
-	disallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
 )
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
@@ -116,29 +129,54 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.addCreateClusterFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
-	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
+	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, clusterIpv4CidrFlagName, "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
 	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "v", "", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
-	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
-	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
-	cmd.Flags().StringVarP(&options.Flags.MachineType, "machine-type", "m", "", "The type of machine to use for nodes")
-	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, "min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
-	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
-	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
-	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "", "The image type for the nodes in the cluster")
-	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
-	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
-	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "Compute region (e.g. us-central1) for the cluster")
-	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
-	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
-	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
+	cmd.Flags().StringVarP(&options.Flags.DiskSize, diskSizeFlagName, "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
+	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, enableAutoupgradeFlagName, "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
+	cmd.Flags().StringVarP(&options.Flags.MachineType, machineTypeFlagName, "m", "", "The type of machine to use for nodes")
+	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, minNodesFlagName, "", "", "The minimum number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, maxNodesFlagName, "", "", "The maximum number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.ProjectId, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.Network, networkFlagName, "", "", "The Compute Engine Network that the cluster will connect to")
+	cmd.Flags().StringVarP(&options.Flags.ImageType, imageTypeFlagName, "", "", "The image type for the nodes in the cluster")
+	cmd.Flags().StringVarP(&options.Flags.SubNetwork, subNetworkFlagName, "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
+	cmd.Flags().StringVarP(&options.Flags.Zone, zoneFlagName, "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
+	cmd.Flags().StringVarP(&options.Flags.Region, regionFlagName, "r", "", "Compute region (e.g. us-central1) for the cluster")
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, skipLoginFlagName, "", false, "Skip Google auth if already logged in via gcloud auth")
+	cmd.Flags().StringVarP(&options.Flags.Labels, labelsFlagName, "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
+	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, scopeFlagName, "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 
+	bindGKEConfigToFlags(cmd)
+
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
 	return cmd
+}
+
+func bindGKEConfigToFlags(cmd *cobra.Command) {
+	_ = viper.BindPFlag(clusterConfigKey(optionClusterName), cmd.Flags().Lookup(optionClusterName))
+	_ = viper.BindPFlag(clusterConfigKey(clusterIpv4CidrFlagName), cmd.Flags().Lookup(clusterIpv4CidrFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(optionKubernetesVersion), cmd.Flags().Lookup(optionKubernetesVersion))
+	_ = viper.BindPFlag(clusterConfigKey(diskSizeFlagName), cmd.Flags().Lookup(diskSizeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(enableAutoupgradeFlagName), cmd.Flags().Lookup(enableAutoupgradeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(machineTypeFlagName), cmd.Flags().Lookup(machineTypeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(minNodesFlagName), cmd.Flags().Lookup(minNodesFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(maxNodesFlagName), cmd.Flags().Lookup(maxNodesFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(projectIDFlagName), cmd.Flags().Lookup(projectIDFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(networkFlagName), cmd.Flags().Lookup(networkFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(imageTypeFlagName), cmd.Flags().Lookup(imageTypeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(subNetworkFlagName), cmd.Flags().Lookup(subNetworkFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(zoneFlagName), cmd.Flags().Lookup(zoneFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(regionFlagName), cmd.Flags().Lookup(regionFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(skipLoginFlagName), cmd.Flags().Lookup(skipLoginFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(labelsFlagName), cmd.Flags().Lookup(labelsFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(scopeFlagName), cmd.Flags().Lookup(labelsFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(preemptibleFlagName), cmd.Flags().Lookup(preemptibleFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(enhancedScopesFlagName), cmd.Flags().Lookup(enhancedScopesFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(enhancedAPIFlagName), cmd.Flags().Lookup(enhancedAPIFlagName))
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
@@ -150,6 +188,11 @@ func (o *CreateClusterGKEOptions) Run() error {
 	err = o.InstallRequirements(cloud.GKE)
 	if err != nil {
 		return err
+	}
+
+	err = o.GetConfiguration(&o)
+	if err != nil {
+		return errors.Wrap(err, "getting gke cluster configuration")
 	}
 
 	err = o.createClusterGKE()
@@ -177,6 +220,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured project id", projectId))
 	}
 
 	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectId)
@@ -184,7 +229,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	log.Logger().Infof("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
+	log.Logger().Debugf("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
 	err = gke.EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
@@ -192,8 +237,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	advancedMode := o.AdvancedMode
 
-	clusterName := o.Flags.ClusterName
-	if clusterName == "" {
+	if o.Flags.ClusterName == "" {
 		defaultClusterName := strings.ToLower(randomdata.SillyName())
 		if len(defaultClusterName) > maxGKEClusterNameLength {
 			defaultClusterName = strings.ToLower(randomdata.SillyName())
@@ -208,11 +252,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					Default: defaultClusterName,
 				}
 
-				err = survey.AskOne(prompt, &clusterName, nil, surveyOpts)
+				err = survey.AskOne(prompt, &o.Flags.ClusterName, nil, surveyOpts)
 				if err != nil {
 					return err
 				}
-				err = validateClusterName(clusterName)
+				err = validateClusterName(o.Flags.ClusterName)
 				if err != nil {
 					log.Logger().Infof(util.ColorAnswer(clusterNameHelp))
 				} else {
@@ -220,9 +264,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				}
 			}
 		} else {
-			clusterName = defaultClusterName
-			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one", clusterName))
+			o.Flags.ClusterName = defaultClusterName
+			log.Logger().Infof(util.QuestionAnswer("No cluster name provided so using a generated one", o.Flags.ClusterName))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured cluster name", o.Flags.ClusterName))
 	}
 
 	region := o.Flags.Region
@@ -265,6 +311,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					return err
 				}
 			}
+		} else if region != "" {
+			log.Logger().Infof(util.QuestionAnswer("Configured to cluster type", "Regional"))
+			log.Logger().Infof(util.QuestionAnswer("Configured Google Cloud Region", region))
+		} else {
+			log.Logger().Infof(util.QuestionAnswer("Configured to cluster type", "Zonal"))
+			log.Logger().Infof(util.QuestionAnswer("Configured Google Cloud Zone", zone))
 		}
 	} else {
 		if zone == "" && region == "" {
@@ -292,6 +344,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			machineType = defaultMachineType
 			log.Logger().Infof(util.QuestionAnswer("Defaulting to machine type", machineType))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured to machine type", machineType))
 	}
 
 	minNumOfNodes := o.Flags.MinNumOfNodes
@@ -315,6 +369,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			minNumOfNodes = defaultNodes
 			log.Logger().Infof(util.QuestionAnswer("Defaulting to minimum number of nodes", minNumOfNodes))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured to minimum number of nodes", minNumOfNodes))
 	}
 
 	maxNumOfNodes := o.Flags.MaxNumOfNodes
@@ -338,10 +394,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			maxNumOfNodes = defaultNodes
 			log.Logger().Infof(util.QuestionAnswer("Defaulting to maxiumum number of nodes", maxNumOfNodes))
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured to maximum number of nodes", maxNumOfNodes))
 	}
 
 	if !o.BatchMode {
-		if !o.IsFlagExplicitlySet(preemptibleFlagName) {
+		if !o.IsConfigExplicitlySet("cluster", preemptibleFlagName) {
 			if advancedMode {
 				prompt := &survey.Confirm{
 					Message: "Would you like to use preemptible VMs?",
@@ -356,9 +414,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				o.Flags.Preemptible = false
 				log.Logger().Infof(util.QuestionAnswer("Defaulting use of preemptible VMs", util.YesNo(o.Flags.Preemptible)))
 			}
+		} else {
+			log.Logger().Infof(util.QuestionAnswer("Configured use of preemptible VMs", util.YesNo(o.Flags.Preemptible)))
 		}
 	}
 
+	// this really shouldn't be here
 	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton {
 		o.Flags.EnhancedApis = true
 		o.Flags.EnhancedScopes = true
@@ -368,7 +429,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// if scopes is empty &
-		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
+		if len(o.Flags.Scopes) == 0 && !o.IsConfigExplicitlySet("cluster", enhancedScopesFlagName) {
 			if advancedMode {
 				prompt := &survey.Confirm{
 					Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
@@ -383,6 +444,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				o.Flags.EnhancedScopes = true
 				log.Logger().Infof(util.QuestionAnswer("Defaulting access to Google Cloud Storage / Google Container Registry", util.YesNo(o.Flags.EnhancedScopes)))
 			}
+		} else {
+			log.Logger().Infof(util.QuestionAnswer("Configured access to Google Cloud Storage / Google Container Registry", util.YesNo(o.Flags.EnhancedScopes)))
 		}
 	}
 
@@ -399,7 +462,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes {
-			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
+			if !o.IsConfigExplicitlySet("cluster", enhancedAPIFlagName) {
 				if advancedMode {
 					prompt := &survey.Confirm{
 						Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
@@ -414,12 +477,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					o.Flags.EnhancedApis = true
 					log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Cloud Build, Container Registry & Container Analysis API's", util.YesNo(o.Flags.EnhancedApis)))
 				}
+			} else {
+				log.Logger().Infof(util.QuestionAnswer("Configured access to Cloud Build, Container Registry & Container Analysis API's", util.YesNo(o.Flags.EnhancedApis)))
 			}
 		}
 	}
 
 	if o.Flags.EnhancedApis {
-		log.Logger().Infof("checking if we need to enable APIs for GCB and GCR")
+		log.Logger().Debugf("checking if we need to enable APIs for GCB and GCR")
 
 		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
@@ -429,39 +494,31 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
-		if o.Flags.EnhancedScopes && !o.InstallOptions.Flags.Kaniko {
-			if advancedMode {
-				prompt := &survey.Confirm{
-					Message: "Would you like to enable Kaniko for building container images",
-					Default: o.Flags.EnhancedScopes,
-					Help:    "Use Kaniko for docker images",
-				}
-				err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
-				if err != nil {
-					return err
+		if o.Flags.EnhancedScopes {
+			if !o.IsConfigExplicitlySet("install", "kaniko") {
+				if advancedMode {
+					prompt := &survey.Confirm{
+						Message: "Would you like to enable Kaniko for building container images",
+						Default: o.Flags.EnhancedScopes,
+						Help:    "Use Kaniko for docker images",
+					}
+					err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+					if err != nil {
+						return err
+					}
+				} else {
+					o.InstallOptions.Flags.Kaniko = false
+					log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Kaniko for building container images", util.YesNo(o.InstallOptions.Flags.Kaniko)))
 				}
 			} else {
-				o.InstallOptions.Flags.Kaniko = false
-				log.Logger().Infof(util.QuestionAnswer("Defaulting enabling Kaniko for building container images", util.YesNo(o.InstallOptions.Flags.Kaniko)))
+				log.Logger().Infof(util.QuestionAnswer("Configured enabling Kaniko for building container images", util.YesNo(o.InstallOptions.Flags.Kaniko)))
 			}
-		}
-	}
-
-	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
-		// lets default the docker registry to GCR
-		if o.InstallOptions.Flags.DockerRegistry == "" {
-			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
-		}
-
-		// lets default the docker registry org to the project id
-		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
-			o.InstallOptions.Flags.DockerRegistryOrg = projectId
 		}
 	}
 
 	// mandatory flags are machine type, num-nodes, zone or region
 	args := []string{"container", "clusters", "create",
-		clusterName,
+		o.Flags.ClusterName,
 		"--num-nodes", minNumOfNodes,
 		"--machine-type", machineType,
 		"--enable-autoscaling",
@@ -503,7 +560,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if len(o.Flags.Scopes) > 0 {
-		log.Logger().Infof("using cluster scopes: %s", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
+		log.Logger().Debugf("using cluster scopes: %s", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
 
 		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
 	}
@@ -524,21 +581,20 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	log.Logger().Info("Creating cluster...")
+	log.Logger().Debugf("gcloud %s", strings.Join(args, " "))
+
 	err = o.RunCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
 
 	log.Logger().Info("Initialising cluster ...")
-	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
-		o.InstallOptions.Flags.DefaultEnvironmentPrefix = clusterName
-	}
 
-	o.InstallOptions.setInstallValues(map[string]string{
+	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Zone:        zone,
 		kube.Region:      region,
 		kube.ProjectID:   projectId,
-		kube.ClusterName: clusterName,
+		kube.ClusterName: o.Flags.ClusterName,
 	})
 
 	err = o.initAndInstall(cloud.GKE)
@@ -546,7 +602,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	getCredsCommand := []string{"container", "clusters", "get-credentials", clusterName}
+	getCredsCommand := []string{"container", "clusters", "get-credentials", o.Flags.ClusterName}
 	if "" != zone {
 		getCredsCommand = append(getCredsCommand, "--zone", zone)
 	} else if "" != region {
@@ -588,18 +644,17 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 // AddLabel adds the given label key and value to the label string
 func AddLabel(labels string, name string, value string) string {
-	username := sanitizeLabel(value)
+	username := util.SanitizeLabel(value)
 	if username != "" {
 		sep := ""
 		if labels != "" {
 			sep = ","
 		}
-		labels += sep + sanitizeLabel(name) + "=" + username
+		labels += sep + util.SanitizeLabel(name) + "=" + username
 	}
 	return labels
 }
 
-func sanitizeLabel(username string) string {
-	sanitized := strings.ToLower(username)
-	return disallowedLabelCharacters.ReplaceAllString(sanitized, "-")
+func clusterConfigKey(key string) string {
+	return fmt.Sprintf("cluster.%s", key)
 }

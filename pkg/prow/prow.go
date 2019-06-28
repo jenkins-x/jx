@@ -2,9 +2,10 @@ package prow
 
 import (
 	"encoding/json"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
+	"io/ioutil"
 
 	//"encoding/json"
 	"fmt"
@@ -56,6 +57,8 @@ type Options struct {
 	Context              string
 	Agent                string
 	IgnoreBranch         bool
+	PluginsFileLocation  string
+	ConfigFileLocation   string
 }
 
 type ExternalPlugins struct {
@@ -422,6 +425,84 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 		}
 	}
 	return prowConfig, create, nil
+}
+
+// LoadProwConfigFromFile loads prow config from a file
+func (o *Options) LoadProwConfigFromFile() (*config.Config, error) {
+	exists, err := util.FileExists(o.ConfigFileLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading prow config from "+o.ConfigFileLocation)
+	}
+	if exists {
+		data, err := ioutil.ReadFile(o.ConfigFileLocation)
+		if err != nil {
+			return nil, errors.New("loading prow config from " + o.ConfigFileLocation)
+		}
+		prowConfig := &config.Config{}
+		if err == nil {
+			err = yaml.Unmarshal(data, &prowConfig)
+			if err != nil {
+				return nil, errors.Wrap(err, "unmarshaling prow config")
+			}
+			return prowConfig, nil
+		}
+
+	}
+	return nil, errors.New("loading prow config from " + o.ConfigFileLocation)
+}
+
+// LoadProwPluginsFromFile loads prow plugins from a file
+func (o *Options) LoadProwPluginsFromFile() (*plugins.Configuration, error) {
+	exists, err := util.FileExists(o.PluginsFileLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading prow plugins from "+o.PluginsFileLocation)
+	}
+	if exists {
+		data, err := ioutil.ReadFile(o.PluginsFileLocation)
+		if err != nil {
+			return nil, errors.New("loading prow plugins from " + o.PluginsFileLocation)
+		}
+		if err == nil {
+			pluginConfig := &plugins.Configuration{}
+			err = yaml.Unmarshal(data, &pluginConfig)
+			if err != nil {
+				return nil, errors.Wrap(err, "unmarshaling plugin config")
+			}
+			return pluginConfig, nil
+		}
+
+	}
+	return nil, errors.New("loading prow plugins from " + o.ConfigFileLocation)
+}
+
+// LoadProwConfig loads prow config from configmap
+func (o *Options) LoadProwConfig() (*config.Config, error) {
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	prowConfig := &config.Config{}
+	if err == nil {
+		err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshaling prow config")
+		}
+	} else {
+		return nil, errors.Wrap(err, "loading prow config configmap")
+	}
+	return prowConfig, nil
+}
+
+// LoadPluginConfig loads prow plugins from a configmap
+func (o *Options) LoadPluginConfig() (*plugins.Configuration, error) {
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwPluginsConfigMapName, metav1.GetOptions{})
+	pluginConfig := &plugins.Configuration{}
+	if err == nil {
+		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), pluginConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshaling plugins")
+		}
+	} else {
+		return nil, errors.Wrap(err, "loading prow plugins configmap")
+	}
+	return pluginConfig, nil
 }
 
 func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configuration,

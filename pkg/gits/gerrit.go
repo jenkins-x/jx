@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 )
 
 type GerritProvider struct {
@@ -141,6 +142,11 @@ func (p *GerritProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 	return nil, nil
 }
 
+// UpdatePullRequest updates pull request with number using data
+func (p *GerritProvider) UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error) {
+	return nil, errors.Errorf("Not yet implemented for gerrit")
+}
+
 func (p *GerritProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
@@ -262,6 +268,11 @@ func (p *GerritProvider) UpdateRelease(owner string, repo string, tag string, re
 }
 
 func (p *GerritProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	return nil, nil
+}
+
+// GetRelease returns the release info for org, repo name and tag
+func (p *GerritProvider) GetRelease(org string, name string, tag string) (*GitRelease, error) {
 	return nil, nil
 }
 

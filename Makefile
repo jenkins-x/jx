@@ -182,7 +182,7 @@ tidy-deps: ## Cleans up dependencies
 make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
-test: make-reports-dir ## Run the unit tests
+test: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
 
 test-report: make-reports-dir get-test-deps test ## Create the test report
@@ -218,8 +218,7 @@ test-integration-report: make-reports-dir get-test-deps test-integration ## Crea
 test-integration-report-html: make-reports-dir get-test-deps test-integration
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
-
-test-slow-integration: make-reports-dir ## Run the integration tests sequentially
+test-slow-integration: make-reports-dir ## Run the any tests without a build tag as well as those that have the "integration" build tag. This target is run during CI.
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration $(COVERFLAGS) ./...
 
 test-slow-integration-report: make-reports-dir get-test-deps test-slow-integration
@@ -273,23 +272,21 @@ darwin: ## Build for OSX
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/darwin/$(NAME) $(MAIN_SRC_FILE)
 	chmod +x build/darwin/$(NAME)
 
+.PHONY: test-release
+test-release: clean build
+	git fetch --tags
+	REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser --config=./.goreleaser.yml --snapshot --skip-publish --rm-dist --skip-validate --debug
+
 .PHONY: release
-release: clean build test-slow-integration linux darwin win arm ## Release the binary
-	mkdir release
-	zip --junk-paths release/$(NAME)-windows-amd64.zip build/win/$(NAME)-windows-amd64.exe README.md LICENSE
-
-	cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
-	cd ./build/linux; tar -zcvf ../../release/jx-linux-amd64.tar.gz jx
+release: clean build test-slow-integration linux # Release the binary
+	git fetch --tags
+	git checkout tags/v$(VERSION)
+	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
-		cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx; \
-	fi
-
-	go get -u github.com/progrium/gh-release
-	gh-release checksums sha256
-	GITHUB_ACCESS_TOKEN=$(GITHUB_ACCESS_TOKEN) gh-release create $(RELEASE_ORG_REPO) $(VERSION) master $(VERSION)
-
-	@if [[ -z "${DISTRO}" ]]; then \
-		./build/linux/jx step changelog  --verbose --header-file docs/dev/changelog-header.md --version $(VERSION) --rev $(PULL_BASE_SHA); \
+		./build/linux/jx step changelog --verbose --header-file=docs/dev/changelog-header.md --version=$(VERSION) --rev=$(PULL_BASE_SHA) --output-markdown=changelog.md --update-release=false; \
+		GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser release --config=.goreleaser.yml --rm-dist --release-notes=./changelog.md --skip-validate; \
+	else \
+		GITHUB_TOKEN=$(GITHUB_ACCESS_TOKEN) REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser release --config=.goreleaser.yml --rm-dist; \
 	fi
 
 .PHONY: release-distro
@@ -298,7 +295,7 @@ release-distro:
 
 .PHONY: clean
 clean: ## Clean the generated artifacts
-	rm -rf build release
+	rm -rf build release dist
 
 .PHONY: codecov-upload
 codecov-upload:

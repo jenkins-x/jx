@@ -8,23 +8,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/edit"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"github.com/jenkins-x/jx/pkg/cmd/start"
-
 	"github.com/cenkalti/backoff"
 	"github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/start"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -65,6 +65,7 @@ type ImportOptions struct {
 	DockerRegistryOrg       string
 	GitDetails              gits.CreateRepoData
 	DeployKind              string
+	SchedulerName           string
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -169,6 +170,7 @@ func (options *ImportOptions) AddImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
+	cmd.Flags().StringVarP(&options.SchedulerName, "scheduler", "", "", "The name of the Scheduler configuration to use for ChatOps when using Prow")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
 	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
@@ -358,7 +360,7 @@ func (options *ImportOptions) Run() error {
 		}
 		_, options.AppName = filepath.Split(dir)
 	}
-	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
+	options.AppName = naming.ToValidName(strings.ToLower(options.AppName))
 
 	if !options.DisableDraft {
 		err = options.DraftCreate()
@@ -927,7 +929,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	settings, err := options.TeamSettings()
+	devEnv, settings, err := options.DevEnvAndTeamSettings()
 	if err != nil {
 		return err
 	}
@@ -935,9 +937,34 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	err = prow.AddApplication(client, []string{repo}, currentNamespace, options.DraftPack, settings)
-	if err != nil {
-		return err
+
+	if settings.IsSchedulerMode() {
+		jxClient, _, err := options.JXClient()
+		if err != nil {
+			return err
+		}
+		sr, err := kube.GetOrCreateSourceRepository(jxClient, currentNamespace, gitInfo.Name, gitInfo.Organisation, gitInfo.HostURLWithoutUser())
+		log.Logger().Debugf("have SourceRepository: %s\n", sr.Name)
+
+		// lets update the Scheduler if one is specified and its different to the default
+		schedulerName := options.SchedulerName
+		if schedulerName != "" && schedulerName != sr.Spec.Scheduler.Name {
+			sr.Spec.Scheduler.Name = schedulerName
+			_, err = jxClient.JenkinsV1().SourceRepositories(currentNamespace).Update(sr)
+			if err != nil {
+				log.Logger().Warnf("failed to update the SourceRepository %s to add the Scheduler name %s due to: %s\n", sr.Name, schedulerName, err.Error())
+			}
+		}
+
+		err = options.GenerateProwConfig(currentNamespace, devEnv, sr)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = prow.AddApplication(client, []string{repo}, currentNamespace, options.DraftPack, settings)
+		if err != nil {
+			return err
+		}
 	}
 
 	startBuildOptions := start.StartPipelineOptions{
@@ -992,7 +1019,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 
 // ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryOrg string) error {
-	options.Organisation = kube.ToValidName(strings.ToLower(options.Organisation))
+	options.Organisation = naming.ToValidName(strings.ToLower(options.Organisation))
 	log.Logger().Infof("replacing placeholders in directory %s", options.Dir)
 	log.Logger().Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
 

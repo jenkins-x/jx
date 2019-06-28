@@ -112,11 +112,15 @@ func (o *CreatePostPreviewJobOptions) Run() error {
 		}
 		settings.PostPreviewJobs = append(settings.PostPreviewJobs, batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   name,
-				Labels: labels,
+				Name:              name,
+				Labels:            labels,
+				CreationTimestamp: metav1.Now(),
 			},
 			Spec: batchv1.JobSpec{
 				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						CreationTimestamp: metav1.Now(),
+					},
 					Spec: corev1.PodSpec{
 						Containers:    []corev1.Container{firstContainer},
 						RestartPolicy: corev1.RestartPolicyNever,

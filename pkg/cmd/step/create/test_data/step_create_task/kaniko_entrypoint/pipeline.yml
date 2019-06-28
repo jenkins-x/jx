@@ -6,6 +6,7 @@ metadata:
   namespace: jx
   labels:
     branch: fix-kaniko-special-casing
+    build: "1"
     owner: jenkins-x
     repo: jx
 spec:

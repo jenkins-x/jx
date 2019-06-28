@@ -87,6 +87,57 @@ func TestYesNo(t *testing.T) {
 	assert.Equal(t, "No", util.YesNo(false), "No boolean conversion")
 }
 
+func TestExtractKeyValuePairs(t *testing.T) {
+	type testData struct {
+		keyValueArray []string
+		keyValueMap   map[string]string
+		expectError   bool
+	}
+
+	testCases := []testData{
+		{
+			[]string{}, map[string]string{}, false,
+		},
+		{
+			[]string{"foo=bar"}, map[string]string{"foo": "bar"}, false,
+		},
+		{
+			[]string{"foo=bar", "snafu=tarfu"}, map[string]string{"foo": "bar", "snafu": "tarfu"}, false,
+		},
+		{
+			[]string{"foo=bar", "snafu"}, map[string]string{}, true,
+		},
+	}
+	for _, data := range testCases {
+		actual, err := util.ExtractKeyValuePairs(data.keyValueArray, "=")
+		if data.expectError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+		assert.Equal(t, data.keyValueMap, actual)
+	}
+}
+
 func TestQuestionAnswer(t *testing.T) {
 	assert.Equal(t, "? This is a question: and answer", util.QuestionAnswer("This is a question", "and answer"))
+}
+
+func Test_sanitizeLabel(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		username string
+		want     string
+	}{
+		{"Replaces . in username for -", "test.person", "test-person"},
+		{"Replaces _ in username for -", "test_person", "test-person"},
+		{"Replaces uppercase in username for lowercase", "Test", "test"},
+		{"Doesn't do anything for empty user names", "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, util.SanitizeLabel(tt.username), tt.want)
+		})
+	}
 }
