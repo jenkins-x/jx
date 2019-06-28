@@ -8,12 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/edit"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"github.com/jenkins-x/jx/pkg/cmd/start"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
-
 	"github.com/cenkalti/backoff"
 	"github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
@@ -30,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
