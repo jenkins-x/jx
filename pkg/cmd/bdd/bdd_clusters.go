@@ -19,6 +19,14 @@ type CreateCluster struct {
 	NoLabels  bool     `json:"noLabels,omitempty"`
 	Labels    string   `json:"labels,omitempty"`
 	Terraform bool     `json:"terraform,omitempty"`
+
+	Commands []Command `json:"commands,omitempty"`
+}
+
+// Command for running post create cluster commands
+type Command struct {
+	Command string   `json:"command,omitempty"`
+	Args    []string `json:"args,omitempty"`
 }
 
 // LoadBddClusters loads the cluster configuration from the given file
