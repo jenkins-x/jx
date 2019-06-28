@@ -477,7 +477,12 @@ func (options *InstallOptions) CheckFlags() error {
 	// Make sure that the default environment prefix is configured. Typically it is the cluster
 	// name when the install command is called from create cluster.
 	if flags.DefaultEnvironmentPrefix == "" {
-		flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+		clusterName := options.installValues[kube.ClusterName]
+		if clusterName == "" {
+			flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+		} else {
+			flags.DefaultEnvironmentPrefix = clusterName
+		}
 	}
 
 	if flags.DockerRegistry == "" {
@@ -491,10 +496,6 @@ func (options *InstallOptions) CheckFlags() error {
 	// lets default the docker registry org to the project id
 	if flags.DockerRegistryOrg == "" {
 		flags.DockerRegistryOrg = options.installValues[kube.ProjectID]
-	}
-
-	if flags.DefaultEnvironmentPrefix == "" {
-		flags.DefaultEnvironmentPrefix = options.installValues[kube.ClusterName]
 	}
 
 	log.Logger().Debugf("flags after checking - %+v", flags)
