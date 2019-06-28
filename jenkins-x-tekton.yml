@@ -40,5 +40,5 @@ pipelineConfig:
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-maven','--destination=docker.io/jenkinsxio/builder-maven:${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
               - name: preview
-                image: gcr.io/jenkinsxio/builder-go:0.1.451
+                image: gcr.io/jenkinsxio/builder-go:0.1.537
                 command: ./jx/bdd/tekton/ci.sh
