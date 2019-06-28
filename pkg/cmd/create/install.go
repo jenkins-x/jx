@@ -499,6 +499,12 @@ func (options *InstallOptions) CheckFlags() error {
 
 	log.Logger().Debugf("flags after checking - %+v", flags)
 
+	if flags.Tekton {
+		kind := options.GitRepositoryOptions.ServerKind
+		if kind != "" && kind != gits.KindGitHub {
+			return fmt.Errorf("Git provider: %s is not yet supported for Tekton.\nYou can work around this with '--static-jenkins'\nFor more details see: https://jenkins-x.io/about/status/", kind)
+		}
+	}
 	return nil
 }
 
