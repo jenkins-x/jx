@@ -1357,3 +1357,12 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 	}
 	return commits, nil
 }
+
+// GetLatestRelease fetches the latest release from the git provider for org and name
+func (p *GitHubProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	repoRelease, _, err := p.Client.Repositories.GetLatestRelease(p.Context, org, name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting latest release for %s/%s", org, name)
+	}
+	return toGitHubRelease(org, name, repoRelease), nil
+}

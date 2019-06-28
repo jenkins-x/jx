@@ -103,6 +103,8 @@ type GitProvider interface {
 
 	GetRelease(org string, name string, id string) (*GitRelease, error)
 
+	GetLatestRelease(org string, name string) (*GitRelease, error)
+
 	GetContent(org string, name string, path string, ref string) (*GitFileContent, error)
 
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
@@ -238,12 +240,14 @@ type Gitter interface {
 	LoadFileFromBranch(dir string, branch string, file string) (string, error)
 
 	GetLatestCommitMessage(dir string) (string, error)
-	GetPreviousGitTagSHA(dir string) (string, error)
-	GetCurrentGitTagSHA(dir string) (string, error)
+	GetPreviousGitTagSHA(dir string) (string, string, error)
+	GetCurrentGitTagSHA(dir string) (string, string, error)
 	FetchTags(dir string) error
 	Tags(dir string) ([]string, error)
 	CreateTag(dir string, tag string, msg string) error
 	GetLatestCommitSha(dir string) (string, error)
+	GetCommits(dir string, startSha string, endSha string) ([]GitCommit, error)
+	RevParse(dir string, rev string) (string, error)
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)

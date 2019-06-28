@@ -243,7 +243,7 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 	if previousRev == "" {
-		previousRev, err = o.Git().GetPreviousGitTagSHA(dir)
+		previousRev, _, err = o.Git().GetPreviousGitTagSHA(dir)
 		if err != nil {
 			return err
 		}
@@ -254,7 +254,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	currentRev := o.CurrentRevision
 	if currentRev == "" {
-		currentRev, err = o.Git().GetCurrentGitTagSHA(dir)
+		currentRev, _, err = o.Git().GetCurrentGitTagSHA(dir)
 		if err != nil {
 			return err
 		}

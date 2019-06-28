@@ -274,7 +274,7 @@ func (g *GitLocal) RemoteBranchNames(dir string, prefix string) ([]string, error
 }
 
 // GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
-func (g *GitLocal) GetPreviousGitTagSHA(dir string) (string, error) {
+func (g *GitLocal) GetPreviousGitTagSHA(dir string) (string, string, error) {
 	return g.GitCLI.GetPreviousGitTagSHA(dir)
 }
 
@@ -289,7 +289,7 @@ func (g *GitLocal) GetRevisionBeforeDateText(dir string, dateText string) (strin
 }
 
 // GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
-func (g *GitLocal) GetCurrentGitTagSHA(dir string) (string, error) {
+func (g *GitLocal) GetCurrentGitTagSHA(dir string) (string, string, error) {
 	return g.GitCLI.GetCurrentGitTagSHA(dir)
 }
 
@@ -427,4 +427,14 @@ func (g *GitLocal) MergeTheirs(dir string, commitish string) error {
 // RebaseTheirs runs git rebase upstream branch
 func (g *GitLocal) RebaseTheirs(dir string, upstream string, branch string) error {
 	return g.GitCLI.RebaseTheirs(dir, upstream, branch)
+}
+
+// GetCommits returns the commits in a range, exclusive of startSha and inclusive of endSha
+func (g *GitLocal) GetCommits(dir string, startSha string, endSha string) ([]GitCommit, error) {
+	return g.GitCLI.GetCommits(dir, startSha, endSha)
+}
+
+// RevParse runs git rev parse
+func (g *GitLocal) RevParse(dir string, rev string) (string, error) {
+	return g.GitCLI.RevParse(dir, rev)
 }

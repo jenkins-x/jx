@@ -769,3 +769,12 @@ func (f *FakeProvider) ListCommits(owner, name string, opt *ListCommitsArguments
 func (f *FakeProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return nil
 }
+
+// GetLatestRelease fetches the latest release from the git provider for org and name
+func (f *FakeProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	releases, err := f.ListReleases(org, name)
+	if err != nil {
+		return nil, errors2.WithStack(err)
+	}
+	return releases[len(releases)-1], nil
+}

@@ -765,3 +765,12 @@ func (p *GiteaProvider) ListCommits(owner, repo string, opt *ListCommitsArgument
 func (p *GiteaProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on gitea")
 }
+
+// GetLatestRelease fetches the latest release from the git provider for org and name
+func (p *GiteaProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	releases, err := p.Client.ListReleases(org, name)
+	if err != nil {
+		return nil, errors2.Wrapf(err, "getting releases for %s/%s", org, name)
+	}
+	return toGiteaRelease(org, name, releases[0]), nil
+}

@@ -432,21 +432,21 @@ func (g *GitFake) HasChanges(dir string) (bool, error) {
 }
 
 // GetPreviousGitTagSHA returns the previous git tag SHA
-func (g *GitFake) GetPreviousGitTagSHA(dir string) (string, error) {
+func (g *GitFake) GetPreviousGitTagSHA(dir string) (string, string, error) {
 	len := len(g.Commits)
 	if len < 2 {
-		return "", errors.New("no previous commit found")
+		return "", "", errors.New("no previous commit found")
 	}
-	return g.Commits[len-2].SHA, nil
+	return g.Commits[len-2].SHA, "", nil
 }
 
 // GetCurrentGitTagSHA returns the current git tag sha
-func (g *GitFake) GetCurrentGitTagSHA(dir string) (string, error) {
+func (g *GitFake) GetCurrentGitTagSHA(dir string) (string, string, error) {
 	len := len(g.Commits)
 	if len < 1 {
-		return "", errors.New("no current commit found")
+		return "", "", errors.New("no current commit found")
 	}
-	return g.Commits[len-1].SHA, nil
+	return g.Commits[len-1].SHA, "", nil
 }
 
 // GetLatestCommitMessage returns the last commit message
@@ -559,4 +559,14 @@ func (g *GitFake) MergeTheirs(dir string, commitish string) error {
 //RebaseTheirs does nothing
 func (g *GitFake) RebaseTheirs(dir string, upstream string, branch string) error {
 	return nil
+}
+
+// GetCommits returns the commits in a range, exclusive of startSha and inclusive of endSha
+func (g *GitFake) GetCommits(dir string, startSha string, endSha string) ([]GitCommit, error) {
+	return nil, nil
+}
+
+// RevParse runs git rev-parse on rev
+func (g *GitFake) RevParse(dir string, rev string) (string, error) {
+	return "", nil
 }
