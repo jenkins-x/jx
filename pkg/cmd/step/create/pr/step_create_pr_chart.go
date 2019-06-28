@@ -16,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 )
 
 var (
@@ -33,13 +32,6 @@ type StepCreatePullRequestChartsOptions struct {
 	StepCreatePrOptions
 
 	Name string
-}
-
-// StepCreatePullRequestChartResults stores the generated results
-type StepCreatePullRequestChartResults struct {
-	Pipeline    *pipelineapi.Pipeline
-	Task        *pipelineapi.Task
-	PipelineRun *pipelineapi.PipelineRun
 }
 
 // NewCmdStepCreatePullRequestChart Creates a new Command object
