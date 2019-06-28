@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 )
 
 var (
@@ -29,13 +28,6 @@ type StepCreatePullRequestDockersOptions struct {
 	StepCreatePrOptions
 
 	Name string
-}
-
-// StepCreatePullRequestDockerResults stores the generated results
-type StepCreatePullRequestDockerResults struct {
-	Pipeline    *pipelineapi.Pipeline
-	Task        *pipelineapi.Task
-	PipelineRun *pipelineapi.PipelineRun
 }
 
 // NewCmdStepCreatePullRequestDocker Creates a new Command object

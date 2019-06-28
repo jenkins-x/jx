@@ -18,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
@@ -61,13 +60,6 @@ type StepCreatePullRequestVersionsOptions struct {
 	builderImageVersion string
 
 	PullRequestDetails opts.PullRequestDetails
-}
-
-// StepCreateVersionPullRequestResults stores the generated results
-type StepCreatePullRequestVersionsResults struct {
-	Pipeline    *pipelineapi.Pipeline
-	Task        *pipelineapi.Task
-	PipelineRun *pipelineapi.PipelineRun
 }
 
 // NewCmdStepCreateVersionPullRequest Creates a new Command object
