@@ -6077,6 +6077,13 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
+					"prowConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProwConfig is the way we manage prow configurations",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

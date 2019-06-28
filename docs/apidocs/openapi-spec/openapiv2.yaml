@@ -2388,6 +2388,9 @@ definitions:
         type: array
       promotionEngine:
         type: string
+      prowConfig:
+        description: ProwConfig is the way we manage prow configurations
+        type: string
       prowEngine:
         description: ProwEngine is the kind of prow engine used such as knative build
           or build pipeline

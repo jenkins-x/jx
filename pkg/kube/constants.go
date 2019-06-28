@@ -156,6 +156,9 @@ const (
 	// AnnotationDescription the tooltip / texual description of an resource
 	AnnotationDescription = "description"
 
+	// LabelGitSync to indicate whether or not to sync this resource to GitOps
+	LabelGitSync = "jenkins.io/gitSync"
+
 	// LabelKind to indicate the kind of auth, such as Git or Issue
 	LabelKind = "jenkins.io/kind"
 

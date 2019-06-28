@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/start"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
 
 	"github.com/cenkalti/backoff"
 	"github.com/denormal/go-gitignore"
@@ -66,6 +67,7 @@ type ImportOptions struct {
 	DockerRegistryOrg       string
 	GitDetails              gits.CreateRepoData
 	DeployKind              string
+	SchedulerName           string
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -170,6 +172,7 @@ func (options *ImportOptions) AddImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
+	cmd.Flags().StringVarP(&options.SchedulerName, "scheduler", "", "", "The name of the Scheduler configuration to use for ChatOps when using Prow")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
 	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
@@ -928,7 +931,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	settings, err := options.TeamSettings()
+	devEnv, settings, err := options.DevEnvAndTeamSettings()
 	if err != nil {
 		return err
 	}
@@ -936,9 +939,44 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	err = prow.AddApplication(client, []string{repo}, currentNamespace, options.DraftPack, settings)
-	if err != nil {
-		return err
+
+	if settings.IsSchedulerMode() {
+		kubeClient, err := options.KubeClient()
+		if err != nil {
+			return err
+		}
+		jxClient, _, err := options.JXClient()
+		if err != nil {
+			return err
+		}
+		sr, err := kube.GetOrCreateSourceRepository(jxClient, currentNamespace, gitInfo.Name, gitInfo.Organisation, gitInfo.HostURLWithoutUser())
+		log.Logger().Debugf("have SourceRepository: %s\n", sr.Name)
+
+		// lets update the Scheduler if one is specified and its different to the default
+		schedulerName := options.SchedulerName
+		if schedulerName != "" && schedulerName != sr.Spec.Scheduler.Name {
+			sr.Spec.Scheduler.Name = schedulerName
+			_, err = jxClient.JenkinsV1().SourceRepositories(currentNamespace).Update(sr)
+			if err != nil {
+				log.Logger().Warnf("failed to update the SourceRepository %s to add the Scheduler name %s due to: %s\n", sr.Name, schedulerName, err.Error())
+			}
+		}
+
+		config, plugins, err := pipelinescheduler.GenerateProw(false, true, jxClient, currentNamespace, settings.DefaultScheduler.Name, devEnv, nil)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update the Prow 'config' and 'plugins' ConfigMaps after adding the new SourceRepository %", sr.Name)
+		}
+		err = pipelinescheduler.ApplyDirectly(kubeClient, currentNamespace, config, plugins)
+		if err != nil {
+			return errors.Wrapf(err, "applying Prow config in namespace %s", currentNamespace)
+		}
+		log.Logger().Infof("regenerated Prow configuration with the extra SourceRepository: %s\n", util.ColorInfo(sr.Name))
+
+	} else {
+		err = prow.AddApplication(client, []string{repo}, currentNamespace, options.DraftPack, settings)
+		if err != nil {
+			return err
+		}
 	}
 
 	startBuildOptions := start.StartPipelineOptions{
