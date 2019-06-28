@@ -3,16 +3,16 @@
 package buildpack_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step/buildpack"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/buildpack"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -27,7 +27,7 @@ import (
 )
 
 func TestStepBuildPackApply(t *testing.T) {
-	const buildPackURL = builds.KubernetesWorkloadBuildPackURL
+	const buildPackURL = v1.KubernetesWorkloadBuildPackURL
 	const buildPackRef = "master"
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
