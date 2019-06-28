@@ -272,6 +272,11 @@ darwin: ## Build for OSX
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/darwin/$(NAME) $(MAIN_SRC_FILE)
 	chmod +x build/darwin/$(NAME)
 
+.PHONY: test-release
+test-release: clean build
+	git fetch --tags
+	REV=$(REV) BRANCH=$(BRANCH) BUILDDATE=$(BUILD_DATE) GOVERSION=$(GO_VERSION) ROOTPACKAGE=$(ROOT_PACKAGE) VERSION=$(VERSION) goreleaser --config=./.goreleaser.yml --snapshot --skip-publish --rm-dist --skip-validate --debug
+
 .PHONY: release
 release: clean build test-slow-integration linux # Release the binary
 	git fetch --tags
