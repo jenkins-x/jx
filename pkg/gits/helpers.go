@@ -611,3 +611,9 @@ func computeBranchName(baseRef string, branchName string, dir string, gitter Git
 func IsUnadvertisedObjectError(err error) bool {
 	return strings.Contains(err.Error(), "Server does not allow request for unadvertised object")
 }
+
+func parseAuthor(l string) (string, string) {
+	open := strings.Index(l, "<")
+	close := strings.Index(l, ">")
+	return strings.TrimSpace(l[:open]), strings.TrimSpace(l[open+1 : close])
+}

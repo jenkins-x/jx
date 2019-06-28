@@ -1085,3 +1085,8 @@ func (b *BitbucketServerProvider) ListCommits(owner, repo string, opt *ListCommi
 func (b *BitbucketServerProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on bitbucket")
 }
+
+// GetLatestRelease fetches the latest release from the git provider for org and name
+func (b *BitbucketServerProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	return nil, nil
+}

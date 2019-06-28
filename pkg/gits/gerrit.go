@@ -337,3 +337,8 @@ func (p *GerritProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 func (p *GerritProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on gerrit")
 }
+
+// GetLatestRelease fetches the latest release from the git provider for org and name
+func (p *GerritProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	return nil, nil
+}
