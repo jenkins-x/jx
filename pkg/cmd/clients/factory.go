@@ -92,7 +92,7 @@ func (f *factory) WithBearerToken(token string) Factory {
 
 // CreateJenkinsClient creates a new Jenkins client
 func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (gojenkins.JenkinsClient, error) {
-	svc, err := f.CreateJenkinsConfigService()
+	svc, err := f.CreateJenkinsConfigService(auth.AutoConfigKind)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 // CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
 func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string,
 	jenkinsServiceName string) (gojenkins.JenkinsClient, error) {
-	svc, err := f.CreateJenkinsConfigService()
+	svc, err := f.CreateJenkinsConfigService(auth.AutoConfigKind)
 	if err != nil {
 		return nil, err
 	}
@@ -196,8 +196,8 @@ func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string
 }
 
 // CreateJenkinsConfigService a jenkins config service whihc is able to load/save the jenkins configuration
-func (f *factory) CreateJenkinsConfigService() (auth.ConfigService, error) {
-	cs, err := f.CreateConfigService(auth.JenkinsAuthConfigFile, kube.ValueKindJenkins, "")
+func (f *factory) CreateJenkinsConfigService(kind auth.ConfigKind) (auth.ConfigService, error) {
+	cs, err := f.CreateConfigService(kind, auth.JenkinsAuthConfigFile, kube.ValueKindJenkins, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config service for jenkins")
 	}
@@ -206,8 +206,8 @@ func (f *factory) CreateJenkinsConfigService() (auth.ConfigService, error) {
 }
 
 // CreateChartmuseumConfigService  a chartmuseum  config service which is able to load/save the chartmuseum configuration
-func (f *factory) CreateChartmuseumConfigService() (auth.ConfigService, error) {
-	cs, err := f.CreateConfigService(auth.ChartmuseumAuthConfigFile, kube.ValueKindChartmuseum, "")
+func (f *factory) CreateChartmuseumConfigService(kind auth.ConfigKind) (auth.ConfigService, error) {
+	cs, err := f.CreateConfigService(kind, auth.ChartmuseumAuthConfigFile, kube.ValueKindChartmuseum, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config service for chartmuseum")
 	}
@@ -215,8 +215,8 @@ func (f *factory) CreateChartmuseumConfigService() (auth.ConfigService, error) {
 }
 
 // CreateIssueTrackerConfigService  a issue tracker config service which is able to load/save the issue tracker configuration
-func (f *factory) CreateIssueTrackerConfigService() (auth.ConfigService, error) {
-	cs, err := f.CreateConfigService(auth.IssuesAuthConfigFile, kube.ValueKindIssue, "")
+func (f *factory) CreateIssueTrackerConfigService(kind auth.ConfigKind) (auth.ConfigService, error) {
+	cs, err := f.CreateConfigService(kind, auth.IssuesAuthConfigFile, kube.ValueKindIssue, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config service for tracker")
 	}
@@ -224,8 +224,8 @@ func (f *factory) CreateIssueTrackerConfigService() (auth.ConfigService, error) 
 }
 
 // CreateChatConfigService a chat config service which is able to load/save the chat configuration
-func (f *factory) CreateChatConfigService() (auth.ConfigService, error) {
-	cs, err := f.CreateConfigService(auth.ChatAuthConfigFile, kube.ValueKindChat, "")
+func (f *factory) CreateChatConfigService(kind auth.ConfigKind) (auth.ConfigService, error) {
+	cs, err := f.CreateConfigService(kind, auth.ChatAuthConfigFile, kube.ValueKindChat, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config service for chat")
 	}
@@ -233,8 +233,8 @@ func (f *factory) CreateChatConfigService() (auth.ConfigService, error) {
 }
 
 // CreateAddonConfigServicecreates a addon config service which is able to load/save the addon configuration
-func (f *factory) CreateAddonConfigService() (auth.ConfigService, error) {
-	cs, err := f.CreateConfigService(auth.AddonAuthConfigFile, kube.ValueKindAddon, "")
+func (f *factory) CreateAddonConfigService(kind auth.ConfigKind) (auth.ConfigService, error) {
+	cs, err := f.CreateConfigService(kind, auth.AddonAuthConfigFile, kube.ValueKindAddon, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config service for addon")
 	}
@@ -242,8 +242,8 @@ func (f *factory) CreateAddonConfigService() (auth.ConfigService, error) {
 }
 
 // CreateGitConfigService creates a git config service which is able to load/save the git configuration
-func (f *factory) CreateGitConfigService() (auth.ConfigService, error) {
-	cs, err := f.CreateConfigService(auth.GitAuthConfigFile, kube.ValueKindGit, "")
+func (f *factory) CreateGitConfigService(kind auth.ConfigKind) (auth.ConfigService, error) {
+	cs, err := f.CreateConfigService(kind, auth.GitAuthConfigFile, kube.ValueKindGit, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config service for git")
 	}
@@ -252,35 +252,58 @@ func (f *factory) CreateGitConfigService() (auth.ConfigService, error) {
 
 // CreateAuthConfigService creates a new auth config service for the provided server and services. The config service location is read from
 // configuration. It could be one of: vault, k8s secrets, local file-system.
-func (f *factory) CreateConfigService(fileName string, serverKind string, serviceKind string) (auth.ConfigService, error) {
+func (f *factory) CreateConfigService(kind auth.ConfigKind, fileName string, serverKind string, serviceKind string) (auth.ConfigService, error) {
+	switch kind {
+	case auth.LocalConfigKind:
+		return auth.NewFileConfigService(fileName)
+	case auth.PipelineConfigKind:
+		return f.createPipelineConfigService(fileName, serverKind, serviceKind)
+	case auth.AutoConfigKind:
+		if f.IsInCluster() {
+			return f.createPipelineConfigService(fileName, serverKind, serviceKind)
+		} else {
+			return auth.NewFileConfigService(fileName)
+		}
+	default:
+		return nil, fmt.Errorf("invalid config location %q", kind)
+	}
+}
+
+func (f *factory) createPipelineConfigService(fileName string, serverKind string, serviceKind string) (auth.ConfigService, error) {
 	client, namespace, err := f.CreateKubeClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating kubernetes client")
 	}
-	switch f.SecretsLocation() {
+	location := f.SecretsLocation()
+	switch location {
 	case secrets.VaultLocationKind:
 		vaultClient, err := f.CreateSystemVaultClient(namespace)
-		authService := auth.NewVaultConfigService(fileName, vaultClient)
-		return authService, err
+		if err != nil {
+			return nil, errors.Wrap(err, "creating system vault")
+		}
+		cs := auth.NewVaultConfigService(fileName, vaultClient)
+		return cs, nil
 	case secrets.KubeLocationKind:
 		devNs, _, err := kube.GetDevNamespace(client, namespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "getting the dev namesapce")
 		}
-		authService := auth.NewKubeConfigService(client, devNs, serverKind, serviceKind)
-		return authService, nil
-	default:
+		cs := auth.NewKubeConfigService(client, devNs, serverKind, serviceKind)
+		return cs, nil
+	case secrets.FileSystemLocationKind:
 		return auth.NewFileConfigService(fileName)
+	default:
+		return nil, fmt.Errorf("invalid location %q for pipeline secrets", location)
 	}
 }
 
 // CreateGitProvider creates a new Git provider from given git URL
-func (f *factory) CreateGitProvider(gitURL string, gitter gits.Gitter) (gits.GitProvider, error) {
+func (f *factory) CreateGitProvider(gitURL string, kind auth.ConfigKind, gitter gits.Gitter) (gits.GitProvider, error) {
 	repository, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
 	}
-	cs, err := f.CreateGitConfigService()
+	cs, err := f.CreateGitConfigService(kind)
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,17 @@
 package auth
 
+// ConfigKind define the type of config
+type ConfigKind string
+
+const (
+	// LocalConfigKind a local config type which is typically stored locally
+	LocalConfigKind ConfigKind = "local"
+	// PipelineConfigKind a pipeline config type which is typically used in-cluster by the pipeline
+	PipelineConfigKind ConfigKind = "pipeline"
+	// AutoConfigKind the config type is auto detected based on the context
+	AutoConfigKind ConfigKind = "auto"
+)
+
 // ConfigService is a service for handing the config of auth tokens
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/auth ConfigService -o mocks/config_service.go
 type ConfigService interface {

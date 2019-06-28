@@ -50,32 +50,32 @@ type Factory interface {
 	//
 
 	// CreateConfigService creates a new authentication configuration service
-	CreateConfigService(fileName string, serverKind string, serviceKind string) (auth.ConfigService, error)
+	CreateConfigService(kind auth.ConfigKind, fileName string, serverKind string, serviceKind string) (auth.ConfigService, error)
 
 	// CreateGitConfigService creates a new git config service
-	CreateGitConfigService() (auth.ConfigService, error)
+	CreateGitConfigService(kind auth.ConfigKind) (auth.ConfigService, error)
 
 	// CreateJenkinsConfigService creates a new Jenkins authentication configuration service
-	CreateJenkinsConfigService() (auth.ConfigService, error)
+	CreateJenkinsConfigService(kind auth.ConfigKind) (auth.ConfigService, error)
 
 	// CreateChartmuseumConfigService creates a new Chartmuseum authentication configuration service
-	CreateChartmuseumConfigService() (auth.ConfigService, error)
+	CreateChartmuseumConfigService(kind auth.ConfigKind) (auth.ConfigService, error)
 
 	// CreateIssueTrackerConfigService creates a new issuer tracker configuration service
-	CreateIssueTrackerConfigService() (auth.ConfigService, error)
+	CreateIssueTrackerConfigService(kind auth.ConfigKind) (auth.ConfigService, error)
 
 	// CreateChatConfigService creates a new chat configuration service
-	CreateChatConfigService() (auth.ConfigService, error)
+	CreateChatConfigService(kind auth.ConfigKind) (auth.ConfigService, error)
 
 	// CreateAddonConfigService creates a new addon auth configuration service
-	CreateAddonConfigService() (auth.ConfigService, error)
+	CreateAddonConfigService(kind auth.ConfigKind) (auth.ConfigService, error)
 
 	//
 	// Generic clients
 	//
 
 	// CreateGitProvider creates a new Git provider
-	CreateGitProvider(gitURL string, git gits.Gitter) (gits.GitProvider, error)
+	CreateGitProvider(gitURL string, kind auth.ConfigKind, git gits.Gitter) (gits.GitProvider, error)
 
 	// CreateJenkinsClient creates a new Jenkins client
 	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (gojenkins.JenkinsClient, error)
