@@ -3,7 +3,10 @@ package verify
 import (
 	"bytes"
 	"fmt"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"os"
@@ -88,6 +91,10 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 		defer f.Close()
 	}
 
+	notReadyPods := []string{}
+
+	notReadyPhases := map[string][]string{}
+
 	for _, pod := range pods.Items {
 		podName := pod.ObjectMeta.Name
 		phase := pod.Status.Phase
@@ -113,7 +120,21 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 			}
 		}
 		table.AddRow(podName, string(phase))
+
+		if !kube.IsPodCompleted(&pod) && !kube.IsPodReady(&pod) {
+			notReadyPods = append(notReadyPods, pod.Name)
+			key := string(phase)
+			notReadyPhases[key] = append(notReadyPhases[key], pod.Name)
+		}
 	}
 	table.Render()
+
+	if len(notReadyPods) > 0 {
+		phaseSlice := []string{}
+		for k, list := range notReadyPhases {
+			phaseSlice = append(phaseSlice, fmt.Sprintf("%s: %s", k, strings.Join(list, ", ")))
+		}
+		return fmt.Errorf("the following pods are not Ready:\n%s", strings.Join(phaseSlice, "\n"))
+	}
 	return nil
 }
