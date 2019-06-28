@@ -33,18 +33,18 @@ type CreateClusterGKEOptions struct {
 }
 
 type CreateClusterGKEFlags struct {
-	AutoUpgrade     bool
+	AutoUpgrade     bool   `mapstructure:"enable-autoupgrade"`
 	ClusterName     string `mapstructure:"cluster-name"`
-	ClusterIpv4Cidr string
-	ClusterVersion  string
-	DiskSize        string
-	ImageType       string
+	ClusterIpv4Cidr string `mapstructure:"cluster-ipv4-cidr"`
+	ClusterVersion  string `mapstructure:"kubernetes-version"`
+	DiskSize        string `mapstructure:"disk-size"`
+	ImageType       string `mapstructure:"image-type"`
 	MachineType     string `mapstructure:"machine-type"`
 	MinNumOfNodes   string `mapstructure:"min-num-nodes"`
 	MaxNumOfNodes   string `mapstructure:"max-num-nodes"`
 	Network         string
-	ProjectID       string `mapstructure:"project-id"`
-	SkipLogin       bool   `mapstructure:"skip-login"`	
+	ProjectId       string `mapstructure:"project-id"`
+	SkipLogin       bool   `mapstructure:"skip-login"`
 	SubNetwork      string
 	Region          string
 	Zone            string
@@ -57,17 +57,25 @@ type CreateClusterGKEFlags struct {
 }
 
 const (
-	skipLoginFlagName       = "skip-login"
-	preemptibleFlagName     = "preemptible"
-	enhancedAPIFlagName     = "enhanced-apis"
-	enhancedScopesFlagName  = "enhanced-scopes"
-	maxGKEClusterNameLength = 27
-	machineTypeFlagName     = "machine-type"
-	minNodesFlagName        = "min-num-nodes"
-	maxNodesFlagName        = "max-num-nodes"
-	projectIDFlagName       = "project-id"
-	zoneFlagName            = "zone"
-	regionFlagName          = "region"
+	skipLoginFlagName         = "skip-login"
+	preemptibleFlagName       = "preemptible"
+	enhancedAPIFlagName       = "enhanced-apis"
+	enhancedScopesFlagName    = "enhanced-scopes"
+	maxGKEClusterNameLength   = 27
+	machineTypeFlagName       = "machine-type"
+	minNodesFlagName          = "min-num-nodes"
+	maxNodesFlagName          = "max-num-nodes"
+	projectIDFlagName         = "project-id"
+	zoneFlagName              = "zone"
+	regionFlagName            = "region"
+	diskSizeFlagName          = "disk-size"
+	imageTypeFlagName         = "image-type"
+	clusterIpv4CidrFlagName   = "cluster-ipv4-cidr"
+	enableAutoupgradeFlagName = "enable-autoupgrade"
+	networkFlagName           = "network"
+	subNetworkFlagName        = "subnetwork"
+	labelsFlagName            = "labels"
+	scopeFlagName             = "scope"
 )
 
 var (
@@ -121,46 +129,54 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.addCreateClusterFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
-	_ = viper.BindPFlag(clusterConfigKey(optionClusterName), cmd.Flags().Lookup(optionClusterName))
-
-	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
+	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, clusterIpv4CidrFlagName, "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
 	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "v", "", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
-	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
-	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
-
+	cmd.Flags().StringVarP(&options.Flags.DiskSize, diskSizeFlagName, "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
+	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, enableAutoupgradeFlagName, "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
 	cmd.Flags().StringVarP(&options.Flags.MachineType, machineTypeFlagName, "m", "", "The type of machine to use for nodes")
-	_ = viper.BindPFlag(clusterConfigKey(machineTypeFlagName), cmd.Flags().Lookup(machineTypeFlagName))
-
 	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, minNodesFlagName, "", "", "The minimum number of nodes to be created in each of the cluster's zones")
-	_ = viper.BindPFlag(clusterConfigKey(minNodesFlagName), cmd.Flags().Lookup(minNodesFlagName))
-
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, maxNodesFlagName, "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	_ = viper.BindPFlag(clusterConfigKey(maxNodesFlagName), cmd.Flags().Lookup(maxNodesFlagName))
-
-	cmd.Flags().StringVarP(&options.Flags.ProjectID, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
-	_ = viper.BindPFlag(clusterConfigKey(projectIDFlagName), cmd.Flags().Lookup(projectIDFlagName))
-
-	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
-	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "", "The image type for the nodes in the cluster")
-	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
+	cmd.Flags().StringVarP(&options.Flags.ProjectId, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.Network, networkFlagName, "", "", "The Compute Engine Network that the cluster will connect to")
+	cmd.Flags().StringVarP(&options.Flags.ImageType, imageTypeFlagName, "", "", "The image type for the nodes in the cluster")
+	cmd.Flags().StringVarP(&options.Flags.SubNetwork, subNetworkFlagName, "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
 	cmd.Flags().StringVarP(&options.Flags.Zone, zoneFlagName, "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
-	_ = viper.BindPFlag(clusterConfigKey(zoneFlagName), cmd.Flags().Lookup(zoneFlagName))
 	cmd.Flags().StringVarP(&options.Flags.Region, regionFlagName, "r", "", "Compute region (e.g. us-central1) for the cluster")
-	_ = viper.BindPFlag(clusterConfigKey(regionFlagName), cmd.Flags().Lookup(regionFlagName))
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, skipLoginFlagName, "", false, "Skip Google auth if already logged in via gcloud auth")
-	_ = viper.BindPFlag(clusterConfigKey(skipLoginFlagName), cmd.Flags().Lookup(skipLoginFlagName))
-	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
-	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
+	cmd.Flags().StringVarP(&options.Flags.Labels, labelsFlagName, "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
+	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, scopeFlagName, "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
-	_ = viper.BindPFlag(clusterConfigKey(preemptibleFlagName), cmd.Flags().Lookup(preemptibleFlagName))
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
-	_ = viper.BindPFlag(clusterConfigKey(enhancedScopesFlagName), cmd.Flags().Lookup(enhancedScopesFlagName))
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
-	_ = viper.BindPFlag(clusterConfigKey(enhancedAPIFlagName), cmd.Flags().Lookup(enhancedAPIFlagName))
+
+	bindGKEConfigToFlags(cmd)
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
 	return cmd
+}
+
+func bindGKEConfigToFlags(cmd *cobra.Command) {
+	_ = viper.BindPFlag(clusterConfigKey(optionClusterName), cmd.Flags().Lookup(optionClusterName))
+	_ = viper.BindPFlag(clusterConfigKey(clusterIpv4CidrFlagName), cmd.Flags().Lookup(clusterIpv4CidrFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(optionKubernetesVersion), cmd.Flags().Lookup(optionKubernetesVersion))
+	_ = viper.BindPFlag(clusterConfigKey(diskSizeFlagName), cmd.Flags().Lookup(diskSizeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(enableAutoupgradeFlagName), cmd.Flags().Lookup(enableAutoupgradeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(machineTypeFlagName), cmd.Flags().Lookup(machineTypeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(minNodesFlagName), cmd.Flags().Lookup(minNodesFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(maxNodesFlagName), cmd.Flags().Lookup(maxNodesFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(projectIDFlagName), cmd.Flags().Lookup(projectIDFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(networkFlagName), cmd.Flags().Lookup(networkFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(imageTypeFlagName), cmd.Flags().Lookup(imageTypeFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(subNetworkFlagName), cmd.Flags().Lookup(subNetworkFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(zoneFlagName), cmd.Flags().Lookup(zoneFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(regionFlagName), cmd.Flags().Lookup(regionFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(skipLoginFlagName), cmd.Flags().Lookup(skipLoginFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(labelsFlagName), cmd.Flags().Lookup(labelsFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(scopeFlagName), cmd.Flags().Lookup(labelsFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(preemptibleFlagName), cmd.Flags().Lookup(preemptibleFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(enhancedScopesFlagName), cmd.Flags().Lookup(enhancedScopesFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(enhancedAPIFlagName), cmd.Flags().Lookup(enhancedAPIFlagName))
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
@@ -198,7 +214,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	projectId := o.Flags.ProjectID
+	projectId := o.Flags.ProjectId
 	if projectId == "" {
 		projectId, err = o.GetGoogleProjectId()
 		if err != nil {
