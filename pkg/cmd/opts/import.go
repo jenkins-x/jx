@@ -222,7 +222,7 @@ func (o *CommonOptions) GenerateProwConfig(currentNamespace string, devEnv *v1.E
 	defaultSchedulerName := devEnv.Spec.TeamSettings.DefaultScheduler.Name
 	config, plugins, err := pipelinescheduler.GenerateProw(false, true, jxClient, currentNamespace, defaultSchedulerName, devEnv, nil)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update the Prow 'config' and 'plugins' ConfigMaps after adding the new SourceRepository %", sr.Name)
+		return errors.Wrapf(err, "failed to update the Prow 'config' and 'plugins' ConfigMaps after adding the new SourceRepository %s", sr.Name)
 	}
 	err = pipelinescheduler.ApplyDirectly(kubeClient, currentNamespace, config, plugins)
 	if err != nil {
