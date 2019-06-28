@@ -59,9 +59,10 @@ func NewCmdStepCreatePr(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdStepCreatePullRequestDocker(commonOpts))
-	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
 	cmd.AddCommand(NewCmdStepCreatePullRequestChart(commonOpts))
 	cmd.AddCommand(NewCmdStepCreatePullRequestRegex(commonOpts))
+	cmd.AddCommand(NewCmdStepCreatePullRequestRepositories(commonOpts))
+	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
 	return cmd
 }
 
