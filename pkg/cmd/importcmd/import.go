@@ -20,8 +20,11 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/start"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -941,10 +944,6 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	}
 
 	if settings.IsSchedulerMode() {
-		kubeClient, err := options.KubeClient()
-		if err != nil {
-			return err
-		}
 		jxClient, _, err := options.JXClient()
 		if err != nil {
 			return err
@@ -962,16 +961,10 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 			}
 		}
 
-		config, plugins, err := pipelinescheduler.GenerateProw(false, true, jxClient, currentNamespace, settings.DefaultScheduler.Name, devEnv, nil)
+		err = options.GenerateProwConfig(currentNamespace, devEnv, sr)
 		if err != nil {
-			return errors.Wrapf(err, "failed to update the Prow 'config' and 'plugins' ConfigMaps after adding the new SourceRepository %", sr.Name)
+			return err
 		}
-		err = pipelinescheduler.ApplyDirectly(kubeClient, currentNamespace, config, plugins)
-		if err != nil {
-			return errors.Wrapf(err, "applying Prow config in namespace %s", currentNamespace)
-		}
-		log.Logger().Infof("regenerated Prow configuration with the extra SourceRepository: %s\n", util.ColorInfo(sr.Name))
-
 	} else {
 		err = prow.AddApplication(client, []string{repo}, currentNamespace, options.DraftPack, settings)
 		if err != nil {

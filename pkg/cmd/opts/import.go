@@ -5,12 +5,15 @@ import (
 	"net/url"
 	"time"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 // ImportProject imports a MultiBranchProject into Jenkins for the given git URL
@@ -203,6 +206,30 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		URL:   webhookUrl,
 	}
 	return gitProvider.CreateWebHook(webhook)
+}
+
+// GenerateProwConfig regenerates the Prow configurations after we have created a SourceRepository
+func (o *CommonOptions) GenerateProwConfig(currentNamespace string, devEnv *v1.Environment, sr *v1.SourceRepository) error {
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
+
+	defaultSchedulerName := devEnv.Spec.TeamSettings.DefaultScheduler.Name
+	config, plugins, err := pipelinescheduler.GenerateProw(false, true, jxClient, currentNamespace, defaultSchedulerName, devEnv, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update the Prow 'config' and 'plugins' ConfigMaps after adding the new SourceRepository %", sr.Name)
+	}
+	err = pipelinescheduler.ApplyDirectly(kubeClient, currentNamespace, config, plugins)
+	if err != nil {
+		return errors.Wrapf(err, "applying Prow config in namespace %s", currentNamespace)
+	}
+	log.Logger().Infof("regenerated Prow configuration with the extra SourceRepository: %s\n", util.ColorInfo(sr.Name))
+	return nil
 }
 
 // LogImportedProject logs more details for an imported project

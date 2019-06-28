@@ -299,18 +299,32 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 	if o.Prow {
 		repo := fmt.Sprintf("%s/%s", gitInfo.Organisation, gitInfo.Name)
 
-		teamSettings, err := o.TeamSettings()
-		if err != nil {
-			return err
-		}
 		kubeClient, devNs, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			return err
 		}
 
-		err = prow.AddEnvironment(kubeClient, []string{repo}, devNs, env.Spec.Namespace, teamSettings, env.Spec.RemoteCluster)
+		devEnv, teamSettings, err := o.DevEnvAndTeamSettings()
 		if err != nil {
-			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
+			return err
+		}
+		if teamSettings.IsSchedulerMode() {
+			jxClient, _, err := o.JXClient()
+			if err != nil {
+				return err
+			}
+			sr, err := kube.GetOrCreateSourceRepository(jxClient, devNs, gitInfo.Name, gitInfo.Organisation, gitInfo.HostURLWithoutUser())
+			log.Logger().Debugf("have SourceRepository: %s\n", sr.Name)
+
+			err = o.GenerateProwConfig(devNs, devEnv, sr)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = prow.AddEnvironment(kubeClient, []string{repo}, devNs, env.Spec.Namespace, teamSettings, env.Spec.RemoteCluster)
+			if err != nil {
+				return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
+			}
 		}
 
 		config := authConfigSvc.Config()
