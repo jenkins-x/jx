@@ -83,17 +83,16 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 	if err != nil {
 		if o.WaitDuration.Seconds() == 0 {
 			return err
-		} else {
-			log.Logger().Warnf("%s\n", err.Error())
-			log.Logger().Infof("\nWaiting %s for the pods to become Ready...\n\n", o.WaitDuration.String())
-
-			err = o.RetryQuietlyUntilTimeout(o.WaitDuration, time.Second*10, func() error {
-				var err error
-				table, err = o.waitForReadyPods(kubeClient, ns)
-				return err
-			})
-			table.Render()
 		}
+		log.Logger().Warnf("%s\n", err.Error())
+		log.Logger().Infof("\nWaiting %s for the pods to become Ready...\n\n", o.WaitDuration.String())
+
+		err = o.RetryQuietlyUntilTimeout(o.WaitDuration, time.Second*10, func() error {
+			var err error
+			table, err = o.waitForReadyPods(kubeClient, ns)
+			return err
+		})
+		table.Render()
 	}
 	return err
 }
