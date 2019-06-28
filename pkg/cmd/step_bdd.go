@@ -661,6 +661,29 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", binary, strings.Join(safeArgs, " "))
 	}
+	if err != nil {
+		return err
+	}
+
+	for _, c := range cluster.Commands {
+		e := exec.Command(c.Command, c.Args...)
+		e.Stdout = o.Out
+		e.Stderr = o.Err
+		os.Setenv("PATH", util.PathWithBinary())
+
+		// work around for helm apply with GitOps using a k8s local Service URL
+		os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
+
+		log.Logger().Infof("running command: %s", util.ColorInfo(fmt.Sprintf("%s %s", c.Command, strings.Join(c.Args, " "))))
+
+		err := e.Run()
+		if err != nil {
+			log.Logger().Errorf("Error: Command failed  %s %s", c.Command, strings.Join(c.Args, " "))
+		}
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
