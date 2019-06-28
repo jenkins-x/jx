@@ -1330,9 +1330,13 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, task *pipelineapi.Task,
 	if dir != "" {
 		workspaceDir := o.getWorkspaceDir()
 		if strings.HasPrefix(dir, workspaceDir) {
-			curDir, err := os.Getwd()
-			if err != nil {
-				return err
+			curDir := o.CloneDir
+			if curDir == "" {
+				var err error
+				curDir, err = os.Getwd()
+				if err != nil {
+					return err
+				}
 			}
 			relPath, err := filepath.Rel(workspaceDir, dir)
 			if err != nil {
