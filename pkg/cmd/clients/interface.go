@@ -13,7 +13,6 @@ import (
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/table"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -79,10 +78,10 @@ type Factory interface {
 	CreateGitProvider(gitURL string, git gits.Gitter) (gits.GitProvider, error)
 
 	// CreateJenkinsClient creates a new Jenkins client
-	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error)
+	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (gojenkins.JenkinsClient, error)
 
 	// CreateCustomJenkinsClient creates a new Jenkins client for the custom Jenkins App with the jenkinsServiceName
-	CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error)
+	CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string) (gojenkins.JenkinsClient, error)
 
 	// CreateComplianceClient creates a new compliance client
 	CreateComplianceClient() (*client.SonobuoyClient, error)

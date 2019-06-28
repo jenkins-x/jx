@@ -25,7 +25,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -92,8 +91,7 @@ func (f *factory) WithBearerToken(token string) Factory {
 }
 
 // CreateJenkinsClient creates a new Jenkins client
-func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string,
-	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (gojenkins.JenkinsClient, error) {
 	svc, err := f.CreateJenkinsConfigService()
 	if err != nil {
 		return nil, err
@@ -114,8 +112,8 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 }
 
 // CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
-func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string,
-	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string,
+	jenkinsServiceName string) (gojenkins.JenkinsClient, error) {
 	svc, err := f.CreateJenkinsConfigService()
 	if err != nil {
 		return nil, err
@@ -169,9 +167,12 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 // GetCustomJenkinsURL gets a custom jenkins App service URL
 func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string) (string, error) {
 	// lets find the Kubernetes service
-	client, ns, err := f.CreateKubeClient()
+	client, curNs, err := f.CreateKubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create the kube client")
+	}
+	if ns == "" {
+		ns = curNs
 	}
 	url, err := services.FindServiceURL(client, ns, jenkinsServiceName)
 	if err != nil {
@@ -626,10 +627,7 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 // function to tell if we are running incluster
 func (f *factory) IsInCluster() bool {
 	_, err := rest.InClusterConfig()
-	if err != nil {
-		return false
-	}
-	return true
+	return err != nil
 }
 
 // CreateComplianceClient creates a new Sonobuoy compliance client

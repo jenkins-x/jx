@@ -21,7 +21,6 @@ import (
 	versioned3 "github.com/knative/serving/pkg/client/clientset/versioned"
 	pegomock "github.com/petergtz/pegomock"
 	versioned4 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	terminal "gopkg.in/AlecAivazis/survey.v1/terminal"
 	io "io"
 	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubernetes "k8s.io/client-go/kubernetes"
@@ -179,11 +178,11 @@ func (mock *MockFactory) CreateConfigService(_param0 string, _param1 string, _pa
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string, _param3 terminal.FileReader, _param4 terminal.FileWriter, _param5 io.Writer) (golang_jenkins.JenkinsClient, error) {
+func (mock *MockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string) (golang_jenkins.JenkinsClient, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5}
+	params := []pegomock.Param{_param0, _param1, _param2}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateCustomJenkinsClient", params, []reflect.Type{reflect.TypeOf((*golang_jenkins.JenkinsClient)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 golang_jenkins.JenkinsClient
 	var ret1 error
@@ -316,11 +315,11 @@ func (mock *MockFactory) CreateJXClient() (versioned0.Interface, string, error) 
 	return ret0, ret1, ret2
 }
 
-func (mock *MockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 terminal.FileReader, _param3 terminal.FileWriter, _param4 io.Writer) (golang_jenkins.JenkinsClient, error) {
+func (mock *MockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string) (golang_jenkins.JenkinsClient, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+	params := []pegomock.Param{_param0, _param1}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateJenkinsClient", params, []reflect.Type{reflect.TypeOf((*golang_jenkins.JenkinsClient)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 golang_jenkins.JenkinsClient
 	var ret1 error
@@ -867,8 +866,8 @@ func (c *MockFactory_CreateConfigService_OngoingVerification) GetAllCapturedArgu
 	return
 }
 
-func (verifier *VerifierMockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string, _param3 terminal.FileReader, _param4 terminal.FileWriter, _param5 io.Writer) *MockFactory_CreateCustomJenkinsClient_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5}
+func (verifier *VerifierMockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string) *MockFactory_CreateCustomJenkinsClient_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateCustomJenkinsClient", params, verifier.timeout)
 	return &MockFactory_CreateCustomJenkinsClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -878,12 +877,12 @@ type MockFactory_CreateCustomJenkinsClient_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, string, terminal.FileReader, terminal.FileWriter, io.Writer) {
-	_param0, _param1, _param2, _param3, _param4, _param5 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1]
+func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string, _param3 []terminal.FileReader, _param4 []terminal.FileWriter, _param5 []io.Writer) {
+func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]kubernetes.Interface, len(params[0]))
@@ -897,18 +896,6 @@ func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetAllCaptur
 		_param2 = make([]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
-		}
-		_param3 = make([]terminal.FileReader, len(params[3]))
-		for u, param := range params[3] {
-			_param3[u] = param.(terminal.FileReader)
-		}
-		_param4 = make([]terminal.FileWriter, len(params[4]))
-		for u, param := range params[4] {
-			_param4[u] = param.(terminal.FileWriter)
-		}
-		_param5 = make([]io.Writer, len(params[5]))
-		for u, param := range params[5] {
-			_param5[u] = param.(io.Writer)
 		}
 	}
 	return
@@ -1052,8 +1039,8 @@ func (c *MockFactory_CreateJXClient_OngoingVerification) GetCapturedArguments() 
 func (c *MockFactory_CreateJXClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 terminal.FileReader, _param3 terminal.FileWriter, _param4 io.Writer) *MockFactory_CreateJenkinsClient_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+func (verifier *VerifierMockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string) *MockFactory_CreateJenkinsClient_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateJenkinsClient", params, verifier.timeout)
 	return &MockFactory_CreateJenkinsClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1063,12 +1050,12 @@ type MockFactory_CreateJenkinsClient_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, terminal.FileReader, terminal.FileWriter, io.Writer) {
-	_param0, _param1, _param2, _param3, _param4 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1]
+func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []terminal.FileReader, _param3 []terminal.FileWriter, _param4 []io.Writer) {
+func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]kubernetes.Interface, len(params[0]))
@@ -1078,18 +1065,6 @@ func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArgu
 		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
-		}
-		_param2 = make([]terminal.FileReader, len(params[2]))
-		for u, param := range params[2] {
-			_param2[u] = param.(terminal.FileReader)
-		}
-		_param3 = make([]terminal.FileWriter, len(params[3]))
-		for u, param := range params[3] {
-			_param3[u] = param.(terminal.FileWriter)
-		}
-		_param4 = make([]io.Writer, len(params[4]))
-		for u, param := range params[4] {
-			_param4[u] = param.(io.Writer)
 		}
 	}
 	return
