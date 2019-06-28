@@ -181,7 +181,8 @@ func (o *UpdateWebhooksOptions) GetOrgOrUserFromOptions() string {
 }
 
 func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner string, repoName string, webhookURL string, isProwEnabled bool, hmacToken string) error {
-	log.Logger().Infof("Checking hooks for repository %s/%s with user %s", util.ColorInfo(owner), util.ColorInfo(repoName), util.ColorInfo(git.UserAuth().Username))
+	userName := git.UserAuth().Username
+	log.Logger().Infof("Checking hooks for repository %s/%s with user %s", util.ColorInfo(owner), util.ColorInfo(repoName), util.ColorInfo(userName))
 
 	webhooks, err := git.ListWebHooks(owner, repoName)
 	if err != nil {
@@ -194,6 +195,9 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 			Name: repoName,
 		},
 		URL: webhookURL,
+	}
+	if userName != owner {
+		webHookArgs.Repo.Organisation = owner
 	}
 	if isProwEnabled {
 		webHookArgs.Secret = hmacToken
@@ -213,12 +217,11 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 				}
 			}
 		}
-	} else {
-		if !o.DryRun {
-			if err := git.CreateWebHook(webHookArgs); err != nil {
-				return errors.Wrapf(err, "creating the webhook %q on repository '%s/%s'",
-					webhookURL, owner, repoName)
-			}
+	}
+	if !o.DryRun {
+		if err := git.CreateWebHook(webHookArgs); err != nil {
+			return errors.Wrapf(err, "creating the webhook %q on repository '%s/%s'",
+				webhookURL, owner, repoName)
 		}
 	}
 	return nil
@@ -241,7 +244,7 @@ func (o *UpdateWebhooksOptions) matchesRepository(repository *v1.SourceRepositor
 	if o.Org != "" && o.Org != repository.Spec.Org {
 		return false
 	}
-	if o.Repo != "" && o.Org != repository.Spec.Repo {
+	if o.Repo != "" && o.Repo != repository.Spec.Repo {
 		return false
 	}
 	return true
