@@ -769,7 +769,7 @@ func (options *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
 		}
 		defer file.Close()
 
-		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\njx\n")
+		_, err = file.WriteString("**/*.json\n.terraform\n**/*.tfstate\njx\n")
 		if err != nil {
 			return err
 		}
