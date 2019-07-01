@@ -172,7 +172,7 @@ brews:
     # Custom install script for brew.
     # Default is 'bin.install "program"'.
     install: |
-      bin.install jx
+      bin.install name
 
       output = Utils.popen_read("SHELL=bash #{bin}/jx completion bash")
       (bash_completion/"jx").write output
