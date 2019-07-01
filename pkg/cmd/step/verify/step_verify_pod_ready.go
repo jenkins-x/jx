@@ -52,7 +52,7 @@ func NewCmdStepVerifyPodReady(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "ready",
-		Short:   "Returns the status of kubernetes pods",
+		Short:   "Verifies all the pods are ready",
 		Long:    stepStatusLong,
 		Example: stepStatusExample,
 		Run: func(cmd *cobra.Command, args []string) {
