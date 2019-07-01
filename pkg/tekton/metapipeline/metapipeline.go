@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -72,7 +73,18 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		return nil, err
 	}
 
-	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, params.GitInfo, "")}
+	revision := params.Branch
+	if params.PullRef != "" {
+		pr, err := prow.ParsePullRefs(params.PullRef)
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range pr.ToMerge {
+			revision = v
+		}
+	}
+
+	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, params.GitInfo, revision)}
 	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.Trigger, params.ServiceAccount, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
@@ -173,6 +185,9 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	args = append(args, "--trigger", params.Trigger)
 	args = append(args, "--service-account", params.ServiceAccount)
 	args = append(args, "--source", params.SourceDir)
+	if params.Branch != "" {
+		args = append(args, "--branch", params.Branch)
+	}
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
