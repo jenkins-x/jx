@@ -32,7 +32,8 @@ func NewCmdStepVerifyInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use: "install",
+		Use:   "install",
+		Short: "Verifies that an installation is setup correctly",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
