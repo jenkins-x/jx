@@ -391,7 +391,7 @@ func (t *TeamSettings) DefaultMissingValues() {
 
 	// lets invoke the getters to lazily populate any missing values
 	t.GetProwConfig()
-	t.GetProwConfig()
+	t.GetProwEngine()
 	t.GetImportMode()
 }
 
@@ -403,7 +403,7 @@ func (t *TeamSettings) IsJenkinsXPipelines() bool {
 // IsSchedulerMode returns true if we setup Prow configuration via the Scheduler CRDs
 // rather than directly modifying the Prow ConfigMaps directly
 func (t *TeamSettings) IsSchedulerMode() bool {
-	return t.IsProw() && t.GetProwEngine() == ProwEngineTypeTekton
+	return t.IsProw() && t.GetProwConfig() == ProwConfigScheduler
 }
 
 // IsProw returns true if using Prow
