@@ -127,7 +127,7 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "parallel", "", false, "Should we process each cluster configuration in parallel")
 	cmd.Flags().BoolVarP(&options.Flags.UseRevision, "use-revision", "", true, "Use the git revision from the current git clone instead of the Pull Request branch")
 	cmd.Flags().BoolVarP(&options.Flags.VersionsRepoPr, "version-repo-pr", "", false, "For use with jenkins-x-versions PR. Indicates the git revision of the PR should be used to clone the jenkins-x-versions")
-	cmd.Flags().StringVarP(&options.Flags.Dir, "dir", "d", ".", "the directory to run from where we look the requirements file")
+	cmd.Flags().StringVarP(&options.Flags.Dir, "source-dir", "", ".", "the directory to run from where we look the requirements file")
 
 	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+cloud.KubernetesProviderOptions())
 
