@@ -120,7 +120,7 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 }
 
 // GenerateNextBuildNumber generates a new build number for the given project.
-func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration, pipelineIdentifier string) (string, error) {
+func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration, context string) (string, error) {
 	nextBuildNumber := ""
 	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
 	// TODO: How does SourceRepository handle name overlap?
@@ -147,9 +147,16 @@ func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxCli
 		for nextNumber := lastBuildNumber + 1; true; nextNumber++ {
 			// lets check there is not already a PipelineRun for this number
 			buildIdentifier := strconv.Itoa(nextNumber)
-			pipelineResourceName := syntax.PipelineRunName(pipelineIdentifier, buildIdentifier)
-			_, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pipelineResourceName, metav1.GetOptions{})
-			if err == nil {
+
+			labelSelector := fmt.Sprintf("owner=%s,repo=%s,branch=%s,build=%s", gitInfo.Organisation, gitInfo.Name, branch, buildIdentifier)
+			if context != "" {
+				labelSelector += fmt.Sprintf(",context=%s", context)
+			}
+
+			prs, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{
+				LabelSelector: labelSelector,
+			})
+			if err == nil && len(prs.Items) > 0 {
 				// lets try make another build number as there's already a PipelineRun
 				// which could be due to name clashes
 				continue
