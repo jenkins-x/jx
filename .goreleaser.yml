@@ -151,7 +151,7 @@ brews:
     # Defaults are shown.
     commit_author:
       name: jenkins-x-bot
-      email: goreleacker.com
+      email: jenkins-x-bot@jenkins-x.io
     folder: Formula
     homepage: "https://jenkins-x.io/"
     description: "A tool to install and interact with Jenkins X on your Kubernetes cluster."
