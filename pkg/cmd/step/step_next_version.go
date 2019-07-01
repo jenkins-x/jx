@@ -10,6 +10,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/semrel"
+
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -33,11 +37,12 @@ const (
 
 // StepNextVersionOptions contains the command line flags
 type StepNextVersionOptions struct {
-	Filename      string
-	Dir           string
-	Tag           bool
-	UseGitTagOnly bool
-	NewVersion    string
+	Filename        string
+	Dir             string
+	Tag             bool
+	UseGitTagOnly   bool
+	NewVersion      string
+	SemanticRelease bool
 	opts.StepOptions
 }
 
@@ -85,15 +90,33 @@ func NewCmdStepNextVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for files that contain a pom.xml or Makefile with the project version to bump")
 	cmd.Flags().BoolVarP(&options.Tag, "tag", "t", false, "tag and push new version")
 	cmd.Flags().BoolVarP(&options.UseGitTagOnly, "use-git-tag-only", "", false, "only use a git tag so work out new semantic version, else specify filename [pom.xml,package.json,Makefile,Chart.yaml]")
-
+	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "use conventional commits to determine next version. Ignores the --use-git-tag-only and --version options See https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines")
 	return cmd
 }
 
 func (o *StepNextVersionOptions) Run() error {
 
 	var err error
-	if o.NewVersion == "" {
-		o.NewVersion, err = o.getNewVersionFromTag()
+	if o.SemanticRelease {
+		err := o.Git().FetchTags(o.Dir)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		rev, tag, err := o.Git().GetCurrentGitTagSHA(o.Dir)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		cur, err := o.Git().RevParse(o.Dir, "HEAD")
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		newVersion, err := semrel.GetNewVersion(o.Dir, cur, o.Git(), tag, rev)
+		if err != nil {
+			return errors.Wrapf(err, "getting new semantic release version for %s", tag)
+		}
+		o.NewVersion = newVersion.String()
+	} else if o.NewVersion == "" {
+		o.NewVersion, err = o.getNewVersionFromTagAndFile()
 		if err != nil {
 			return err
 		}
@@ -274,7 +297,7 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	return versions[latest-1].String(), nil
 }
 
-func (o *StepNextVersionOptions) getNewVersionFromTag() (string, error) {
+func (o *StepNextVersionOptions) getNewVersionFromTagAndFile() (string, error) {
 
 	// get the latest github tag
 	tag, err := o.getLatestTag()
@@ -374,7 +397,7 @@ func (o *StepNextVersionOptions) SetVersion() error {
 		return err
 	}
 
-	err = o.Git().CommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
+	err = o.Git().CommitDir(o.Dir, fmt.Sprintf("release %s", o.NewVersion))
 	if err != nil {
 		return err
 	}

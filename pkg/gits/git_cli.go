@@ -377,6 +377,53 @@ func (g *GitCLI) CommitIfChanges(dir string, message string) error {
 	return g.CommitDir(dir, message)
 }
 
+// GetCommits returns the commits in a range, exclusive of startSha and inclusive of endSha
+func (g *GitCLI) GetCommits(dir string, startSha string, endSha string) ([]GitCommit, error) {
+	args := []string{"log", "--format=raw", fmt.Sprintf("%s..%s", startSha, endSha)}
+	out, err := g.gitCmdWithOutput(dir, args...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "running git %s", strings.Join(args, " "))
+	}
+	answer := make([]GitCommit, 0)
+	commits := strings.Split(out, "commit ")
+	for _, rawCommit := range commits {
+		if strings.TrimSpace(rawCommit) == "" {
+			// Skip empty lines
+			continue
+		}
+		// Readd the commit bit that we split around
+		rawCommit = "commit " + rawCommit
+		commit := GitCommit{}
+		lines := strings.Split(rawCommit, "\n")
+		message := make([]string, 0)
+		for _, line := range lines {
+			if strings.HasPrefix(line, "commit ") {
+				commit.SHA = strings.TrimPrefix(line, "commit ")
+			} else if strings.HasPrefix(line, "author ") {
+				name, email := parseAuthor(strings.TrimPrefix(line, "author "))
+				commit.Author = &GitUser{
+					Name:  name,
+					Email: email,
+				}
+			} else if strings.HasPrefix(line, "committer ") {
+				name, email := parseAuthor(strings.TrimPrefix(line, "committer "))
+				commit.Author = &GitUser{
+					Name:  name,
+					Email: email,
+				}
+			} else if strings.HasPrefix(line, "parent ") || strings.HasPrefix(line, "tree ") {
+
+			} else if line != "" {
+				message = append(message, strings.TrimSpace(line))
+			}
+			commit.Message = strings.Join(message, "\n")
+		}
+		answer = append(answer, commit)
+	}
+	return answer, nil
+
+}
+
 // CommitDir commits all changes from the given directory
 func (g *GitCLI) CommitDir(dir string, message string) error {
 	return g.gitCmd(dir, "commit", "-m", message)
@@ -656,22 +703,22 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 }
 
 // GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
-func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
+func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, string, error) {
 	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--tags", "--always")
 	if err != nil {
-		return "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
+		return "", "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
 	}
 
 	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--tags", "--always", latestTag+"^^")
 	if err != nil {
-		return "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
+		return "", "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
 	}
 
 	previousTagSha, err := g.gitCmdWithOutput(dir, "rev-list", "-n", "1", previousTag)
 	if err != nil {
-		return "", errors.Wrapf(err, "running for git rev-list -n 1 %s", previousTag)
+		return "", "", errors.Wrapf(err, "running for git rev-list -n 1 %s", previousTag)
 	}
-	return previousTagSha, nil
+	return previousTagSha, previousTag, nil
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
@@ -690,8 +737,18 @@ func (g *GitCLI) GetRevisionBeforeDateText(dir string, dateText string) (string,
 }
 
 // GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
-func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, error) {
-	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
+func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, string, error) {
+	args := []string{"rev-list", "--tags", "--max-count=1"}
+	sha, err := g.gitCmdWithOutput(dir, args...)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
+	}
+	args = []string{"describe", sha}
+	tag, err := g.gitCmdWithOutput(dir, args...)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
+	}
+	return sha, tag, nil
 }
 
 // GetLatestCommitMessage returns the latest git commit message
@@ -701,7 +758,7 @@ func (g *GitCLI) GetLatestCommitMessage(dir string) (string, error) {
 
 // FetchTags fetches all the tags
 func (g *GitCLI) FetchTags(dir string) error {
-	return g.gitCmd("", "fetch", "--tags", "-v")
+	return g.gitCmd(dir, "fetch", "--tags")
 }
 
 // Tags returns all tags from the repository at the given directory
@@ -868,4 +925,9 @@ func (g *GitCLI) RebaseTheirs(dir string, upstream string, branch string) error 
 		args = append(args, branch)
 	}
 	return g.gitCmd(dir, args...)
+}
+
+// RevParse runs git rev-parse on rev
+func (g *GitCLI) RevParse(dir string, rev string) (string, error) {
+	return g.gitCmdWithOutput(dir, "rev-parse", rev)
 }

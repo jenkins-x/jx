@@ -525,7 +525,7 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository 
 			if commit.Author.User != nil {
 				login = commit.Author.User.Username
 			}
-			// Author.Raw contains the Git commit author in the form: User <email@example.com>
+			// Author.MessageLines contains the Git commit author in the form: User <email@example.com>
 			email = rawEmailMatcher.ReplaceAllString(commit.Author.Raw, "$1")
 		}
 
@@ -1036,4 +1036,9 @@ func (b *BitbucketCloudProvider) ListCommits(owner, repo string, opt *ListCommit
 // AddLabelsToIssue adds labels to issues or pullrequests
 func (b *BitbucketCloudProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on bitbucket")
+}
+
+// GetLatestRelease fetches the latest release from the git provider for org and name
+func (b *BitbucketCloudProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	return nil, nil
 }

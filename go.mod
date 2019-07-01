@@ -6,6 +6,7 @@ require (
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2
 	github.com/Jeffail/gabs v1.1.1
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
+	github.com/Masterminds/semver v1.4.2
 	github.com/Netflix/go-expect v0.0.0-20180814212900-124a37274874
 	github.com/Pallinder/go-randomdata v0.0.0-20180616180521-15df0648130a
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect

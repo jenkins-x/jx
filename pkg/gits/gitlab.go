@@ -737,3 +737,9 @@ func (g *GitlabProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 func (g *GitlabProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
 	return fmt.Errorf("Getting content not supported on gitlab yet")
 }
+
+// GetLatestRelease fetches the latest release from the git provider for org and name
+func (g *GitlabProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	// TODO
+	return nil, nil
+}

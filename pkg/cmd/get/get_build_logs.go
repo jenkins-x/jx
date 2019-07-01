@@ -254,20 +254,21 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	var buildMap map[string]builds.BaseBuildInfo
 	var pipelineMap map[string]builds.BaseBuildInfo
 
+	var err error
+	if tektonEnabled {
+		names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+	} else {
+		names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
+	}
+	if err != nil {
+		return err
+	}
+
 	args := o.Args
 	pickedPipeline := false
 	if len(args) == 0 {
 		if o.BatchMode {
 			return util.MissingArgument("pipeline")
-		}
-		var err error
-		if tektonEnabled {
-			names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
-		} else {
-			names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
-		}
-		if err != nil {
-			return err
 		}
 		pickedPipeline = true
 		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
