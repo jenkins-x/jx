@@ -5,8 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
-	"sigs.k8s.io/yaml"
 
 	"io/ioutil"
 	"path/filepath"
@@ -31,6 +32,20 @@ const (
 	SecretStorageTypeLocal SecretStorageType = "local"
 )
 
+// EnvironmentConfig configures the organisation and repository name of the git repositories for environments
+type EnvironmentConfig struct {
+	// Key is the key of the environment configuration
+	Key string `json:"key,omitempty"`
+	// Owner is the git user or organisation for the repository
+	Owner string `json:"owner,omitempty"`
+	// Repository is the name of the repository within the owner
+	Repository string `json:"repository,omitempty"`
+	// GitServer is the URL of the git server
+	GitServer string `json:"gitServer,omitempty"`
+	// GitKind is the kind of git server (github, bitbucketserver etc)
+	GitKind string `json:"gitKind,omitempty"`
+}
+
 // RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
 	// Kaniko whether to enable kaniko for building docker images
@@ -49,6 +64,8 @@ type RequirementsConfig struct {
 	Region string `json:"region,omitempty"`
 	// Zone the cloud zone being used
 	Zone string `json:"zone,omitempty"`
+	// Environments the requirements for the environments
+	Environments []EnvironmentConfig `json:"environments,omitempty"`
 }
 
 // NewRequirementsConfig creates a default configuration file
@@ -146,6 +163,38 @@ func (c *RequirementsConfig) SaveConfig(fileName string) error {
 		return errors.Wrapf(err, "failed to save file %s", fileName)
 	}
 	return nil
+}
+
+// EnvironmentMap creates a map of maps tree which can be used inside Go templates to access the environment
+// configurations
+func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
+	answer := map[string]interface{}{}
+	for _, env := range c.Environments {
+		k := env.Key
+		if k == "" {
+			log.Logger().Warnf("missing 'key' for Environment requirements %#v", env)
+			continue
+		}
+		m, err := toObjectMap(&env)
+		if err == nil {
+			answer[k] = m
+		} else {
+			log.Logger().Warnf("failed to turn environment %s with value %#v into a map: %s\n", k, env, err.Error())
+		}
+	}
+	log.Logger().Infof("Enviroments: %#v\n", answer)
+	return answer
+}
+
+// toObjectMap converts the given object into a map of strings/maps using YAML marshalling
+func toObjectMap(object interface{}) (map[string]interface{}, error) {
+	answer := map[string]interface{}{}
+	data, err := yaml.Marshal(object)
+	if err != nil {
+		return answer, err
+	}
+	err = yaml.Unmarshal(data, &answer)
+	return answer, err
 }
 
 // MissingRequirement returns an error if there is a missing property in the requirements

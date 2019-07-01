@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -583,11 +584,25 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if exists {
 		if cluster.Name != requirements.ClusterName {
 			requirements.ClusterName = cluster.Name
+
+			// lets ensure that there's git repositories setup
+			o.ensureTestEnvironmentRepoSetup(requirements, "staging")
+			// TODO lets not do production just yet to avoid making too many git repos on github.com
+			//ensureTestEnvironmentRepoSetup(requirements, "production")
+
 			err = requirements.SaveConfig(requirementsFile)
 			if err != nil {
 				return errors.Wrapf(err, "failed to save file %s after setting the cluster name to %s", requirementsFile, cluster.Name)
 			}
 			log.Logger().Infof("wrote file %s after setting the cluster name to %s\n", requirementsFile, cluster.Name)
+
+			data, err := ioutil.ReadFile(requirementsFile)
+			if err != nil {
+				return errors.Wrapf(err, "failed to load file %s", requirementsFile)
+			}
+			log.Logger().Infof("%s is:\n", requirementsFile)
+			log.Logger().Infof("%s\n", util.ColorStatus(string(data)))
+			log.Logger().Info("\n")
 		}
 	}
 
@@ -712,6 +727,44 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		}
 	}
 	return err
+}
+
+func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.RequirementsConfig, envName string) {
+	idx := -1
+	for i, env := range requirements.Environments {
+		if env.Key == envName {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		idx = len(requirements.Environments)
+		requirements.Environments = append(requirements.Environments, config.EnvironmentConfig{})
+	}
+	repo := requirements.Environments[idx]
+	repo.Key = envName
+	if repo.Owner == "" {
+		repo.Owner = o.Flags.GitOwner
+	}
+	if repo.Owner == "" {
+		repo.Owner = o.InstallOptions.GitRepositoryOptions.Username
+	}
+	if repo.Repository == "" {
+		repo.Repository = naming.ToValidName("environment-" + requirements.ClusterName + "-" + envName)
+	}
+	if repo.GitKind == "" {
+		repo.GitKind = naming.ToValidName("environment-" + requirements.ClusterName + "-" + envName)
+		if repo.GitKind == "" {
+			repo.GitKind = gits.KindGitHub
+		}
+	}
+	if repo.GitServer == "" {
+		repo.GitServer = o.InstallOptions.GitRepositoryOptions.ServerKind
+		if repo.GitServer == "" {
+			repo.GitServer = gits.GitHubURL
+		}
+	}
+	requirements.Environments[idx] = repo
 }
 
 func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {

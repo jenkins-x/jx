@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -239,7 +240,11 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
-	chartValues, params, err := helm.GenerateValues(dir, nil, true, secretURLClient)
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return err
+	}
+	chartValues, params, err := helm.GenerateValues(requirements, dir, nil, true, secretURLClient)
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}

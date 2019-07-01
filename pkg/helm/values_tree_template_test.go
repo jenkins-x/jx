@@ -4,6 +4,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestValuesTreeTemplates(t *testing.T) {
 	localVaultDir := path.Join(testData, "local_vault_files")
 	secretURLClient := localvault.NewFileSystemClient(localVaultDir)
 
-	result, _, err := helm.GenerateValues(testData, nil, true, secretURLClient)
+	result, _, err := helm.GenerateValues(config.NewRequirementsConfig(), testData, nil, true, secretURLClient)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedTemplatedValuesTree, string(result))
 }
