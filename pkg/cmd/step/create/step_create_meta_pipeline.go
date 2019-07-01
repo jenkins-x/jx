@@ -142,7 +142,7 @@ func (o *StepCreatePipelineOptions) Run() error {
 	}
 
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, o.Branch, o.Context, tekton.MetaPipeline)
-	buildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, gitInfo, o.Branch, retryDuration, pipelineName)
+	buildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, gitInfo, o.Branch, retryDuration, o.Context)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine next build number")
 	}

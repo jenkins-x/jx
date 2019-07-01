@@ -380,7 +380,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		o.BuildNumber = "1"
 	} else {
 		log.Logger().Debugf("generating build number...")
-		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, pipelineName)
+		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, o.Context)
 		if err != nil {
 			return nil, err
 		}
