@@ -179,12 +179,12 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("cluster short name for vault naming: %s", util.ColorInfo(clusterName))
+	log.Logger().Debugf("cluster short name for vault naming: %s", util.ColorInfo(clusterName))
 	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.Namespace, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
-	log.Logger().Infof("Created service account %s for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
+	log.Logger().Debugf("Created service account %s for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
 	if kubeProvider == cloud.GKE {
 		err = o.createVaultGKE(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
 	}
@@ -270,25 +270,25 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 		o.GKEZone = zone
 	}
 
-	log.Logger().Infof("Ensure KMS API is enabled")
+	log.Logger().Debugf("Ensure KMS API is enabled")
 	err = gke.EnableAPIs(o.GKEProjectID, "cloudkms")
 	if err != nil {
 		return errors.Wrap(err, "unable to enable 'cloudkms' API")
 	}
 
-	log.Logger().Infof("Creating GCP service account for Vault backend")
+	log.Logger().Debugf("Creating GCP service account for Vault backend")
 	gcpServiceAccountSecretName, err := gkevault.CreateVaultGCPServiceAccount(kubeClient, vaultName, o.Namespace, clusterName, o.GKEProjectID)
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
 	}
-	log.Logger().Infof("%s service account created", util.ColorInfo(gcpServiceAccountSecretName))
+	log.Logger().Debugf("%s service account created", util.ColorInfo(gcpServiceAccountSecretName))
 
-	log.Logger().Infof("Setting up GCP KMS configuration")
+	log.Logger().Debugf("Setting up GCP KMS configuration")
 	kmsConfig, err := gkevault.CreateKmsConfig(vaultName, clusterName, o.GKEProjectID)
 	if err != nil {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
-	log.Logger().Infof("KMS Key %s created in keying %s", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
+	log.Logger().Debugf("KMS Key %s created in keying %s", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
 	vaultBucket, err := gkevault.CreateBucket(vaultName, clusterName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
