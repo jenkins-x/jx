@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +30,7 @@ meat:
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	result, _, err := helm.GenerateValues(dir, nil, true, nil)
+	result, _, err := helm.GenerateValues(config.NewRequirementsConfig(), dir, nil, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutput, string(result))
 }
@@ -55,7 +56,7 @@ people: pete
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	result, _, err := helm.GenerateValues(dir, nil, true, nil)
+	result, _, err := helm.GenerateValues(config.NewRequirementsConfig(), dir, nil, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutput, string(result))
 }
@@ -84,7 +85,7 @@ func TestValuesTreeWithFileRefs(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	result, _, err := helm.GenerateValues(dir, nil, true, nil)
+	result, _, err := helm.GenerateValues(config.NewRequirementsConfig(), dir, nil, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutput, string(result))
 }

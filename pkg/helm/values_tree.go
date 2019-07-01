@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -32,7 +33,7 @@ var DefaultValuesTreeIgnores = []string{
 // Any keys used that match files with the same name in the directory (
 // and have empty values) will be inlined as block scalars.
 // Standard UNIX glob patterns can be passed to IgnoreFile directories.
-func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient secreturl.Client) ([]byte, chartutil.Values, error) {
+func GenerateValues(requirements *config.RequirementsConfig, dir string, ignores []string, verbose bool, secretURLClient secreturl.Client) ([]byte, chartutil.Values, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
 		return nil, nil, err
@@ -69,7 +70,7 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 			if rDir != "" {
 				// If it's values.tmpl.yaml, then evalate it as a go template and parse it
 				if file == ValuesTemplateFileName {
-					b, err := ReadValuesYamlFileTemplateOutput(path, params, funcMap)
+					b, err := ReadValuesYamlFileTemplateOutput(path, params, funcMap, requirements)
 					if err != nil {
 						return err
 					}
@@ -125,7 +126,7 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 		return nil, params, errors.Wrapf(err, "failed to find %s", rootValuesFileName)
 	}
 	if exists {
-		rootData, err = ReadValuesYamlFileTemplateOutput(rootValuesFileName, params, funcMap)
+		rootData, err = ReadValuesYamlFileTemplateOutput(rootValuesFileName, params, funcMap, requirements)
 		if err != nil {
 			return nil, params, errors.Wrapf(err, "failed to render template of file %s", rootValuesFileName)
 		}
@@ -200,14 +201,16 @@ func GenerateValues(dir string, ignores []string, verbose bool, secretURLClient 
 }
 
 // ReadValuesYamlFileTemplateOutput evaluates the given values.yaml file as a go template and returns the output data
-func ReadValuesYamlFileTemplateOutput(templateFile string, params chartutil.Values, funcMap template.FuncMap) ([]byte, error) {
+func ReadValuesYamlFileTemplateOutput(templateFile string, params chartutil.Values, funcMap template.FuncMap, requirements *config.RequirementsConfig) ([]byte, error) {
 	tmpl, err := template.New(ValuesTemplateFileName).Option("missingkey=error").Funcs(funcMap).ParseFiles(templateFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse Secrets template: %s", templateFile)
 	}
 
 	templateData := map[string]interface{}{
-		"Parameters": chartutil.Values(params),
+		"Parameters":   chartutil.Values(params),
+		"Requirements": requirements,
+		"Environments": chartutil.Values(requirements.EnvironmentMap()),
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, templateData)
