@@ -90,6 +90,7 @@ type StepCreateTaskOptions struct {
 	Duration          time.Duration
 	FromRepo          bool
 	NoKaniko          bool
+	SemanticRelease   bool
 	KanikoImage       string
 	KanikoSecretMount string
 	KanikoSecret      string
@@ -157,6 +158,7 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().BoolVarP(&options.InterpretMode, "interpret", "", false, "Enable interpret mode. Rather than spinning up Tekton CRDs to create a Pod just invoke the commands in the current shell directly. Useful for bootstrapping installations of Jenkins X and tekton using a pipeline before you have installed Tekton.")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().BoolVarP(&options.EffectivePipeline, "effective-pipeline", "", false, "Just view the effective pipeline definition that would be created")
+	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
 
 	options.AddCommonFlags(cmd)
 	return cmd, options
@@ -1146,11 +1148,15 @@ func (o *StepCreateTaskOptions) setBuildVersion(pipelineConfig *jenkinsfile.Pipe
 		}
 		sv := release.SetVersion
 		if sv == nil {
+			command := "jx step next-version --use-git-tag-only --tag"
+			if o.SemanticRelease {
+				command = "jx step next-version --semantic-release --tag"
+			}
 			// lets create a default set version pipeline
 			sv = &jenkinsfile.PipelineLifecycle{
 				Steps: []*syntax.Step{
 					{
-						Command: "jx step next-version --use-git-tag-only --tag",
+						Command: command,
 						Name:    "next-version",
 						Comment: "tags git with the next version",
 					},
