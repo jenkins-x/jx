@@ -1,7 +1,5 @@
-FROM centos:7
+FROM alpine:3.9.3
 
-RUN yum install -y git
-
-ENTRYPOINT ["jx", "version"]
+RUN apk --update add ca-certificates git
 
 COPY ./build/linux/jx /usr/bin/jx
