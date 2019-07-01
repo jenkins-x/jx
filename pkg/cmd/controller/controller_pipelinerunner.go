@@ -40,6 +40,7 @@ type ControllerPipelineRunnerOptions struct {
 	Path                 string
 	Port                 int
 	NoGitCredentialsInit bool
+	SemanticRelease      bool
 }
 
 // PipelineRunRequest the request to trigger a pipeline run
@@ -98,6 +99,7 @@ func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Comma
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().BoolVarP(&options.NoGitCredentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
+	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
 	return cmd
 }
 
@@ -235,6 +237,10 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	// turn map into string array with = separator to match type of custom env vars which are CLI flags
 	for key, value := range envs {
 		pr.CustomEnvs = append(pr.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	if o.SemanticRelease {
+		o.SemanticRelease = true
 	}
 
 	log.Logger().Infof("triggering pipeline for repo %s branch %s revision %s context %s", sourceURL, branch, revision, pj.Context)
