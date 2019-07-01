@@ -35,7 +35,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	if err != nil {
 		return err
 	}
-	provider, err := options.GitProviderForURL(originalGitURL, message)
+	provider, err := options.CreateGitProvider(originalGitURL)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,8 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	if o.Message == "" {
 		log.Logger().Warn("missing option: 'message' when creating a PR")
 	}
-	username := provider.CurrentUsername()
+	server := provider.Server()
+	username := server.CurrentUser
 	if username == "" {
 		return fmt.Errorf("no git user name found")
 	}

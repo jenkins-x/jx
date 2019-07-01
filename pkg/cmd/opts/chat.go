@@ -7,20 +7,21 @@ import (
 
 // CreateChatProvider creates a new chart provider from the given configuration
 func (o *CommonOptions) CreateChatProvider(chatConfig *config.ChatConfig) (chats.ChatProvider, error) {
-	u := chatConfig.URL
-	if u == "" {
+	url := chatConfig.URL
+	if url == "" {
 		return nil, nil
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	cs, err := o.CreateChatConfigService()
 	if err != nil {
 		return nil, err
 	}
-	config := authConfigSvc.Config()
-
-	server := config.GetOrCreateServer(u)
-	userAuth, err := config.PickServerUserAuth(server, "user to access the chat service at "+u, o.BatchMode, "", o.In, o.Out, o.Err)
+	cfg, err := cs.Config()
 	if err != nil {
 		return nil, err
 	}
-	return chats.CreateChatProvider(server.Kind, server, userAuth, o.BatchMode)
+	server, err := cfg.GetServer(url)
+	if err != nil {
+		return nil, err
+	}
+	return chats.CreateChatProvider(server.Kind, server, o.BatchMode)
 }

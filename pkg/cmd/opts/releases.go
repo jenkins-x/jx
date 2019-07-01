@@ -73,7 +73,7 @@ func (o *CommonOptions) ParseDependencyUpdateMessage(msg string, commitURL strin
 			ToVersion:   matches[3],
 			Component:   slugMatches[7],
 		}
-		provider, _, err := o.CreateGitProviderForURLWithoutKind(update.URL)
+		provider, err := o.CreateGitProvider(update.URL)
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating git provider for %s", update.URL)
 		}

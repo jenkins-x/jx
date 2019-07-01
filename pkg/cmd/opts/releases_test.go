@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/auth"
 
 	clients_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
@@ -18,21 +19,45 @@ import (
 )
 
 func TestParseDependencyUpdateMessage(t *testing.T) {
-
 	mockFactory := clients_test.NewMockFactory()
 	commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)
 	mockHelmer := helm_test.NewMockHelmer()
 	installerMock := resources_test.NewMockInstaller()
+	server := auth.Server{
+		URL: "https://github.com",
+		Users: []auth.User{
+			{
+				Username: "pmuir",
+				ApiToken: "test",
+			},
+		},
+		Name:        "GitHub",
+		Kind:        "github",
+		CurrentUser: "pmuir",
+	}
+	config := auth.Config{
+		Servers:       []auth.Server{server},
+		CurrentServer: server.URL,
+	}
+	configSvc, err := auth.NewMemConfigService(config)
+	if err != nil {
+		t.Fatal("failed to create auth config service")
+	}
+	gitProvider, err := gits.NewFakeProvider(server, &gits.FakeRepository{
+		Owner: "pmuir",
+		GitRepo: &gits.GitRepository{
+			Name: "brie",
+		},
+	})
+	if err != nil {
+		t.Fatal("fail to create git provider")
+	}
 	testhelpers.ConfigureTestOptionsWithResources(&commonOpts,
 		[]runtime.Object{},
 		[]runtime.Object{},
-		gits.NewGitFake(),
-		gits.NewFakeProvider(&gits.FakeRepository{
-			Owner: "pmuir",
-			GitRepo: &gits.GitRepository{
-				Name: "brie",
-			},
-		}),
+		configSvc,
+		gits.NewGitFake(server),
+		gitProvider,
 		mockHelmer,
 		installerMock,
 	)

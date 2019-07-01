@@ -3,6 +3,7 @@ package upgrade
 import (
 	"context"
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/update"
 
@@ -589,27 +590,31 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 		CommonOptions: o.CommonOptions,
 	}
 
-	authConfigService, err := o.CreateGitAuthConfigService()
+	cs, err := o.CreateGitConfigService()
 	if err != nil {
-		return errors.Wrap(err, "failed to create git auth service")
+		return errors.Wrap(err, "creating git config service")
 	}
 
-	gitServer := authConfigService.Config().CurrentServer
-	git, err := o.GitProviderForGitServerURL(gitServer, "github")
+	cfg, err := cs.Config()
 	if err != nil {
-		return errors.Wrap(err, "unable to determine git provider")
+		return errors.Wrap(err, "getting the git configuration")
 	}
 
-	// user
-	userAuth := git.UserAuth()
-	username := userAuth.Username
-
-	// organisation
-	organisation, err := gits.PickOrganisation(git, username, o.In, o.Out, o.Err)
-	updateWebHook.Username = ReturnUserNameIfPicked(organisation, username)
+	server, err := cfg.GetCurrentServer()
 	if err != nil {
-		return errors.Wrap(err, "unable to determine git provider")
+		return errors.Wrap(err, "seraching current server")
 	}
+
+	provider, err := o.CreateGitProvider(server.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating the git provider for current server %q", server.URL)
+	}
+
+	organisation, err := gits.PickOrganisation(provider, server.CurrentUser, o.In, o.Out, o.Err)
+	if err != nil {
+		return errors.Wrap(err, "selecting the organisation")
+	}
+	updateWebHook.Username = ReturnUserNameIfPicked(organisation, server.CurrentUser)
 
 	if o.CommonOptions.Verbose {
 		log.Logger().Infof("Updating all webHooks for org %s and/or username %s", organisation, updateWebHook.Username)

@@ -82,7 +82,6 @@ type Prow struct {
 	SetValues   string
 	ReleaseName string
 	HMACToken   string
-	OAUTHToken  string
 }
 
 // DoInstallMissingDependencies install missing dependencies from the given list
@@ -1622,7 +1621,7 @@ func GetSafeUsername(username string) string {
 }
 
 // InstallProw installs prow
-func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string, valuesFiles []string) error {
+func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, valuesFiles []string) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1639,32 +1638,20 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 			return fmt.Errorf("cannot create a random hmac token for Prow")
 		}
 	}
-
-	if o.OAUTHToken == "" {
-		authConfigSvc, err := o.CreateGitAuthConfigService()
-		if err != nil {
-			return errors.Wrap(err, "creating git auth config svc")
-		}
-
-		config := authConfigSvc.Config()
-		// lets assume github.com for now so ignore config.CurrentServer
-		server := config.GetOrCreateServer("https://github.com")
-		message := fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
-		userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode, "", o.In, o.Out, o.Err)
-		if err != nil {
-			return errors.Wrap(err, "picking bot user auth")
-		}
-		o.OAUTHToken = userAuth.ApiToken
-	}
-
 	if o.Username == "" {
 		o.Username, err = o.GetClusterUserName()
 		if err != nil {
 			return errors.Wrap(err, "retrieving the cluster user name")
 		}
 	}
-	if gitUsername == "" {
-		gitUsername = o.Username
+
+	server, err := o.CurrentGitServerAuthForPipeline()
+	if err != nil {
+		return errors.Wrap(err, "getting the current server auth configuration")
+	}
+	user, err := server.GetCurrentUser()
+	if err != nil {
+		return errors.Wrap(err, "getting the current user from server auth configuration")
 	}
 
 	client, devNamespace, err := o.KubeClientAndDevNamespace()
@@ -1706,10 +1693,10 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 
 	if useTekton {
 		setValues = append(setValues,
-			"auth.git.username="+gitUsername)
+			"auth.git.username="+user.Username)
 
 		ksecretValues = append(ksecretValues,
-			"auth.git.password="+o.OAUTHToken)
+			"auth.git.password="+user.ApiToken)
 
 		err = o.Retry(2, time.Second, func() (err error) {
 			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultTektonReleaseName,
@@ -1726,8 +1713,8 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		)
 
 	} else {
-		setValues = append(setValues, "build.auth.git.username="+gitUsername)
-		ksecretValues = append(ksecretValues, "build.auth.git.username="+gitUsername, "build.auth.git.password="+o.OAUTHToken)
+		setValues = append(setValues, "build.auth.git.username="+user.Username)
+		ksecretValues = append(ksecretValues, "build.auth.git.username="+user.Username, "build.auth.git.password="+user.Username)
 		err = o.Retry(2, time.Second, func() (err error) {
 			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildReleaseName,
 				kube.ChartKnativeBuild, "knativebuild", "", devNamespace, true, setValues, ksecretValues, valuesFiles, "")
@@ -1764,7 +1751,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		log.Logger().Infof("with values file %s", util.ColorInfo(value))
 	}
 
-	secretValues := []string{"user=" + gitUsername, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
+	secretValues := []string{"user=" + user.Username, "oauthToken=" + user.ApiToken, "hmacToken=" + o.HMACToken}
 	err = o.Retry(2, time.Second, func() (err error) {
 		return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, o.ReleaseName,
 			o.Chart, "prow", prowVersion, devNamespace, true, setValues, secretValues, valuesFiles, "")
@@ -1878,12 +1865,11 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 	}
 
 	// Create managed zone for external dns if it doesn't exist
-	var nameServers = []string{}
 	err = gke.CreateManagedZone(googleProjectID, o.Domain)
 	if err != nil {
 		return errors.Wrap(err, "while trying to creating a CloudDNS managed zone for external-dns")
 	}
-	_, nameServers, err = gke.GetManagedZoneNameServers(googleProjectID, o.Domain)
+	_, nameServers, err := gke.GetManagedZoneNameServers(googleProjectID, o.Domain)
 	if err != nil {
 		return errors.Wrap(err, "while trying to retrieve the managed zone name servers for external-dns")
 	}

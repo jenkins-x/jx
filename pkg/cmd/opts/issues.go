@@ -11,23 +11,19 @@ import (
 	"github.com/jenkins-x/jx/pkg/issues"
 )
 
-// CreateIssueTrackerAuthConfigService creates auth config service for issue tracker
-func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.ConfigService, error) {
+// CreateIssueTrackerConfigService creates auth config service for issue tracker
+func (o *CommonOptions) CreateIssueTrackerConfigService() (auth.ConfigService, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	_, namespace, err := o.KubeClientAndDevNamespace()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to find development namespace")
-	}
-	return o.factory.CreateIssueTrackerAuthConfigService(namespace)
+	return o.factory.CreateIssueTrackerConfigService(auth.AutoConfigKind)
 }
 
-// CreateIssueProvider creates a issues provider
-func (o *CommonOptions) CreateIssueProvider(dir string) (issues.IssueProvider, error) {
+// CreateIssueProvider creates a issues provider from a give directory which contains a git repository
+func (o *CommonOptions) CreateIssueProviderFromDir(dir string) (issues.IssueProvider, error) {
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("No issue tracker configured for this project and cannot find the .git directory: %s", err)
+		return nil, fmt.Errorf("no issue tracker configured for this project and cannot find the .git directory: %s", err)
 	}
 	pc, _, err := config.LoadProjectConfig(dir)
 	if err != nil {
@@ -43,33 +39,34 @@ func (o *CommonOptions) CreateIssueProvider(dir string) (issues.IssueProvider, e
 		it := pc.IssueTracker
 		if it != nil {
 			if it.URL != "" && it.Kind != "" {
-				authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+				cs, err := o.CreateIssueTrackerConfigService()
 				if err != nil {
 					return nil, err
 				}
-				config := authConfigSvc.Config()
-				server := config.GetOrCreateServer(it.URL)
-				userAuth, err := config.PickServerUserAuth(server, "user to access the issue tracker", o.BatchMode, "", o.In, o.Out, o.Err)
+				cfg, err := cs.Config()
 				if err != nil {
 					return nil, err
 				}
-				return issues.CreateIssueProvider(it.Kind, server, userAuth, it.Project, o.BatchMode, o.Git())
+				server, err := cfg.GetServer(it.URL)
+				if err != nil {
+					return nil, err
+				}
+				return issues.CreateIssueProvider(it.Kind, server, it.Project, o.BatchMode, o.Git())
 			}
 		}
 	}
-
 	if gitConfDir == "" {
-		return nil, fmt.Errorf("No issue tracker configured and no git directory could be found from dir %s\n", dir)
+		return nil, fmt.Errorf("no issue tracker configured and no git directory could be found from dir %q\n", dir)
 	}
-	gitUrl, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
+	gitURL, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
-		return nil, fmt.Errorf("No issue tracker configured and could not find the upstream git URL for dir %s, due to: %s\n", dir, err)
+		return nil, fmt.Errorf("no issue tracker configured and could not find the upstream git URL for dir %s, due to: %s\n", dir, err)
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl)
+	gitProvider, err := o.factory.CreateGitProvider(gitURL, auth.AutoConfigKind, o.Git())
 	if err != nil {
 		return nil, err
 	}
-	gitProvider, err := o.GitProviderForURL(gitUrl, "user name to use for authenticating with git issues")
+	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/add"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -216,8 +217,26 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
 	devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
 
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
-	fakeGitProvider.User.Username = testOrgName
+	server := auth.Server{
+		URL: "https://test",
+		Users: []auth.User{
+			{
+				Username: testOrgName,
+				ApiToken: "test",
+			},
+		},
+		Name:        "TestProvider",
+		Kind:        "github",
+		CurrentUser: testOrgName,
+	}
+	config := auth.Config{
+		Servers:       []auth.Server{server},
+		CurrentServer: server.URL,
+	}
+	configSvc, err := auth.NewMemConfigService(config)
+	assert.NoError(t, err)
+	fakeGitProvider, err := gits.NewFakeProvider(server, fakeRepo, devEnvRepo)
+	assert.NoError(t, err)
 
 	MockFactoryFakeClients(mockFactory)
 
@@ -241,7 +260,8 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 		[]runtime.Object{
 			devEnv,
 		},
-		gits.NewGitLocal(),
+		configSvc,
+		gits.NewGitLocal(server),
 		fakeGitProvider,
 		o.MockHelmer,
 		installerMock,
@@ -299,7 +319,6 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 
 		return gitter.AddCommit(dir, "Initial Commit")
 	}
-	o.FakeGitProvider = fakeGitProvider
 	o.DevRepo = fakeRepo
 	o.DevEnvRepo = devEnvRepo
 	o.OrgName = testOrgName

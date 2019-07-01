@@ -2,13 +2,15 @@ package opts
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/spf13/viper"
+
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/spf13/pflag"
 
@@ -22,7 +24,6 @@ import (
 	"github.com/pkg/errors"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/golang-jenkins"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -125,8 +126,8 @@ type CommonOptions struct {
 	devNamespace           string
 	environmentsDir        string
 	factory                clients.Factory
-	fakeGitProvider        *gits.FakeProvider
 	git                    gits.Gitter
+	gitProvider            gits.GitProvider
 	helm                   helm.Helmer
 	jenkinsClient          gojenkins.JenkinsClient
 	jxClient               versioned.Interface
@@ -509,7 +510,12 @@ func (o *CommonOptions) JXClientDevAndAdminNamespace() (versioned.Interface, str
 // Git returns the git client
 func (o *CommonOptions) Git() gits.Gitter {
 	if o.git == nil {
-		o.git = gits.NewGitCLI()
+		server, err := o.CurrentGitServerAuth()
+		// TODO propagate this error to the caller or find a better default server configuration
+		if err != nil {
+			server = auth.Server{}
+		}
+		o.git = gits.NewGitCLI(server)
 	}
 	return o.git
 }
@@ -519,9 +525,9 @@ func (o *CommonOptions) SetGit(git gits.Gitter) {
 	o.git = git
 }
 
-// SetFakeGitProvider set the fake git provider for testing purposes
-func (o *CommonOptions) SetFakeGitProvider(provider *gits.FakeProvider) {
-	o.fakeGitProvider = provider
+// SetGitProvider sets the git provider
+func (o *CommonOptions) SetGitProvider(provider gits.GitProvider) {
+	o.gitProvider = provider
 }
 
 // NewHelm cerates a new helm client from the given list of parameters
@@ -594,91 +600,9 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 }
 
 // AddGitServerFlags add git server flags to the given cobra command
-func (o *ServerFlags) AddGitServerFlags(cmd *cobra.Command) {
+func (o *ServerFlags) AddServerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.ServerName, OptionServerName, "n", "", "The name of the Git server to add a user")
 	cmd.Flags().StringVarP(&o.ServerURL, OptionServerURL, "u", "", "The URL of the Git server to add a user")
-}
-
-// FindGitServer finds the Git server from the given flags or returns an error
-func (o *CommonOptions) FindGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.ServerAuth, error) {
-	return o.FindServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
-}
-
-// FindIssueTrackerServer finds the issue tracker server from the given flags or returns an error
-func (o *CommonOptions) FindIssueTrackerServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.ServerAuth, error) {
-	return o.FindServer(config, serverFlags, "issues", "Try creating one via: jx create tracker server", false)
-}
-
-// FindChatServer finds the chat server from the given flags or returns an error
-func (o *CommonOptions) FindChatServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.ServerAuth, error) {
-	return o.FindServer(config, serverFlags, "chat", "Try creating one via: jx create chat server", false)
-}
-
-// FindAddonServer finds the addon server from the given flags or returns an error
-func (o *CommonOptions) FindAddonServer(config *auth.AuthConfig, serverFlags *ServerFlags, kind string) (*auth.ServerAuth, error) {
-	return o.FindServer(config, serverFlags, kind, "Try creating one via: jx create addon", true)
-}
-
-// FindServer find the server flags from the given flags or returns an error
-func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerFlags, defaultKind string, missingServerDescription string, lazyCreate bool) (*auth.ServerAuth, error) {
-	kind := defaultKind
-	var server *auth.ServerAuth
-	if serverFlags.ServerURL != "" {
-		server = config.GetServer(serverFlags.ServerURL)
-		if server == nil {
-			if lazyCreate {
-				return config.GetOrCreateServerName(serverFlags.ServerURL, serverFlags.ServerName, kind), nil
-			}
-			return nil, util.InvalidOption(OptionServerURL, serverFlags.ServerURL, config.GetServerURLs())
-		}
-	}
-	if server == nil && serverFlags.ServerName != "" {
-		name := serverFlags.ServerName
-		if lazyCreate {
-			server = config.GetOrCreateServerName(serverFlags.ServerURL, name, kind)
-		} else {
-			server = config.GetServerByName(name)
-		}
-		if server == nil {
-			return nil, util.InvalidOption(OptionServerName, name, config.GetServerNames())
-		}
-	}
-	if server == nil {
-		name := config.CurrentServer
-		if name != "" && o.BatchMode {
-			server = config.GetServerByName(name)
-			if server == nil {
-				log.Logger().Warnf("Current server %s no longer exists", name)
-			}
-		}
-	}
-	if server == nil && len(config.Servers) == 1 {
-		server = config.Servers[0]
-	}
-	if server == nil && len(config.Servers) > 1 {
-		if o.BatchMode {
-			return nil, fmt.Errorf("Multiple servers found. Please specify one via the %s option", OptionServerName)
-		}
-		defaultServerName := ""
-		if config.CurrentServer != "" {
-			s := config.GetServer(config.CurrentServer)
-			if s != nil {
-				defaultServerName = s.Name
-			}
-		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.In, o.Out, o.Err)
-		if err != nil {
-			return nil, err
-		}
-		server = config.GetServerByName(name)
-		if server == nil {
-			return nil, fmt.Errorf("Could not find the server for name %s", name)
-		}
-	}
-	if server == nil {
-		return nil, fmt.Errorf("Could not find a %s. %s", kind, missingServerDescription)
-	}
-	return server, nil
 }
 
 // FindService finds the given service and returns its URL
@@ -691,9 +615,9 @@ func (o *CommonOptions) FindService(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	url, err := services.FindServiceURL(client, ns, name)
+	url, _ := services.FindServiceURL(client, ns, name)
 	if url == "" {
-		url, err = services.FindServiceURL(client, devNs, name)
+		url, _ = services.FindServiceURL(client, devNs, name)
 	}
 	if url == "" {
 		names, err := services.GetServiceNames(client, ns, name)
@@ -706,11 +630,11 @@ func (o *CommonOptions) FindService(name string) (string, error) {
 				return "", err
 			}
 			if name != "" {
-				url, err = services.FindServiceURL(client, ns, name)
+				url, _ = services.FindServiceURL(client, ns, name)
 			}
 		} else if len(names) == 1 {
 			// must have been a filter
-			url, err = services.FindServiceURL(client, ns, names[0])
+			url, _ = services.FindServiceURL(client, ns, names[0])
 		}
 		if url == "" {
 			return "", fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
@@ -1179,11 +1103,6 @@ func (o *CommonOptions) InCluster() bool {
 	return o.factory.IsInCluster()
 }
 
-// InCDPipeline return true if the command execution takes place in the CD pipeline
-func (o *CommonOptions) InCDPipeline() bool {
-	return o.factory.IsInCDPipeline()
-}
-
 // SetBatchMode configures the batch mode
 func (o *CommonOptions) SetBatchMode(batchMode bool) {
 	o.factory.SetBatch(batchMode)
@@ -1214,13 +1133,13 @@ func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
 // IsConfigExplicitlySet checks whether the flag or config with the specified name is explicitly set by the user.
 // If so, true is returned, false otherwise.
 func (o *CommonOptions) IsConfigExplicitlySet(configPath, configKey string) bool {
-	if o.IsFlagExplicitlySet(configKey) || o.configExists(configPath, configKey) {
+	if o.IsFlagExplicitlySet(configKey) || o.ConfigExists(configPath, configKey) {
 		return true
 	}
 	return false
 }
 
-func (o *CommonOptions) configExists(configPath, configKey string) bool {
+func (o *CommonOptions) ConfigExists(configPath, configKey string) bool {
 	if configPath != "" {
 		path := append(strings.Split(configPath, "."), configKey)
 		configMap := viper.GetStringMap(path[0])

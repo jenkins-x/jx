@@ -12,11 +12,11 @@ import (
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	fakefactory "github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	clients_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -38,19 +38,39 @@ import (
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
 func ConfigureTestOptions(o *opts.CommonOptions, git gits.Gitter, helm helm.Helmer) {
-	ConfigureTestOptionsWithResources(o, nil, nil, git, nil, helm, nil)
+	ConfigureTestOptionsWithResources(o, nil, nil, nil, git, nil, helm, nil)
+}
+
+// factory used to mock the git provider
+type factory struct {
+	clients.Factory
+	provider  gits.GitProvider
+	configSvc auth.ConfigService
+}
+
+// CreateGitProvider creates a git provider
+func (f *factory) CreateGitProvider(gitURL string, kind auth.ConfigKind, gitter gits.Gitter) (gits.GitProvider, error) {
+	return f.provider, nil
+}
+
+// CreateGitConfigService create a git config service
+func (f *factory) CreateGitConfigService(kind auth.ConfigKind) (auth.ConfigService, error) {
+	return f.configSvc, nil
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster.
 func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
-	git gits.Gitter, fakeGitProvider *gits.FakeProvider, helm helm.Helmer, resourcesInstaller resources.Installer) {
-	//o.Out = tests.Output()
+	configSvc auth.ConfigService, git gits.Gitter, gitProvider gits.GitProvider, helm helm.Helmer, resourcesInstaller resources.Installer) {
 	o.BatchMode = true
-	factory := o.GetFactory()
-	if factory == nil {
-		o.SetFactory(clients.NewFactory())
+
+	factory := &factory{
+		Factory:   clients.NewFactory(),
+		provider:  gitProvider,
+		configSvc: configSvc,
 	}
+	o.SetFactory(factory)
+
 	currentNamespace := "jx"
 	o.SetCurrentNamespace(currentNamespace)
 
@@ -106,21 +126,8 @@ func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runti
 	o.SetAPIExtensionsClient(apifake.NewSimpleClientset())
 	o.SetKnativeServeClient(kservefake.NewSimpleClientset())
 	o.SetGit(git)
-	if fakeGitProvider != nil {
-		o.SetFakeGitProvider(fakeGitProvider)
-	}
 	o.SetHelm(helm)
 	o.SetResourcesInstaller(resourcesInstaller)
-}
-
-// SetFakeFactoryFromKubeClients registers a factory from the existing clients so that if a client is nilled we reuse the same one again
-func SetFakeFactoryFromKubeClients(o *opts.CommonOptions) {
-	apiClient, _ := o.ApiExtensionsClient()
-	jxClient, _, _ := o.JXClient()
-	kubeClient, _ := o.KubeClient()
-	f := fakefactory.NewFakeFactoryFromClients(apiClient, jxClient, kubeClient)
-	f.SetDelegateFactory(o.GetFactory())
-	o.SetFactory(f)
 }
 
 // MockFactoryWithKubeClients registers the fake clients with the mock factory so they return the same instances

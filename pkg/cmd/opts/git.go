@@ -7,7 +7,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -15,6 +14,16 @@ import (
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
+
+type GitRepositoryOptions struct {
+	ServerURL  string
+	ServerKind string
+	Username   string
+	ApiToken   string
+	Owner      string
+	RepoName   string
+	Private    bool
+}
 
 // FindGitInfo parses the git information from the given directory
 func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
@@ -33,51 +42,39 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 	}
 }
 
-// NewGitProvider creates a new git provider for the given list of argumentes
-func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
+// CreateGitProvider creates a new git provider for the given URL
+func (o *CommonOptions) CreateGitProvider(gitURL string) (gits.GitProvider, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, o.In, o.Out, o.Err)
+	return o.factory.CreateGitProvider(gitURL, auth.AutoConfigKind, o.Git())
 }
 
-// CreateGitProvider creates a git from the given directory
-func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits.GitProvider, issues.IssueProvider, error) {
+// CreateGitProviderFromDir creates a git providder from a given directory which contains a repostiory
+func (o *CommonOptions) CreateGitProviderFromDir(dir string) (gits.GitProvider, error) {
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		log.Logger().Warnf("No git directory could be found from dir %s", dir)
-		return nil, nil, nil, nil
+		return nil, fmt.Errorf("no git repository found in directory %q", dir)
 	}
-
-	gitUrl, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
+	gitURL, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl)
+	if o.factory == nil {
+		return nil, errors.New("command factory is not initialized")
+	}
+	gitProvider, err := o.factory.CreateGitProvider(gitURL, auth.AutoConfigKind, o.Git())
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return gitInfo, nil, nil, err
-	}
-	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(o.factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
-	if err != nil {
-		return gitInfo, gitProvider, nil, err
-	}
-	tracker, err := o.CreateIssueProvider(dir)
-	if err != nil {
-		return gitInfo, gitProvider, tracker, err
-	}
-	return gitInfo, gitProvider, tracker, nil
+	return gitProvider, nil
 }
 
 // EnsureGitServiceCRD ensure that the GitService CRD is installed
-func (o *CommonOptions) EnsureGitServiceCRD(server *auth.ServerAuth) error {
+func (o *CommonOptions) EnsureGitServiceCRD(server auth.Server) error {
 	kind := server.Kind
 	if kind == "github" && server.URL == gits.GitHubURL {
 		return nil
@@ -86,11 +83,9 @@ func (o *CommonOptions) EnsureGitServiceCRD(server *auth.ServerAuth) error {
 		log.Logger().Warnf("Kind of git server %s with URL %s is empty", server.Name, server.URL)
 		return nil
 	}
-	// lets lazily populate the name if its empty
 	if server.Name == "" {
 		server.Name = kind
 	}
-
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to create JX Client")
@@ -136,7 +131,7 @@ func (o *CommonOptions) DiscoverGitURL(gitConf string) (string, error) {
 }
 
 // AddGitRepoOptionsArguments adds common git flags to the given cobra command
-func AddGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
+func AddGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *GitRepositoryOptions) {
 	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "https://github.com", "The Git server URL to create new Git repositories inside")
 	cmd.Flags().StringVarP(&repositoryOptions.ServerKind, "git-provider-kind", "", "",
 		"Kind of Git server. If not specified, kind of server will be autodetected from Git provider URL. Possible values: bitbucketcloud, bitbucketserver, gitea, gitlab, github, fakegit")
@@ -179,52 +174,6 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		}
 	}
 	return kind, nil
-}
-
-// GitProviderForURL returns a GitProvider for the given git URL
-func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.GitProvider, error) {
-	if o.fakeGitProvider != nil {
-		return o.fakeGitProvider, nil
-	}
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-		return nil, err
-	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, err
-	}
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return nil, err
-	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
-}
-
-// GitProviderForURL returns a GitProvider for the given Git server URL
-func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
-	if o.fakeGitProvider != nil {
-		return o.fakeGitProvider, nil
-	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, err
-	}
-	return gits.CreateProviderForURL(o.factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
-}
-
-// CreateGitProviderForURLWithoutKind creates a git provider from URL wihtout kind
-func (o *CommonOptions) CreateGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepository, error) {
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-		return nil, gitInfo, err
-	}
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return nil, gitInfo, err
-	}
-	provider, err := o.GitProviderForGitServerURL(gitInfo.HostURL(), gitKind)
-	return provider, gitInfo, err
 }
 
 // InitGitConfigAndUser validates we have git setup

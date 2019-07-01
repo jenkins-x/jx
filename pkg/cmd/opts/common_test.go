@@ -1,29 +1,33 @@
-package opts
+package opts_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"testing"
+
+	"io/ioutil"
+	"os"
+	"path"
+
+	"github.com/jenkins-x/jx/pkg/auth"
+	clients_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/gits"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"path"
-	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
 	testCommandName = "foo"
 	testFlagName    = "snafu"
-)
-
-var (
-	cmdUnderTest        *cobra.Command
-	commonOptsUnderTest CommonOptions
 )
 
 type TestFlags struct {
@@ -36,7 +40,7 @@ type ChildFlags struct {
 }
 
 func Test_FlagExplicitlySet_returns_true_if_flag_explicitly_set_to_false(t *testing.T) {
-	setupTestCommand()
+	cmdUnderTest, commonOptsUnderTest := setupTestCommand(t)
 
 	err := cmdUnderTest.Flags().Parse([]string{testCommandName, fmt.Sprintf("--%s", testFlagName), "false"})
 	assert.NoError(t, err)
@@ -45,7 +49,7 @@ func Test_FlagExplicitlySet_returns_true_if_flag_explicitly_set_to_false(t *test
 }
 
 func Test_FlagExplicitlySet_returns_true_if_flag_explicitly_set_to_true(t *testing.T) {
-	setupTestCommand()
+	cmdUnderTest, commonOptsUnderTest := setupTestCommand(t)
 
 	err := cmdUnderTest.Flags().Parse([]string{testCommandName, fmt.Sprintf("--%s", testFlagName), "true"})
 	assert.NoError(t, err)
@@ -54,39 +58,38 @@ func Test_FlagExplicitlySet_returns_true_if_flag_explicitly_set_to_true(t *testi
 }
 
 func Test_FlagExplicitlySet_returns_false_if_flag_is_not_set(t *testing.T) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	explicit := commonOptsUnderTest.IsFlagExplicitlySet(testFlagName)
 	assert.False(t, explicit, "the flag should not be explicitly set")
 }
 
 func Test_FlagExplicitlySet_returns_false_if_flag_is_unknown(t *testing.T) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	explicit := commonOptsUnderTest.IsFlagExplicitlySet("fubar")
 	assert.False(t, explicit, "the flag should be unknown")
 }
 
 func Test_NotifyProgress(t *testing.T) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
-	commonOptsUnderTest.NotifyProgress(LogInfo, "hello %s", "world\n")
+	commonOptsUnderTest.NotifyProgress(opts.LogInfo, "hello %s", "world\n")
 
 	actual := ""
 	expectedText := "hello again\n"
 
-	commonOptsUnderTest.NotifyCallback = func(level LogLevel, text string) {
+	commonOptsUnderTest.NotifyCallback = func(level opts.LogLevel, text string) {
 		actual = text
 	}
 
-	commonOptsUnderTest.NotifyProgress(LogInfo, expectedText)
+	commonOptsUnderTest.NotifyProgress(opts.LogInfo, expectedText)
 
 	assert.Equal(t, expectedText, actual, "callback receives the log message")
 }
 
 func Test_JXNamespace(t *testing.T) {
-	setupTestCommand()
-	commonOptsUnderTest.SetFactory(clients.NewFactory())
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	kubeClient, ns, err := commonOptsUnderTest.KubeClientAndNamespace()
 	assert.NoError(t, err, "Failed to create kube client")
@@ -99,19 +102,18 @@ func Test_JXNamespace(t *testing.T) {
 		}
 	}
 
-	_, err = commonOptsUnderTest.CreateGitAuthConfigService()
+	_, err = commonOptsUnderTest.CreateGitConfigService()
 	assert.NoError(t, err, "Failed to create GitAuthConfigService")
 }
 
 func Test_GetConfiguration(t *testing.T) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	fileContent := fmt.Sprintf("%s: %t\n", testFlagName, true)
 	configFile, removeTmp := setupTestConfig(t, fileContent)
 
 	defer removeTmp(configFile)
 
-	commonOptsUnderTest = CommonOptions{}
 	commonOptsUnderTest.ConfigFile = configFile
 
 	testFlags := TestFlags{}
@@ -122,40 +124,40 @@ func Test_GetConfiguration(t *testing.T) {
 }
 
 func Test_configExists_child(t *testing.T) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	valuesYaml := fmt.Sprintf("children:\n  child: foo")
 	configFile, removeTmp := setupTestConfig(t, valuesYaml)
 
 	defer removeTmp(configFile)
 
-	assert.True(t, commonOptsUnderTest.configExists("children", "child"))
+	assert.True(t, commonOptsUnderTest.ConfigExists("children", "child"))
 }
 
 func Test_configExists_no_path(t *testing.T) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	valuesYaml := fmt.Sprintf("snafu: true")
 	configFile, removeTmp := setupTestConfig(t, valuesYaml)
 
 	defer removeTmp(configFile)
 
-	assert.True(t, commonOptsUnderTest.configExists("", "snafu"))
+	assert.True(t, commonOptsUnderTest.ConfigExists("", "snafu"))
 }
 
 func Test_configNotExists(t *testing.T) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	valuesYaml := fmt.Sprintf("children:\n  child: foo")
 	configFile, removeTmp := setupTestConfig(t, valuesYaml)
 
 	defer removeTmp(configFile)
 
-	assert.False(t, commonOptsUnderTest.configExists("children", "son"))
+	assert.False(t, commonOptsUnderTest.ConfigExists("children", "son"))
 }
 
 func setupTestConfig(t *testing.T, config string) (string, func(string)) {
-	setupTestCommand()
+	_, commonOptsUnderTest := setupTestCommand(t)
 
 	tmpDir, err := ioutil.TempDir("", "")
 	require.Nil(t, err, "Failed creating tmp dir")
@@ -175,18 +177,62 @@ func setupTestConfig(t *testing.T, config string) (string, func(string)) {
 	return configFile, removeAllFunc
 }
 
-func setupTestCommand() {
+func setupTestCommand(t *testing.T) (*cobra.Command, *opts.CommonOptions) {
 	var flag bool
-	cmdUnderTest = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   testCommandName,
 		Short: "",
 		Run: func(cmd *cobra.Command, args []string) {
 			// noop
 		},
 	}
-	cmdUnderTest.Flags().BoolVar(&flag, testFlagName, false, "")
-	_ = viper.BindPFlag(testFlagName, cmdUnderTest.Flags().Lookup(testFlagName))
+	cmd.Flags().BoolVar(&flag, testFlagName, false, "")
+	_ = viper.BindPFlag(testFlagName, cmd.Flags().Lookup(testFlagName))
 
-	commonOptsUnderTest = CommonOptions{}
-	commonOptsUnderTest.Cmd = cmdUnderTest
+	mockFactory := clients_test.NewMockFactory()
+	commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)
+	mockHelmer := helm_test.NewMockHelmer()
+	installerMock := resources_test.NewMockInstaller()
+	server := auth.Server{
+		URL: "https://github.com",
+		Users: []auth.User{
+			{
+				Username: "test",
+				ApiToken: "test",
+			},
+		},
+		Name:        "GitHub",
+		Kind:        "github",
+		CurrentUser: "test",
+	}
+	config := auth.Config{
+		Servers:       []auth.Server{server},
+		CurrentServer: server.URL,
+	}
+	configSvc, err := auth.NewMemConfigService(config)
+	if err != nil {
+		t.Fatal("failed to create auth config service")
+	}
+	gitProvider, err := gits.NewFakeProvider(server, &gits.FakeRepository{
+		Owner: "test",
+		GitRepo: &gits.GitRepository{
+			Name: "test",
+		},
+	})
+	if err != nil {
+		t.Fatal("failed to create git provider")
+	}
+	testhelpers.ConfigureTestOptionsWithResources(&commonOpts,
+		[]runtime.Object{},
+		[]runtime.Object{},
+		configSvc,
+		gits.NewGitFake(server),
+		gitProvider,
+		mockHelmer,
+		installerMock,
+	)
+
+	commonOpts.Cmd = cmd
+
+	return cmd, &commonOpts
 }

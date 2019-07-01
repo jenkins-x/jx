@@ -949,7 +949,7 @@ func (o *CommonOptions) ReleaseChartMuseumUrl() string {
 	}
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
-		if o.factory.IsInCDPipeline() {
+		if o.factory.IsInCluster() {
 			chartRepo = DefaultChartRepo
 			log.Logger().Warnf("No $CHART_REPOSITORY defined so using the default value of: %s", DefaultChartRepo)
 		} else {

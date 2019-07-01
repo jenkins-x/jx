@@ -5,45 +5,41 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/pkg/errors"
 )
 
-// GetAddonAuth returns the server and user auth for the given addon service URL
-func (o *CommonOptions) GetAddonAuth(serviceURL string) (*auth.ServerAuth, *auth.UserAuth, error) {
-	if serviceURL == "" {
-		return nil, nil, nil
+// GetAddonServer returns the server configuration for a given service URL
+func (o *CommonOptions) GetAddonServer(serverURL string) (auth.Server, error) {
+	server := auth.Server{}
+	if serverURL == "" {
+		return server, errors.New("cannot find server configuration for an empty addon URL")
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	cs, err := o.CreateAddonConfigService()
 	if err != nil {
-		return nil, nil, err
+		return server, err
 	}
-	config := authConfigSvc.Config()
-
-	server := config.GetOrCreateServer(serviceURL)
-	userAuth, err := config.PickServerUserAuth(server, "user to access the addon service at "+serviceURL, o.BatchMode, "", o.In, o.Out, o.Err)
-	return server, userAuth, err
+	cfg, err := cs.Config()
+	if err != nil {
+		return server, err
+	}
+	return cfg.GetServer(serverURL)
 }
 
-// GetAddonAuth returns the server and user auth for the given addon service URL. Returns null values if there is no server
-func (o *CommonOptions) GetAddonAuthByKind(kind, serverURL string) (*auth.ServerAuth, *auth.UserAuth, error) {
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+// GetAddonServerByKind returns the server for a given addon kind
+func (o *CommonOptions) GetAddonAuthByKind(kind string) (auth.Server, error) {
+	server := auth.Server{}
+	if kind == "" {
+		return server, errors.New("connot find server configuration for an empty addon kind")
+	}
+	cs, err := o.CreateAddonConfigService()
 	if err != nil {
-		return nil, nil, err
+		return server, err
 	}
-	config := authConfigSvc.Config()
-
-	var server *auth.ServerAuth
-	for _, s := range config.Servers {
-		if s.Kind == kind && s.URL == serverURL {
-			server = s
-		}
+	cfg, err := cs.Config()
+	if err != nil {
+		return server, err
 	}
-	if server == nil {
-		// TODO lets try find the service in the current namespace using a naming convention?
-		return nil, nil, fmt.Errorf("no server found for kind %s", kind)
-	}
-	message := "user to access the " + kind + " addon service at " + server.URL
-	userAuth, err := config.PickServerUserAuth(server, message, true, "", o.In, o.Out, o.Err)
-	return server, userAuth, err
+	return cfg.GetServerByKind(kind)
 }
 
 // EnsureAddonServiceAvailable ensures that the given service name is available for addon

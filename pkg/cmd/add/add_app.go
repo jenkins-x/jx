@@ -180,7 +180,8 @@ func (o *AddAppOptions) Run() error {
 		}
 		installOpts.EnvironmentsDir = environmentsDir
 
-		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		url := o.DevEnv.Spec.Source.URL
+		gitProvider, err := o.CreateGitProvider(url)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
 		}

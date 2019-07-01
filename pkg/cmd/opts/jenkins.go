@@ -75,7 +75,7 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 		}
 
 		o.factory.SetBatch(o.BatchMode)
-		jenkins, err := o.factory.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
+		jenkins, err := o.factory.CreateJenkinsClient(kubeClient, ns)
 
 		if err != nil {
 			return nil, err
@@ -92,7 +92,7 @@ func (o *CommonOptions) CustomJenkinsClient(jenkinsServiceName string) (gojenkin
 		return nil, err
 	}
 	o.factory.SetBatch(o.BatchMode)
-	return o.factory.CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName, o.In, o.Out, o.Err)
+	return o.factory.CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName)
 }
 
 // CustomJenkinsURL returns the default or the custom Jenkins URL
@@ -300,7 +300,7 @@ func (o *CommonOptions) UpdateJenkinsURL(namespaces []string) error {
 
 		log.Logger().Infof("Updating Jenkins with new external URL details %s", externalURL)
 
-		jenkins, err := o.factory.CreateJenkinsClient(client, n, o.In, o.Out, o.Err)
+		jenkins, err := o.factory.CreateJenkinsClient(client, n)
 
 		if err != nil {
 			return err
