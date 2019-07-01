@@ -21,7 +21,7 @@ pipelineConfig:
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy:80
               - name: PARALLEL_BUILDS
-                value: "2"
+                value: "8"
                 # Build a binary that can emit coverage
               - name: COVERED_BINARY
                 value: "true"

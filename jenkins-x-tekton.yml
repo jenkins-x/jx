@@ -21,7 +21,7 @@ pipelineConfig:
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy:80
               - name: PARALLEL_BUILDS
-                value: "2"
+                value: "6"
 
             steps:
               - name: build-binary

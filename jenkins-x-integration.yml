@@ -23,7 +23,7 @@ pipelineConfig:
               - name: JUNIT_REPORT
                 value: "true"
               - name: PARALLEL_BUILDS
-                value: "2"
+                value: "6"
             options:
               containerOptions:
                 resources:
