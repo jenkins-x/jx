@@ -279,8 +279,7 @@ test-release: clean build
 
 .PHONY: release
 release: clean build test-slow-integration linux # Release the binary
-	git fetch --tags
-	git checkout tags/v$(VERSION)
+	git fetch origin refs/tags/v$(VERSION)
 	# Don't create a changelog for the distro
 	@if [[ -z "${DISTRO}" ]]; then \
 		./build/linux/jx step changelog --verbose --header-file=docs/dev/changelog-header.md --version=$(VERSION) --rev=$(PULL_BASE_SHA) --output-markdown=changelog.md --update-release=false; \
