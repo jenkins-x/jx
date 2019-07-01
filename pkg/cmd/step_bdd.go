@@ -66,6 +66,7 @@ type StepBDDFlags struct {
 	TestCases           []string
 	VersionsRepoPr      bool
 	BaseDomain          string
+	Dir                 string
 }
 
 var (
@@ -126,6 +127,7 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "parallel", "", false, "Should we process each cluster configuration in parallel")
 	cmd.Flags().BoolVarP(&options.Flags.UseRevision, "use-revision", "", true, "Use the git revision from the current git clone instead of the Pull Request branch")
 	cmd.Flags().BoolVarP(&options.Flags.VersionsRepoPr, "version-repo-pr", "", false, "For use with jenkins-x-versions PR. Indicates the git revision of the PR should be used to clone the jenkins-x-versions")
+	cmd.Flags().StringVarP(&options.Flags.Dir, "dir", "d", ".", "the directory to run from where we look the requirements file")
 
 	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+cloud.KubernetesProviderOptions())
 
@@ -569,6 +571,26 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	binary := o.Flags.JxBinary
 	args := cluster.Args
 
+	// lets modify the local requirements file if it exists
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Flags.Dir)
+	if err != nil {
+		return err
+	}
+	exists, err := util.FileExists(requirementsFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		if cluster.Name != requirements.ClusterName {
+			requirements.ClusterName = cluster.Name
+			err = requirements.SaveConfig(requirementsFile)
+			if err != nil {
+				return errors.Wrapf(err, "failed to save file %s after setting the cluster name to %s", requirementsFile, cluster.Name)
+			}
+			log.Logger().Infof("wrote file %s after setting the cluster name to %s\n", requirementsFile, cluster.Name)
+		}
+	}
+
 	if cluster.Terraform {
 		// use the cluster name as the organisation name
 		args = append(args, "--organisation-name", cluster.Name)
@@ -662,7 +684,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 
 	// work around for helm apply with GitOps using a k8s local Service URL
 	os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
-	err := e.Run()
+	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", binary, strings.Join(safeArgs, " "))
 	}
