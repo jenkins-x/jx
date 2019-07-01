@@ -753,7 +753,7 @@ func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.Req
 		repo.Repository = naming.ToValidName("environment-" + requirements.ClusterName + "-" + envName)
 	}
 	if repo.GitKind == "" {
-		repo.GitKind = naming.ToValidName("environment-" + requirements.ClusterName + "-" + envName)
+		repo.GitKind = o.InstallOptions.GitRepositoryOptions.ServerKind
 		if repo.GitKind == "" {
 			repo.GitKind = gits.KindGitHub
 		}
