@@ -179,6 +179,9 @@ func (o *BootOptions) Run() error {
 	so.AdditionalEnvVars = map[string]string{
 		"JX_NO_TILLER": "true",
 	}
+	if o.BatchMode {
+		so.AdditionalEnvVars["JX_BATCH_MODE"] = "true"
+	}
 	err = so.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to interpret pipeline file %s", pipelineFile)
