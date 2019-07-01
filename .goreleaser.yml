@@ -115,7 +115,7 @@ builds:
       - amd64
 
 archives:
-  -
+  - id: jx-archive
     name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
     format_overrides:
       - goos: windows
@@ -130,6 +130,57 @@ checksum:
   # Accepted options are sha256, sha512, sha1, crc32, md5, sha224 and sha384.
   # Default is sha256.
   algorithm: sha256
+
+brews:
+  - name: jx
+    # IDs of the archives to use.
+    # Defaults to all.
+    ids:
+    - jx-archive
+
+    # Repository to push the tap to.
+    github:
+      owner: jenkins-x
+      name: homebrew-jx
+
+    # Template for the url.
+    # Default is "https://github.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "http://github.com/jenkins-x/jx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # Git author used to commit to the repository.
+    # Defaults are shown.
+    commit_author:
+      name: jenkins-x-bot
+      email: goreleacker.com
+    folder: Formula
+    homepage: "https://jenkins-x.io/"
+    description: "A tool to install and interact with Jenkins X on your Kubernetes cluster."
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist folder only,
+    # leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the homebrew tap
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    # Default is false.
+    skip_upload: true
+
+    # So you can `brew test` your formula.
+    # Default is empty.
+    test: |
+      system "#{bin}/jx --version"
+
+    # Custom install script for brew.
+    # Default is 'bin.install "program"'.
+    install: |
+      bin.install jx
+
+      output = Utils.popen_read("SHELL=bash #{bin}/jx completion bash")
+      (bash_completion/"jx").write output
+
+      output = Utils.popen_read("SHELL=zsh #{bin}/jx completion zsh")
+      (zsh_completion/"_jx").write output
+
+      prefix.install_metafiles
 
 changelog:
   # set it to true if you wish to skip the changelog generation
