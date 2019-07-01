@@ -535,6 +535,11 @@ func (o *StepBDDOptions) copyReports(testDir string, err error) error {
 }
 
 func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
+	log.Logger().Infof("has %d post create cluster commands\n", len(cluster.Commands))
+	for _, cmd := range cluster.Commands {
+		log.Logger().Infof("post create command: %s\n", util.ColorInfo(cmd.Command+" "+strings.Join(cmd.Args, " ")))
+	}
+
 	buildNum := o.GetBuildNumber()
 	if buildNum == "" {
 		log.Logger().Warnf("No build number could be found from the environment variable $BUILD_NUMBER!")
