@@ -182,13 +182,16 @@ func (o *BootOptions) Run() error {
 	if o.BatchMode {
 		so.AdditionalEnvVars["JX_BATCH_MODE"] = "true"
 	}
+	ns := FindBootNamespace(projectConfig, requirements)
+	if ns != "" {
+		so.CommonOptions.SetDevNamespace(ns)
+	}
 	err = so.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to interpret pipeline file %s", pipelineFile)
 	}
 
 	// if we can find the deploy namespace lets switch kubernetes context to it so the user can use `jx` commands immediately
-	ns := FindBootNamespace(projectConfig, requirements)
 	if ns != "" {
 		no := &namespace.NamespaceOptions{}
 		no.CommonOptions = o.CommonOptions
