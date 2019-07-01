@@ -14,6 +14,7 @@ import (
 // EnableLongTermStorage will take the cluster install values and a provided bucket name and use it / create a new one for gs
 func EnableLongTermStorage(installValues map[string]string, providedBucketName string) (string, error) {
 	if providedBucketName != "" {
+		log.Logger().Infof(util.QuestionAnswer("Configured to use long term storage bucket", providedBucketName))
 		return ensureProvidedBucketExists(installValues, providedBucketName)
 	} else {
 		log.Logger().Info("No bucket name provided for long term storage, creating a new one")

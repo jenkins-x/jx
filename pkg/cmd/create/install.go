@@ -133,8 +133,8 @@ type InstallFlags struct {
 	NoGitOpsVault               bool
 	NextGeneration              bool
 	StaticJenkins               bool
-	LongTermStorage             bool
-	LongTermStorageBucketName   string
+	LongTermStorage             bool   `mapstructure:"long-term-storage"`
+	LongTermStorageBucketName   string `mapstructure:"lts-bucket"`
 	CloudBeesDomain             string
 	CloudBeesAuth               string
 }
@@ -232,6 +232,7 @@ This repository contains the source code for the Jenkins X Development Environme
 }
 `
 	longTermStorageFlagName = "long-term-storage"
+	ltsBucketFlagName       = "lts-bucket"
 	kanikoFlagName          = "kaniko"
 	namespaceFlagName       = "namespace"
 )
@@ -379,7 +380,7 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
-	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, "lts-bucket", "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
+	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, ltsBucketFlagName, "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
 	cmd.Flags().StringVarP(&options.Flags.CloudBeesDomain, "cloudbees-domain", "", "", "When setting up a letter/tenant cluster, this creates a tenant cluster on the cloudbees domain which is retrieved via the required URL")
 	cmd.Flags().StringVarP(&options.Flags.CloudBeesAuth, "cloudbees-auth", "", "", "Auth used when setting up a letter/tenant cluster, format: 'username:password'")
 	bindInstallConfigToFlags(cmd)
@@ -2393,7 +2394,7 @@ func (options *InstallOptions) configureBuildPackMode() error {
 
 func (options *InstallOptions) configureLongTermStorageBucket() error {
 
-	if options.IsFlagExplicitlySet(longTermStorageFlagName) && !options.Flags.LongTermStorage {
+	if options.IsConfigExplicitlySet("install", longTermStorageFlagName) && !options.Flags.LongTermStorage {
 		return nil
 	}
 
@@ -2418,6 +2419,8 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 				log.Logger().Debugf("Long Term Storage not supported by provider '%s', disabling this option", options.Flags.Provider)
 			}
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Configured to use long term logs storage", util.YesNo(options.Flags.LongTermStorage)))
 	}
 
 	if options.Flags.LongTermStorage {
