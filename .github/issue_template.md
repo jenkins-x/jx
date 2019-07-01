@@ -19,9 +19,8 @@ COPY OUTPUT HERE
 <!--
 Select which installation type are you using. 
 -->
-- [ ] Next Generation (Tekton + Prow)
+- [ ] Serverless Jenkins X Pipelines (Tekton + Prow)
 - [ ] Classic Jenkins
-- [ ] Serverless Jenkins (JenkinsFileRunner + Prow)
 
 ### Kubernetes cluster
 
