@@ -75,7 +75,7 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.C
 		Short:   "Creates a Pull Request on the versions git repository for a new version of a chart/package",
 		Long:    createVersionPullRequestLong,
 		Example: createVersionPullRequestExample,
-		Aliases: []string{"version pullrequest"},
+		Aliases: []string{"version pullrequest", "version"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
