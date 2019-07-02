@@ -13,10 +13,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -162,6 +164,11 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 	info := util.ColorInfo
 
+	devGitInfo, err := o.FindGitInfo(dir)
+	if err != nil {
+		log.Logger().Warnf("could not find a git repoitory in the directory %s: %s\n", o.Dir, err.Error())
+	}
+
 	path, err := filepath.Abs(dir)
 	if err != nil {
 		return errors.Wrapf(err, "could not find absolute path of dir %s", dir)
@@ -244,6 +251,9 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	DefaultEnvironments(requirements, devGitInfo)
+
 	chartValues, params, err := helm.GenerateValues(requirements, dir, nil, true, secretURLClient)
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
@@ -304,6 +314,36 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
 	}
 	return nil
+}
+
+// DefaultEnvironments ensures we have valid values for environment owner and repository names.
+// if none are configured lets default them from smart defaults
+func DefaultEnvironments(c *config.RequirementsConfig, devGitInfo *gits.GitRepository) {
+	defaultOwner := c.EnvironmentGitOwner
+	clusterName := c.ClusterName
+	for i := range c.Environments {
+		env := &c.Environments[i]
+		if env.Key == kube.LabelValueDevEnvironment && devGitInfo != nil {
+			if env.Owner == "" {
+				env.Owner = devGitInfo.Organisation
+			}
+			if env.Repository == "" {
+				env.Repository = devGitInfo.Name
+			}
+			if env.GitServer == "" {
+				env.GitServer = devGitInfo.HostURL()
+			}
+			if env.GitKind == "" {
+				env.GitKind = gits.SaasGitKind(env.GitServer)
+			}
+		}
+		if env.Owner == "" {
+			env.Owner = defaultOwner
+		}
+		if env.Repository == "" && clusterName != "" {
+			env.Repository = naming.ToValidName("environment-" + clusterName + "-" + env.Key)
+		}
+	}
 }
 
 func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {

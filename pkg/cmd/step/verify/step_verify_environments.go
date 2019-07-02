@@ -2,8 +2,10 @@ package verify
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -60,12 +62,12 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 
 	info := util.ColorInfo
 
-	envMap, _, err := kube.GetEnvironments(jxClient, ns)
+	envMap, names, err := kube.GetEnvironments(jxClient, ns)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load Environments in namespace %s", ns)
 	}
-	for _, env := range envMap {
-		name := env.Name
+	for _, name := range names {
+		env := envMap[name]
 		gitURL := env.Spec.Source.URL
 		if gitURL != "" && name != kube.LabelValueDevEnvironment && env.Spec.Kind == v1.EnvironmentKindTypePermanent {
 			log.Logger().Infof("validating git repository for %s at URL %s\n", info(name), info(gitURL))
@@ -88,7 +90,16 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepoitory(environment *v1.Env
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s and %s", gitURL, message)
 	}
-	provider, err := o.GitProviderForURL(gitURL, message)
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return err
+	}
+	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create git provider for git URL %s and %s", gitURL, message)
 	}
@@ -100,34 +111,38 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepoitory(environment *v1.Env
 	}
 	if err != nil {
 		if !lazyCreate {
-			return errors.Wrapf(err, "failed to find git repository %s/%s from git URL %s and %s", owner, repository, gitURL, message)
+			return errors.Wrapf(err, "failed to find git repository %s/%s from git URL %s and %s", owner, repo, gitURL, message)
 		}
 
-		return o.createEnvGitRepposotory(environment, gitURL, gitInfo)
+		log.Logger().Infof("failed to find git repository %s/%s from git URL %s and %s so lets create it\n", owner, repo, gitURL, message)
+		return o.createEnvGitRepository(authConfigSvc, environment, gitURL, gitInfo)
 	}
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) createEnvGitRepposotory(environment *v1.Environment, gitURL string, gitInfo *gits.GitRepository) error {
+func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, gitInfo *gits.GitRepository) error {
 	log.Logger().Infof("creating environment %s git repository for URL: %s\n", util.ColorInfo(environment.Name), util.ColorInfo(gitURL))
 
 	devEnv, _, err := o.DevEnvAndTeamSettings()
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+
+	envDir, err := ioutil.TempDir("", "jx-env-repo-")
 	if err != nil {
 		return err
 	}
 
 	// TODO
-	envDir := ""
 	gitKind := gits.KindGitHub
 	privateRepo := false
-	gitServerURL := gitInfo.HostURL()
 	prefix := ""
+
+	gitServerURL := gitInfo.HostURL()
 	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
 	helmValues := config.HelmValuesConfig{}
+	batchMode := o.BatchMode
+	forkGitURL := kube.DefaultEnvironmentGitRepoURL
 
 	if server == nil {
 		return fmt.Errorf("no auth server found for git server %s from gitURL %s", gitServerURL, gitURL)
@@ -149,8 +164,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepposotory(environment *v1.
 		Private:    privateRepo,
 	}
 
-	batchMode := true
-	_, _, err = kube.CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, environment, environment, gitURL, envDir, gitRepoOptions, helmValues, prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
+	_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, devEnv, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
 	if err != nil {
 		return fmt.Errorf("failed to create git repository for gitURL %s", gitURL)
 	}

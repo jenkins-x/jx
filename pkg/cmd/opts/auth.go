@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	jxv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
@@ -91,6 +92,31 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 
 	fileName := auth.GitAuthConfigFile
 	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.factory.IsInCDPipeline())
+}
+
+// CreatePipelineUserGitAuthConfigService creates git auth config service for the pipeline user
+func (o *CommonOptions) CreatePipelineUserGitAuthConfigService() (auth.ConfigService, error) {
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		return nil, err
+	}
+	fileName := file.Name()
+
+	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
+	if err != nil {
+		kubeConfig, _, configLoadErr := o.Kube().LoadConfig()
+		if configLoadErr != nil {
+			log.Logger().Warnf("WARNING: Could not load config: %s", configLoadErr)
+		}
+
+		ns := kube.CurrentNamespace(kubeConfig)
+		if ns == "" {
+			log.Logger().Warnf("WARNING: Could not get the current namespace")
+		}
+
+		log.Logger().Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s", ns, err)
+	}
+	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, true)
 }
 
 // CreateGitAuthConfigServiceFromSecrets Creates a git auth config service from secrets
