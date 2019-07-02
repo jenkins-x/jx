@@ -3,7 +3,6 @@ package step
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -110,10 +109,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil || gitUser == "" {
 		gitUser = o.GitUsername
 		if gitUser == "" {
-			user, err := user.Current()
-			if err == nil && user != nil {
-				gitUser = user.Username
-			}
+			gitUser, _ = o.GetUsername("")
 		}
 		if gitUser == "" {
 			gitUser = "jenkins-x-bot"

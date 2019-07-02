@@ -372,11 +372,13 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 // GetUsername returns current user name
 func (o *CommonOptions) GetUsername(userName string) (string, error) {
 	if userName == "" {
-		u, err := user.Current()
-		if err != nil {
-			return userName, errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
+		if !o.GetFactory().IsInCluster() {
+			u, err := user.Current()
+			if err != nil {
+				return userName, errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
+			}
+			userName = u.Username
 		}
-		userName = u.Username
 	}
 	return naming.ToValidNameTruncated(userName, 63), nil
 }
