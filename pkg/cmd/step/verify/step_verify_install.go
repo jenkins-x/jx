@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/log"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -81,9 +82,11 @@ func (o *StepVerifyInstallOptions) Run() error {
 		return err
 	}
 	if requirements.Kaniko {
-		err = o.validateKaniko(ns)
-		if err != nil {
-			return err
+		if requirements.Provider == cloud.GKE {
+			err = o.validateKaniko(ns)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	log.Infof("installation looks good!\n")
