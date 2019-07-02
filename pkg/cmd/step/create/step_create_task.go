@@ -255,7 +255,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return errors.Wrap(err, "Unable to load pod templates")
 	}
 
-	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline)
+	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline, tektonClient, ns)
 
 	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {

@@ -2,10 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/prow"
-	"github.com/jenkins-x/jx/pkg/tekton"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,12 +10,17 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/knative/pkg/kmp"
 	"github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
@@ -31,6 +32,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -49,6 +51,8 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	packsDir := path.Join(testData, "packs")
 	_, err = os.Stat(packsDir)
 	assert.NoError(t, err)
+
+	rand.Seed(12345)
 
 	resolver := func(importFile *jenkinsfile.ImportFile) (string, error) {
 		dirPath := []string{packsDir, "import_dir", importFile.Import}
@@ -376,11 +380,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			testhelpers.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
 			ns := "jx"
+			// Create a single duplicate PipelineResource for the name used by the 'kaniko_entrypoint' test case to verify that the deduplication logic works correctly.
+			tektonClient := tektonfake.NewSimpleClientset(tekton_helpers_test.AssertLoadPipelineResources(t, path.Join(testData, "prepopulated")))
+
 			effectiveProjectConfig, _ := createTask.createEffectiveProjectConfig(packsDir, projectConfig, projectConfigFile, resolver, ns)
 			if effectiveProjectConfig != nil {
 				createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
 			}
-			pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline)
+			pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, tektonClient, ns)
 			crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
 			if tt.expectingError {
 				if err == nil {

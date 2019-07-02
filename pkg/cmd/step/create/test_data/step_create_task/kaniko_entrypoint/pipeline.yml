@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   creationTimestamp: null
-  name: jenkins-x-jx-fix-kaniko-special-1
+  name: jenkins-x-jx-fix-kaniko-special-9l9zj-1
   namespace: jx
   labels:
     branch: fix-kaniko-special-casing
@@ -16,7 +16,7 @@ spec:
         images and helm charts
       name: version
   resources:
-    - name: jenkins-x-jx-fix-kaniko-special
+    - name: jenkins-x-jx-fix-kaniko-special-9l9zj
       type: git
   tasks:
     - name: ci
@@ -26,7 +26,7 @@ spec:
       resources:
         inputs:
           - name: workspace
-            resource: jenkins-x-jx-fix-kaniko-special
+            resource: jenkins-x-jx-fix-kaniko-special-9l9zj
       taskRef:
-        name: jenkins-x-jx-fix-kaniko-special-ci-1
+        name: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
 status: {}
