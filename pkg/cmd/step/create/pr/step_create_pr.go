@@ -113,18 +113,18 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 // CreatePullRequest will fork (if needed) and pull a git repo, then perform the update, and finally create or update a
 // PR for the change. Any open PR on the repo with the `updatebot` label will be updated.
 func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir string, gitInfo *gits.GitRepository) ([]string, error)) error {
-	for _, gitUrl := range o.GitURLs {
+	for _, gitURL := range o.GitURLs {
 		dir, err := ioutil.TempDir("", "create-pr")
 		if err != nil {
 			return err
 		}
 
-		provider, _, err := o.CreateGitProviderForURLWithoutKind(gitUrl)
+		provider, _, err := o.CreateGitProviderForURLWithoutKind(gitURL)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for directory %s", dir)
 		}
 
-		dir, _, gitInfo, err := gits.ForkAndPullPullRepo(gitUrl, dir, o.Base, o.BranchName, provider, o.Git(), o.ConfigGitFn)
+		dir, _, gitInfo, err := gits.ForkAndPullPullRepo(gitURL, dir, o.Base, o.BranchName, provider, o.Git(), o.ConfigGitFn)
 		if err != nil {
 			return errors.Wrapf(err, "failed to fork and pull %s", o.GitURLs)
 		}
