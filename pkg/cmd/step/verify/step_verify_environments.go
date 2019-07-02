@@ -161,7 +161,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelpValues(requirements
 	namespaceSubDomain := ""
 	exposer := "Ingress"
 
-	clustersYamlFile := filepath.Join(o.Dir, "env", "cluster", "values.yaml")
+	clustersYamlFile := filepath.Join(o.Dir, "cluster", "values.yaml")
 	exists, err := util.FileExists(clustersYamlFile)
 	if err != nil {
 		return config.HelmValuesConfig{}, errors.Wrapf(err, "failed to check file exists: %s", clustersYamlFile)
