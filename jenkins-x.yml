@@ -148,7 +148,7 @@ pipelineConfig:
                 # Needs maven as openapi tools are written in Java!
                 image: gcr.io/jenkinsxio/builder-maven:0.1.537
                 command: ./jx/scripts/update-clients.sh
-          - name: bdd-baseline
+          - name: bdd-baseline-prep
             environment:
             - name: GIT_COMMITTER_EMAIL
               value: jenkins-x@googlegroups.com
@@ -222,12 +222,68 @@ pipelineConfig:
               command: /kaniko/executor
               args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
-            - name: e2e-tests
-              image: gcr.io/jenkinsxio/builder-go:0.1.537
-              command: ./jx/scripts/ci.sh
+          - name: bdd-baseline
+            environment:
+              - name: GIT_COMMITTER_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_NAME
+                value: jenkins-x-bot
+              - name: GIT_COMMITTER_NAME
+                value: jenkins-x-bot
+              - name: BASE_WORKSPACE
+                value: /workspace/source
+              - name: GOPROXY
+                value: http://jenkins-x-athens-proxy:80
+              - name: PARALLEL_BUILDS
+                value: "2"
+                # Build a binary that can emit coverage
+              - name: COVERED_BINARY
+                value: "true"
+              - name: VERSION_PREFIX
+                value: covered-
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 3
+                    memory: 6144Mi
+                  requests:
+                    cpu: 1
+                    memory: 3072Mi
+                env:
+                  - name: CODECOV_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        key: token
+                        name: codecov-token
+            parallel:
+              - name: static
+                env:
+                  - name: CODECOV_NAME
+                    value: e2e
+                steps:
+                  - name: e2e-tests
+                    image: gcr.io/jenkinsxio/builder-go:0.1.537
+                    command: ./jx/scripts/ci.sh
 
-            - name: stash-test-results
-              image: jenkinsxio/jx:2.0.128
-              command: jx
-              # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
-              args: ['step', 'stash', '-c', 'e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
+                  - name: stash-test-results
+                    image: jenkinsxio/jx:2.0.128
+                    command: jx
+                    # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
+                    args: ['step', 'stash', '-c', 'e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
+              - name: tekton
+                env:
+                  - name: CODECOV_NAME
+                    value: tekton-e2e
+                steps:
+                  - name: tekton-e2e-tests
+                    image: gcr.io/jenkinsxio/builder-go:0.1.537
+                    command: ./jx/bdd/tekton/ci.sh
+
+                  - name: stash-test-results
+                    image: jenkinsxio/jx:2.0.128
+                    command: jx
+                    # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
+                    args: ['step', 'stash', '-c', 'tekton-e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
