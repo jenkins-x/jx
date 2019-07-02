@@ -90,34 +90,11 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepoitory(environment *v1.Env
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s and %s", gitURL, message)
 	}
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return err
-	}
 	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
 	if err != nil {
 		return err
 	}
-
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create git provider for git URL %s and %s", gitURL, message)
-	}
-	owner := gitInfo.Organisation
-	repo := gitInfo.Name
-	repository, err := provider.GetRepository(owner, repo)
-	if repository != nil && err == nil {
-		return nil
-	}
-	if err != nil {
-		if !lazyCreate {
-			return errors.Wrapf(err, "failed to find git repository %s/%s from git URL %s and %s", owner, repo, gitURL, message)
-		}
-
-		log.Logger().Infof("failed to find git repository %s/%s from git URL %s and %s so lets create it\n", owner, repo, gitURL, message)
-		return o.createEnvGitRepository(authConfigSvc, environment, gitURL, gitInfo)
-	}
-	return nil
+	return o.createEnvGitRepository(authConfigSvc, environment, gitURL, gitInfo)
 }
 
 func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, gitInfo *gits.GitRepository) error {
