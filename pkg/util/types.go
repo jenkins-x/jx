@@ -102,6 +102,14 @@ func DereferenceInt(i *int) int {
 	return 0
 }
 
+// DereferenceInt64 will return the int value or the empty value for i
+func DereferenceInt64(i *int64) int64 {
+	if i != nil {
+		return *i
+	}
+	return 0
+}
+
 // DereferenceString will return the string value or the empty value for string
 func DereferenceString(s *string) string {
 	if s != nil {

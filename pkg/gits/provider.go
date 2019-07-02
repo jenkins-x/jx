@@ -119,6 +119,7 @@ type GitUser struct {
 }
 
 type GitRelease struct {
+	ID            int64
 	Name          string
 	TagName       string
 	Body          string
@@ -130,6 +131,7 @@ type GitRelease struct {
 
 // GitReleaseAsset represents a release stored in Git
 type GitReleaseAsset struct {
+	ID                 int64
 	BrowserDownloadURL string
 	Name               string
 	ContentType        string

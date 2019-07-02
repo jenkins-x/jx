@@ -3,6 +3,7 @@ package gits
 import (
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -102,7 +103,9 @@ type GitProvider interface {
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
 
-	GetRelease(org string, name string, id string) (*GitRelease, error)
+	GetRelease(org string, name string, tag string) (*GitRelease, error)
+
+	UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error)
 
 	GetLatestRelease(org string, name string) (*GitRelease, error)
 

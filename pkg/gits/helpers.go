@@ -12,7 +12,7 @@ import (
 
 	"github.com/jpillora/longestcommon"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
@@ -295,7 +295,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 					gha.Title = "chore(dependencies): update dependency versions"
 				}
 				gha.Title = strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(gha.Title), " to"), " from")
-				gha.Body = fmt.Sprintf("%s\n<hr />\n%s", prDetails.Message, pr.Body)
+				gha.Body = fmt.Sprintf("%s\n<hr />\n\n%s", prDetails.Message, pr.Body)
 
 				pr, err := provider.UpdatePullRequest(gha, *pr.Number)
 				if err != nil {

@@ -1,13 +1,18 @@
 package pr
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
 
 	"github.com/blang/semver"
+
+	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 
@@ -175,14 +180,104 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 			oldVersionsStr = oldVersionsStr + fmt.Sprintf(" and %s", strings.Join(dedupedNonSemantic, ", "))
 		}
 
-		commitMessage, details, updateDependency, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, gitInfo, oldVersionsStr, o.Version, o.Component)
+		commitMessage, details, updateDependency, assets, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, gitInfo, oldVersionsStr, o.Version, o.Component)
 		if err != nil {
 			return errors.WithStack(err)
+		}
+
+		var upstreamDependencyAsset *gits.GitReleaseAsset
+
+		for _, asset := range assets {
+			if asset.Name == dependencymatrix.DependencyUpdatesAssetName {
+				upstreamDependencyAsset = &asset
+				break
+			}
 		}
 
 		err = dependencymatrix.UpdateDependencyMatrix(dir, updateDependency)
 		if err != nil {
 			return errors.WithStack(err)
+		}
+
+		if upstreamDependencyAsset != nil {
+			var upstreamUpdates dependencymatrix.DependencyUpdates
+			resp, err := http.Get(upstreamDependencyAsset.BrowserDownloadURL)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
+			}
+			defer resp.Body.Close()
+
+			// Write the body
+			var b bytes.Buffer
+			_, err = io.Copy(&b, resp.Body)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
+			}
+			err = yaml.Unmarshal(b.Bytes(), &upstreamUpdates)
+			if err != nil {
+				return errors.Wrapf(err, "unmarshaling dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
+			}
+			for _, d := range upstreamUpdates.Updates {
+				// Need to prepend a path element
+				if d.Paths == nil {
+					d.Paths = []v1.DependencyUpdatePath{
+						{
+							{
+								Host:               updateDependency.Host,
+								Owner:              updateDependency.Owner,
+								Repo:               updateDependency.Repo,
+								URL:                updateDependency.URL,
+								Component:          updateDependency.Component,
+								ToReleaseHTMLURL:   updateDependency.ToReleaseHTMLURL,
+								ToVersion:          updateDependency.ToVersion,
+								FromVersion:        updateDependency.FromVersion,
+								FromReleaseName:    updateDependency.FromReleaseName,
+								FromReleaseHTMLURL: updateDependency.FromReleaseHTMLURL,
+								ToReleaseName:      updateDependency.ToReleaseName,
+							},
+						},
+					}
+				} else {
+					for j, e := range d.Paths {
+						if e == nil {
+							d.Paths[j] = v1.DependencyUpdatePath{
+								{
+									Host:               updateDependency.Host,
+									Owner:              updateDependency.Owner,
+									Repo:               updateDependency.Repo,
+									URL:                updateDependency.URL,
+									Component:          updateDependency.Component,
+									ToReleaseHTMLURL:   updateDependency.ToReleaseHTMLURL,
+									ToVersion:          updateDependency.ToVersion,
+									FromVersion:        updateDependency.FromVersion,
+									FromReleaseName:    updateDependency.FromReleaseName,
+									FromReleaseHTMLURL: updateDependency.FromReleaseHTMLURL,
+									ToReleaseName:      updateDependency.ToReleaseName,
+								},
+							}
+						}
+						d.Paths[j] = append([]v1.DependencyUpdateDetails{
+							{
+								Host:               updateDependency.Host,
+								Owner:              updateDependency.Owner,
+								Repo:               updateDependency.Repo,
+								URL:                updateDependency.URL,
+								Component:          updateDependency.Component,
+								ToReleaseHTMLURL:   updateDependency.ToReleaseHTMLURL,
+								ToVersion:          updateDependency.ToVersion,
+								FromVersion:        updateDependency.FromVersion,
+								FromReleaseName:    updateDependency.FromReleaseName,
+								FromReleaseHTMLURL: updateDependency.FromReleaseHTMLURL,
+								ToReleaseName:      updateDependency.ToReleaseName,
+							},
+						}, e...)
+					}
+				}
+				err := dependencymatrix.UpdateDependencyMatrix(dir, &d)
+				if err != nil {
+					return errors.Wrapf(err, "updating dependency matrix with upstream dependency %+v", d)
+				}
+			}
 		}
 
 		filter := &gits.PullRequestFilter{
@@ -200,23 +295,26 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 
 // CreateDependencyUpdatePRDetails creates the PullRequestDetails for a pull request, taking the kind of change it is (an id)
 // the srcRepoUrl for the repo that caused the change, the destRepo for the repo receiving the change, the fromVersion and the toVersion
-func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRepoURL string, destRepo *gits.GitRepository, fromVersion string, toVersion string, component string) (string, *gits.PullRequestDetails, *v1.DependencyUpdate, error) {
+func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRepoURL string, destRepo *gits.GitRepository, fromVersion string, toVersion string, component string) (string, *gits.PullRequestDetails, *v1.DependencyUpdate, []gits.GitReleaseAsset, error) {
 
 	var commitMessage, title, message strings.Builder
 	commitMessage.WriteString("chore(dependencies): update ")
 	title.WriteString("chore(dependencies): update ")
 	message.WriteString("Update ")
 	var update *v1.DependencyUpdate
+	var assets []gits.GitReleaseAsset
 
 	if srcRepoURL != "" {
 		provider, srcRepo, err := o.CreateGitProviderForURLWithoutKind(srcRepoURL)
 		if err != nil {
-			return "", nil, nil, errors.Wrapf(err, "creating git provider for %s", srcRepoURL)
+			return "", nil, nil, nil, errors.Wrapf(err, "creating git provider for %s", srcRepoURL)
 		}
 		update = &v1.DependencyUpdate{
-			Owner: srcRepo.Organisation,
-			Repo:  srcRepo.Name,
-			URL:   srcRepoURL,
+			DependencyUpdateDetails: v1.DependencyUpdateDetails{
+				Owner: srcRepo.Organisation,
+				Repo:  srcRepo.Name,
+				URL:   srcRepoURL,
+			},
 		}
 		if srcRepo.Host != destRepo.Host {
 			commitMessage.WriteString(srcRepoURL)
@@ -249,7 +347,7 @@ func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRe
 			update.FromVersion = fromVersion
 			release, err := releases.GetRelease(fromVersion, srcRepo.Organisation, srcRepo.Name, provider)
 			if err != nil {
-				return "", nil, nil, errors.Wrapf(err, "getting release from %s/%s", srcRepo.Organisation, srcRepo.Name)
+				return "", nil, nil, nil, errors.Wrapf(err, "getting release from %s/%s", srcRepo.Organisation, srcRepo.Name)
 			}
 			if release != nil {
 				message.WriteString(fmt.Sprintf("from [%s](%s) ", fromVersion, release.HTMLURL))
@@ -266,9 +364,11 @@ func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRe
 			update.ToVersion = toVersion
 			release, err := releases.GetRelease(toVersion, srcRepo.Organisation, srcRepo.Name, provider)
 			if err != nil {
-				return "", nil, nil, errors.Wrapf(err, "getting release from %s/%s", srcRepo.Organisation, srcRepo.Name)
+				return "", nil, nil, nil, errors.Wrapf(err, "getting release from %s/%s", srcRepo.Organisation, srcRepo.Name)
 			}
-
+			if release.Assets != nil {
+				assets = *release.Assets
+			}
 			if release != nil {
 				message.WriteString(fmt.Sprintf("to [%s](%s)", toVersion, release.HTMLURL))
 				update.ToReleaseHTMLURL = release.HTMLURL
@@ -283,5 +383,5 @@ func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRe
 		BranchName: fmt.Sprintf("update-%s-version-%s", kind, string(uuid.NewUUID())),
 		Title:      title.String(),
 		Message:    message.String(),
-	}, update, nil
+	}, update, assets, nil
 }
