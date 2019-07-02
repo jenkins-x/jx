@@ -197,13 +197,13 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testCaseDir := path.Join("test_data", "pipeline_info", tt.name)
 
-			jxObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineActivity(t, testCaseDir)}
-			structure := tekton_helpers_test.AssertLoadPipelineStructure(t, testCaseDir)
+			jxObjects := []runtime.Object{tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)}
+			structure := tekton_helpers_test.AssertLoadSinglePipelineStructure(t, testCaseDir)
 			if structure != nil {
 				jxObjects = append(jxObjects, structure)
 			}
 
-			tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineRun(t, testCaseDir), tekton_helpers_test.AssertLoadPipeline(t, testCaseDir)}
+			tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir), tekton_helpers_test.AssertLoadSinglePipeline(t, testCaseDir)}
 			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTasks(t, testCaseDir))
 			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTaskRuns(t, testCaseDir))
 			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadPipelineResources(t, testCaseDir))

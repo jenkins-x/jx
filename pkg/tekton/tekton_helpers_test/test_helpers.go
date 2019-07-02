@@ -56,8 +56,25 @@ func AssertLoadSinglePod(t *testing.T, dir string) *corev1.Pod {
 	return &corev1.Pod{}
 }
 
-// AssertLoadPipeline reads a file containing a Pipeline and returns that Pipeline
-func AssertLoadPipeline(t *testing.T, dir string) *v1alpha1.Pipeline {
+// AssertLoadPipelines reads a file containing a PipelineList and returns that PipelineList
+func AssertLoadPipelines(t *testing.T, dir string) *v1alpha1.PipelineList {
+	fileName := filepath.Join(dir, "pipelines.yml")
+	if tests.AssertFileExists(t, fileName) {
+		pipelineList := &v1alpha1.PipelineList{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, pipelineList)
+			if assert.NoError(t, err, "Failed to unmarshal YAML file %s", fileName) {
+				return pipelineList
+			}
+
+		}
+	}
+	return nil
+}
+
+// AssertLoadSinglePipeline reads a file containing a Pipeline and returns that Pipeline
+func AssertLoadSinglePipeline(t *testing.T, dir string) *v1alpha1.Pipeline {
 	fileName := filepath.Join(dir, "pipeline.yml")
 	if tests.AssertFileExists(t, fileName) {
 		pipeline := &v1alpha1.Pipeline{}
@@ -73,8 +90,25 @@ func AssertLoadPipeline(t *testing.T, dir string) *v1alpha1.Pipeline {
 	return nil
 }
 
-// AssertLoadPipelineRun reads a file containing a PipelineRun and returns that PipelineRun
-func AssertLoadPipelineRun(t *testing.T, dir string) *v1alpha1.PipelineRun {
+// AssertLoadPipelineRuns reads a file containing a PipelineRunList and returns that PipelineRunList
+func AssertLoadPipelineRuns(t *testing.T, dir string) *v1alpha1.PipelineRunList {
+	fileName := filepath.Join(dir, "pipelineruns.yml")
+	if tests.AssertFileExists(t, fileName) {
+		pipelineRunList := &v1alpha1.PipelineRunList{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, pipelineRunList)
+			if assert.NoError(t, err, "Failed to unmarshal YAML file %s", fileName) {
+				return pipelineRunList
+			}
+
+		}
+	}
+	return nil
+}
+
+// AssertLoadSinglePipelineRun reads a file containing a PipelineRun and returns that PipelineRun
+func AssertLoadSinglePipelineRun(t *testing.T, dir string) *v1alpha1.PipelineRun {
 	fileName := filepath.Join(dir, "pipelinerun.yml")
 	if tests.AssertFileExists(t, fileName) {
 		pipelineRun := &v1alpha1.PipelineRun{}
@@ -90,8 +124,25 @@ func AssertLoadPipelineRun(t *testing.T, dir string) *v1alpha1.PipelineRun {
 	return nil
 }
 
-// AssertLoadPipelineActivity reads a file containing a PipelineActivity and returns that PipelineActivity
-func AssertLoadPipelineActivity(t *testing.T, dir string) *v1.PipelineActivity {
+// AssertLoadPipelineActivities reads a file containing a PipelineActivityList and returns that PipelineActivityList
+func AssertLoadPipelineActivities(t *testing.T, dir string) *v1.PipelineActivityList {
+	fileName := filepath.Join(dir, "activities.yml")
+	if tests.AssertFileExists(t, fileName) {
+		activityList := &v1.PipelineActivityList{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, activityList)
+			if assert.NoError(t, err, "Failed to unmarshal YAML file %s", fileName) {
+				return activityList
+			}
+
+		}
+	}
+	return nil
+}
+
+// AssertLoadSinglePipelineActivity reads a file containing a PipelineActivity and returns that PipelineActivity
+func AssertLoadSinglePipelineActivity(t *testing.T, dir string) *v1.PipelineActivity {
 	fileName := filepath.Join(dir, "activity.yml")
 	if tests.AssertFileExists(t, fileName) {
 		activity := &v1.PipelineActivity{}
@@ -107,8 +158,25 @@ func AssertLoadPipelineActivity(t *testing.T, dir string) *v1.PipelineActivity {
 	return nil
 }
 
-// AssertLoadPipelineStructure reads a file containing a PipelineStructure and returns that PipelineStructure
-func AssertLoadPipelineStructure(t *testing.T, dir string) *v1.PipelineStructure {
+// AssertLoadPipelineStructures reads a file containing a PipelineStructureList and returns that PipelineStructureList
+func AssertLoadPipelineStructures(t *testing.T, dir string) *v1.PipelineStructureList {
+	fileName := filepath.Join(dir, "structures.yml")
+	if tests.AssertFileExists(t, fileName) {
+		structureList := &v1.PipelineStructureList{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, structureList)
+			if assert.NoError(t, err, "Failed to unmarshal YAML file %s", fileName) {
+				return structureList
+			}
+
+		}
+	}
+	return nil
+}
+
+// AssertLoadSinglePipelineStructure reads a file containing a PipelineStructure and returns that PipelineStructure
+func AssertLoadSinglePipelineStructure(t *testing.T, dir string) *v1.PipelineStructure {
 	fileName := filepath.Join(dir, "structure.yml")
 	exists, err := util.FileExists(fileName)
 	if err != nil {

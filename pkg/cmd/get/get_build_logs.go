@@ -137,7 +137,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 	webhookEngine := devEnv.Spec.WebHookEngine
 	if webhookEngine == v1.WebHookEngineProw && !o.JenkinsSelector.IsCustom() {
-		return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)
+		return o.GetProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)
 	}
 
 	args := o.Args
@@ -233,7 +233,8 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	}
 }
 
-func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string, tektonEnabled bool) error {
+// GetProwBuildLog prompts the user, if needed, to choose a pipeline, and then prints out that pipeline's logs.
+func (o *GetBuildLogsOptions) GetProwBuildLog(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string, tektonEnabled bool) error {
 	if o.CurrentFolder {
 		currentDirectory, err := os.Getwd()
 		if err != nil {
@@ -255,7 +256,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 
 	var err error
 	if tektonEnabled {
-		names, defaultName, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+		names, defaultName, pipelineMap, err = o.LoadPipelines(kubeClient, tektonClient, jxClient, ns)
 	} else {
 		names, defaultName, pipelineMap, err = o.loadBuilds(kubeClient, ns)
 	}
@@ -288,7 +289,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		f := func() error {
 			var err error
 			if tektonEnabled {
-				names, defaultName, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+				names, defaultName, pipelineMap, err = o.LoadPipelines(kubeClient, tektonClient, jxClient, ns)
 			} else {
 				names, defaultName, pipelineMap, err = o.loadBuilds(kubeClient, ns)
 			}
@@ -535,7 +536,8 @@ func (o *GetBuildLogsOptions) loadBuilds(kubeClient kubernetes.Interface, ns str
 	return names, defaultName, buildMap, nil
 }
 
-func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, error) {
+// LoadPipelines loads all available pipelines as PipelineRunInfos.
+func (o *GetBuildLogsOptions) LoadPipelines(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, error) {
 	defaultName := ""
 	names := []string{}
 	pipelineMap := map[string][]builds.BaseBuildInfo{}
@@ -600,17 +602,21 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 		return names, defaultName, pipelineMap, fmt.Errorf("no Tekton pipelines have been triggered which match the current filter")
 	}
 
+	namesMap := make(map[string]bool, 0)
 	for _, build := range buildInfos {
 		buildName := build.Pipeline + " #" + build.Build
 		if build.Context != "" {
 			buildName += " " + build.Context
 		}
-		names = append(names, buildName)
+		namesMap[buildName] = true
 		pipelineMap[buildName] = append(pipelineMap[buildName], build)
 
 		if build.Branch == "master" {
 			defaultName = buildName
 		}
+	}
+	for k := range namesMap {
+		names = append(names, k)
 	}
 
 	return names, defaultName, pipelineMap, nil
