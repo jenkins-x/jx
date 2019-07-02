@@ -1,7 +1,7 @@
 apiVersion: jenkins.io/v1
 kind: Release
 metadata:
-  creationTimestamp: "2019-07-02T14:32:26Z"
+  creationTimestamp: "2019-07-02T17:31:52Z"
   deletionTimestamp: null
   name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
 spec:
@@ -10,12 +10,12 @@ spec:
     branch: master
     committer: {}
     message: |
-      fix: specify the repo in updatebot
-    sha: bd4b0f6f9c8f57498454bedfdaf71bfa3847701c
+      fix: sort and dedupe versions
+    sha: 2ed94955d74c26a4d34e313d156189e8f75b6c08
   gitCloneUrl: https://github.com/jenkins-x/jx.git
   gitHttpUrl: https://github.com/jenkins-x/jx
   gitOwner: jenkins-x
   gitRepository: jx
   name: '{{ .Chart.Name }}'
-  version: 2.0.383
+  version: 2.0.385
 status: {}
