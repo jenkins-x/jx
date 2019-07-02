@@ -65,7 +65,7 @@ func (o *DeleteGkeOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	args := []string{"container", "clusters", "delete", cluster, "--region=" + o.Region, "--quiet"}
+	args := []string{"container", "clusters", "delete", cluster, "--region=" + o.Region, "--quiet", "--async"}
 	if o.ProjectID != "" {
 		args = append(args, "--project="+o.ProjectID)
 	}
