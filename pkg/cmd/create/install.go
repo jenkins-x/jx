@@ -1622,6 +1622,7 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 			settings.ProwEngine = v1.ProwEngineTypeKnativeBuild
 			if options.Flags.Tekton {
 				settings.ProwEngine = v1.ProwEngineTypeTekton
+				settings.ImportMode = v1.ImportModeTypeYAML
 			}
 			log.Logger().Debugf("Configuring the TeamSettings for Prow with engine %s", string(settings.ProwEngine))
 			return nil
