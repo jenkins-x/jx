@@ -164,16 +164,16 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 	info := util.ColorInfo
 
-	devGitInfo, err := o.FindGitInfo(dir)
-	if err != nil {
-		log.Logger().Warnf("could not find a git repoitory in the directory %s: %s\n", o.Dir, err.Error())
-	}
-
 	path, err := filepath.Abs(dir)
 	if err != nil {
 		return errors.Wrapf(err, "could not find absolute path of dir %s", dir)
 	}
 	dir = path
+
+	devGitInfo, err := o.FindGitInfo(dir)
+	if err != nil {
+		log.Logger().Warnf("could not find a git repository in the directory %s: %s\n", dir, err.Error())
+	}
 
 	if o.UseTempDir {
 		rootTmpDir, err := ioutil.TempDir("", "jx-helm-apply-")

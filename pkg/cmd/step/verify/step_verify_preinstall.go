@@ -206,6 +206,7 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 				secretsLocation = string(secrets.VaultLocationKind)
 			}
 
+			modifyMapIfNotBlank(configMap.Data, kube.KubeProvider, requirements.Provider)
 			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.ProjectID)
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.ClusterName)
 			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
