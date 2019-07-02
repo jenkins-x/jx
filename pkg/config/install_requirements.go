@@ -64,6 +64,8 @@ type RequirementsConfig struct {
 	Region string `json:"region,omitempty"`
 	// Zone the cloud zone being used
 	Zone string `json:"zone,omitempty"`
+	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
+	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
 }
@@ -177,6 +179,7 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 		}
 		m, err := toObjectMap(&env)
 		if err == nil {
+			ensureHasFields(m, "owner", "repository", "gitServer", "gitKind")
 			answer[k] = m
 		} else {
 			log.Logger().Warnf("failed to turn environment %s with value %#v into a map: %s\n", k, env, err.Error())
@@ -184,6 +187,15 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 	}
 	log.Logger().Infof("Enviroments: %#v\n", answer)
 	return answer
+}
+
+func ensureHasFields(m map[string]interface{}, keys ...string) {
+	for _, k := range keys {
+		_, ok := m[k]
+		if !ok {
+			m[k] = ""
+		}
+	}
 }
 
 // toObjectMap converts the given object into a map of strings/maps using YAML marshalling
