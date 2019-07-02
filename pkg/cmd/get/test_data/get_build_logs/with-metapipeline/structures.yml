@@ -1,0 +1,53 @@
+apiVersion: jenkins.io/v1
+items:
+- apiVersion: jenkins.io/v1
+  kind: PipelineStructure
+  metadata:
+    creationTimestamp: "2019-07-02T12:34:56Z"
+    generation: 1
+    name: abayer-js-test-repo-build-pack-8
+    namespace: jx
+    ownerReferences:
+    - apiVersion: tekton.dev/v1alpha1
+      kind: pipeline
+      name: abayer-js-test-repo-build-pack-8
+      uid: cc57794e-9cc5-11e9-aa2e-42010a8a00fe
+    resourceVersion: "235866"
+    selfLink: /apis/jenkins.io/v1/namespaces/jx/pipelinestructures/abayer-js-test-repo-build-pack-8
+    uid: cc5c12bc-9cc5-11e9-aa2e-42010a8a00fe
+  pipelineRef: abayer-js-test-repo-build-pack-8
+  pipelineRunRef: abayer-js-test-repo-build-pack-8
+  stages:
+  - depth: 0
+    name: from-build-pack
+    taskRef: abayer-js-test-repo-build-pack-from-build-pack-8
+- apiVersion: jenkins.io/v1
+  kind: PipelineStructure
+  metadata:
+    creationTimestamp: "2019-07-02T12:34:45Z"
+    generation: 1
+    labels:
+      branch: build-pack
+      build: "8"
+      owner: abayer
+      repo: js-test-repo
+    name: meta-abayer-js-test-repo-build-8
+    namespace: jx
+    ownerReferences:
+      - apiVersion: tekton.dev/v1alpha1
+        kind: pipeline
+        name: meta-abayer-js-test-repo-build-8
+        uid: c5ad1626-9cc5-11e9-aa2e-42010a8a00fe
+    resourceVersion: "235785"
+    selfLink: /apis/jenkins.io/v1/namespaces/jx/pipelinestructures/meta-abayer-js-test-repo-build-8
+    uid: c5cdca7a-9cc5-11e9-aa2e-42010a8a00fe
+  pipelineRef: meta-abayer-js-test-repo-build-8
+  pipelineRunRef: meta-abayer-js-test-repo-build-8
+  stages:
+    - depth: 0
+      name: app-extension
+      taskRef: meta-abayer-js-test-repo-build-app-extension-8
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

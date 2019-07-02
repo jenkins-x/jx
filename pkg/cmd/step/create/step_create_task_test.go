@@ -408,7 +408,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					resourceList.Items = append(resourceList.Items, *resource)
 				}
 
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), crds.Pipeline()); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipeline(t, caseDir), crds.Pipeline()); d != "" {
 					t.Errorf("Generated Pipeline did not match expected: \n%s", d)
 				}
 				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
@@ -418,10 +418,10 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					t.Errorf("Generated PipelineResources did not match expected: %s", d)
 				}
 
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), crds.PipelineRun()); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineRun(t, caseDir), crds.PipelineRun()); d != "" {
 					t.Errorf("Generated PipelineRun did not match expected: %s", d)
 				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), crds.Structure()); d != "" {
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineStructure(t, caseDir), crds.Structure()); d != "" {
 					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 				}
 
