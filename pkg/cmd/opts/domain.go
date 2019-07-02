@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// GetDomain returns the domain name, trying to infer it either from various Kuberntes resources or cloud provider. If no domain
+// GetDomain returns the domain name, trying to infer it either from various Kubernetes resources or cloud provider. If no domain
 // can be determined, it will prompt to the user for a value.
 func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string, externalIP string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
@@ -157,7 +157,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return defaultDomain, nil
 		}
 		log.Logger().Infof("You can now configure a wildcard DNS pointing to the new Load Balancer address %s", util.ColorInfo(address))
-		log.Logger().Infof("If you don't have a wildcard DNS setup then setup a DNS (A) record and point it at: %s, then use the DNS domain in the next input...", util.ColorInfo(address))
+		log.Logger().Infof("If you don't have a wildcard DNS setup then create a DNS (A) record and point it at: %s, then use the DNS domain in the next input...", util.ColorInfo(address))
 
 		log.Logger().Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic DNS nip.io.")
 		log.Logger().Infof("Once you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))

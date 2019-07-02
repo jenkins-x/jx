@@ -207,9 +207,14 @@ func ReadValuesYamlFileTemplateOutput(templateFile string, params chartutil.Valu
 		return nil, errors.Wrapf(err, "failed to parse Secrets template: %s", templateFile)
 	}
 
+	requirementsMap, err := requirements.ToMap()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed turn requirements into a map: %v", requirements)
+	}
+
 	templateData := map[string]interface{}{
 		"Parameters":   chartutil.Values(params),
-		"Requirements": requirements,
+		"Requirements": chartutil.Values(requirementsMap),
 		"Environments": chartutil.Values(requirements.EnvironmentMap()),
 	}
 	var buf bytes.Buffer

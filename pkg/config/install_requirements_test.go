@@ -18,11 +18,13 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 
 	expectedClusterName := "my-cluster"
 	expectedSecretStorage := config.SecretStorageTypeVault
+	expectedDomain := "cheese.co.uk"
 
 	file := filepath.Join(dir, config.RequirementsConfigFileName)
 	requirements := config.NewRequirementsConfig()
 	requirements.SecretStorage = expectedSecretStorage
 	requirements.ClusterName = expectedClusterName
+	requirements.Ingress.Domain = expectedDomain
 
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
@@ -34,6 +36,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	assert.Equal(t, true, requirements.Kaniko, "requirements.Kaniko")
 	assert.Equal(t, expectedClusterName, requirements.ClusterName, "requirements.ClusterName")
 	assert.Equal(t, expectedSecretStorage, requirements.SecretStorage, "requirements.SecretStorage")
+	assert.Equal(t, expectedDomain, requirements.Ingress.Domain, "requirements.Domain")
 
 	// lets check we can load the file from a sub dir
 	subDir := filepath.Join(dir, "subdir")
@@ -44,6 +47,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	assert.Equal(t, true, requirements.Kaniko, "requirements.Kaniko")
 	assert.Equal(t, expectedClusterName, requirements.ClusterName, "requirements.ClusterName")
 	assert.Equal(t, expectedSecretStorage, requirements.SecretStorage, "requirements.SecretStorage")
+	assert.Equal(t, expectedDomain, requirements.Ingress.Domain, "requirements.Domain")
 }
 
 func TestRequirementsConfigMarshalInEmptyDir(t *testing.T) {

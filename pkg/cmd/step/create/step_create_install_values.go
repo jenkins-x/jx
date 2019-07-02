@@ -2,8 +2,10 @@ package create
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/config"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -19,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/mail"
 )
 
 var (
@@ -124,10 +127,8 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		ns = os.Getenv("DEPLOY_NAMESPACE")
 	}
 	if ns != "" {
-		current := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
-		if current == "" {
-			subDomain := "." + ns + "."
-			util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
+		if ns == "" {
+			return values, fmt.Errorf("no default namespace found")
 		}
 	}
 
@@ -142,6 +143,50 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		}
 		util.SetMapValueViaPath(values, "domain", domain)
 	}
+
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return values, errors.Wrapf(err, "failed to load Jenkins X requirements")
+	}
+	if o.Provider == "" {
+		o.Provider = requirements.Provider
+		if o.Provider == "" {
+			log.Logger().Warnf("No provider configured\n")
+		}
+	}
+
+	subDomain := "." + ns + "."
+
+	if requirements.Ingress.TLS {
+		if o.Provider != cloud.GKE {
+			return values, errors.New("TLS is currently only supported on Google Container Engine")
+		}
+
+		if strings.Contains(o.Domain, "nip.io") {
+			return values, errors.New("TLS is not supported with nip.io, you will need to use a domain you own")
+		}
+
+		_, err = mail.ParseAddress(requirements.Ingress.Email)
+		if err != nil {
+			return values, errors.Wrap(err, "You must provide a valid email address to enable TLS so you can receive notifications from LetsEncrypt about your certificates")
+		}
+
+		util.SetMapValueViaPath(values, "tls", true)
+		util.SetMapValueViaPath(values, "external-dns", true)
+		// for wildcard certs to work using dns we need to use `-` and not `.`
+		subDomain = "-" + ns + "."
+	}
+
+	current := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
+	if current == "" {
+		util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
+	}
+
+	projectID := util.GetMapValueAsStringViaPath(values, "projectID")
+	if projectID == "" {
+		util.SetMapValueViaPath(values, "projectID", requirements.ProjectID)
+	}
+
 	return values, nil
 }
 
@@ -150,9 +195,18 @@ func (o *StepCreateInstallValuesOptions) discoverIngressDomain(values map[string
 	if err != nil {
 		return "", errors.Wrap(err, "getting the kubernetes client")
 	}
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return "failed to load Jenkins X requirements", err
+	}
+	if requirements.Ingress.Domain != "" {
+		return requirements.Ingress.Domain, nil
+	}
 	if o.Provider == "" {
-		// TODO lets see if the provider is in the config
-		log.Logger().Warnf("No provider configured\n")
+		o.Provider = requirements.Provider
+		if o.Provider == "" {
+			log.Logger().Warnf("No provider configured\n")
+		}
 	}
 	domain, err := o.GetDomain(client, "",
 		o.Provider,
