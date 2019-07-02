@@ -3,6 +3,7 @@ package verify
 import (
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -10,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -60,6 +62,10 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		return err
 	}
 
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return err
+	}
 	info := util.ColorInfo
 
 	envMap, names, err := kube.GetEnvironments(jxClient, ns)
@@ -72,7 +78,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		if gitURL != "" && name != kube.LabelValueDevEnvironment && env.Spec.Kind == v1.EnvironmentKindTypePermanent {
 			log.Logger().Infof("validating git repository for %s at URL %s\n", info(name), info(gitURL))
 
-			err = o.validateGitRepoitory(env, gitURL, lazyCreate)
+			err = o.validateGitRepoitory(requirements, env, gitURL, lazyCreate)
 			if err != nil {
 				return err
 			}
@@ -84,7 +90,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) validateGitRepoitory(environment *v1.Environment, gitURL string, lazyCreate bool) error {
+func (o *StepVerifyEnvironmentsOptions) validateGitRepoitory(requirements *config.RequirementsConfig, environment *v1.Environment, gitURL string, lazyCreate bool) error {
 	message := fmt.Sprintf("for environment %s", environment.Name)
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
@@ -94,10 +100,10 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepoitory(environment *v1.Env
 	if err != nil {
 		return err
 	}
-	return o.createEnvGitRepository(authConfigSvc, environment, gitURL, gitInfo)
+	return o.createEnvGitRepository(requirements, authConfigSvc, environment, gitURL, gitInfo)
 }
 
-func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, gitInfo *gits.GitRepository) error {
+func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(requirements *config.RequirementsConfig, authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, gitInfo *gits.GitRepository) error {
 	log.Logger().Infof("creating environment %s git repository for URL: %s to namespace %s\n", util.ColorInfo(environment.Name), util.ColorInfo(gitURL), util.ColorInfo(environment.Spec.Namespace))
 
 	envDir, err := ioutil.TempDir("", "jx-env-repo-")
@@ -112,7 +118,10 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(authConfigSvc aut
 
 	gitServerURL := gitInfo.HostURL()
 	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
-	helmValues := config.HelmValuesConfig{}
+	helmValues, err := o.createEnvironmentHelpValues(requirements, environment)
+	if err != nil {
+		return err
+	}
 	batchMode := o.BatchMode
 	forkGitURL := kube.DefaultEnvironmentGitRepoURL
 
@@ -141,4 +150,49 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(authConfigSvc aut
 		return fmt.Errorf("failed to create git repository for gitURL %s", gitURL)
 	}
 	return nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelpValues(requirements *config.RequirementsConfig, environment *v1.Environment) (config.HelmValuesConfig, error) {
+	// TODO
+	// domain := requirements.Ingress.Domain
+	domain := ""
+	useHttp := "true"
+	tlsAcme := ""
+	namespaceSubDomain := ""
+	exposer := "Ingress"
+
+	clustersYamlFile := filepath.Join(o.Dir, "env", "cluster", "values.yaml")
+	exists, err := util.FileExists(clustersYamlFile)
+	if err != nil {
+		return config.HelmValuesConfig{}, errors.Wrapf(err, "failed to check file exists: %s", clustersYamlFile)
+	}
+	if exists {
+		data, err := helm.LoadValuesFile(clustersYamlFile)
+		if err != nil {
+			return config.HelmValuesConfig{}, errors.Wrapf(err, "failed to load clusters YAML file: %s", clustersYamlFile)
+		}
+		log.Logger().Infof("found ingress configuration %#v\n", data)
+
+		if domain == "" {
+			domain = util.GetMapValueAsStringViaPath(data, "domain")
+		}
+		if namespaceSubDomain == "" {
+			namespaceSubDomain = util.GetMapValueAsStringViaPath(data, "namespaceSubDomain")
+		}
+	} else {
+		log.Logger().Warnf("could not find: %s\n", clustersYamlFile)
+
+	}
+
+	helmValues := config.HelmValuesConfig{
+		ExposeController: &config.ExposeController{
+			Config: config.ExposeControllerConfig{
+				Domain:  domain,
+				Exposer: exposer,
+				HTTP:    useHttp,
+				TLSAcme: tlsAcme,
+			},
+		},
+	}
+	return helmValues, nil
 }
