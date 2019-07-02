@@ -156,7 +156,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelpValues(requirements
 	// TODO
 	// domain := requirements.Ingress.Domain
 	domain := ""
-	useHttp := "true"
+	useHTTP := "true"
 	tlsAcme := ""
 	namespaceSubDomain := ""
 	exposer := "Ingress"
@@ -189,7 +189,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelpValues(requirements
 			Config: config.ExposeControllerConfig{
 				Domain:  domain,
 				Exposer: exposer,
-				HTTP:    useHttp,
+				HTTP:    useHTTP,
 				TLSAcme: tlsAcme,
 			},
 		},
