@@ -68,7 +68,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if err != nil {
 		return nil, err
 	}
-	return gits.PushRepoAndCreatePullRequest(dir, gitInfo, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, autoMerge, o.GitProvider, o.Gitter)
+	return gits.PushRepoAndCreatePullRequest(dir, gitInfo, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, autoMerge, false, o.Gitter, o.GitProvider)
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function

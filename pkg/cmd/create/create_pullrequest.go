@@ -113,7 +113,7 @@ func (o *CreatePullRequestOptions) Run() error {
 		return errors.WithStack(err)
 	}
 
-	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, o.Base, details, nil, o.Push, details.Message, o.Push, false, provider, o.Git())
+	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, o.Base, details, nil, o.Push, details.Message, o.Push, false, false, o.Git(), provider)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
 	}

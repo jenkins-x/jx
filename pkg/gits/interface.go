@@ -1,6 +1,7 @@
 package gits
 
 import (
+	"fmt"
 	"io"
 	"time"
 
@@ -262,4 +263,8 @@ type PullRequestDetails struct {
 	Message    string
 	BranchName string
 	Title      string
+}
+
+func (p *PullRequestDetails) String() string {
+	return fmt.Sprintf("Branch Name: %s; Title: %s; Message: %s", p.BranchName, p.Title, p.Message)
 }
