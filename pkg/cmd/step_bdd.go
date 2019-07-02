@@ -774,16 +774,20 @@ func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.Req
 
 func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {
 	projectID := ""
+	region := ""
 	for _, arg := range cluster.Args {
 		if strings.Contains(arg, "project-id=") {
 			projectID = strings.Split(arg, "=")[1]
-			break
+		}
+		if strings.Contains(arg, "z=") || strings.Contains(arg, "zone=") || strings.Contains(arg, "region=") {
+			region = strings.Split(arg, "=")[1]
 		}
 	}
 	if projectID != "" {
 		labelOptions := e2e.StepE2ELabelOptions{
 			ProjectID: projectID,
 			Delete:    true,
+			Region:    region,
 			StepOptions: opts.StepOptions{
 				CommonOptions: &opts.CommonOptions{},
 			},
