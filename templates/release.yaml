@@ -1,7 +1,7 @@
 apiVersion: jenkins.io/v1
 kind: Release
 metadata:
-  creationTimestamp: "2019-07-02T21:55:08Z"
+  creationTimestamp: "2019-07-02T22:45:40Z"
   deletionTimestamp: null
   name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
 spec:
@@ -10,14 +10,12 @@ spec:
     branch: master
     committer: {}
     message: |
-      fix: Pick up region/zone from created cluster info
-
-      Signed-off-by: Andrew Bayer <andrew.bayer@gmail.com>
-    sha: 0f7b06a4f56b743ce8e3e0d618fbbf5a1f6b1d00
+      upgrade jenkins-x/jx-ts-client client to jx 2.0.388
+    sha: b80cb3b566d41751bb4bd680097ed25483acb0ef
   gitCloneUrl: https://github.com/jenkins-x/jx.git
   gitHttpUrl: https://github.com/jenkins-x/jx
   gitOwner: jenkins-x
   gitRepository: jx
   name: '{{ .Chart.Name }}'
-  version: 2.0.388
+  version: 2.0.389
 status: {}
