@@ -77,7 +77,7 @@ pipelineConfig:
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
               - name: tekton-e2e-tests
-                image: jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-4515-44
+                image: jenkinsxio/builder-go:0.1.537
                 command: ./jx/bdd/tekton/ci.sh
 
               - name: stash-test-results
