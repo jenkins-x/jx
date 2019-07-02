@@ -260,7 +260,8 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	} else {
 		names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
 	}
-	if err != nil {
+	// If there's an error and we're waiting, ignore it.
+	if err != nil && !o.Wait {
 		return err
 	}
 
