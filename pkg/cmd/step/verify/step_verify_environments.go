@@ -98,12 +98,7 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepoitory(environment *v1.Env
 }
 
 func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, gitInfo *gits.GitRepository) error {
-	log.Logger().Infof("creating environment %s git repository for URL: %s\n", util.ColorInfo(environment.Name), util.ColorInfo(gitURL))
-
-	devEnv, _, err := o.DevEnvAndTeamSettings()
-	if err != nil {
-		return err
-	}
+	log.Logger().Infof("creating environment %s git repository for URL: %s to namespace %s\n", util.ColorInfo(environment.Name), util.ColorInfo(gitURL), util.ColorInfo(environment.Spec.Namespace))
 
 	envDir, err := ioutil.TempDir("", "jx-env-repo-")
 	if err != nil {
@@ -141,7 +136,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(authConfigSvc aut
 		Private:    privateRepo,
 	}
 
-	_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, devEnv, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
+	_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
 	if err != nil {
 		return fmt.Errorf("failed to create git repository for gitURL %s", gitURL)
 	}
