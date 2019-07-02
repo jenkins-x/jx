@@ -209,8 +209,7 @@ func GitProviderURL(text string) string {
 // It creates a branch called branchName from a base.
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
-func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base string, prDetails *PullRequestDetails,
-	filter *PullRequestFilter, commit bool, commitMessage string, push bool, autoMerge bool, provider GitProvider, gitter Gitter) (*PullRequestInfo, error) {
+func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, autoMerge bool, dryRun bool, gitter Gitter, provider GitProvider) (*PullRequestInfo, error) {
 	if commit {
 
 		err := gitter.Add(dir, "-A")
@@ -294,6 +293,10 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
+				if dryRun {
+					log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(pr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
+					return nil, nil
+				}
 				err = gitter.ForcePushBranch(dir, prDetails.BranchName, existingBranchName)
 				if err != nil {
 					return nil, errors.Wrapf(err, "pushing merged branch %s", existingBranchName)
@@ -325,6 +328,11 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 	}
 
 	gha.Head = headPrefix + prDetails.BranchName
+
+	if dryRun {
+		log.Logger().Infof("Commit created but not pushed; would have created new pull request with %s and used commit message %s. Please manually delete %s when you are done.", prDetails.String(), commitMessage, util.ColorInfo(dir))
+		return nil, nil
+	}
 
 	if push {
 		err := gitter.ForcePushBranch(dir, "HEAD", prDetails.BranchName)

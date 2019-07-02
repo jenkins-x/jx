@@ -35,6 +35,7 @@ type StepCreatePrOptions struct {
 	SrcGitURL   string
 	Component   string
 	Version     string
+	DryRun      bool
 }
 
 // NewCmdStepCreatePr Steps a command object for the "step" command
@@ -76,10 +77,10 @@ func AddStepCreatePrFlags(cmd *cobra.Command, o *StepCreatePrOptions) {
 	cmd.Flags().StringArrayVarP(&o.GitURLs, "repo", "r", []string{}, "Git repo update")
 	cmd.Flags().StringVarP(&o.BranchName, "branch", "", "master", "Branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&o.Base, "base", "", "master", "The branch to create the pull request into")
-	cmd.Flags().StringVarP(&o.SrcGitURL, "srcRepo", "", "", "The git repo which caused this change; if this is a dependency update this will cause commit messages to be generated which can be parsed by jx step changelog. By default this will be read from the environment variable REPO_URL")
+	cmd.Flags().StringVarP(&o.SrcGitURL, "src-repo", "", "", "The git repo which caused this change; if this is a dependency update this will cause commit messages to be generated which can be parsed by jx step changelog. By default this will be read from the environment variable REPO_URL")
 	cmd.Flags().StringVarP(&o.Component, "component", "", "", "The component of the git repo which caused this change; useful if you have a complex or monorepo setup and want to differentiate between different components from the same repo")
 	cmd.Flags().StringVarP(&o.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
-
+	cmd.Flags().BoolVarP(&o.DryRun, "dry-run", "", false, "Perform a dry run, the change will be generated and committed, but not pushed or have a PR created")
 }
 
 // ValidateOptions validates the common options for all PR creation steps
@@ -113,12 +114,14 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 // CreatePullRequest will fork (if needed) and pull a git repo, then perform the update, and finally create or update a
 // PR for the change. Any open PR on the repo with the `updatebot` label will be updated.
 func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir string, gitInfo *gits.GitRepository) ([]string, error)) error {
+	if o.DryRun {
+		log.Logger().Infof("--dry-run specified. Change will be created and committed to local git repo, but not pushed. No pull request will be created or updated. A fork will still be created.")
+	}
 	for _, gitURL := range o.GitURLs {
 		dir, err := ioutil.TempDir("", "create-pr")
 		if err != nil {
 			return err
 		}
-
 		provider, _, err := o.CreateGitProviderForURLWithoutKind(gitURL)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for directory %s", dir)
@@ -149,7 +152,7 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 				"updatebot",
 			},
 		}
-		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, gitInfo, o.Base, details, filter, true, commitMessage, true, true, provider, o.Git())
+		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, gitInfo, o.Base, details, filter, true, commitMessage, true, true, o.DryRun, o.Git(), provider)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
 		}
