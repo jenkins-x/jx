@@ -316,6 +316,9 @@ const (
 	// ClusterName stores the name of the cluster that is created
 	ClusterName = "clusterName"
 
+	// KubeProvider stores the kubernetes provider name
+	KubeProvider = "kubeProvider"
+
 	// SystemVaultName stores the name of the system Vault created on install
 	SystemVaultName = "systemVaultName"
 )
