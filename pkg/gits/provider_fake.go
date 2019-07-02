@@ -3,6 +3,7 @@ package gits
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -777,4 +778,9 @@ func (f *FakeProvider) GetLatestRelease(org string, name string) (*GitRelease, e
 		return nil, errors2.WithStack(err)
 	}
 	return releases[len(releases)-1], nil
+}
+
+// UploadReleaseAsset will upload an asset to org/repo to a release with id, giving it a name, it will return the release asset from the git provider
+func (f *FakeProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
+	return nil, nil
 }

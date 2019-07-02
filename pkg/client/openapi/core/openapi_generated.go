@@ -39,6 +39,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy":                       schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep":                    schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate":                    schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdateDetails":             schema_pkg_apis_jenkinsio_v1_DependencyUpdateDetails(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment":                         schema_pkg_apis_jenkinsio_v1_Environment(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter":                   schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentList":                     schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
@@ -1140,74 +1141,175 @@ func schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref common.ReferenceCallback)
 				Description: "DependencyUpdate describes an dependency update message from the commit log",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"URL": {
+					"host": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"Owner": {
+					"owner": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"Host": {
+					"repo": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"Repo": {
+					"component": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"FromVersion": {
+					"url": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"FromReleaseHTMLURL": {
+					"fromVersion": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"FromReleaseName": {
+					"fromReleaseHTMLURL": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"ToVersion": {
+					"fromReleaseName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"ToReleaseHTMLURL": {
+					"toVersion": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"ToReleaseName": {
+					"toReleaseHTMLURL": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"Component": {
+					"toReleaseName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"paths": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type: []string{"array"},
+										Items: &spec.SchemaOrArray{
+											Schema: &spec.Schema{
+												SchemaProps: spec.SchemaProps{
+													Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdateDetails"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"host", "owner", "repo", "url", "fromVersion", "fromReleaseHTMLURL", "fromReleaseName", "toVersion", "toReleaseHTMLURL", "toReleaseName"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdateDetails"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_DependencyUpdateDetails(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DependencyUpdateDetails are the details of a dependency update",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"host": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"owner": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"repo": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"component": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"fromVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"fromReleaseHTMLURL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"fromReleaseName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"toVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"toReleaseHTMLURL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"toReleaseName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
 				},
-				Required: []string{"URL", "Owner", "Host", "Repo", "FromVersion", "FromReleaseHTMLURL", "FromReleaseName", "ToVersion", "ToReleaseHTMLURL", "ToReleaseName", "Component"},
+				Required: []string{"host", "owner", "repo", "url", "fromVersion", "fromReleaseHTMLURL", "fromReleaseName", "toVersion", "toReleaseHTMLURL", "toReleaseName"},
 			},
 		},
 		Dependencies: []string{},

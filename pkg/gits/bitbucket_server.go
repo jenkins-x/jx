@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -1088,5 +1089,10 @@ func (b *BitbucketServerProvider) AddLabelsToIssue(owner, repo string, number in
 
 // GetLatestRelease fetches the latest release from the git provider for org and name
 func (b *BitbucketServerProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	return nil, nil
+}
+
+// UploadReleaseAsset will upload an asset to org/repo to a release with id, giving it a name, it will return the release asset from the git provider
+func (b *BitbucketServerProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
 	return nil, nil
 }

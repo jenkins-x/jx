@@ -141,19 +141,28 @@ type GitServiceList struct {
 
 //DependencyUpdate describes an dependency update message from the commit log
 type DependencyUpdate struct {
-	URL                string
-	Owner              string
-	Host               string
-	Repo               string
-	FromVersion        string
-	FromReleaseHTMLURL string
-	FromReleaseName    string
-	ToVersion          string
-	ToReleaseHTMLURL   string
-	ToReleaseName      string
-	Component          string
+	DependencyUpdateDetails `json:",inline"`
+	Paths                   []DependencyUpdatePath `json:"paths,omitempty"`
 }
 
-func (d *DependencyUpdate) String() string {
-	return fmt.Sprintf("%s/%s %s", d.Owner, d.Host, d.ToVersion)
+// DependencyUpdatePath is the path of a dependency update
+type DependencyUpdatePath []DependencyUpdateDetails
+
+// DependencyUpdateDetails are the details of a dependency update
+type DependencyUpdateDetails struct {
+	Host               string `json:"host"`
+	Owner              string `json:"owner"`
+	Repo               string `json:"repo"`
+	Component          string `json:"component, omitempty"`
+	URL                string `json:"url"`
+	FromVersion        string `json:"fromVersion"`
+	FromReleaseHTMLURL string `json:"fromReleaseHTMLURL"`
+	FromReleaseName    string `json:"fromReleaseName"`
+	ToVersion          string `json:"toVersion"`
+	ToReleaseHTMLURL   string `json:"toReleaseHTMLURL"`
+	ToReleaseName      string `json:"toReleaseName"`
+}
+
+func (d *DependencyUpdateDetails) String() string {
+	return fmt.Sprintf("%s/%s/%s:%s", d.Host, d.Owner, d.Repo, d.Component)
 }

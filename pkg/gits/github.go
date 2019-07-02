@@ -254,11 +254,7 @@ func toGitHubRelease(org string, name string, release *github.RepositoryRelease)
 		if p != nil {
 			totalDownloadCount = totalDownloadCount + *p
 		}
-		assets = append(assets, GitReleaseAsset{
-			Name:               asText(asset.Name),
-			BrowserDownloadURL: asText(asset.BrowserDownloadURL),
-			ContentType:        asText(asset.ContentType),
-		})
+		assets = append(assets, toGitHubAsset(asset))
 	}
 	return &GitRelease{
 		Name:          asText(release.Name),
@@ -268,6 +264,15 @@ func toGitHubRelease(org string, name string, release *github.RepositoryRelease)
 		HTMLURL:       asText(release.HTMLURL),
 		DownloadCount: totalDownloadCount,
 		Assets:        &assets,
+	}
+}
+
+func toGitHubAsset(asset github.ReleaseAsset) GitReleaseAsset {
+	return GitReleaseAsset{
+		ID:                 util.DereferenceInt64(asset.ID),
+		Name:               asText(asset.Name),
+		BrowserDownloadURL: asText(asset.BrowserDownloadURL),
+		ContentType:        asText(asset.ContentType),
 	}
 }
 
@@ -1038,6 +1043,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	if id == nil {
 		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
 	}
+	releaseInfo.ID = util.DereferenceInt64(id)
 	r2, _, err := p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
 	if r != nil {
 		releaseInfo.URL = asText(r2.URL)
@@ -1365,4 +1371,19 @@ func (p *GitHubProvider) GetLatestRelease(org string, name string) (*GitRelease,
 		return nil, errors.Wrapf(err, "getting latest release for %s/%s", org, name)
 	}
 	return toGitHubRelease(org, name, repoRelease), nil
+}
+
+// UploadReleaseAsset will upload an asset to org/repo to a release with id, giving it a name, it will return the release asset from the git provider
+func (p *GitHubProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
+	answer, _, err := p.Client.Repositories.UploadReleaseAsset(p.Context, org, repo, id, &github.UploadOptions{
+		Name: name,
+	}, asset)
+	if err != nil {
+		return nil, errors.Wrapf(err, "uploading asset %s to release %d in %s/%s", asset.Name(), id, org, repo)
+	}
+	if answer != nil {
+		a := toGitHubAsset(*answer)
+		return &a, nil
+	}
+	return nil, nil
 }
