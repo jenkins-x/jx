@@ -277,7 +277,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 
 	for _, j := range jobs {
 		if jenkins.IsMultiBranchProject(j) {
-			name := j.FullName
+			name := j.Name
 			names = append(names, name)
 			m[name] = j
 		}
