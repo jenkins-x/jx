@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
+
+	"github.com/blang/semver"
 
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 
@@ -136,8 +139,42 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 		if err != nil {
 			return errors.WithStack(err)
 		}
+		nonSemantic := make([]string, 0)
+		semantic := make([]semver.Version, 0)
+		for _, v := range oldVersions {
+			sv, err := semver.Parse(v)
+			if err != nil {
+				nonSemantic = append(nonSemantic, v)
+			} else {
+				semantic = append(semantic, sv)
+			}
+		}
+		semver.Sort(semantic)
+		sort.Strings(nonSemantic)
+		dedupedSemantic := make([]string, 0)
+		dedupedNonSemantic := make([]string, 0)
+		previous := ""
+		for _, v := range nonSemantic {
+			if v != previous {
+				dedupedNonSemantic = append(dedupedNonSemantic, v)
+			}
+			previous = v
+		}
+		previous = ""
+		for _, v := range semantic {
+			vStr := v.String()
+			if vStr != previous {
+				dedupedSemantic = append(dedupedSemantic, vStr)
+			}
+			previous = vStr
+		}
 
-		commitMessage, details, updateDependency, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version, o.Component)
+		oldVersionsStr := strings.Join(dedupedSemantic, ", ")
+		if len(dedupedNonSemantic) > 0 {
+			oldVersionsStr = oldVersionsStr + fmt.Sprintf(" and %s", strings.Join(dedupedNonSemantic, ", "))
+		}
+
+		commitMessage, details, updateDependency, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, gitInfo, oldVersionsStr, o.Version, o.Component)
 		if err != nil {
 			return errors.WithStack(err)
 		}
