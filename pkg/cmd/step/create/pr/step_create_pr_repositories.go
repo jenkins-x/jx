@@ -65,13 +65,13 @@ func NewCmdStepCreatePullRequestRepositories(commonOpts *opts.CommonOptions) *co
 
 // Run implements this command
 func (o *StepCreatePullRequestRepositoriessOptions) Run() error {
-	if o.GitURL == "" {
+	if len(o.GitURLs) == 0 {
 		// lets default to the dev environment git repository
 		devEnv, _, err := o.DevEnvAndTeamSettings()
 		if err != nil {
 			return errors.Wrapf(err, "no --repo specified so trying to find the 'dev' Environment to default the repository but cannot find it")
 		}
-		o.GitURL = devEnv.Spec.Source.URL
+		o.GitURLs = []string{devEnv.Spec.Source.URL}
 	}
 	if err := o.ValidateOptions(); err != nil {
 		return errors.WithStack(err)

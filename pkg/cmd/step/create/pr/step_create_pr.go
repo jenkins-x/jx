@@ -29,7 +29,7 @@ type StepCreatePrOptions struct {
 	Results     *gits.PullRequestInfo
 	ConfigGitFn gits.ConfigureGitFn
 	BranchName  string
-	GitURL      string
+	GitURLs     []string
 	Base        string
 	Fork        bool
 	SrcGitURL   string
@@ -73,7 +73,7 @@ func (o *StepCreatePrOptions) Run() error {
 
 //AddStepCreatePrFlags adds the common flags for all PR creation steps to the cmd and stores them in o
 func AddStepCreatePrFlags(cmd *cobra.Command, o *StepCreatePrOptions) {
-	cmd.Flags().StringVarP(&o.GitURL, "repo", "r", "", "Git repo")
+	cmd.Flags().StringArrayVarP(&o.GitURLs, "repo", "r", []string{}, "Git repo update")
 	cmd.Flags().StringVarP(&o.BranchName, "branch", "", "master", "Branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&o.Base, "base", "", "master", "The branch to create the pull request into")
 	cmd.Flags().StringVarP(&o.SrcGitURL, "srcRepo", "", "", "The git repo which caused this change; if this is a dependency update this will cause commit messages to be generated which can be parsed by jx step changelog. By default this will be read from the environment variable REPO_URL")
@@ -104,7 +104,7 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 		}
 
 	}
-	if o.GitURL == "" {
+	if len(o.GitURLs) == 0 {
 		return util.MissingOption("repo")
 	}
 	return nil
@@ -113,44 +113,46 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 // CreatePullRequest will fork (if needed) and pull a git repo, then perform the update, and finally create or update a
 // PR for the change. Any open PR on the repo with the `updatebot` label will be updated.
 func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir string, gitInfo *gits.GitRepository) ([]string, error)) error {
-	dir, err := ioutil.TempDir("", "create-pr")
-	if err != nil {
-		return err
-	}
+	for _, gitUrl := range o.GitURLs {
+		dir, err := ioutil.TempDir("", "create-pr")
+		if err != nil {
+			return err
+		}
 
-	provider, _, err := o.CreateGitProviderForURLWithoutKind(o.GitURL)
-	if err != nil {
-		return errors.Wrapf(err, "creating git provider for directory %s", dir)
-	}
+		provider, _, err := o.CreateGitProviderForURLWithoutKind(gitUrl)
+		if err != nil {
+			return errors.Wrapf(err, "creating git provider for directory %s", dir)
+		}
 
-	dir, _, gitInfo, err := gits.ForkAndPullPullRepo(o.GitURL, dir, o.Base, o.BranchName, provider, o.Git(), o.ConfigGitFn)
-	if err != nil {
-		return errors.Wrapf(err, "failed to fork and pull %s", o.GitURL)
-	}
+		dir, _, gitInfo, err := gits.ForkAndPullPullRepo(gitUrl, dir, o.Base, o.BranchName, provider, o.Git(), o.ConfigGitFn)
+		if err != nil {
+			return errors.Wrapf(err, "failed to fork and pull %s", o.GitURLs)
+		}
 
-	oldVersions, err := update(dir, gitInfo)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+		oldVersions, err := update(dir, gitInfo)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 
-	commitMessage, details, updateDependency, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version, o.Component)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+		commitMessage, details, updateDependency, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, gitInfo, strings.Join(oldVersions, ", "), o.Version, o.Component)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 
-	err = dependencymatrix.UpdateDependencyMatrix(dir, updateDependency)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+		err = dependencymatrix.UpdateDependencyMatrix(dir, updateDependency)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 
-	filter := &gits.PullRequestFilter{
-		Labels: []string{
-			"updatebot",
-		},
-	}
-	o.Results, err = gits.PushRepoAndCreatePullRequest(dir, gitInfo, o.Base, details, filter, true, commitMessage, true, true, provider, o.Git())
-	if err != nil {
-		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
+		filter := &gits.PullRequestFilter{
+			Labels: []string{
+				"updatebot",
+			},
+		}
+		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, gitInfo, o.Base, details, filter, true, commitMessage, true, true, provider, o.Git())
+		if err != nil {
+			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
+		}
 	}
 	return nil
 }
