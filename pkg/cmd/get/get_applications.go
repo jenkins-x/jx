@@ -1,7 +1,6 @@
 package get
 
 import (
-	"os/user"
 	"sort"
 	"strings"
 
@@ -249,13 +248,9 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 	if err != nil {
 		return nil, nil, nil, nil, errors.Wrap(err, "getting jx client")
 	}
-	u, err := user.Current()
+	username, err := o.GetUsername(o.Username)
 	if err != nil {
 		log.Logger().Warnf("could not find the current user name %s", err.Error())
-	}
-	username := "uknown"
-	if u != nil {
-		username = u.Username
 	}
 
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)

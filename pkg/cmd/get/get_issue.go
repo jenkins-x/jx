@@ -1,10 +1,10 @@
 package get
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"os/user"
 	"regexp"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -204,11 +204,9 @@ func (o *GetIssueOptions) getApplications(client kubernetes.Interface, env *v1.E
 			if appName == kube.DeploymentExposecontrollerService {
 				continue
 			}
-			currUser, err := user.Current()
-			if err == nil {
-				if currUser.Username != env.Spec.PreviewGitSpec.User.Username {
-					continue
-				}
+			currUsername, _ := o.GetUsername(o.Username)
+			if currUsername != env.Spec.PreviewGitSpec.User.Username {
+				continue
 			}
 			appName = kube.GetEditAppName(appName)
 		} else if env.Spec.Kind == v1.EnvironmentKindTypePreview {
