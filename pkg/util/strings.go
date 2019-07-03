@@ -3,13 +3,14 @@ package util
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/pkg/errors"
 	"math/rand"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 //DisallowedLabelCharacters regex of chars not allowed in lables
@@ -255,4 +256,9 @@ func StripTrailingSlash(url string) string {
 		return url[0 : len(url)-1]
 	}
 	return url
+}
+
+// StartsWith returns true if the string starts with the given substring
+func StartsWith(s, substr string) bool {
+	return strings.Index(s, substr) == 0
 }

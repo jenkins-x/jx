@@ -24,6 +24,7 @@ type QuickstartFilter struct {
 	Text        string
 	ProjectName string
 	Tags        []string
+	AllowML     bool
 }
 
 type QuickstartForm struct {
