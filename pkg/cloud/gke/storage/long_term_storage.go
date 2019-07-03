@@ -42,12 +42,18 @@ func ensureProvidedBucketExists(installValues map[string]string, providedBucketN
 }
 
 func createUniqueBucketName(installValues map[string]string) (string, map[string]string) {
+	clusterName := installValues[kube.ClusterName]
+	bucketName := createUniqueBucketNameForCluster(clusterName)
+	return bucketName, installValues
+}
+
+func createUniqueBucketNameForCluster(clusterName string) string {
 	uuid4, _ := uuid.NewV4()
-	bucketName := fmt.Sprintf("%s-lts-%s", installValues[kube.ClusterName], uuid4.String())
+	bucketName := fmt.Sprintf("%s-lts-%s", clusterName, uuid4.String())
 	if len(bucketName) > 60 {
 		bucketName = bucketName[:60]
 	}
-	return bucketName, installValues
+	return bucketName
 }
 
 func createBucket(bucketName string, installValues map[string]string) (string, error) {
