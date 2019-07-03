@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -42,12 +43,28 @@ type StepSyntaxEffectiveOptions struct {
 	SourceName        string
 	CustomEnvs        []string
 	OutputFile        string
+	ShortView         bool
 
 	PodTemplates map[string]*corev1.Pod
 
 	GitInfo         *gits.GitRepository
 	VersionResolver *opts.VersionResolver
 }
+
+var (
+	stepSyntaxEffectiveLong = templates.LongDesc(`
+		Reads the appropriate jenkins-x.yml, depending on context, from the current directory, if one exists, and outputs an effective representation of the pipelines
+`)
+
+	stepSyntaxEffectiveExample = templates.Examples(`
+		# view the effective pipeline
+		jx step syntax effective
+
+		# view the short version of the effective pipeline
+		jx step syntax effective -s
+
+`)
+)
 
 // NewCmdStepSyntaxEffective Creates a new Command object
 func NewCmdStepSyntaxEffective(commonOpts *opts.CommonOptions) *cobra.Command {
@@ -58,9 +75,10 @@ func NewCmdStepSyntaxEffective(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "effective",
-		Short: "Outputs an effective representation of the pipeline to be executed",
-		Long:  "Reads the appropriate jenkins-x.yml, depending on context, from the current directory, if one exists, and outputs an effective representation of the pipelines",
+		Use:     "effective",
+		Short:   "Outputs an effective representation of the pipeline to be executed",
+		Long:    stepSyntaxEffectiveLong,
+		Example: stepSyntaxEffectiveExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -88,6 +106,7 @@ func (o *StepSyntaxEffectiveOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
 	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", syntax.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
 	cmd.Flags().BoolVarP(&o.UseKaniko, "use-kaniko", "", true, "Enables using kaniko directly for building docker images")
+	cmd.Flags().BoolVarP(&o.ShortView, "short", "s", false, "Use short concise output")
 	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", syntax.KanikoDockerImage, "The docker image for Kaniko")
 	cmd.Flags().StringVarP(&o.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
 	cmd.Flags().StringVarP(&o.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
@@ -214,12 +233,27 @@ func (o *StepSyntaxEffectiveOptions) Run() error {
 		return err
 	}
 
+	if o.ShortView {
+		effectiveConfig = o.makeConcisePipeline(effectiveConfig)
+	}
+
 	effectiveYaml, err := yaml.Marshal(effectiveConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal effective pipeline")
 	}
 	if o.OutDir == "" && o.OutputFile == "" {
-		log.Logger().Infof("%s", effectiveYaml)
+		if o.ShortView {
+			for _, line := range strings.Split(string(effectiveYaml), "\n") {
+				prefix := "command: "
+				idx := strings.Index(line, prefix)
+				if idx >= 0 {
+					line = line[0:idx] + prefix + util.ColorInfo(line[idx+len(prefix):])
+				}
+				fmt.Printf("%s\n", line)
+			}
+		} else {
+			fmt.Printf("%s\n", effectiveYaml)
+		}
 	} else {
 		outputDir := o.OutDir
 		if outputDir == "" {
@@ -444,4 +478,40 @@ func (o *StepSyntaxEffectiveOptions) loadProjectConfig(workingDir string) (*conf
 		}
 	}
 	return config.LoadProjectConfig(workingDir)
+}
+
+func (o *StepSyntaxEffectiveOptions) makeConcisePipeline(projectConfig *config.ProjectConfig) *config.ProjectConfig {
+	for _, pipelines := range projectConfig.PipelineConfig.Pipelines.All() {
+		if pipelines != nil {
+			if pipelines.Pipeline != nil {
+				o.makeConciseStages(pipelines.Pipeline.Stages)
+			}
+		}
+	}
+	return projectConfig
+}
+
+func (o *StepSyntaxEffectiveOptions) makeConciseStages(stages []syntax.Stage) {
+	for i := range stages {
+		stage := &stages[i]
+		for j := range stage.Steps {
+			o.makeConciseStep(&stage.Steps[j])
+		}
+	}
+}
+
+func (o *StepSyntaxEffectiveOptions) makeConciseStep(step *syntax.Step) {
+	for _, child := range step.Steps {
+		o.makeConciseStep(child)
+	}
+	c := step.Command
+	if c == "" {
+		return
+	}
+	args := step.Arguments
+	if len(args) > 0 {
+		c = c + " " + strings.Join(args, " ")
+		step.Arguments = nil
+	}
+	step.Command = c
 }
