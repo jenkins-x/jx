@@ -190,7 +190,6 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 
 // Run implements this command
 func (o *StepCreateTaskOptions) Run() error {
-	var pr *prow.PullRefs
 	var effectiveProjectConfig *config.ProjectConfig
 	var err error
 
@@ -204,6 +203,11 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	pr, err := o.parsePullRefs()
+	if err != nil {
+		return errors.Wrapf(err, "Unable to find or parse PULL_REFS from custom environment")
 	}
 
 	exists, err := o.effectiveProjectConfigExists()
@@ -243,11 +247,6 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to find git branch from dir %s", o.CloneDir)
 		}
-	}
-
-	pr, err = o.parsePullRefs()
-	if err != nil {
-		return errors.Wrapf(err, "Unable to find or parse PULL_REFS from custom environment")
 	}
 
 	o.PodTemplates, err = kube.LoadPodTemplates(kubeClient, ns)
