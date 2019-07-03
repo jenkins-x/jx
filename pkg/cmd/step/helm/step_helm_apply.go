@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -26,6 +27,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"k8s.io/helm/pkg/chartutil"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -41,6 +43,7 @@ type StepHelmApplyOptions struct {
 	UseTempDir         bool
 	NoVault            bool
 	NoMasking          bool
+	ProviderValuesDir  string
 }
 
 var (
@@ -91,6 +94,7 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoVault, "no-vault", "", false, "Disables loading secrets from Vault. e.g. if bootstrapping core services like Ingress before we have a Vault")
 	cmd.Flags().BoolVarP(&options.NoMasking, "no-masking", "", false, "The effective 'values.yaml' file is output to the console with parameters masked. Enabling this flag will show the unmasked secrets in the console output")
 	cmd.Flags().BoolVarP(&options.UseTempDir, "use-temp-dir", "", true, "Whether to build and apply the helm chart from a temporary directory - to avoid updating the local values.yaml file from the generated file as part of the apply which could get accidentally checked into git")
+	cmd.Flags().StringVarP(&options.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific override values.tmpl.yaml files a kubernetes provider specific folder")
 
 	return cmd
 }
@@ -247,7 +251,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -258,6 +262,13 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}
+	if o.ProviderValuesDir != "" {
+		chartValues, err = o.overwriteProviderValues(requirements, requirementsFileName, chartValues, params, o.ProviderValuesDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to overwrite provider values in dir: %s", dir)
+		}
+	}
+
 	chartValuesFile := filepath.Join(dir, helm.ValuesFileName)
 	err = ioutil.WriteFile(chartValuesFile, chartValues, 0755)
 	if err != nil {
@@ -470,4 +481,48 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 		files = append(files, secretFile)
 	}
 	return files, nil
+}
+
+func (o *StepHelmApplyOptions) overwriteProviderValues(requirements *config.RequirementsConfig, requirementsFileName string, valuesData []byte, params chartutil.Values, providersValuesDir string) ([]byte, error) {
+	provider := requirements.Provider
+	if provider == "" {
+		log.Logger().Warnf("No provider in the requirements file %s\n", requirementsFileName)
+		return valuesData, nil
+	}
+	valuesTmplYamlFile := filepath.Join(providersValuesDir, provider, "values.tmpl.yaml")
+	exists, err := util.FileExists(valuesTmplYamlFile)
+	if err != nil {
+		return valuesData, errors.Wrapf(err, "failed to check if file exists: %s", valuesTmplYamlFile)
+	}
+	log.Logger().Infof("Applying the kubernetes overrides at %s\n", util.ColorInfo(valuesTmplYamlFile))
+
+	if !exists {
+		log.Logger().Warnf("No provider specific values overrides exist in file %s\n", valuesTmplYamlFile)
+		return valuesData, nil
+
+	}
+	funcMap := helm.NewFunctionMap()
+	overrideData, err := helm.ReadValuesYamlFileTemplateOutput(valuesTmplYamlFile, params, funcMap, requirements)
+	if err != nil {
+		return valuesData, errors.Wrapf(err, "failed to load provider specific helm value overrides %s", valuesTmplYamlFile)
+	}
+	if len(overrideData) == 0 {
+		return valuesData, nil
+	}
+
+	// now lets apply the overrides
+	values, err := helm.LoadValues(valuesData)
+	if err != nil {
+		return valuesData, errors.Wrapf(err, "failed to unmarshal the default helm values")
+	}
+
+	overrides, err := helm.LoadValues(overrideData)
+	if err != nil {
+		return valuesData, errors.Wrapf(err, "failed to unmarshal the default helm values")
+	}
+
+	util.CombineMapTrees(values, overrides)
+
+	data, err := yaml.Marshal(values)
+	return data, err
 }
