@@ -1,7 +1,7 @@
 apiVersion: jenkins.io/v1
 kind: Release
 metadata:
-  creationTimestamp: "2019-07-03T04:28:43Z"
+  creationTimestamp: "2019-07-03T05:26:41Z"
   deletionTimestamp: null
   name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
 spec:
@@ -10,12 +10,12 @@ spec:
     branch: master
     committer: {}
     message: |
-      upgrade jenkins-x/jx-ts-client client to jx 2.0.393
-    sha: fc6c1bb9b5fa6edf301786208708fd9c225b0338
+      upgrade jenkins-x/jx-ts-client client to jx 2.0.394
+    sha: 21296f127cfea806525f00a378c1c7e6dcf495a5
   gitCloneUrl: https://github.com/jenkins-x/jx.git
   gitHttpUrl: https://github.com/jenkins-x/jx
   gitOwner: jenkins-x
   gitRepository: jx
   name: '{{ .Chart.Name }}'
-  version: 2.0.394
+  version: 2.0.395
 status: {}
