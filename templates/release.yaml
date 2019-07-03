@@ -1,7 +1,7 @@
 apiVersion: jenkins.io/v1
 kind: Release
 metadata:
-  creationTimestamp: "2019-07-02T22:45:40Z"
+  creationTimestamp: "2019-07-03T00:44:09Z"
   deletionTimestamp: null
   name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
 spec:
@@ -10,12 +10,14 @@ spec:
     branch: master
     committer: {}
     message: |
-      upgrade jenkins-x/jx-ts-client client to jx 2.0.388
-    sha: b80cb3b566d41751bb4bd680097ed25483acb0ef
+      chore: set default values for external-dns during jx boot
+
+      Signed-off-by: rawlingsj <rawlingsj80@gmail.com>
+    sha: 6a6513bafe218669a9b5c4a7cb94b30283b35d19
   gitCloneUrl: https://github.com/jenkins-x/jx.git
   gitHttpUrl: https://github.com/jenkins-x/jx
   gitOwner: jenkins-x
   gitRepository: jx
   name: '{{ .Chart.Name }}'
-  version: 2.0.389
+  version: 2.0.390
 status: {}

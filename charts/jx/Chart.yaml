@@ -2,7 +2,7 @@ apiVersion: v1
 name: jx
 description: Jenkins X next gen cloud CI / CD platform for Kubernetes
 home: https://jenkins-x.io/
-version: 2.0.389
+version: 2.0.390
 appVersion: 0.1
 icon: https://jenkins-x.github.io/jenkins-x-website/img/profile.png
 sources:
