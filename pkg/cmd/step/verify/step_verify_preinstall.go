@@ -62,7 +62,7 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *StepVerifyPreInstallOptions) Run() error {
 	info := util.ColorInfo
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -129,6 +129,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	err = o.verifyInstallConfig(kubeClient, ns, requirements)
+	if err != nil {
+		return err
+	}
+
+	err = o.verifyStorage(requirements, requirementsFileName)
 	if err != nil {
 		return err
 	}
@@ -216,6 +221,66 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 		}, nil)
 	if err != nil {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
+	}
+	return nil
+}
+
+// verifyStorage verifies the associated buckets exist or if enabled lazily create them
+func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.RequirementsConfig, requirementsFileName string) error {
+	storage := &requirements.Storage
+	err := o.verifyStorageEntry(requirements, requirementsFileName, &storage.Logs, "Logs")
+	if err != nil {
+		return err
+	}
+	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Reports, "Reports")
+	if err != nil {
+		return err
+	}
+	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Repository, "Repository")
+	if err != nil {
+		return err
+	}
+	log.Logger().Infof("the storage looks good\n")
+	return nil
+}
+
+func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.RequirementsConfig, requirementsFileName string, storageEntryConfig *config.StorageEntryConfig, name string) error {
+	if !storageEntryConfig.Enabled {
+		if requirements.IsCloudProvider() {
+			log.Logger().Warnf("Your requirements have not enabled cloud storage for %s - we recommend enabling this for kubernetes provider %s\n", name, requirements.Provider)
+		}
+		return nil
+	}
+
+	if storageEntryConfig.URL == "" {
+		// lets allow the storage bucket to be entered or created
+		if o.BatchMode {
+			log.Logger().Warnf("No URL provided for storage: %s%s\n", name)
+			return nil
+		}
+		scheme := cloud.BucketURLScheme(requirements.Provider)
+		if scheme == "" {
+			scheme = "s3"
+		}
+		message := fmt.Sprintf("storage bucket URL (%s://bucketName) for %s: ", scheme, name)
+		help := fmt.Sprintf("please enter the URL of the bucket to use for storage like %s://bucketName or leave blank to disable cloud storage", scheme)
+		value, err := util.PickValue(message, "", false, help, o.In, o.Out, o.Err)
+		if err != nil {
+			return errors.Wrapf(err, "failed to pick storage bucket for %s", name)
+		}
+		if value != "" {
+			storageEntryConfig.URL = value
+
+			err = requirements.SaveConfig(requirementsFileName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
+			}
+		}
+	}
+
+	if storageEntryConfig.URL != "" {
+		// TODO validate bucket exists....
+
 	}
 	return nil
 }
