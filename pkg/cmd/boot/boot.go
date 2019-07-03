@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	defaultBootRepository = "https://github.com/jstrachan/environment-simple-tekton.git"
+	defaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
 )
 
 // BootOptions options for the command
