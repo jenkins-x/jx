@@ -62,6 +62,7 @@ func NewCmdStepCreatePr(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdStepCreatePullRequestBrew(commonOpts))
 	cmd.AddCommand(NewCmdStepCreatePullRequestDocker(commonOpts))
 	cmd.AddCommand(NewCmdStepCreatePullRequestChart(commonOpts))
 	cmd.AddCommand(NewCmdStepCreatePullRequestRegex(commonOpts))
