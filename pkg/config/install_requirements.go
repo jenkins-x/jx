@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 
@@ -56,6 +57,25 @@ type IngressConfig struct {
 	Email string `json:"email"`
 }
 
+// StorageEntryConfig contains dns specific requirements for a kind of storage
+type StorageEntryConfig struct {
+	// Enabled if the storage is enabled
+	Enabled bool `json:"enabled"`
+	// URL the cloud storage bucket URL such as 'gs://mybucket' or 's3://foo' or `azblob://thingy'
+	// see https://jenkins-x.io/architecture/storage/
+	URL string `json:"url"`
+}
+
+// StorageConfig contains dns specific requirements
+type StorageConfig struct {
+	// Logs for storing build logs
+	Logs StorageEntryConfig `json:"logs"`
+	// Tests for storing test results, coverage + code quality reports
+	Reports StorageEntryConfig `json:"reports"`
+	// Repository for storing build logs
+	Repository StorageEntryConfig `json:"repository"`
+}
+
 // RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
 	// Kaniko whether to enable kaniko for building docker images
@@ -78,8 +98,10 @@ type RequirementsConfig struct {
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
-	// Ingress contains dns specific requirements
+	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress"`
+	// Storage contains storage requirements
+	Storage StorageConfig `json:"storage"`
 }
 
 // NewRequirementsConfig creates a default configuration file
@@ -208,6 +230,12 @@ func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
 		ensureHasFields(m, "provider", "project", "environmentGitOwner")
 	}
 	return m, err
+}
+
+// IsCloudProvider returns true if the kubenretes provider is a cloud
+func (c *RequirementsConfig) IsCloudProvider() bool {
+	p := c.Provider
+	return p == cloud.GKE || p == cloud.AKS || p == cloud.AWS || p == cloud.EKS || p == cloud.ALIBABA
 }
 
 func ensureHasFields(m map[string]interface{}, keys ...string) {
