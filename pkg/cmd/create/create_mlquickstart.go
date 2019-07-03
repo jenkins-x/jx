@@ -3,7 +3,6 @@ package create
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,11 +10,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
-	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -147,10 +148,13 @@ func (o *CreateMLQuickstartOptions) Run() error {
 			return err
 		}
 		foundDefault := false
-		for i := range locations {
-			locations[i].Includes = []string{"ML-*"} // Filter for ML repos
-			log.Logger().Debugf("Location: %s ", locations[i])
-			if locations[i].GitURL == gits.GitHubURL && locations[i].Owner == JenkinsXMLQuickstartsOrganisation {
+		for _, location := range locations {
+			if isMLRepo(location) {
+				log.Logger().Debugf("Location: %s ", location)
+			} else {
+				// Protect generic quickstart repos from
+			}
+			if location.GitURL == gits.GitHubURL && location.Owner == JenkinsXMLQuickstartsOrganisation {
 				foundDefault = true
 			}
 		}
@@ -168,7 +172,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		}
 	}
 
-	// lets add any extra github organisations if they are not already configured
+	// lets add any extra github organisations from the CLI if they are not already configured
 	for _, org := range o.GitHubOrganisations {
 		found := false
 		for _, loc := range locations {
@@ -209,6 +213,8 @@ func (o *CreateMLQuickstartOptions) Run() error {
 
 		o.Filter.ProjectName = details.RepoName
 	}
+
+	o.Filter.AllowML = true
 
 	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
@@ -292,6 +298,9 @@ func (o *CreateMLQuickstartOptions) Run() error {
 
 }
 
+// Pairs of Training and Service projects can be declared by creating a dedicated repository that shares the same root name as the -Training and -Service repositories
+// but which contains only a 'projectset' file that specifies the names of the associated projects.
+// Selecting the projectset project as a quickstart automatically creates both related -Training and -Service projects with a common name prefix.
 func (o *CreateMLQuickstartOptions) getMLProjectSet(q *quickstarts.Quickstart) ([]projectset, error) {
 	var ps []projectset
 
@@ -327,6 +336,8 @@ func (o *CreateMLQuickstartOptions) getMLProjectSet(q *quickstarts.Quickstart) (
 func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
 
+	mlOnly := []string{"ML-*"} // Filter for ML repos
+
 	for gitURL, m := range gitMap {
 		for _, location := range m {
 			kind := location.GitKind
@@ -337,13 +348,14 @@ func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConf
 			if err != nil {
 				return model, err
 			}
-			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s ", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
-			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
+			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s ", gitProvider.ServerURL(), location.Owner, strings.Join(mlOnly, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, mlOnly, location.Excludes)
 			if err != nil {
 				log.Logger().Debugf("Quickstart load error: %s", err.Error())
 			}
 		}
 	}
+
 	return model, nil
 }
 
@@ -377,4 +389,14 @@ func pickMLProject(model *quickstarts.QuickstartModel, filter *quickstarts.Quick
 		Name:       q.Name,
 	}
 	return form, nil
+}
+
+// isMLRepo returns true if the git location has "ML-*" defined within Includes:
+func isMLRepo(location v1.QuickStartLocation) bool {
+	for _, v := range location.Includes {
+		if v == "ML-*" {
+			return true
+		}
+	}
+	return false
 }

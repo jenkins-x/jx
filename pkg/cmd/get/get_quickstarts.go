@@ -2,9 +2,10 @@ package get
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/log"
-	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -65,6 +66,7 @@ func NewCmdGetQuickstarts(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Filter.Owner, "owner", "", "", "The owner to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Language, "language", "l", "", "The language to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
+	cmd.Flags().BoolVarP(&options.Filter.AllowML, "machine-learning", "", false, "Allow machine-learning quickstarts in results")
 	cmd.Flags().BoolVarP(&options.ShortFormat, "short", "s", false, "return minimal details")
 
 	return cmd
