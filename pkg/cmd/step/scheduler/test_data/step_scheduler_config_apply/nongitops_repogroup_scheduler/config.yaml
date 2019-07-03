@@ -33,7 +33,6 @@ postsubmits:
   - agent: tekton
     branches:
     - master
-    - master
     context: ""
     name: release
   cb-kubecd/jx-scheduler-test-group-repo:
@@ -45,7 +44,6 @@ postsubmits:
   - agent: tekton
     branches:
     - master
-    - master
     context: ""
     name: release
   cb-kubecd/jx-scheduler-test-repo:
@@ -56,7 +54,6 @@ postsubmits:
     name: bdd
   - agent: tekton
     branches:
-    - master
     - master
     context: ""
     name: release

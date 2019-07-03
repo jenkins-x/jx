@@ -3,6 +3,7 @@ package pipelinescheduler
 import (
 	"github.com/davecgh/go-spew/spew"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -204,7 +205,11 @@ func applyToReplaceableSliceOfStrings(parent *jenkinsv1.ReplaceableSliceOfString
 		if child.Items == nil {
 			child.Items = make([]string, 0)
 		}
-		child.Items = append(child.Items, parent.Items...)
+		for i := range parent.Items {
+			if !util.Contains(child.Items, parent.Items[i]) {
+				child.Items = append(child.Items, parent.Items[i])
+			}
+		}
 	}
 }
 
