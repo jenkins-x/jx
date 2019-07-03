@@ -1,6 +1,6 @@
 image:
   repository: jenkinsxio/jx
-  tag: 2.0.392
+  tag: 2.0.393
   pullPolicy: IfNotPresent
 
 replicaCount: 1

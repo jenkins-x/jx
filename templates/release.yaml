@@ -1,7 +1,7 @@
 apiVersion: jenkins.io/v1
 kind: Release
 metadata:
-  creationTimestamp: "2019-07-03T02:50:48Z"
+  creationTimestamp: "2019-07-03T03:42:12Z"
   deletionTimestamp: null
   name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
 spec:
@@ -10,14 +10,12 @@ spec:
     branch: master
     committer: {}
     message: |
-      fix(tekton): Wrong builder image qualification
-
-      Signed-off-by: Andrew Bayer <andrew.bayer@gmail.com>
-    sha: 6163a9fc05f2c7781cc28ca7521adf102069acaf
+      upgrade jenkins-x/jx-ts-client client to jx 2.0.392
+    sha: df325fd9a79d542ef4865591a4cff8a36bf02681
   gitCloneUrl: https://github.com/jenkins-x/jx.git
   gitHttpUrl: https://github.com/jenkins-x/jx
   gitOwner: jenkins-x
   gitRepository: jx
   name: '{{ .Chart.Name }}'
-  version: 2.0.392
+  version: 2.0.393
 status: {}
