@@ -48,8 +48,7 @@ func GenerateValues(requirements *config.RequirementsConfig, dir string, ignores
 	if err != nil {
 		return nil, params, err
 	}
-	funcMap := engine.FuncMap()
-	funcMap["hashPassword"] = util.HashPassword
+	funcMap := NewFunctionMap()
 
 	if ignores == nil {
 		ignores = DefaultValuesTreeIgnores
@@ -198,6 +197,13 @@ func GenerateValues(requirements *config.RequirementsConfig, dir string, ignores
 	}
 	data, err := yaml.Marshal(rootValues)
 	return data, params, err
+}
+
+// NewFunctionMap creates a new function map for values.tmpl.yaml templating
+func NewFunctionMap() template.FuncMap {
+	funcMap := engine.FuncMap()
+	funcMap["hashPassword"] = util.HashPassword
+	return funcMap
 }
 
 // ReadValuesYamlFileTemplateOutput evaluates the given values.yaml file as a go template and returns the output data

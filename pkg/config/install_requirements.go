@@ -203,7 +203,11 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 
 // ToMap converts this object to a map of maps for use in helm templating
 func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
-	return toObjectMap(c)
+	m, err := toObjectMap(c)
+	if m != nil {
+		ensureHasFields(m, "provider", "project", "environmentGitOwner")
+	}
+	return m, err
 }
 
 func ensureHasFields(m map[string]interface{}, keys ...string) {
