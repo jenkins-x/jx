@@ -26,7 +26,7 @@ pipelineConfig:
               - name: COVERED_BINARY
                 value: "true"
               - name: CODECOV_NAME
-                value: tekton-e2e
+                value: tektone2e
               - name: VERSION_PREFIX
                 value: covered-
             options:

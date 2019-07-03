@@ -276,7 +276,7 @@ pipelineConfig:
               - name: tekton
                 env:
                   - name: CODECOV_NAME
-                    value: tekton-e2e
+                    value: tektone2e
                 steps:
                   - name: tekton-e2e-tests
                     image: gcr.io/jenkinsxio/builder-go:0.1.537
