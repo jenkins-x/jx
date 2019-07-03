@@ -2,6 +2,7 @@ package metapipeline
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"path/filepath"
 	"strings"
 
@@ -24,6 +25,9 @@ import (
 
 const (
 	appExtensionStageName = "app-extension"
+
+	// mergePullRefsStepName is the meta pipeline step name for merging all pull refs into the workspace
+	mergePullRefsStepName = "merge-pull-refs"
 	// createEffectivePipelineStepName is the meta pipeline step name for the generation of the effective jenkins-x pipeline config
 	createEffectivePipelineStepName = "create-effective-pipeline"
 	// createTektonCRDsStepName is the meta pipeline step name for the Tekton CRD creation
@@ -34,22 +38,22 @@ const (
 
 // CRDCreationParameters are the parameters needed to create the Tekton CRDs
 type CRDCreationParameters struct {
-	Namespace      string
-	Context        string
-	PipelineName   string
-	PipelineKind   string
-	BuildNumber    string
-	GitInfo        *gits.GitRepository
-	Branch         string
-	PullRef        string
-	SourceDir      string
-	PodTemplates   map[string]*corev1.Pod
-	Trigger        string
-	ServiceAccount string
-	Labels         []string
-	EnvVars        []string
-	DefaultImage   string
-	Apps           []jenkinsv1.App
+	Namespace        string
+	Context          string
+	PipelineName     string
+	PipelineKind     string
+	BuildNumber      string
+	GitInfo          gits.GitRepository
+	BranchIdentifier string
+	PullRef          prow.PullRefs
+	SourceDir        string
+	PodTemplates     map[string]*corev1.Pod
+	Trigger          string
+	ServiceAccount   string
+	Labels           []string
+	EnvVars          []string
+	DefaultImage     string
+	Apps             []jenkinsv1.App
 }
 
 // CreateMetaPipelineCRDs creates the Tekton CRDs needed to execute the meta pipeline.
@@ -72,7 +76,7 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		return nil, err
 	}
 
-	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, params.GitInfo, "")}
+	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, &params.GitInfo, params.PullRef.BaseSha)}
 	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.Trigger, params.ServiceAccount, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
@@ -120,14 +124,25 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 	return parsedPipeline, nil
 }
 
-// buildSteps builds a step (container) for each of the apps specified.
+// buildSteps builds the meta pipeline steps.
+// The tasks of the meta pipeline are:
+// 1) make sure the right commits are merged
+// 2) create the effective pipeline and write it to disk
+// 3) one step for each extending app
+// 4) create Tekton CRDs for the meta pipeline
 func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
 	var steps []syntax.Step
 
-	step := stepEffectivePipeline(params)
+	// 1)
+	step := stepMergePullRefs(params.PullRef)
+	steps = append(steps, step)
+
+	// 2)
+	step = stepEffectivePipeline(params)
 	steps = append(steps, step)
 
 	log.Logger().Debugf("creating pipeline steps for extending apps")
+	// 3)
 	for _, app := range params.Apps {
 		if app.Spec.PipelineExtension == nil {
 			log.Logger().Warnf("Skipping app %s in meta pipeline. It contains label %s with value %s, but does not contain PipelineExtension fields.", app.Name, apps.AppTypeLabel, apps.PipelineExtension)
@@ -146,10 +161,26 @@ func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
 		steps = append(steps, step)
 	}
 
+	// 4)
 	step = stepCreateTektonCRDs(params)
 	steps = append(steps, step)
 
 	return steps, nil
+}
+
+func stepMergePullRefs(pullRefs prow.PullRefs) syntax.Step {
+	args := []string{"--baseBranch", pullRefs.BaseBranch, "--baseSHA", pullRefs.BaseSha}
+	for _, mergeSha := range pullRefs.ToMerge {
+		args = append(args, "--sha", mergeSha)
+	}
+
+	step := syntax.Step{
+		Name:      mergePullRefsStepName,
+		Comment:   "Pipeline step merging pull refs",
+		Command:   "jx step git merge",
+		Arguments: args,
+	}
+	return step
 }
 
 func stepEffectivePipeline(params CRDCreationParameters) syntax.Step {
@@ -169,10 +200,16 @@ func stepEffectivePipeline(params CRDCreationParameters) syntax.Step {
 
 func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	args := []string{"--clone-dir", filepath.Join(tektonBaseDir, params.SourceDir)}
-	args = append(args, "--build-number", params.BuildNumber)
+	args = append(args, "--kind", params.PipelineKind)
+	for prID := range params.PullRef.ToMerge {
+		args = append(args, "--pr-number", prID)
+		// there might be a batch build building multiple PRs, in which case we just use the first in this case
+		break
+	}
 	args = append(args, "--trigger", params.Trigger)
 	args = append(args, "--service-account", params.ServiceAccount)
 	args = append(args, "--source", params.SourceDir)
+	args = append(args, "--branch", params.BranchIdentifier)
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
@@ -212,13 +249,15 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 		Value: params.BuildNumber,
 	})
 
-	kind := params.PipelineKind
-	if kind != "" {
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "PIPELINE_KIND",
-			Value: kind,
-		})
-	}
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "PIPELINE_KIND",
+		Value: params.PipelineKind,
+	})
+
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "PULL_REFS",
+		Value: params.PullRef.String(),
+	})
 
 	context := params.Context
 	if context != "" {
@@ -229,13 +268,10 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 	}
 
 	gitInfo := params.GitInfo
-	u := gitInfo.CloneURL
-	if u != "" {
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "SOURCE_URL",
-			Value: u,
-		})
-	}
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "SOURCE_URL",
+		Value: gitInfo.URL,
+	})
 
 	owner := gitInfo.Organisation
 	if owner != "" {
@@ -259,22 +295,12 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 		})
 	}
 
-	branch := params.Branch
+	branch := params.BranchIdentifier
 	if branch != "" {
 		if kube.GetSliceEnvVar(envVars, "BRANCH_NAME") == nil {
 			envVars = append(envVars, corev1.EnvVar{
 				Name:  "BRANCH_NAME",
 				Value: branch,
-			})
-		}
-	}
-
-	pullRef := params.PullRef
-	if pullRef != "" {
-		if kube.GetSliceEnvVar(envVars, "PULL_REFS") == nil {
-			envVars = append(envVars, corev1.EnvVar{
-				Name:  "PULL_REFS",
-				Value: pullRef,
 			})
 		}
 	}
@@ -297,11 +323,9 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 // TODO: Merge this with step_create_task's setBuildValues equivalent somewhere.
 func buildLabels(params CRDCreationParameters) (map[string]string, error) {
 	labels := map[string]string{}
-	if params.GitInfo != nil {
-		labels[tekton.LabelOwner] = params.GitInfo.Organisation
-		labels[tekton.LabelRepo] = params.GitInfo.Name
-	}
-	labels[tekton.LabelBranch] = params.Branch
+	labels[tekton.LabelOwner] = params.GitInfo.Organisation
+	labels[tekton.LabelRepo] = params.GitInfo.Name
+	labels[tekton.LabelBranch] = params.BranchIdentifier
 	if params.Context != "" {
 		labels[tekton.LabelContext] = params.Context
 	}
