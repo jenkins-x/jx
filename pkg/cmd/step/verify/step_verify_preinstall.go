@@ -280,13 +280,12 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 				log.Logger().Warnf("the kubernete provider %s has no BucketProvider in jx yet so we cannot lazily create buckets - so long term stor\n", kubeProvider)
 				log.Logger().Warnf("long term storage for %s will be disabled until you provide an existing bucket URL\n", name)
 				return nil
-			} else {
-				safeClusterName := naming.ToValidName(requirements.ClusterName)
-				safeName := naming.ToValidName(name)
-				value, err = provider.CreateNewBucketForCluster(safeClusterName, safeName)
-				if err != nil {
-					return errors.Wrapf(err, "failed to create a dynamic bucket for cluster %s and name %s", safeClusterName, safeName)
-				}
+			}
+			safeClusterName := naming.ToValidName(requirements.ClusterName)
+			safeName := naming.ToValidName(name)
+			value, err = provider.CreateNewBucketForCluster(safeClusterName, safeName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create a dynamic bucket for cluster %s and name %s", safeClusterName, safeName)
 			}
 		}
 		if value != "" {
