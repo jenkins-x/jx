@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/buckets"
+	"github.com/jenkins-x/jx/pkg/cloud/factory"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
@@ -12,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -245,20 +248,23 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 }
 
 func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.RequirementsConfig, requirementsFileName string, storageEntryConfig *config.StorageEntryConfig, name string) error {
+	kubeProvider := requirements.Provider
 	if !storageEntryConfig.Enabled {
 		if requirements.IsCloudProvider() {
-			log.Logger().Warnf("Your requirements have not enabled cloud storage for %s - we recommend enabling this for kubernetes provider %s\n", name, requirements.Provider)
+			log.Logger().Warnf("Your requirements have not enabled cloud storage for %s - we recommend enabling this for kubernetes provider %s\n", name, kubeProvider)
 		}
 		return nil
 	}
 
+	provider := factory.NewBucketProvider(requirements)
+
 	if storageEntryConfig.URL == "" {
 		// lets allow the storage bucket to be entered or created
 		if o.BatchMode {
-			log.Logger().Warnf("No URL provided for storage: %s%s\n", name)
+			log.Logger().Warnf("No URL provided for storage: %s\n", name)
 			return nil
 		}
-		scheme := cloud.BucketURLScheme(requirements.Provider)
+		scheme := buckets.KubeProviderToBucketScheme(kubeProvider)
 		if scheme == "" {
 			scheme = "s3"
 		}
@@ -267,6 +273,21 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 		value, err := util.PickValue(message, "", false, help, o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrapf(err, "failed to pick storage bucket for %s", name)
+		}
+
+		if value == "" {
+			if provider == nil {
+				log.Logger().Warnf("the kubernete provider %s has no BucketProvider in jx yet so we cannot lazily create buckets - so long term stor\n", kubeProvider)
+				log.Logger().Warnf("long term storage for %s will be disabled until you provide an existing bucket URL\n", name)
+				return nil
+			} else {
+				safeClusterName := naming.ToValidName(requirements.ClusterName)
+				safeName := naming.ToValidName(name)
+				value, err = provider.CreateNewBucketForCluster(safeClusterName, safeName)
+				if err != nil {
+					return errors.Wrapf(err, "failed to create a dynamic bucket for cluster %s and name %s", safeClusterName, safeName)
+				}
+			}
 		}
 		if value != "" {
 			storageEntryConfig.URL = value
@@ -279,8 +300,16 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 	}
 
 	if storageEntryConfig.URL != "" {
-		// TODO validate bucket exists....
+		if provider == nil {
+			log.Logger().Warnf("the kubernete provider %s has no BucketProvider in jx yet - so you have to manually setup and verify your bucket URLs exist\n", kubeProvider)
+			log.Logger().Infof("please verify this bucket exists: %s\n", util.ColorInfo(storageEntryConfig.URL))
+			return nil
+		}
 
+		err := provider.EnsureBucketIsCreated(storageEntryConfig.URL)
+		if err != nil {
+			return errors.Wrapf(err, "failed to ensure the bucket URL %s is created", storageEntryConfig.URL)
+		}
 	}
 	return nil
 }

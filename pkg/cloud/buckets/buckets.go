@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gocloud.dev/blob"
@@ -20,7 +21,7 @@ func CreateBucketURL(name string, kind string, settings *jenkinsv1.TeamSettings)
 		if provider == "" {
 			return "", fmt.Errorf("No bucket kind provided nor is a kubernetes provider configured for this team so it could not be defaulted")
 		}
-		kind = kubeProviderToBucketKind(provider)
+		kind = KubeProviderToBucketScheme(provider)
 		if kind == "" {
 			return "", fmt.Errorf("No bucket kind is associated with kubernetes provider %s", provider)
 		}
@@ -28,14 +29,15 @@ func CreateBucketURL(name string, kind string, settings *jenkinsv1.TeamSettings)
 	return kind + "://" + name, nil
 }
 
-func kubeProviderToBucketKind(provider string) string {
+// KubeProviderToBucketScheme returns the bucket scheme for the cloud provider
+func KubeProviderToBucketScheme(provider string) string {
 	switch provider {
-	case "gke":
-		return "gs"
-	case "aws", "eks":
-		return "s3"
-	case "aks", "azure":
+	case cloud.AKS:
 		return "azblob"
+	case cloud.AWS, cloud.EKS:
+		return "s3"
+	case cloud.GKE:
+		return "gs"
 	default:
 		return ""
 	}

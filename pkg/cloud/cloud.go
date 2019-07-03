@@ -32,17 +32,3 @@ func KubernetesProviderOptions() string {
 	sort.Strings(values)
 	return strings.Join(values, ", ")
 }
-
-// BucketURLScheme returns the bucket URL scheme for the given provider
-func BucketURLScheme(provider string) string {
-	switch provider {
-	case AKS:
-		return "azblob"
-	case AWS, EKS:
-		return "s3"
-	case GKE:
-		return "gs"
-	default:
-		return ""
-	}
-}
