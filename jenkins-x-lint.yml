@@ -13,7 +13,7 @@ pipelineConfig:
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy
               - name: PATH
-                value: "/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/workspace/go/bin"
+                value: "/usr/local/git/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/workspace/go/bin"
             options:
               containerOptions:
                 resources:
