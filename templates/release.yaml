@@ -1,7 +1,7 @@
 apiVersion: jenkins.io/v1
 kind: Release
 metadata:
-  creationTimestamp: "2019-07-03T13:22:17Z"
+  creationTimestamp: "2019-07-03T14:08:20Z"
   deletionTimestamp: null
   name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
 spec:
@@ -10,19 +10,12 @@ spec:
     branch: master
     committer: {}
     message: |
-      fix: Use /usr/local/git/bin in path for lint build
-
-      The container used for the git merge has two gits - one in
-      /usr/local/git/bin, and one in /usr/bin. The latter is too old, and
-      the former is the one we want. We're overriding the path to get go
-      stuff to work, so let's prepend /usr/local/git/bin to that path.
-
-      Signed-off-by: Andrew Bayer <andrew.bayer@gmail.com>
-    sha: 8f69bd9f63fc90e21cfa0d20f54356eb1f6400e2
+      upgrade jenkins-x/jx-ts-client client to jx 2.0.398
+    sha: d5e2cb38a18e697e484bf1e8057cb64155662f7e
   gitCloneUrl: https://github.com/jenkins-x/jx.git
   gitHttpUrl: https://github.com/jenkins-x/jx
   gitOwner: jenkins-x
   gitRepository: jx
   name: '{{ .Chart.Name }}'
-  version: 2.0.398
+  version: 2.0.399
 status: {}
