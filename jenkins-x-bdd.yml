@@ -36,8 +36,8 @@ pipelineConfig:
                     cpu: 4
                     memory: 6144Mi
                   requests:
-                    cpu: 3
-                    memory: 3072Mi
+                    cpu: 1
+                    memory: 2048Mi
                 env:
                   - name: CODECOV_TOKEN
                     valueFrom:
