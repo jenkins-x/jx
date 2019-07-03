@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -91,7 +92,8 @@ func (o *StepGitForkAndCloneOptions) Run() error {
 	o.OutDir = dir
 	if o.PrintOutDir {
 		// Output the directory so it can be used in a script
-		log.Logger().Infof(dir)
+		// Must use fmt.Print() as we need to write to stdout
+		fmt.Print(dir)
 	}
 	if gitInfo.Fork {
 		log.Logger().Infof("Forked %s and pulled it into %s checking out %s", gitURL, dir, baseRef)
