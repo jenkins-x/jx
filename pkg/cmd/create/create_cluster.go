@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -21,7 +23,7 @@ type CreateClusterOptions struct {
 	InstallOptions   InstallOptions
 	Flags            initcmd.InitFlags
 	Provider         string
-	SkipInstallation bool
+	SkipInstallation bool `mapstructure:"skip-installation"`
 }
 
 const (
@@ -30,6 +32,7 @@ const (
 	optionCluster           = "cluster"
 	optionClusterName       = "cluster-name"
 	optionCloudProvider     = "cloud-provider"
+	optionSkipInstallation  = "skip-installation"
 )
 
 const (
@@ -116,7 +119,8 @@ func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	o.InstallOptions.AddInstallFlags(cmd, true)
-	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
+	cmd.Flags().BoolVarP(&o.SkipInstallation, optionSkipInstallation, "", false, "Provision cluster only, don't install Jenkins X into it")
+	_ = viper.BindPFlag(optionSkipInstallation, cmd.Flags().Lookup(optionSkipInstallation))
 }
 
 func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider string) CreateClusterOptions {
@@ -131,6 +135,11 @@ func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider st
 }
 
 func (o *CreateClusterOptions) initAndInstall(provider string) error {
+	err := o.GetConfiguration(&o)
+	if err != nil {
+		return errors.Wrap(err, "getting create cluster configuration")
+	}
+
 	if o.SkipInstallation {
 		log.Logger().Infof("%s cluster created. Skipping Jenkins X installation.", o.Provider)
 		return nil
@@ -142,7 +151,7 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	installOpts := &o.InstallOptions
 
 	// call jx install
-	err := installOpts.Run()
+	err = installOpts.Run()
 	if err != nil {
 		return err
 	}
