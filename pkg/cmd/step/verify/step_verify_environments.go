@@ -153,11 +153,14 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(requirements *con
 }
 
 func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelpValues(requirements *config.RequirementsConfig, environment *v1.Environment) (config.HelmValuesConfig, error) {
-	// TODO
-	// domain := requirements.Ingress.Domain
-	domain := ""
+	// lets default the ingress requirements
+	domain := requirements.Ingress.Domain
 	useHTTP := "true"
 	tlsAcme := ""
+	if requirements.Ingress.TLS {
+		useHTTP = "false"
+		tlsAcme = "true"
+	}
 	namespaceSubDomain := ""
 	exposer := "Ingress"
 
