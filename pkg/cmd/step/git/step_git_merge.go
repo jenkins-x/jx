@@ -121,7 +121,7 @@ func (o *StepGitMergeOptions) Run() error {
 		log.Logger().Warnf("no SHAs to merge, falling back to initial cloned commit")
 		return nil
 	}
-	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git(), o.Verbose)
+	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git())
 }
 
 func (o *StepGitMergeOptions) setGitConfig() error {

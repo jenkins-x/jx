@@ -12,7 +12,7 @@ import (
 
 	"github.com/jpillora/longestcommon"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
@@ -89,7 +89,7 @@ func Unshallow(dir string, gitter Gitter) error {
 // com/git/git/commit/68ee628932c2196742b77d2961c5e16360734a62) otherwise it uses git remote update to pull down the
 // whole repo.
 func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote string, dir string,
-	gitter Gitter, verbose bool) error {
+	gitter Gitter) error {
 	refspecs := make([]string, 0)
 	for _, sha := range SHAs {
 		refspecs = append(refspecs, fmt.Sprintf("%s:", sha))
@@ -108,24 +108,17 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 			if err != nil {
 				return errors.Wrapf(err, "updating remote %s", remote)
 			}
-			if verbose {
-				log.Logger().Infof("ran %s in %s", util.ColorInfo("git remote update"), dir)
-			}
+			log.Logger().Debugf("ran %s in %s", util.ColorInfo("git remote update"), dir)
 		}
-		if verbose {
-			log.Logger().Infof("ran git fetch %s %s in %s", remote, strings.Join(refspecs, " "), dir)
-		}
+		log.Logger().Debugf("ran git fetch %s %s in %s", remote, strings.Join(refspecs, " "), dir)
+
 		err = Unshallow(dir, gitter)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		if verbose {
-			log.Logger().Infof("Unshallowed git repo in %s", dir)
-		}
+		log.Logger().Debugf("Unshallowed git repo in %s", dir)
 	} else {
-		if verbose {
-			log.Logger().Infof("ran git fetch --unshallow %s %s in %s", remote, strings.Join(refspecs, " "), dir)
-		}
+		log.Logger().Debugf("ran git fetch --unshallow %s %s in %s", remote, strings.Join(refspecs, " "), dir)
 	}
 	branches, err := gitter.LocalBranches(dir)
 	if err != nil {
@@ -149,33 +142,26 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 	if err != nil {
 		return errors.Wrapf(err, "checking out %s", baseBranch)
 	}
-	if verbose {
-		log.Logger().Infof("ran git checkout %s in %s", baseBranch, dir)
-	}
+	log.Logger().Debugf("ran git checkout %s in %s", baseBranch, dir)
 	// Ensure we are on the right revision
 	err = gitter.ResetHard(dir, baseSha)
 	if err != nil {
 		return errors.Wrapf(err, "resetting %s to %s", baseBranch, baseSha)
 	}
-	if verbose {
-		log.Logger().Infof("ran git reset --hard %s in %s", baseSha, dir)
-	}
+	log.Logger().Debugf("ran git reset --hard %s in %s", baseSha, dir)
 	err = gitter.CleanForce(dir, ".")
 	if err != nil {
 		return errors.Wrapf(err, "cleaning up the git repo")
 	}
-	if verbose {
-		log.Logger().Infof("ran clean --force -d . in %s", dir)
-	}
+	log.Logger().Debugf("ran clean --force -d . in %s", dir)
 	// Now do the merges
 	for _, sha := range SHAs {
 		err := gitter.Merge(dir, sha)
 		if err != nil {
 			return errors.Wrapf(err, "merging %s into master", sha)
 		}
-		if verbose {
-			log.Logger().Infof("ran git merge %s in %s", sha, dir)
-		}
+		log.Logger().Debugf("ran git merge %s in %s", sha, dir)
+
 	}
 	return nil
 }
