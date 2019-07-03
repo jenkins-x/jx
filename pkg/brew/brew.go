@@ -40,12 +40,12 @@ func UpdateVersion(dir string, newVersion string) ([]string, error) {
 				answer := make([]string, 0)
 				for _, line := range strings.Split(brewFile, "\n") {
 					found := false
-						if versionRegex.MatchString(line) {
-							oldVersions[versionRegex.ReplaceAllString(line, "$3")] = true
-							answer = append(answer, versionRegex.ReplaceAllString(line, fmt.Sprintf("$1 ${2}%s${7}", newVersion)))
-							found = true
-							continue
-						}
+					if versionRegex.MatchString(line) {
+						oldVersions[versionRegex.ReplaceAllString(line, "$3")] = true
+						answer = append(answer, versionRegex.ReplaceAllString(line, fmt.Sprintf("$1 ${2}%s${7}", newVersion)))
+						found = true
+						continue
+					}
 					if !found {
 						answer = append(answer, line)
 					}
