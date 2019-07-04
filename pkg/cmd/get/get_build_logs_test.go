@@ -1,4 +1,4 @@
-package get_test
+package get
 
 import (
 	"io/ioutil"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/acarl005/stripansi"
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/cmd/get"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
@@ -34,15 +33,15 @@ func TestWithMetapipeline(t *testing.T) {
 
 	ns := "jx"
 
-	o := &get.GetBuildLogsOptions{
-		GetOptions: get.GetOptions{
+	o := &GetBuildLogsOptions{
+		GetOptions: GetOptions{
 			CommonOptions: &opts.CommonOptions{
 				BatchMode: true,
 			},
 		},
 	}
 
-	names, defaultName, pipelineMap, err := o.LoadPipelines(kubeClient, tektonClient, jxClient, ns)
+	names, defaultName, pipelineMap, err := o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(names))
 	assert.Equal(t, "", defaultName)
@@ -57,7 +56,7 @@ func TestWithMetapipeline(t *testing.T) {
 	o.CommonOptions.Out = fakeStdout
 	o.Args = []string{pipelineName}
 
-	err = o.GetProwBuildLog(kubeClient, tektonClient, jxClient, ns, true)
+	err = o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, true)
 	assert.NoError(t, err)
 
 	fakeStdout.Close()
