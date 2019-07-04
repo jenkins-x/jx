@@ -248,3 +248,11 @@ func SanitizeLabel(label string) string {
 	sanitized := strings.ToLower(label)
 	return DisallowedLabelCharacters.ReplaceAllString(sanitized, "-")
 }
+
+// StripTrailingSlash removes any trailing forward slashes on the URL
+func StripTrailingSlash(url string) string {
+	if url[len(url)-1:] == "/" {
+		return url[0 : len(url)-1]
+	}
+	return url
+}
