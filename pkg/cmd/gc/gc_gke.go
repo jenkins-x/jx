@@ -460,11 +460,11 @@ func (o *GCGKEOptions) getCurrentGoogleProjectId() (string, error) {
 	return data, nil
 }
 func (o *GCGKEOptions) getIamPolicy() (iamPolicy, error) {
-	googleProjectId, err := o.getCurrentGoogleProjectId()
+	googleProjectID, err := o.getCurrentGoogleProjectId()
 	if err != nil {
 		return iamPolicy{}, err
 	}
-	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", googleProjectId)
+	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", googleProjectID)
 	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
 	if err != nil {
 		return iamPolicy{}, err
@@ -480,7 +480,7 @@ func (o *GCGKEOptions) getIamPolicy() (iamPolicy, error) {
 }
 
 func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, error) {
-	googleProjectId, err := o.getCurrentGoogleProjectId()
+	googleProjectID, err := o.getCurrentGoogleProjectId()
 	if err != nil {
 		return nil, err
 	}
@@ -502,7 +502,7 @@ func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, e
 					clusterName := displayName[:sz-3]
 
 					if !o.clusterExists(clusters, clusterName) {
-						cmd := fmt.Sprintf("gcloud projects remove-iam-policy-binding %s --member=%s --role=%s --quiet", googleProjectId, m, b.Role)
+						cmd := fmt.Sprintf("gcloud projects remove-iam-policy-binding %s --member=%s --role=%s --quiet", googleProjectID, m, b.Role)
 						line = append(line, cmd)
 					}
 				}
