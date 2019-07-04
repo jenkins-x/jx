@@ -287,13 +287,3 @@ func TestVerifyDomainName(t *testing.T) {
 	domain = "some.really.long.domain.that.should.be.longer.than.the.maximum.63.characters.com"
 	assert.EqualError(t, create.ValidateDomainName(domain), fmt.Sprintf(lengthErr, domain))
 }
-
-func TestStripTrailingSlash(t *testing.T) {
-	t.Parallel()
-
-	url := "http://some.url.com/"
-	assert.Equal(t, create.StripTrailingSlash(url), "http://some.url.com")
-
-	url = "http://some.other.url.com"
-	assert.Equal(t, create.StripTrailingSlash(url), "http://some.other.url.com")
-}

@@ -70,6 +70,7 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateDevPod(commonOpts))
 	cmd.AddCommand(NewCmdCreateDockerAuth(commonOpts))
 	cmd.AddCommand(NewCmdCreateDocs(commonOpts))
+	cmd.AddCommand(NewCmdCreateDomain(commonOpts))
 	cmd.AddCommand(NewCmdCreateEnv(commonOpts))
 	cmd.AddCommand(NewCmdCreateEtcHosts(commonOpts))
 	cmd.AddCommand(NewCmdCreateGkeServiceAccount(commonOpts))

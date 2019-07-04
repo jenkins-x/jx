@@ -114,6 +114,21 @@ func CreateManagedZone(projectID string, domain string) error {
 	return nil
 }
 
+// CreateDNSZone creates the tenants DNS zone if it doesn't exist
+// and returns the list of name servers for the given domain and project
+func CreateDNSZone(projectID string, domain string) (string, []string, error) {
+	var managedZone, nameServers = "", []string{}
+	err := CreateManagedZone(projectID, domain)
+	if err != nil {
+		return "", []string{}, errors.Wrap(err, "while trying to creating a CloudDNS managed zone")
+	}
+	managedZone, nameServers, err = GetManagedZoneNameServers(projectID, domain)
+	if err != nil {
+		return "", []string{}, errors.Wrap(err, "while trying to retrieve the managed zone name servers")
+	}
+	return managedZone, nameServers, nil
+}
+
 // GetManagedZoneNameServers retrieves a list of name servers associated with a zone
 func GetManagedZoneNameServers(projectID string, domain string) (string, []string, error) {
 	var managedZoneName, nameServers = "", []string{}
