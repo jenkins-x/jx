@@ -59,11 +59,7 @@ func NewCmdStepCreatePullRequestBrew(commonOpts *opts.CommonOptions) *cobra.Comm
 	return cmd
 }
 
-// Run implements this command
-func (o *StepCreatePullRequestBrewOptions) Run() error {
-	if err := o.ValidateOptions(); err != nil {
-		return errors.WithStack(err)
-	}
+func (o *StepCreatePullRequestBrewOptions) ValidateOptions() error {
 	if o.Version == "" {
 		return util.MissingOption("version")
 	}
@@ -73,17 +69,20 @@ func (o *StepCreatePullRequestBrewOptions) Run() error {
 	if o.SrcGitURL == "" {
 		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
 	}
+	return nil
+}
+
+// Run implements this command
+func (o *StepCreatePullRequestBrewOptions) Run() error {
+	if err := o.ValidateOptions(); err != nil {
+		return errors.WithStack(err)
+	}
 	err := o.CreatePullRequest("brew",
 		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-			oldVersions, err := brew.UpdateVersion(dir, o.Version)
+			oldVersions, _, err := brew.UpdateVersionAndSha(dir, o.Version, o.Sha)
 			if err != nil {
 				return nil, errors.Wrapf(err, "updating version to %s", o.Version)
 			}
-			_, err = brew.UpdateSha(dir, o.Sha)
-			if err != nil {
-				return nil, errors.Wrapf(err, "updating sha to %s", o.Sha)
-			}
-
 			return oldVersions, nil
 		})
 	if err != nil {
