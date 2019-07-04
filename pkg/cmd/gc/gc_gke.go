@@ -77,6 +77,15 @@ type serviceAccount struct {
 	Email       string `json:"email"`
 }
 
+type iamPolicy struct {
+	Bindings []iamBinding `json:"bindings"`
+}
+
+type iamBinding struct {
+	Members []string `json:"members"`
+	Role    string   `json:"role"`
+}
+
 // NewCmdGCGKE is a command object for the "step" command
 func NewCmdGCGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GCGKEOptions{
@@ -297,8 +306,23 @@ func (o *GCGKEOptions) cleanUpServiceAccounts() ([]string, error) {
 		for _, sa := range serviceAccounts {
 			line = append(line, fmt.Sprintf("gcloud iam service-accounts delete %s --quiet", sa.Email))
 		}
-		return line, nil
 	}
+
+	if len(line) == 0 {
+		line = append(line, "# No service accounts found for deletion\n")
+	}
+
+	policy, err := o.getIamPolicy()
+	if err != nil {
+		return nil, err
+	}
+
+	iam, err := o.determineUnusedIamBindings(policy)
+	if err != nil {
+		return nil, err
+	}
+
+	line = append(line, iam...)
 
 	if len(line) == 0 {
 		line = append(line, "# No service accounts found for deletion\n")
@@ -423,4 +447,65 @@ func (o *GCGKEOptions) clusterExists(clusters []cluster, clusterName string) boo
 		}
 	}
 	return false
+}
+
+func (o *GCGKEOptions) getCurrentGoogleProjectId() (string, error) {
+	cmd := "gcloud config get-value core/project"
+	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
+	if err != nil {
+		return "", err
+	}
+	return data, nil
+}
+func (o *GCGKEOptions) getIamPolicy() (iamPolicy, error) {
+	googleProjectId, err := o.getCurrentGoogleProjectId()
+	if err != nil {
+		return iamPolicy{}, err
+	}
+	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", googleProjectId)
+	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
+	if err != nil {
+		return iamPolicy{}, err
+	}
+
+	var policy iamPolicy
+	err = json.Unmarshal([]byte(data), &policy)
+	if err != nil {
+		return iamPolicy{}, err
+	}
+
+	return policy, nil
+}
+
+func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, error) {
+	googleProjectId, err := o.getCurrentGoogleProjectId()
+	if err != nil {
+		return nil, err
+	}
+
+	var line []string
+
+	clusters, err := o.getClusters()
+	if err != nil {
+		return line, err
+	}
+	for _, b := range policy.Bindings {
+		for _, m := range b.Members {
+			if strings.HasPrefix(m, "serviceAccount:") {
+				saName := strings.TrimPrefix(m, "serviceAccount:")
+				displayName := saName[:strings.IndexByte(saName, '@')]
+
+				if strings.HasSuffix(displayName, "-vt") || strings.HasSuffix(displayName, "-ko") || strings.HasSuffix(displayName, "-tf") {
+					sz := len(displayName)
+					clusterName := displayName[:sz-3]
+
+					if !o.clusterExists(clusters, clusterName) {
+						cmd := fmt.Sprintf("gcloud projects remove-iam-policy-binding %s --member=%s --role=%s --quiet", googleProjectId, m, b.Role)
+						line = append(line, cmd)
+					}
+				}
+			}
+		}
+	}
+	return line, nil
 }
