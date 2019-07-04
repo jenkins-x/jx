@@ -606,7 +606,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 	spec := &activity.Spec
 	var biggestFinishedAt metav1.Time
 
-	allCompleted := true
+	allStagesCompleted := true
 	failed := false
 	running := true
 	for i := range spec.Steps {
@@ -634,18 +634,18 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 					failed = true
 				}
 			} else {
-				allCompleted = false
+				allStagesCompleted = false
 			}
 			if stage.Status == v1.ActivityStatusTypeRunning {
 				running = true
 			}
 			if stage.Status == v1.ActivityStatusTypeRunning || stage.Status == v1.ActivityStatusTypePending {
-				allCompleted = false
+				allStagesCompleted = false
 			}
 		}
 	}
 
-	if allCompleted {
+	if allStagesCompleted {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
 		} else if pri.Type == tekton.MetaPipeline {
