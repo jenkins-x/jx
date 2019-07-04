@@ -559,7 +559,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if options.Flags.CloudBeesDomain != "" {
-		cloudbeesDomain := StripTrailingSlash(options.Flags.CloudBeesDomain)
+		cloudbeesDomain := util.StripTrailingSlash(options.Flags.CloudBeesDomain)
 		cloudbeesAuth := options.Flags.CloudBeesAuth
 		domain, err := options.enableTenantCluster(cloudbeesDomain, cloudbeesAuth)
 		if err != nil {
@@ -3391,14 +3391,6 @@ func createTenantsSubDomainDNSZone(projectID string, domain string) (string, []s
 		return "", []string{}, errors.Wrap(err, "while trying to retrieve the managed zone name servers")
 	}
 	return managedZone, nameServers, nil
-}
-
-// StripTrailingSlash removes any trailing forward slashes on the URL
-func StripTrailingSlash(url string) string {
-	if url[len(url)-1:] == "/" {
-		return url[0 : len(url)-1]
-	}
-	return url
 }
 
 func installConfigKey(key string) string {
