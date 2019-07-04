@@ -239,8 +239,8 @@ func (o *StepCreatePipelineOptions) handleResult(tektonClient tektonclient.Inter
 	gitInfo *gits.GitRepository) error {
 
 	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branch, gitInfo, &pullRefs, tekton.MetaPipeline)
-	if o.NoApply {
-		err := tektonCRDs.WriteToDisk(o.OutDir, pipelineActivity)
+	if viper.GetBool(noApplyOptionName) {
+		err := tektonCRDs.WriteToDisk(viper.GetString(outputOptionName), pipelineActivity)
 		if err != nil {
 			return errors.Wrapf(err, "failed to output Tekton CRDs")
 		}
