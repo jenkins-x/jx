@@ -21,7 +21,7 @@ var (
 )
 
 //UpdateVersion scans the directory structure rooted in dir for files that match brewNameRegex and replaces any
-// lines starting with FROM <name>:, ENV <name> or ARG=<name> with the newVersion
+// version and sha with their new values
 func UpdateVersionAndSha(dir string, newVersion string, newSha string) ([]string, []string, error) {
 	oldVersions := make(map[string]bool)
 	oldShas := make(map[string]bool)
