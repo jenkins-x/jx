@@ -44,6 +44,8 @@ var (
 		jx garbage collect gke
 		jx gc gke
 `)
+
+	ServiceAccountSuffixes = []string{"-vt","-ko","-tf"}
 )
 
 type Rules struct {
@@ -405,7 +407,7 @@ func (o *GCGKEOptions) getFilteredServiceAccounts() ([]serviceAccount, error) {
 
 	filteredServiceAccounts := []serviceAccount{}
 	for _, sa := range serviceAccounts {
-		if strings.HasSuffix(sa.DisplayName, "-vt") || strings.HasSuffix(sa.DisplayName, "-ko") || strings.HasSuffix(sa.DisplayName, "-tf") {
+		if isServiceAccount(sa.DisplayName) {
 			sz := len(sa.DisplayName)
 			clusterName := sa.DisplayName[:sz-3]
 
@@ -495,7 +497,7 @@ func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, e
 				saName := strings.TrimPrefix(m, "serviceAccount:")
 				displayName := saName[:strings.IndexByte(saName, '@')]
 
-				if strings.HasSuffix(displayName, "-vt") || strings.HasSuffix(displayName, "-ko") || strings.HasSuffix(displayName, "-tf") {
+				if isServiceAccount(displayName) {
 					sz := len(displayName)
 					clusterName := displayName[:sz-3]
 
@@ -508,4 +510,13 @@ func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, e
 		}
 	}
 	return line, nil
+}
+
+func isServiceAccount(sa string) bool {
+	for _, suffix := range ServiceAccountSuffixes {
+		if strings.HasSuffix(sa, suffix) {
+			return true
+		}
+	}
+	return false
 }
