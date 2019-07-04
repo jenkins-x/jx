@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -142,7 +143,7 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "out", "The directory to write the output to as YAML. Defaults to 'out'")
+	cmd.Flags().StringVarP(&options.OutDir, outputOptionName, "o", "out", "The directory to write the output to as YAML. Defaults to 'out'")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
@@ -153,7 +154,7 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().StringVarP(&options.CloneDir, "clone-dir", "", "", "Specify the directory of the directory containing the git clone")
 	cmd.Flags().StringVarP(&options.PullRequestNumber, "pr-number", "", "", "If a Pull Request this is it's number")
 	cmd.Flags().StringVarP(&options.BuildNumber, "build-number", "", "", "The build number")
-	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
+	cmd.Flags().BoolVarP(&options.NoApply, noApplyOptionName, "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file, without side effects")
 	cmd.Flags().BoolVarP(&options.InterpretMode, "interpret", "", false, "Enable interpret mode. Rather than spinning up Tekton CRDs to create a Pod just invoke the commands in the current shell directly. Useful for bootstrapping installations of Jenkins X and tekton using a pipeline before you have installed Tekton.")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
@@ -161,7 +162,19 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
 
 	options.AddCommonFlags(cmd)
+	options.setupViper(cmd)
 	return cmd, options
+}
+
+func (o *StepCreateTaskOptions) setupViper(cmd *cobra.Command) {
+	replacer := strings.NewReplacer("-", "_")
+	viper.SetEnvKeyReplacer(replacer)
+
+	_ = viper.BindEnv(noApplyOptionName)
+	_ = viper.BindPFlag(noApplyOptionName, cmd.Flags().Lookup(noApplyOptionName))
+
+	_ = viper.BindEnv(outputOptionName)
+	_ = viper.BindPFlag(outputOptionName, cmd.Flags().Lookup(outputOptionName))
 }
 
 // AddCommonFlags adds common CLI options
@@ -298,9 +311,9 @@ func (o *StepCreateTaskOptions) Run() error {
 		return o.interpretPipeline(ns, effectiveProjectConfig, tektonCRDs)
 	}
 
-	if o.NoApply || o.DryRun {
+	if viper.GetBool(noApplyOptionName) || o.DryRun {
 		log.Logger().Infof("Writing output ")
-		err := tektonCRDs.WriteToDisk(o.OutDir, nil)
+		err := tektonCRDs.WriteToDisk(viper.GetString(outputOptionName), nil)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
@@ -377,7 +390,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		}
 	}
 
-	if o.NoApply || o.DryRun || o.InterpretMode {
+	if viper.GetBool(noApplyOptionName) || o.DryRun || o.InterpretMode {
 		o.BuildNumber = "1"
 	} else {
 		log.Logger().Debugf("generating build number...")

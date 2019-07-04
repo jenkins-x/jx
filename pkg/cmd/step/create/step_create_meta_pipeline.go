@@ -17,6 +17,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"strings"
 	"time"
 
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -66,6 +68,7 @@ type StepCreatePipelineOptions struct {
 	CustomEnvs   []string
 	DefaultImage string
 
+	Results tekton.CRDWrapper
 	OutDir  string
 	NoApply bool
 }
@@ -108,7 +111,19 @@ func NewCmdCreateMetaPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.OutDir, outputOptionName, "o", "out", "Used in conjunction with --no-apply to determine the directory into which to write the output")
 
 	options.AddCommonFlags(cmd)
+	options.setupViper(cmd)
 	return cmd
+}
+
+func (o *StepCreatePipelineOptions) setupViper(cmd *cobra.Command) {
+	replacer := strings.NewReplacer("-", "_")
+	viper.SetEnvKeyReplacer(replacer)
+
+	_ = viper.BindEnv(noApplyOptionName)
+	_ = viper.BindPFlag(noApplyOptionName, cmd.Flags().Lookup(noApplyOptionName))
+
+	_ = viper.BindEnv(outputOptionName)
+	_ = viper.BindPFlag(outputOptionName, cmd.Flags().Lookup(outputOptionName))
 }
 
 // Run implements this command
@@ -177,6 +192,8 @@ func (o *StepCreatePipelineOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRDs for meta pipeline")
 	}
+	// record the results in the struct for the case this command is called programmatically (HF)
+	o.Results = *tektonCRDs
 
 	err = o.handleResult(tektonClient, jxClient, tektonCRDs, buildNumber, branchIdentifier, *pullRefs, ns, gitInfo)
 	if err != nil {
