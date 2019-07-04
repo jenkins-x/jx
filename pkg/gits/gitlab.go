@@ -3,6 +3,7 @@ package gits
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -278,7 +279,39 @@ func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 
 // UpdatePullRequest updates pull request with number using data
 func (g *GitlabProvider) UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error) {
-	return nil, errors2.Errorf("Not yet implemented for gitlab")
+	owner := data.GitRepository.Organisation
+	repo := data.GitRepository.Name
+	title := data.Title
+	body := data.Body
+	base := data.Base
+
+	o := &gitlab.UpdateMergeRequestOptions{
+		Title:        &title,
+		Description:  &body,
+		TargetBranch: &base,
+	}
+
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
+	mr, resp, err := g.Client.MergeRequests.UpdateMergeRequest(pid, number, o)
+	if err != nil {
+		if resp != nil && resp.Body != nil {
+			data, err2 := ioutil.ReadAll(resp.Body)
+			if err2 == nil && len(data) > 0 {
+				return nil, errors2.Wrapf(err, "response: %s", string(data))
+			}
+		}
+		return nil, err
+	}
+
+	return &GitPullRequest{
+		URL:    mr.WebURL,
+		Owner:  owner,
+		Repo:   repo,
+		Number: &mr.IID,
+	}, nil
 }
 
 func fromMergeRequest(mr *gitlab.MergeRequest, owner, repo string) *GitPullRequest {
