@@ -223,8 +223,8 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(HealthPath, http.HandlerFunc(o.health))
-	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
+	mux.Handle(healthPath, http.HandlerFunc(o.health))
+	mux.Handle(readyPath, http.HandlerFunc(o.ready))
 
 	indexPaths := []string{"/", "/index.html"}
 	for _, p := range indexPaths {

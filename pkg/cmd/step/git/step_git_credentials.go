@@ -54,8 +54,7 @@ func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "credentials",
-		Short:   "Creates the Git credentials file for the current pipeline Git credentials",
-		Aliases: []string{"nexus_stage"},
+		Short:   "Creates the Git credentials file for the current pipeline",
 		Long:    StepGitCredentialsLong,
 		Example: StepGitCredentialsExample,
 		Run: func(cmd *cobra.Command, args []string) {
