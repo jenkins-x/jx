@@ -1,23 +1,21 @@
 package brew
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strings"
-
-	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/pkg/errors"
 )
 
 var (
 	brewFilePattern = "**/*.rb"
-	versionRegex = regexp.MustCompile(`\s*version \"(.*)\"`)
-	shaRegex = regexp.MustCompile(`\s*sha256 \"(.*)\"`)
+	versionRegex = regexp.MustCompile(`(?m)^\s*version \"(.*)\"$`)
+	shaRegex = regexp.MustCompile(`(?m)^\s*sha256 \"(.*)\"$`)
 )
 
 //UpdateVersion scans the directory structure rooted in dir for files that match brewNameRegex and replaces any
@@ -35,43 +33,27 @@ func UpdateVersionAndSha(dir string, newVersion string, newSha string) ([]string
 			return nil, nil, errors.Wrapf(err, "reading %s", path)
 		}
 		brewFile := string(bytes)
-		answer := make([]string, 0)
-		for _, line := range strings.Split(brewFile, "\n") {
-			foundVersion, foundSha := false,false
-			if versionRegex.MatchString(line) {
-				answer = append(answer, util.ReplaceAllStringSubmatchFunc(versionRegex, line, func(groups []util.Group) []string {
-					answer := make([]string, 0)
-					for _, group := range groups {
-					  oldVersions[group.Value] = true
-					}
-					answer = append(answer, newVersion)
-					return answer
-				}))
-				foundVersion = true
-				continue
+		updatedBrewFile := util.ReplaceAllStringSubmatchFunc(versionRegex, brewFile, func(groups []util.Group) []string {
+			answer := make([]string, 0)
+			for _, group := range groups {
+				oldVersions[group.Value] = true
 			}
-			if shaRegex.MatchString(line) {
-				answer = append(answer, util.ReplaceAllStringSubmatchFunc(shaRegex, line, func(groups []util.Group) []string {
-					answer := make([]string, 0)
-					for _, group := range groups {
-						oldShas[group.Value] = true
-					}
-					answer = append(answer, newSha)
-					return answer
-				}))
-				foundSha = true
-				continue
+			answer = append(answer, newVersion)
+			return answer
+		})
+		updatedBrewFile = util.ReplaceAllStringSubmatchFunc(shaRegex, updatedBrewFile, func(groups []util.Group) []string {
+			answer := make([]string, 0)
+			for _, group := range groups {
+				oldShas[group.Value] = true
 			}
-
-			if !foundVersion || !foundSha {
-				answer = append(answer, line)
-			}
-		}
+			answer = append(answer, newSha)
+			return answer
+		})
 		info, err := os.Stat(path)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "reading mode of %s file", path)
 		}
-		err = ioutil.WriteFile(path, []byte(strings.Join(answer, "\n")), info.Mode())
+		err = ioutil.WriteFile(path, []byte(updatedBrewFile), info.Mode())
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "writing %s", path)
 		}
