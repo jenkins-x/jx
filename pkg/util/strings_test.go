@@ -141,3 +141,13 @@ func Test_sanitizeLabel(t *testing.T) {
 		})
 	}
 }
+
+func TestStripTrailingSlash(t *testing.T) {
+	t.Parallel()
+
+	url := "http://some.url.com/"
+	assert.Equal(t, util.StripTrailingSlash(url), "http://some.url.com")
+
+	url = "http://some.other.url.com"
+	assert.Equal(t, util.StripTrailingSlash(url), "http://some.other.url.com")
+}

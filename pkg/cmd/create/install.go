@@ -3349,7 +3349,7 @@ func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tena
 	}
 
 	// Create domain if it doesn't exist and return name servers list
-	managedZone, nameServers, err := createTenantsSubDomainDNSZone(projectID, domain)
+	managedZone, nameServers, err := gke.CreateDNSZone(projectID, domain)
 	if err != nil {
 		return "", errors.Wrap(err, "while trying to create the tenants subdomain zone")
 	}
@@ -3376,21 +3376,6 @@ func ValidateDomainName(domain string) error {
 		return err
 	}
 	return nil
-}
-
-// createTenantsSubDomainDNSZone creates the tenants DNS zone if it doesn't exist
-// and returns the list of name servers for the given domain and project
-func createTenantsSubDomainDNSZone(projectID string, domain string) (string, []string, error) {
-	var managedZone, nameServers = "", []string{}
-	err := gke.CreateManagedZone(projectID, domain)
-	if err != nil {
-		return "", []string{}, errors.Wrap(err, "while trying to creating a CloudDNS managed zone")
-	}
-	managedZone, nameServers, err = gke.GetManagedZoneNameServers(projectID, domain)
-	if err != nil {
-		return "", []string{}, errors.Wrap(err, "while trying to retrieve the managed zone name servers")
-	}
-	return managedZone, nameServers, nil
 }
 
 func installConfigKey(key string) string {
