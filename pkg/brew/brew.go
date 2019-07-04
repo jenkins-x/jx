@@ -14,8 +14,8 @@ import (
 
 var (
 	brewFilePattern = "**/*.rb"
-	versionRegex = regexp.MustCompile(`(?m)^\s*version \"(.*)\"$`)
-	shaRegex = regexp.MustCompile(`(?m)^\s*sha256 \"(.*)\"$`)
+	versionRegex    = regexp.MustCompile(`(?m)^\s*version \"(.*)\"$`)
+	shaRegex        = regexp.MustCompile(`(?m)^\s*sha256 \"(.*)\"$`)
 )
 
 //UpdateVersion scans the directory structure rooted in dir for files that match brewNameRegex and replaces any
@@ -27,7 +27,7 @@ func UpdateVersionAndSha(dir string, newVersion string, newSha string) ([]string
 	if err != nil {
 		log.Logger().Warnf("looking for homebrew ruby files in %s %v", dir, err)
 	}
-	for _,path := range files {
+	for _, path := range files {
 		bytes, err := ioutil.ReadFile(path)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "reading %s", path)

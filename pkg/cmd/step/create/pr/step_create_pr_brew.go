@@ -58,6 +58,7 @@ func NewCmdStepCreatePullRequestBrew(commonOpts *opts.CommonOptions) *cobra.Comm
 	cmd.Flags().StringVarP(&options.Sha, "sha", "", "", "The sha of the brew archive to update")
 	return cmd
 }
+
 // ValidateOptions validates the common options for brew pr steps
 func (o *StepCreatePullRequestBrewOptions) ValidateOptions() error {
 	if o.Version == "" {
