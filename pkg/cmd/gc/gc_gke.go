@@ -112,7 +112,9 @@ func (o *GCGKEOptions) Run() error {
 
 	os.Remove(path)
 
-	message := `
+	message := `#!/bin/bash
+
+set -euo pipefail
 
 ###################################################################################################
 #
@@ -406,6 +408,11 @@ func (o *GCGKEOptions) getServiceAccounts() ([]serviceAccount, error) {
 		return nil, err
 	}
 
+	for _, sa := range serviceAccounts {
+		if sa.DisplayName == "" {
+			sa.DisplayName = sa.Email[:strings.IndexByte(sa.Email, '@')]
+		}
+	}
 	return serviceAccounts, nil
 }
 
