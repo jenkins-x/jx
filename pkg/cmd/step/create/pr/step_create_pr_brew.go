@@ -58,7 +58,7 @@ func NewCmdStepCreatePullRequestBrew(commonOpts *opts.CommonOptions) *cobra.Comm
 	cmd.Flags().StringVarP(&options.Sha, "sha", "", "", "The sha of the brew archive to update")
 	return cmd
 }
-
+// ValidateOptions validates the common options for brew pr steps
 func (o *StepCreatePullRequestBrewOptions) ValidateOptions() error {
 	if o.Version == "" {
 		return util.MissingOption("version")
@@ -81,7 +81,7 @@ func (o *StepCreatePullRequestBrewOptions) Run() error {
 		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 			oldVersions, _, err := brew.UpdateVersionAndSha(dir, o.Version, o.Sha)
 			if err != nil {
-				return nil, errors.Wrapf(err, "updating version to %s", o.Version)
+				return nil, errors.Wrapf(err, "updating version to %s and sha to %s", o.Version, o.Sha)
 			}
 			return oldVersions, nil
 		})
