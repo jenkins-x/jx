@@ -56,6 +56,7 @@ type PipelineRunnerOptions struct {
 	UseMetaPipeline      bool
 	MetaPipelineImage    string
 	SemanticRelease      bool
+	GitServerURL         string
 }
 
 // PipelineRunRequest the request to trigger a pipeline run
@@ -112,6 +113,7 @@ func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Comma
 	cmd.Flags().StringVarP(&options.Path, "path", "p", "/", "The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline.")
 	cmd.Flags().BoolVarP(&options.NoGitCredentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup.")
+	cmd.Flags().StringVarP(&options.GitServerURL, "git-provider-url", "", "https://github.com", "The default Git server URL. Currently only Github is supported.")
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
 
 	// TODO - temporary flags until meta pipeline is the default
@@ -276,7 +278,7 @@ func (o *PipelineRunnerOptions) startPipeline(pipelineRun PipelineRunRequest) (P
 		return response, errors.Wrap(err, "failed to get env vars from prowjob")
 	}
 
-	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", prowJobSpec.Refs.Org, prowJobSpec.Refs.Repo)
+	sourceURL := fmt.Sprintf("%s/%s/%s.git", o.GitServerURL, prowJobSpec.Refs.Org, prowJobSpec.Refs.Repo)
 	if sourceURL == "" {
 		return response, errors.Wrap(err, "missing sourceURL property")
 	}
