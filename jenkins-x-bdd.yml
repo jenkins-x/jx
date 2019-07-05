@@ -99,8 +99,44 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: ./jx/scripts/ci.sh
 
-              - name: stash-test-results
-                image: gcr.io/jenkinsxio/jx:${inputs.params.version}
+              - name: stash_xml_report
+                image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: jx
-                # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
-                args: ['step', 'stash', '-c', 'e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
+                args:
+                  - step
+                  - stash
+                  - -c
+                  - e2e-tests
+                  - -p
+                  - "/workspace/source/build/reports/create_spring_application.junit.xml"
+                  - --bucket-url gs://jx-prod-logs
+
+              - name: generate-report
+                image: gcr.io/jenkinsxio/builder-nodejs10x:0.1.607
+                command: jx
+                args:
+                  - step
+                  - report
+                  - --in-dir
+                  - /workspace/source/build/reports
+                  - --target-report
+                  - create_spring_application.junit.xml
+                  - --merge
+                  - --out-dir
+                  - /workspace/source/build/reports
+                  - --output-name
+                  - junit.html
+                  - --suite-name
+                  - "BDD_Tests"
+
+              - name: stash_html_report
+                image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
+                command: jx
+                args:
+                  - step
+                  - stash
+                  - -c
+                  - e2e-tests
+                  - -p
+                  - "/workspace/source/build/reports/junit.html"
+                  - --bucket-url gs://jx-prod-logs
