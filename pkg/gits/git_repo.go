@@ -82,6 +82,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 	if userAuth == nil {
 		if repoOptions.Username != "" {
 			userAuth = config.GetOrCreateUserAuth(url, repoOptions.Username)
+			log.Logger().Infof(util.QuestionAnswer("Using Git user name", repoOptions.Username))
 		} else {
 			if batchMode {
 				if len(server.Users) == 0 {
@@ -139,19 +140,29 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 	if err != nil {
 		return nil, err
 	}
+
 	owner := repoOptions.Owner
 	if owner == "" {
 		owner, err = GetOwner(batchMode, provider, gitUsername, in, out, errOut)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		log.Logger().Infof(util.QuestionAnswer("Using organisation", owner))
 	}
+
 	repoName := repoOptions.RepoName
 	if repoName == "" {
 		repoName, err = GetRepoName(batchMode, allowExistingRepo, provider, defaultRepoName, owner, in, out, errOut)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		err := provider.ValidateRepositoryName(owner, repoName)
+		if err != nil {
+			return nil, err
+		}
+		log.Logger().Infof(util.QuestionAnswer("Using repository", repoName))
 	}
 
 	fullName := git.RepoName(owner, repoName)
