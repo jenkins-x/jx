@@ -34,7 +34,7 @@ type GCGKEOptions struct {
 
 // GCGKEFlags contains the flags for the command
 type GCGKEFlags struct {
-	ProjectID     string
+	ProjectID string
 }
 
 var (
