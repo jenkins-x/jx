@@ -30,6 +30,13 @@ var (
 		"roles/storage.objectCreator"}
 )
 
+// Cluster struct to represent a cluster on gcloud
+type Cluster struct {
+	Name           string            `json:"name,omitempty"`
+	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
+	Status         string            `json:"status,omitempty"`
+}
+
 // getManagedZoneName constructs and returns a managed zone name using the domain value
 func getManagedZoneName(domain string) string {
 
@@ -526,6 +533,66 @@ func GetServiceAccountKeys(serviceAccount string, projectID string) ([]string, e
 		}
 	}
 	return keys, nil
+}
+
+// ListClusters returns the clusters in a GKE project
+func ListClusters(region string, projectID string) ([]Cluster, error) {
+	args := []string{"container", "clusters", "list", "--region=" + region, "--format=json", "--quiet"}
+	if projectID != "" {
+		args = append(args, "--project="+projectID)
+	}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return nil, err
+	}
+
+	clusters := make([]Cluster, 0)
+	err = json.Unmarshal([]byte(output), &clusters)
+	if err != nil {
+		return nil, err
+	}
+	return clusters, nil
+}
+
+// LoadGkeCluster load a gke cluster from a GKE project
+func LoadGkeCluster(region string, projectID string, clusterName string) (*Cluster, error) {
+	args := []string{"container", "clusters", "describe", clusterName, "--region=" + region, "--format=json", "--quiet"}
+	if projectID != "" {
+		args = append(args, "--project="+projectID)
+	}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return nil, err
+	}
+
+	cluster := &Cluster{}
+	err = json.Unmarshal([]byte(output), cluster)
+	if err != nil {
+		return nil, err
+	}
+	return cluster, nil
+}
+
+// UpdateGkeClusterLabels updates labesl for a gke cluster
+func UpdateGkeClusterLabels(region string, projectID string, clusterName string, labels []string) error {
+	args := []string{"container", "clusters", "update", clusterName, "--region=" + region, "--quiet", "--update-labels=" + strings.Join(labels, ",") + ""}
+	if projectID != "" {
+		args = append(args, "--project="+projectID)
+	}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	return err
 }
 
 // DeleteServiceAccountKey deletes a service account key

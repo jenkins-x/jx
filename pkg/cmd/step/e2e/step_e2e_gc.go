@@ -1,22 +1,21 @@
 package e2e
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
+	"github.com/jenkins-x/jx/pkg/cmd/gc"
 	"github.com/jenkins-x/jx/pkg/cmd/get"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"os"
-	"strings"
-	"time"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // StepE2EGCOptions contains the command line flags
@@ -25,13 +24,6 @@ type StepE2EGCOptions struct {
 	ProjectID string
 	Region    string
 	Duration  int
-}
-
-// GkeCluster struct to represent a cluster on gcloud
-type GkeCluster struct {
-	Name           string            `json:"name,omitempty"`
-	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
-	Status         string            `json:"status,omitempty"`
 }
 
 var (
@@ -80,74 +72,118 @@ func (o *StepE2EGCOptions) Run() error {
 		return err
 	}
 	gkeSa := os.Getenv("GKE_SA_KEY_FILE")
-	if gkeSa == "" {
-		return errors.New("please set the GKE service account key via the environment variable GKE_SA_KEY_FILE")
+	if gkeSa != "" {
+		err = gke.Login(gkeSa, true)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = gke.Login(gkeSa, true)
+	clusters, err := gke.ListClusters(o.Region, o.ProjectID)
 	if err != nil {
 		return err
 	}
 
-	args := []string{"container", "clusters", "list", "--region=" + o.Region, "--format=json", "--quiet"}
-	if o.ProjectID != "" {
-		args = append(args, "--project="+o.ProjectID)
-	}
-	cmd := util.Command{
-		Name: "gcloud",
-		Args: args,
-	}
-	output, err := cmd.RunWithoutRetry()
-	if err != nil {
-		return err
-	}
-
-	clusters := make([]GkeCluster, 0)
-	err = json.Unmarshal([]byte(output), &clusters)
-	if err != nil {
-		return err
-	}
 	for _, cluster := range clusters {
 		if cluster.Status == "RUNNING" {
-			deleteCluster := false
 			// Marked for deletion
-			if deleteLabel, ok := cluster.ResourceLabels["delete-me"]; ok {
-				if deleteLabel == "true" {
-					deleteCluster = true
-				}
-			}
-			// TODO delete clusters for the same test run if one already exists
-			if branchLabel, ok := cluster.ResourceLabels["branch"]; ok {
-				if strings.Contains(branchLabel, "pr-") {
-					log.Logger().Debugf("Found cluster for branch %s", branchLabel)
-				}
-			}
-			// Older than 2 hours and not marked to be kept
-			if createdTime, ok := cluster.ResourceLabels["create-time"]; ok {
-				createdDate, err := time.Parse("Mon-Jan-2-2006-15-04-05", createdTime)
-				if err != nil {
-					log.Logger().Errorf("Error parsing date for cluster %s", createdTime)
-					log.Logger().Error(err)
-					continue
-				}
-				ttlExceededDate := createdDate.Add(time.Duration(o.Duration) * time.Hour)
-				now := time.Now()
-				if now.After(ttlExceededDate) {
-					if _, ok := cluster.ResourceLabels["keep-me"]; !ok {
-						deleteCluster = true
+			if !o.ShouldDeleteMarkedCluster(&cluster) {
+				// Older than duration in hours
+				if !o.ShouldDeleteOlderThanDuration(&cluster) {
+					// Delete build that has been replaced by a newer version
+					if o.ShouldDeleteDueToNewerRun(&cluster, clusters) {
+						o.deleteGkeCluster(&cluster)
 					}
+				} else {
+					o.deleteGkeCluster(&cluster)
 				}
-			}
-
-			if deleteCluster {
+			} else {
 				o.deleteGkeCluster(&cluster)
 			}
 		}
 	}
-	return nil
+	gkeGCOpts := gc.GCGKEOptions{
+		CommonOptions: &opts.CommonOptions{},
+	}
+	gkeGCOpts.Flags.ProjectID = o.ProjectID
+	gkeGCOpts.Flags.RunNow = true
+	return gkeGCOpts.Run()
 }
 
-func (o *StepE2EGCOptions) deleteGkeCluster(cluster *GkeCluster) {
+// GetBuildNumberFromCluster gets the build number from the cluster labels
+func (o *StepE2EGCOptions) GetBuildNumberFromCluster(cluster *gke.Cluster) (int, error) {
+	if branch, ok := cluster.ResourceLabels["branch"]; ok {
+		if clusterType, ok := cluster.ResourceLabels["cluster"]; ok {
+			buildNumStr := strings.Replace(strings.Replace(cluster.Name, branch+"-", "", -1), "-"+clusterType, "", -1)
+			return strconv.Atoi(buildNumStr)
+		}
+	}
+	return 0, errors.New("finding build number for cluster " + cluster.Name)
+
+}
+
+// ShouldDeleteMarkedCluster returns true if the cluster has a delete label
+func (o *StepE2EGCOptions) ShouldDeleteMarkedCluster(cluster *gke.Cluster) bool {
+	if deleteLabel, ok := cluster.ResourceLabels["delete-me"]; ok {
+		if deleteLabel == "true" {
+			return true
+		}
+	}
+	return false
+}
+
+// ShouldDeleteOlderThanDuration returns true if the cluster is older than the delete duration and does not have a keep label
+func (o *StepE2EGCOptions) ShouldDeleteOlderThanDuration(cluster *gke.Cluster) bool {
+	if createdTime, ok := cluster.ResourceLabels["create-time"]; ok {
+		createdDate, err := time.Parse("Mon-Jan-2-2006-15-04-05", createdTime)
+		if err != nil {
+			log.Logger().Errorf("Error parsing date for cluster %s", createdTime)
+			log.Logger().Error(err)
+		} else {
+			ttlExceededDate := createdDate.Add(time.Duration(o.Duration) * time.Hour)
+			now := time.Now().UTC()
+			if now.After(ttlExceededDate) {
+				if _, ok := cluster.ResourceLabels["keep-me"]; !ok {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// ShouldDeleteDueToNewerRun returns true if a cluster with a higher build number exists
+func (o *StepE2EGCOptions) ShouldDeleteDueToNewerRun(cluster *gke.Cluster, clusters []gke.Cluster) bool {
+	if branchLabel, ok := cluster.ResourceLabels["branch"]; ok {
+		if strings.Contains(branchLabel, "pr-") {
+			currentBuildNumber, err := o.GetBuildNumberFromCluster(cluster)
+			if err == nil {
+				if clusterType, ok := cluster.ResourceLabels["cluster"]; ok {
+					for _, existingCluster := range clusters {
+						// Check for same PR & Cluster type
+						if existingClusterType, ok := existingCluster.ResourceLabels["cluster"]; ok {
+							if strings.Contains(existingCluster.Name, branchLabel) && strings.Contains(existingClusterType, clusterType) {
+								existingBuildNumber, err := o.GetBuildNumberFromCluster(&existingCluster)
+								if err == nil {
+									// Delete the older build
+									if currentBuildNumber < existingBuildNumber {
+										if _, ok := cluster.ResourceLabels["keep-me"]; !ok {
+											return true
+										}
+										break
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (o *StepE2EGCOptions) deleteGkeCluster(cluster *gke.Cluster) {
 	deleteOptions := &deletecmd.DeleteGkeOptions{
 		GetOptions: get.GetOptions{
 			CommonOptions: &opts.CommonOptions{},
