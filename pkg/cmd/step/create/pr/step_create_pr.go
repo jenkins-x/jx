@@ -302,8 +302,8 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRepoURL string, destRepo *gits.GitRepository, fromVersion string, toVersion string, component string) (string, *gits.PullRequestDetails, *v1.DependencyUpdate, []gits.GitReleaseAsset, error) {
 
 	var commitMessage, title, message strings.Builder
-	commitMessage.WriteString("chore(dependencies): update ")
-	title.WriteString("chore(dependencies): update ")
+	commitMessage.WriteString("chore(deps): bump ")
+	title.WriteString("chore(deps): bump ")
 	message.WriteString("Update ")
 	var update *v1.DependencyUpdate
 	var assets []gits.GitReleaseAsset
@@ -384,7 +384,7 @@ func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRe
 	}
 	message.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
 	return commitMessage.String(), &gits.PullRequestDetails{
-		BranchName: fmt.Sprintf("update-%s-version-%s", kind, string(uuid.NewUUID())),
+		BranchName: fmt.Sprintf("bump-%s-version-%s", kind, string(uuid.NewUUID())),
 		Title:      title.String(),
 		Message:    message.String(),
 	}, update, assets, nil

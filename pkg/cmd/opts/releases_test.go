@@ -65,12 +65,39 @@ update BRIE_VERSION to 1.2.4`, v1.DependencyUpdate{
 			},
 		}, &commonOpts)
 	})
+	t.Run("fullbump", func(t *testing.T) {
+		assertParseDependencyUpdateMessage(t, `chore(deps): bump https://github.com/pmuir/brie from 1.2.3 to 1.2.4
+
+update BRIE_VERSION to 1.2.4`, v1.DependencyUpdate{
+			DependencyUpdateDetails: v1.DependencyUpdateDetails{
+				Owner:       "pmuir",
+				Repo:        "brie",
+				ToVersion:   "1.2.4",
+				FromVersion: "1.2.3",
+				Host:        "github.com",
+			},
+		}, &commonOpts)
+	})
+	t.Run("simplebump", func(t *testing.T) {
+		assertParseDependencyUpdateMessage(t, `chore(deps): bump pmuir/brie from 1.2.3 to 1.2.4
+
+update BRIE_VERSION to 1.2.4`, v1.DependencyUpdate{
+			DependencyUpdateDetails: v1.DependencyUpdateDetails{
+				Owner:       "pmuir",
+				Repo:        "brie",
+				ToVersion:   "1.2.4",
+				FromVersion: "1.2.3",
+				Host:        "fake.git",
+			},
+		}, &commonOpts)
+	})
 
 }
 
 func assertParseDependencyUpdateMessage(t *testing.T, msg string, expected v1.DependencyUpdate, o *opts.CommonOptions) {
 	update, _, err := o.ParseDependencyUpdateMessage(msg, "https://fake.git/acme/cheese")
 	assert.NoError(t, err)
+	assert.NotNil(t, update)
 	assert.Equal(t, expected.Owner, update.Owner)
 	assert.Equal(t, expected.Repo, update.Repo)
 	assert.Equal(t, expected.ToVersion, update.ToVersion)
