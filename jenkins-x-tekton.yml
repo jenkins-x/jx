@@ -5,8 +5,23 @@ pipelineConfig:
       pipeline:
         agent:
           image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+        options:
+          containerOptions:
+            resources:
+              limits:
+                cpu: 4
+                memory: 6144Mi
+              requests:
+                cpu: 1
+                memory: 2048Mi
+            env:
+              - name: CODECOV_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    key: token
+                    name: codecov-token
         stages:
-          - name: ci
+          - name: build
             environment:
               - name: GIT_COMMITTER_EMAIL
                 value: jenkins-x@googlegroups.com
@@ -29,21 +44,6 @@ pipelineConfig:
                 value: tektone2e
               - name: VERSION_PREFIX
                 value: covered-
-            options:
-              containerOptions:
-                resources:
-                  limits:
-                    cpu: 4
-                    memory: 6144Mi
-                  requests:
-                    cpu: 1
-                    memory: 2048Mi
-                env:
-                  - name: CODECOV_TOKEN
-                    valueFrom:
-                      secretKeyRef:
-                        key: token
-                        name: codecov-token
 
             steps:
               - name: build-binary
@@ -72,6 +72,31 @@ pipelineConfig:
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=gcr.io/jenkinsxio/builder-go:covered-${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
+          - name: e2e-tests
+            environment:
+              - name: GIT_COMMITTER_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_NAME
+                value: jenkins-x-bot
+              - name: GIT_COMMITTER_NAME
+                value: jenkins-x-bot
+              - name: BASE_WORKSPACE
+                value: /workspace/source
+              - name: GOPROXY
+                value: http://jenkins-x-athens-proxy:80
+              - name: PARALLEL_BUILDS
+                value: "2"
+                # Build a binary that can emit coverage
+              - name: COVERED_BINARY
+                value: "true"
+              - name: CODECOV_NAME
+                value: tektone2e
+              - name: VERSION_PREFIX
+                value: covered-
+
+            steps:
               - name: tekton-e2e-tests
                 image: gcr.io/jenkinsxio/builder-go:covered-${inputs.params.version}
                 command: ./jx/bdd/tekton/ci.sh
