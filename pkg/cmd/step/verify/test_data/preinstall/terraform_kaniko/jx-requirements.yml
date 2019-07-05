@@ -1,4 +1,6 @@
 kaniko: true
 terraform: true
 secretStorage: local
-clusterName: my-cluster-name
+cluster:
+  clusterName: my-cluster-name
+  provider: gke

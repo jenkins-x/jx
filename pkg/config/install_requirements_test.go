@@ -23,7 +23,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	file := filepath.Join(dir, config.RequirementsConfigFileName)
 	requirements := config.NewRequirementsConfig()
 	requirements.SecretStorage = expectedSecretStorage
-	requirements.ClusterName = expectedClusterName
+	requirements.Cluster.ClusterName = expectedClusterName
 	requirements.Ingress.Domain = expectedDomain
 
 	err = requirements.SaveConfig(file)
@@ -34,7 +34,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	assert.FileExists(t, fileName)
 
 	assert.Equal(t, true, requirements.Kaniko, "requirements.Kaniko")
-	assert.Equal(t, expectedClusterName, requirements.ClusterName, "requirements.ClusterName")
+	assert.Equal(t, expectedClusterName, requirements.Cluster.ClusterName, "requirements.ClusterName")
 	assert.Equal(t, expectedSecretStorage, requirements.SecretStorage, "requirements.SecretStorage")
 	assert.Equal(t, expectedDomain, requirements.Ingress.Domain, "requirements.Domain")
 
@@ -45,7 +45,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	assert.FileExists(t, fileName)
 
 	assert.Equal(t, true, requirements.Kaniko, "requirements.Kaniko")
-	assert.Equal(t, expectedClusterName, requirements.ClusterName, "requirements.ClusterName")
+	assert.Equal(t, expectedClusterName, requirements.Cluster.ClusterName, "requirements.ClusterName")
 	assert.Equal(t, expectedSecretStorage, requirements.SecretStorage, "requirements.SecretStorage")
 	assert.Equal(t, expectedDomain, requirements.Ingress.Domain, "requirements.Domain")
 }

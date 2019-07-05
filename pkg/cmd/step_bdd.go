@@ -587,8 +587,8 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		return err
 	}
 	if exists {
-		if cluster.Name != requirements.ClusterName {
-			requirements.ClusterName = cluster.Name
+		if cluster.Name != requirements.Cluster.ClusterName {
+			requirements.Cluster.ClusterName = cluster.Name
 
 			// lets ensure that there's git repositories setup
 			o.ensureTestEnvironmentRepoSetup(requirements, "staging")
@@ -755,7 +755,7 @@ func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.Req
 		repo.Owner = o.InstallOptions.GitRepositoryOptions.Username
 	}
 	if repo.Repository == "" {
-		repo.Repository = naming.ToValidName("environment-" + requirements.ClusterName + "-" + envName)
+		repo.Repository = naming.ToValidName("environment-" + requirements.Cluster.ClusterName + "-" + envName)
 	}
 	if repo.GitKind == "" {
 		repo.GitKind = o.InstallOptions.GitRepositoryOptions.ServerKind

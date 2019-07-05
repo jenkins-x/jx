@@ -94,7 +94,7 @@ func (o *StepVerifyInstallOptions) Run() error {
 	provider := installValues[kube.KubeProvider]
 	if provider == "" {
 		log.Logger().Warnf("no %s in the ConfigMap %s. Has values %#v\n", kube.KubeProvider, kube.ConfigMapNameJXInstallConfig, installValues)
-		provider = requirements.Provider
+		provider = requirements.Cluster.Provider
 	}
 
 	if requirements.Kaniko {

@@ -330,8 +330,8 @@ func (o *StepHelmApplyOptions) Run() error {
 // DefaultEnvironments ensures we have valid values for environment owner and repository names.
 // if none are configured lets default them from smart defaults
 func DefaultEnvironments(c *config.RequirementsConfig, devGitInfo *gits.GitRepository) {
-	defaultOwner := c.EnvironmentGitOwner
-	clusterName := c.ClusterName
+	defaultOwner := c.Cluster.EnvironmentGitOwner
+	clusterName := c.Cluster.ClusterName
 	for i := range c.Environments {
 		env := &c.Environments[i]
 		if env.Key == kube.LabelValueDevEnvironment && devGitInfo != nil {
@@ -484,7 +484,7 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 }
 
 func (o *StepHelmApplyOptions) overwriteProviderValues(requirements *config.RequirementsConfig, requirementsFileName string, valuesData []byte, params chartutil.Values, providersValuesDir string) ([]byte, error) {
-	provider := requirements.Provider
+	provider := requirements.Cluster.Provider
 	if provider == "" {
 		log.Logger().Warnf("No provider in the requirements file %s\n", requirementsFileName)
 		return valuesData, nil

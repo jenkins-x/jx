@@ -133,7 +133,7 @@ func (o *StepCreateValuesOptions) Run() error {
 	}
 	if o.BasePath == "" {
 		if exists {
-			o.BasePath = string(requirements.ClusterName)
+			o.BasePath = string(requirements.Cluster.ClusterName)
 			log.Infof("defaulting to secret base path to the cluster name %s found from requirements file at %s\n", info(o.BasePath), info(fileName))
 		} else {
 			log.Warnf("there is no requirements file at %s\n", fileName)

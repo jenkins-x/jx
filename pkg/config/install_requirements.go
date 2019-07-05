@@ -49,12 +49,23 @@ type EnvironmentConfig struct {
 
 // IngressConfig contains dns specific requirements
 type IngressConfig struct {
+	// DNS is enabled
+	ExternalDNS bool `json:"externalDNS"`
 	// Domain to expose ingress endpoints
 	Domain string `json:"domain"`
 	// TLS enable automated TLS using certmanager
-	TLS bool `json:"tls"`
+	TLS TLSConfig `json:"tls"`
+}
+
+// TLSConfig contains TLS specific requirements
+type TLSConfig struct {
+	// TLS enabled
+	Enabled bool `json:"enabled"`
 	// Email address to register with services like LetsEncrypt
 	Email string `json:"email"`
+	// Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production
+	// server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/
+	Production bool `json:"production"`
 }
 
 // StorageEntryConfig contains dns specific requirements for a kind of storage
@@ -76,14 +87,10 @@ type StorageConfig struct {
 	Repository StorageEntryConfig `json:"repository"`
 }
 
-// RequirementsConfig contains the logical installation requirements
-type RequirementsConfig struct {
-	// Kaniko whether to enable kaniko for building docker images
-	Kaniko bool `json:"kaniko,omitempty"`
-	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
-	Terraform bool `json:"terraform,omitempty"`
-	// SecretStorage how should we store secrets for the cluster
-	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
+// ClusterConfig contains cluster specific requirements
+type ClusterConfig struct {
+	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
+	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// Provider the kubernetes provider (e.g. gke)
 	Provider string `json:"provider,omitempty"`
 	// ProjectID the cloud project ID e.g. on GCP
@@ -94,8 +101,18 @@ type RequirementsConfig struct {
 	Region string `json:"region,omitempty"`
 	// Zone the cloud zone being used
 	Zone string `json:"zone,omitempty"`
-	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
-	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
+}
+
+// RequirementsConfig contains the logical installation requirements
+type RequirementsConfig struct {
+	// Cluster contains cluster specific requirements
+	Cluster ClusterConfig `json:"cluster"`
+	// Kaniko whether to enable kaniko for building docker images
+	Kaniko bool `json:"kaniko,omitempty"`
+	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
+	Terraform bool `json:"terraform,omitempty"`
+	// SecretStorage how should we store secrets for the cluster
+	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
 	// Ingress contains ingress specific requirements
@@ -234,7 +251,7 @@ func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
 
 // IsCloudProvider returns true if the kubenretes provider is a cloud
 func (c *RequirementsConfig) IsCloudProvider() bool {
-	p := c.Provider
+	p := c.Cluster.Provider
 	return p == cloud.GKE || p == cloud.AKS || p == cloud.AWS || p == cloud.EKS || p == cloud.ALIBABA
 }
 

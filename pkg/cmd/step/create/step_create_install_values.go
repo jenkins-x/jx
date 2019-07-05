@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/util"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,18 +12,15 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
-	"k8s.io/client-go/kubernetes"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/mail"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -132,47 +131,55 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		}
 	}
 
-	domain := util.GetMapValueAsStringViaPath(values, "domain")
-	if domain == "" {
-		domain, err := o.discoverIngressDomain(values)
-		if err != nil {
-			return values, errors.Wrapf(err, "failed to discover the Ingress domain")
-		}
-		if domain == "" {
-			return values, fmt.Errorf("could not detect a domain. Pleae configure one at 'domain' in the init-values.yaml")
-		}
-		util.SetMapValueViaPath(values, "domain", domain)
-	}
-
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return values, errors.Wrapf(err, "failed to load Jenkins X requirements")
 	}
-	if o.Provider == "" {
-		o.Provider = requirements.Provider
-		if o.Provider == "" {
-			log.Logger().Warnf("No provider configured\n")
+
+	if requirements.Cluster.Provider == "" {
+		log.Logger().Warnf("No provider configured\n")
+	}
+
+	if requirements.Ingress.Domain == "" {
+		requirements.Ingress.Domain, err = o.discoverIngressDomain()
+		if err != nil {
+			return values, errors.Wrapf(err, "failed to discover the Ingress domain")
 		}
+	}
+
+	domain := util.GetMapValueAsStringViaPath(values, "domain")
+	if domain == "" {
+		util.SetMapValueViaPath(values, "domain", requirements.Ingress.Domain)
+	}
+
+	// if we're using GKE and folks have provided a domain, i.e. we're  not using the Jenkins X default nip.io
+	// then let's enable external dns automatically.
+	if !strings.Contains(requirements.Ingress.Domain, "nip.io") && requirements.Cluster.Provider == cloud.GKE {
+		log.Logger().Info("Using a custom domain and GKE so enabling external dns, you can also now enable TLS")
+		requirements.Ingress.ExternalDNS = true
+	} else {
+		log.Logger().Info("Disabling using external-dns as it currently only works on GKE and not nip.io domains")
+		requirements.Ingress.ExternalDNS = false
 	}
 
 	subDomain := "." + ns + "."
 
-	if requirements.Ingress.TLS {
-		if o.Provider != cloud.GKE {
+	// TLS uses cert-manager to ask LetsEncrypt for a signed certificate
+	if requirements.Ingress.TLS.Enabled {
+		if requirements.Cluster.Provider != cloud.GKE {
 			return values, errors.New("TLS is currently only supported on Google Container Engine")
 		}
 
-		if strings.Contains(o.Domain, "nip.io") {
+		if strings.Contains(requirements.Ingress.Domain, "nip.io") {
 			return values, errors.New("TLS is not supported with nip.io, you will need to use a domain you own")
 		}
 
-		_, err = mail.ParseAddress(requirements.Ingress.Email)
+		_, err = mail.ParseAddress(requirements.Ingress.TLS.Email)
 		if err != nil {
 			return values, errors.Wrap(err, "You must provide a valid email address to enable TLS so you can receive notifications from LetsEncrypt about your certificates")
 		}
 
 		util.SetMapValueViaPath(values, "tls", true)
-		util.SetMapValueViaPath(values, "external-dns", true)
 		// for wildcard certs to work using dns we need to use `-` and not `.`
 		subDomain = "-" + ns + "."
 	}
@@ -184,13 +191,18 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 
 	projectID := util.GetMapValueAsStringViaPath(values, "projectID")
 	if projectID == "" {
-		util.SetMapValueViaPath(values, "projectID", requirements.ProjectID)
+		util.SetMapValueViaPath(values, "projectID", requirements.Cluster.ProjectID)
+	}
+
+	requirements.SaveConfig(requirementsFileName)
+	if err != nil {
+		return values, nil
 	}
 
 	return values, nil
 }
 
-func (o *StepCreateInstallValuesOptions) discoverIngressDomain(values map[string]interface{}) (string, error) {
+func (o *StepCreateInstallValuesOptions) discoverIngressDomain() (string, error) {
 	client, err := o.KubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "getting the kubernetes client")
@@ -203,7 +215,7 @@ func (o *StepCreateInstallValuesOptions) discoverIngressDomain(values map[string
 		return requirements.Ingress.Domain, nil
 	}
 	if o.Provider == "" {
-		o.Provider = requirements.Provider
+		o.Provider = requirements.Cluster.Provider
 		if o.Provider == "" {
 			log.Logger().Warnf("No provider configured\n")
 		}
