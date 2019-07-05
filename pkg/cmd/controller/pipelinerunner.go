@@ -59,6 +59,8 @@ type PipelineRunnerOptions struct {
 	UseMetaPipeline      bool
 	MetaPipelineImage    string
 	SemanticRelease      bool
+	noApply              bool
+	outDir               string
 }
 
 // PipelineRunRequest the request to trigger a pipeline run
@@ -340,6 +342,8 @@ func (o *PipelineRunnerOptions) buildStepCreateTaskOption(prowJobSpec prowapi.Pr
 	createTaskOption.Branch = branch
 	createTaskOption.Revision = revision
 	createTaskOption.ServiceAccount = o.ServiceAccount
+	createTaskOption.NoApply = o.noApply
+	createTaskOption.OutDir = o.outDir
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range pipelineRun.Labels {
 		createTaskOption.CustomLabels = append(createTaskOption.CustomLabels, fmt.Sprintf("%s=%s", key, value))
@@ -371,7 +375,8 @@ func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(pipelineRun Pipeli
 
 	createPipelineOption.ServiceAccount = o.ServiceAccount
 	createPipelineOption.DefaultImage = o.MetaPipelineImage
-
+	createPipelineOption.NoApply = o.noApply
+	createPipelineOption.OutDir = o.outDir
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range pipelineRun.Labels {
 		createPipelineOption.CustomLabels = append(createPipelineOption.CustomLabels, fmt.Sprintf("%s=%s", key, value))

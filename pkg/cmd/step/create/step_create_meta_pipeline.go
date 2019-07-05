@@ -2,6 +2,8 @@ package create
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -17,9 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"strings"
-	"time"
 
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -111,19 +110,7 @@ func NewCmdCreateMetaPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.OutDir, outputOptionName, "o", "out", "Used in conjunction with --no-apply to determine the directory into which to write the output")
 
 	options.AddCommonFlags(cmd)
-	options.setupViper(cmd)
 	return cmd
-}
-
-func (o *StepCreatePipelineOptions) setupViper(cmd *cobra.Command) {
-	replacer := strings.NewReplacer("-", "_")
-	viper.SetEnvKeyReplacer(replacer)
-
-	_ = viper.BindEnv(noApplyOptionName)
-	_ = viper.BindPFlag(noApplyOptionName, cmd.Flags().Lookup(noApplyOptionName))
-
-	_ = viper.BindEnv(outputOptionName)
-	_ = viper.BindPFlag(outputOptionName, cmd.Flags().Lookup(outputOptionName))
 }
 
 // Run implements this command
@@ -239,8 +226,8 @@ func (o *StepCreatePipelineOptions) handleResult(tektonClient tektonclient.Inter
 	gitInfo *gits.GitRepository) error {
 
 	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branch, gitInfo, &pullRefs, tekton.MetaPipeline)
-	if viper.GetBool(noApplyOptionName) {
-		err := tektonCRDs.WriteToDisk(viper.GetString(outputOptionName), pipelineActivity)
+	if o.NoApply {
+		err := tektonCRDs.WriteToDisk(o.OutDir, pipelineActivity)
 		if err != nil {
 			return errors.Wrapf(err, "failed to output Tekton CRDs")
 		}

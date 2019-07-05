@@ -79,19 +79,12 @@ var _ = Describe("Pipeline Runner Integration", func() {
 		testOutDir, err = ioutil.TempDir("", "jx-pipelinerunner-tests")
 		Expect(err).Should(BeNil())
 
-		err = os.Setenv("OUTPUT", testOutDir)
-		Expect(err).Should(BeNil())
-		err = os.Setenv("NO_APPLY", "true")
-		Expect(err).Should(BeNil())
-
 		port, _ = getFreePort()
 	})
 
 	AfterEach(func() {
 		cancel()
 		_ = os.RemoveAll(testOutDir)
-		_ = os.Unsetenv("OUTPUT")
-		_ = os.Unsetenv("NO_APPLY")
 	})
 
 	Describe("when running in meta pipeline mode", func() {
@@ -106,6 +99,8 @@ var _ = Describe("Pipeline Runner Integration", func() {
 				Port:                 port,
 				NoGitCredentialsInit: true,
 				UseMetaPipeline:      true,
+				noApply:              true,
+				outDir:               testOutDir,
 			}
 
 			go func() {
@@ -169,6 +164,8 @@ var _ = Describe("Pipeline Runner Integration", func() {
 				BindAddress:          "0.0.0.0",
 				Port:                 port,
 				NoGitCredentialsInit: true,
+				noApply:              true,
+				outDir:               testOutDir,
 			}
 
 			go func() {

@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -162,19 +161,7 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
 
 	options.AddCommonFlags(cmd)
-	options.setupViper(cmd)
 	return cmd, options
-}
-
-func (o *StepCreateTaskOptions) setupViper(cmd *cobra.Command) {
-	replacer := strings.NewReplacer("-", "_")
-	viper.SetEnvKeyReplacer(replacer)
-
-	_ = viper.BindEnv(noApplyOptionName)
-	_ = viper.BindPFlag(noApplyOptionName, cmd.Flags().Lookup(noApplyOptionName))
-
-	_ = viper.BindEnv(outputOptionName)
-	_ = viper.BindPFlag(outputOptionName, cmd.Flags().Lookup(outputOptionName))
 }
 
 // AddCommonFlags adds common CLI options
@@ -311,9 +298,9 @@ func (o *StepCreateTaskOptions) Run() error {
 		return o.interpretPipeline(ns, effectiveProjectConfig, tektonCRDs)
 	}
 
-	if viper.GetBool(noApplyOptionName) || o.DryRun {
+	if o.NoApply || o.DryRun {
 		log.Logger().Infof("Writing output ")
-		err := tektonCRDs.WriteToDisk(viper.GetString(outputOptionName), nil)
+		err := tektonCRDs.WriteToDisk(o.OutDir, nil)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
@@ -390,7 +377,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		}
 	}
 
-	if viper.GetBool(noApplyOptionName) || o.DryRun || o.InterpretMode {
+	if o.NoApply || o.DryRun || o.InterpretMode {
 		o.BuildNumber = "1"
 	} else {
 		log.Logger().Debugf("generating build number...")
