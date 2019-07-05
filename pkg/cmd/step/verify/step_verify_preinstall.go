@@ -2,8 +2,7 @@ package verify
 
 import (
 	"fmt"
-	"strings"
-
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/factory"
@@ -21,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"strings"
 )
 
 // StepVerifyPreInstallOptions contains the command line flags
@@ -131,7 +131,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
-	err = o.verifyInstallConfig(kubeClient, ns, requirements)
+	err = o.verifyInstallConfig(kubeClient, ns, requirements, requirementsFileName)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	if requirements.Kaniko {
-		if requirements.Provider == cloud.GKE {
+		if requirements.Cluster.Provider == cloud.GKE {
 			log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
 
 			err = o.validateKaniko(ns)
@@ -189,11 +189,10 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 	io.CommonOptions = o.CommonOptions
 	io.Flags.Kaniko = true
 	io.Flags.Namespace = ns
-	io.Flags.Provider = requirements.Provider
+	io.Flags.Provider = requirements.Cluster.Provider
 	io.SetInstallValues(map[string]string{
-		kube.ClusterName: requirements.ClusterName,
-		kube.ProjectID:   requirements.ProjectID,
-		kube.Domain:      requirements.Ingress.Domain,
+		kube.ClusterName: requirements.Cluster.ClusterName,
+		kube.ProjectID:   requirements.Cluster.ProjectID,
 	})
 	err := io.ConfigureKaniko()
 	if err != nil {
@@ -207,7 +206,7 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 }
 
 // verifyInstallConfig lets ensure we modify the install ConfigMap with the requirements
-func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig) error {
+func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig, requirementsFileName string) error {
 	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
 		func(configMap *corev1.ConfigMap) error {
 			secretsLocation := string(secrets.FileSystemLocationKind)
@@ -215,10 +214,85 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 				secretsLocation = string(secrets.VaultLocationKind)
 			}
 
-			modifyMapIfNotBlank(configMap.Data, kube.KubeProvider, requirements.Provider)
-			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.ProjectID)
-			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.ClusterName)
-			modifyMapIfNotBlank(configMap.Data, kube.Domain, requirements.Ingress.Domain)
+			if o.BatchMode {
+				msg := "please specify '%s' in jx-requirements when running  in  batch mode"
+				if requirements.Cluster.Provider == "" {
+					return errors.Errorf(msg, "provider")
+				}
+				if requirements.Cluster.ProjectID == "" {
+					return errors.Errorf(msg, "project")
+				}
+				if requirements.Cluster.Zone == "" {
+					return errors.Errorf(msg, "zone")
+				}
+				if requirements.Cluster.EnvironmentGitOwner == "" {
+					return errors.Errorf(msg, "environmentGitOwner")
+				}
+				if requirements.Cluster.ClusterName == "" {
+					log.Logger().Warnf("no clusterName provided")
+					return errors.Errorf(msg, "environmentGitOwner")
+				}
+			}
+			var err error
+			if requirements.Cluster.Provider == "" {
+				requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.In, o.Out, o.Err)
+				if err != nil {
+					return errors.Wrap(err, "selecting Kubernetes provider")
+				}
+			}
+
+			if requirements.Cluster.Provider == cloud.GKE {
+				if requirements.Cluster.ProjectID == "" {
+					requirements.Cluster.ProjectID, err = o.GetGoogleProjectId()
+				}
+				if requirements.Cluster.Zone == "" {
+					requirements.Cluster.Zone, err = o.GetGoogleZone(requirements.Cluster.ProjectID)
+					if err != nil {
+						return errors.Wrap(err, "getting GKE Zone")
+					}
+				}
+				if requirements.Cluster.ClusterName == "" {
+					defaultClusterName := strings.ToLower(randomdata.SillyName())
+					requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", defaultClusterName, true,
+						"The name for your cluster", o.In, o.Out, o.Err)
+					if err != nil {
+						return errors.Wrap(err, "getting GKE Zone")
+					}
+				}
+			} else {
+				// lets check we want to try installation as we've only tested on GKE at the moment
+				confirmed := util.Confirm("jx boot has only be validated on GKE, we'd love feedback and contributions for other Kubernetes providers",
+					true, "", o.In, o.Out, o.Err)
+				if !confirmed {
+					return nil
+				}
+			}
+
+			if requirements.Cluster.EnvironmentGitOwner == "" {
+				requirements.Cluster.EnvironmentGitOwner, err = util.PickValue(
+					"Git Owner name for environment repositories",
+					"",
+					true,
+					"Jenkins X leverages GitOps to track and control what gets deployed into environments.  This "+
+						"requires a Git repository per environment.  This question is asking for the Git Owner where these"+
+						"repositories will live",
+					o.In, o.Out, o.Err)
+				if err != nil {
+					return errors.Wrap(err, "getting GKE Zone")
+				}
+			}
+
+			requirements.Cluster.ClusterName = strings.ToLower(requirements.Cluster.ClusterName)
+			requirements.Cluster.EnvironmentGitOwner = strings.ToLower(requirements.Cluster.EnvironmentGitOwner)
+
+			requirements.SaveConfig(requirementsFileName)
+			if err != nil {
+				return err
+			}
+
+			modifyMapIfNotBlank(configMap.Data, kube.KubeProvider, requirements.Cluster.Provider)
+			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.Cluster.ProjectID)
+			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.Cluster.ClusterName)
 			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
 			return nil
 		}, nil)
@@ -248,7 +322,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 }
 
 func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.RequirementsConfig, requirementsFileName string, storageEntryConfig *config.StorageEntryConfig, name string) error {
-	kubeProvider := requirements.Provider
+	kubeProvider := requirements.Cluster.Provider
 	if !storageEntryConfig.Enabled {
 		if requirements.IsCloudProvider() {
 			log.Logger().Warnf("Your requirements have not enabled cloud storage for %s - we recommend enabling this for kubernetes provider %s\n", name, kubeProvider)
@@ -281,7 +355,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 				log.Logger().Warnf("long term storage for %s will be disabled until you provide an existing bucket URL\n", name)
 				return nil
 			}
-			safeClusterName := naming.ToValidName(requirements.ClusterName)
+			safeClusterName := naming.ToValidName(requirements.Cluster.ClusterName)
 			safeName := naming.ToValidName(name)
 			value, err = provider.CreateNewBucketForCluster(safeClusterName, safeName)
 			if err != nil {

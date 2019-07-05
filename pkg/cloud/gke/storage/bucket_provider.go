@@ -34,7 +34,7 @@ func (b *GKEBucketProvider) CreateNewBucketForCluster(clusterName string, bucket
 }
 
 func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
-	project := b.Requirements.ProjectID
+	project := b.Requirements.Cluster.ProjectID
 	if project == "" {
 		return fmt.Errorf("Requirements do not specify a project")
 	}
@@ -54,7 +54,7 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 
 	infoBucketURL := util.ColorInfo(bucketURL)
 	log.Logger().Infof("The bucket %s does not exist so lets create it", infoBucketURL)
-	region := gke.GetRegionFromZone(b.Requirements.Zone)
+	region := gke.GetRegionFromZone(b.Requirements.Cluster.Zone)
 	err = gke.CreateBucket(project, bucketName, region)
 	gke.AddBucketLabel(bucketName, gke.UserLabel())
 	if err != nil {

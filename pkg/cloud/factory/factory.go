@@ -9,7 +9,7 @@ import (
 
 // NewBucketProvider creates a new provider for kubeernetes provider
 func NewBucketProvider(requirements *config.RequirementsConfig) buckets.Provider {
-	switch requirements.Provider {
+	switch requirements.Cluster.Provider {
 	case cloud.GKE:
 		return storage.NewGKEBucketProvider(requirements)
 	default:

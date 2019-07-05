@@ -1,13 +1,13 @@
-package create_test
+package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -32,7 +32,7 @@ func TestCreateInstallValues(t *testing.T) {
 	err = util.CopyDir(testData, outputDir, true)
 	require.NoError(t, err, "failed to copy test data into temp dir")
 
-	o := &create.StepCreateInstallValuesOptions{
+	o := &StepCreateInstallValuesOptions{
 		StepOptions: opts.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
@@ -92,6 +92,142 @@ func TestCreateInstallValues(t *testing.T) {
 
 	AssertMapPathValueAsString(t, values, "namespaceSubDomain", ".jx.")
 	AssertMapPathValueAsString(t, values, "domain", expectedDomain)
+}
+
+func TestExternalDNSDisabledDomainNotOwned(t *testing.T) {
+	t.Parallel()
+
+	commonOpts := opts.CommonOptions{
+		BatchMode: false,
+	}
+	o := StepCreateInstallValuesOptions{
+		StepOptions: opts.StepOptions{
+			CommonOptions: &commonOpts,
+		},
+	}
+
+	dir, err := ioutil.TempDir("", "test-requirements-external-")
+	assert.NoError(t, err, "should create a temporary config dir")
+
+	o.Dir = dir
+	file := filepath.Join(o.Dir, config.RequirementsConfigFileName)
+	requirements := getBaseRequirements()
+
+	// using nip.io on gke should disable the use of external dns as we cannot transfer domain ownership to google dns
+	requirements.Ingress.Domain = "34.76.24.247.nip.io"
+	requirements.Cluster.Provider = "gke"
+
+	err = requirements.SaveConfig(file)
+	assert.NoError(t, err, "failed to save file %s", file)
+
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	values := make(map[string]interface{})
+	_, err = o.defaultMissingValues(values)
+
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+
+	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	assert.Equal(t, false, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
+
+}
+
+func TestExternalDNSDisabledNotGKE(t *testing.T) {
+	t.Parallel()
+
+	commonOpts := opts.CommonOptions{
+		BatchMode: false,
+	}
+	o := StepCreateInstallValuesOptions{
+		StepOptions: opts.StepOptions{
+			CommonOptions: &commonOpts,
+		},
+	}
+
+	dir, err := ioutil.TempDir("", "test-requirements-external-")
+	assert.NoError(t, err, "should create a temporary config dir")
+
+	o.Dir = dir
+	file := filepath.Join(o.Dir, config.RequirementsConfigFileName)
+	requirements := getBaseRequirements()
+
+	// using nip.io on gke should disable the use of external dns as we cannot transfer domain ownership to google dns
+	requirements.Ingress.Domain = "foobar.com"
+	requirements.Cluster.Provider = "aws"
+
+	err = requirements.SaveConfig(file)
+	assert.NoError(t, err, "failed to save file %s", file)
+
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	values := make(map[string]interface{})
+	_, err = o.defaultMissingValues(values)
+
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+
+	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	assert.Equal(t, false, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
+
+}
+
+func TestExternalDNSEnabledCustomDomain(t *testing.T) {
+	t.Parallel()
+
+	commonOpts := opts.CommonOptions{
+		BatchMode: false,
+	}
+	o := StepCreateInstallValuesOptions{
+		StepOptions: opts.StepOptions{
+			CommonOptions: &commonOpts,
+		},
+	}
+
+	dir, err := ioutil.TempDir("", "test-requirements-external-")
+	assert.NoError(t, err, "should create a temporary config dir")
+
+	o.Dir = dir
+	file := filepath.Join(o.Dir, config.RequirementsConfigFileName)
+	requirements := getBaseRequirements()
+	requirements.Ingress.Domain = "foobar.io"
+	requirements.Cluster.Provider = "gke"
+
+	err = requirements.SaveConfig(file)
+	assert.NoError(t, err, "failed to save file %s", file)
+
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	values := make(map[string]interface{})
+	_, err = o.defaultMissingValues(values)
+
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+
+	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	assert.Equal(t, true, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
+
+}
+
+func getBaseRequirements() *config.RequirementsConfig {
+	requirements := config.NewRequirementsConfig()
+	requirements.Cluster.ProjectID = "test-project"
+	requirements.Cluster.ClusterName = "test-cluster"
+	requirements.Cluster.EnvironmentGitOwner = "test-org"
+	requirements.Cluster.Zone = "test-zone"
+	return requirements
 }
 
 func AssertMapPathValueAsString(t *testing.T, values map[string]interface{}, path string, expected string) {

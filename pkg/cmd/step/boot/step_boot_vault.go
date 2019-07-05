@@ -106,23 +106,23 @@ func (o *StepBootVaultOptions) Run() error {
 	}
 	cvo.SetDevNamespace(ns)
 
-	provider := requirements.Provider
+	provider := requirements.Cluster.Provider
 	if provider == cloud.GKE {
 		if cvo.GKEProjectID == "" {
-			cvo.GKEProjectID = requirements.ProjectID
+			cvo.GKEProjectID = requirements.Cluster.ProjectID
 		}
 		if cvo.GKEProjectID == "" {
 			return config.MissingRequirement("project", requirementsFile)
 		}
 
 		if cvo.GKEZone == "" {
-			cvo.GKEZone = requirements.Zone
+			cvo.GKEZone = requirements.Cluster.Zone
 		}
 		if cvo.GKEZone == "" {
 			return config.MissingRequirement("zone", requirementsFile)
 		}
 	} else if provider == cloud.AWS || provider == cloud.EKS {
-		defaultRegion := requirements.Region
+		defaultRegion := requirements.Cluster.Region
 		if cvo.DynamoDBRegion == "" {
 			cvo.DynamoDBRegion = defaultRegion
 			log.Logger().Infof("Region not specified for DynamoDB, defaulting to %s", util.ColorInfo(defaultRegion))

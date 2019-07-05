@@ -203,12 +203,12 @@ func (o *BootOptions) Run() error {
 }
 
 func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig, requirementsFile string) error {
-	provider := requirements.Provider
+	provider := requirements.Cluster.Provider
 	if provider == "" {
 		return config.MissingRequirement("provider", requirementsFile)
 	}
 	if provider == "" {
-		if requirements.ProjectID == "" {
+		if requirements.Cluster.ProjectID == "" {
 			return config.MissingRequirement("project", requirementsFile)
 		}
 	}

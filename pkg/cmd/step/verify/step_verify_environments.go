@@ -147,7 +147,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(requirements *con
 
 	_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
 	if err != nil {
-		return fmt.Errorf("failed to create git repository for gitURL %s", gitURL)
+		return errors.Wrapf(err, "failed to create git repository for gitURL %s", gitURL)
 	}
 	return nil
 }
@@ -157,7 +157,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelpValues(requirements
 	domain := requirements.Ingress.Domain
 	useHTTP := "true"
 	tlsAcme := ""
-	if requirements.Ingress.TLS {
+	if requirements.Ingress.TLS.Enabled {
 		useHTTP = "false"
 		tlsAcme = "true"
 	}
