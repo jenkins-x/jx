@@ -152,7 +152,8 @@ func (o *CreateQuickstartOptions) Run() error {
 	}
 
 	var details *gits.CreateRepoData
-
+	o.GitRepositoryOptions.Owner = o.ImportOptions.Organisation
+	o.GitRepositoryOptions.RepoName = o.ImportOptions.Repository
 	if !o.BatchMode {
 		details, err = o.GetGitRepositoryDetails()
 		if err != nil {
