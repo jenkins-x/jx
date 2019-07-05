@@ -32,6 +32,12 @@ pipelinerunner:
     XDG_CONFIG_HOME: "/home/jenkins"
     MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
     CODECOV_TOKEN: $CODECOV_TOKEN
+  args:
+    - "controller"
+    - "pipelinerunner"
+    - "--use-meta-pipeline"
+    - "--meta-pipeline-image"
+    - "docker.io/jenkinsxio/builder-maven:$VERSION"
 
 # Override the prow image
 image:

@@ -119,7 +119,7 @@ func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Comma
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
 
 	// TODO - temporary flags until meta pipeline is the default
-	cmd.Flags().BoolVarP(&options.UseMetaPipeline, "use-meta-pipeline", "", true, "Uses the meta pipeline to create the pipeline.")
+	cmd.Flags().BoolVarP(&options.UseMetaPipeline, "use-meta-pipeline", "", false, "Uses the meta pipeline to create the pipeline.")
 	cmd.Flags().StringVar(&options.MetaPipelineImage, "meta-pipeline-image", "", "Specify the docker image to use if there is no image specified for a step.")
 	return cmd
 }
