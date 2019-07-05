@@ -3,6 +3,7 @@ package metapipeline
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/prow"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -256,6 +257,14 @@ func determineDefaultStepImage(defaultImage string) string {
 func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 
+	// TODO: Temporary hack.
+	cct := os.Getenv("CODECOV_TOKEN")
+	if cct != "" {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "CODECOV_TOKEN",
+			Value: cct,
+		})
+	}
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "JX_LOG_FORMAT",
 		Value: "json",
