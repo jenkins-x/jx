@@ -35,11 +35,11 @@ var _ = Describe("Meta pipeline", func() {
 
 		BeforeEach(func() {
 			gitInfo, _ := gits.NewGitFake().Info("/acme")
-			pullRef, _ := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815")
+			pullRef, _ := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815,42:db8e2d275df53477b1c6871f7d7f4281dacf3169")
 
 			testParams = CRDCreationParameters{
 				PipelineName:     "test-pipeline",
-				PipelineKind:     "release",
+				PipelineKind:     "pullrequest",
 				BranchIdentifier: "master",
 				PullRef:          *pullRef,
 				Trigger:          "manual",
@@ -82,12 +82,12 @@ var _ = Describe("Meta pipeline", func() {
 			It("merge pull refs step passes correct pull ref", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
 				mergePullRefStep := steps[1]
-				Expect(mergePullRefStep.Args).Should(Equal([]string{"jx step git merge --baseBranch master --baseSHA 0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815"}))
+				Expect(mergePullRefStep.Args).Should(Equal([]string{"jx step git merge --baseBranch master --baseSHA 0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815 --sha db8e2d275df53477b1c6871f7d7f4281dacf3169"}))
 			})
 
 			It("should have correct step create task args", func() {
 				step := actualCRDs.Tasks()[0].Spec.Steps[3]
-				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --kind release --trigger manual --service-account tekton-bot --source source --branch master --label someLabel=someValue --env SOME_VAR=SOME_VAL"}))
+				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --kind pullrequest --pr-number 42 --trigger manual --service-account tekton-bot --source source --branch master --label someLabel=someValue --env SOME_VAR=SOME_VAL"}))
 			})
 		})
 
@@ -170,6 +170,36 @@ var _ = Describe("Meta pipeline", func() {
 				Expect(steps[2].Name).Should(Equal(createEffectivePipelineStepName))
 				Expect(steps[3].Name).Should(Equal("acme-ext"))
 				Expect(steps[4].Name).Should(Equal(createTektonCRDsStepName))
+			})
+		})
+
+		Context("with no SHAs to merge (only baseBranch)", func() {
+			JustBeforeEach(func() {
+				pullRef, err := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815")
+				Expect(err).Should(BeNil())
+				testParams.PullRef = *pullRef
+				actualCRDs, actualStdout, actualError = createMetaPipeline(testParams)
+			})
+
+			It("merge pull refs step passes correct pull ref", func() {
+				steps := actualCRDs.Tasks()[0].Spec.Steps
+				mergePullRefStep := steps[1]
+				Expect(mergePullRefStep.Args[0]).Should(ContainSubstring("SKIP merge-pull-refs: Nothing to merge"))
+			})
+		})
+
+		Context("with no SHAs to merge (baseBranch & baseSHA)", func() {
+			JustBeforeEach(func() {
+				pullRef, err := prow.ParsePullRefs("master:")
+				Expect(err).Should(BeNil())
+				testParams.PullRef = *pullRef
+				actualCRDs, actualStdout, actualError = createMetaPipeline(testParams)
+			})
+
+			It("merge pull refs step passes correct pull ref", func() {
+				steps := actualCRDs.Tasks()[0].Spec.Steps
+				mergePullRefStep := steps[1]
+				Expect(mergePullRefStep.Args[0]).Should(ContainSubstring("SKIP merge-pull-refs: Nothing to merge"))
 			})
 		})
 	})
