@@ -33,3 +33,7 @@ pipelinerunner:
     MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
     CODECOV_TOKEN: $CODECOV_TOKEN
 
+# Override the prow image
+image:
+  repository: gcr.io/abayer-jx-experiment/prow
+  tag: v20190705-891d910be
