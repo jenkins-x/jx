@@ -11,8 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jpillora/longestcommon"
-
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -298,11 +296,27 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 
 				gha.Head = headPrefix + existingBranchName
 				// work out the minimal similar title
-				gha.Title = longestcommon.Prefix([]string{pr.Title, prDetails.Title})
-				if len(gha.Title) <= len("chore(dependencies): update ") {
-					gha.Title = "chore(dependencies): update dependency versions"
+				if strings.HasPrefix(pr.Title, "chore(deps): bump ") {
+					origWords := strings.Split(pr.Title, " ")
+					newWords := strings.Split(pr.Title, " ")
+					answer := make([]string, 0)
+					for i, w := range newWords {
+						if len(origWords) > i && origWords[i] == w {
+							answer = append(answer, w)
+						}
+					}
+					if answer[len(answer)-1] == "bump" {
+						// if there are no similarities in the actual dependency, then add a generic form of words
+						answer = append(answer, "dependency", "versions")
+					}
+					if answer[len(answer)-1] == "to" || answer[len(answer)-1] == "from" {
+						// remove trailing prepositions
+						answer = answer[:len(answer)-2]
+					}
+					gha.Title = strings.Join(answer, " ")
+				} else {
+					gha.Title = prDetails.Title
 				}
-				gha.Title = strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(gha.Title), " to"), " from")
 				gha.Body = fmt.Sprintf("%s\n<hr />\n\n%s", prDetails.Message, pr.Body)
 
 				pr, err := provider.UpdatePullRequest(gha, *pr.Number)
