@@ -41,6 +41,9 @@ const (
 	// readyPath URL path for the HTTP endpoint that returns ready status.
 	readyPath = "/ready"
 
+	// jobLabel is the label name used to identify the Prow job within PipelineRunRequest.Labels
+	jobLabel = "prowJobName"
+
 	shutdownTimeout = 5
 )
 
@@ -259,7 +262,7 @@ func (o *PipelineRunnerOptions) startPipeline(pipelineRun PipelineRunRequest) (P
 
 	prowJobSpec := pipelineRun.ProwJobSpec
 	if prowJobSpec.Refs == nil {
-		return response, errors.New(fmt.Sprintf("no prowJobSpec.refs passed in so cannot determine git repository: %s", util.PrettyPrint(pipelineRun)))
+		return response, errors.New(fmt.Sprintf("no prowJobSpec.refs passed: %s", util.PrettyPrint(pipelineRun)))
 	}
 
 	// Only if there is one Pull in Refs, it's a PR build so we are going to pass it
@@ -294,7 +297,11 @@ func (o *PipelineRunnerOptions) startPipeline(pipelineRun PipelineRunRequest) (P
 
 	results := PipelineRunResponse{}
 	if o.UseMetaPipeline {
-		pipelineCreateOption := o.buildStepCreatePipelineOption(prowJobSpec, prNumber, sourceURL, revision, branch, pipelineRun, envs)
+		pipelineCreateOption, err := o.buildStepCreatePipelineOption(pipelineRun, prNumber, sourceURL, revision, branch, envs)
+		if err != nil {
+			return response, errors.Wrap(err, "error creating options for creating meta pipeline")
+		}
+
 		err = pipelineCreateOption.Run()
 		if err != nil {
 			return response, errors.Wrap(err, "error triggering the pipeline run")
@@ -345,8 +352,14 @@ func (o *PipelineRunnerOptions) buildStepCreateTaskOption(prowJobSpec prowapi.Pr
 	return createTaskOption
 }
 
-func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(prowJobSpec prowapi.ProwJobSpec, prNumber string, sourceURL string, revision string, branch string, pipelineRun PipelineRunRequest, envs map[string]string) *create.StepCreatePipelineOptions {
+func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(pipelineRun PipelineRunRequest, prNumber string, sourceURL string, revision string, branch string, envs map[string]string) (*create.StepCreatePipelineOptions, error) {
+	prowJobSpec := pipelineRun.ProwJobSpec
 	pullRefs := o.getPullRefs(prowJobSpec)
+
+	job := pipelineRun.Labels[jobLabel]
+	if job == "" {
+		return nil, errors.Errorf("unable to find prow job name in pipeline request: %s", util.PrettyPrint(pipelineRun))
+	}
 
 	createPipelineOption := &create.StepCreatePipelineOptions{}
 	c := *o.CommonOptions
@@ -354,7 +367,7 @@ func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(prowJobSpec prowap
 	createPipelineOption.SourceURL = sourceURL
 	createPipelineOption.PullRefs = pullRefs.String()
 	createPipelineOption.Context = prowJobSpec.Context
-	createPipelineOption.Job = prowJobSpec.Job
+	createPipelineOption.Job = job
 
 	createPipelineOption.ServiceAccount = o.ServiceAccount
 	createPipelineOption.DefaultImage = o.MetaPipelineImage
@@ -368,7 +381,7 @@ func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(prowJobSpec prowap
 		createPipelineOption.CustomEnvs = append(createPipelineOption.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	return createPipelineOption
+	return createPipelineOption, nil
 }
 
 func (o *PipelineRunnerOptions) marshalPayload(payload interface{}) ([]byte, error) {
