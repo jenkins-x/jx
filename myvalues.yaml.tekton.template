@@ -36,8 +36,6 @@ pipelinerunner:
     - "controller"
     - "pipelinerunner"
     - "--use-meta-pipeline"
-    - "--meta-pipeline-image"
-    - "docker.io/jenkinsxio/builder-maven:$VERSION"
 
 # Override the prow image
 image:

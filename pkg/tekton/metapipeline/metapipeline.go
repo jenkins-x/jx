@@ -251,7 +251,8 @@ func determineDefaultStepImage(defaultImage string) string {
 		return defaultImage
 	}
 
-	return syntax.DefaultContainerImage
+	// TODO: Temporary hack to make sure we pick up the pod template we've built.
+	return "maven"
 }
 
 func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
