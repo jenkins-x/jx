@@ -76,7 +76,7 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		return nil, err
 	}
 
-	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, &params.GitInfo, params.PullRef.BaseSha)}
+	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, &params.GitInfo, params.PullRef.BaseBranch)}
 	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.Trigger, params.ServiceAccount, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
@@ -169,6 +169,12 @@ func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
 }
 
 func stepMergePullRefs(pullRefs prow.PullRefs) syntax.Step {
+	// we only need to run the merge step in case there is anything to merge
+	// Tekton has at this stage the base branch already checked out
+	if len(pullRefs.ToMerge) == 0 {
+		return stepSkip(mergePullRefsStepName, "Nothing to merge")
+	}
+
 	args := []string{"--baseBranch", pullRefs.BaseBranch, "--baseSHA", pullRefs.BaseSha}
 	for _, mergeSha := range pullRefs.ToMerge {
 		args = append(args, "--sha", mergeSha)
@@ -224,6 +230,17 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 		Comment:   "Pipeline step to create the Tekton CRDs for the actual pipeline run",
 		Command:   "jx step create task",
 		Arguments: args,
+	}
+	return step
+}
+
+func stepSkip(stepName string, msg string) syntax.Step {
+	skipMsg := fmt.Sprintf("SKIP %s: %s", stepName, msg)
+	step := syntax.Step{
+		Name:      stepName,
+		Comment:   skipMsg,
+		Command:   "echo",
+		Arguments: []string{fmt.Sprintf("'%s'", skipMsg)},
 	}
 	return step
 }
