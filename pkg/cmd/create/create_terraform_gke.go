@@ -204,8 +204,8 @@ func (g *GKECluster) ParseTfVarsFile(path string) {
 	g.EnableVault = b
 }
 
-// CreateTerraformGKEFlags for a cluster
-type CreateTerraformGKEFlags struct {
+// TerraformGKEFlags for a cluster
+type TerraformGKEFlags struct {
 	OrganisationName            string
 	ClusterName                 string
 	SkipLogin                   bool
@@ -217,8 +217,8 @@ type CreateTerraformGKEFlags struct {
 	LocalOrganisationRepository string
 }
 
-// CreateTerraformOptions the options for the create spring command
-type CreateTerraformGKEOptions struct {
+// TerraformGKEOptions the options for the create spring command
+type TerraformGKEOptions struct {
 	CreateClusterGKEOptions
 	Flags   Flags
 	Cluster Cluster
@@ -255,7 +255,7 @@ const (
 
 // NewCmdCreateTerraform creates a command object for the "create" command
 func NewCmdCreateTerraformGKE(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &CreateTerraformGKEOptions{
+	options := &TerraformGKEOptions{
 		CreateClusterGKEOptions: CreateClusterGKEOptions{
 			CreateClusterOptions: CreateClusterOptions{
 				CreateOptions: CreateOptions{
@@ -302,7 +302,7 @@ func NewCmdCreateTerraformGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func (options *CreateTerraformGKEOptions) addFlags(cmd *cobra.Command, addSharedFlags bool) {
+func (options *TerraformGKEOptions) addFlags(cmd *cobra.Command, addSharedFlags bool) {
 	// global flags
 	if addSharedFlags {
 		cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
@@ -340,7 +340,7 @@ func stringInValidProviders(a string) bool {
 }
 
 // Run implements this command
-func (options *CreateTerraformGKEOptions) Run() error {
+func (options *TerraformGKEOptions) Run() error {
 	err := options.InstallRequirements(cloud.GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
@@ -390,7 +390,7 @@ func (options *CreateTerraformGKEOptions) Run() error {
 }
 
 // ClusterDetailsWizard cluster details wizard
-func (options *CreateTerraformGKEOptions) ClusterDetailsWizard() error {
+func (options *TerraformGKEOptions) ClusterDetailsWizard() error {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 
 	jxEnvironment := ""
@@ -427,7 +427,7 @@ func (options *CreateTerraformGKEOptions) ClusterDetailsWizard() error {
 	return nil
 }
 
-func (options *CreateTerraformGKEOptions) createOrganisationGitRepo() error {
+func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 	organisationDir, err := util.OrganisationsDir()
 	if err != nil {
 		return err
@@ -585,7 +585,7 @@ func (options *CreateTerraformGKEOptions) createOrganisationGitRepo() error {
 }
 
 // CreateOrganisationFolderStructure creates an organisations folder structure
-func (options *CreateTerraformGKEOptions) CreateOrganisationFolderStructure(dir string) ([]Cluster, error) {
+func (options *TerraformGKEOptions) CreateOrganisationFolderStructure(dir string) ([]Cluster, error) {
 	options.writeGitIgnoreFile(dir)
 
 	clusterDefinitions := []Cluster{}
@@ -632,7 +632,7 @@ func (options *CreateTerraformGKEOptions) CreateOrganisationFolderStructure(dir 
 	return clusterDefinitions, nil
 }
 
-func (options *CreateTerraformGKEOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
+func (options *TerraformGKEOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
 	log.Logger().Infof("Creating/Updating %v clusters", util.ColorInfo(len(clusterDefinitions)))
 	for _, c := range clusterDefinitions {
 		switch v := c.(type) {
@@ -651,7 +651,7 @@ func (options *CreateTerraformGKEOptions) createClusters(dir string, clusterDefi
 	return nil
 }
 
-func (options *CreateTerraformGKEOptions) findDevCluster(clusterDefinitions []Cluster) (Cluster, error) {
+func (options *TerraformGKEOptions) findDevCluster(clusterDefinitions []Cluster) (Cluster, error) {
 	for _, c := range clusterDefinitions {
 		if c.Name() == options.Flags.JxEnvironment {
 			return c, nil
@@ -660,7 +660,7 @@ func (options *CreateTerraformGKEOptions) findDevCluster(clusterDefinitions []Cl
 	return nil, fmt.Errorf("unable to find jx environment %s", options.Flags.JxEnvironment)
 }
 
-func (options *CreateTerraformGKEOptions) writeGitIgnoreFile(dir string) error {
+func (options *TerraformGKEOptions) writeGitIgnoreFile(dir string) error {
 	gitignore := filepath.Join(dir, ".gitignore")
 	if _, err := os.Stat(gitignore); os.IsNotExist(err) {
 		file, err := os.OpenFile(gitignore, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
@@ -677,7 +677,7 @@ func (options *CreateTerraformGKEOptions) writeGitIgnoreFile(dir string) error {
 	return nil
 }
 
-func (options *CreateTerraformGKEOptions) commitClusters(dir string) (bool, error) {
+func (options *TerraformGKEOptions) commitClusters(dir string) (bool, error) {
 	err := options.Git().Add(dir, "*")
 	if err != nil {
 		return false, err
@@ -692,7 +692,7 @@ func (options *CreateTerraformGKEOptions) commitClusters(dir string) (bool, erro
 	return false, nil
 }
 
-func (options *CreateTerraformGKEOptions) configureGKECluster(g *GKECluster, path string) error {
+func (options *TerraformGKEOptions) configureGKECluster(g *GKECluster, path string) error {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	g.DiskSize = options.Flags.GKEDiskSize
 	g.AutoUpgrade = options.Flags.GKEAutoUpgrade
@@ -921,7 +921,7 @@ func (options *CreateTerraformGKEOptions) configureGKECluster(g *GKECluster, pat
 	return nil
 }
 
-func (options *CreateTerraformGKEOptions) applyTerraformGKE(g *GKECluster, path string) error {
+func (options *TerraformGKEOptions) applyTerraformGKE(g *GKECluster, path string) error {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	if g.ProjectID == "" {
 		return errors.New("Unable to apply terraform, projectId has not been set")
@@ -1039,7 +1039,7 @@ func (options *CreateTerraformGKEOptions) applyTerraformGKE(g *GKECluster, path 
 }
 
 // asks to chose from existing projects or optionally creates one if none exist
-func (options *CreateTerraformGKEOptions) getGoogleProjectID() (string, error) {
+func (options *TerraformGKEOptions) getGoogleProjectID() (string, error) {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	existingProjects, err := gke.GetGoogleProjects()
 	if err != nil {
@@ -1087,7 +1087,7 @@ func (options *CreateTerraformGKEOptions) getGoogleProjectID() (string, error) {
 	return projectID, nil
 }
 
-func (options *CreateTerraformGKEOptions) installJx(c Cluster, clusters []Cluster) error {
+func (options *TerraformGKEOptions) installJx(c Cluster, clusters []Cluster) error {
 	log.Logger().Infof("Installing jx on cluster %s with context %s", util.ColorInfo(c.Name()), util.ColorInfo(c.Context()))
 
 	err := options.RunCommand("kubectl", "config", "use-context", c.Context())
@@ -1143,7 +1143,7 @@ func (options *CreateTerraformGKEOptions) installJx(c Cluster, clusters []Cluste
 	return nil
 }
 
-func (options *CreateTerraformGKEOptions) initAndInstall(provider string) error {
+func (options *TerraformGKEOptions) initAndInstall(provider string) error {
 	// call jx init
 	options.InstallOptions.BatchMode = options.BatchMode
 	options.InstallOptions.Flags.Provider = provider
@@ -1158,7 +1158,7 @@ func (options *CreateTerraformGKEOptions) initAndInstall(provider string) error 
 	return nil
 }
 
-func (options *CreateTerraformGKEOptions) configureEnvironments(clusters []Cluster) error {
+func (options *TerraformGKEOptions) configureEnvironments(clusters []Cluster) error {
 
 	for index, cluster := range clusters {
 		if cluster.Name() != options.Flags.JxEnvironment {
