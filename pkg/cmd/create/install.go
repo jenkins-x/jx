@@ -1321,7 +1321,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 }
 
 func (options *InstallOptions) configureGitAuth() error {
-	log.Logger().Infof("\nSet up a Git username and API token to be able to perform CI/CD")
+	log.Logger().Infof("Set up a Git username and API token to be able to perform CI/CD")
 	gitUsername := options.GitRepositoryOptions.Username
 	gitServer := options.GitRepositoryOptions.ServerURL
 	gitAPIToken := options.GitRepositoryOptions.ApiToken
@@ -2251,6 +2251,8 @@ func (options *InstallOptions) ConfigureKaniko() error {
 		serviceAccountName := naming.ToValidNameTruncated(fmt.Sprintf("%s-ko", clusterName), 30)
 		log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 
+		log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
+
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
 		if err != nil {
 			return errors.Wrap(err, "creating the service account")
@@ -2262,6 +2264,7 @@ func (options *InstallOptions) ConfigureKaniko() error {
 		}
 
 		options.AdminSecretsService.Flags.KanikoSecret = string(serviceAccount)
+
 	}
 	return nil
 }
