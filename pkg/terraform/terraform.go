@@ -56,15 +56,13 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string) 
 	return out, nil
 }
 
-func Output(terraformDir string, terraformVars string, serviceAccountPath string, output string) (string, error) {
-	log.Logger().Debugf("Extracting terrafrom output %s", output)
+// Output displays a terraform output from the local terraform.tfstate
+func Output(output string) (string, error) {
+	log.Logger().Debugf("Extracting terraform output %s", output)
 	cmd := util.Command{
 		Name: "terraform",
-		Args: []string{"plan",
-			fmt.Sprintf("-var-file=%s", terraformVars),
-			"-var",
-			fmt.Sprintf("credentials=%s", serviceAccountPath),
-			terraformDir},
+		Args: []string{"output",
+			output},
 	}
 	out, err := cmd.RunWithoutRetry()
 	if err != nil {
