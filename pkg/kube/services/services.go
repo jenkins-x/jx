@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -182,6 +183,14 @@ func GetServiceURL(svc *v1.Service) string {
 		}
 	}
 	return url
+}
+
+func FindServiceSchemePort(client kubernetes.Interface, namespace string, name string) (string, string, error) {
+	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
+	if err != nil {
+		return "", "", errors.Wrapf(err, "failed to find service %s in namespace %s", name, namespace)
+	}
+	return ExtractServiceSchemePort(svc)
 }
 
 func GetServiceURLFromName(c kubernetes.Interface, name, ns string) (string, error) {
@@ -440,4 +449,57 @@ func CleanServiceAnnotations(c kubernetes.Interface, ns string, services ...stri
 		}
 	}
 	return nil
+}
+
+func ExtractServiceSchemePort(svc *v1.Service) (string, string, error) {
+	scheme := ""
+	port := ""
+
+	found := false
+
+	// Search in order of degrading priority
+	for _, p := range svc.Spec.Ports {
+		if p.Port == 443 { // Prefer 443/https if found
+			scheme = "https"
+			port = "443"
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		for _, p := range svc.Spec.Ports {
+			if p.Port == 80 { // Use 80/http if found
+				scheme = "http"
+				port = "80"
+				found = true
+			}
+		}
+	}
+
+	if !found { // No conventional ports, so search for named https ports
+		for _, p := range svc.Spec.Ports {
+			if p.Protocol == "TCP" {
+				if p.Name == "https" {
+					scheme = "https"
+					port = strconv.FormatInt(int64(p.Port), 10)
+					found = true
+					break
+				}
+			}
+		}
+	}
+
+	if !found { // No conventional ports, so search for named http ports
+		for _, p := range svc.Spec.Ports {
+			if p.Name == "http" {
+				scheme = "http"
+				port = strconv.FormatInt(int64(p.Port), 10)
+				found = true
+				break
+			}
+		}
+	}
+
+	return scheme, port, nil
 }
