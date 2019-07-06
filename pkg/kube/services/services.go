@@ -185,6 +185,7 @@ func GetServiceURL(svc *v1.Service) string {
 	return url
 }
 
+// FindServiceSchemePort parses the service definition and interprets http scheme in the absence of an external ingress
 func FindServiceSchemePort(client kubernetes.Interface, namespace string, name string) (string, string, error) {
 	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
@@ -451,6 +452,7 @@ func CleanServiceAnnotations(c kubernetes.Interface, ns string, services ...stri
 	return nil
 }
 
+// ExtractServiceSchemePort is a utility function to interpret http scheme and port information from k8s service definitions
 func ExtractServiceSchemePort(svc *v1.Service) (string, string, error) {
 	scheme := ""
 	port := ""
