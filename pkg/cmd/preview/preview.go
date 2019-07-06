@@ -25,7 +25,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -618,7 +618,7 @@ func (o *PreviewOptions) Run() error {
 	if err != nil {
 		log.Logger().Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s", o.GitInfo.Organisation, o.GitInfo.Name, err)
 	}
-	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build)
+	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build, o.Application)
 }
 
 // findPreviewURL finds the preview URL
@@ -644,16 +644,39 @@ func (o *PreviewOptions) findPreviewURL(kubeClient kubernetes.Interface, kserveC
 }
 
 // RunPostPreviewSteps lets run any post-preview steps that are configured for all apps in a team
-func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns string, url string, pipeline string, build string) error {
+func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns string, url string, pipeline string, build string, application string) error {
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
 		return err
 	}
-	envVars := map[string]string{
-		"JX_PREVIEW_URL": url,
-		"JX_PIPELINE":    pipeline,
-		"JX_BUILD":       build,
+
+	scheme, port, err := services.FindServiceSchemePort(kubeClient, ns, application)
+	if err != nil {
+		log.Logger().Warnf("Failed to find the service %s : %s", application, err)
 	}
+	internalURL := ""
+	if !(scheme == "" || port == "") {
+		internalURL = scheme + "://" + application + ":" + port // The service URL that is visible within the namespace scope
+	}
+	preferredURL := url
+	if url == "" {
+		preferredURL = internalURL // Set to external URL if an ingress was found, otherwise use the internal URL
+	}
+
+	envVars := map[string]string{
+		"JX_PREVIEW_URL":      preferredURL,
+		"JX_EXTERNAL_URL":     url,
+		"JX_INTERNAL_URL":     internalURL,
+		"JX_APPLICATION_NAME": application,
+		"JX_SCHEME":           scheme,
+		"JX_PORT":             port,
+		"JX_PIPELINE":         pipeline,
+		"JX_BUILD":            build,
+	}
+
+	// Note that post preview jobs need to allow for use cases where no HTTP-based services are published by a pod
+
+	// Post preview jobs should validate input and behave appropriately. Needs a selector to invoke only relevant PPJs?
 
 	jobs := teamSettings.PostPreviewJobs
 	jobResources := kubeClient.BatchV1().Jobs(ns)
