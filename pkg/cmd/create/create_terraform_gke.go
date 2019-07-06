@@ -8,6 +8,8 @@ import (
 
 	"fmt"
 
+	os_user "os/user"
+
 	"strconv"
 
 	"errors"
@@ -16,9 +18,11 @@ import (
 
 	"os"
 
+	"time"
+
 	"path"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -29,69 +33,243 @@ import (
 	"github.com/jenkins-x/jx/pkg/terraform"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
-// Flags for a cluster
-type Flags struct {
-	Cluster                     []string
-	ClusterName                 string // cannot be used in conjunction with Cluster
-	CloudProvider               string // cannot be used in conjunction with Cluster
+// Cluster interface for Clusters
+type Cluster interface {
+	Name() string
+	SetName(string) string
+	ClusterName() string
+	Provider() string
+	SetProvider(string) string
+	Context() string
+	CreateTfVarsFile(path string) error
+	Validate() error
+}
+
+// GKECluster implements Cluster interface for GKE
+type GKECluster struct {
+	name           string
+	provider       string
+	Organisation   string
+	ProjectID      string
+	Zone           string
+	MachineType    string
+	Preemptible    bool
+	MinNumOfNodes  string
+	MaxNumOfNodes  string
+	DiskSize       string
+	AutoRepair     bool
+	AutoUpgrade    bool
+	ServiceAccount string
+	DevStorageRole string
+	EnableKaniko   bool
+	EnableVault    bool
+}
+
+const (
+	devStorageFullControl = "https://www.googleapis.com/auth/devstorage.full_control"
+	devStorageReadOnly    = "https://www.googleapis.com/auth/devstorage.read_only"
+)
+
+// Name Get name
+func (g GKECluster) Name() string {
+	return g.name
+}
+
+// SetName Sets the name
+func (g *GKECluster) SetName(name string) string {
+	g.name = name
+	return g.name
+}
+
+// ClusterName get cluster name
+func (g GKECluster) ClusterName() string {
+	return fmt.Sprintf("%s-%s", g.Organisation, g.name)
+}
+
+// Provider get provider
+func (g GKECluster) Provider() string {
+	return g.provider
+}
+
+// SetProvider Set the provider
+func (g *GKECluster) SetProvider(provider string) string {
+	g.provider = provider
+	return g.provider
+}
+
+// Context Get the context
+func (g GKECluster) Context() string {
+	return fmt.Sprintf("%s_%s_%s_%s", "gke", g.ProjectID, g.Zone, g.ClusterName())
+}
+
+// Region Get the region
+func (g GKECluster) Region() string {
+	return gke.GetRegionFromZone(g.Zone)
+}
+
+type terraformFileWriter struct {
+	err error
+}
+
+func (tf *terraformFileWriter) write(path string, key string, value string) {
+	if tf.err != nil {
+		return
+	}
+	tf.err = terraform.WriteKeyValueToFileIfNotExists(path, key, value)
+}
+
+// Validate validates that all args are ok to create a GKE cluster
+func (g GKECluster) Validate() error {
+	if len(g.ClusterName()) >= 27 {
+		return errors.New("cluster name must not be longer than 27 characters - " + g.ClusterName())
+	}
+	return nil
+}
+
+// CreateTfVarsFile create vars
+func (g GKECluster) CreateTfVarsFile(path string) error {
+	user, err := os_user.Current()
+	var username string
+	if err != nil {
+		username = "unknown"
+	} else {
+		username = util.SanitizeLabel(user.Username)
+	}
+
+	tf := terraformFileWriter{}
+	tf.write(path, "created_by", username)
+	tf.write(path, "created_timestamp", time.Now().Format("20060102150405"))
+	tf.write(path, "cluster_name", g.ClusterName())
+	tf.write(path, "organisation", g.Organisation)
+	tf.write(path, "cloud_provider", g.provider)
+	tf.write(path, "gcp_zone", g.Zone)
+	tf.write(path, "gcp_region", g.Region())
+	tf.write(path, "gcp_project", g.ProjectID)
+	tf.write(path, "min_node_count", g.MinNumOfNodes)
+	tf.write(path, "max_node_count", g.MaxNumOfNodes)
+	tf.write(path, "node_machine_type", g.MachineType)
+	tf.write(path, "node_preemptible", strconv.FormatBool(g.Preemptible))
+	tf.write(path, "node_disk_size", g.DiskSize)
+	tf.write(path, "auto_repair", strconv.FormatBool(g.AutoRepair))
+	tf.write(path, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
+	tf.write(path, "enable_kubernetes_alpha", "false")
+	tf.write(path, "enable_legacy_abac", "false")
+	tf.write(path, "logging_service", "logging.googleapis.com")
+	tf.write(path, "monitoring_service", "monitoring.googleapis.com")
+	tf.write(path, "node_devstorage_role", g.DevStorageRole)
+	tf.write(path, "enable_kaniko", booleanAsInt(g.EnableKaniko))
+	tf.write(path, "enable_vault", booleanAsInt(g.EnableVault))
+
+	if tf.err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ParseTfVarsFile Parse vars file
+func (g *GKECluster) ParseTfVarsFile(path string) {
+	g.Zone, _ = terraform.ReadValueFromFile(path, "gcp_zone")
+	// no need to read region as it can be calculated
+	g.Organisation, _ = terraform.ReadValueFromFile(path, "organisation")
+	g.provider, _ = terraform.ReadValueFromFile(path, "cloud_provider")
+	g.ProjectID, _ = terraform.ReadValueFromFile(path, "gcp_project")
+	g.MinNumOfNodes, _ = terraform.ReadValueFromFile(path, "min_node_count")
+	g.MaxNumOfNodes, _ = terraform.ReadValueFromFile(path, "max_node_count")
+	g.MachineType, _ = terraform.ReadValueFromFile(path, "node_machine_type")
+	g.DiskSize, _ = terraform.ReadValueFromFile(path, "node_disk_size")
+	g.DevStorageRole, _ = terraform.ReadValueFromFile(path, "node_devstorage_role")
+
+	preemptible, _ := terraform.ReadValueFromFile(path, "node_preemptible")
+	b, _ := strconv.ParseBool(preemptible)
+	g.Preemptible = b
+
+	autoRepair, _ := terraform.ReadValueFromFile(path, "auto_repair")
+	b, _ = strconv.ParseBool(autoRepair)
+	g.AutoRepair = b
+
+	autoUpgrade, _ := terraform.ReadValueFromFile(path, "auto_upgrade")
+	b, _ = strconv.ParseBool(autoUpgrade)
+	g.AutoUpgrade = b
+
+	enableKaniko, _ := terraform.ReadValueFromFile(path, "enable_kaniko")
+	b, _ = strconv.ParseBool(enableKaniko)
+	g.EnableKaniko = b
+
+	enableVault, _ := terraform.ReadValueFromFile(path, "enable_vault")
+	b, _ = strconv.ParseBool(enableVault)
+	g.EnableVault = b
+}
+
+// CreateTerraformGKEFlags for a cluster
+type CreateTerraformGKEFlags struct {
 	OrganisationName            string
+	ClusterName                 string
 	SkipLogin                   bool
 	ForkOrganisationGitRepo     string
 	SkipTerraformApply          bool
 	NoActiveCluster             bool
 	IgnoreTerraformWarnings     bool
 	JxEnvironment               string
-	GKEProjectID                string
-	GKESkipEnableApis           bool
-	GKEZone                     string
-	GKEMachineType              string
-	GKEPreemptible              bool
-	GKEMinNumOfNodes            string
-	GKEMaxNumOfNodes            string
-	GKEDiskSize                 string
-	GKEAutoRepair               bool
-	GKEAutoUpgrade              bool
-	GKEServiceAccount           string
-	GKEUseEnhancedScopes        bool
-	GKEUseEnhancedApis          bool
 	LocalOrganisationRepository string
 }
 
 // CreateTerraformOptions the options for the create spring command
-type CreateTerraformOptions struct {
-	CreateOptions
-	InstallOptions InstallOptions
-	Flags          Flags
-	Clusters       []Cluster
+type CreateTerraformGKEOptions struct {
+	CreateClusterGKEOptions
+	Flags   Flags
+	Cluster Cluster
 }
 
 var (
-	createTerraformExample = templates.Examples(`
-		jx create terraform
+	validTerraformClusterProviders = []string{"gke", "jx-infra"}
+
+	createTerraformGKEExample = templates.Examples(`
+		jx create terraform gke
 
 		# to specify the clusters via flags
-		jx create terraform -c dev=gke -c stage=gke -c prod=gke
+		jx create terraform gke -o myorg -c dev 
 
 `)
 
+	gkeBucketConfiguration = `terraform {
+  required_version = ">= %s"
+  backend "gcs" {
+    bucket      = "%s-%s-terraform-state"
+    prefix      = "%s"
+  }
+}`
+)
+
+const (
+	// Clusters constant
+	Clusters = "clusters"
+	// Terraform constant
+	Terraform = "terraform"
+	// TerraformTemplatesGKE constant
+	TerraformTemplatesGKE = "https://github.com/jenkins-x/terraform-jx-templates-gke.git"
 )
 
 // NewCmdCreateTerraform creates a command object for the "create" command
-func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &CreateTerraformOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: commonOpts,
+func NewCmdCreateTerraformGKE(commonOpts *opts.CommonOptions) *cobra.Command {
+	options := &CreateTerraformGKEOptions{
+		CreateClusterGKEOptions: CreateClusterGKEOptions{
+			CreateClusterOptions: CreateClusterOptions{
+				CreateOptions: CreateOptions{
+					CommonOptions: commonOpts,
+				},
+				InstallOptions: CreateInstallOptions(commonOpts),
+			},
 		},
-		InstallOptions: CreateInstallOptions(commonOpts),
 	}
 
 	cmd := &cobra.Command{
-		Use:     "terraform",
-		Short:   "Creates a Jenkins X Terraform plan",
-		Example: createTerraformExample,
+		Use:     "gke",
+		Short:   "Creates a Jenkins X Terraform plan for GKE",
+		Example: createTerraformGKEExample,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := features.IsEnabled(cmd)
 			helper.CheckErr(err)
@@ -101,6 +279,7 @@ func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.InstallOptions.Flags.Tekton = true
 			options.InstallOptions.Flags.Prow = true
 			options.InstallOptions.InitOptions.Flags.NoTiller = true
+			options.InstallOptions.Flags.Provider = "gke"
 
 			err = options.InstallOptions.CheckFlags()
 			helper.CheckErr(err)
@@ -120,13 +299,10 @@ func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.GKEServiceAccount, "gke-service-account", "", "", "The service account to use to connect to GKE")
 	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation Git repos")
 
-	// add sub commands
-	cmd.AddCommand(NewCmdCreateTerraformGKE(commonOpts))
-
 	return cmd
 }
 
-func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFlags bool) {
+func (options *CreateTerraformGKEOptions) addFlags(cmd *cobra.Command, addSharedFlags bool) {
 	// global flags
 	if addSharedFlags {
 		cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
@@ -141,21 +317,30 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	cmd.Flags().BoolVarP(&options.Flags.NoActiveCluster, "no-active-cluster", "", false, "Tells JX there's isn't currently an active cluster, so we cannot use it for configuration")
 
 	// GKE specific overrides
-	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "gke-disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
-	cmd.Flags().BoolVarP(&options.Flags.GKEAutoUpgrade, "gke-enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
-	cmd.Flags().BoolVarP(&options.Flags.GKEAutoRepair, "gke-enable-autorepair", "", true, "Sets autorepair feature for a cluster's default node-pool(s)")
-	cmd.Flags().BoolVarP(&options.Flags.GKEPreemptible, "gke-preemptible", "", false, "Use preemptible VMs in the node-pool")
-	cmd.Flags().StringVarP(&options.Flags.GKEMachineType, "gke-machine-type", "", "", "The type of machine to use for nodes")
-	cmd.Flags().StringVarP(&options.Flags.GKEMinNumOfNodes, "gke-min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
-	cmd.Flags().StringVarP(&options.Flags.GKEMaxNumOfNodes, "gke-max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	cmd.Flags().StringVarP(&options.Flags.GKEProjectID, "gke-project-id", "", "", "Google Project ID to create cluster in")
-	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
-	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedScopes, "gke-use-enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
-	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedApis, "gke-use-enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
+	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
+	cmd.Flags().BoolVarP(&options.Flags.GKEAutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
+	cmd.Flags().BoolVarP(&options.Flags.GKEAutoRepair, "enable-autorepair", "", true, "Sets autorepair feature for a cluster's default node-pool(s)")
+	cmd.Flags().BoolVarP(&options.Flags.GKEPreemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
+	cmd.Flags().StringVarP(&options.Flags.GKEMachineType, "machine-type", "", "", "The type of machine to use for nodes")
+	cmd.Flags().StringVarP(&options.Flags.GKEMinNumOfNodes, "min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.GKEMaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.GKEProjectID, "project-id", "", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.GKEZone, "zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
+	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedScopes, "use-enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
+	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedApis, "use-enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
+}
+
+func stringInValidProviders(a string) bool {
+	for _, b := range validTerraformClusterProviders {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 // Run implements this command
-func (options *CreateTerraformOptions) Run() error {
+func (options *CreateTerraformGKEOptions) Run() error {
 	err := options.InstallRequirements(cloud.GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
@@ -168,22 +353,20 @@ func (options *CreateTerraformOptions) Run() error {
 		}
 	}
 
+	log.Logger().Debugf("Checking terraform version")
 	err = terraform.CheckVersion()
 	if err != nil {
 		return err
 	}
 
+	log.Logger().Debugf("Validating git configuration")
 	err = options.InstallOptions.InitOptions.ValidateGit()
 	if err != nil {
 		return err
 	}
 
-	err = options.ValidateClusterDetails()
-	if err != nil {
-		return err
-	}
-
-	if len(options.Clusters) == 0 {
+	if options.Cluster == nil {
+		log.Logger().Debugf("Launching cluster details wizard")
 		err := options.ClusterDetailsWizard()
 		if err != nil {
 			return err
@@ -198,6 +381,7 @@ func (options *CreateTerraformOptions) Run() error {
 	}
 
 	options.InstallOptions.Owner = options.InstallOptions.Flags.EnvironmentGitOwner
+	log.Logger().Debugf("Creating organisation git repository")
 	err = options.createOrganisationGitRepo()
 	if err != nil {
 		return err
@@ -206,108 +390,44 @@ func (options *CreateTerraformOptions) Run() error {
 }
 
 // ClusterDetailsWizard cluster details wizard
-func (options *CreateTerraformOptions) ClusterDetailsWizard() error {
+func (options *CreateTerraformGKEOptions) ClusterDetailsWizard() error {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
-	var numOfClusters int
-	numOfClustersStr := "1"
-	prompts := &survey.Input{
-		Message: fmt.Sprintf("How many clusters shall we create?"),
-		Default: numOfClustersStr,
-	}
-
-	err := survey.AskOne(prompts, &numOfClustersStr, nil, surveyOpts)
-	if err != nil {
-		return err
-	}
-	numOfClusters, err = strconv.Atoi(numOfClustersStr)
-	if err != nil {
-		return err
-	}
 
 	jxEnvironment := ""
 
-	for i := 1; i <= numOfClusters; i++ {
-		var name string
-		var provider string
+	var name string
+	provider := cloud.GKE
+	defaultOption := "dev"
 
-		defaultOption := ""
-		if i == 1 {
-			defaultOption = "dev"
-		}
-		prompts := &survey.Input{
-			Message: fmt.Sprintf("Cluster %v name:", i),
-			Default: defaultOption,
-		}
-		validator := survey.Required
-		err := survey.AskOne(prompts, &name, validator, surveyOpts)
-		if err != nil {
-			return err
-		}
-
-		prompts = &survey.Input{
-			Message: fmt.Sprintf("Cluster %v provider:", i),
-			Default: "gke",
-		}
-		validator = survey.Validator(
-			func(val interface{}) error {
-				if str, ok := val.(string); !ok || !stringInValidProviders(str) {
-					return fmt.Errorf("invalid cluster provider type %s, must be one of %v", str, validTerraformClusterProviders)
-				}
-				return nil
-			},
-		)
-		err = survey.AskOne(prompts, &provider, validator, surveyOpts)
-		if err != nil {
-			return err
-		}
-
-		if jxEnvironment == "" {
-			confirm := false
-			prompt := &survey.Confirm{
-				Message: fmt.Sprintf("Would you like to install Jenkins X in cluster %v", name),
-				Default: true,
-			}
-			survey.AskOne(prompt, &confirm, nil, surveyOpts)
-
-			if confirm {
-				jxEnvironment = name
-			}
-		}
-		c := &GKECluster{name: name, provider: provider}
-
-		options.Clusters = append(options.Clusters, c)
+	prompts := &survey.Input{
+		Message: "Cluster name:",
+		Default: defaultOption,
+	}
+	validator := survey.Required
+	err := survey.AskOne(prompts, &name, validator, surveyOpts)
+	if err != nil {
+		return err
 	}
 
+	if jxEnvironment == "" {
+		confirm := false
+		prompt := &survey.Confirm{
+			Message: fmt.Sprintf("Would you like to install Jenkins X in cluster %v", name),
+			Default: true,
+		}
+		survey.AskOne(prompt, &confirm, nil, surveyOpts)
+
+		if confirm {
+			jxEnvironment = name
+		}
+	}
+	options.Cluster = &GKECluster{name: name, provider: provider}
 	options.Flags.JxEnvironment = jxEnvironment
 
 	return nil
 }
 
-// ValidateClusterDetails validates the options for a cluster
-func (options *CreateTerraformOptions) ValidateClusterDetails() error {
-	if len(options.Flags.Cluster) > 0 {
-		if options.Flags.ClusterName != "" || options.Flags.CloudProvider != "" {
-			return fmt.Errorf("--%s cannot be used in conjunction with --%s or --%s", optionCluster, optionClusterName, optionCloudProvider)
-		}
-		for _, p := range options.Flags.Cluster {
-			pair := strings.Split(p, "=")
-			if len(pair) != 2 {
-				return fmt.Errorf("need to provide cluster values as --%s name=provider, e.g. --%s production=gke", optionCluster, optionCluster)
-			}
-			if !stringInValidProviders(pair[1]) {
-				return fmt.Errorf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders)
-			}
-
-			c := &GKECluster{name: pair[0], provider: pair[1]}
-			options.Clusters = append(options.Clusters, c)
-		}
-	} else if options.Flags.ClusterName != "" || options.Flags.CloudProvider != "" {
-		options.Clusters = []Cluster{&GKECluster{name: options.Flags.ClusterName, provider: options.Flags.CloudProvider}}
-	}
-	return nil
-}
-
-func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
+func (options *CreateTerraformGKEOptions) createOrganisationGitRepo() error {
 	organisationDir, err := util.OrganisationsDir()
 	if err != nil {
 		return err
@@ -465,78 +585,54 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 }
 
 // CreateOrganisationFolderStructure creates an organisations folder structure
-func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir string) ([]Cluster, error) {
+func (options *CreateTerraformGKEOptions) CreateOrganisationFolderStructure(dir string) ([]Cluster, error) {
 	options.writeGitIgnoreFile(dir)
 
 	clusterDefinitions := []Cluster{}
 
-	for _, c := range options.Clusters {
-		log.Logger().Infof("Creating config for cluster %s\n", util.ColorInfo(c.Name()))
+	c := options.Cluster
 
-		path := filepath.Join(dir, Clusters, c.Name(), Terraform)
-		exists, err := util.FileExists(path)
+	log.Logger().Infof("Creating config for cluster %s", util.ColorInfo(c.Name()))
+
+	path := filepath.Join(dir, Clusters, c.Name(), Terraform)
+	exists, err := util.FileExists(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check if existing folder exists for path %s: %v", path, err)
+	}
+
+	if !exists {
+		log.Logger().Debugf("cluster %s does not exist, creating...", c.Name())
+
+		os.MkdirAll(path, util.DefaultWritePermissions)
+
+		options.Git().Clone(TerraformTemplatesGKE, path)
+		g := c.(*GKECluster)
+		//g := &GKECluster{}
+
+		err := options.configureGKECluster(g, path)
 		if err != nil {
-			return nil, fmt.Errorf("unable to check if existing folder exists for path %s: %v", path, err)
+			return nil, err
 		}
+		clusterDefinitions = append(clusterDefinitions, g)
 
-		if !exists {
-			log.Logger().Debugf("cluster %s does not exist, creating...", c.Name())
+		os.RemoveAll(filepath.Join(path, ".git"))
+		os.RemoveAll(filepath.Join(path, ".gitignore"))
+	} else {
+		// if the directory already exists, try to load its config
+		log.Logger().Debugf("cluster %s already exists, loading...", c.Name())
 
-			os.MkdirAll(path, util.DefaultWritePermissions)
+		g := c.(*GKECluster)
+		terraformVars := filepath.Join(path, "terraform.tfvars")
+		log.Logger().Infof("loading config from %s", util.ColorInfo(terraformVars))
 
-			switch c.Provider() {
-			case "gke", "jx-infra":
-				options.Git().Clone(TerraformTemplatesGKE, path)
-				g := c.(*GKECluster)
-				//g := &GKECluster{}
-
-				err := options.configureGKECluster(g, path)
-				if err != nil {
-					return nil, err
-				}
-				clusterDefinitions = append(clusterDefinitions, g)
-
-			case "aks":
-				// TODO add aks terraform templates URL
-				return nil, fmt.Errorf("creating an AKS cluster via Terraform is not currently supported")
-			case "eks":
-				// TODO add eks terraform templates URL
-				return nil, fmt.Errorf("creating an EKS cluster via Terraform is not currently supported")
-			default:
-				return nil, fmt.Errorf("unknown Kubernetes provider type '%s' must be one of %v", c.Provider(), validTerraformClusterProviders)
-			}
-			os.RemoveAll(filepath.Join(path, ".git"))
-			os.RemoveAll(filepath.Join(path, ".gitignore"))
-		} else {
-			// if the directory already exists, try to load its config
-			log.Logger().Debugf("cluster %s already exists, loading...", c.Name())
-
-			switch c.Provider() {
-			case "gke", "jx-infra":
-				//g := &GKECluster{}
-				g := c.(*GKECluster)
-				terraformVars := filepath.Join(path, "terraform.tfvars")
-				log.Logger().Infof("loading config from %s", util.ColorInfo(terraformVars))
-
-				g.ParseTfVarsFile(terraformVars)
-				clusterDefinitions = append(clusterDefinitions, g)
-
-			case "aks":
-				// TODO add aks terraform templates URL
-				return nil, fmt.Errorf("creating an AKS cluster via Terraform is not currently supported")
-			case "eks":
-				// TODO add eks terraform templates URL
-				return nil, fmt.Errorf("creating an EKS cluster via Terraform is not currently supported")
-			default:
-				return nil, fmt.Errorf("unknown Kubernetes provider type %s must be one of %v", c.Provider(), validTerraformClusterProviders)
-			}
-		}
+		g.ParseTfVarsFile(terraformVars)
+		clusterDefinitions = append(clusterDefinitions, g)
 	}
 
 	return clusterDefinitions, nil
 }
 
-func (options *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
+func (options *CreateTerraformGKEOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
 	log.Logger().Infof("Creating/Updating %v clusters", util.ColorInfo(len(clusterDefinitions)))
 	for _, c := range clusterDefinitions {
 		switch v := c.(type) {
@@ -555,7 +651,7 @@ func (options *CreateTerraformOptions) createClusters(dir string, clusterDefinit
 	return nil
 }
 
-func (options *CreateTerraformOptions) findDevCluster(clusterDefinitions []Cluster) (Cluster, error) {
+func (options *CreateTerraformGKEOptions) findDevCluster(clusterDefinitions []Cluster) (Cluster, error) {
 	for _, c := range clusterDefinitions {
 		if c.Name() == options.Flags.JxEnvironment {
 			return c, nil
@@ -564,7 +660,7 @@ func (options *CreateTerraformOptions) findDevCluster(clusterDefinitions []Clust
 	return nil, fmt.Errorf("unable to find jx environment %s", options.Flags.JxEnvironment)
 }
 
-func (options *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
+func (options *CreateTerraformGKEOptions) writeGitIgnoreFile(dir string) error {
 	gitignore := filepath.Join(dir, ".gitignore")
 	if _, err := os.Stat(gitignore); os.IsNotExist(err) {
 		file, err := os.OpenFile(gitignore, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
@@ -581,7 +677,7 @@ func (options *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
 	return nil
 }
 
-func (options *CreateTerraformOptions) commitClusters(dir string) (bool, error) {
+func (options *CreateTerraformGKEOptions) commitClusters(dir string) (bool, error) {
 	err := options.Git().Add(dir, "*")
 	if err != nil {
 		return false, err
@@ -596,7 +692,7 @@ func (options *CreateTerraformOptions) commitClusters(dir string) (bool, error) 
 	return false, nil
 }
 
-func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string) error {
+func (options *CreateTerraformGKEOptions) configureGKECluster(g *GKECluster, path string) error {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	g.DiskSize = options.Flags.GKEDiskSize
 	g.AutoUpgrade = options.Flags.GKEAutoUpgrade
@@ -825,7 +921,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	return nil
 }
 
-func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) error {
+func (options *CreateTerraformGKEOptions) applyTerraformGKE(g *GKECluster, path string) error {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	if g.ProjectID == "" {
 		return errors.New("Unable to apply terraform, projectId has not been set")
@@ -943,7 +1039,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 }
 
 // asks to chose from existing projects or optionally creates one if none exist
-func (options *CreateTerraformOptions) getGoogleProjectID() (string, error) {
+func (options *CreateTerraformGKEOptions) getGoogleProjectID() (string, error) {
 	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	existingProjects, err := gke.GetGoogleProjects()
 	if err != nil {
@@ -991,7 +1087,7 @@ func (options *CreateTerraformOptions) getGoogleProjectID() (string, error) {
 	return projectID, nil
 }
 
-func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) error {
+func (options *CreateTerraformGKEOptions) installJx(c Cluster, clusters []Cluster) error {
 	log.Logger().Infof("Installing jx on cluster %s with context %s", util.ColorInfo(c.Name()), util.ColorInfo(c.Context()))
 
 	err := options.RunCommand("kubectl", "config", "use-context", c.Context())
@@ -1047,17 +1143,10 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 	return nil
 }
 
-func (options *CreateTerraformOptions) initAndInstall(provider string) error {
+func (options *CreateTerraformGKEOptions) initAndInstall(provider string) error {
 	// call jx init
 	options.InstallOptions.BatchMode = options.BatchMode
 	options.InstallOptions.Flags.Provider = provider
-
-	if len(options.Clusters) > 1 {
-		options.InstallOptions.Flags.NoDefaultEnvironments = true
-		log.Logger().Info("Creating custom environments in each cluster")
-	} else {
-		log.Logger().Info("Creating default environments")
-	}
 
 	// call jx install
 	installOpts := &options.InstallOptions
@@ -1069,7 +1158,7 @@ func (options *CreateTerraformOptions) initAndInstall(provider string) error {
 	return nil
 }
 
-func (options *CreateTerraformOptions) configureEnvironments(clusters []Cluster) error {
+func (options *CreateTerraformGKEOptions) configureEnvironments(clusters []Cluster) error {
 
 	for index, cluster := range clusters {
 		if cluster.Name() != options.Flags.JxEnvironment {
@@ -1100,4 +1189,11 @@ func (options *CreateTerraformOptions) configureEnvironments(clusters []Cluster)
 		}
 	}
 	return nil
+}
+
+func booleanAsInt(input bool) string {
+	if input {
+		return "1"
+	}
+	return "0"
 }
