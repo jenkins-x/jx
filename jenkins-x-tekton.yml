@@ -44,8 +44,22 @@ pipelineConfig:
                 value: tektone2e
               - name: VERSION_PREFIX
                 value: covered-
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /builder/home/kaniko-secret.json
 
             steps:
+              - image: jenkinsxio/jx:1.3.963
+                command: jx
+                args:
+                  - step
+                  - credential
+                  - -s
+                  - kaniko-secret
+                  - -k
+                  - kaniko-secret
+                  - -f
+                  - /builder/home/kaniko-secret.json
+
               - name: build-binary
                 image: docker.io/golang:1.11.5
                 command: make
