@@ -222,8 +222,8 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	if len(params.Labels) > 0 {
 		args = append(args, "--label", strings.Join(params.Labels, ","))
 	}
-	if len(params.EnvVars) > 0 {
-		args = append(args, "--env", strings.Join(params.EnvVars, ","))
+	for _, e := range params.EnvVars {
+		args = append(args, "--env", e)
 	}
 	step := syntax.Step{
 		Name:      createTektonCRDsStepName,
