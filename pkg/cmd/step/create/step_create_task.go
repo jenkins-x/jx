@@ -269,11 +269,6 @@ func (o *StepCreateTaskOptions) Run() error {
 
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline, tektonClient, ns)
 
-	err = o.setBuildValues()
-	if err != nil {
-		return err
-	}
-
 	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {
 		return err
@@ -288,6 +283,11 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to create effective project configuration")
 		}
+	}
+
+	err = o.setBuildValues()
+	if err != nil {
+		return err
 	}
 
 	log.Logger().Debug("setting build version")
