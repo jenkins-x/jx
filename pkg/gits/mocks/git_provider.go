@@ -243,6 +243,25 @@ func (mock *MockGitProvider) ForkRepository(_param0 string, _param1 string, _par
 	return ret0, ret1
 }
 
+func (mock *MockGitProvider) GetBranch(_param0 string, _param1 string, _param2 string) (*gits.GitBranch, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetBranch", params, []reflect.Type{reflect.TypeOf((**gits.GitBranch)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *gits.GitBranch
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(*gits.GitBranch)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitProvider) GetContent(_param0 string, _param1 string, _param2 string, _param3 string) (*gits.GitFileContent, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -1382,6 +1401,41 @@ func (c *MockGitProvider_ForkRepository_OngoingVerification) GetCapturedArgument
 }
 
 func (c *MockGitProvider_ForkRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitProvider) GetBranch(_param0 string, _param1 string, _param2 string) *MockGitProvider_GetBranch_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetBranch", params, verifier.timeout)
+	return &MockGitProvider_GetBranch_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitProvider_GetBranch_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitProvider_GetBranch_OngoingVerification) GetCapturedArguments() (string, string, string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *MockGitProvider_GetBranch_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

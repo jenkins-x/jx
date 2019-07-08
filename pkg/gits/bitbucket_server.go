@@ -1096,3 +1096,8 @@ func (b *BitbucketServerProvider) GetLatestRelease(org string, name string) (*Gi
 func (b *BitbucketServerProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
 	return nil, nil
 }
+
+// GetBranch returns the branch information for an owner/repo, including the commit at the tip
+func (b *BitbucketServerProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
+	return nil, nil
+}

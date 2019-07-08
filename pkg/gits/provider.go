@@ -195,6 +195,13 @@ type GitFileContent struct {
 	DownloadUrl string
 }
 
+// GitBranch is info on a git branch including the commit at the tip
+type GitBranch struct {
+	Name      string
+	Commit    *GitCommit
+	Protected bool
+}
+
 // PullRequestInfo describes a pull request that has been created
 type PullRequestInfo struct {
 	GitProvider          GitProvider
