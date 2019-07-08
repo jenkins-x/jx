@@ -43,7 +43,7 @@ var (
 		jx create cluster gke --skip-installation
 
 		# lets get the GitOps repository source code
-		git clone https://github.com/jstrachan/environment-simple-tekton.git my-jx-config
+		git clone https://github.com/jenkins-x/jenkins-x-boot-config.git my-jx-config
 		cd my-jx-config
 
 		# now lets boot up Jenkins X installing/upgrading whatever is needed
@@ -87,7 +87,7 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 	if !exists {
-		log.Logger().Infof("No Jenkins X pipeline file %s found. You are not running this command from inside a Jenkins X Boot git clone\n\n", info(pipelineFile))
+		log.Logger().Infof("No Jenkins X pipeline file %s found. You are not running this command from inside a Jenkins X Boot git clone", info(pipelineFile))
 
 		gitURL := o.GitURL
 		if gitURL == "" {
@@ -102,8 +102,8 @@ func (o *BootOptions) Run() error {
 		cloneDir := filepath.Join(o.Dir, repo)
 
 		if !o.BatchMode {
-			log.Logger().Infof("To continue we will clone: %s\n", info(gitURL))
-			log.Logger().Infof("To the directory: %s\n\n", info(cloneDir))
+			log.Logger().Infof("To continue we will clone: %s", info(gitURL))
+			log.Logger().Infof("To the directory: %s", info(cloneDir))
 
 			help := "A git clone of a Jenkins X Boot source repository is required for 'jx boot'"
 			message := "Do you want to clone the Jenkins X Boot Git repository?"
@@ -168,7 +168,7 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("booting up Jenkins X\n")
+	log.Logger().Infof("booting up Jenkins X")
 
 	// now lets really boot
 	_, so := create.NewCmdStepCreateTaskAndOption(o.CommonOptions)
@@ -196,7 +196,7 @@ func (o *BootOptions) Run() error {
 		no := &namespace.NamespaceOptions{}
 		no.CommonOptions = o.CommonOptions
 		no.Args = []string{ns}
-		log.Logger().Infof("switching to the namespace %s so that you can use %s commands on the installation\n", info(ns), info("jx"))
+		log.Logger().Infof("switching to the namespace %s so that you can use %s commands on the installation", info(ns), info("jx"))
 		return no.Run()
 	}
 	return nil
