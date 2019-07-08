@@ -22,13 +22,19 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
+// GCGKEOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCGKEOptions struct {
 	*opts.CommonOptions
+	Flags GCGKEFlags
 
 	RevisionHistoryLimit int
 	jclient              gojenkins.JenkinsClient
+}
+
+// GCGKEFlags contains the flags for the command
+type GCGKEFlags struct {
+	ProjectID string
 }
 
 var (
@@ -88,6 +94,10 @@ type iamBinding struct {
 	Role    string   `json:"role"`
 }
 
+func (options *GCGKEOptions) addFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&options.Flags.ProjectID, "project", "p", "", "The google project id to create the GC script for")
+}
+
 // NewCmdGCGKE is a command object for the "step" command
 func NewCmdGCGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GCGKEOptions{
@@ -107,11 +117,30 @@ func NewCmdGCGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
+	options.CommonOptions.AddBaseFlags(cmd)
+	options.addFlags(cmd)
+
 	return cmd
 }
 
 // Run implements this command
 func (o *GCGKEOptions) Run() error {
+
+	if o.Flags.ProjectID == "" {
+		if o.BatchMode {
+			projectID, err := o.getCurrentGoogleProjectId()
+			if err != nil {
+				return err
+			}
+			o.Flags.ProjectID = projectID
+		} else {
+			projectId, err := o.GetGoogleProjectId()
+			if err != nil {
+				return err
+			}
+			o.Flags.ProjectID = projectId
+		}
+	}
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -133,6 +162,8 @@ set -euo pipefail
 #  generated command on the Jenkins X project itself but it has not been tested on other clusters.
 #
 ###################################################################################################
+
+# Project %s
 
 %s
 
@@ -167,7 +198,7 @@ set -euo pipefail
 		return err
 	}
 
-	data := fmt.Sprintf(message, fw, strings.Join(disks, "\n"), strings.Join(addr, "\n"), strings.Join(serviceAccounts, "\n"))
+	data := fmt.Sprintf(message, o.Flags.ProjectID, fw, strings.Join(disks, "\n"), strings.Join(addr, "\n"), strings.Join(serviceAccounts, "\n"))
 	data = strings.Replace(data, "[", "", -1)
 	data = strings.Replace(data, "]", "", -1)
 
@@ -179,7 +210,7 @@ set -euo pipefail
 
 func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 	o := &opts.CommonOptions{}
-	data, err := o.GetCommandOutput("", "gcloud", "compute", "firewall-rules", "list", "--format", "json")
+	data, err := o.GetCommandOutput("", "gcloud", "compute", "firewall-rules", "list", "--format", "json", "--project", p.Flags.ProjectID)
 	if err != nil {
 		return "", err
 	}
@@ -190,7 +221,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		return "", err
 	}
 
-	out, err := o.GetCommandOutput("", "gcloud", "container", "clusters", "list")
+	out, err := o.GetCommandOutput("", "gcloud", "container", "clusters", "list", "--project", p.Flags.ProjectID)
 	if err != nil {
 		return "", err
 	}
@@ -224,7 +255,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 	}
 
 	if nameToDelete != nil {
-		args := "gcloud compute firewall-rules delete "
+		args := "gcloud compute firewall-rules delete --project " + p.Flags.ProjectID
 		for _, name := range nameToDelete {
 			args = args + " " + name
 		}
@@ -249,7 +280,7 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 
 		for _, d := range disks {
 			if strings.HasPrefix(d.Name, "gke-") {
-				line = append(line, fmt.Sprintf("gcloud compute disks delete --zone=%s --quiet %s", z.Name, d.Name))
+				line = append(line, fmt.Sprintf("gcloud compute disks delete --zone=%s --quiet %s --project %s", z.Name, d.Name, o.Flags.ProjectID))
 			}
 		}
 	}
@@ -263,7 +294,7 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 
 func (o *GCGKEOptions) cleanUpAddresses() ([]string, error) {
 
-	cmd := "gcloud compute addresses list --filter=\"status:RESERVED\" --format=json"
+	cmd := "gcloud compute addresses list --filter=\"status:RESERVED\" --format=json --project " + o.Flags.ProjectID
 	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
 	if err != nil {
 		return nil, err
@@ -285,7 +316,7 @@ func (o *GCGKEOptions) cleanUpAddresses() ([]string, error) {
 			} else {
 				scope = "--global"
 			}
-			line = append(line, fmt.Sprintf("gcloud compute addresses delete %s %s", address.Name, scope))
+			line = append(line, fmt.Sprintf("gcloud compute addresses delete %s %s --project %s", address.Name, scope, o.Flags.ProjectID))
 		}
 		return line, nil
 	}
@@ -306,7 +337,7 @@ func (o *GCGKEOptions) cleanUpServiceAccounts() ([]string, error) {
 
 	if len(serviceAccounts) > 0 {
 		for _, sa := range serviceAccounts {
-			line = append(line, fmt.Sprintf("gcloud iam service-accounts delete %s --quiet", sa.Email))
+			line = append(line, fmt.Sprintf("gcloud iam service-accounts delete %s --quiet --project %s", sa.Email, o.Flags.ProjectID))
 		}
 	}
 
@@ -347,7 +378,7 @@ func getLastString(s []string) string {
 }
 
 func (o *GCGKEOptions) getZones() ([]zone, error) {
-	cmd := "gcloud compute zones list --format=json"
+	cmd := "gcloud compute zones list --format=json --project " + o.Flags.ProjectID
 	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
 	if err != nil {
 		return nil, err
@@ -363,7 +394,7 @@ func (o *GCGKEOptions) getZones() ([]zone, error) {
 }
 
 func (o *GCGKEOptions) getClusters() ([]cluster, error) {
-	cmd := "gcloud container clusters list --format=json"
+	cmd := "gcloud container clusters list --format=json --project " + o.Flags.ProjectID
 	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
 	if err != nil {
 		return nil, err
@@ -379,7 +410,7 @@ func (o *GCGKEOptions) getClusters() ([]cluster, error) {
 }
 
 func (o *GCGKEOptions) getUnusedDisksForZone(z zone) ([]disk, error) {
-	diskCmd := fmt.Sprintf("gcloud compute disks list --filter=\"NOT users:* AND zone:(%s)\" --format=json", z.Name)
+	diskCmd := fmt.Sprintf("gcloud compute disks list --filter=\"NOT users:* AND zone:(%s)\" --format=json  --project %s", z.Name, o.Flags.ProjectID)
 	data, err := o.GetCommandOutput("", "bash", "-c", diskCmd)
 	if err != nil {
 		return nil, err
@@ -422,7 +453,7 @@ func (o *GCGKEOptions) getFilteredServiceAccounts() ([]serviceAccount, error) {
 }
 
 func (o *GCGKEOptions) getServiceAccounts() ([]serviceAccount, error) {
-	cmd := "gcloud iam service-accounts list --format=json"
+	cmd := "gcloud iam service-accounts list --format=json --project " + o.Flags.ProjectID
 	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
 	if err != nil {
 		return nil, err
@@ -459,12 +490,9 @@ func (o *GCGKEOptions) getCurrentGoogleProjectId() (string, error) {
 	}
 	return data, nil
 }
+
 func (o *GCGKEOptions) getIamPolicy() (iamPolicy, error) {
-	googleProjectID, err := o.getCurrentGoogleProjectId()
-	if err != nil {
-		return iamPolicy{}, err
-	}
-	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", googleProjectID)
+	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", o.Flags.ProjectID)
 	data, err := o.GetCommandOutput("", "bash", "-c", cmd)
 	if err != nil {
 		return iamPolicy{}, err
@@ -480,11 +508,6 @@ func (o *GCGKEOptions) getIamPolicy() (iamPolicy, error) {
 }
 
 func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, error) {
-	googleProjectID, err := o.getCurrentGoogleProjectId()
-	if err != nil {
-		return nil, err
-	}
-
 	var line []string
 
 	clusters, err := o.getClusters()
@@ -502,7 +525,7 @@ func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, e
 					clusterName := displayName[:sz-3]
 
 					if !o.clusterExists(clusters, clusterName) {
-						cmd := fmt.Sprintf("gcloud projects remove-iam-policy-binding %s --member=%s --role=%s --quiet", googleProjectID, m, b.Role)
+						cmd := fmt.Sprintf("gcloud projects remove-iam-policy-binding %s --member=%s --role=%s --quiet", o.Flags.ProjectID, m, b.Role)
 						line = append(line, cmd)
 					}
 				}

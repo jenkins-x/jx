@@ -250,7 +250,7 @@ func (o *StepCreatePipelineOptions) handleResult(tektonClient tektonclient.Inter
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}
 		if o.Verbose {
-			log.Logger().Infof("applied tekton CRDs for %s\n", tektonCRDs.PipelineRun().Name)
+			log.Logger().Infof("applied tekton CRDs for %s", tektonCRDs.PipelineRun().Name)
 		}
 	}
 	return nil

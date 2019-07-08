@@ -21,6 +21,16 @@ func TestReplaceAllStringSubmatchFunc(t *testing.T) {
 		}
 		return answer
 	}
+	brewVersionRepl := func(groups []util.Group) []string {
+		answer := make([]string, 0)
+		answer = append(answer, "1.0.20")
+		return answer
+	}
+	brewShaRepl := func(groups []util.Group) []string {
+		answer := make([]string, 0)
+		answer = append(answer, "ef7a95c23bc5858cff6fd2825836af7e8342a9f6821d91ddb0b5b5f87f0f4e85")
+		return answer
+	}
 	type args struct {
 		re   *regexp.Regexp
 		str  string
@@ -57,6 +67,24 @@ func TestReplaceAllStringSubmatchFunc(t *testing.T) {
 				repl: incrementVersionRepl,
 			},
 			want: "    release = \"11\"\n    release = \"9\"",
+		},
+		{
+			name: "brew-version",
+			args: args{
+				re:   regexp.MustCompile(`\s*version \"(.*)\"`),
+				str:  "  version \"1.0.1\"",
+				repl: brewVersionRepl,
+			},
+			want: "  version \"1.0.20\"",
+		},
+		{
+			name: "brew-sha",
+			args: args{
+				re:   regexp.MustCompile(`\s*sha256 \"(.*)\"`),
+				str:  "  sha256 \"7d7d380c5f0760027ae73f1663a1e1b340548fd93f68956e6b0e2a0d984774fa\"",
+				repl: brewShaRepl,
+			},
+			want: "  sha256 \"ef7a95c23bc5858cff6fd2825836af7e8342a9f6821d91ddb0b5b5f87f0f4e85\"",
 		},
 	}
 	for _, tt := range tests {
