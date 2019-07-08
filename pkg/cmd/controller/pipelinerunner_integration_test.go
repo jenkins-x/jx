@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"net/http"
@@ -62,7 +63,7 @@ func TestPipelineRunnerIntegration(t *testing.T) {
 }
 
 var _ = Describe("Pipeline Runner Integration", func() {
-	//log.SetOutput(ioutil.Discard)
+	log.SetOutput(ioutil.Discard)
 	var (
 		client     *http.Client
 		port       int
@@ -102,7 +103,7 @@ var _ = Describe("Pipeline Runner Integration", func() {
 			pipelineRunner := PipelineRunnerOptions{
 				CommonOptions:        &commonOpts,
 				Path:                 "/",
-				BindAddress:          "0.0.0.0",
+				BindAddress:          "127.0.0.1",
 				Port:                 port,
 				NoGitCredentialsInit: true,
 				UseMetaPipeline:      true,
@@ -166,7 +167,7 @@ var _ = Describe("Pipeline Runner Integration", func() {
 			pipelineRunner := PipelineRunnerOptions{
 				CommonOptions:        &commonOpts,
 				Path:                 "/",
-				BindAddress:          "0.0.0.0",
+				BindAddress:          "127.0.0.1",
 				Port:                 port,
 				NoGitCredentialsInit: true,
 			}
