@@ -383,6 +383,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			// Create a single duplicate PipelineResource for the name used by the 'kaniko_entrypoint' test case to verify that the deduplication logic works correctly.
 			tektonClient := tektonfake.NewSimpleClientset(tekton_helpers_test.AssertLoadPipelineResources(t, path.Join(testData, "prepopulated")))
 
+			createTask.setBuildValues()
 			effectiveProjectConfig, _ := createTask.createEffectiveProjectConfig(packsDir, projectConfig, projectConfigFile, resolver, ns)
 			if effectiveProjectConfig != nil {
 				createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
