@@ -328,12 +328,12 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	}
 
 	if tektonEnabled {
-		return o.getLogForTekton(kubeClient, tektonClient, ns, name, pipelineMap)
+		return o.getLogForTekton(kubeClient, tektonClient, jxClient, ns, name, pipelineMap)
 	}
 	return o.getLogForKnative(kubeClient, ns, name, pipelineMap)
 }
 
-func (o *GetBuildLogsOptions) getLogForTekton(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, ns string, name string, pipelineMap map[string][]builds.BaseBuildInfo) error {
+func (o *GetBuildLogsOptions) pipelineRunsForName(name string, pipelineMap map[string][]builds.BaseBuildInfo) []*tekton.PipelineRunInfo {
 	var pipelines []*tekton.PipelineRunInfo
 	for _, info := range pipelineMap[name] {
 		pipelines = append(pipelines, info.(*tekton.PipelineRunInfo))
@@ -341,55 +341,135 @@ func (o *GetBuildLogsOptions) getLogForTekton(kubeClient kubernetes.Interface, t
 	sort.Slice(pipelines, func(i, j int) bool {
 		return pipelines[i].CreatedTime.Before(pipelines[j].CreatedTime)
 	})
+	return pipelines
+}
+
+func (o *GetBuildLogsOptions) getLogForTekton(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string, name string, pipelineMap map[string][]builds.BaseBuildInfo) error {
+	pipelines := o.pipelineRunsForName(name, pipelineMap)
+
+	pipelinesLogged := make(map[string]bool)
 	log.Logger().Infof("Build logs for %s", util.ColorInfo(name))
+	for len(pipelines) > len(pipelinesLogged) {
+		err := o.getLogsForSpecifiedPipelines(kubeClient, tektonClient, ns, name, pipelines, pipelinesLogged)
+		if err != nil {
+			return err
+		}
+		// Refresh the pipeline list
+		_, _, refreshedMap, err := o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+		if err != nil {
+			return err
+		}
+		pipelines = o.pipelineRunsForName(name, refreshedMap)
+	}
+
+	return nil
+}
+
+func (o *GetBuildLogsOptions) getLogsForSpecifiedPipelines(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, ns string, name string, pipelines []*tekton.PipelineRunInfo, pipelinesLogged map[string]bool) error {
 	for _, pri := range pipelines {
-		for _, stage := range pri.GetOrderedTaskStages() {
-			pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pri.PipelineRun, metav1.GetOptions{})
+		if _, seen := pipelinesLogged[pri.PipelineRun]; !seen {
+			pipelinesLogged[pri.PipelineRun] = true
+			for _, stage := range pri.GetOrderedTaskStages() {
+				pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pri.PipelineRun, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				if stage.Pod == nil {
+					// The stage's pod hasn't been created yet, so let's wait a bit.
+					f := func() error {
+						return checkForStagePod(kubeClient, ns, pr, pri, stage)
+					}
+					err := util.Retry(o.WaitForPipelineDuration, f)
+					if err != nil {
+						return err
+					}
+					// If the pod is still nil, then the pipeline failed before executing this stage, so just continue.
+					if stage.Pod == nil {
+						continue
+					}
+				}
+				pod := stage.Pod
+				containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+				if len(containers) <= 0 {
+					return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
+				}
+				for i, ic := range containers {
+					pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+					if err != nil {
+						return errors.Wrapf(err, "failed to find pod %s", pod.Name)
+					}
+					if i > 0 {
+						_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+						if i < len(containerStatuses) {
+							lastContainer := containerStatuses[i-1]
+							terminated := lastContainer.State.Terminated
+							if terminated != nil && terminated.ExitCode != 0 {
+								log.Logger().Warnf("container %s failed with exit code %d: %s", lastContainer.Name, terminated.ExitCode, terminated.Message)
+							}
+						}
+					}
+					pod, err = waitForContainerToStart(kubeClient, ns, pod, i)
+					if err != nil {
+						return err
+					}
+					err = o.getStageLog(ns, name, stage.GetStageNameIncludingParents(), pod, ic)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (o *GetBuildLogsOptions) getLogForTektonPipeline(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, ns string, name string, pri *tekton.PipelineRunInfo) error {
+	for _, stage := range pri.GetOrderedTaskStages() {
+		pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pri.PipelineRun, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if stage.Pod == nil {
+			// The stage's pod hasn't been created yet, so let's wait a bit.
+			f := func() error {
+				return checkForStagePod(kubeClient, ns, pr, pri, stage)
+			}
+			err := util.Retry(o.WaitForPipelineDuration, f)
 			if err != nil {
 				return err
 			}
+			// If the pod is still nil, then the pipeline failed before executing this stage, so just continue.
 			if stage.Pod == nil {
-				// The stage's pod hasn't been created yet, so let's wait a bit.
-				f := func() error {
-					return checkForStagePod(kubeClient, ns, pr, pri, stage)
-				}
-				err := util.Retry(o.WaitForPipelineDuration, f)
-				if err != nil {
-					return err
-				}
-				// If the pod is still nil, then the pipeline failed before executing this stage, so just continue.
-				if stage.Pod == nil {
-					continue
-				}
+				continue
 			}
-			pod := stage.Pod
-			containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
-			if len(containers) <= 0 {
-				return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
+		}
+		pod := stage.Pod
+		containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+		if len(containers) <= 0 {
+			return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
+		}
+		for i, ic := range containers {
+			pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to find pod %s", pod.Name)
 			}
-			for i, ic := range containers {
-				pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
-				if err != nil {
-					return errors.Wrapf(err, "failed to find pod %s", pod.Name)
-				}
-				if i > 0 {
-					_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
-					if i < len(containerStatuses) {
-						lastContainer := containerStatuses[i-1]
-						terminated := lastContainer.State.Terminated
-						if terminated != nil && terminated.ExitCode != 0 {
-							log.Logger().Warnf("container %s failed with exit code %d: %s", lastContainer.Name, terminated.ExitCode, terminated.Message)
-						}
+			if i > 0 {
+				_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+				if i < len(containerStatuses) {
+					lastContainer := containerStatuses[i-1]
+					terminated := lastContainer.State.Terminated
+					if terminated != nil && terminated.ExitCode != 0 {
+						log.Logger().Warnf("container %s failed with exit code %d: %s", lastContainer.Name, terminated.ExitCode, terminated.Message)
 					}
 				}
-				pod, err = waitForContainerToStart(kubeClient, ns, pod, i)
-				if err != nil {
-					return err
-				}
-				err = o.getStageLog(ns, name, stage.GetStageNameIncludingParents(), pod, ic)
-				if err != nil {
-					return err
-				}
+			}
+			pod, err = waitForContainerToStart(kubeClient, ns, pod, i)
+			if err != nil {
+				return err
+			}
+			err = o.getStageLog(ns, name, stage.GetStageNameIncludingParents(), pod, ic)
+			if err != nil {
+				return err
 			}
 		}
 	}
