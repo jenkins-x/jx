@@ -269,6 +269,11 @@ func (o *StepCreateTaskOptions) Run() error {
 
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline, tektonClient, ns)
 
+	err = o.setBuildValues()
+	if err != nil {
+		return err
+	}
+
 	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {
 		return err
@@ -459,11 +464,6 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 
 // createEffectiveProjectConfig creates the effective parsed pipeline which is then used to generate the Tekton CRDs.
 func (o *StepCreateTaskOptions) createEffectiveProjectConfig(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*config.ProjectConfig, error) {
-	err := o.setBuildValues()
-	if err != nil {
-		return nil, err
-	}
-
 	createEffective := &syntaxstep.StepSyntaxEffectiveOptions{
 		Pack:              o.Pack,
 		BuildPackURL:      o.BuildPackURL,
