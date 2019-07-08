@@ -390,15 +390,17 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		}
 	}
 
-	if viper.GetBool(noApplyOptionName) || o.DryRun || o.InterpretMode {
-		o.BuildNumber = "1"
-	} else {
-		log.Logger().Debugf("generating build number...")
-		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, o.Context)
-		if err != nil {
-			return nil, err
+	if o.BuildNumber == "" {
+		if viper.GetBool(noApplyOptionName) || o.DryRun || o.InterpretMode {
+			o.BuildNumber = "1"
+		} else {
+			log.Logger().Debugf("generating build number...")
+			o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, o.Context)
+			if err != nil {
+				return nil, err
+			}
+			log.Logger().Debugf("generated build number %s for %s", o.BuildNumber, o.CloneGitURL)
 		}
-		log.Logger().Debugf("generated build number %s for %s", o.BuildNumber, o.CloneGitURL)
 	}
 	projectConfig, projectConfigFile, err := o.loadProjectConfig()
 	if err != nil {
