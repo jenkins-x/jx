@@ -720,27 +720,6 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 	return nil
 }
 
-func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
-	// add any custom env vars
-	envMap := make(map[string]corev1.EnvVar)
-	for _, e := range projectConfig.Env {
-		envMap[e.Name] = e
-	}
-	for _, customEnvVar := range o.CustomEnvs {
-		parts := strings.Split(customEnvVar, "=")
-		if len(parts) != 2 {
-			return errors.Errorf("expected 2 parts to env var but got %v", len(parts))
-		}
-		e := corev1.EnvVar{
-			Name:  parts[0],
-			Value: parts[1],
-		}
-		envMap[e.Name] = e
-	}
-	projectConfig.Env = syntax.EnvMapToSlice(envMap)
-	return nil
-}
-
 func (o *StepCreateTaskOptions) getWorkspaceDir() string {
 	return filepath.Join("/workspace", o.SourceName)
 }
