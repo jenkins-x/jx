@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"os"
 	"sort"
 	"strings"
 
@@ -121,6 +122,7 @@ func GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, kubeClient k
 	foundLogs := false
 
 	for len(pipelineRunNames) > len(pipelineRunsLogged) {
+		os.Stderr.WriteString(fmt.Sprintf("runs: %s, logged: %+v\n", strings.Join(pipelineRunNames, ","), pipelineRunsLogged))
 		pods, err := builds.GetBuildPods(kubeClient, pa.Namespace)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get build pods in namespace %s", pa.Namespace)
@@ -165,6 +167,8 @@ func GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, kubeClient k
 		for k, v := range runsSeenForPods {
 			pipelineRunsLogged[k] = v
 		}
+		os.Stderr.WriteString(fmt.Sprintf("AFTER: runs: %s, logged: %+v\n", strings.Join(pipelineRunNames, ","), pipelineRunsLogged))
+
 	}
 	if !foundLogs {
 		return errors.New("the build pods for this build have been garbage collected and the log was not found in the long term storage bucket")

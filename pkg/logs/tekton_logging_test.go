@@ -160,9 +160,9 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 
 	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
-	pipelineRun := tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)
+	pipelineRunList := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
 	kubeClient := kubeMocks.NewSimpleClientset(podsList)
-	tektonClient := tektonMocks.NewSimpleClientset(pipelineRun)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRunList)
 
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
