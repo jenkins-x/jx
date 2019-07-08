@@ -780,3 +780,8 @@ func (p *GiteaProvider) GetLatestRelease(org string, name string) (*GitRelease, 
 func (p *GiteaProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
 	return nil, nil
 }
+
+// GetBranch returns the branch information for an owner/repo, including the commit at the tip
+func (p *GiteaProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
+	return nil, nil
+}

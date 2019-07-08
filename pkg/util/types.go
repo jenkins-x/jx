@@ -130,3 +130,11 @@ func DereferenceFloat64(f *float64) float64 {
 func IsZeroOfUnderlyingType(x interface{}) bool {
 	return reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
 }
+
+// DereferenceBool will return the bool value or the empty value for bool
+func DereferenceBool(b *bool) bool {
+	if b != nil {
+		return *b
+	}
+	return false
+}

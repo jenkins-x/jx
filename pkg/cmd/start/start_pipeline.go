@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	errors2 "github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 
@@ -31,6 +33,7 @@ const (
 	repoNameEnv    = "REPO_NAME"
 	jmbrBranchName = "BRANCH_NAME"
 	jmbrSourceURL  = "SOURCE_URL"
+	pullPullSha    = "PULL_PULL_SHA"
 )
 
 // StartPipelineOptions contains the command line options
@@ -203,6 +206,7 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 			Revision: branch,
 		},
 	}
+
 	if jobSpec.BuildSpec != nil {
 		jobSpec.BuildSpec.Source = sourceSpec
 		env := map[string]string{}
@@ -239,6 +243,25 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 				jobSpec.BuildSpec.Template.Env = append(jobSpec.BuildSpec.Template.Env, e)
 			}
 		}
+	} else {
+		provider, _, err := o.CreateGitProviderForURLWithoutKind(sourceURL)
+		if err != nil {
+			return errors2.Wrapf(err, "creating git provider for %s", sourceURL)
+		}
+		gitBranch, err := provider.GetBranch(org, repo, branch)
+		if err != nil {
+			return errors2.Wrapf(err, "getting branch %s on %s/%s", branch, org, repo)
+		}
+
+		if gitBranch != nil && gitBranch.Commit != nil {
+			if jobSpec.Refs == nil {
+				jobSpec.Refs = &prowjobv1.Refs{}
+			}
+			jobSpec.Refs.BaseSHA = gitBranch.Commit.SHA
+			jobSpec.Refs.Repo = repo
+			jobSpec.Refs.Org = org
+			jobSpec.Refs.BaseRef = branch
+		}
 	}
 
 	p := prow.NewProwJob(jobSpec, nil)
@@ -249,6 +272,19 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 		BaseRef: branch,
 		Org:     org,
 		Repo:    repo,
+	}
+
+	provider, _, err := o.CreateGitProviderForURLWithoutKind(sourceURL)
+	if err != nil {
+		return errors2.Wrapf(err, "creating git provider for %s", sourceURL)
+	}
+	gitBranch, err := provider.GetBranch(org, repo, branch)
+	if err != nil {
+		return errors2.Wrapf(err, "getting branch %s on %s/%s", branch, org, repo)
+	}
+
+	if gitBranch != nil && gitBranch.Commit != nil {
+		p.Spec.Refs.BaseSHA = gitBranch.Commit.SHA
 	}
 
 	client, currentNamespace, err := o.KubeClientAndNamespace()
