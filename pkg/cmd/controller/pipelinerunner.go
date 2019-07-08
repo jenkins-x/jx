@@ -4,18 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
@@ -24,6 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
 
+	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 
@@ -31,6 +34,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/test-infra/prow/pod-utils/downwardapi"
 )
@@ -279,7 +283,10 @@ func (o *PipelineRunnerOptions) startPipeline(pipelineRun PipelineRunRequest) (P
 		return response, errors.Wrap(err, "failed to get env vars from prowjob")
 	}
 
-	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", prowJobSpec.Refs.Org, prowJobSpec.Refs.Repo)
+	sourceURL := o.getSourceURL(prowJobSpec.Refs.Org, prowJobSpec.Refs.Repo)
+	if sourceURL == "" {
+		sourceURL = fmt.Sprintf("https://github.com/%s/%s.git", prowJobSpec.Refs.Org, prowJobSpec.Refs.Repo)
+	}
 	if sourceURL == "" {
 		return response, errors.Wrap(err, "missing sourceURL property")
 	}
@@ -456,4 +463,43 @@ func (o *PipelineRunnerOptions) setupSignalChannel(cancel context.CancelFunc) {
 		logger.Info("Received SIGTERM signal. Initiating shutdown.")
 		cancel()
 	}()
+}
+
+func (o *PipelineRunnerOptions) getSourceURL(org, repo string) string {
+	jxClient, ns, err := o.getClientsAndNamespace()
+
+	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
+
+	sourceRepos, err := resourceInterface.List(meta_v1.ListOptions{
+		LabelSelector: fmt.Sprintf("owner=%s,repository=%s", org, repo),
+	})
+
+	if err != nil || sourceRepos == nil || len(sourceRepos.Items) == 0 {
+		return ""
+	}
+
+	gitProviderURL := sourceRepos.Items[0].Spec.Provider
+	if gitProviderURL == "" {
+		return ""
+	}
+	if !strings.HasSuffix(gitProviderURL, "/") {
+		gitProviderURL = gitProviderURL + "/"
+	}
+
+	return fmt.Sprintf("%s%s/%s.git", gitProviderURL, org, repo)
+}
+
+func (o *PipelineRunnerOptions) getClientsAndNamespace() (jxclient.Interface, string, error) {
+
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to create JX client")
+	}
+
+	_, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to create Kube client")
+	}
+
+	return jxClient, ns, nil
 }
