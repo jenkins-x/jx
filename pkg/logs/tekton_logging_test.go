@@ -2,6 +2,14 @@ package logs
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path"
+	"regexp"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
@@ -14,18 +22,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	"io/ioutil"
+	tektonMocks "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"regexp"
 
 	kubeMocks "k8s.io/client-go/kubernetes/fake"
-	"path"
-	"testing"
 )
 
 type TestWriter struct{}
@@ -104,7 +106,7 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 }
 
 func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
-	_, _, kubeClient, _, ns := getFakeClientsAndNs(t)
+	_, tektonClient, kubeClient, _, ns := getFakeClientsAndNs(t)
 
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
@@ -121,14 +123,14 @@ func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 		},
 	}
 
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, nil)
+	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, nil)
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
 
 func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 	testCaseDir := path.Join("test_data")
-	_, _, _, _, ns := getFakeClientsAndNs(t)
+	_, tektonClient, _, _, ns := getFakeClientsAndNs(t)
 
 	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
 	kubeClient := kubeMocks.NewSimpleClientset(podsList)
@@ -148,7 +150,7 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 		},
 	}
 
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, nil)
+	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, nil)
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -158,7 +160,9 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 
 	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+	pipelineRun := tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)
 	kubeClient := kubeMocks.NewSimpleClientset(podsList)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRun)
 
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
@@ -182,7 +186,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 	r, fakeStdout, _ := os.Pipe()
 	log.SetOutput(fakeStdout)
 
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, writer)
+	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, writer)
 
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)
