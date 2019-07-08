@@ -27,7 +27,8 @@ ${JX} step git credentials
 
 gcloud auth activate-service-account --key-file $GKE_SA
 
-sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_TOKEN}/g myvalues.yaml.tekton.template > myvalues.yaml
+# TODO: Removing coverage for the moment
+sed -e s/\$VERSION/${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_TOKEN}/g myvalues.yaml.tekton.template > myvalues.yaml
 
 #echo the myvalues.yaml file is:
 #cat myvalues.yaml
