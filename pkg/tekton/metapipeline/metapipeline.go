@@ -217,6 +217,7 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	args = append(args, "--service-account", params.ServiceAccount)
 	args = append(args, "--source", params.SourceDir)
 	args = append(args, "--branch", params.BranchIdentifier)
+	args = append(args, "--build-number", params.BuildNumber)
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
