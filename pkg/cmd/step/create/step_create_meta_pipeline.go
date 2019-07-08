@@ -53,6 +53,9 @@ var (
 		# Create the Tekton meta pipeline which allows Jenkins-X Apps to extend the actual build pipeline.
 		jx step create pipeline
 			`)
+
+	createPipelineOutDir  string
+	createPipelineNoApply bool
 )
 
 // StepCreatePipelineOptions contains the command line flags for the command to create the meta pipeline
@@ -70,7 +73,7 @@ type StepCreatePipelineOptions struct {
 
 	Results tekton.CRDWrapper
 	OutDir  string
-	NoApply bool
+	NoApply *bool
 }
 
 // NewCmdCreateMetaPipeline creates the command for generating and applying the Tekton CRDs for the meta pipeline.
@@ -107,8 +110,8 @@ func NewCmdCreateMetaPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVar(&options.ServiceAccount, serviceAccountOptionName, "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 
 	// options to control the output, mainly for development
-	cmd.Flags().BoolVar(&options.NoApply, noApplyOptionName, false, "Disables creating the pipeline resources in the cluster and just outputs the generated resources to file")
-	cmd.Flags().StringVarP(&options.OutDir, outputOptionName, "o", "out", "Used in conjunction with --no-apply to determine the directory into which to write the output")
+	cmd.Flags().BoolVar(&createPipelineNoApply, noApplyOptionName, false, "Disables creating the pipeline resources in the cluster and just outputs the generated resources to file")
+	cmd.Flags().StringVarP(&createPipelineOutDir, outputOptionName, "o", "out", "Used in conjunction with --no-apply to determine the directory into which to write the output")
 
 	options.AddCommonFlags(cmd)
 	options.setupViper(cmd)
@@ -128,6 +131,16 @@ func (o *StepCreatePipelineOptions) setupViper(cmd *cobra.Command) {
 
 // Run implements this command
 func (o *StepCreatePipelineOptions) Run() error {
+	if o.NoApply == nil {
+		b := viper.GetBool(noApplyOptionName)
+		o.NoApply = &b
+	}
+
+	if o.OutDir == "" {
+		s := viper.GetString(outputOptionName)
+		o.OutDir = s
+	}
+
 	err := o.validateCommandLineFlags()
 	if err != nil {
 		return err
@@ -239,8 +252,8 @@ func (o *StepCreatePipelineOptions) handleResult(tektonClient tektonclient.Inter
 	gitInfo *gits.GitRepository) error {
 
 	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branch, gitInfo, &pullRefs, tekton.MetaPipeline)
-	if viper.GetBool(noApplyOptionName) {
-		err := tektonCRDs.WriteToDisk(viper.GetString(outputOptionName), pipelineActivity)
+	if *o.NoApply {
+		err := tektonCRDs.WriteToDisk(o.OutDir, pipelineActivity)
 		if err != nil {
 			return errors.Wrapf(err, "failed to output Tekton CRDs")
 		}
