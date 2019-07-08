@@ -33,6 +33,7 @@ func TestSystem(t *testing.T) {
 		disableSelfUpload := os.Getenv("COVER_SELF_UPLOAD") == "false"
 		alreadyWrapped := os.Getenv("COVER_WRAPPED") == "true"
 		coverprofileArgFound := false
+		testTimeoutArgFound := false
 		args := make([]string, 0)
 		strippedArgs := make([]string, 0)
 		for i, arg := range os.Args {
@@ -46,6 +47,9 @@ func TestSystem(t *testing.T) {
 			}
 			if strings.HasPrefix(arg, "-test.coverprofile") {
 				coverprofileArgFound = true
+			}
+			if strings.HasPrefix(arg, "-test.timeout") {
+				testTimeoutArgFound = true
 			}
 		}
 		if !alreadyWrapped && (!disableSelfUpload || !coverprofileArgFound) {
@@ -77,6 +81,14 @@ func TestSystem(t *testing.T) {
 				log.Logger().Errorf("Self upload is not supported if -test.coverprofile is specified. Disabling it.")
 				disableSelfUpload = true
 			}
+			if !testTimeoutArgFound {
+				timeout := os.Getenv("SESSION_WAIT")
+				if timeout == "" {
+					timeout = "60m"
+				}
+				args = append(args, "-test.timeout", timeout)
+			}
+
 			cmd := util.Command{
 				Env: map[string]string{
 					"COVER_WRAPPED": "true",
@@ -87,6 +99,7 @@ func TestSystem(t *testing.T) {
 				In:   os.Stdin,
 				Err:  os.Stderr,
 			}
+			log.Logger().Infof("Running %s", cmd.String())
 			_, err := cmd.RunWithoutRetry()
 			if !disableSelfUpload {
 				if os.Getenv("CODECOV_TOKEN") == "" {
