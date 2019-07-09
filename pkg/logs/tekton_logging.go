@@ -2,6 +2,10 @@ package logs
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
@@ -17,10 +21,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sort"
-	"strings"
-
-	"time"
 )
 
 // LogWriter is an interface that can be implemented to define different ways to stream / write logs
@@ -164,6 +164,9 @@ func GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, kubeClient k
 		}
 		for k, v := range runsSeenForPods {
 			pipelineRunsLogged[k] = v
+		}
+		if !foundLogs {
+			break
 		}
 	}
 	if !foundLogs {
