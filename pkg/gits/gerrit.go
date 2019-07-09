@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"time"
 
 	gerrit "github.com/andygrunwald/go-gerrit"
@@ -340,5 +341,15 @@ func (p *GerritProvider) AddLabelsToIssue(owner, repo string, number int, labels
 
 // GetLatestRelease fetches the latest release from the git provider for org and name
 func (p *GerritProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
+	return nil, nil
+}
+
+// UploadReleaseAsset will upload an asset to org/repo to a release with id, giving it a name, it will return the release asset from the git provider
+func (p *GerritProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
+	return nil, nil
+}
+
+// GetBranch returns the branch information for an owner/repo, including the commit at the tip
+func (p *GerritProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
 	return nil, nil
 }

@@ -1,6 +1,7 @@
 package gc
 
 import (
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -26,8 +27,7 @@ import (
 // referencing the cmd.Flags()
 type GCGKEOptions struct {
 	*opts.CommonOptions
-	Flags GCGKEFlags
-
+	Flags                GCGKEFlags
 	RevisionHistoryLimit int
 	jclient              gojenkins.JenkinsClient
 }
@@ -35,6 +35,7 @@ type GCGKEOptions struct {
 // GCGKEFlags contains the flags for the command
 type GCGKEFlags struct {
 	ProjectID string
+	RunNow    bool
 }
 
 var (
@@ -96,6 +97,7 @@ type iamBinding struct {
 
 func (options *GCGKEOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.ProjectID, "project", "p", "", "The google project id to create the GC script for")
+	cmd.Flags().BoolVarP(&options.Flags.RunNow, "run-now", "", false, "Execute the script")
 }
 
 // NewCmdGCGKE is a command object for the "step" command
@@ -145,6 +147,14 @@ func (o *GCGKEOptions) Run() error {
 	dir, err := os.Getwd()
 	if err != nil {
 		return err
+	}
+
+	gkeSa := os.Getenv("GKE_SA_KEY_FILE")
+	if gkeSa != "" {
+		err = gke.Login(gkeSa, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	path := util.UrlJoin(dir, "gc_gke.sh")
@@ -203,9 +213,16 @@ set -euo pipefail
 	data = strings.Replace(data, "]", "", -1)
 
 	err = ioutil.WriteFile("gc_gke.sh", []byte(data), util.DefaultWritePermissions)
-
+	if err != nil {
+		return err
+	}
 	log.Logger().Info("Script 'gc_gke.sh' created!")
-	return nil
+	if o.Flags.RunNow {
+		log.Logger().Info("Executing 'gc_gke.sh'")
+		err = o.RunCommand("gc_gke.sh")
+		log.Logger().Info("Done")
+	}
+	return err
 }
 
 func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
@@ -255,7 +272,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 	}
 
 	if nameToDelete != nil {
-		args := "gcloud compute firewall-rules delete --project " + p.Flags.ProjectID
+		args := "gcloud compute firewall-rules delete --quiet --project " + p.Flags.ProjectID
 		for _, name := range nameToDelete {
 			args = args + " " + name
 		}

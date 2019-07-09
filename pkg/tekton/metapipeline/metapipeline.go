@@ -2,15 +2,14 @@ package metapipeline
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"path/filepath"
-	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -216,14 +215,15 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	args = append(args, "--service-account", params.ServiceAccount)
 	args = append(args, "--source", params.SourceDir)
 	args = append(args, "--branch", params.BranchIdentifier)
+	args = append(args, "--build-number", params.BuildNumber)
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
-	if len(params.Labels) > 0 {
-		args = append(args, "--label", strings.Join(params.Labels, ","))
+	for _, l := range params.Labels {
+		args = append(args, "--label", l)
 	}
-	if len(params.EnvVars) > 0 {
-		args = append(args, "--env", strings.Join(params.EnvVars, ","))
+	for _, e := range params.EnvVars {
+		args = append(args, "--env", e)
 	}
 	step := syntax.Step{
 		Name:      createTektonCRDsStepName,

@@ -394,40 +394,82 @@ definitions:
     description: DependencyUpdate describes an dependency update message from the
       commit log
     properties:
-      Component:
+      component:
         type: string
-      FromReleaseHTMLURL:
+      fromReleaseHTMLURL:
         type: string
-      FromReleaseName:
+      fromReleaseName:
         type: string
-      FromVersion:
+      fromVersion:
         type: string
-      Host:
+      host:
         type: string
-      Owner:
+      owner:
         type: string
-      Repo:
+      paths:
+        items:
+          items:
+            $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdateDetails'
+          type: array
+        type: array
+      repo:
         type: string
-      ToReleaseHTMLURL:
+      toReleaseHTMLURL:
         type: string
-      ToReleaseName:
+      toReleaseName:
         type: string
-      ToVersion:
+      toVersion:
         type: string
-      URL:
+      url:
         type: string
     required:
-    - URL
-    - Owner
-    - Host
-    - Repo
-    - FromVersion
-    - FromReleaseHTMLURL
-    - FromReleaseName
-    - ToVersion
-    - ToReleaseHTMLURL
-    - ToReleaseName
-    - Component
+    - host
+    - owner
+    - repo
+    - url
+    - fromVersion
+    - fromReleaseHTMLURL
+    - fromReleaseName
+    - toVersion
+    - toReleaseHTMLURL
+    - toReleaseName
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdateDetails:
+    description: DependencyUpdateDetails are the details of a dependency update
+    properties:
+      component:
+        type: string
+      fromReleaseHTMLURL:
+        type: string
+      fromReleaseName:
+        type: string
+      fromVersion:
+        type: string
+      host:
+        type: string
+      owner:
+        type: string
+      repo:
+        type: string
+      toReleaseHTMLURL:
+        type: string
+      toReleaseName:
+        type: string
+      toVersion:
+        type: string
+      url:
+        type: string
+    required:
+    - host
+    - owner
+    - repo
+    - url
+    - fromVersion
+    - fromReleaseHTMLURL
+    - fromReleaseName
+    - toVersion
+    - toReleaseHTMLURL
+    - toReleaseName
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Environment:
     description: Environment represents an environment like Dev, Test, Staging, Production

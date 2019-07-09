@@ -119,6 +119,7 @@ type GitUser struct {
 }
 
 type GitRelease struct {
+	ID            int64
 	Name          string
 	TagName       string
 	Body          string
@@ -130,6 +131,7 @@ type GitRelease struct {
 
 // GitReleaseAsset represents a release stored in Git
 type GitReleaseAsset struct {
+	ID                 int64
 	BrowserDownloadURL string
 	Name               string
 	ContentType        string
@@ -191,6 +193,13 @@ type GitFileContent struct {
 	GitUrl      string
 	HtmlUrl     string
 	DownloadUrl string
+}
+
+// GitBranch is info on a git branch including the commit at the tip
+type GitBranch struct {
+	Name      string
+	Commit    *GitCommit
+	Protected bool
 }
 
 // PullRequestInfo describes a pull request that has been created

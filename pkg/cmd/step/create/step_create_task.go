@@ -285,6 +285,11 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
+	err = o.setBuildValues()
+	if err != nil {
+		return err
+	}
+
 	log.Logger().Debug("setting build version")
 	err = o.setBuildVersion(effectiveProjectConfig.PipelineConfig)
 	if err != nil {
@@ -390,15 +395,17 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		}
 	}
 
-	if viper.GetBool(noApplyOptionName) || o.DryRun || o.InterpretMode {
-		o.BuildNumber = "1"
-	} else {
-		log.Logger().Debugf("generating build number...")
-		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, o.Context)
-		if err != nil {
-			return nil, err
+	if o.BuildNumber == "" {
+		if viper.GetBool(noApplyOptionName) || o.DryRun || o.InterpretMode {
+			o.BuildNumber = "1"
+		} else {
+			log.Logger().Debugf("generating build number...")
+			o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, o.Context)
+			if err != nil {
+				return nil, err
+			}
+			log.Logger().Debugf("generated build number %s for %s", o.BuildNumber, o.CloneGitURL)
 		}
-		log.Logger().Debugf("generated build number %s for %s", o.BuildNumber, o.CloneGitURL)
 	}
 	projectConfig, projectConfigFile, err := o.loadProjectConfig()
 	if err != nil {
@@ -457,11 +464,6 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 
 // createEffectiveProjectConfig creates the effective parsed pipeline which is then used to generate the Tekton CRDs.
 func (o *StepCreateTaskOptions) createEffectiveProjectConfig(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*config.ProjectConfig, error) {
-	err := o.setBuildValues()
-	if err != nil {
-		return nil, err
-	}
-
 	createEffective := &syntaxstep.StepSyntaxEffectiveOptions{
 		Pack:              o.Pack,
 		BuildPackURL:      o.BuildPackURL,
@@ -715,27 +717,6 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 		return err
 	}
 	o.labels = util.MergeMaps(labels, customLabels)
-	return nil
-}
-
-func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
-	// add any custom env vars
-	envMap := make(map[string]corev1.EnvVar)
-	for _, e := range projectConfig.Env {
-		envMap[e.Name] = e
-	}
-	for _, customEnvVar := range o.CustomEnvs {
-		parts := strings.Split(customEnvVar, "=")
-		if len(parts) != 2 {
-			return errors.Errorf("expected 2 parts to env var but got %v", len(parts))
-		}
-		e := corev1.EnvVar{
-			Name:  parts[0],
-			Value: parts[1],
-		}
-		envMap[e.Name] = e
-	}
-	projectConfig.Env = syntax.EnvMapToSlice(envMap)
 	return nil
 }
 

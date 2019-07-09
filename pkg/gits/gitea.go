@@ -3,6 +3,7 @@ package gits
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -773,4 +774,14 @@ func (p *GiteaProvider) GetLatestRelease(org string, name string) (*GitRelease, 
 		return nil, errors2.Wrapf(err, "getting releases for %s/%s", org, name)
 	}
 	return toGiteaRelease(org, name, releases[0]), nil
+}
+
+// UploadReleaseAsset will upload an asset to org/repo to a release with id, giving it a name, it will return the release asset from the git provider
+func (p *GiteaProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
+	return nil, nil
+}
+
+// GetBranch returns the branch information for an owner/repo, including the commit at the tip
+func (p *GiteaProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
+	return nil, nil
 }

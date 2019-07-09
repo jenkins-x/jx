@@ -3,6 +3,7 @@ package gits
 import (
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -102,7 +103,9 @@ type GitProvider interface {
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
 
-	GetRelease(org string, name string, id string) (*GitRelease, error)
+	GetRelease(org string, name string, tag string) (*GitRelease, error)
+
+	UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error)
 
 	GetLatestRelease(org string, name string) (*GitRelease, error)
 
@@ -157,6 +160,8 @@ type GitProvider interface {
 	// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 	// before creating a pull request
 	ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool
+
+	GetBranch(owner string, repo string, branch string) (*GitBranch, error)
 }
 
 // Gitter defines common git actions used by Jenkins X via git cli

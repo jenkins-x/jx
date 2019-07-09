@@ -1,16 +1,14 @@
 package e2e
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 // StepE2ELabelOptions contains the command line flags
@@ -78,11 +76,10 @@ func (o *StepE2ELabelOptions) Run() error {
 		return err
 	}
 	clusterName := o.Args[0]
-	cluster, err := o.loadGkeCluster(clusterName)
+	cluster, err := gke.LoadGkeCluster(o.Region, o.ProjectID, clusterName)
 	if err != nil {
 		return err
 	}
-
 	if cluster != nil {
 		labelMap := cluster.ResourceLabels
 		labels := make([]string, 0)
@@ -99,16 +96,7 @@ func (o *StepE2ELabelOptions) Run() error {
 		for key, value := range labelMap {
 			labels = append(labels, key+"="+value)
 		}
-
-		args := []string{"container", "clusters", "update", clusterName, "--region=" + o.Region, "--quiet", "--update-labels=" + strings.Join(labels, ",") + ""}
-		if o.ProjectID != "" {
-			args = append(args, "--project="+o.ProjectID)
-		}
-		cmd := util.Command{
-			Name: "gcloud",
-			Args: args,
-		}
-		_, err = cmd.RunWithoutRetry()
+		err := gke.UpdateGkeClusterLabels(o.Region, o.ProjectID, clusterName, labels)
 		if err == nil {
 			if o.Keep {
 				log.Logger().Infof("%s was marked to be kept", cluster.Name)
@@ -120,26 +108,4 @@ func (o *StepE2ELabelOptions) Run() error {
 		}
 	}
 	return nil
-}
-
-func (o *StepE2ELabelOptions) loadGkeCluster(clusterName string) (*GkeCluster, error) {
-	args := []string{"container", "clusters", "describe", clusterName, "--region=" + o.Region, "--format=json", "--quiet"}
-	if o.ProjectID != "" {
-		args = append(args, "--project="+o.ProjectID)
-	}
-	cmd := util.Command{
-		Name: "gcloud",
-		Args: args,
-	}
-	output, err := cmd.RunWithoutRetry()
-	if err != nil {
-		return nil, err
-	}
-
-	cluster := &GkeCluster{}
-	err = json.Unmarshal([]byte(output), cluster)
-	if err != nil {
-		return nil, err
-	}
-	return cluster, nil
 }

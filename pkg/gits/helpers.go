@@ -8,11 +8,12 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime/debug"
+	"sort"
 	"strings"
 
 	"github.com/jpillora/longestcommon"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
@@ -245,12 +246,19 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 		}
 
 		if len(existingPrs) > 1 {
+			sort.SliceStable(existingPrs, func(i, j int) bool {
+				// sort in descending order of PR numbers (assumes PRs numbers increment!)
+				return util.DereferenceInt(existingPrs[j].Number) < util.DereferenceInt(existingPrs[i].Number)
+			})
 			prs := make([]string, 0)
 			for _, pr := range existingPrs {
 				prs = append(prs, pr.URL)
 			}
-			log.Logger().Debugf("Found more than one PR %s using filter %s on repo %s/%s so unable to rebase existing PR, creating new PR", strings.Join(prs, ", "), filter.String(), gitInfo.Organisation, gitInfo.Name)
-		} else if len(existingPrs) == 1 {
+			log.Logger().Debugf("Found more than one PR %s using filter %s on repo %s/%s so rebasing latest PR %s", strings.Join(prs, ", "), filter.String(), gitInfo.Organisation, gitInfo.Name, existingPrs[:1][0].URL)
+			//
+			existingPrs = existingPrs[:1]
+		}
+		if len(existingPrs) == 1 {
 			pr := existingPrs[0]
 			if pr.HeadRef != nil && pr.Number != nil {
 				changeBranch, err := gitter.Branch(dir)
@@ -295,7 +303,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 					gha.Title = "chore(dependencies): update dependency versions"
 				}
 				gha.Title = strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(gha.Title), " to"), " from")
-				gha.Body = fmt.Sprintf("%s\n<hr />\n%s", prDetails.Message, pr.Body)
+				gha.Body = fmt.Sprintf("%s\n<hr />\n\n%s", prDetails.Message, pr.Body)
 
 				pr, err := provider.UpdatePullRequest(gha, *pr.Number)
 				if err != nil {

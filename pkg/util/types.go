@@ -102,6 +102,14 @@ func DereferenceInt(i *int) int {
 	return 0
 }
 
+// DereferenceInt64 will return the int value or the empty value for i
+func DereferenceInt64(i *int64) int64 {
+	if i != nil {
+		return *i
+	}
+	return 0
+}
+
 // DereferenceString will return the string value or the empty value for string
 func DereferenceString(s *string) string {
 	if s != nil {
@@ -121,4 +129,12 @@ func DereferenceFloat64(f *float64) float64 {
 // IsZeroOfUnderlyingType checks if the underlying type of the interface is set to it's zero value
 func IsZeroOfUnderlyingType(x interface{}) bool {
 	return reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
+}
+
+// DereferenceBool will return the bool value or the empty value for bool
+func DereferenceBool(b *bool) bool {
+	if b != nil {
+		return *b
+	}
+	return false
 }

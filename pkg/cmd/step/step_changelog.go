@@ -12,6 +12,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/dependencymatrix"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
@@ -426,6 +428,51 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		release.Spec.ReleaseNotesURL = url
 		log.Logger().Infof("Updated the release information at %s", util.ColorInfo(url))
+
+		// First, attach the current dependency matrix
+		dependencyMatrixFileName := filepath.Join(dir, dependencymatrix.DependencyMatrixDirName, dependencymatrix.DependencyMatrixYamlFileName)
+		if info, err := os.Stat(dependencyMatrixFileName); err != nil && os.IsNotExist(err) {
+			log.Logger().Debugf("Not adding dependency matrix %s as does not exist", dependencyMatrixFileName)
+		} else if err != nil {
+			return errors.Wrapf(err, "checking if %s exists", dependencyMatrixFileName)
+		} else if info.Size() == 0 {
+			log.Logger().Debugf("Not adding dependency matrix %s as has no content", dependencyMatrixFileName)
+		} else {
+			file, err := os.Open(dependencyMatrixFileName)
+			// The file will be closed by the release asset uploader
+			if err != nil {
+				return errors.Wrapf(err, "opening %s", dependencyMatrixFileName)
+			}
+			releaseAsset, err := gitProvider.UploadReleaseAsset(gitInfo.Organisation, gitInfo.Name, releaseInfo.ID, dependencymatrix.DependencyMatrixAssetName, file)
+			if err != nil {
+				return errors.Wrapf(err, "uploading %s to release %d of %s/%s", dependencyMatrixFileName, releaseInfo.ID, gitInfo.Organisation, gitInfo.Name)
+			}
+			log.Logger().Infof("Uploaded %s to release asset %s", dependencyMatrixFileName, releaseAsset.BrowserDownloadURL)
+		}
+		if len(release.Spec.DependencyUpdates) > 0 {
+			// Now, let's attach any dependency updates that were done as part of this release
+			file, err := ioutil.TempFile("", "")
+			if err != nil {
+				return errors.Wrapf(err, "creating temp file to write dependency updates to")
+			}
+			data := dependencymatrix.DependencyUpdates{
+				Updates: release.Spec.DependencyUpdates,
+			}
+			bytes, err := yaml.Marshal(data)
+			if err != nil {
+				return errors.Wrapf(err, "marshaling %+v to yaml", data)
+			}
+			err = ioutil.WriteFile(file.Name(), bytes, 0600)
+			if err != nil {
+				return errors.Wrapf(err, "writing dependency update yaml to %s", file.Name())
+			}
+			releaseAsset, err := gitProvider.UploadReleaseAsset(gitInfo.Organisation, gitInfo.Name, releaseInfo.ID, dependencymatrix.DependencyUpdatesAssetName, file)
+			if err != nil {
+				return errors.Wrapf(err, "uploading %s to release %d of %s/%s", dependencymatrix.DependencyUpdatesAssetName, releaseInfo.ID, gitInfo.Organisation, gitInfo.Name)
+			}
+			log.Logger().Infof("Uploaded %s to release asset %s", dependencymatrix.DependencyUpdatesAssetName, releaseAsset.BrowserDownloadURL)
+		}
+
 	} else if o.OutputMarkdownFile != "" {
 		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), util.DefaultWritePermissions)
 		if err != nil {
@@ -572,7 +619,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	if committer != nil {
 		committerDetails = committer.Spec
 	}
-	dependencyUpdate, err := o.ParseDependencyUpdateMessage(commit.Message, spec.GitCloneURL)
+	dependencyUpdate, upstreamUpdates, err := o.ParseDependencyUpdateMessage(commit.Message, spec.GitCloneURL)
 	if err != nil {
 		log.Logger().Infof("Parsing %s for dependency updates", commit.Message)
 	}
@@ -581,6 +628,11 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 			spec.DependencyUpdates = make([]v1.DependencyUpdate, 0)
 		}
 		spec.DependencyUpdates = append(spec.DependencyUpdates, *dependencyUpdate)
+	}
+	if upstreamUpdates != nil {
+		for _, u := range upstreamUpdates.Updates {
+			spec.DependencyUpdates = append(spec.DependencyUpdates, u)
+		}
 	}
 	commitSummary := v1.CommitSummary{
 		Message:   commit.Message,

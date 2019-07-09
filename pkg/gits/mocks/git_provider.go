@@ -8,6 +8,7 @@ import (
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	pegomock "github.com/petergtz/pegomock"
+	os "os"
 	"reflect"
 	"time"
 )
@@ -234,6 +235,25 @@ func (mock *MockGitProvider) ForkRepository(_param0 string, _param1 string, _par
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(*gits.GitRepository)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
+func (mock *MockGitProvider) GetBranch(_param0 string, _param1 string, _param2 string) (*gits.GitBranch, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetBranch", params, []reflect.Type{reflect.TypeOf((**gits.GitBranch)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *gits.GitBranch
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(*gits.GitBranch)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -885,6 +905,25 @@ func (mock *MockGitProvider) UpdateWebHook(_param0 *gits.GitWebHookArguments) er
 	return ret0
 }
 
+func (mock *MockGitProvider) UploadReleaseAsset(_param0 string, _param1 string, _param2 int64, _param3 string, _param4 *os.File) (*gits.GitReleaseAsset, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("UploadReleaseAsset", params, []reflect.Type{reflect.TypeOf((**gits.GitReleaseAsset)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *gits.GitReleaseAsset
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(*gits.GitReleaseAsset)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitProvider) UserAuth() auth.UserAuth {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -1362,6 +1401,41 @@ func (c *MockGitProvider_ForkRepository_OngoingVerification) GetCapturedArgument
 }
 
 func (c *MockGitProvider_ForkRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitProvider) GetBranch(_param0 string, _param1 string, _param2 string) *MockGitProvider_GetBranch_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetBranch", params, verifier.timeout)
+	return &MockGitProvider_GetBranch_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitProvider_GetBranch_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitProvider_GetBranch_OngoingVerification) GetCapturedArguments() (string, string, string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *MockGitProvider_GetBranch_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -2424,6 +2498,49 @@ func (c *MockGitProvider_UpdateWebHook_OngoingVerification) GetAllCapturedArgume
 		_param0 = make([]*gits.GitWebHookArguments, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(*gits.GitWebHookArguments)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitProvider) UploadReleaseAsset(_param0 string, _param1 string, _param2 int64, _param3 string, _param4 *os.File) *MockGitProvider_UploadReleaseAsset_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UploadReleaseAsset", params, verifier.timeout)
+	return &MockGitProvider_UploadReleaseAsset_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitProvider_UploadReleaseAsset_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitProvider_UploadReleaseAsset_OngoingVerification) GetCapturedArguments() (string, string, int64, string, *os.File) {
+	_param0, _param1, _param2, _param3, _param4 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1]
+}
+
+func (c *MockGitProvider_UploadReleaseAsset_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int64, _param3 []string, _param4 []*os.File) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]int64, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(int64)
+		}
+		_param3 = make([]string, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(string)
+		}
+		_param4 = make([]*os.File, len(params[4]))
+		for u, param := range params[4] {
+			_param4[u] = param.(*os.File)
 		}
 	}
 	return

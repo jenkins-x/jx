@@ -1446,6 +1446,9 @@ func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, e
 	if err != nil {
 		return nil, err
 	}
+	//config git repositoryoptions parameters: Owner and RepoName
+	options.GitRepositoryOptions.Owner = options.Organisation
+	options.GitRepositoryOptions.RepoName = options.Repository
 	details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
 		"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.In, options.Out, options.Err)
 	if err != nil {

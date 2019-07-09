@@ -4,9 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -16,6 +13,10 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
@@ -340,6 +341,7 @@ func (o *PipelineRunnerOptions) buildStepCreateTaskOption(prowJobSpec prowapi.Pr
 	createTaskOption.Branch = branch
 	createTaskOption.Revision = revision
 	createTaskOption.ServiceAccount = o.ServiceAccount
+	createTaskOption.SemanticRelease = o.SemanticRelease
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range pipelineRun.Labels {
 		createTaskOption.CustomLabels = append(createTaskOption.CustomLabels, fmt.Sprintf("%s=%s", key, value))

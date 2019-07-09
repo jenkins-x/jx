@@ -254,11 +254,7 @@ func toGitHubRelease(org string, name string, release *github.RepositoryRelease)
 		if p != nil {
 			totalDownloadCount = totalDownloadCount + *p
 		}
-		assets = append(assets, GitReleaseAsset{
-			Name:               asText(asset.Name),
-			BrowserDownloadURL: asText(asset.BrowserDownloadURL),
-			ContentType:        asText(asset.ContentType),
-		})
+		assets = append(assets, toGitHubAsset(asset))
 	}
 	return &GitRelease{
 		Name:          asText(release.Name),
@@ -268,6 +264,15 @@ func toGitHubRelease(org string, name string, release *github.RepositoryRelease)
 		HTMLURL:       asText(release.HTMLURL),
 		DownloadCount: totalDownloadCount,
 		Assets:        &assets,
+	}
+}
+
+func toGitHubAsset(asset github.ReleaseAsset) GitReleaseAsset {
+	return GitReleaseAsset{
+		ID:                 util.DereferenceInt64(asset.ID),
+		Name:               asText(asset.Name),
+		BrowserDownloadURL: asText(asset.BrowserDownloadURL),
+		ContentType:        asText(asset.ContentType),
 	}
 }
 
@@ -309,14 +314,14 @@ func (p *GitHubProvider) DeleteRepository(org string, name string) error {
 func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 	return &GitRepository{
 		Name:             name,
-		AllowMergeCommit: asBool(repo.AllowMergeCommit),
+		AllowMergeCommit: util.DereferenceBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
-		Fork:             asBool(repo.Fork),
+		Fork:             util.DereferenceBool(repo.Fork),
 		Language:         asText(repo.Language),
 		Stars:            asInt(repo.StargazersCount),
-		Private:          asBool(repo.Private),
+		Private:          util.DereferenceBool(repo.Private),
 	}
 }
 
@@ -357,7 +362,7 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 	}
 	answer := &GitRepository{
 		Name:             name,
-		AllowMergeCommit: asBool(repo.AllowMergeCommit),
+		AllowMergeCommit: util.DereferenceBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
@@ -743,6 +748,34 @@ func (p *GitHubProvider) ListOpenPullRequests(owner string, repo string) ([]*Git
 	return answer, nil
 }
 
+func (p *GitHubProvider) asGitHubCommit(commit *github.RepositoryCommit) GitCommit {
+	message := ""
+	if commit.Commit != nil {
+		message = util.DereferenceString(commit.Commit.Message)
+	} else {
+		log.Logger().Warnf("No Commit object for for commit: %s", commit.GetSHA())
+	}
+	var author *GitUser
+	if commit.Author != nil {
+		author = &GitUser{
+			Login:     commit.Author.GetLogin(),
+			Email:     commit.Author.GetEmail(),
+			Name:      commit.Author.GetName(),
+			URL:       commit.Author.GetURL(),
+			AvatarURL: commit.Author.GetAvatarURL(),
+		}
+	} else {
+		log.Logger().Warnf("No author for commit: %s", commit.GetSHA())
+	}
+	return GitCommit{
+		Message: message,
+		URL:     commit.GetURL(),
+		SHA:     commit.GetSHA(),
+		Author:  author,
+	}
+
+}
+
 func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
 	repo := repository.Name
 	commits, _, err := p.Client.PullRequests.ListCommits(p.Context, owner, repo, number, nil)
@@ -754,51 +787,28 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 	answer := []*GitCommit{}
 
 	for _, commit := range commits {
-		message := ""
-		if commit.Commit != nil {
-			message = commit.Commit.GetMessage()
-			if commit.Author != nil {
-				author := commit.Author
-
-				summary := &GitCommit{
-					Message: message,
-					URL:     commit.GetURL(),
-					SHA:     commit.GetSHA(),
-					Author: &GitUser{
-						Login:     author.GetLogin(),
-						Email:     author.GetEmail(),
-						Name:      author.GetName(),
-						URL:       author.GetURL(),
-						AvatarURL: author.GetAvatarURL(),
-					},
+		summary := p.asGitHubCommit(commit)
+		if commit.Author != nil {
+			if summary.Author.Email == "" {
+				log.Logger().Infof("Commit author email is empty for: %s", commit.GetSHA())
+				dir, err := os.Getwd()
+				if err != nil {
+					return answer, err
 				}
-
-				if summary.Author.Email == "" {
-					log.Logger().Infof("Commit author email is empty for: %s", commit.GetSHA())
-					dir, err := os.Getwd()
-					if err != nil {
-						return answer, err
-					}
-					gitDir, _, err := p.Git.FindGitConfigDir(dir)
-					if err != nil {
-						return answer, err
-					}
-					log.Logger().Infof("Looking for commits in: %s", gitDir)
-					email, err := p.Git.GetAuthorEmailForCommit(gitDir, commit.GetSHA())
-					if err != nil {
-						log.Logger().Warnf("Commit not found: %s", commit.GetSHA())
-						continue
-					}
-					summary.Author.Email = email
+				gitDir, _, err := p.Git.FindGitConfigDir(dir)
+				if err != nil {
+					return answer, err
 				}
-
-				answer = append(answer, summary)
-			} else {
-				log.Logger().Warnf("No author for commit: %s", commit.GetSHA())
+				log.Logger().Infof("Looking for commits in: %s", gitDir)
+				email, err := p.Git.GetAuthorEmailForCommit(gitDir, commit.GetSHA())
+				if err != nil {
+					log.Logger().Warnf("Commit not found: %s", commit.GetSHA())
+					continue
+				}
+				summary.Author.Email = email
 			}
-		} else {
-			log.Logger().Warnf("No Commit object for for commit: %s", commit.GetSHA())
 		}
+		answer = append(answer, &summary)
 	}
 	return answer, nil
 }
@@ -978,7 +988,7 @@ func (p *GitHubProvider) RenameRepository(org string, name string, newName strin
 	}
 	answer := &GitRepository{
 		Name:             name,
-		AllowMergeCommit: asBool(repo.AllowMergeCommit),
+		AllowMergeCommit: util.DereferenceBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
@@ -1038,6 +1048,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	if id == nil {
 		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
 	}
+	releaseInfo.ID = util.DereferenceInt64(id)
 	r2, _, err := p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
 	if r != nil {
 		releaseInfo.URL = asText(r2.URL)
@@ -1303,13 +1314,6 @@ func (p *GitHubProvider) ShouldForkForPullRequest(originalOwner string, repoName
 	return true
 }
 
-func asBool(b *bool) bool {
-	if b != nil {
-		return *b
-	}
-	return false
-}
-
 func asInt(i *int) int {
 	if i != nil {
 		return *i
@@ -1365,4 +1369,34 @@ func (p *GitHubProvider) GetLatestRelease(org string, name string) (*GitRelease,
 		return nil, errors.Wrapf(err, "getting latest release for %s/%s", org, name)
 	}
 	return toGitHubRelease(org, name, repoRelease), nil
+}
+
+// UploadReleaseAsset will upload an asset to org/repo to a release with id, giving it a name, it will return the release asset from the git provider
+func (p *GitHubProvider) UploadReleaseAsset(org string, repo string, id int64, name string, asset *os.File) (*GitReleaseAsset, error) {
+	answer, _, err := p.Client.Repositories.UploadReleaseAsset(p.Context, org, repo, id, &github.UploadOptions{
+		Name: name,
+	}, asset)
+	if err != nil {
+		return nil, errors.Wrapf(err, "uploading asset %s to release %d in %s/%s", asset.Name(), id, org, repo)
+	}
+	if answer != nil {
+		a := toGitHubAsset(*answer)
+		return &a, nil
+	}
+	return nil, nil
+}
+
+// GetBranch returns the branch information for an owner/repo, including the commit at the tip
+func (p *GitHubProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
+	b, _, err := p.Client.Repositories.GetBranch(p.Context, owner, repo, branch)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting branch %s on %s/%s", branch, owner, repo)
+	}
+	commit := p.asGitHubCommit(b.Commit)
+	answer := GitBranch{
+		Name:      util.DereferenceString(b.Name),
+		Protected: util.DereferenceBool(b.Protected),
+		Commit:    &commit,
+	}
+	return &answer, nil
 }

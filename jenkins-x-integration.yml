@@ -41,7 +41,7 @@ pipelineConfig:
                       name: codecov-token
             steps:
               - name: init-jx
-                image: jenkinsxio/jx:2.0.128
+                image: gcr.io/jenkinsxio/builder-jx:0.1.553
                 command: jx
                 args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
 
@@ -65,7 +65,7 @@ pipelineConfig:
                 args: ['test-slow-integration']
 
               - name: stash-test-results
-                image: jenkinsxio/jx:2.0.128
+                image: gcr.io/jenkinsxio/builder-jx:0.1.553
                 command: jx
                 # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
                 args: ['step', 'stash', '-c', 'integration-tests', '-p', 'build/reports/*.junit.xml', '--bucket-url', 'gs://jx-prod-logs']
