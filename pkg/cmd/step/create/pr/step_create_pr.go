@@ -73,6 +73,7 @@ func NewCmdStepCreatePr(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepCreatePullRequestRegex(commonOpts))
 	cmd.AddCommand(NewCmdStepCreatePullRequestRepositories(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
+	cmd.AddCommand(NewCmdStepCreatePullRequestMake(commonOpts))
 	return cmd
 }
 
@@ -287,7 +288,7 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 		}
 		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, gitInfo, o.Base, details, filter, true, commitMessage, true, true, o.DryRun, o.Git(), provider)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
+			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
 		}
 	}
 	return nil
