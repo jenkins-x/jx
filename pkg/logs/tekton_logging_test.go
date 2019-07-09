@@ -56,7 +56,10 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
-			Build: "1",
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
 		},
 	})
 	assert.NoError(t, err)
@@ -119,7 +122,40 @@ func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
-			Build: "1",
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
+		},
+	}
+
+	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, nil)
+	assert.Error(t, err)
+	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
+}
+
+func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
+	testCaseDir := path.Join("test_data")
+	_, _, kubeClient, _, ns := getFakeClientsAndNs(t)
+
+	pipelineRun := tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRun)
+
+	pa := &v1.PipelineActivity{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PA1",
+			Namespace: ns,
+			Labels: map[string]string{
+				v1.LabelRepository: "fakerepo",
+				v1.LabelBranch:     "fakebranch",
+				v1.LabelOwner:      "fakeowner",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
 		},
 	}
 
@@ -146,7 +182,10 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
-			Build: "1",
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
 		},
 	}
 
