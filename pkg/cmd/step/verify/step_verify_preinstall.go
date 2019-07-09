@@ -69,20 +69,9 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	flag := strings.ToLower(o.LazyCreateFlag)
-	if flag != "" {
-		if flag == "true" {
-			o.LazyCreate = true
-		} else if flag == "false" {
-			o.LazyCreate = false
-		} else {
-			return util.InvalidOption("lazy-create", flag, []string{"true", "false"})
-		}
-	} else {
-		// lets default from the requirements
-		if !requirements.Terraform {
-			o.LazyCreate = true
-		}
+	o.LazyCreate, err = requirements.IsLazyCreateSecrets(o.LazyCreateFlag)
+	if err != nil {
+		return err
 	}
 
 	// lets find the namespace to use
@@ -229,8 +218,7 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 					return errors.Errorf(msg, "environmentGitOwner")
 				}
 				if requirements.Cluster.ClusterName == "" {
-					log.Logger().Warnf("no clusterName provided")
-					return errors.Errorf(msg, "environmentGitOwner")
+					return errors.Errorf(msg, "clusterName")
 				}
 			}
 			var err error

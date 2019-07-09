@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -177,47 +177,6 @@ func TestExternalDNSDisabledNotGKE(t *testing.T) {
 	assert.FileExists(t, fileName)
 
 	assert.Equal(t, false, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
-
-}
-
-func TestExternalDNSEnabledCustomDomain(t *testing.T) {
-	t.Parallel()
-
-	commonOpts := opts.CommonOptions{
-		BatchMode: false,
-	}
-	o := StepCreateInstallValuesOptions{
-		StepOptions: opts.StepOptions{
-			CommonOptions: &commonOpts,
-		},
-	}
-
-	dir, err := ioutil.TempDir("", "test-requirements-external-")
-	assert.NoError(t, err, "should create a temporary config dir")
-
-	o.Dir = dir
-	file := filepath.Join(o.Dir, config.RequirementsConfigFileName)
-	requirements := getBaseRequirements()
-	requirements.Ingress.Domain = "foobar.io"
-	requirements.Cluster.Provider = "gke"
-
-	err = requirements.SaveConfig(file)
-	assert.NoError(t, err, "failed to save file %s", file)
-
-	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
-	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
-	assert.FileExists(t, fileName)
-
-	values := make(map[string]interface{})
-	_, err = o.defaultMissingValues(values)
-
-	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
-
-	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
-	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
-	assert.FileExists(t, fileName)
-
-	assert.Equal(t, true, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
 
 }
 

@@ -279,3 +279,23 @@ func toObjectMap(object interface{}) (map[string]interface{}, error) {
 func MissingRequirement(property string, fileName string) error {
 	return fmt.Errorf("missing property: %s in file %s", property, fileName)
 }
+
+// IsLazyCreateSecrets returns a boolean whether secrets should be lazily created
+func (c *RequirementsConfig) IsLazyCreateSecrets(flag string) (bool, error) {
+	if flag != "" {
+		if flag == "true" {
+			return true, nil
+		} else if flag == "false" {
+			return false, nil
+		} else {
+			return false, util.InvalidOption("lazy-create", flag, []string{"true", "false"})
+		}
+	} else {
+		// lets default from the requirements
+		if !c.Terraform {
+			return true, nil
+		}
+	}
+	// default to false
+	return false, nil
+}
