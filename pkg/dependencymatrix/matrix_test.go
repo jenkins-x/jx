@@ -24,7 +24,7 @@ func TestUpdateSimpleDependencyMatrix(t *testing.T) {
 	err = os.MkdirAll(matrixDir, 0700)
 	assert.NoError(t, err)
 	matrixYamlPath := filepath.Join(matrixDir, "matrix.yaml")
-	err = util.CopyFile(filepath.Join("testdata", "simple_matrix", "matrix.yaml"), matrixYamlPath)
+	err = util.CopyFile(filepath.Join("testdata", "simple_matrix", "dependency-matrix", "matrix.yaml"), matrixYamlPath)
 	assert.NoError(t, err)
 	owner := "acme"
 	repo := "roadrunner"
@@ -62,7 +62,7 @@ func TestUpdateOneDegreeDependencyMatrix(t *testing.T) {
 	err = os.MkdirAll(matrixDir, 0700)
 	assert.NoError(t, err)
 	matrixYamlPath := filepath.Join(matrixDir, "matrix.yaml")
-	err = util.CopyFile(filepath.Join("testdata", "one_degree_matrix", "matrix.yaml"), matrixYamlPath)
+	err = util.CopyFile(filepath.Join("testdata", "one_degree_matrix", "dependency-matrix", "matrix.yaml"), matrixYamlPath)
 	assert.NoError(t, err)
 	owner := "acme"
 	repo := "roadrunner"
@@ -114,7 +114,7 @@ func TestUpdateTwoPathsDependencyMatrix(t *testing.T) {
 	err = os.MkdirAll(matrixDir, 0700)
 	assert.NoError(t, err)
 	matrixYamlPath := filepath.Join(matrixDir, "matrix.yaml")
-	err = util.CopyFile(filepath.Join("testdata", "two_paths_matrix", "matrix.yaml"), matrixYamlPath)
+	err = util.CopyFile(filepath.Join("testdata", "two_paths_matrix", "dependency-matrix", "matrix.yaml"), matrixYamlPath)
 	assert.NoError(t, err)
 	owner := "acme"
 	repo := "roadrunner"
@@ -166,7 +166,7 @@ func TestUpdateTwoDegreeDependencyMatrix(t *testing.T) {
 	err = os.MkdirAll(matrixDir, 0700)
 	assert.NoError(t, err)
 	matrixYamlPath := filepath.Join(matrixDir, "matrix.yaml")
-	err = util.CopyFile(filepath.Join("testdata", "two_degree_matrix", "matrix.yaml"), matrixYamlPath)
+	err = util.CopyFile(filepath.Join("testdata", "two_degree_matrix", "dependency-matrix", "matrix.yaml"), matrixYamlPath)
 	assert.NoError(t, err)
 	owner := "acme"
 	repo := "roadrunner"

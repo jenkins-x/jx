@@ -66,6 +66,14 @@ func (d DependencyPath) String() string {
 	return strings.Join(answer, ";")
 }
 
+func (d DependencyDetails) String() string {
+	componentStr := ""
+	if d.Component != "" {
+		componentStr = fmt.Sprintf(":%s", d.Component)
+	}
+	return fmt.Sprintf("%s/%s/%s%s", d.Host, d.Owner, d.Repo, componentStr)
+}
+
 // Markdown returns the dependency path as markdown
 func (d DependencyPath) Markdown() string {
 	answer := make([]string, 0)

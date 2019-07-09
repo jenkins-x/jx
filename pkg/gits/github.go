@@ -1049,7 +1049,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	}
 	id := release.ID
 	if id == nil {
-		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
+		return fmt.Errorf("the release for %s/%s tag %s has no ID", owner, repo, tag)
 	}
 	releaseInfo.ID = util.DereferenceInt64(id)
 	r2, _, err := p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
