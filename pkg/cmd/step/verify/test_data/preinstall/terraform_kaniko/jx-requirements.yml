@@ -4,3 +4,6 @@ secretStorage: local
 cluster:
   clusterName: my-cluster-name
   provider: gke
+  project: foo
+  zone: myzone
+  environmentGitOwner: myorg

@@ -2,7 +2,10 @@ package create
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"net/mail"
 	"os"
@@ -45,6 +48,8 @@ type StepCreateInstallValuesOptions struct {
 	IngressNamespace string
 	IngressService   string
 	ExternalIP       string
+	LazyCreate       bool
+	LazyCreateFlag   string
 }
 
 // StepCreateInstallValuesResults stores the generated results
@@ -83,6 +88,7 @@ func NewCmdStepCreateInstallValues(commonOpts *opts.CommonOptions) *cobra.Comman
 	cmd.Flags().StringVarP(&options.IngressService, "ingress-service", "", opts.DefaultIngressServiceName, "The name of the Ingress controller Service")
 	cmd.Flags().StringVarP(&options.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+cloud.KubernetesProviderOptions())
+	cmd.Flags().StringVarP(&options.LazyCreateFlag, "lazy-create", "", "", fmt.Sprintf("Specify true/false as to whether to lazily create missing resources. If not specified it is enabled if Terraform is not specified in the %s file", config.RequirementsConfigFileName))
 	return cmd
 }
 
@@ -121,6 +127,7 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 }
 
 func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]interface{}) (map[string]interface{}, error) {
+	info := util.ColorInfo
 	ns := o.Namespace
 	if ns == "" {
 		ns = os.Getenv("DEPLOY_NAMESPACE")
@@ -130,10 +137,14 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 			return values, fmt.Errorf("no default namespace found")
 		}
 	}
-
 	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return values, errors.Wrapf(err, "failed to load Jenkins X requirements")
+	}
+
+	o.LazyCreate, err = requirements.IsLazyCreateSecrets(o.LazyCreateFlag)
+	if err != nil {
+		return values, errors.Wrapf(err, "failed to see if lazy create flag is set %s", o.LazyCreateFlag)
 	}
 
 	if requirements.Cluster.Provider == "" {
@@ -152,18 +163,52 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		util.SetMapValueViaPath(values, "domain", requirements.Ingress.Domain)
 	}
 
+	subDomain := "." + ns + "."
+
 	// if we're using GKE and folks have provided a domain, i.e. we're  not using the Jenkins X default nip.io
 	// then let's enable external dns automatically.
 	if !strings.Contains(requirements.Ingress.Domain, "nip.io") && requirements.Cluster.Provider == cloud.GKE {
-		log.Logger().Info("Using a custom domain and GKE so enabling external dns, you can also now enable TLS")
+		log.Logger().Info("using a custom domain and GKE so enabling external dns, you can also now enable TLS")
 		requirements.Ingress.ExternalDNS = true
+		log.Logger().Infof("validating the external-dns secret in namespace %s\n", info(ns))
+
+		kubeClient, err := o.KubeClient()
+		if err != nil {
+			return values, errors.Wrap(err, "creating kubernetes client")
+		}
+
+		serviceAccountName := gke.GcpServiceAccountSecretName(kube.DefaultExternalDNSReleaseName)
+
+		err = kube.ValidateSecret(kubeClient, serviceAccountName, externaldns.ServiceAccountSecretKey, ns)
+
+		if err != nil {
+			if o.LazyCreate {
+
+				log.Logger().Infof("attempting to lazily create the external-dns secret %s\n", info(ns))
+
+				_, err = externaldns.CreateExternalDNSGCPServiceAccount(kubeClient, kube.DefaultExternalDNSReleaseName, ns, requirements.Cluster.ClusterName, requirements.Cluster.ProjectID)
+				if err != nil {
+					return values, errors.Wrap(err, "creating the ExternalDNS GCP Service Account")
+				}
+				// lets rerun the verify step to ensure its all sorted now
+				err = kube.ValidateSecret(kubeClient, serviceAccountName, externaldns.ServiceAccountSecretKey, ns)
+			}
+		}
+		if err != nil {
+			return values, errors.Wrap(err, "validating external-dns secret")
+		}
+
+		// for external dns to work using dns we need to use `-` and not `.`
+		subDomain = "-" + ns + "."
+
+		err = gke.EnableAPIs(requirements.Cluster.ProjectID, "dns")
+		if err != nil {
+			return values, errors.Wrap(err, "unable to enable 'dns' api")
+		}
 	} else {
 		log.Logger().Info("Disabling using external-dns as it currently only works on GKE and not nip.io domains")
 		requirements.Ingress.ExternalDNS = false
 	}
-
-	subDomain := "." + ns + "."
-
 	// TLS uses cert-manager to ask LetsEncrypt for a signed certificate
 	if requirements.Ingress.TLS.Enabled {
 		if requirements.Cluster.Provider != cloud.GKE {
@@ -173,15 +218,12 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		if strings.Contains(requirements.Ingress.Domain, "nip.io") {
 			return values, errors.New("TLS is not supported with nip.io, you will need to use a domain you own")
 		}
-
 		_, err = mail.ParseAddress(requirements.Ingress.TLS.Email)
 		if err != nil {
 			return values, errors.Wrap(err, "You must provide a valid email address to enable TLS so you can receive notifications from LetsEncrypt about your certificates")
 		}
 
 		util.SetMapValueViaPath(values, "tls", true)
-		// for wildcard certs to work using dns we need to use `-` and not `.`
-		subDomain = "-" + ns + "."
 	}
 
 	current := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
