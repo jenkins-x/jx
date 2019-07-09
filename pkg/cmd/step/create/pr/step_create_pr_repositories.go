@@ -63,7 +63,7 @@ func NewCmdStepCreatePullRequestRepositories(commonOpts *opts.CommonOptions) *co
 	return cmd
 }
 
-// ValidateRegexOptions validates the common options for regex pr steps
+// ValidateRepositoriesOptions validates the common options for repositories pr steps
 func (o *StepCreatePullRequestRepositoriesOptions) ValidateRepositoriesOptions() error {
 	if len(o.GitURLs) == 0 {
 		// lets default to the dev environment git repository
