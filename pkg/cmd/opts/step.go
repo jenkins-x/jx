@@ -29,3 +29,8 @@ type StepGitMergeOptions struct {
 type StepCreateOptions struct {
 	StepOptions
 }
+
+// StepUpdateOptions contains the command line flags
+type StepUpdateOptions struct {
+	StepOptions
+}

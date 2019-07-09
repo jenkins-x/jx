@@ -1060,6 +1060,39 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	return err
 }
 
+func (p *GitHubProvider) UpdateReleaseStatus(owner string, repo string, tag string, prerelease bool) error {
+	release := &github.RepositoryRelease{}
+	rel, r, err := p.Client.Repositories.GetReleaseByTag(p.Context, owner, repo, tag)
+
+	if r != nil && r.StatusCode == 404 && !strings.HasPrefix(tag, "v") {
+		// sometimes we prepend a v for example when using gh-release
+		// so lets make sure we don't create a double release
+		vtag := "v" + tag
+
+		rel2, r2, err2 := p.Client.Repositories.GetReleaseByTag(p.Context, owner, repo, vtag)
+		if r2.StatusCode != 405 {
+			rel = rel2
+			r = r2
+			err = err2
+			tag = vtag
+		}
+	}
+
+	if r != nil && err == nil {
+		release = rel
+	}
+	if r != nil && r.StatusCode == 404 {
+		log.Logger().Warnf("No release found for %s/%s and tag %s", owner, repo, tag)
+		return err
+	}
+	release.Prerelease = &prerelease
+	id := release.ID
+	if id == nil {
+		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
+	}
+	_, _, err = p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
+	return err
+}
 func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 	i, r, err := p.Client.Issues.Get(p.Context, org, name, number)
 	if r != nil && r.StatusCode == 404 {
