@@ -56,7 +56,7 @@ pipelineConfig:
                 command: helm
                 args: ['init','--client-only']
 
-              - image: jenkinsxio/jx:2.0.128
+              - image: gcr.io/jenkinsxio/builder-jx:0.1.553
                 command: jx
                 args:
                   - step
@@ -68,7 +68,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/git-token
 
-              - image: jenkinsxio/jx:2.0.128
+              - image: gcr.io/jenkinsxio/builder-jx:0.1.553
                 command: jx
                 args:
                   - step
@@ -80,7 +80,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/feature-flag-token
 
-              - image: jenkinsxio/jx:2.0.128
+              - image: gcr.io/jenkinsxio/builder-jx:0.1.553
                 command: jx
                 args:
                   - step
@@ -92,7 +92,7 @@ pipelineConfig:
                   - -f
                   - /builder/home/basic-auth-user
 
-              - image: jenkinsxio/jx:2.0.128
+              - image: gcr.io/jenkinsxio/builder-jx:0.1.553
                 command: jx
                 args:
                   - step
@@ -130,7 +130,7 @@ pipelineConfig:
                 - /workspace/source/charts/jx/Makefile
 
               - name: update-bot
-                image: gcr.io/jenkinsxio/builder-jx:0.1.537
+                image: gcr.io/jenkinsxio/builder-jx:0.1.553
                 command: ./jx/scripts/update-bot.sh
 
               #- name: distro
@@ -265,7 +265,7 @@ pipelineConfig:
                     command: ./jx/scripts/ci.sh
 
                   - name: stash-test-results
-                    image: jenkinsxio/jx:2.0.128
+                    image: gcr.io/jenkinsxio/builder-jx:0.1.553
                     command: jx
                     # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
                     args: ['step', 'stash', '-c', 'e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
@@ -279,7 +279,7 @@ pipelineConfig:
                     command: ./jx/bdd/tekton/ci.sh
 
                   - name: stash-test-results
-                    image: jenkinsxio/jx:2.0.128
+                    image: gcr.io/jenkinsxio/builder-jx:0.1.553
                     command: jx
                     # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
                     args: ['step', 'stash', '-c', 'tekton-e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
