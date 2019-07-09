@@ -76,7 +76,6 @@ var (
 		jx create terraform -c dev=gke -c stage=gke -c prod=gke
 
 `)
-
 )
 
 // NewCmdCreateTerraform creates a command object for the "create" command
