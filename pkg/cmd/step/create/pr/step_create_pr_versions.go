@@ -95,6 +95,7 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.C
 	return cmd
 }
 
+// ValidateVersionsOptions validates the common options for version pr steps
 func (o *StepCreatePullRequestVersionsOptions) ValidateVersionsOptions() error {
 	if o.Kind == "" {
 		return util.MissingOption("kind")
