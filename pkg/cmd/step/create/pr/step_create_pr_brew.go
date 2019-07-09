@@ -3,13 +3,12 @@ package pr
 import (
 	"github.com/jenkins-x/jx/pkg/brew"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -64,15 +63,13 @@ func (o *StepCreatePullRequestBrewOptions) ValidateBrewOptions() error {
 	if err := o.ValidateOptions(); err != nil {
 		return errors.WithStack(err)
 	}
-	if o.Version == "" {
-		return util.MissingOption("version")
-	}
 	if o.Sha == "" {
 		return util.MissingOption("sha")
 	}
 	if o.SrcGitURL == "" {
 		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
 	}
+
 	return nil
 }
 

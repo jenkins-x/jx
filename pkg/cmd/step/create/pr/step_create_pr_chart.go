@@ -64,19 +64,25 @@ func NewCmdStepCreatePullRequestChart(commonOpts *opts.CommonOptions) *cobra.Com
 	return cmd
 }
 
-// Run implements this command
-func (o *StepCreatePullRequestChartsOptions) Run() error {
+// ValidateChartsOptions validates the common options for chart pr steps
+func (o *StepCreatePullRequestChartsOptions) ValidateChartsOptions() error {
 	if err := o.ValidateOptions(); err != nil {
 		return errors.WithStack(err)
 	}
 	if o.Name == "" {
 		return util.MissingOption("name")
 	}
-	if o.Version == "" {
-		return util.MissingOption("version")
-	}
 	if o.SrcGitURL == "" {
 		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
+	}
+
+	return nil
+}
+
+// Run implements this command
+func (o *StepCreatePullRequestChartsOptions) Run() error {
+	if err := o.ValidateChartsOptions(); err != nil {
+		return errors.WithStack(err)
 	}
 	err := o.CreatePullRequest("chart",
 		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {

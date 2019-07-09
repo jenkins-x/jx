@@ -95,24 +95,19 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.C
 	return cmd
 }
 
-// Run implements this command
-func (o *StepCreatePullRequestVersionsOptions) Run() error {
+func (o *StepCreatePullRequestVersionsOptions) ValidateVersionsOptions() error {
 	if o.Kind == "" {
 		return util.MissingOption("kind")
 	}
 	if util.StringArrayIndex(version.KindStrings, o.Kind) < 0 {
 		return util.InvalidOption("kind", o.Kind, version.KindStrings)
 	}
-	opts := &o.PullRequestDetails
 
-	if opts.RepositoryGitURL == "" {
+	if o.PullRequestDetails.RepositoryGitURL == "" {
 		return util.MissingOption("repo")
 	}
-	dir, err := ioutil.TempDir("", "create-version-pr")
-	if err != nil {
-		return err
-	}
 
+	var err error
 	if o.UpdateTektonImages {
 		o.builderImageVersion, err = o.findLatestBuilderImageVersion()
 		if err != nil {
@@ -147,7 +142,20 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 		o.PullRequestDetails.Title = "upgrade chart versions"
 		o.PullRequestDetails.Message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
 	}
+	return nil
+}
 
+// Run implements this command
+func (o *StepCreatePullRequestVersionsOptions) Run() error {
+	if err := o.ValidateVersionsOptions(); err != nil {
+		return errors.WithStack(err)
+	}
+	dir, err := ioutil.TempDir("", "create-version-pr")
+	if err != nil {
+		return err
+	}
+
+	opts := &o.PullRequestDetails
 	opts.Dir = dir
 	opts.RepositoryMessage = "versions repository"
 
