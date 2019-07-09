@@ -86,8 +86,8 @@ func NewCmdStepCreatePullRequestRegex(commonOpts *opts.CommonOptions) *cobra.Com
 	return cmd
 }
 
-// Run implements this command
-func (o *StepCreatePullRequestRegexOptions) Run() error {
+// ValidateRegexOptions validates the common options for regex pr steps
+func (o *StepCreatePullRequestRegexOptions) ValidateRegexOptions() error {
 	if err := o.ValidateOptions(); err != nil {
 		return errors.WithStack(err)
 	}
@@ -97,6 +97,21 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 	// ensure the regexp is multi-line
 	if !strings.HasPrefix(o.Regexp, "(?m") {
 		o.Regexp = fmt.Sprintf("(?m)%s", o.Regexp)
+	}
+	if o.SrcGitURL == "" {
+		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
+	}
+	if o.Kind == "" {
+		o.Kind = "regex"
+	}
+
+	return nil
+}
+
+// Run implements this command
+func (o *StepCreatePullRequestRegexOptions) Run() error {
+	if err := o.ValidateRegexOptions(); err != nil {
+		return errors.WithStack(err)
 	}
 	regexp, err := regexp.Compile(o.Regexp)
 	if err != nil {
@@ -113,15 +128,6 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 		} else {
 			namedCaptureIndex = append(namedCaptureIndex, false)
 		}
-	}
-	if o.Version == "" {
-		return util.MissingOption("version")
-	}
-	if o.SrcGitURL == "" {
-		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
-	}
-	if o.Kind == "" {
-		o.Kind = "regex"
 	}
 	err = o.CreatePullRequest(o.Kind,
 		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {

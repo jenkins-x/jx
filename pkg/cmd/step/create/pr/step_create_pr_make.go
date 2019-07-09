@@ -6,9 +6,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -63,13 +63,25 @@ func NewCmdStepCreatePullRequestMake(commonOpts *opts.CommonOptions) *cobra.Comm
 	return cmd
 }
 
-// Run implements this command
-func (o *StepCreatePullRequestMakeOptions) Run() error {
+// ValidateMakeOptions validates the common options for make pr steps
+func (o *StepCreatePullRequestMakeOptions) ValidateMakeOptions() error {
 	if err := o.ValidateOptions(); err != nil {
 		return errors.WithStack(err)
 	}
 	if o.Name == "" {
 		return util.MissingOption("name")
+	}
+	if o.SrcGitURL == "" {
+		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
+	}
+
+	return nil
+}
+
+// Run implements this command
+func (o *StepCreatePullRequestMakeOptions) Run() error {
+	if err := o.ValidateMakeOptions(); err != nil {
+		return errors.WithStack(err)
 	}
 	ro := StepCreatePullRequestRegexOptions{
 		StepCreatePrOptions: o.StepCreatePrOptions,

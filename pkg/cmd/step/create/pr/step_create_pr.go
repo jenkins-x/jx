@@ -115,6 +115,9 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 		}
 
 	}
+	if o.Version == "" {
+		return util.MissingOption("version")
+	}
 	if len(o.GitURLs) == 0 {
 		return util.MissingOption("repo")
 	}
