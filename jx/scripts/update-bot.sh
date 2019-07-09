@@ -11,7 +11,7 @@ then
   SHA256=$(grep 'darwin' $CHECKSUMS | cut -d' ' -f1)
   if [ ! -z $SHA256 ]
   then
-    ./build/linux/jx step create pr brew --version $VERSION --sha $SHA256 --repo https://github.com/jenkins-x/homebrew-jx.git
+    ./build/linux/jx step create pr brew --version $VERSION --sha $SHA256 --repo https://github.com/jenkins-x/homebrew-jx.git --src-repo https://github.com/jenkins-x/jx.git
   fi
 fi
 
