@@ -194,6 +194,21 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	return answer
 }
 
+// LabelSelectorsForActivity returns a slice of label selectors relevant to PipelineActivity corresponding to the filter
+func (o *BuildPodInfoFilter) LabelSelectorsForActivity() []string {
+	var labelSelectors []string
+	if o.Owner != "" {
+		labelSelectors = append(labelSelectors, "owner="+o.Owner)
+	}
+	if o.Repository != "" {
+		labelSelectors = append(labelSelectors, "repo="+o.Repository)
+	}
+	if o.Branch != "" {
+		labelSelectors = append(labelSelectors, "branch="+o.Branch)
+	}
+	return labelSelectors
+}
+
 // LabelSelectorsForBuild returns a slice of label selectors corresponding to the filter
 func (o *BuildPodInfoFilter) LabelSelectorsForBuild() []string {
 	var labelSelectors []string
