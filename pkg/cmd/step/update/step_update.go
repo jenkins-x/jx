@@ -3,6 +3,7 @@ package update
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/step/update/release"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +26,7 @@ func NewCmdStepUpdate(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	//cmd.AddCommand(pr.NewCmdStepCreatePr(commonOpts))
+	cmd.AddCommand(release.NewCmdStepUpdateRelease(commonOpts))
 	return cmd
 }
 
