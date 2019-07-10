@@ -243,6 +243,55 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 	assert.Equal(t, containersNumber, len(n))
 }
 
+func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing.T) {
+	testCaseDir := path.Join("test_data", "legacy_pipeline_run")
+	_, _, _, _, ns := getFakeClientsAndNs(t)
+
+	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+	pipelineRun := tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)
+	kubeClient := kubeMocks.NewSimpleClientset(podsList)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRun)
+
+	pa := &v1.PipelineActivity{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PA1",
+			Namespace: ns,
+			Labels: map[string]string{
+				v1.LabelRepository: "fakerepo",
+				v1.LabelBranch:     "fakebranch",
+				v1.LabelOwner:      "fakeowner",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
+		},
+	}
+
+	writer := TestWriter{}
+	r, fakeStdout, _ := os.Pipe()
+	log.SetOutput(fakeStdout)
+
+	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, writer)
+
+	fakeStdout.Close()
+	outBytes, _ := ioutil.ReadAll(r)
+	r.Close()
+
+	aORb := regexp.MustCompile("Pod logs...")
+	n := aORb.FindAllStringIndex(string(outBytes), -1)
+	fmt.Println(len(n))
+
+	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
+	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
+	containersNumber := len(containers1) + len(containers2)
+
+	assert.NoError(t, err)
+	assert.Equal(t, containersNumber, len(n))
+}
+
 func TestStreamPipelinePersistentLogs(t *testing.T) {
 	_, _, _, opts, _ := getFakeClientsAndNs(t)
 	opts.SkipAuthSecretsMerge = true

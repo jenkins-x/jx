@@ -2,6 +2,7 @@ package logs
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/tekton"
 	"sort"
 	"strings"
 	"time"
@@ -95,7 +96,7 @@ func findLegacyPipelineRunBuildNumber(pipelineRun *v1alpha12.PipelineRun) string
 }
 
 func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) ([]string, error) {
-	filters := []string{"owner=" + pa.Spec.GitOwner, "repo=" + pa.Spec.GitRepository, "branch=" + pa.Spec.GitBranch, "build=" + pa.Spec.Build}
+	filters := []string{"owner=" + pa.Spec.GitOwner, "repo=" + pa.Spec.GitRepository, "branch=" + pa.Spec.GitBranch}
 
 	tektonPRs, err := tektonClient.TektonV1alpha1().PipelineRuns(pa.Namespace).List(metav1.ListOptions{
 		LabelSelector: strings.Join(filters, ","),
@@ -105,7 +106,13 @@ func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tekton
 	}
 	var names []string
 	for _, pr := range tektonPRs.Items {
-		names = append(names, pr.Name)
+		buildNumber := pr.Labels[tekton.LabelBuild]
+		if buildNumber == "" {
+			buildNumber = findLegacyPipelineRunBuildNumber(&pr)
+		}
+		if buildNumber == pa.Spec.Build {
+			names = append(names, pr.Name)
+		}
 	}
 
 	return names, nil
