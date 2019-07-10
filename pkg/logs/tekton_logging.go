@@ -94,7 +94,11 @@ func findLegacyPipelineRunBuildNumber(pipelineRun *v1alpha12.PipelineRun) string
 }
 
 func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) ([]string, error) {
-	filters := []string{"owner=" + pa.Spec.GitOwner, "repo=" + pa.Spec.GitRepository, "branch=" + pa.Spec.GitBranch}
+	filters := []string{
+		fmt.Sprintf("%s=%s", v1.LabelOwner, pa.Spec.GitOwner),
+		fmt.Sprintf("%s=%s", v1.LabelRepository, pa.Spec.GitRepository),
+		fmt.Sprintf("%s=%s", v1.LabelBranch, pa.Spec.GitBranch),
+	}
 
 	tektonPRs, err := tektonClient.TektonV1alpha1().PipelineRuns(pa.Namespace).List(metav1.ListOptions{
 		LabelSelector: strings.Join(filters, ","),

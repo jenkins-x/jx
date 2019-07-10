@@ -1,6 +1,7 @@
 package builds
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -198,13 +199,13 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 func (o *BuildPodInfoFilter) LabelSelectorsForActivity() []string {
 	var labelSelectors []string
 	if o.Owner != "" {
-		labelSelectors = append(labelSelectors, "owner="+o.Owner)
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelOwner, o.Owner))
 	}
 	if o.Repository != "" {
-		labelSelectors = append(labelSelectors, "repository="+o.Repository)
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelRepository, o.Repository))
 	}
 	if o.Branch != "" {
-		labelSelectors = append(labelSelectors, "branch="+o.Branch)
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelBranch, o.Branch))
 	}
 	return labelSelectors
 }
@@ -216,13 +217,13 @@ func (o *BuildPodInfoFilter) LabelSelectorsForBuild() []string {
 		labelSelectors = append(labelSelectors, "context="+o.Context)
 	}
 	if o.Owner != "" {
-		labelSelectors = append(labelSelectors, "owner="+o.Owner)
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelOwner, o.Owner))
 	}
 	if o.Repository != "" {
-		labelSelectors = append(labelSelectors, "repo="+o.Repository)
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelRepository, o.Repository))
 	}
 	if o.Branch != "" {
-		labelSelectors = append(labelSelectors, "branch="+o.Branch)
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelBranch, o.Branch))
 	}
 	return labelSelectors
 }
