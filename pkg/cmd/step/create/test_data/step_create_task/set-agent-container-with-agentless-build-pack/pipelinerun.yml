@@ -10,16 +10,16 @@ metadata:
   name: abayer-js-test-repo-no-default-1
 spec:
   params:
-    - name: version
-      value: 0.0.1
+  - name: version
+    value: 0.0.1
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-js-test-repo-no-default-1
   resources:
-    - name: abayer-js-test-repo-no-default
-      resourceRef:
-        apiVersion: tekton.dev/v1alpha1
-        name: abayer-js-test-repo-no-default
+  - name: abayer-js-test-repo-no-default
+    resourceRef:
+      apiVersion: tekton.dev/v1alpha1
+      name: abayer-js-test-repo-no-default
   serviceAccount: tekton-bot
   timeout: 240h0m0s
   trigger:

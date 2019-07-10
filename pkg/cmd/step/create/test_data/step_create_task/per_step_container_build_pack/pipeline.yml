@@ -2,31 +2,32 @@ apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   creationTimestamp: null
-  name: abayer-golang-qs-test-master-1
-  namespace: jx
   labels:
     branch: master
     build: "1"
     owner: abayer
     repo: golang-qs-test
+  name: abayer-golang-qs-test-master-1
+  namespace: jx
 spec:
   params:
-    - default: 0.0.1
-      description: the version number for this pipeline which is used as a tag on docker
-        images and helm charts
-      name: version
+  - default: 0.0.1
+    description: the version number for this pipeline which is used as a tag on docker
+      images and helm charts
+    name: version
   resources:
-    - name: abayer-golang-qs-test-master
-      type: git
+  - name: abayer-golang-qs-test-master
+    type: git
   tasks:
-    - name: from-build-pack
-      params:
-        - name: version
-          value: ${params.version}
-      resources:
-        inputs:
-          - name: workspace
-            resource: abayer-golang-qs-test-master
-      taskRef:
-        name: abayer-golang-qs-test-master-from-build-pack-1
+  - name: from-build-pack
+    params:
+    - name: version
+      value: ${params.version}
+    resources:
+      inputs:
+      - name: workspace
+        resource: abayer-golang-qs-test-master
+    retries: 0
+    taskRef:
+      name: abayer-golang-qs-test-master-from-build-pack-1
 status: {}
