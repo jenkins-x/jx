@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -334,6 +335,33 @@ func DeleteAllObjectsInBucket(bucketName string) error {
 		return err
 	}
 	return nil
+}
+
+// DownloadFileFromBucket downloads the given file from the bucket and returns the read bytes, deleting the temp file
+func DownloadFileFromBucket(fullBucketURL string) ([]byte, error) {
+	f, err := ioutil.TempFile(os.TempDir(), "build-log-*.log")
+	defer os.Remove(f.Name())
+	if err != nil {
+		return nil, errors.Wrapf(err, "there was a problem storing the logs file in the temp dir")
+	}
+	args := []string{"cp", fullBucketURL, f.Name()}
+
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+
+	_, err = cmd.RunWithoutRetry()
+	if err != nil {
+		return nil, err
+	}
+
+	fileContents, err := ioutil.ReadFile(f.Name())
+	if err != nil {
+		return nil, err
+	}
+
+	return fileContents, nil
 }
 
 // DeleteBucket deletes a Google storage bucket
