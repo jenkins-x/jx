@@ -468,6 +468,11 @@ func (o *PipelineRunnerOptions) setupSignalChannel(cancel context.CancelFunc) {
 func (o *PipelineRunnerOptions) getSourceURL(org, repo string) string {
 	jxClient, ns, err := o.getClientsAndNamespace()
 
+	if err != nil {
+		logger.Debugf("failed to get jxClient or namespace %v", err)
+		return ""
+	}
+
 	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
 
 	sourceRepos, err := resourceInterface.List(meta_v1.ListOptions{
