@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/version"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -1114,7 +1115,7 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, labels map[string]string, defaultImage string) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, versionsDir string, labels map[string]string, defaultImage string) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
@@ -1210,7 +1211,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		// We don't want to dupe volumes for the Task if there are multiple steps
 		volumes := make(map[string]corev1.Volume)
 		for _, step := range s.Steps {
-			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, sourceDir, baseWorkingDir, env, stageContainer, podTemplates, stepCounter)
+			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, sourceDir, baseWorkingDir, env, stageContainer, podTemplates, versionsDir, stepCounter)
 			if err != nil {
 				return nil, err
 			}
@@ -1248,7 +1249,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates, labels, defaultImage)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates, versionsDir, labels, defaultImage)
 			if err != nil {
 				return nil, err
 			}
@@ -1265,7 +1266,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 
 		for _, nested := range s.Parallel {
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates, labels, defaultImage)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates, versionsDir, labels, defaultImage)
 			if err != nil {
 				return nil, err
 			}
@@ -1344,7 +1345,7 @@ func isNestedFirstStepsStage(enclosingStage *transformedStage) bool {
 	return true
 }
 
-func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {
+func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, versionsDir string, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {
 	volumes := make(map[string]corev1.Volume)
 	var steps []corev1.Container
 
@@ -1390,6 +1391,13 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 			c.Image = stepImage
 			c.Command = []string{"/bin/sh", "-c"}
 		}
+
+		resolvedImage, err := version.ResolveDockerImage(versionsDir, c.Image)
+		if err != nil {
+			log.Logger().Warnf("failed to resolve step image version: %s due to %s", c.Image, err.Error())
+		} else {
+			c.Image = resolvedImage
+		}
 		// Special-casing for commands starting with /kaniko
 		// TODO: Should this be more general?
 		if strings.HasPrefix(step.GetCommand(), "/kaniko") {
@@ -1423,7 +1431,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 				if s.Name != "" {
 					s.Name = s.Name + strconv.Itoa(1+i)
 				}
-				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, sourceDir, baseWorkingDir, loopEnv, parentContainer, podTemplates, stepCounter)
+				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, sourceDir, baseWorkingDir, loopEnv, parentContainer, podTemplates, versionsDir, stepCounter)
 				if loopErr != nil {
 					return nil, nil, loopCounter, loopErr
 				}
@@ -1453,7 +1461,7 @@ func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string, labels map[string]string, defaultImage string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, versionsDir string, taskParams []tektonv1alpha1.TaskParam, sourceDir string, labels map[string]string, defaultImage string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -1510,7 +1518,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
 
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates, labels, defaultImage)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates, versionsDir, labels, defaultImage)
 		if err != nil {
 			return nil, nil, nil, err
 		}

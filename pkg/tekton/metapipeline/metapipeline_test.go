@@ -2,6 +2,7 @@ package metapipeline
 
 import (
 	"github.com/jenkins-x/jx/pkg/prow"
+	"path/filepath"
 	"testing"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -49,6 +50,7 @@ var _ = Describe("Meta pipeline", func() {
 				BuildNumber:      "1",
 				SourceDir:        "source",
 				ServiceAccount:   "tekton-bot",
+				VersionsDir:      filepath.Join("test_data", "stable_versions"),
 			}
 		})
 
