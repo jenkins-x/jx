@@ -33,7 +33,7 @@ var (
 		"roles/storage.objectAdmin",
 		"roles/storage.objectCreator"}
 )
-
+// GCloud real implementation of the gcloud helper
 type GCloud struct {
 
 }

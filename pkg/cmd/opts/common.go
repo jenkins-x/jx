@@ -389,6 +389,7 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
+// GCloud returns the implementation of a gcloud helper
 func (o *CommonOptions) GCloud() gke.GClouder {
 	return &gke.GCloud{}
 }
