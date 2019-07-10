@@ -10,16 +10,16 @@ metadata:
   name: abayer-js-test-repo-really-long-1
 spec:
   params:
-    - name: version
-      value: 0.0.1
+  - name: version
+    value: 0.0.1
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-js-test-repo-really-long-1
   resources:
-    - name: abayer-js-test-repo-really-long
-      resourceRef:
-        apiVersion: tekton.dev/v1alpha1
-        name: abayer-js-test-repo-really-long
+  - name: abayer-js-test-repo-really-long
+    resourceRef:
+      apiVersion: tekton.dev/v1alpha1
+      name: abayer-js-test-repo-really-long
   serviceAccount: tekton-bot
   timeout: 240h0m0s
   trigger:

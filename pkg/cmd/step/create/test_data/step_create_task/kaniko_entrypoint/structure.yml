@@ -1,14 +1,14 @@
 metadata:
   creationTimestamp: null
-  name: jenkins-x-jx-fix-kaniko-special-9l9zj-1
   labels:
     branch: fix-kaniko-special-casing
     build: "1"
     owner: jenkins-x
     repo: jx
+  name: jenkins-x-jx-fix-kaniko-special-9l9zj-1
 pipelineRef: null
 pipelineRunRef: null
 stages:
-  - depth: 0
-    name: ci
-    taskRef: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
+- depth: 0
+  name: ci
+  taskRef: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
