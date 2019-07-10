@@ -33,7 +33,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/spf13/cobra"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/test-infra/prow/pod-utils/downwardapi"
@@ -339,7 +338,6 @@ func (o *PipelineRunnerOptions) buildStepCreateTaskOption(prowJobSpec prowapi.Pr
 	// defaults
 	createTaskOption.SourceName = "source"
 	createTaskOption.Duration = time.Second * 20
-	createTaskOption.Trigger = string(pipelineapi.PipelineTriggerTypeManual)
 	createTaskOption.PullRequestNumber = prNumber
 	createTaskOption.CloneGitURL = sourceURL
 	createTaskOption.DeleteTempDir = true

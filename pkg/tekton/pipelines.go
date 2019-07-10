@@ -213,7 +213,6 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 	name string,
 	apiVersion string,
 	labels map[string]string,
-	trigger string,
 	serviceAccount string,
 	pipelineParams []pipelineapi.Param,
 	timeout *metav1.Duration) *pipelineapi.PipelineRun {
@@ -243,9 +242,6 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 		},
 		Spec: pipelineapi.PipelineRunSpec{
 			ServiceAccount: serviceAccount,
-			Trigger: pipelineapi.PipelineTrigger{
-				Type: pipelineapi.PipelineTriggerType(trigger),
-			},
 			PipelineRef: pipelineapi.PipelineRef{
 				Name:       name,
 				APIVersion: apiVersion,

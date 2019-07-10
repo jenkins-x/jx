@@ -47,7 +47,6 @@ type CRDCreationParameters struct {
 	PullRef          prow.PullRefs
 	SourceDir        string
 	PodTemplates     map[string]*corev1.Pod
-	Trigger          string
 	ServiceAccount   string
 	Labels           []string
 	EnvVars          []string
@@ -77,7 +76,7 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 	}
 
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, &params.GitInfo, params.PullRef.BaseBranch)}
-	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.Trigger, params.ServiceAccount, nil, nil)
+	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.ServiceAccount, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
 	if err != nil {
@@ -212,7 +211,6 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 		// there might be a batch build building multiple PRs, in which case we just use the first in this case
 		break
 	}
-	args = append(args, "--trigger", params.Trigger)
 	args = append(args, "--service-account", params.ServiceAccount)
 	args = append(args, "--source", params.SourceDir)
 	args = append(args, "--branch", params.BranchIdentifier)

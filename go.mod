@@ -111,7 +111,7 @@ require (
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/testify v1.3.0
-	github.com/tektoncd/pipeline v0.3.2-0.20190508171555-91b53326d376
+	github.com/tektoncd/pipeline v0.5.1
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb
@@ -125,6 +125,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f
+	golang.org/x/xerrors v0.0.0-20190513163551-3ee3066db522 // indirect
 	google.golang.org/api v0.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20190219182410-082222b4a5c5 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.3

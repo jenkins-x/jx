@@ -152,7 +152,6 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to resources that are created")
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to resources that are created")
-	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.CloneGitURL, "clone-git-url", "", "", "Specify the git URL to clone to a temporary directory to get the source code")
 	cmd.Flags().StringVarP(&options.CloneDir, "clone-dir", "", "", "Specify the directory of the directory containing the git clone")
 	cmd.Flags().StringVarP(&options.PullRequestNumber, "pr-number", "", "", "If a Pull Request this is it's number")
@@ -551,7 +550,7 @@ func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *confi
 			return nil, errors.Wrapf(err, "parsing of pipeline timeout failed")
 		}
 	}
-	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, o.labels, o.Trigger, o.ServiceAccount, o.pipelineParams, timeout)
+	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, o.labels, o.ServiceAccount, o.pipelineParams, timeout)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
 	if err != nil {
@@ -662,8 +661,8 @@ func (o *StepCreateTaskOptions) enhanceTasksAndPipeline(tasks []*pipelineapi.Tas
 	return tasks, pipeline
 }
 
-func (o *StepCreateTaskOptions) createTaskParams() []pipelineapi.TaskParam {
-	taskParams := []pipelineapi.TaskParam{}
+func (o *StepCreateTaskOptions) createTaskParams() []pipelineapi.ParamSpec {
+	taskParams := []pipelineapi.ParamSpec{}
 	for _, param := range o.pipelineParams {
 		name := param.Name
 		description := ""
@@ -676,7 +675,7 @@ func (o *StepCreateTaskOptions) createTaskParams() []pipelineapi.TaskParam {
 			description = "the PipelineRun build number"
 			defaultValue = o.BuildNumber
 		}
-		taskParams = append(taskParams, pipelineapi.TaskParam{
+		taskParams = append(taskParams, pipelineapi.ParamSpec{
 			Name:        name,
 			Description: description,
 			Default:     defaultValue,
@@ -685,11 +684,11 @@ func (o *StepCreateTaskOptions) createTaskParams() []pipelineapi.TaskParam {
 	return taskParams
 }
 
-func (o *StepCreateTaskOptions) createPipelineParams() []pipelineapi.PipelineParam {
-	answer := []pipelineapi.PipelineParam{}
+func (o *StepCreateTaskOptions) createPipelineParams() []pipelineapi.ParamSpec {
+	answer := []pipelineapi.ParamSpec{}
 	taskParams := o.createTaskParams()
 	for _, tp := range taskParams {
-		answer = append(answer, pipelineapi.PipelineParam{
+		answer = append(answer, pipelineapi.ParamSpec{
 			Name:        tp.Name,
 			Description: tp.Description,
 			Default:     tp.Default,

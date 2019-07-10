@@ -2,6 +2,9 @@ package create
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -18,11 +21,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"strings"
-	"time"
 
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
@@ -203,7 +203,6 @@ func (o *StepCreatePipelineOptions) Run() error {
 		PullRef:          *pullRefs,
 		SourceDir:        defaultCheckoutDir,
 		PodTemplates:     podTemplates,
-		Trigger:          string(pipelineapi.PipelineTriggerTypeManual),
 		ServiceAccount:   o.ServiceAccount,
 		Labels:           o.CustomLabels,
 		EnvVars:          o.CustomEnvs,
