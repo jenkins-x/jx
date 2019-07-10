@@ -43,6 +43,7 @@ type GitProvider interface {
 	ValidateRepositoryName(org string, name string) error
 
 	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
+
 	UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error)
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
@@ -100,6 +101,8 @@ type GitProvider interface {
 	CreateIssueComment(owner string, repo string, number int, comment string) error
 
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
+
+	UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
 

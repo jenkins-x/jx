@@ -607,6 +607,20 @@ func (f *FakeProvider) UpdateRelease(owner string, repoName string, tag string, 
 	return fmt.Errorf("repository with name '%s' not found", repoName)
 }
 
+func (f *FakeProvider) UpdateReleaseStatus(owner string, repoName string, tag string, releaseInfo *GitRelease) error {
+	repos, ok := f.Repositories[owner]
+	if !ok {
+		return fmt.Errorf("organization '%s' not found", owner)
+	}
+
+	for _, repo := range repos {
+		if repo.GitRepo.Name == repoName {
+			repo.Releases[tag] = releaseInfo
+			return nil
+		}
+	}
+	return fmt.Errorf("repository with name '%s' not found", repoName)
+}
 func (f *FakeProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	repos, ok := f.Repositories[org]
 	if !ok {

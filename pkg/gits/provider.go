@@ -123,6 +123,7 @@ type GitRelease struct {
 	Name          string
 	TagName       string
 	Body          string
+	PreRelease    bool
 	URL           string
 	HTMLURL       string
 	DownloadCount int

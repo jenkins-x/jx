@@ -1030,6 +1030,11 @@ func (b *BitbucketServerProvider) UpdateRelease(owner string, repo string, tag s
 	return nil
 }
 
+func (b *BitbucketServerProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
+	log.Logger().Warn("Bitbucket Server doesn't support releases")
+	return nil
+}
+
 func (b *BitbucketServerProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
 	log.Logger().Warn("Bitbucket Server doesn't support releases")

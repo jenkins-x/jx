@@ -268,6 +268,10 @@ func (p *GerritProvider) UpdateRelease(owner string, repo string, tag string, re
 	return nil
 }
 
+func (p *GerritProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
+	return nil
+}
+
 func (p *GerritProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	return nil, nil
 }
