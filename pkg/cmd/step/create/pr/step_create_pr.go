@@ -115,6 +115,9 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 		}
 
 	}
+	if o.SrcGitURL == "" {
+		return errors.Errorf("unable to determine source url, no argument provided, env var REPO_URL is empty and working directory is not a git repo")
+	}
 	if o.Version == "" {
 		return util.MissingOption("version")
 	}
