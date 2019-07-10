@@ -370,13 +370,13 @@ func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRe
 			if err != nil {
 				return "", nil, nil, nil, errors.Wrapf(err, "getting release from %s/%s", srcRepo.Organisation, srcRepo.Name)
 			}
-			if release.Assets != nil {
-				assets = *release.Assets
-			}
 			if release != nil {
 				message.WriteString(fmt.Sprintf("to [%s](%s)", toVersion, release.HTMLURL))
 				update.ToReleaseHTMLURL = release.HTMLURL
 				update.ToReleaseName = release.Name
+				if release.Assets != nil {
+					assets = *release.Assets
+				}
 			} else {
 				message.WriteString(fmt.Sprintf("to %s", toVersion))
 			}
