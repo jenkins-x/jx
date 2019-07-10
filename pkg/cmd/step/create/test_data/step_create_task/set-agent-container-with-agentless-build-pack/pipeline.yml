@@ -2,31 +2,32 @@ apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   creationTimestamp: null
-  name: abayer-js-test-repo-no-default-1
-  namespace: jx
   labels:
     branch: no-default-agent
     build: "1"
     owner: abayer
     repo: js-test-repo
+  name: abayer-js-test-repo-no-default-1
+  namespace: jx
 spec:
   params:
-    - default: 0.0.1
-      description: the version number for this pipeline which is used as a tag on docker
-        images and helm charts
-      name: version
+  - default: 0.0.1
+    description: the version number for this pipeline which is used as a tag on docker
+      images and helm charts
+    name: version
   resources:
-    - name: abayer-js-test-repo-no-default
-      type: git
+  - name: abayer-js-test-repo-no-default
+    type: git
   tasks:
-    - name: from-build-pack
-      params:
-        - name: version
-          value: ${params.version}
-      resources:
-        inputs:
-          - name: workspace
-            resource: abayer-js-test-repo-no-default
-      taskRef:
-        name: abayer-js-test-repo-no-default-from-build-pack-1
+  - name: from-build-pack
+    params:
+    - name: version
+      value: ${params.version}
+    resources:
+      inputs:
+      - name: workspace
+        resource: abayer-js-test-repo-no-default
+    retries: 0
+    taskRef:
+      name: abayer-js-test-repo-no-default-from-build-pack-1
 status: {}
