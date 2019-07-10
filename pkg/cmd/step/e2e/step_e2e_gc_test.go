@@ -46,10 +46,10 @@ func TestShouldDeleteOlderThanDuration(t *testing.T) {
 	o := e2e.StepE2EGCOptions{}
 	o.Duration = 2
 	cluster := getCluster("168", "jenkins-gkebdd", "159")
-	cluster.ResourceLabels["create-time"] = time.Now().Format("Mon-Jan-2-2006-15-04-05")
+	cluster.ResourceLabels["create-time"] = time.Now().UTC().Format("Mon-Jan-2-2006-15-04-05")
 	assert.Equal(t, false, o.ShouldDeleteOlderThanDuration(cluster))
 	cluster2 := getCluster("170", "jenkins-gkebdd", "159")
-	cluster2.ResourceLabels["create-time"] = time.Now().Add(-3 * time.Hour).Format("Mon-Jan-2-2006-15-04-05")
+	cluster2.ResourceLabels["create-time"] = time.Now().UTC().Add(-3 * time.Hour).Format("Mon-Jan-2-2006-15-04-05")
 	assert.Equal(t, true, o.ShouldDeleteOlderThanDuration(cluster2))
 	cluster2.ResourceLabels["keep-me"] = "true"
 	assert.Equal(t, false, o.ShouldDeleteOlderThanDuration(cluster2))
