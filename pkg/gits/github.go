@@ -1060,7 +1060,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	return err
 }
 
-func (p *GitHubProvider) UpdateReleaseStatus(owner string, repo string, tag string, prerelease bool) error {
+func (p *GitHubProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	release := &github.RepositoryRelease{}
 	rel, r, err := p.Client.Repositories.GetReleaseByTag(p.Context, owner, repo, tag)
 
@@ -1085,7 +1085,9 @@ func (p *GitHubProvider) UpdateReleaseStatus(owner string, repo string, tag stri
 		log.Logger().Warnf("No release found for %s/%s and tag %s", owner, repo, tag)
 		return err
 	}
-	release.Prerelease = &prerelease
+	if release.Prerelease != &releaseInfo.PreRelease {
+		release.Prerelease = &releaseInfo.PreRelease
+	}
 	id := release.ID
 	if id == nil {
 		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
@@ -1093,6 +1095,7 @@ func (p *GitHubProvider) UpdateReleaseStatus(owner string, repo string, tag stri
 	_, _, err = p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
 	return err
 }
+
 func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 	i, r, err := p.Client.Issues.Get(p.Context, org, name, number)
 	if r != nil && r.StatusCode == 404 {

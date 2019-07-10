@@ -660,6 +660,39 @@ func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, rel
 	return err
 }
 
+func (p *GiteaProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
+	var release *gitea.Release
+	releases, err := p.Client.ListReleases(owner, repo)
+	found := false
+	for _, rel := range releases {
+		if rel.TagName == tag {
+			release = rel
+			found = true
+			break
+		}
+	}
+	flag := false
+
+	if found {
+		editRelease := gitea.EditReleaseOption{
+			TagName:      release.TagName,
+			Title:        release.Title,
+			Note:         release.Note,
+			IsDraft:      &flag,
+			IsPrerelease: &flag,
+		}
+
+		if editRelease.IsPrerelease != &releaseInfo.PreRelease {
+			editRelease.IsPrerelease = &releaseInfo.PreRelease
+		}
+		_, err := p.Client.EditRelease(owner, repo, release.ID, editRelease)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
 func (p *GiteaProvider) HasIssues() bool {
 	return true
 }

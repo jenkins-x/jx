@@ -688,6 +688,10 @@ func (g *GitlabProvider) UpdateRelease(owner string, repo string, tag string, re
 	return nil
 }
 
+func (g *GitlabProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
+	return nil
+}
+
 // IssueURL returns the URL of the issue
 func (g *GitlabProvider) IssueURL(org string, name string, number int, isPull bool) string {
 	return ""
