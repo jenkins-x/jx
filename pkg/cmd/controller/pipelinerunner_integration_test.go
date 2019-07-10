@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"net/http"
@@ -62,7 +63,7 @@ func TestPipelineRunnerIntegration(t *testing.T) {
 }
 
 var _ = Describe("Pipeline Runner Integration", func() {
-	//log.SetOutput(ioutil.Discard)
+	log.SetOutput(ioutil.Discard)
 	var (
 		client     *http.Client
 		port       int
@@ -102,7 +103,7 @@ var _ = Describe("Pipeline Runner Integration", func() {
 			pipelineRunner := PipelineRunnerOptions{
 				CommonOptions:        &commonOpts,
 				Path:                 "/",
-				BindAddress:          "0.0.0.0",
+				BindAddress:          "127.0.0.1",
 				Port:                 port,
 				NoGitCredentialsInit: true,
 				UseMetaPipeline:      true,
@@ -147,13 +148,13 @@ var _ = Describe("Pipeline Runner Integration", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(fileInfos)).Should(Equal(6))
 
-			expectedFiles := []string{"pipeline.yml", "pipeline-run.yml", "structure.yml", "tasks.yml", "resources.yml", "pipelineActivity.yml"}
+			expectedFileList := []string{"pipeline.yml", "pipelinerun.yml", "structure.yml", "tasks.yml", "pipelineresources.yml", "pipelineActivity.yml"}
 			for _, file := range fileInfos {
-				index := util.StringArrayIndex(expectedFiles, file.Name())
+				index := util.StringArrayIndex(expectedFileList, file.Name())
 				Expect(index).ShouldNot(Equal(-1))
-				expectedFiles = removeElement(expectedFiles, index)
+				expectedFileList = removeElement(expectedFileList, index)
 			}
-			Expect(len(expectedFiles)).Should(Equal(0))
+			Expect(len(expectedFileList)).Should(Equal(0))
 		})
 	})
 
@@ -166,7 +167,7 @@ var _ = Describe("Pipeline Runner Integration", func() {
 			pipelineRunner := PipelineRunnerOptions{
 				CommonOptions:        &commonOpts,
 				Path:                 "/",
-				BindAddress:          "0.0.0.0",
+				BindAddress:          "127.0.0.1",
 				Port:                 port,
 				NoGitCredentialsInit: true,
 			}
@@ -210,13 +211,13 @@ var _ = Describe("Pipeline Runner Integration", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(fileInfos)).Should(Equal(5))
 
-			expectedFiles := []string{"pipeline.yml", "pipeline-run.yml", "structure.yml", "tasks.yml", "resources.yml"}
+			expectedFileList := []string{"pipeline.yml", "pipelinerun.yml", "structure.yml", "tasks.yml", "pipelineresources.yml"}
 			for _, file := range fileInfos {
-				index := util.StringArrayIndex(expectedFiles, file.Name())
+				index := util.StringArrayIndex(expectedFileList, file.Name())
 				Expect(index).ShouldNot(Equal(-1))
-				expectedFiles = removeElement(expectedFiles, index)
+				expectedFileList = removeElement(expectedFileList, index)
 			}
-			Expect(len(expectedFiles)).Should(Equal(0))
+			Expect(len(expectedFileList)).Should(Equal(0))
 		})
 	})
 })

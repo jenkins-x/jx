@@ -15,6 +15,14 @@ import (
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 )
 
+const (
+	pipelineFileName          = "pipeline.yml"
+	pipelineRunFileName       = "pipelinerun.yml"
+	structureFileName         = "structure.yml"
+	pipelineResourcesFileName = "pipelineresources.yml"
+	tasksFileName             = "tasks.yml"
+)
+
 // CRDWrapper is a wrapper around the various Tekton CRDs
 type CRDWrapper struct {
 	pipeline    *pipelineapi.Pipeline
@@ -131,7 +139,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal pipeline YAML")
 	}
-	fileName := filepath.Join(dir, "pipeline.yml")
+	fileName := filepath.Join(dir, pipelineFileName)
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save pipeline file %s", fileName)
@@ -142,7 +150,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal pipelineRun YAML")
 	}
-	fileName = filepath.Join(dir, "pipeline-run.yml")
+	fileName = filepath.Join(dir, pipelineRunFileName)
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save pipelineRun file %s", fileName)
@@ -154,7 +162,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 		if err != nil {
 			return errors.Wrapf(err, "failed to marshal PipelineStructure YAML")
 		}
-		fileName = filepath.Join(dir, "structure.yml")
+		fileName = filepath.Join(dir, structureFileName)
 		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
@@ -176,7 +184,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal Task YAML")
 	}
-	fileName = filepath.Join(dir, "tasks.yml")
+	fileName = filepath.Join(dir, tasksFileName)
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save Task file %s", fileName)
@@ -187,7 +195,7 @@ func (crds *CRDWrapper) WriteToDisk(dir string, pipelineActivity *kube.PromoteSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal PipelineResource YAML")
 	}
-	fileName = filepath.Join(dir, "resources.yml")
+	fileName = filepath.Join(dir, pipelineResourcesFileName)
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save PipelineResource file %s", fileName)
