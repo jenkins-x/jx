@@ -1,11 +1,6 @@
 package opts
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 )
 
@@ -27,33 +22,7 @@ func (o *CommonOptions) CreateVersionResolver(repo string, gitRef string) (*Vers
 
 // ResolveDockerImage ensures the given docker image has a valid version if there is one in the version stream
 func (v *VersionResolver) ResolveDockerImage(image string) (string, error) {
-	// lets check if we already have a version
-	path := strings.SplitN(image, ":", 2)
-	if len(path) == 2 && path[1] != "" {
-		return image, nil
-	}
-	info, err := version.LoadStableVersion(v.VersionsDir, version.KindDocker, image)
-	if err != nil {
-		return image, err
-	}
-	if info.Version == "" {
-		// lets check if there is a docker.io prefix and if so lets try fetch without the docker prefix
-		prefix := "docker.io/"
-		if strings.HasPrefix(image, prefix) {
-			image = strings.TrimPrefix(image, prefix)
-			info, err = version.LoadStableVersion(v.VersionsDir, version.KindDocker, image)
-			if err != nil {
-				return image, err
-			}
-		}
-	}
-	if info.Version == "" {
-		log.Logger().Warnf("could not find a stable version of docker image: %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/", image, v.VersionsDir)
-		log.Logger().Infof("Please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k docker -n %s -v 1.2.3", image)))
-		return image, nil
-	}
-	prefix := strings.TrimSuffix(strings.TrimSpace(image), ":")
-	return prefix + ":" + info.Version, nil
+	return version.ResolveDockerImage(v.VersionsDir, image)
 }
 
 // StableVersion returns the stable version of the given kind name

@@ -74,6 +74,8 @@ type StepCreatePipelineOptions struct {
 	Results tekton.CRDWrapper
 	OutDir  string
 	NoApply *bool
+
+	VersionResolver *opts.VersionResolver
 }
 
 // NewCmdCreateMetaPipeline creates the command for generating and applying the Tekton CRDs for the meta pipeline.
@@ -183,6 +185,13 @@ func (o *StepCreatePipelineOptions) Run() error {
 		return err
 	}
 
+	if o.VersionResolver == nil {
+		o.VersionResolver, err = o.CreateVersionResolver("", "")
+		if err != nil {
+			return err
+		}
+	}
+
 	crdCreationParams := metapipeline.CRDCreationParameters{
 		Namespace:        ns,
 		Context:          o.Context,
@@ -200,6 +209,7 @@ func (o *StepCreatePipelineOptions) Run() error {
 		EnvVars:          o.CustomEnvs,
 		DefaultImage:     o.DefaultImage,
 		Apps:             extendingApps,
+		VersionsDir:      o.VersionResolver.VersionsDir,
 	}
 	tektonCRDs, err := metapipeline.CreateMetaPipelineCRDs(crdCreationParams)
 	if err != nil {

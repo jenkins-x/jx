@@ -53,6 +53,7 @@ type CRDCreationParameters struct {
 	EnvVars          []string
 	DefaultImage     string
 	Apps             []jenkinsv1.App
+	VersionsDir      string
 }
 
 // CreateMetaPipelineCRDs creates the Tekton CRDs needed to execute the meta pipeline.
@@ -70,7 +71,7 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 	if err != nil {
 		return nil, err
 	}
-	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(params.PipelineName, params.BuildNumber, params.Namespace, params.PodTemplates, nil, params.SourceDir, labels, params.DefaultImage)
+	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(params.PipelineName, params.BuildNumber, params.Namespace, params.PodTemplates, params.VersionsDir, nil, params.SourceDir, labels, params.DefaultImage)
 	if err != nil {
 		return nil, err
 	}

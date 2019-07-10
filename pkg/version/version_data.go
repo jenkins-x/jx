@@ -180,3 +180,34 @@ func ForEachKindVersion(wrkDir string, kind VersionKind, callback Callback) erro
 	}
 	return nil
 }
+
+// ResolveDockerImage ensures the given docker image has a valid version if there is one in the version stream
+func ResolveDockerImage(versionsDir, image string) (string, error) {
+	// lets check if we already have a version
+	path := strings.SplitN(image, ":", 2)
+	if len(path) == 2 && path[1] != "" {
+		return image, nil
+	}
+	info, err := LoadStableVersion(versionsDir, KindDocker, image)
+	if err != nil {
+		return image, err
+	}
+	if info.Version == "" {
+		// lets check if there is a docker.io prefix and if so lets try fetch without the docker prefix
+		prefix := "docker.io/"
+		if strings.HasPrefix(image, prefix) {
+			image = strings.TrimPrefix(image, prefix)
+			info, err = LoadStableVersion(versionsDir, KindDocker, image)
+			if err != nil {
+				return image, err
+			}
+		}
+	}
+	if info.Version == "" {
+		log.Logger().Warnf("could not find a stable version of docker image: %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/", image, versionsDir)
+		log.Logger().Infof("Please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k docker -n %s -v 1.2.3", image)))
+		return image, nil
+	}
+	prefix := strings.TrimSuffix(strings.TrimSpace(image), ":")
+	return prefix + ":" + info.Version, nil
+}
