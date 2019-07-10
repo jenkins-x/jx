@@ -106,7 +106,7 @@ func (o *CreateGkeServiceAccountOptions) Run() error {
 		o.Flags.Project = projectId
 	}
 
-	path, err := gke.GetOrCreateServiceAccount(o.Flags.Name, o.Flags.Project, util.HomeDir(), gke.RequiredServiceAccountRoles)
+	path, err := o.GCloud().GetOrCreateServiceAccount(o.Flags.Name, o.Flags.Project, util.HomeDir(), gke.RequiredServiceAccountRoles)
 	if err != nil {
 		return err
 	}

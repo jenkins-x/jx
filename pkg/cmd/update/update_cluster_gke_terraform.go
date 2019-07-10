@@ -4,13 +4,12 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"os"
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -113,7 +112,8 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		}
 	}
 
-	err := gke.Login(o.ServiceAccount, o.Flags.SkipLogin)
+	gcloud := o.GCloud()
+	err := gcloud.Login(o.ServiceAccount, o.Flags.SkipLogin)
 	if err != nil {
 		return err
 	}

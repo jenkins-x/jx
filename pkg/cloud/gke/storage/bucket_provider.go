@@ -16,6 +16,7 @@ import (
 // GKEBucketProvider the bucket provider for GKE
 type GKEBucketProvider struct {
 	Requirements *config.RequirementsConfig
+	gcloud gke.GClouder
 }
 
 // CreateNewBucketForCluster creates a new dynamic bucket
@@ -45,7 +46,7 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 	}
 	bucketName := u.Host
 
-	exists, err := gke.BucketExists(project, bucketName)
+	exists, err := b.gcloud.BucketExists(project, bucketName)
 	if err != nil {
 		return errors.Wrap(err, "checking if the provided bucket exists")
 	}
@@ -56,8 +57,8 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 	infoBucketURL := util.ColorInfo(bucketURL)
 	log.Logger().Infof("The bucket %s does not exist so lets create it", infoBucketURL)
 	region := gke.GetRegionFromZone(b.Requirements.Cluster.Zone)
-	err = gke.CreateBucket(project, bucketName, region)
-	gke.AddBucketLabel(bucketName, gke.UserLabel())
+	err = b.gcloud.CreateBucket(project, bucketName, region)
+	b.gcloud.AddBucketLabel(bucketName, b.gcloud.UserLabel())
 	if err != nil {
 		return errors.Wrapf(err, "there was a problem creating the bucket %s in the GKE Project %s",
 			bucketName, project)
@@ -69,5 +70,6 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 func NewGKEBucketProvider(requirements *config.RequirementsConfig) buckets.Provider {
 	return &GKEBucketProvider{
 		Requirements: requirements,
+		gcloud: &gke.GCloud{},
 	}
 }

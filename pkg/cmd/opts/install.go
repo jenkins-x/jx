@@ -1879,11 +1879,12 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 
 	// Create managed zone for external dns if it doesn't exist
 	var nameServers = []string{}
-	err = gke.CreateManagedZone(googleProjectID, o.Domain)
+	gcloud := o.GCloud()
+	err = gcloud.CreateManagedZone(googleProjectID, o.Domain)
 	if err != nil {
 		return errors.Wrap(err, "while trying to creating a CloudDNS managed zone for external-dns")
 	}
-	_, nameServers, err = gke.GetManagedZoneNameServers(googleProjectID, o.Domain)
+	_, nameServers, err = gcloud.GetManagedZoneNameServers(googleProjectID, o.Domain)
 	if err != nil {
 		return errors.Wrap(err, "while trying to retrieve the managed zone name servers for external-dns")
 	}
@@ -1891,13 +1892,13 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 	o.NameServers = nameServers
 
 	var gcpServiceAccountSecretName string
-	gcpServiceAccountSecretName, err = externaldns.CreateExternalDNSGCPServiceAccount(client,
+	gcpServiceAccountSecretName, err = externaldns.CreateExternalDNSGCPServiceAccount(o.GCloud(), client,
 		kube.DefaultExternalDNSReleaseName, devNamespace, clusterName, googleProjectID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create service account for ExternalDNS")
 	}
 
-	err = gke.EnableAPIs(googleProjectID, "dns")
+	err = gcloud.EnableAPIs(googleProjectID, "dns")
 	if err != nil {
 		return errors.Wrap(err, "unable to enable 'dns' api")
 	}

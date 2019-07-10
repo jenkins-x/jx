@@ -228,7 +228,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	log.Logger().Debugf("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
-	err = gke.EnableAPIs(projectId, "container", "compute")
+	err = o.GCloud().EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
 	}
@@ -483,8 +483,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if o.Flags.EnhancedApis {
 		log.Logger().Debugf("checking if we need to enable APIs for GCB and GCR")
-
-		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
+		err = o.GCloud().EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
 		}

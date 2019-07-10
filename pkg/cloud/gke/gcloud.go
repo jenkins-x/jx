@@ -11,11 +11,14 @@ import (
 
 	"time"
 
+	v1 "k8s.io/api/core/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	osUser "os/user"
 	"sigs.k8s.io/yaml"
+	"k8s.io/client-go/kubernetes"
 )
 
 // KmsLocation indicates the location used by the Google KMS service
@@ -30,6 +33,10 @@ var (
 		"roles/storage.objectAdmin",
 		"roles/storage.objectCreator"}
 )
+
+type GCloud struct {
+
+}
 
 // Cluster struct to represent a cluster on gcloud
 type Cluster struct {
@@ -47,7 +54,10 @@ func getManagedZoneName(domain string) string {
 		managedZoneName = strings.Replace(domain, ".", "-", -1)
 		return fmt.Sprintf("%s-zone", managedZoneName)
 	}
+
 	return ""
+
+
 }
 
 // managedZoneExists checks for a given domain zone within the specified project
@@ -89,7 +99,7 @@ func managedZoneExists(projectID string, domain string) (bool, error) {
 }
 
 // CreateManagedZone creates a managed zone for the given domain in the specified project
-func CreateManagedZone(projectID string, domain string) error {
+func (g *GCloud) CreateManagedZone(projectID string, domain string) error {
 	zoneExists, err := managedZoneExists(projectID, domain)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine whether managed zone exists")
@@ -124,13 +134,13 @@ func CreateManagedZone(projectID string, domain string) error {
 
 // CreateDNSZone creates the tenants DNS zone if it doesn't exist
 // and returns the list of name servers for the given domain and project
-func CreateDNSZone(projectID string, domain string) (string, []string, error) {
+func (g *GCloud) CreateDNSZone(projectID string, domain string) (string, []string, error) {
 	var managedZone, nameServers = "", []string{}
-	err := CreateManagedZone(projectID, domain)
+	err := g.CreateManagedZone(projectID, domain)
 	if err != nil {
 		return "", []string{}, errors.Wrap(err, "while trying to creating a CloudDNS managed zone")
 	}
-	managedZone, nameServers, err = GetManagedZoneNameServers(projectID, domain)
+	managedZone, nameServers, err = g.GetManagedZoneNameServers(projectID, domain)
 	if err != nil {
 		return "", []string{}, errors.Wrap(err, "while trying to retrieve the managed zone name servers")
 	}
@@ -138,7 +148,7 @@ func CreateDNSZone(projectID string, domain string) (string, []string, error) {
 }
 
 // GetManagedZoneNameServers retrieves a list of name servers associated with a zone
-func GetManagedZoneNameServers(projectID string, domain string) (string, []string, error) {
+func (g *GCloud) GetManagedZoneNameServers(projectID string, domain string) (string, []string, error) {
 	var managedZoneName, nameServers = "", []string{}
 	zoneExists, err := managedZoneExists(projectID, domain)
 	if err != nil {
@@ -184,7 +194,7 @@ func GetManagedZoneNameServers(projectID string, domain string) (string, []strin
 }
 
 // ClusterZone retrives the zone of GKE cluster description
-func ClusterZone(cluster string) (string, error) {
+func (g *GCloud) ClusterZone(cluster string) (string, error) {
 	args := []string{"container",
 		"clusters",
 		"describe",
@@ -236,7 +246,7 @@ func parseScopes(clusterInfo string) ([]string, error) {
 }
 
 // BucketExists checks if a Google Storage bucket exists
-func BucketExists(projectID string, bucketName string) (bool, error) {
+func (g *GCloud) BucketExists(projectID string, bucketName string) (bool, error) {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
 	args := []string{"ls"}
 
@@ -258,7 +268,7 @@ func BucketExists(projectID string, bucketName string) (bool, error) {
 }
 
 // CreateBucket creates a new Google Storage bucket
-func CreateBucket(projectID string, bucketName string, location string) error {
+func (g *GCloud) CreateBucket(projectID string, bucketName string, location string) error {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
 	args := []string{"mb", "-l", location}
 
@@ -282,8 +292,8 @@ func CreateBucket(projectID string, bucketName string, location string) error {
 }
 
 //AddBucketLabel adds a label to a Google Storage bucket
-func AddBucketLabel(bucketName string, label string) {
-	found := FindBucket(bucketName)
+func (g *GCloud) AddBucketLabel(bucketName string, label string) {
+	found := g.FindBucket(bucketName)
 	if found && label != "" {
 		fullBucketName := fmt.Sprintf("gs://%s", bucketName)
 		args := []string{"label", "ch", "-l", label}
@@ -302,7 +312,7 @@ func AddBucketLabel(bucketName string, label string) {
 }
 
 // FindBucket finds a Google Storage bucket
-func FindBucket(bucketName string) bool {
+func (g *GCloud) FindBucket(bucketName string) bool {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
 	args := []string{"list", "-b", fullBucketName}
 
@@ -318,8 +328,8 @@ func FindBucket(bucketName string) bool {
 }
 
 // DeleteAllObjectsInBucket deletes all objects in a Google Storage bucket
-func DeleteAllObjectsInBucket(bucketName string) error {
-	found := FindBucket(bucketName)
+func (g *GCloud) DeleteAllObjectsInBucket(bucketName string) error {
+	found := g.FindBucket(bucketName)
 	if !found {
 		return nil // nothing to delete
 	}
@@ -365,8 +375,8 @@ func DownloadFileFromBucket(fullBucketURL string) ([]byte, error) {
 }
 
 // DeleteBucket deletes a Google storage bucket
-func DeleteBucket(bucketName string) error {
-	found := FindBucket(bucketName)
+func (g *GCloud) DeleteBucket(bucketName string) error {
+	found := g.FindBucket(bucketName)
 	if !found {
 		return nil // nothing to delete
 	}
@@ -390,7 +400,7 @@ func GetRegionFromZone(zone string) string {
 }
 
 // FindServiceAccount checks if a service account exists
-func FindServiceAccount(serviceAccount string, projectID string) bool {
+func (g *GCloud) FindServiceAccount(serviceAccount string, projectID string) bool {
 	args := []string{"iam",
 		"service-accounts",
 		"list",
@@ -416,17 +426,17 @@ func FindServiceAccount(serviceAccount string, projectID string) bool {
 
 // GetOrCreateServiceAccount retrieves or creates a GCP service account. It will return the path to the file where the service
 // account token is stored
-func GetOrCreateServiceAccount(serviceAccount string, projectID string, clusterConfigDir string, roles []string) (string, error) {
+func (g *GCloud) GetOrCreateServiceAccount(serviceAccount string, projectID string, clusterConfigDir string, roles []string) (string, error) {
 	if projectID == "" {
 		return "", errors.New("cannot get/create a service account without a projectId")
 	}
 
-	found := FindServiceAccount(serviceAccount, projectID)
+	found := g.FindServiceAccount(serviceAccount, projectID)
 	if !found {
 		log.Logger().Infof("Unable to find service account %s, checking if we have enough permission to create", util.ColorInfo(serviceAccount))
 
 		// if it doesn't check to see if we have permissions to create (assign roles) to a service account
-		hasPerm, err := CheckPermission("resourcemanager.projects.setIamPolicy", projectID)
+		hasPerm, err := g.CheckPermission("resourcemanager.projects.setIamPolicy", projectID)
 		if err != nil {
 			return "", err
 		}
@@ -487,15 +497,15 @@ func GetOrCreateServiceAccount(serviceAccount string, projectID string, clusterC
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		log.Logger().Info("Downloading service account key")
-		err := CreateServiceAccountKey(serviceAccount, projectID, keyPath)
+		err := g.CreateServiceAccountKey(serviceAccount, projectID, keyPath)
 		if err != nil {
 			log.Logger().Infof("Exceeds the maximum number of keys on service account %s",
 				util.ColorInfo(serviceAccount))
-			err := CleanupServiceAccountKeys(serviceAccount, projectID)
+			err := g.CleanupServiceAccountKeys(serviceAccount, projectID)
 			if err != nil {
 				return "", errors.Wrap(err, "cleaning up the service account keys")
 			}
-			err = CreateServiceAccountKey(serviceAccount, projectID, keyPath)
+			err = g.CreateServiceAccountKey(serviceAccount, projectID, keyPath)
 			if err != nil {
 				return "", errors.Wrap(err, "creating service account key")
 			}
@@ -508,7 +518,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectID string, clusterC
 }
 
 // CreateServiceAccountKey creates a new service account key and downloads into the given file
-func CreateServiceAccountKey(serviceAccount string, projectID string, keyPath string) error {
+func (g *GCloud) CreateServiceAccountKey(serviceAccount string, projectID string, keyPath string) error {
 	args := []string{"iam",
 		"service-accounts",
 		"keys",
@@ -531,7 +541,7 @@ func CreateServiceAccountKey(serviceAccount string, projectID string, keyPath st
 }
 
 // GetServiceAccountKeys returns all keys of a service account
-func GetServiceAccountKeys(serviceAccount string, projectID string) ([]string, error) {
+func (g *GCloud) GetServiceAccountKeys(serviceAccount string, projectID string) ([]string, error) {
 	keys := []string{}
 	account := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectID)
 	args := []string{"iam",
@@ -564,7 +574,7 @@ func GetServiceAccountKeys(serviceAccount string, projectID string) ([]string, e
 }
 
 // ListClusters returns the clusters in a GKE project
-func ListClusters(region string, projectID string) ([]Cluster, error) {
+func (g *GCloud) ListClusters(region string, projectID string) ([]Cluster, error) {
 	args := []string{"container", "clusters", "list", "--region=" + region, "--format=json", "--quiet"}
 	if projectID != "" {
 		args = append(args, "--project="+projectID)
@@ -587,7 +597,7 @@ func ListClusters(region string, projectID string) ([]Cluster, error) {
 }
 
 // LoadGkeCluster load a gke cluster from a GKE project
-func LoadGkeCluster(region string, projectID string, clusterName string) (*Cluster, error) {
+func (g *GCloud) LoadGkeCluster(region string, projectID string, clusterName string) (*Cluster, error) {
 	args := []string{"container", "clusters", "describe", clusterName, "--region=" + region, "--format=json", "--quiet"}
 	if projectID != "" {
 		args = append(args, "--project="+projectID)
@@ -610,7 +620,7 @@ func LoadGkeCluster(region string, projectID string, clusterName string) (*Clust
 }
 
 // UpdateGkeClusterLabels updates labesl for a gke cluster
-func UpdateGkeClusterLabels(region string, projectID string, clusterName string, labels []string) error {
+func (g *GCloud) UpdateGkeClusterLabels(region string, projectID string, clusterName string, labels []string) error {
 	args := []string{"container", "clusters", "update", clusterName, "--region=" + region, "--quiet", "--update-labels=" + strings.Join(labels, ",") + ""}
 	if projectID != "" {
 		args = append(args, "--project="+projectID)
@@ -624,7 +634,7 @@ func UpdateGkeClusterLabels(region string, projectID string, clusterName string,
 }
 
 // DeleteServiceAccountKey deletes a service account key
-func DeleteServiceAccountKey(serviceAccount string, projectID string, key string) error {
+func (g *GCloud) DeleteServiceAccountKey(serviceAccount string, projectID string, key string) error {
 	account := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectID)
 	args := []string{"iam",
 		"service-accounts",
@@ -648,8 +658,8 @@ func DeleteServiceAccountKey(serviceAccount string, projectID string, key string
 }
 
 // CleanupServiceAccountKeys remove all keys from given service account
-func CleanupServiceAccountKeys(serviceAccount string, projectID string) error {
-	keys, err := GetServiceAccountKeys(serviceAccount, projectID)
+func (g *GCloud) CleanupServiceAccountKeys(serviceAccount string, projectID string) error {
+	keys, err := g.GetServiceAccountKeys(serviceAccount, projectID)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the service account keys")
 	}
@@ -657,7 +667,7 @@ func CleanupServiceAccountKeys(serviceAccount string, projectID string) error {
 	log.Logger().Infof("Cleaning up the keys of the service account %s", util.ColorInfo(serviceAccount))
 
 	for _, key := range keys {
-		err := DeleteServiceAccountKey(serviceAccount, projectID, key)
+		err := g.DeleteServiceAccountKey(serviceAccount, projectID, key)
 		if err != nil {
 			log.Logger().Infof("Cannot delete the key %s from service account %s: %v",
 				util.ColorWarning(key), util.ColorInfo(serviceAccount), err)
@@ -670,8 +680,8 @@ func CleanupServiceAccountKeys(serviceAccount string, projectID string) error {
 }
 
 // DeleteServiceAccount deletes a service account and its role bindings
-func DeleteServiceAccount(serviceAccount string, projectID string, roles []string) error {
-	found := FindServiceAccount(serviceAccount, projectID)
+func (g *GCloud) DeleteServiceAccount(serviceAccount string, projectID string, roles []string) error {
+	found := g.FindServiceAccount(serviceAccount, projectID)
 	if !found {
 		return nil // nothing to delete
 	}
@@ -716,7 +726,7 @@ func DeleteServiceAccount(serviceAccount string, projectID string, roles []strin
 }
 
 // GetEnabledApis returns which services have the API enabled
-func GetEnabledApis(projectID string) ([]string, error) {
+func (g *GCloud) GetEnabledApis(projectID string) ([]string, error) {
 	args := []string{"services", "list", "--enabled"}
 
 	if projectID != "" {
@@ -749,8 +759,8 @@ func GetEnabledApis(projectID string) ([]string, error) {
 }
 
 // EnableAPIs enables APIs for the given services
-func EnableAPIs(projectID string, apis ...string) error {
-	enabledApis, err := GetEnabledApis(projectID)
+func (g *GCloud) EnableAPIs(projectID string, apis ...string) error {
+	enabledApis, err := g.GetEnabledApis(projectID)
 	if err != nil {
 		return err
 	}
@@ -792,7 +802,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 
 // Login login an user into Google account. It skips the interactive login using the
 // browser when the skipLogin flag is active
-func Login(serviceAccountKeyPath string, skipLogin bool) error {
+func (g *GCloud) Login(serviceAccountKeyPath string, skipLogin bool) error {
 	if serviceAccountKeyPath != "" {
 		log.Logger().Infof("Activating service account %s", util.ColorInfo(serviceAccountKeyPath))
 
@@ -859,7 +869,7 @@ type stop struct {
 }
 
 // CheckPermission checks permission on the given project
-func CheckPermission(perm string, projectID string) (bool, error) {
+func (g *GCloud) CheckPermission(perm string, projectID string) (bool, error) {
 	if projectID == "" {
 		return false, errors.New("cannot check permission without a projectId")
 	}
@@ -883,12 +893,12 @@ func CheckPermission(perm string, projectID string) (bool, error) {
 }
 
 // CreateKmsKeyring creates a new KMS keyring
-func CreateKmsKeyring(keyringName string, projectID string) error {
+func (g *GCloud) CreateKmsKeyring(keyringName string, projectID string) error {
 	if keyringName == "" {
 		return errors.New("provided keyring name is empty")
 	}
 
-	if IsKmsKeyringAvailable(keyringName, projectID) {
+	if g.IsKmsKeyringAvailable(keyringName, projectID) {
 		return nil
 	}
 
@@ -914,7 +924,7 @@ func CreateKmsKeyring(keyringName string, projectID string) error {
 }
 
 // IsKmsKeyringAvailable checks if the KMS keyring is already available
-func IsKmsKeyringAvailable(keyringName string, projectID string) bool {
+func (g *GCloud) IsKmsKeyringAvailable(keyringName string, projectID string) bool {
 	args := []string{"kms",
 		"keyrings",
 		"describe",
@@ -937,8 +947,8 @@ func IsKmsKeyringAvailable(keyringName string, projectID string) bool {
 }
 
 // CreateKmsKey creates a new KMS key in the given keyring
-func CreateKmsKey(keyName string, keyringName string, projectID string) error {
-	if IsKmsKeyAvailable(keyName, keyringName, projectID) {
+func (g *GCloud) CreateKmsKey(keyName string, keyringName string, projectID string) error {
+	if g.IsKmsKeyAvailable(keyName, keyringName, projectID) {
 		return nil
 	}
 	args := []string{"kms",
@@ -966,7 +976,7 @@ func CreateKmsKey(keyName string, keyringName string, projectID string) error {
 }
 
 // IsKmsKeyAvailable checks if the KMS key is already available
-func IsKmsKeyAvailable(keyName string, keyringName string, projectID string) bool {
+func (g *GCloud) IsKmsKeyAvailable(keyName string, keyringName string, projectID string) bool {
 	args := []string{"kms",
 		"keys",
 		"describe",
@@ -991,7 +1001,7 @@ func IsKmsKeyAvailable(keyName string, keyringName string, projectID string) boo
 }
 
 // IsGCSWriteRoleEnabled will check if the devstorage.full_control scope is enabled in the cluster in order to use GCS
-func IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error) {
+func (g *GCloud) IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error) {
 	args := []string{"container",
 		"clusters",
 		"describe",
@@ -1022,7 +1032,7 @@ func IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error) {
 }
 
 // UserLabel returns a string identifying current user that can be used as a label
-func UserLabel() string {
+func (g *GCloud) UserLabel() string {
 	user, err := osUser.Current()
 	if err == nil && user != nil && user.Username != "" {
 		userLabel := util.SanitizeLabel(user.Username)
@@ -1030,3 +1040,52 @@ func UserLabel() string {
 	}
 	return ""
 }
+
+// CreateGCPServiceAccount creates a service account in GCP for a service using the account roles specified
+func (g *GCloud) CreateGCPServiceAccount(kubeClient kubernetes.Interface, serviceName, serviceAbbreviation, namespace, clusterName, projectID string, serviceAccountRoles []string, serviceAccountSecretKey string) (string, error) {
+	serviceAccountDir, err := ioutil.TempDir("", "gke")
+	if err != nil {
+		return "", errors.Wrap(err, "creating a temporary folder where the service account will be stored")
+	}
+	defer os.RemoveAll(serviceAccountDir)
+
+	serviceAccountName := ServiceAccountName(clusterName, serviceAbbreviation)
+
+	serviceAccountPath, err := g.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, serviceAccountRoles)
+	if err != nil {
+		return "", errors.Wrap(err, "creating the service account")
+	}
+
+	secretName, err := g.storeGCPServiceAccountIntoSecret(kubeClient, serviceAccountPath, serviceName, namespace, serviceAccountSecretKey)
+	if err != nil {
+		return "", errors.Wrap(err, "storing the service account into a secret")
+	}
+	return secretName, nil
+}
+
+func (g *GCloud) storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccountPath, serviceName, namespace string, serviceAccountSecretKey string) (string, error) {
+	serviceAccount, err := ioutil.ReadFile(serviceAccountPath)
+	if err != nil {
+		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
+	}
+
+	secretName := GcpServiceAccountSecretName(serviceName)
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secretName,
+		},
+		Data: map[string][]byte{
+			serviceAccountSecretKey: serviceAccount,
+		},
+	}
+
+	secrets := client.CoreV1().Secrets(namespace)
+	_, err = secrets.Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		_, err = secrets.Create(secret)
+	} else {
+		_, err = secrets.Update(secret)
+	}
+	return secretName, nil
+}
+

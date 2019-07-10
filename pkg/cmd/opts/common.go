@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/spf13/viper"
 	"io"
 	"os"
@@ -388,6 +389,9 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
+func (o *CommonOptions) GCloud() gke.GClouder {
+	return &gke.GCloud{}
+}
 // TektonClient lazily creates a new Knative Pipeline client
 func (o *CommonOptions) TektonClient() (tektonclient.Interface, string, error) {
 	if o.factory == nil {

@@ -73,13 +73,13 @@ func (o *StepE2EGCOptions) Run() error {
 	}
 	gkeSa := os.Getenv("GKE_SA_KEY_FILE")
 	if gkeSa != "" {
-		err = gke.Login(gkeSa, true)
+		err = o.GCloud().Login(gkeSa, true)
 		if err != nil {
 			return err
 		}
 	}
 
-	clusters, err := gke.ListClusters(o.Region, o.ProjectID)
+	clusters, err := o.GCloud().ListClusters(o.Region, o.ProjectID)
 	if err != nil {
 		return err
 	}

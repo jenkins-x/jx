@@ -2249,11 +2249,8 @@ func (options *InstallOptions) ConfigureKaniko() error {
 		}
 
 		serviceAccountName := naming.ToValidNameTruncated(fmt.Sprintf("%s-ko", clusterName), 30)
-		log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
-
-		log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
-
-		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
+        log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
+		serviceAccountPath, err := options.GCloud().GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
 		if err != nil {
 			return errors.Wrap(err, "creating the service account")
 		}
@@ -2453,7 +2450,7 @@ func (options *InstallOptions) configureLongTermStorageBucket() error {
 			if err != nil {
 				return errors.Wrap(err, "filling install values with cluster information")
 			}
-			bucketURL, err = gkeStorage.EnableLongTermStorage(options.installValues,
+			bucketURL, err = gkeStorage.EnableLongTermStorage(options.GCloud(), options.installValues,
 				options.Flags.LongTermStorageBucketName)
 			if err != nil {
 				return errors.Wrap(err, "enabling long term storage on GKE")
@@ -3346,13 +3343,13 @@ func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tena
 	}
 
 	// Checking whether dns api is enabled
-	err = gke.EnableAPIs(projectID, "dns")
+	err = options.GCloud().EnableAPIs(projectID, "dns")
 	if err != nil {
 		return "", errors.Wrap(err, "enabling the dns api")
 	}
 
 	// Create domain if it doesn't exist and return name servers list
-	managedZone, nameServers, err := gke.CreateDNSZone(projectID, domain)
+	managedZone, nameServers, err := options.GCloud().CreateDNSZone(projectID, domain)
 	if err != nil {
 		return "", errors.Wrap(err, "while trying to create the tenants subdomain zone")
 	}
