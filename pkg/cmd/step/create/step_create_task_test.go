@@ -37,6 +37,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type testCase struct {
+	name           string
+	language       string
+	repoName       string
+	organization   string
+	branch         string
+	kind           string
+	expectingError bool
+	useKaniko      bool
+}
+
 func TestGenerateTektonCRDs(t *testing.T) {
 	t.Parallel()
 
@@ -61,16 +72,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 		return filepath.Join(path...), nil
 	}
 
-	cases := []struct {
-		name           string
-		language       string
-		repoName       string
-		organization   string
-		branch         string
-		kind           string
-		expectingError bool
-		useKaniko      bool
-	}{
+	cases := []testCase{
 		{
 			name:         "js_build_pack",
 			language:     "javascript",
@@ -383,11 +385,15 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			// Create a single duplicate PipelineResource for the name used by the 'kaniko_entrypoint' test case to verify that the deduplication logic works correctly.
 			tektonClient := tektonfake.NewSimpleClientset(tekton_helpers_test.AssertLoadPipelineResources(t, path.Join(testData, "prepopulated")))
 
-			createTask.setBuildValues()
+			err = createTask.setBuildValues()
+			assert.NoError(t, err)
+
 			effectiveProjectConfig, _ := createTask.createEffectiveProjectConfig(packsDir, projectConfig, projectConfigFile, resolver, ns)
 			if effectiveProjectConfig != nil {
-				createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
+				err = createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
+				assert.NoError(t, err)
 			}
+
 			pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, tektonClient, ns)
 			crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
 			if tt.expectingError {
@@ -399,48 +405,53 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					t.Fatalf("Error generating CRDs: %s", err)
 				}
 
-				taskList := &pipelineapi.TaskList{}
-				for _, task := range crds.Tasks() {
-					taskList.Items = append(taskList.Items, *task)
+				// to update the golden files 'make test1-pkg PKG=./pkg/cmd/step/create TEST=TestGenerateTektonCRDs UPDATE_GOLDEN=1' - use with care!
+				if os.Getenv("UPDATE_GOLDEN") != "" {
+					err = crds.WriteToDisk(caseDir, nil)
+					assert.NoError(t, err)
 				}
 
-				resourceList := &pipelineapi.PipelineResourceList{}
-				for _, resource := range crds.Resources() {
-					resourceList.Items = append(resourceList.Items, *resource)
-				}
-
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipeline(t, caseDir), crds.Pipeline()); d != "" {
-					t.Errorf("Generated Pipeline did not match expected: \n%s", d)
-				}
-				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
-					t.Errorf("Generated Tasks did not match expected: \n%s", d)
-				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
-					t.Errorf("Generated PipelineResources did not match expected: %s", d)
-				}
-
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineRun(t, caseDir), crds.PipelineRun()); d != "" {
-					t.Errorf("Generated PipelineRun did not match expected: %s", d)
-				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineStructure(t, caseDir), crds.Structure()); d != "" {
-					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
-				}
-
-				pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, &prow.PullRefs{}, tekton.BuildPipeline)
-
-				expectedActivityKey := &kube.PromoteStepActivityKey{
-					PipelineActivityKey: kube.PipelineActivityKey{
-						Name:     fmt.Sprintf("%s-%s-%s-1", tt.organization, tt.repoName, tt.branch),
-						Pipeline: fmt.Sprintf("%s/%s/%s", tt.organization, tt.repoName, tt.branch),
-						Build:    "1",
-						GitInfo:  createTask.GitInfo,
-					},
-				}
-				if d := cmp.Diff(expectedActivityKey, pa); d != "" {
-					t.Errorf("not match expected: %s", d)
-				}
+				assertTektonCRDs(t, tt, crds, caseDir, createTask)
 			}
 		})
+	}
+}
+
+func assertTektonCRDs(t *testing.T, testCase testCase, crds *tekton.CRDWrapper, caseDir string, createTask *StepCreateTaskOptions) {
+	taskList := &pipelineapi.TaskList{}
+	for _, task := range crds.Tasks() {
+		taskList.Items = append(taskList.Items, *task)
+	}
+	resourceList := &pipelineapi.PipelineResourceList{}
+	for _, resource := range crds.Resources() {
+		resourceList.Items = append(resourceList.Items, *resource)
+	}
+	if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipeline(t, caseDir), crds.Pipeline()); d != "" {
+		t.Errorf("Generated Pipeline did not match expected: \n%s", d)
+	}
+	if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
+		t.Errorf("Generated Tasks did not match expected: \n%s", d)
+	}
+	if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
+		t.Errorf("Generated PipelineResources did not match expected: %s", d)
+	}
+	if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineRun(t, caseDir), crds.PipelineRun()); d != "" {
+		t.Errorf("Generated PipelineRun did not match expected: %s", d)
+	}
+	if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineStructure(t, caseDir), crds.Structure()); d != "" {
+		t.Errorf("Generated PipelineStructure did not match expected: %s", d)
+	}
+	pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, &prow.PullRefs{}, tekton.BuildPipeline)
+	expectedActivityKey := &kube.PromoteStepActivityKey{
+		PipelineActivityKey: kube.PipelineActivityKey{
+			Name:     fmt.Sprintf("%s-%s-%s-1", testCase.organization, testCase.repoName, testCase.branch),
+			Pipeline: fmt.Sprintf("%s/%s/%s", testCase.organization, testCase.repoName, testCase.branch),
+			Build:    "1",
+			GitInfo:  createTask.GitInfo,
+		},
+	}
+	if d := cmp.Diff(expectedActivityKey, pa); d != "" {
+		t.Errorf("not match expected: %s", d)
 	}
 }
 

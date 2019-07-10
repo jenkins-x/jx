@@ -153,7 +153,7 @@ list: ## List all make targets
 .PHONY: help
 .DEFAULT_GOAL := help
 help:
-	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 all: build ## Build the binary
 full: check ## Build and run the tests
@@ -230,8 +230,11 @@ test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-inte
 test-soak: make-reports-dir get-test-deps
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags soak $(COVERFLAGS) ./...
 
-test1: get-test-deps make-reports-dir
+test1: get-test-deps make-reports-dir ## Runs single test specified by test name, eg 'make test1 TEST=TestFoo'
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) ./... -test.v -run $(TEST)
+
+test1-pkg: get-test-deps make-reports-dir ## Runs single test specified by path to test file, eg 'make test-single-file PKG=./pkg/util TEST=TestFoo'
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(PKG) -test.v $(TEST)
 
 testbin: get-test-deps make-reports-dir
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/cmd -o build/jx-test
