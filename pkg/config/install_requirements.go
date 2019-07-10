@@ -137,6 +137,7 @@ func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
 	if dir != "" {
 		fileName = filepath.Join(dir, fileName)
 	}
+	originalFileName := fileName
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
 		path, err := filepath.Abs(fileName)
@@ -147,6 +148,7 @@ func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
 		subDir := GetParentDir(path)
 
 		// lets walk up the directory tree to see if we can find a requirements file in a parent dir
+		// if by the end we have not found a requirements file lets use the original filename
 		for {
 			subDir = GetParentDir(subDir)
 			if subDir == "" || subDir == "/" {
@@ -159,6 +161,8 @@ func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
 				return config, fileName, err
 			}
 		}
+		// set back to the original filename
+		fileName = originalFileName
 	}
 	config, err := LoadRequirementsConfigFile(fileName)
 	return config, fileName, err
