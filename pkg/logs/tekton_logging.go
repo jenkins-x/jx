@@ -2,6 +2,7 @@ package logs
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"sort"
 	"strings"
@@ -11,9 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/cloud/buckets"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
@@ -215,26 +213,12 @@ func waitForContainerToStart(kubeClient kubernetes.Interface, ns string, pod *co
 	}
 }
 
-// StreamPipelinePersistentLogs reads logs from the provided bucker URL and writes them using the provided LogWriter
-func StreamPipelinePersistentLogs(logWriter LogWriter, logsURL string, co *opts.CommonOptions) error {
-	httpFn := createBucketHTTPFn(co)
-	data, err := buckets.ReadURL(logsURL, time.Second*20, httpFn)
+// StreamPipelinePersistentLogs reads logs from the provided bucket URL and writes them using the provided LogWriter
+func StreamPipelinePersistentLogs(logWriter LogWriter, logsURL string) error {
+	//TODO: This should be changed in the future when other bucket providers are supported
+	bytes, err := gke.DownloadFileFromBucket(logsURL)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "there was a problem obtaining the log file %s", logsURL)
 	}
-	return logWriter.WriteLog(string(data))
-}
-
-func createBucketHTTPFn(co *opts.CommonOptions) func(urlString string) (string, error) {
-	httpFn := func(urlString string) (string, error) {
-		// Only access the auth service when the httpFn is actually called - then we don't need to grant extra permissions
-		// e.g. in gcs case
-		authSvc, err := co.CreateGitAuthConfigService()
-		if err != nil {
-			return "", err
-		}
-		inner := step.CreateBucketHTTPFn(authSvc)
-		return inner(urlString)
-	}
-	return httpFn
+	return logWriter.WriteLog(string(bytes))
 }

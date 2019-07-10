@@ -107,6 +107,7 @@ func TestGetTektonLogsForRunningBuildWithWaitTime(t *testing.T) {
 }
 
 func TestGetTektonLogsForStoredLogs(t *testing.T) {
+	t.Skip("Skipping until we find a way to mock the gsutil calls")
 	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
 	commonOpts.BatchMode = true
 	testCaseDir := path.Join("test_data", "get_build_logs", "tekton_build_logs")
