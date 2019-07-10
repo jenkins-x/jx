@@ -3,13 +3,13 @@ package opts
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"io"
 	"net/url"
 	"time"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -116,7 +116,7 @@ func (o *CommonOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket, cb *Cre
 	if cb.GKEZone == "" {
 		defaultZone := ""
 		if cluster, err := cluster.Name(o.Kube()); err == nil && cluster != "" {
-			if clusterZone, err := gke.ClusterZone(cluster); err == nil {
+			if clusterZone, err := o.GCloud().ClusterZone(cluster); err == nil {
 				defaultZone = clusterZone
 			}
 		}
@@ -129,7 +129,7 @@ func (o *CommonOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket, cb *Cre
 
 	bucketName := u.Host
 	region := gke.GetRegionFromZone(cb.GKEZone)
-	err = gke.CreateBucket(cb.GKEProjectID, bucketName, region)
+	err = o.GCloud().CreateBucket(cb.GKEProjectID, bucketName, region)
 	if err != nil {
 		return errors.Wrapf(err, "creating bucket %s in project %s and region %s", bucketName, cb.GKEProjectID, region)
 	}

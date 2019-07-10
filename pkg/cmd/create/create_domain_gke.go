@@ -1,7 +1,6 @@
 package create
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -82,7 +81,7 @@ func (o *DomainGKEOptions) Run() error {
 		}
 	}
 	// Create domain if it doesn't exist and return name servers list
-	_, nameServers, err := gke.CreateDNSZone(o.ProjectID, o.Domain)
+	_, nameServers, err := o.GCloud().CreateDNSZone(o.ProjectID, o.Domain)
 	if err != nil {
 		return errors.Wrap(err, "while trying to create the domain zone")
 	}

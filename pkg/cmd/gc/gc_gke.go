@@ -1,7 +1,6 @@
 package gc
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -151,7 +150,7 @@ func (o *GCGKEOptions) Run() error {
 
 	gkeSa := os.Getenv("GKE_SA_KEY_FILE")
 	if gkeSa != "" {
-		err = gke.Login(gkeSa, true)
+		err = o.GCloud().Login(gkeSa, true)
 		if err != nil {
 			return err
 		}

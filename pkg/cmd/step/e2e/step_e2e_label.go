@@ -3,7 +3,6 @@ package e2e
 import (
 	"errors"
 	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -76,7 +75,7 @@ func (o *StepE2ELabelOptions) Run() error {
 		return err
 	}
 	clusterName := o.Args[0]
-	cluster, err := gke.LoadGkeCluster(o.Region, o.ProjectID, clusterName)
+	cluster, err := o.GCloud().LoadGkeCluster(o.Region, o.ProjectID, clusterName)
 	if err != nil {
 		return err
 	}
@@ -96,7 +95,7 @@ func (o *StepE2ELabelOptions) Run() error {
 		for key, value := range labelMap {
 			labels = append(labels, key+"="+value)
 		}
-		err := gke.UpdateGkeClusterLabels(o.Region, o.ProjectID, clusterName, labels)
+		err := o.GCloud().UpdateGkeClusterLabels(o.Region, o.ProjectID, clusterName, labels)
 		if err == nil {
 			if o.Keep {
 				log.Logger().Infof("%s was marked to be kept", cluster.Name)

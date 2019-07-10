@@ -149,7 +149,7 @@ func (o *DeleteVaultOptions) Run() error {
 }
 
 func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
-	err := gke.Login("", true)
+	err := o.GCloud().Login("", true)
 	if err != nil {
 		return errors.Wrap(err, "login into GCP")
 	}
@@ -175,14 +175,14 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 	}
 
 	sa := gke.ServiceAccountName(vaultName, gkevault.DefaultVaultAbbreviation)
-	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
+	err = o.GCloud().DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
 	}
 	log.Logger().Infof("GCP service account %s deleted", util.ColorInfo(sa))
 
 	bucket := gke.BucketName(vaultName)
-	err = gke.DeleteAllObjectsInBucket(bucket)
+	err = o.GCloud().DeleteAllObjectsInBucket(bucket)
 	if err != nil {
 		return errors.Wrapf(err, "deleting all objects in GCS bucket '%s'", bucket)
 	}
