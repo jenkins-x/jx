@@ -2,6 +2,7 @@ package gke
 
 import "k8s.io/client-go/kubernetes"
 
+// GClouder interface to define interactions with the gcloud command
 type GClouder interface {
 	CreateManagedZone(projectID string, domain string) error
 	CreateDNSZone(projectID string, domain string) (string, []string, error)
