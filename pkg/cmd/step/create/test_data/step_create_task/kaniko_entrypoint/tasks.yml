@@ -8,7 +8,7 @@ items:
       build: "1"
       jenkins.io/task-stage-name: ci
       owner: jenkins-x
-      repo: jx
+      repository: jx
     name: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
     namespace: jx
   spec:

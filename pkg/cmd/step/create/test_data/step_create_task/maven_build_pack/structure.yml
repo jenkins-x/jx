@@ -4,7 +4,7 @@ metadata:
     branch: master
     build: "1"
     owner: abayer
-    repo: jx-demo-qs
+    repository: jx-demo-qs
   name: abayer-jx-demo-qs-master-1
 pipelineRef: null
 pipelineRunRef: null
