@@ -1461,7 +1461,7 @@ func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, versionsDir string, taskParams []tektonv1alpha1.TaskParam, sourceDir string, labels map[string]string, defaultImage string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, versionsDir string, taskParams []tektonv1alpha1.ParamSpec, sourceDir string, labels map[string]string, defaultImage string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}

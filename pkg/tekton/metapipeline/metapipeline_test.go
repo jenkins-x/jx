@@ -43,7 +43,6 @@ var _ = Describe("Meta pipeline", func() {
 				PipelineKind:     "pullrequest",
 				BranchIdentifier: "master",
 				PullRef:          *pullRef,
-				Trigger:          "manual",
 				GitInfo:          *gitInfo,
 				Labels:           []string{"someLabel=someValue"},
 				EnvVars:          []string{"SOME_VAR=SOME_VAL"},
@@ -89,7 +88,7 @@ var _ = Describe("Meta pipeline", func() {
 
 			It("should have correct step create task args", func() {
 				step := actualCRDs.Tasks()[0].Spec.Steps[3]
-				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --kind pullrequest --pr-number 42 --trigger manual --service-account tekton-bot --source source --branch master --build-number 1 --label someLabel=someValue --env SOME_VAR=SOME_VAL"}))
+				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --kind pullrequest --pr-number 42 --service-account tekton-bot --source source --branch master --build-number 1 --label someLabel=someValue --env SOME_VAR=SOME_VAL"}))
 			})
 		})
 

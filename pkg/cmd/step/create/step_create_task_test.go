@@ -363,7 +363,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				Branch:       tt.branch,
 				PipelineKind: tt.kind,
 				NoKaniko:     !tt.useKaniko,
-				Trigger:      string(pipelineapi.PipelineTriggerTypeManual),
 				StepOptions: opts.StepOptions{
 					CommonOptions: &opts.CommonOptions{
 						ServiceAccount: "tekton-bot",
