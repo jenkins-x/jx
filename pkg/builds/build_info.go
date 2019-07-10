@@ -201,7 +201,7 @@ func (o *BuildPodInfoFilter) LabelSelectorsForActivity() []string {
 		labelSelectors = append(labelSelectors, "owner="+o.Owner)
 	}
 	if o.Repository != "" {
-		labelSelectors = append(labelSelectors, "repo="+o.Repository)
+		labelSelectors = append(labelSelectors, "repository="+o.Repository)
 	}
 	if o.Branch != "" {
 		labelSelectors = append(labelSelectors, "branch="+o.Branch)
