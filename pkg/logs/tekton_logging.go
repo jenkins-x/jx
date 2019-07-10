@@ -32,7 +32,7 @@ type LogWriter interface {
 // GetTektonPipelinesWithActivePipelineActivity returns list of all PipelineActivities with corresponding Tekton PipelineRuns ordered by the PipelineRun creation timestamp and a map to obtain its reference once a name has been selected
 func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, tektonClient tektonclient.Interface, ns string, filters []string) ([]string, map[string]*v1.PipelineActivity, error) {
 	paList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{
-		LabelSelector: strings.Replace(strings.Join(filters, ","), "repo=", "repository=", 1),
+		LabelSelector: strings.Join(filters, ","),
 	})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "there was a problem getting the PipelineActivities")
