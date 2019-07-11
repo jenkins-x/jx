@@ -2,6 +2,8 @@ package verify
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
@@ -19,8 +21,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"strings"
 )
 
 // StepVerifyPreInstallOptions contains the command line flags
@@ -150,6 +152,14 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if requirements.Webhook == config.WebhookTypeLighthouse {
+		// we don't need the ConfigMaps for prow yet
+		err = o.verifyProwConfigMaps(kubeClient, ns)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -372,6 +382,64 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 			return errors.Wrapf(err, "failed to ensure the bucket URL %s is created", storageEntryConfig.URL)
 		}
 	}
+	return nil
+}
+
+func (o *StepVerifyPreInstallOptions) verifyProwConfigMaps(kubeClient kubernetes.Interface, ns string) error {
+	err := o.verifyConfigMapExists(kubeClient, ns, "config", "config.yaml", "pod_namespace: jx\n")
+	if err != nil {
+		return err
+	}
+	return o.verifyConfigMapExists(kubeClient, ns, "plugins", "plugins.yaml", "cat: {}\n")
+}
+
+func (o *StepVerifyPreInstallOptions) verifyConfigMapExists(kubeClient kubernetes.Interface, ns string, name string, key string, defaultValue string) error {
+	info := util.ColorInfo
+	configMapInterface := kubeClient.CoreV1().ConfigMaps(ns)
+	cm, err := configMapInterface.Get(name, metav1.GetOptions{})
+	if err != nil {
+		// lets try create it
+		cm = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Data: map[string]string{
+				key: defaultValue,
+			},
+		}
+		cm, err = configMapInterface.Create(cm)
+		if err != nil {
+			// maybe someone else just created it - lets try one more time
+			cm2, err2 := configMapInterface.Get(name, metav1.GetOptions{})
+			if err == nil {
+				log.Logger().Infof("created ConfigMap %s in namespace %s\n", info(name), info(ns))
+			}
+			if err2 != nil {
+				return fmt.Errorf("failed to create the ConfigMap %s in namespace %s due to: %s - we cannot get it either: %s", name, ns, err.Error(), err2.Error())
+			}
+			cm = cm2
+			err = nil
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	// lets verify that there is an entry
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
+	_, ok := cm.Data[key]
+	if !ok {
+		cm.Data[key] = defaultValue
+		cm.Name = name
+
+		_, err = configMapInterface.Update(cm)
+		if err != nil {
+			return fmt.Errorf("failed to update the ConfigMap %s in namespace %s to add key %s due to: %s", name, ns, key, err.Error())
+		}
+	}
+	log.Logger().Infof("verified there is a ConfigMap %s in namespace %s\n", info(name), info(ns))
 	return nil
 }
 
