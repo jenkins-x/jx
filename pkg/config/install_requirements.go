@@ -109,6 +109,9 @@ type RequirementsConfig struct {
 	Cluster ClusterConfig `json:"cluster"`
 	// Kaniko whether to enable kaniko for building docker images
 	Kaniko bool `json:"kaniko,omitempty"`
+	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
+	// re-run 'jx boot' when changes merge to the master branch
+	GitOps bool `json:"gitops,omitempty"`
 	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
 	Terraform bool `json:"terraform,omitempty"`
 	// SecretStorage how should we store secrets for the cluster
@@ -248,7 +251,7 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
 	m, err := toObjectMap(c)
 	if m != nil {
-		ensureHasFields(m, "provider", "project", "environmentGitOwner")
+		ensureHasFields(m, "provider", "project", "environmentGitOwner", "gitops")
 	}
 	return m, err
 }
