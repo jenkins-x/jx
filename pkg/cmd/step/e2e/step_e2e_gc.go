@@ -105,6 +105,8 @@ func (o *StepE2EGCOptions) Run() error {
 	gkeGCOpts := gc.GCGKEOptions{
 		CommonOptions: &opts.CommonOptions{},
 	}
+	gkeGCOpts.Err = o.Err
+	gkeGCOpts.Out = o.Out
 	gkeGCOpts.Flags.ProjectID = o.ProjectID
 	gkeGCOpts.Flags.RunNow = true
 	return gkeGCOpts.Run()
