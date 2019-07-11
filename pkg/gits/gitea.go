@@ -660,6 +660,7 @@ func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, rel
 	return err
 }
 
+// UpdateReleaseStatus updates the state (release/prerelease) of a release
 func (p *GiteaProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	var release *gitea.Release
 	releases, err := p.Client.ListReleases(owner, repo)
