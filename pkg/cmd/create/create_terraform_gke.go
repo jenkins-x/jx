@@ -717,7 +717,7 @@ func (options *TerraformGKEOptions) configureGKECluster(g *GKECluster, path stri
 	if g.ServiceAccount != "" {
 		log.Logger().Debugf("loading service account for cluster %s", g.Name())
 
-		err := gke.Login(g.ServiceAccount, false)
+		err := options.GCloud().Login(g.ServiceAccount, false)
 		if err != nil {
 			return err
 		}
@@ -736,7 +736,7 @@ func (options *TerraformGKEOptions) configureGKECluster(g *GKECluster, path stri
 	if !options.Flags.GKESkipEnableApis {
 		log.Logger().Debugf("enabling apis for %s", g.Name())
 
-		err := gke.EnableAPIs(g.ProjectID, "iam", "compute", "container")
+		err := options.GCloud().EnableAPIs(g.ProjectID, "iam", "compute", "container")
 		if err != nil {
 			return err
 		}
@@ -834,7 +834,7 @@ func (options *TerraformGKEOptions) configureGKECluster(g *GKECluster, path stri
 	}
 
 	if options.Flags.GKEUseEnhancedApis {
-		err := gke.EnableAPIs(g.ProjectID, "cloudbuild", "containerregistry", "containeranalysis")
+		err := options.GCloud().EnableAPIs(g.ProjectID, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
 		}
@@ -934,13 +934,13 @@ func (options *TerraformGKEOptions) applyTerraformGKE(g *GKECluster, path string
 	if g.ServiceAccount == "" {
 		if options.Flags.GKEServiceAccount != "" {
 			g.ServiceAccount = options.Flags.GKEServiceAccount
-			err := gke.Login(g.ServiceAccount, false)
+			err := options.GCloud().Login(g.ServiceAccount, false)
 			if err != nil {
 				return err
 			}
 
 			log.Logger().Debugf("attempting to enable apis")
-			err = gke.EnableAPIs(g.ProjectID, "iam", "compute", "container")
+			err = options.GCloud().EnableAPIs(g.ProjectID, "iam", "compute", "container")
 			if err != nil {
 				return err
 			}
@@ -952,7 +952,7 @@ func (options *TerraformGKEOptions) applyTerraformGKE(g *GKECluster, path string
 		serviceAccountName := fmt.Sprintf("%s-%s-tf", options.Flags.OrganisationName, g.Name())
 		log.Logger().Infof("No GCP service account provided, creating %s", util.ColorInfo(serviceAccountName))
 
-		_, err := gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectID, filepath.Dir(path), gke.RequiredServiceAccountRoles)
+		_, err := options.GCloud().GetOrCreateServiceAccount(serviceAccountName, g.ProjectID, filepath.Dir(path), gke.RequiredServiceAccountRoles)
 		if err != nil {
 			return err
 		}
@@ -965,13 +965,13 @@ func (options *TerraformGKEOptions) applyTerraformGKE(g *GKECluster, path string
 
 	// create the bucket
 	bucketName := fmt.Sprintf("%s-%s-terraform-state", g.ProjectID, options.Flags.OrganisationName)
-	exists, err := gke.BucketExists(g.ProjectID, bucketName)
+	exists, err := options.GCloud().BucketExists(g.ProjectID, bucketName)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
-		err = gke.CreateBucket(g.ProjectID, bucketName, g.Region())
+		err = options.GCloud().CreateBucket(g.ProjectID, bucketName, g.Region())
 		if err != nil {
 			return err
 		}
