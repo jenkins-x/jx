@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
 	"testing"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/vault/fake"
 
@@ -746,6 +749,33 @@ func TestGeneratedToken(t *testing.T) {
 		secrets, err := vaultClient.Read(vaultBasePath)
 		assert.NoError(t, err)
 		assert.Len(t, secrets["tokenValue"], 20)
+		assert.NoError(r, err)
+	})
+}
+
+func TestGeneratedHmacToken(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
+		values, vaultClient, err := GenerateValuesAsYaml(r, "generatedHmacToken.test.schema.json", make(map[string]interface{}), false,
+			false,
+			false, false,
+			func(console *tests.ConsoleWrapper, donec chan struct{}) {
+				defer close(donec)
+				// Test boolean type
+				console.ExpectString("Enter a value for tokenValue")
+				console.SendLine("")
+				console.ExpectEOF()
+			}, nil)
+		assert.Equal(r, fmt.Sprintf(`tokenValue: vault:%s:tokenValue
+`, vaultBasePath), values)
+		secrets, err := vaultClient.Read(vaultBasePath)
+		assert.NoError(t, err)
+		value := secrets["tokenValue"]
+		valueStr, err := util.AsString(value)
+		assert.NoError(t, err)
+		assert.Len(t, valueStr, 41)
+		hexRegex := regexp.MustCompile(`^(0x|0X)?[a-fA-F0-9]+$`)
+		assert.True(t, hexRegex.MatchString(valueStr), "%s is not a hexadecimal string")
 		assert.NoError(r, err)
 	})
 }
