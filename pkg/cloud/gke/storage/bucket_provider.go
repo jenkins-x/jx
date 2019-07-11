@@ -16,7 +16,7 @@ import (
 // GKEBucketProvider the bucket provider for GKE
 type GKEBucketProvider struct {
 	Requirements *config.RequirementsConfig
-	gcloud gke.GClouder
+	gcloud       gke.GClouder
 }
 
 // CreateNewBucketForCluster creates a new dynamic bucket
@@ -70,6 +70,6 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 func NewGKEBucketProvider(requirements *config.RequirementsConfig) buckets.Provider {
 	return &GKEBucketProvider{
 		Requirements: requirements,
-		gcloud: &gke.GCloud{},
+		gcloud:       &gke.GCloud{},
 	}
 }

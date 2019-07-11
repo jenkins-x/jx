@@ -11,14 +11,14 @@ import (
 
 	"time"
 
-	v1 "k8s.io/api/core/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	osUser "os/user"
 	"sigs.k8s.io/yaml"
-	"k8s.io/client-go/kubernetes"
 )
 
 // KmsLocation indicates the location used by the Google KMS service
@@ -33,9 +33,9 @@ var (
 		"roles/storage.objectAdmin",
 		"roles/storage.objectCreator"}
 )
+
 // GCloud real implementation of the gcloud helper
 type GCloud struct {
-
 }
 
 // Cluster struct to represent a cluster on gcloud
@@ -56,7 +56,6 @@ func getManagedZoneName(domain string) string {
 	}
 
 	return ""
-
 
 }
 
@@ -1088,4 +1087,3 @@ func (g *GCloud) storeGCPServiceAccountIntoSecret(client kubernetes.Interface, s
 	}
 	return secretName, nil
 }
-
