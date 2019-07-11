@@ -981,6 +981,7 @@ func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag st
 	return nil
 }
 
+// UpdateReleaseStatus is not supported for this git provider
 func (b *BitbucketCloudProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	log.Logger().Warn("Bitbucket Cloud doesn't support releases")
 	return nil

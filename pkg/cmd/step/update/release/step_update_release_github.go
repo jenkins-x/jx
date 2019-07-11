@@ -31,10 +31,11 @@ type StepUpdateReleaseGitHubOptions struct {
 	State StepUpdateReleaseStatusState
 }
 
+// StepUpdateReleaseStatusState contains the state information
 type StepUpdateReleaseStatusState struct {
-	GitInfo         *gits.GitRepository
-	GitProvider     gits.GitProvider
-	Release         *v1.Release
+	GitInfo     *gits.GitRepository
+	GitProvider gits.GitProvider
+	Release     *v1.Release
 }
 
 // NewCmdStepUpdateReleaseGitHub Creates a new Command object
@@ -67,7 +68,7 @@ func NewCmdStepUpdateReleaseGitHub(commonOpts *opts.CommonOptions) *cobra.Comman
 	return cmd
 }
 
-// ValidateOptions validates the common options for brew pr steps
+// ValidateGitHubOptions validates the common options for brew pr steps
 func (o *StepUpdateReleaseGitHubOptions) ValidateGitHubOptions() error {
 	if err := o.ValidateOptions(); err != nil {
 		return errors.WithStack(err)
@@ -101,11 +102,11 @@ func (o *StepUpdateReleaseGitHubOptions) Run() error {
 		log.Logger().Warnf("No git directory could be found from dir %s", dir)
 		return nil
 	}
-	gitUrl, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
+	gitURL, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
 		return err
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl)
+	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return err
 	}

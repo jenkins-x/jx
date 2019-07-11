@@ -1060,6 +1060,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	return err
 }
 
+// UpdateReleaseStatus updates the state (release/prerelease) of a release
 func (p *GitHubProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	release := &github.RepositoryRelease{}
 	rel, r, err := p.Client.Repositories.GetReleaseByTag(p.Context, owner, repo, tag)
@@ -1090,7 +1091,7 @@ func (p *GitHubProvider) UpdateReleaseStatus(owner string, repo string, tag stri
 	}
 	id := release.ID
 	if id == nil {
-		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
+		return fmt.Errorf("the release for %s/%s tag %s has no ID!", owner, repo, tag)
 	}
 	_, _, err = p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
 	return err
