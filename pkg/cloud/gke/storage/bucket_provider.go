@@ -33,6 +33,7 @@ func (b *GKEBucketProvider) CreateNewBucketForCluster(clusterName string, bucket
 	return bucketURL, nil
 }
 
+// EnsureBucketIsCreated ensures the bucket URL is createtd
 func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 	project := b.Requirements.Cluster.ProjectID
 	if project == "" {
