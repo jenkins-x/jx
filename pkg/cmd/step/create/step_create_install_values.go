@@ -186,7 +186,7 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 
 				log.Logger().Infof("attempting to lazily create the external-dns secret %s\n", info(ns))
 
-				_, err = externaldns.CreateExternalDNSGCPServiceAccount(kubeClient, kube.DefaultExternalDNSReleaseName, ns, requirements.Cluster.ClusterName, requirements.Cluster.ProjectID)
+				_, err = externaldns.CreateExternalDNSGCPServiceAccount(o.GCloud(), kubeClient, kube.DefaultExternalDNSReleaseName, ns, requirements.Cluster.ClusterName, requirements.Cluster.ProjectID)
 				if err != nil {
 					return values, errors.Wrap(err, "creating the ExternalDNS GCP Service Account")
 				}
@@ -201,7 +201,7 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		// for external dns to work using dns we need to use `-` and not `.`
 		subDomain = "-" + ns + "."
 
-		err = gke.EnableAPIs(requirements.Cluster.ProjectID, "dns")
+		err = o.GCloud().EnableAPIs(requirements.Cluster.ProjectID, "dns")
 		if err != nil {
 			return values, errors.Wrap(err, "unable to enable 'dns' api")
 		}
