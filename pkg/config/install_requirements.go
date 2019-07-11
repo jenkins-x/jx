@@ -37,13 +37,13 @@ const (
 type WebhookType string
 
 const (
-	// WebhookTypeVault specifies that we use prow for webhooks
-	// see:
+	// WebhookTypeProw specifies that we use prow for webhooks
+	// see: https://github.com/kubernetes/test-infra/tree/master/prow
 	WebhookTypeProw WebhookType = "prow"
 	// WebhookTypeLighthouse specifies that we use lighthouse for webhooks
-	// see:
+	// see: https://github.com/jenkins-x/lighthouse
 	WebhookTypeLighthouse WebhookType = "lighthouse"
-	// WebhookTypeLighthouse specifies that we use jenkins webhooks
+	// WebhookTypeJenkins specifies that we use jenkins webhooks
 	WebhookTypeJenkins WebhookType = "jenkins"
 )
 
