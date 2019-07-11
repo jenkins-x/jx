@@ -890,6 +890,21 @@ func (mock *MockGitProvider) UpdateRelease(_param0 string, _param1 string, _para
 	return ret0
 }
 
+func (mock *MockGitProvider) UpdateReleaseStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRelease) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("UpdateReleaseStatus", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGitProvider) UpdateWebHook(_param0 *gits.GitWebHookArguments) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -2454,6 +2469,45 @@ func (c *MockGitProvider_UpdateRelease_OngoingVerification) GetCapturedArguments
 }
 
 func (c *MockGitProvider_UpdateRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []*gits.GitRelease) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+		_param3 = make([]*gits.GitRelease, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(*gits.GitRelease)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitProvider) UpdateReleaseStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRelease) *MockGitProvider_UpdateReleaseStatus_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateReleaseStatus", params, verifier.timeout)
+	return &MockGitProvider_UpdateReleaseStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitProvider_UpdateReleaseStatus_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitProvider_UpdateReleaseStatus_OngoingVerification) GetCapturedArguments() (string, string, string, *gits.GitRelease) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
+}
+
+func (c *MockGitProvider_UpdateReleaseStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []*gits.GitRelease) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
