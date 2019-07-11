@@ -106,6 +106,15 @@ func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tekton
 	if err != nil {
 		return nil, err
 	}
+	// For legacy purposes, look for the old "repo" label as well.
+	if len(tektonPRs.Items) == 0 {
+		tektonPRs, err = tektonClient.TektonV1alpha1().PipelineRuns(pa.Namespace).List(metav1.ListOptions{
+			LabelSelector: strings.Replace(strings.Join(filters, ","), "repository=", "repo=", 1),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	var names []string
 	for _, pr := range tektonPRs.Items {
 		buildNumber := pr.Labels[tekton.LabelBuild]

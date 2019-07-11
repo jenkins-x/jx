@@ -8,7 +8,7 @@ metadata:
     created-by-prow: "true"
     owner: fakeowner
     prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
-    repository: fakerepo
+    repo: fakerepo
     tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
   name: fakeowner-fakerepo-fakebranch-1
   namespace: jx
