@@ -136,13 +136,14 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(requirements *con
 	}
 
 	gitRepoOptions := &gits.GitRepositoryOptions{
-		ServerURL:  gitServerURL,
-		ServerKind: gitKind,
-		Username:   userAuth.Username,
-		ApiToken:   userAuth.Password,
-		Owner:      gitInfo.Organisation,
-		RepoName:   gitInfo.Name,
-		Private:    privateRepo,
+		ServerURL:                gitServerURL,
+		ServerKind:               gitKind,
+		Username:                 userAuth.Username,
+		ApiToken:                 userAuth.Password,
+		Owner:                    gitInfo.Organisation,
+		RepoName:                 gitInfo.Name,
+		Private:                  privateRepo,
+		IgnoreExistingRepository: true,
 	}
 
 	_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
