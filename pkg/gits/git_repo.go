@@ -23,13 +23,14 @@ type CreateRepoData struct {
 }
 
 type GitRepositoryOptions struct {
-	ServerURL  string
-	ServerKind string
-	Username   string
-	ApiToken   string
-	Owner      string
-	RepoName   string
-	Private    bool
+	ServerURL                string
+	ServerKind               string
+	Username                 string
+	ApiToken                 string
+	Owner                    string
+	RepoName                 string
+	Private                  bool
+	IgnoreExistingRepository bool
 }
 
 // GetRepository returns the repository if it already exists
@@ -158,11 +159,13 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 			return nil, err
 		}
 	} else {
-		err := provider.ValidateRepositoryName(owner, repoName)
-		if err != nil {
-			return nil, err
+		if !repoOptions.IgnoreExistingRepository {
+			err := provider.ValidateRepositoryName(owner, repoName)
+			if err != nil {
+				return nil, err
+			}
+			log.Logger().Infof(util.QuestionAnswer("Using repository", repoName))
 		}
-		log.Logger().Infof(util.QuestionAnswer("Using repository", repoName))
 	}
 
 	fullName := git.RepoName(owner, repoName)
