@@ -607,6 +607,7 @@ func (f *FakeProvider) UpdateRelease(owner string, repoName string, tag string, 
 	return fmt.Errorf("repository with name '%s' not found", repoName)
 }
 
+// UpdateReleaseStatus updates the status (release/prerelease) of a release
 func (f *FakeProvider) UpdateReleaseStatus(owner string, repoName string, tag string, releaseInfo *GitRelease) error {
 	repos, ok := f.Repositories[owner]
 	if !ok {
