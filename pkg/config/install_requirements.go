@@ -22,7 +22,7 @@ const (
 	RequirementsConfigFileName = "jx-requirements.yml"
 )
 
-// SecretStorageType is the type of a promotion strategy
+// SecretStorageType is the type of storage used for secrets
 type SecretStorageType string
 
 const (
@@ -31,6 +31,20 @@ const (
 	// SecretStorageTypeLocal specifies that we use the local file system in
 	// `~/.jx/localSecrets` to store secrets
 	SecretStorageTypeLocal SecretStorageType = "local"
+)
+
+// WebhookType is the type of a webhook strategy
+type WebhookType string
+
+const (
+	// WebhookTypeVault specifies that we use prow for webhooks
+	// see:
+	WebhookTypeProw WebhookType = "prow"
+	// WebhookTypeLighthouse specifies that we use lighthouse for webhooks
+	// see:
+	WebhookTypeLighthouse WebhookType = "lighthouse"
+	// WebhookTypeLighthouse specifies that we use jenkins webhooks
+	WebhookTypeJenkins WebhookType = "jenkins"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments
@@ -116,6 +130,8 @@ type RequirementsConfig struct {
 	Terraform bool `json:"terraform,omitempty"`
 	// SecretStorage how should we store secrets for the cluster
 	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
+	// Webhook specifies what engine we should use for webhooks
+	Webhook WebhookType `json:"webhook,omitempty"`
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
 	// Ingress contains ingress specific requirements
@@ -128,6 +144,7 @@ type RequirementsConfig struct {
 func NewRequirementsConfig() *RequirementsConfig {
 	return &RequirementsConfig{
 		SecretStorage: SecretStorageTypeLocal,
+		Webhook:       WebhookTypeProw,
 		Kaniko:        true,
 	}
 }
@@ -251,7 +268,7 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
 	m, err := toObjectMap(c)
 	if m != nil {
-		ensureHasFields(m, "provider", "project", "environmentGitOwner", "gitops")
+		ensureHasFields(m, "provider", "project", "environmentGitOwner", "gitops", "webhook")
 	}
 	return m, err
 }
