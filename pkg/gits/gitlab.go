@@ -688,6 +688,7 @@ func (g *GitlabProvider) UpdateRelease(owner string, repo string, tag string, re
 	return nil
 }
 
+// UpdateReleaseStatus is not supported for this git provider
 func (g *GitlabProvider) UpdateReleaseStatus(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	return nil
 }
