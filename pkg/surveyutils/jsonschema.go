@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -27,7 +28,7 @@ import (
 )
 
 var (
-	generatedPasswordValue = "<generated>"
+	generatedPasswordValueRegex = regexp.MustCompile(`^<generated:?(.*)>$`)
 )
 
 // Type represents a JSON Schema object type current to https://www.ietf.org/archive/id/draft-handrews-json-schema-validation-01.txt
@@ -840,11 +841,32 @@ func handlePasswordProperty(message string, help string, kind string, ask bool, 
 	}
 
 	generated := false
-	if defaultValue == generatedPasswordValue {
-		secret, err := secrets.DefaultGenerateSecret()
-		if err != nil {
-			return nil, errors.WithStack(err)
+	if submatches := generatedPasswordValueRegex.FindStringSubmatch(defaultValue); len(submatches) > 0 {
+		var secret string
+		var err error
+		if len(submatches) == 2 {
+			format := submatches[1]
+			switch format {
+			case "hmac":
+				secret, err = util.RandStringBytesMaskImprSrc(41)
+				if err != nil {
+					return nil, errors.Wrapf(err, "generating hmac")
+				}
+			case "":
+				secret, err = secrets.DefaultGenerateSecret()
+				if err != nil {
+					return nil, errors.WithStack(err)
+				}
+			default:
+				return nil, errors.Errorf("%s is not a known format to generate", format)
+			}
+		} else {
+			secret, err = secrets.DefaultGenerateSecret()
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
 		}
+
 		defaultValue = secret
 		fmt.Fprintf(terminal.NewAnsiStdout(out), "Generated %s %s, to use it press enter.\nThis is the only time you will be shown it so remember to save it\n", kind, util.ColorInfo(secret))
 		generated = true
