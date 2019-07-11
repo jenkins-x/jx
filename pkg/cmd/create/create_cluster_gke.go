@@ -151,8 +151,6 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	bindGKEConfigToFlags(cmd)
 
-	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
-
 	return cmd
 }
 
