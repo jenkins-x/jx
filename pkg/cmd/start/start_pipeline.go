@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/kube"
 	errors2 "github.com/pkg/errors"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
@@ -44,12 +44,16 @@ type StartPipelineOptions struct {
 	Output          string
 	Tail            bool
 	Filter          string
-	Context         string
 	JenkinsSelector opts.JenkinsSelectorOptions
 
 	Jobs map[string]gojenkins.Job
 
 	ProwOptions prow.Options
+
+	// meta pipeline options
+	Context      string
+	CustomLabels []string
+	CustomEnvs   []string
 }
 
 var (
@@ -92,6 +96,10 @@ func NewCmdStartPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", false, "Tails the build log to the current terminal")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "An optional Prow pipeline context")
+	cmd.Flags().StringVar(&options.ServiceAccount, "service-account", "tekton-bot", "The Kubernetes ServiceAccount to use to run the meta pipeline")
+	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to the generated PipelineRun (can be use multiple times)")
+	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to the generated PipelineRun that are created (can be use multiple times)")
+
 	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
@@ -162,13 +170,13 @@ func (o *StartPipelineOptions) Run() error {
 		args = []string{name}
 	}
 	for _, a := range args {
-		if isProw {
-			err = o.createProwJob(a)
+		if devEnv.Spec.IsLighthouse() {
+			err = o.createMetaPipeline(a)
 			if err != nil {
 				return err
 			}
-		} else if devEnv.Spec.IsLighthouse() {
-			err = o.createMetaPipeline(a)
+		} else if isProw {
+			err = o.createProwJob(a)
 			if err != nil {
 				return err
 			}
@@ -192,28 +200,34 @@ func (o *StartPipelineOptions) createMetaPipeline(jobname string) error {
 	branch := parts[2]
 	pullRefs := branch + ":"
 
-	postSubmitJob, err := o.ProwOptions.GetPostSubmitJob(owner, repo, branch)
+	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return err
+		return errors2.Wrap(err, "failed to create JX client")
 	}
 
-	sourceURL := postSubmitJob.CloneURI
+	sr, err := kube.FindSourceRepository(jxClient, ns, owner, repo)
+	if err != nil {
+		return errors2.Wrap(err, "cannot determine git source URL")
+	}
+
+	sourceURL, err := kube.GetRepositoryGitURL(sr)
+	if err != nil {
+		return errors2.Wrapf(err, "cannot generate the git URL from SourceRepository %s", sr.Name)
+	}
 	if sourceURL == "" {
-		return fmt.Errorf("Could not find CloneURI in the prow configuration for repository %s/%s with branch %s", owner, repo, branch)
+		return fmt.Errorf("no git URL returned from SourceRepository %s", sr.Name)
 	}
 
 	po := create.StepCreatePipelineOptions{
-		SourceURL: sourceURL,
-		Job:       jobname,
-		PullRefs:  pullRefs,
-		Context:   o.Context,
-	}
-	sa := os.Getenv("JX_SERVICE_ACCOUNT")
-	if sa == "" {
-		sa = "tekton-bot"
+		SourceURL:    sourceURL,
+		Job:          jobname,
+		PullRefs:     pullRefs,
+		Context:      o.Context,
+		CustomLabels: o.CustomLabels,
+		CustomEnvs:   o.CustomEnvs,
 	}
 	po.CommonOptions = o.CommonOptions
-	po.ServiceAccount = sa
+	po.ServiceAccount = o.ServiceAccount
 
 	err = po.Run()
 	if err != nil {
