@@ -37,6 +37,8 @@ const (
 type WebhookType string
 
 const (
+	// WebhookTypeNone if we have yet to define a webhook
+	WebhookTypeNone WebhookType = ""
 	// WebhookTypeProw specifies that we use prow for webhooks
 	// see: https://github.com/kubernetes/test-infra/tree/master/prow
 	WebhookTypeProw WebhookType = "prow"
@@ -220,6 +222,7 @@ func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
 	if err != nil {
 		return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
+	config.addDefaults()
 	return config, nil
 }
 
@@ -322,4 +325,11 @@ func (c *RequirementsConfig) IsLazyCreateSecrets(flag string) (bool, error) {
 	}
 	// default to false
 	return false, nil
+}
+
+// addDefaults lets ensure any missing values have good defaults
+func (c *RequirementsConfig) addDefaults() {
+	if c.Webhook == WebhookTypeNone {
+		c.Webhook = WebhookTypeProw
+	}
 }
