@@ -3,6 +3,7 @@ package version
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -49,9 +50,82 @@ var (
 
 // StableVersion stores the stable version information
 type StableVersion struct {
+	// Version the default version to use
 	Version string `json:"version,omitempty"`
-	GitURL  string `json:"gitUrl,omitempty"`
-	URL     string `json:"url,omitempty"`
+	// VersionUpperLimit represents the upper limit which indicates a version which is too new.
+
+	// e.g. for packages we could use: `{ version: "1.10.1", upperLimit: "1.14.0"}` which would mean these
+	// versions are all valid `["1.11.5", "1.13.1234"]` but these are invalid `["1.14.0", "1.14.1"]`
+	UpperLimit string `json:"upperLimit,omitempty"`
+	// GitURL the URL to the source code
+	GitURL string `json:"gitUrl,omitempty"`
+	// URL the URL for the documentation
+	URL string `json:"url,omitempty"`
+}
+
+// VerifyPackage verifies the current version of the package is valid
+func (data *StableVersion) VerifyPackage(name string, currentVersion string, workDir string) error {
+	currentVersion = convertToVersion(currentVersion)
+	if currentVersion == "" {
+		return nil
+	}
+	version := convertToVersion(data.Version)
+	if version == "" {
+		log.Logger().Warnf("could not find a stable package version for %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/", name, workDir)
+		log.Logger().Infof("Please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k package -n %s", name)))
+		return nil
+	}
+
+	currentSem, err := semver.Make(currentVersion)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse semantic version for current version %s for package %s", currentVersion, name)
+	}
+
+	minSem, err := semver.Make(version)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse required semantic version %s for package %s", version, name)
+	}
+
+	upperLimitText := convertToVersion(data.UpperLimit)
+	if upperLimitText == "" {
+		if minSem.Equals(currentSem) {
+			return nil
+		}
+		return verifyError(name, fmt.Errorf("package %s is on version %s but the version stream requires version %s", name, currentVersion, version))
+	}
+
+	// lets make sure the current version is in the range
+	if currentSem.LT(minSem) {
+		return verifyError(name, fmt.Errorf("package %s is an old version %s. The version stream requires at least %s", name, currentVersion, version))
+	}
+
+	limitSem, err := semver.Make(upperLimitText)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse upper limit version %s for package %s", upperLimitText, name)
+	}
+
+	if currentSem.GE(limitSem) {
+		return verifyError(name, fmt.Errorf("package %s is using version %s which is too new. The version stream requires a version earlier than %s", name, currentVersion, upperLimitText))
+	}
+	return nil
+}
+
+// verifyError allows package verify errors to be disabled in development via environment variables
+func verifyError(name string, err error) error {
+	envVar := "JX_DISABLE_VERIFY_" + strings.ToUpper(name)
+	value := os.Getenv(envVar)
+	if strings.ToLower(value) == "true" {
+		log.Logger().Warnf("$%s is true so disabling verify of %s: %s\n", envVar, name, err.Error())
+		return nil
+	}
+	return err
+}
+
+// removes any whitespace and `v` prefix from a version string
+func convertToVersion(text string) string {
+	answer := strings.TrimSpace(text)
+	answer = strings.TrimPrefix(answer, "v")
+	return answer
 }
 
 // LoadStableVersion loads the stable version data from the version configuration directory returning an empty object if there is

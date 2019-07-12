@@ -28,12 +28,13 @@ func NewCmdStepVerify(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdStepVerifyDependencies(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyEnvironments(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyGit(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyInstall(commonOpts))
-	cmd.AddCommand(NewCmdStepVerifyPreInstall(commonOpts))
+	cmd.AddCommand(NewCmdStepVerifyPackages(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyPod(commonOpts))
-	cmd.AddCommand(NewCmdStepVerifyDependencies(commonOpts))
+	cmd.AddCommand(NewCmdStepVerifyPreInstall(commonOpts))
 	return cmd
 }
 
