@@ -30,9 +30,10 @@ type LogWriter interface {
 }
 
 // GetTektonPipelinesWithActivePipelineActivity returns list of all PipelineActivities with corresponding Tekton PipelineRuns ordered by the PipelineRun creation timestamp and a map to obtain its reference once a name has been selected
-func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, tektonClient tektonclient.Interface, ns string, filters []string) ([]string, map[string]*v1.PipelineActivity, error) {
+func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, tektonClient tektonclient.Interface, ns string, filters []string, context string) ([]string, map[string]*v1.PipelineActivity, error) {
+	labelsFilter := strings.Join(filters, ",")
 	paList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{
-		LabelSelector: strings.Join(filters, ","),
+		LabelSelector: labelsFilter,
 	})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "there was a problem getting the PipelineActivities")
@@ -44,8 +45,13 @@ func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, 
 		paMap[createPipelineActivityName(p.Labels, p.Spec.Build)] = &p
 	}
 
+	// This is a temporary solution until we add the "context" label to PipelineActivities
+	labelsFilter = strings.Replace(labelsFilter, "repository=", "repo=", 1)
+	if context != "" {
+		labelsFilter = modifyFilterForPipelineRun(labelsFilter, context)
+	}
 	tektonPRs, _ := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{
-		LabelSelector: strings.Join(filters, ","),
+		LabelSelector: labelsFilter,
 	})
 
 	sort.Slice(tektonPRs.Items, func(i, j int) bool {
@@ -67,6 +73,14 @@ func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, 
 	}
 
 	return names, paMap, nil
+}
+
+func modifyFilterForPipelineRun(labelsFilter string, context string) string {
+	contextFilter := fmt.Sprintf("context=%s", context)
+	if labelsFilter == "" {
+		return contextFilter
+	}
+	return fmt.Sprintf("%s,%s", labelsFilter, contextFilter)
 }
 
 func createPipelineActivityName(labels map[string]string, buildNumber string) string {

@@ -388,7 +388,7 @@ func (o *GetBuildLogsOptions) getLogForKnative(kubeClient kubernetes.Interface, 
 
 func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) (bool, error) {
 	var defaultName string
-	names, paMap, err := logs.GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, o.BuildFilter.LabelSelectorsForActivity())
+	names, paMap, err := logs.GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, o.BuildFilter.LabelSelectorsForActivity(), o.BuildFilter.Context)
 	if err != nil {
 		return true, err
 	}

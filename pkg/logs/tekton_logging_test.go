@@ -35,7 +35,7 @@ type TestWriter struct{}
 func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 	jxClient, tektonClient, _, _, ns := getFakeClientsAndNs(t)
 
-	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{})
+	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{}, "")
 
 	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
 	assert.Empty(t, names, "There shouldn't be any returned build names")
@@ -72,7 +72,7 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 				tekton.LabelRepo:    "fakerepo",
 				tekton.LabelBranch:  "fakebranch",
 				tekton.LabelOwner:   "fakeowner",
-				tekton.LabelContext: "tekton",
+				tekton.LabelContext: "fakecontext",
 			},
 		},
 		Spec: v1alpha1.PipelineRunSpec{
@@ -99,10 +99,10 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{})
+	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{}, "fakecontext")
 
 	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
-	assert.Equal(t, "fakeowner/fakerepo/fakebranch #1 tekton", names[0], "There should be a match build in the returned names")
+	assert.Equal(t, "fakeowner/fakerepo/fakebranch #1 fakecontext", names[0], "There should be a match build in the returned names")
 	_, exists := paNames[names[0]]
 	assert.True(t, exists, "There should be a matching PipelineActivity in the paMap")
 	assert.Equal(t, len(names), len(paNames))
