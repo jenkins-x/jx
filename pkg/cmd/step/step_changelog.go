@@ -64,6 +64,7 @@ type StepChangelogOptions struct {
 	IncludeMergeCommits bool
 	FailIfFindCommits   bool
 	State               StepChangelogState
+	TagName             string
 }
 
 type StepChangelogState struct {
@@ -189,6 +190,8 @@ func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.Footer, "footer", "", "", "The changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.FooterFile, "footer-file", "", "", "The file name of the changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
+
+	cmd.Flags().StringVarP(&options.TagName, "tag-name", "", "", "The name of the tag, by default <version>")
 
 	return cmd
 }
@@ -351,6 +354,10 @@ func (o *StepChangelogOptions) Run() error {
 		version = SpecVersion
 	}
 
+	if o.TagName == "" {
+		o.TagName = version
+	}
+
 	release := &v1.Release{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Release",
@@ -411,7 +418,7 @@ func (o *StepChangelogOptions) Run() error {
 	if version != "" && o.UpdateRelease && foundGitProvider {
 		releaseInfo := &gits.GitRelease{
 			Name:    version,
-			TagName: version,
+			TagName: o.TagName,
 			Body:    markdown,
 		}
 		url := releaseInfo.HTMLURL
@@ -421,7 +428,7 @@ func (o *StepChangelogOptions) Run() error {
 		if url == "" {
 			url = util.UrlJoin(gitInfo.HttpsURL(), "releases/tag", version)
 		}
-		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
+		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, o.TagName, releaseInfo)
 		if err != nil {
 			log.Logger().Warnf("Failed to update the release at %s: %s", url, err)
 			return nil
