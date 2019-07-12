@@ -54,7 +54,7 @@ git config --global --add user.email jenkins-x@googlegroups.com
 cp ${JX} /usr/bin
 
 # lets trigger the BDD tests in a new team and git provider
-GIT_ORGANISATION="jenkins-x-tests" ${JX} step bdd -b --test-git-repo=https://github.com/fiunchinho/bdd-jx.git --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-import-node-http-watch-pipeline-activity
+GIT_ORGANISATION="jenkins-x-tests" ${JX} step bdd -b --test-git-repo=https://github.com/fiunchinho/bdd-jx.git --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-import
 
 # Reset the namespace back to jx after test for any followup steps
 COVER_JX_BINARY=false ${JX} ns jx
