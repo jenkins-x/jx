@@ -4,14 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
-	errors2 "github.com/pkg/errors"
-
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	errors2 "github.com/pkg/errors"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -43,6 +44,7 @@ type StartPipelineOptions struct {
 	Output          string
 	Tail            bool
 	Filter          string
+	Context         string
 	JenkinsSelector opts.JenkinsSelectorOptions
 
 	Jobs map[string]gojenkins.Job
@@ -89,6 +91,7 @@ func NewCmdStartPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", false, "Tails the build log to the current terminal")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "An optional Prow pipeline context")
 	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
@@ -105,10 +108,13 @@ func (o *StartPipelineOptions) Run() error {
 		return err
 	}
 
-	isProw, err := o.IsProw()
+	devEnv, _, err := o.DevEnvAndTeamSettings()
 	if err != nil {
 		return err
 	}
+
+	isProw := devEnv.Spec.IsProwOrLighthouse()
+
 	args := o.Args
 	names := []string{}
 	o.ProwOptions = prow.Options{
@@ -161,12 +167,57 @@ func (o *StartPipelineOptions) Run() error {
 			if err != nil {
 				return err
 			}
+		} else if devEnv.Spec.IsLighthouse() {
+			err = o.createMetaPipeline(a)
+			if err != nil {
+				return err
+			}
 		} else {
 			err = o.startJenkinsJob(a)
 			if err != nil {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func (o *StartPipelineOptions) createMetaPipeline(jobname string) error {
+	parts := strings.Split(jobname, "/")
+	if len(parts) != 3 {
+		return fmt.Errorf("job name [%s] does not match org/repo/branch format", jobname)
+	}
+	owner := parts[0]
+	repo := parts[1]
+	branch := parts[2]
+	pullRefs := branch + ":"
+
+	postSubmitJob, err := o.ProwOptions.GetPostSubmitJob(owner, repo, branch)
+	if err != nil {
+		return err
+	}
+
+	sourceURL := postSubmitJob.CloneURI
+	if sourceURL == "" {
+		return fmt.Errorf("Could not find CloneURI in the prow configuration for repository %s/%s with branch %s", owner, repo, branch)
+	}
+
+	po := create.StepCreatePipelineOptions{
+		SourceURL: sourceURL,
+		Job:       jobname,
+		PullRefs:  pullRefs,
+		Context:   o.Context,
+	}
+	sa := os.Getenv("JX_SERVICE_ACCOUNT")
+	if sa == "" {
+		sa = "tekton-bot"
+	}
+	po.CommonOptions = o.CommonOptions
+	po.ServiceAccount = sa
+
+	err = po.Run()
+	if err != nil {
+		return errors2.Wrapf(err, "failed to create Jenkins X Pipeline for git URL %s pullRefs: %s", sourceURL, pullRefs)
 	}
 	return nil
 }
