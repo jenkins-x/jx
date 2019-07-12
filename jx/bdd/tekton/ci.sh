@@ -40,5 +40,18 @@ cp ${JX} /usr/bin
 
 echo "running the BDD tests with JX_HOME = $JX_HOME"
 
-jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git --config jx/bdd/tekton/cluster.yaml --gopath /tmp  --git-provider=github --git-username $GH_USERNAME --git-owner $GH_OWNER --git-api-token $GH_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tekton --tests install --tests test-create-spring
+${JX} step bdd \
+    --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
+    --config jx/bdd/tekton/cluster.yaml \
+    --gopath /tmp \
+    --git-provider=github \
+    --git-username $GH_USERNAME \
+    --git-owner $GH_OWNER \
+    --git-api-token $GH_CREDS_PSW \
+    --default-admin-password $JENKINS_CREDS_PSW \
+    --no-delete-app \
+    --no-delete-repo \
+    --tekton \
+    --tests install \
+    --tests test-import
 
