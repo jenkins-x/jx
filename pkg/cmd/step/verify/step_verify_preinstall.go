@@ -123,7 +123,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	po := &StepVerifyPackagesOptions{}
-	no.CommonOptions = o.CommonOptions
+	po.CommonOptions = o.CommonOptions
 	err = po.Run()
 	if err != nil {
 		return err
