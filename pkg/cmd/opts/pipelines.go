@@ -112,7 +112,7 @@ func (o *CommonOptions) GetLatestPipelineBuild(pipeline string) (string, string,
 	}
 	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
 	webhookEngine := devEnv.Spec.WebHookEngine
-	if webhookEngine == v1.WebHookEngineProw {
+	if webhookEngine == v1.WebHookEngineProw || webhookEngine == v1.WebHookEngineLighthouse {
 		return pipeline, build, nil
 	}
 

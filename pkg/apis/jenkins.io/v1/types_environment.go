@@ -140,9 +140,15 @@ const (
 type WebHookEngineType string
 
 const (
-	WebHookEngineNone    WebHookEngineType = ""
+	WebHookEngineNone WebHookEngineType = ""
+	// WebHookEngineJenkins specifies that we use jenkins webhooks
 	WebHookEngineJenkins WebHookEngineType = "Jenkins"
-	WebHookEngineProw    WebHookEngineType = "Prow"
+	// WebHookEngineProw specifies that we use prow for webhooks
+	// see: https://github.com/kubernetes/test-infra/tree/master/prow
+	WebHookEngineProw WebHookEngineType = "Prow"
+	// WebHookEngineLighthouse specifies that we use lighthouse for webhooks
+	// see: https://github.com/jenkins-x/lighthouse
+	WebHookEngineLighthouse WebHookEngineType = "Lighthouse"
 )
 
 // IsPermanent returns true if this environment is permanent
@@ -409,6 +415,18 @@ func (t *TeamSettings) IsSchedulerMode() bool {
 // IsProw returns true if using Prow
 func (t *TeamSettings) IsProw() bool {
 	return t.PromotionEngine == PromotionEngineProw
+}
+
+// IsProwOrLighthouse returns true if either Prow or Lighthouse is being used.
+// e.g. using the Prow based configuration model
+func (e *EnvironmentSpec) IsProwOrLighthouse() bool {
+	w := e.WebHookEngine
+	return w == WebHookEngineProw || w == WebHookEngineLighthouse
+}
+
+// IsLighthouse returns true if we are using lighthouse as the webhook handler
+func (e *EnvironmentSpec) IsLighthouse() bool {
+	return e.WebHookEngine == WebHookEngineLighthouse
 }
 
 // IsEmpty returns true if the storage location is empty
