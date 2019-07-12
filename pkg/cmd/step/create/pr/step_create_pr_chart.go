@@ -1,9 +1,11 @@
 package pr
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -105,9 +107,19 @@ func (o *StepCreatePullRequestChartsOptions) Run() error {
 					if err != nil {
 						return errors.Wrapf(err, "reading %s", path)
 					}
-					values, moreOldVersions := helm.UpdateImagesInValuesToNewVersion(values, o.Name, o.Version)
-					oldVersions = append(oldVersions, moreOldVersions...)
-					err = ioutil.WriteFile(path, values, info.Mode())
+					re, err := regexp.Compile(fmt.Sprintf(`(?m)^\s*Image: %s:(.*)$`, o.Name))
+					if err != nil {
+						return errors.WithStack(err)
+					}
+					newValues := util.ReplaceAllStringSubmatchFunc(re, string(values), func(groups []util.Group) []string {
+						answer := make([]string, 0)
+						for i := range groups {
+							oldVersions = append(oldVersions, groups[i].Value)
+							answer = append(answer, o.Version)
+						}
+						return answer
+					})
+					err = ioutil.WriteFile(path, []byte(newValues), info.Mode())
 					if err != nil {
 						return errors.Wrapf(err, "writing %s", path)
 					}
