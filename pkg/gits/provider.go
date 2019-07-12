@@ -58,6 +58,7 @@ type GitPullRequest struct {
 	RequestedReviewers []*GitUser
 	Labels             []*Label
 	UpdatedAt          *time.Time
+	HeadOwner          *string // HeadOwner is the string the PR is created from
 }
 
 // Label represents a label on an Issue

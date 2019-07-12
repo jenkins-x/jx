@@ -678,6 +678,9 @@ func (p *GitHubProvider) updatePullRequest(pr *GitPullRequest, source *github.Pu
 	}
 	if source.Head != nil {
 		pr.HeadRef = source.Head.Ref
+		if source.Head.Repo != nil {
+			pr.HeadOwner = source.Head.Repo.Owner.Login
+		}
 	}
 	if source.StatusesURL != nil {
 		pr.StatusesURL = source.StatusesURL

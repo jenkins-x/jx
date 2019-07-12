@@ -259,7 +259,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 		if len(existingPrs) == 1 {
 			pr := existingPrs[0]
 			// We can only update an existing PR if the owner of that PR is this user!
-			if pr.Author.Login == username && pr.HeadRef != nil && pr.Number != nil {
+			if util.DereferenceString(pr.HeadOwner) == username && pr.HeadRef != nil && pr.Number != nil {
 				url := pr.URL
 				changeBranch, err := gitter.Branch(dir)
 				if err != nil {
