@@ -6,10 +6,9 @@ export ORG="jenkinsxio"
 export APP_NAME="jx"
 export TEAM="$(echo ${BRANCH_NAME}-$BUILD_ID  | tr '[:upper:]' '[:lower:]')"
 
-export GHE_CREDS_PSW="$(jx step credential -s jx-pipeline-git-github-ghe | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
-export JENKINS_CREDS_PSW="$(jx step credential -s  test-jenkins-user | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
-export GKE_SA="$(jx step credential -s gke-sa | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
-
+export GHE_CREDS_PSW="$(${JX} step credential -s jx-pipeline-git-github-ghe | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
+export JENKINS_CREDS_PSW="$(${JX} step credential -s  test-jenkins-user | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
+export GKE_SA="$(jx step credential -k bdd-credentials.json -s bdd-secret -f sa.json)"
 export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 
 # for BDD tests
@@ -29,7 +28,6 @@ git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
 JX_HOME="/tmp/jxhome"
-KUBECONFIG="/tmp/jxhome/config"
 
 export GIT_COMMITTER_NAME="dev1"
 
@@ -40,8 +38,7 @@ COVER_JX_BINARY=false jx version
 jx step git credentials
 
 # lets create a team for this PR and run the BDD tests
-gcloud auth activate-service-account --key-file ${GKE_SA}
-gcloud container clusters get-credentials jx-bdd-tests --zone europe-west1-c --project jenkins-x-infra
+gcloud auth activate-service-account --key-file $GKE_SA
 
 sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_TOKEN}/g myvalues.yaml.template > myvalues.yaml
 
@@ -53,8 +50,25 @@ echo "creating team: $TEAM"
 git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
+cp ${JX} /usr/bin
+
+git clone https://github.com/jenkins-x/jenkins-x-versions.git
+
 # lets trigger the BDD tests in a new team and git provider
-jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-create-spring
+${JX} step bdd -b \
+    --provider=gke \
+    --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
+    --config jenkins-x-versions/jx/bdd/static/cluster.yaml \
+    --gopath /tmp \
+    --git-provider=ghe \
+    --git-provider-url=https://github.beescloud.com \
+    --git-username dev1 \
+    --git-api-token $GHE_CREDS_PSW \
+    --default-admin-password $JENKINS_CREDS_PSW \
+    --no-delete-app \
+    --no-delete-repo \
+    --tests install \
+    --tests test-create-spring
 
 # Reset the namespace back to jx after test for any followup steps
 COVER_JX_BINARY=false jx ns jx
