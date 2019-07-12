@@ -140,6 +140,7 @@ const (
 type WebHookEngineType string
 
 const (
+	// WebHookEngineNone indicates no webhook being configured
 	WebHookEngineNone WebHookEngineType = ""
 	// WebHookEngineJenkins specifies that we use jenkins webhooks
 	WebHookEngineJenkins WebHookEngineType = "Jenkins"
