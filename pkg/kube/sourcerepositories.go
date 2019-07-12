@@ -9,9 +9,40 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// GetRepositoryGitURL returns the git repository clone URL
+func GetRepositoryGitURL(s *v1.SourceRepository) (string, error) {
+	spec := s.Spec
+	provider := spec.Provider
+	owner := spec.Org
+	repo := spec.Repo
+	answer := ""
+	if provider == "" {
+		return answer, fmt.Errorf("missing provider in SourceRepository %s", s.Name)
+	}
+	if owner == "" {
+		return answer, fmt.Errorf("missing org in SourceRepository %s", s.Name)
+	}
+	if repo == "" {
+		return answer, fmt.Errorf("missing repo in SourceRepository %s", s.Name)
+	}
+	return util.UrlJoin(provider, owner, repo) + ".git", nil
+}
+
+// FindSourceRepository returns a SourceRepository for the given namespace, owner and name
+// or returns an error if it cannot be found
+func FindSourceRepository(jxClient versioned.Interface, ns string, owner string, name string) (*v1.SourceRepository, error) {
+	resourceName := naming.ToValidName(owner + "-" + name)
+	repo, err := jxClient.JenkinsV1().SourceRepositories(ns).Get(resourceName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find SourceRepository %s in namespace %s", resourceName, ns)
+	}
+	return repo, nil
+}
 
 // GetOrCreateSourceRepository gets or creates the SourceRepository for the given repository name and organisation
 func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, organisation, providerURL string) (*v1.SourceRepository, error) {
