@@ -122,6 +122,13 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	po := &StepVerifyPackagesOptions{}
+	no.CommonOptions = o.CommonOptions
+	err = po.Run()
+	if err != nil {
+		return err
+	}
+
 	err = o.verifyInstallConfig(kubeClient, ns, requirements, requirementsFileName)
 	if err != nil {
 		return err

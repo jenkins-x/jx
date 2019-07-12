@@ -2,18 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
-	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/util/system"
-	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -25,6 +23,7 @@ type VersionOptions struct {
 	Namespace      string
 	HelmTLS        bool
 	NoVersionCheck bool
+	NoVerify       bool
 }
 
 func NewCmdVersion(commonOpts *opts.CommonOptions) *cobra.Command {
@@ -49,101 +48,19 @@ func NewCmdVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().MarkShorthandDeprecated("client", "please use --client instead.")
 	cmd.Flags().BoolVarP(&options.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&options.NoVersionCheck, "no-version-check", "n", false, "Disable checking of version upgrade checks")
+	cmd.Flags().BoolVarP(&options.NoVerify, "no-verify", "", false, "Disable verification of package versions")
 	return cmd
 }
 
 func (o *VersionOptions) Run() error {
-	info := util.ColorInfo
-	table := o.CreateTable()
-	table.AddRow("NAME", "VERSION")
-	table.AddRow("jx", info(version.GetVersion()))
-
-	// Jenkins X version
-	releases, _, err := o.Helm().ListReleases(o.Namespace)
-	if err != nil {
-		log.Logger().Warnf("Failed to find helm installs: %s", err)
-	} else {
-		for _, release := range releases {
-			if release.Chart == "jenkins-x-platform" {
-				table.AddRow("jenkins x platform", info(release.ChartVersion))
-			}
-		}
-	}
-
-	// Kubernetes version
-	client, err := o.KubeClient()
-	if err != nil {
-		log.Logger().Warnf("Failed to connect to Kubernetes: %s", err)
-	} else {
-		serverVersion, err := client.Discovery().ServerVersion()
-		if err != nil {
-			log.Logger().Warnf("Failed to get Kubernetes server version: %s", err)
-		} else if serverVersion != nil {
-			table.AddRow("Kubernetes cluster", info(serverVersion.String()))
-		}
-	}
-
-	// kubectl version
-	output, err := o.GetCommandOutput("", "kubectl", "version", "--short")
-	if err != nil {
-		log.Logger().Warnf("Failed to get kubectl version: %s", err)
-	} else {
-		for i, line := range strings.Split(output, "\n") {
-			fields := strings.Fields(line)
-			if len(fields) > 1 {
-				v := fields[2]
-				if v != "" {
-					switch i {
-					case 0:
-						table.AddRow("kubectl", info(v))
-					case 1:
-						// Ignore K8S server details as we have these above
-					}
-				}
-			}
-		}
-	}
-
-	// helm version
-	output, err = o.Helm().Version(o.HelmTLS)
-	if err != nil {
-		log.Logger().Warnf("Failed to get helm version: %s", err)
-	} else {
-		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
-		if helmBinary == "helm3" || noTiller || helmTemplate {
-			table.AddRow("helm client", info(output))
-		} else {
-			for i, line := range strings.Split(output, "\n") {
-				fields := strings.Fields(line)
-				if len(fields) > 1 {
-					v := fields[1]
-					if v != "" {
-						switch i {
-						case 0:
-							table.AddRow("helm client", info(v))
-						case 1:
-							table.AddRow("helm server", info(v))
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// git version
-	version, err := o.Git().Version()
-	if err != nil {
-		log.Logger().Warnf("Failed to get git version: %s", err)
-	} else {
-		table.AddRow("git", info(version))
-	}
+	packages, table := o.GetPackageVersions(o.Namespace, o.HelmTLS)
 
 	// os version
-	version, err = o.GetOsVersion()
+	version, err := o.GetOsVersion()
 	if err != nil {
 		log.Logger().Warnf("Failed to get OS version: %s", err)
 	} else {
-		table.AddRow("Operating System", info(version))
+		table.AddRow("Operating System", util.ColorInfo(version))
 	}
 
 	table.Render()
@@ -156,7 +73,18 @@ func (o *VersionOptions) Run() error {
 
 		return o.upgradeCli(newVersion)
 	}
-	return nil
+	if o.NoVerify {
+		return nil
+	}
+	versionResolver, err := o.CreateVersionResolver("", "")
+	if err != nil {
+		return err
+	}
+
+	// lets remove any non-package name before verifying
+	delete(packages, "kubernetesCluster")
+
+	return versionResolver.VerifyPackages(packages)
 }
 
 func (o *VersionOptions) upgradeCli(newVersion semver.Version) error {
