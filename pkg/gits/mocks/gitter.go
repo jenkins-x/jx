@@ -958,11 +958,11 @@ func (mock *MockGitter) PushTag(_param0 string, _param1 string) error {
 	return ret0
 }
 
-func (mock *MockGitter) RebaseTheirs(_param0 string, _param1 string, _param2 string) error {
+func (mock *MockGitter) RebaseTheirs(_param0 string, _param1 string, _param2 string, _param3 bool) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("RebaseTheirs", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
@@ -3038,8 +3038,8 @@ func (c *MockGitter_PushTag_OngoingVerification) GetAllCapturedArguments() (_par
 	return
 }
 
-func (verifier *VerifierMockGitter) RebaseTheirs(_param0 string, _param1 string, _param2 string) *MockGitter_RebaseTheirs_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2}
+func (verifier *VerifierMockGitter) RebaseTheirs(_param0 string, _param1 string, _param2 string, _param3 bool) *MockGitter_RebaseTheirs_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RebaseTheirs", params, verifier.timeout)
 	return &MockGitter_RebaseTheirs_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -3049,12 +3049,12 @@ type MockGitter_RebaseTheirs_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockGitter_RebaseTheirs_OngoingVerification) GetCapturedArguments() (string, string, string) {
-	_param0, _param1, _param2 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+func (c *MockGitter_RebaseTheirs_OngoingVerification) GetCapturedArguments() (string, string, string, bool) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *MockGitter_RebaseTheirs_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitter_RebaseTheirs_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -3068,6 +3068,10 @@ func (c *MockGitter_RebaseTheirs_OngoingVerification) GetAllCapturedArguments() 
 		_param2 = make([]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
+		}
+		_param3 = make([]bool, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(bool)
 		}
 	}
 	return

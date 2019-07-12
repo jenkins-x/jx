@@ -258,20 +258,30 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 		}
 		if len(existingPrs) == 1 {
 			pr := existingPrs[0]
-			if pr.HeadRef != nil && pr.Number != nil {
+			// We can only update an existing PR if the owner of that PR is this user!
+			if pr.Author.Login == username && pr.HeadRef != nil && pr.Number != nil {
+				url := pr.URL
 				changeBranch, err := gitter.Branch(dir)
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
-				existingBranchName := *pr.HeadRef
-				err = gitter.FetchBranch(dir, "origin", existingBranchName)
+				localBranchUUID, err := uuid.NewV4()
 				if err != nil {
-					return nil, errors.Wrapf(err, "fetching branch %s for merge", existingBranchName)
+					return nil, errors.Wrapf(err, "creating UUID for local branch")
+				}
+				// We use this "dummy" local branch to pull into to avoid having to work with FETCH_HEAD as our local
+				// representation of the remote branch. This is an oddity of the pull/%d/head remote.
+				localBranch := localBranchUUID.String()
+				existingBranchName := *pr.HeadRef
+				fetchRefSpec := fmt.Sprintf("pull/%d/head:%s", *pr.Number, localBranch)
+				err = gitter.FetchBranch(dir, "upstream", fetchRefSpec)
+				if err != nil {
+					return nil, errors.Wrapf(err, "fetching %s for merge", fetchRefSpec)
 				}
 
-				err = gitter.CreateBranchFrom(dir, prDetails.BranchName, fmt.Sprintf("origin/%s", existingBranchName))
+				err = gitter.CreateBranchFrom(dir, prDetails.BranchName, localBranch)
 				if err != nil {
-					return nil, errors.Wrapf(err, "creating branch %s from %s", prDetails.BranchName, existingBranchName)
+					return nil, errors.Wrapf(err, "creating branch %s from %s", prDetails.BranchName, fetchRefSpec)
 				}
 				err = gitter.Checkout(dir, prDetails.BranchName)
 				if err != nil {
@@ -279,9 +289,9 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 				}
 				err = gitter.MergeTheirs(dir, changeBranch)
 				if err != nil {
-					return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, existingBranchName)
+					return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, fetchRefSpec)
 				}
-				err = gitter.RebaseTheirs(dir, fmt.Sprintf("origin/%s", existingBranchName), "")
+				err = gitter.RebaseTheirs(dir, fmt.Sprintf(localBranch), "", true)
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
@@ -321,7 +331,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 
 				pr, err := provider.UpdatePullRequest(gha, *pr.Number)
 				if err != nil {
-					return nil, errors.Wrapf(err, "updating pull request %s", pr.URL)
+					return nil, errors.Wrapf(err, "updating pull request %s", url)
 				}
 				log.Logger().Infof("Updated Pull Request: %s", util.ColorInfo(pr.URL))
 				return &PullRequestInfo{

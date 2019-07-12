@@ -915,7 +915,7 @@ func (g *GitCLI) MergeTheirs(dir string, commitish string) error {
 }
 
 // RebaseTheirs runs git rebase upstream branch with the strategy option theirs
-func (g *GitCLI) RebaseTheirs(dir string, upstream string, branch string) error {
+func (g *GitCLI) RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error {
 	args := []string{
 		"rebase",
 		"--strategy-option=theirs",
@@ -924,7 +924,18 @@ func (g *GitCLI) RebaseTheirs(dir string, upstream string, branch string) error 
 	if branch != "" {
 		args = append(args, branch)
 	}
-	return g.gitCmd(dir, args...)
+	err := g.gitCmd(dir, args...)
+	if skipEmpty {
+		// If skipEmpty is passed, then if the failure is due to an empty commit, run `git rebase --skip` to move on
+		// Weirdly git has no option on rebase to just do this
+		for err != nil && IsEmptyCommitError(err) {
+			err = g.gitCmd(dir, "rebase", "--skip")
+		}
+	}
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // RevParse runs git rev-parse on rev

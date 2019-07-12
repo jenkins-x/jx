@@ -231,7 +231,7 @@ type Gitter interface {
 	Merge(dir string, commitish string) error
 	MergeTheirs(dir string, commitish string) error
 	ResetHard(dir string, commitish string) error
-	RebaseTheirs(dir string, upstream string, branch string) error
+	RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error
 
 	Stash(dir string) error
 
