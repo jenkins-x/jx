@@ -557,7 +557,7 @@ func (g *GitFake) MergeTheirs(dir string, commitish string) error {
 }
 
 //RebaseTheirs does nothing
-func (g *GitFake) RebaseTheirs(dir string, upstream string, branch string) error {
+func (g *GitFake) RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error {
 	return nil
 }
 

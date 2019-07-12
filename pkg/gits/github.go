@@ -366,6 +366,7 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
+		Fork:             true,
 	}
 	return answer, nil
 }

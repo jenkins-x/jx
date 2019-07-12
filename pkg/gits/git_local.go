@@ -425,8 +425,8 @@ func (g *GitLocal) MergeTheirs(dir string, commitish string) error {
 }
 
 // RebaseTheirs runs git rebase upstream branch
-func (g *GitLocal) RebaseTheirs(dir string, upstream string, branch string) error {
-	return g.GitCLI.RebaseTheirs(dir, upstream, branch)
+func (g *GitLocal) RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error {
+	return g.GitCLI.RebaseTheirs(dir, upstream, branch, false)
 }
 
 // GetCommits returns the commits in a range, exclusive of startSha and inclusive of endSha

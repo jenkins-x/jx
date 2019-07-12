@@ -386,6 +386,7 @@ func (o *StepCreatePrOptions) CreateDependencyUpdatePRDetails(kind string, srcRe
 		}
 	}
 	message.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
+	commitMessage.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
 	return commitMessage.String(), &gits.PullRequestDetails{
 		BranchName: fmt.Sprintf("bump-%s-version-%s", kind, string(uuid.NewUUID())),
 		Title:      title.String(),
