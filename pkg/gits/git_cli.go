@@ -763,8 +763,13 @@ func (g *GitCLI) FetchTags(dir string) error {
 
 // Tags returns all tags from the repository at the given directory
 func (g *GitCLI) Tags(dir string) ([]string, error) {
+	return g.FilterTags(dir, "")
+}
+
+// FilterTags returns all tags from the repository at the given directory that match the filter
+func (g *GitCLI) FilterTags(dir string, filter string) ([]string, error) {
 	tags := []string{}
-	text, err := g.gitCmdWithOutput(dir, "tag")
+	text, err := g.gitCmdWithOutput(dir, "tag", "--list", filter)
 	if err != nil {
 		return tags, err
 	}

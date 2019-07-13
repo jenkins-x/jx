@@ -309,6 +309,11 @@ func (g *GitLocal) Tags(dir string) ([]string, error) {
 	return g.GitCLI.Tags(dir)
 }
 
+// FilterTags returns all tags from the repository at the given directory that match the filter
+func (g *GitLocal) FilterTags(dir string, filter string) ([]string, error) {
+	return g.GitCLI.FilterTags(dir, filter)
+}
+
 // CreateTag creates a tag with the given name and message in the repository at the given directory
 func (g *GitLocal) CreateTag(dir string, tag string, msg string) error {
 	return g.GitCLI.CreateTag(dir, tag, msg)
