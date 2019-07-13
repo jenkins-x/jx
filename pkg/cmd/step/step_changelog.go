@@ -64,7 +64,6 @@ type StepChangelogOptions struct {
 	IncludeMergeCommits bool
 	FailIfFindCommits   bool
 	State               StepChangelogState
-	TagName             string
 }
 
 type StepChangelogState struct {
@@ -190,8 +189,6 @@ func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.Footer, "footer", "", "", "The changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.FooterFile, "footer-file", "", "", "The file name of the changelog footer in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
-
-	cmd.Flags().StringVarP(&options.TagName, "tag-name", "", "", "The name of the tag, by default <version>")
 
 	return cmd
 }
@@ -354,10 +351,6 @@ func (o *StepChangelogOptions) Run() error {
 		version = SpecVersion
 	}
 
-	if o.TagName == "" {
-		o.TagName = version
-	}
-
 	release := &v1.Release{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Release",
@@ -416,9 +409,37 @@ func (o *StepChangelogOptions) Run() error {
 	log.Logger().Debugf("Generated release notes:\n\n%s\n", markdown)
 
 	if version != "" && o.UpdateRelease && foundGitProvider {
+		tags, err := o.Git().FilterTags(o.Dir, version)
+		if err != nil {
+			return errors.Wrapf(err, "listing tags with pattern %s in %s", version, o.Dir)
+		}
+		vVersion := fmt.Sprintf("v%s", version)
+		vtags, err := o.Git().FilterTags(o.Dir, vVersion)
+		if err != nil {
+			return errors.Wrapf(err, "listing tags with pattern %s in %s", vVersion, o.Dir)
+		}
+		foundTag := false
+		foundVTag := false
+
+		for _, t := range tags {
+			if t == version {
+				foundTag = true
+				break
+			}
+		}
+		for _, t := range vtags {
+			if t == vVersion {
+				foundVTag = true
+				break
+			}
+		}
+		tagName := version
+		if foundVTag && !foundTag {
+			tagName = vVersion
+		}
 		releaseInfo := &gits.GitRelease{
 			Name:    version,
-			TagName: o.TagName,
+			TagName: tagName,
 			Body:    markdown,
 		}
 		url := releaseInfo.HTMLURL
@@ -426,9 +447,9 @@ func (o *StepChangelogOptions) Run() error {
 			url = releaseInfo.URL
 		}
 		if url == "" {
-			url = util.UrlJoin(gitInfo.HttpsURL(), "releases/tag", version)
+			url = util.UrlJoin(gitInfo.HttpsURL(), "releases/tag", tagName)
 		}
-		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, o.TagName, releaseInfo)
+		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, tagName, releaseInfo)
 		if err != nil {
 			log.Logger().Warnf("Failed to update the release at %s: %s", url, err)
 			return nil

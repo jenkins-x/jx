@@ -472,6 +472,11 @@ func (g *GitFake) Tags(dir string) ([]string, error) {
 	return tags, nil
 }
 
+// FilterTags returns all tags from the repository at the given directory that match the filter
+func (g *GitFake) FilterTags(dir string, filter string) ([]string, error) {
+	return make([]string, 0), nil
+}
+
 // CreateTag creates a tag
 func (g *GitFake) CreateTag(dir string, tag string, msg string) error {
 	t := GitTag{
