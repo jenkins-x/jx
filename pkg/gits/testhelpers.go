@@ -84,6 +84,13 @@ func DetachHead(fail func(string, ...int), repoDir string) {
 	GitCmd(fail, repoDir, "checkout", head)
 }
 
+// Merge merges the specified commits into the current branch
+func Merge(fail func(string, ...int), repoDir string, commits ...string) {
+	args := []string{"merge"}
+	args = append(args, commits...)
+	GitCmd(fail, repoDir, args...)
+}
+
 // GitCmd runs a git command with arguments in the specified git repository
 func GitCmd(fail func(string, ...int), repoDir string, args ...string) {
 	cmd := util.Command{

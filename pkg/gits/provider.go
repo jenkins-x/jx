@@ -225,6 +225,21 @@ func (pr *GitPullRequest) NumberString() string {
 	return "#" + strconv.Itoa(*n)
 }
 
+// ShortSha returns short SHA of the commit.
+func (c *GitCommit) ShortSha() string {
+	shortLen := 9
+	if len(c.SHA) < shortLen+1 {
+		return c.SHA
+	}
+	return c.SHA[:shortLen]
+}
+
+// Subject returns the subject line of the commit message.
+func (c *GitCommit) Subject() string {
+	lines := strings.Split(c.Message, "\n")
+	return lines[0]
+}
+
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	if server.Kind == "" {
 		server.Kind = SaasGitKind(server.URL)

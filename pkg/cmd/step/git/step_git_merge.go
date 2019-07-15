@@ -1,6 +1,7 @@
 package git
 
 import (
+	"github.com/jenkins-x/jx/pkg/table"
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -121,7 +122,20 @@ func (o *StepGitMergeOptions) Run() error {
 		log.Logger().Warnf("no SHAs to merge, falling back to initial cloned commit")
 		return nil
 	}
-	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git())
+
+	err = gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git())
+	if err != nil {
+		return errors.Wrap(err, "error during merge")
+	}
+
+	if o.Verbose {
+		err = o.writeCommitTable()
+		if err != nil {
+			return errors.Wrap(err, "unable to write merge result")
+		}
+	}
+
+	return nil
 }
 
 func (o *StepGitMergeOptions) setGitConfig() error {
@@ -139,5 +153,20 @@ func (o *StepGitMergeOptions) setGitConfig() error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (o *StepGitMergeOptions) writeCommitTable() error {
+	commits, err := o.Git().GetCommits(o.Dir, o.BaseSHA, "HEAD")
+	if err != nil {
+		return errors.Wrap(err, "unable to retrieve commits")
+	}
+
+	commitTable := table.CreateTable(os.Stdout)
+	commitTable.AddRow("MERGED SHA", "SUBJECT")
+	for _, commit := range commits {
+		commitTable.AddRow(commit.ShortSha(), commit.Subject())
+	}
+	commitTable.Render()
 	return nil
 }

@@ -84,7 +84,7 @@ var _ = Describe("Meta pipeline", func() {
 			It("merge pull refs step passes correct pull ref", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
 				mergePullRefStep := steps[1]
-				Expect(mergePullRefStep.Args).Should(Equal([]string{"jx step git merge --baseBranch master --baseSHA 0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815 --sha db8e2d275df53477b1c6871f7d7f4281dacf3169"}))
+				Expect(mergePullRefStep.Args).Should(Equal([]string{"jx step git merge --verbose --baseBranch master --baseSHA 0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815 --sha db8e2d275df53477b1c6871f7d7f4281dacf3169"}))
 			})
 
 			It("should have correct step create task args", func() {
