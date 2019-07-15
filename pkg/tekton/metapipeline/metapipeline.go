@@ -175,7 +175,7 @@ func stepMergePullRefs(pullRefs prow.PullRefs) syntax.Step {
 		return stepSkip(mergePullRefsStepName, "Nothing to merge")
 	}
 
-	args := []string{"--baseBranch", pullRefs.BaseBranch, "--baseSHA", pullRefs.BaseSha}
+	args := []string{"--verbose", "--baseBranch", pullRefs.BaseBranch, "--baseSHA", pullRefs.BaseSha}
 	for _, mergeSha := range pullRefs.ToMerge {
 		args = append(args, "--sha", mergeSha)
 	}

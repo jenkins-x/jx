@@ -831,6 +831,54 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 	}
 }
 
+func Test_ShortSha(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		SHA              string
+		expectedShortSHA string
+	}{
+		{"", ""},
+		{"f73f71c", "f73f71c"},
+		{"f73f71cd6", "f73f71cd6"},
+		{"f73f71cd6856a3854f05c37f1833b3e3e96a5b8a", "f73f71cd6"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s-%s", t.Name(), testCase.SHA), func(t *testing.T) {
+			commit := gits.GitCommit{
+				SHA: testCase.SHA,
+			}
+			assert.Equal(t, testCase.expectedShortSHA, commit.ShortSha())
+		})
+	}
+}
+
+func Test_Subject(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		SHA             string
+		Message         string
+		expectedSubject string
+	}{
+		{"1", "", ""},
+		{"2", "subject only", "subject only"},
+		{"3", "subject\nbody", "subject"},
+		{"4", "subject\nbody line 1\nbody line 2", "subject"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s-%s", t.Name(), testCase.SHA), func(t *testing.T) {
+			commit := gits.GitCommit{
+				SHA:     testCase.SHA,
+				Message: testCase.Message,
+			}
+			assert.Equal(t, testCase.expectedSubject, commit.Subject())
+		})
+	}
+}
+
 func assertProvider(t assert.TestingT, want gits.GitProvider, result gits.GitProvider) {
 	assert.Equal(t, want.Kind(), result.Kind())
 	assert.Equal(t, want.ServerURL(), result.ServerURL())

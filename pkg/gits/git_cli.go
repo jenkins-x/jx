@@ -379,49 +379,37 @@ func (g *GitCLI) CommitIfChanges(dir string, message string) error {
 
 // GetCommits returns the commits in a range, exclusive of startSha and inclusive of endSha
 func (g *GitCLI) GetCommits(dir string, startSha string, endSha string) ([]GitCommit, error) {
-	args := []string{"log", "--format=raw", fmt.Sprintf("%s..%s", startSha, endSha)}
+	// use a custom format to get commits, using %x1e to separate commits and %x1f to separate fields
+	args := []string{"log", "--format=%H%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%s%n%b%x1e", fmt.Sprintf("%s..%s", startSha, endSha)}
 	out, err := g.gitCmdWithOutput(dir, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "running git %s", strings.Join(args, " "))
 	}
 	answer := make([]GitCommit, 0)
-	commits := strings.Split(out, "commit ")
+	commits := strings.Split(out, "\x1e")
 	for _, rawCommit := range commits {
-		if strings.TrimSpace(rawCommit) == "" {
-			// Skip empty lines
+		rawCommit = strings.TrimSpace(rawCommit)
+		if rawCommit == "" {
 			continue
 		}
-		// Readd the commit bit that we split around
-		rawCommit = "commit " + rawCommit
+		fields := strings.Split(rawCommit, "\x1f")
 		commit := GitCommit{}
-		lines := strings.Split(rawCommit, "\n")
-		message := make([]string, 0)
-		for _, line := range lines {
-			if strings.HasPrefix(line, "commit ") {
-				commit.SHA = strings.TrimPrefix(line, "commit ")
-			} else if strings.HasPrefix(line, "author ") {
-				name, email := parseAuthor(strings.TrimPrefix(line, "author "))
-				commit.Author = &GitUser{
-					Name:  name,
-					Email: email,
-				}
-			} else if strings.HasPrefix(line, "committer ") {
-				name, email := parseAuthor(strings.TrimPrefix(line, "committer "))
-				commit.Author = &GitUser{
-					Name:  name,
-					Email: email,
-				}
-			} else if strings.HasPrefix(line, "parent ") || strings.HasPrefix(line, "tree ") {
+		commit.SHA = fields[0]
 
-			} else if line != "" {
-				message = append(message, strings.TrimSpace(line))
-			}
-			commit.Message = strings.Join(message, "\n")
+		commit.Author = &GitUser{
+			Name:  fields[1],
+			Email: fields[2],
 		}
+
+		commit.Committer = &GitUser{
+			Name:  fields[3],
+			Email: fields[4],
+		}
+
+		commit.Message = fields[5]
 		answer = append(answer, commit)
 	}
 	return answer, nil
-
 }
 
 // CommitDir commits all changes from the given directory
