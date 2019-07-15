@@ -260,6 +260,10 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 			pr := existingPrs[0]
 			// We can only update an existing PR if the owner of that PR is this user!
 			if util.DereferenceString(pr.HeadOwner) == username && pr.HeadRef != nil && pr.Number != nil {
+				remote := "origin"
+				if gitInfo.Fork {
+					remote = "upstream"
+				}
 				url := pr.URL
 				changeBranch, err := gitter.Branch(dir)
 				if err != nil {
@@ -274,7 +278,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 				localBranch := localBranchUUID.String()
 				existingBranchName := *pr.HeadRef
 				fetchRefSpec := fmt.Sprintf("pull/%d/head:%s", *pr.Number, localBranch)
-				err = gitter.FetchBranch(dir, "upstream", fetchRefSpec)
+				err = gitter.FetchBranch(dir, remote, fetchRefSpec)
 				if err != nil {
 					return nil, errors.Wrapf(err, "fetching %s for merge", fetchRefSpec)
 				}
@@ -308,7 +312,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 				// work out the minimal similar title
 				if strings.HasPrefix(pr.Title, "chore(deps): bump ") {
 					origWords := strings.Split(pr.Title, " ")
-					newWords := strings.Split(pr.Title, " ")
+					newWords := strings.Split(prDetails.Title, " ")
 					answer := make([]string, 0)
 					for i, w := range newWords {
 						if len(origWords) > i && origWords[i] == w {
@@ -321,7 +325,7 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 					}
 					if answer[len(answer)-1] == "to" || answer[len(answer)-1] == "from" {
 						// remove trailing prepositions
-						answer = answer[:len(answer)-2]
+						answer = answer[:len(answer)-1]
 					}
 					gha.Title = strings.Join(answer, " ")
 				} else {
