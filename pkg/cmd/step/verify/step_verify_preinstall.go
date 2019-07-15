@@ -2,6 +2,7 @@ package verify
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
@@ -295,7 +296,19 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 
 // gatherRequirements gathers cluster requirements and connects to the cluster if required
 func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.RequirementsConfig, requirementsFileName string) (*config.RequirementsConfig, error) {
+	isTerraform := os.Getenv("JX_REQUIREMENT_TERRAFORM")
 	if o.BatchMode {
+		if isTerraform == "true" {
+			requirements.Terraform = true
+			requirements.Cluster.ClusterName = os.Getenv("JX_REQUIREMENT_CLUSTER_NAME")
+			requirements.Cluster.ProjectID = os.Getenv("JX_REQUIREMENT_PROJECT")
+			requirements.Cluster.Zone = os.Getenv("JX_REQUIREMENT_ZONE")
+			requirements.Cluster.EnvironmentGitOwner = os.Getenv("JX_REQUIREMENT_ENV_GIT_OWNER")
+			kaniko := os.Getenv("JX_REQUIREMENT_KANIKO")
+			if kaniko == "false" {
+				requirements.Kaniko = false
+			}
+		}
 		msg := "please specify '%s' in jx-requirements when running  in  batch mode"
 		if requirements.Cluster.Provider == "" {
 			return nil, errors.Errorf(msg, "provider")
