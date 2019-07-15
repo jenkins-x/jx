@@ -127,9 +127,8 @@ func (o *CreateVariableOptions) Run() error {
 		}
 	}
 	if value == "" {
-		message := "environment variable name: "
-		help := "the name of the environment variable which is usually upper case without spaces or dashes"
-		value, err = util.PickValue(message, defaultValues[name], true, help, o.In, o.Out, o.Err)
+		message := "environment variable value: "
+		value, err = util.PickValue(message, defaultValues[name], true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
