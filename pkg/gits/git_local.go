@@ -443,3 +443,8 @@ func (g *GitLocal) GetCommits(dir string, startSha string, endSha string) ([]Git
 func (g *GitLocal) RevParse(dir string, rev string) (string, error) {
 	return g.GitCLI.RevParse(dir, rev)
 }
+
+// SetUpstreamTo will set the given branch to track the origin branch with the same name
+func (g *GitLocal) SetUpstreamTo(dir string, branch string) error {
+	return g.GitCLI.SetUpstreamTo(dir, branch)
+}

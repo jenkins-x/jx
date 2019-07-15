@@ -262,6 +262,8 @@ type Gitter interface {
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
 	DeleteRemoteBranch(dir string, remoteName string, branch string) error
+
+	SetUpstreamTo(dir string, branch string) error
 }
 
 // ConfigureGitFn callback to optionally configure git before its used for creating commits and PRs

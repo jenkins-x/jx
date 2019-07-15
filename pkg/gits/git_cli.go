@@ -947,3 +947,8 @@ func (g *GitCLI) RebaseTheirs(dir string, upstream string, branch string, skipEm
 func (g *GitCLI) RevParse(dir string, rev string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", rev)
 }
+
+// SetUpstreamTo will set the given branch to track the origin branch with the same name
+func (g *GitCLI) SetUpstreamTo(dir string, branch string) error {
+	return g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("origin/%s", branch), branch)
+}

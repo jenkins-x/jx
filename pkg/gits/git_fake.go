@@ -575,3 +575,8 @@ func (g *GitFake) GetCommits(dir string, startSha string, endSha string) ([]GitC
 func (g *GitFake) RevParse(dir string, rev string) (string, error) {
 	return "", nil
 }
+
+// SetUpstreamTo will set the given branch to track the origin branch with the same name
+func (g *GitFake) SetUpstreamTo(dir string, branch string) error {
+	return nil
+}
