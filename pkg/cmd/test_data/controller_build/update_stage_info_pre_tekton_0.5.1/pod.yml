@@ -51,7 +51,7 @@ spec:
       value: /builder/home
     image: gcr.io/abayer-jx-experiment/git-init:v20190508-91b53326
     imagePullPolicy: IfNotPresent
-    name: step-git-source-jenkins-x-jx-pr-4135-integratio-lxddq
+    name: build-step-git-source-jenkins-x-jx-pr-4135-integratio-lxddq
     resources:
       requests:
         cpu: "0"
@@ -87,7 +87,7 @@ spec:
     env: []
     image: rawlingsj/builder-jx:wip34
     imagePullPolicy: IfNotPresent
-    name: step-git-merge
+    name: build-step-git-merge
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -108,7 +108,7 @@ spec:
     env: []
     image: jenkinsxio/jx:2.0.128
     imagePullPolicy: IfNotPresent
-    name: step-init-jx
+    name: build-step-init-jx
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -129,7 +129,7 @@ spec:
     env: []
     image: alpine/helm:2.12.3
     imagePullPolicy: IfNotPresent
-    name: step-init-helm
+    name: build-step-init-helm
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -150,7 +150,7 @@ spec:
     env: []
     image: gcr.io/jenkinsxio/builder-go:0.1.332
     imagePullPolicy: IfNotPresent
-    name: step-build
+    name: build-step-build
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -171,7 +171,7 @@ spec:
     env: []
     image: gcr.io/jenkinsxio/builder-go:0.1.477
     imagePullPolicy: IfNotPresent
-    name: step-test-integration
+    name: build-step-test-integration
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -193,7 +193,7 @@ spec:
     env: []
     image: jenkinsxio/jx:2.0.128
     imagePullPolicy: IfNotPresent
-    name: step-stash-test-results
+    name: build-step-stash-test-results
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -214,12 +214,34 @@ spec:
     env: []
     image: gcr.io/jenkinsxio/builder-go:0.1.332
     imagePullPolicy: IfNotPresent
-    name: step-codecov-upload
+    name: build-step-codecov-upload
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
     volumeMounts: []
     workingDir: /workspace/source
+  - args:
+    - -wait_file
+    - /builder/tools/7
+    - -post_file
+    - /builder/tools/8
+    - -entrypoint
+    - /ko-app/nop
+    - --
+    command:
+    - /builder/tools/entrypoint
+    image: gcr.io/abayer-jx-experiment/nop:v20190508-91b53326
+    imagePullPolicy: IfNotPresent
+    name: nop
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /builder/tools
+      name: tools
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: tekton-bot-token-2lb5w
+      readOnly: true
   dnsPolicy: ClusterFirst
   initContainers:
   - args:
@@ -232,7 +254,7 @@ spec:
       value: /builder/home
     image: gcr.io/abayer-jx-experiment/creds-init:v20190508-91b53326
     imagePullPolicy: IfNotPresent
-    name: step-credential-initializer-9g4st
+    name: build-step-credential-initializer-9g4st
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -248,7 +270,7 @@ spec:
       value: /builder/home
     image: gcr.io/abayer-jx-experiment/bash:v20190508-91b53326
     imagePullPolicy: IfNotPresent
-    name: step-working-dir-initializer-2zdml
+    name: build-step-working-dir-initializer-2zdml
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -264,7 +286,7 @@ spec:
       value: /builder/home
     image: gcr.io/abayer-jx-experiment/entrypoint:v20190508-91b53326
     imagePullPolicy: IfNotPresent
-    name: step-place-tools
+    name: build-step-place-tools
     resources: {}
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
@@ -340,7 +362,7 @@ status:
     image: gcr.io/jenkinsxio/builder-go:0.1.332
     imageID: docker-pullable://gcr.io/jenkinsxio/builder-go@sha256:a3b9d596846270059398237a51111282338b6a2582a6e46f6f492ebc19b4e29e
     lastState: {}
-    name: step-build
+    name: build-step-build
     ready: false
     restartCount: 0
     state:
@@ -354,7 +376,7 @@ status:
     image: gcr.io/jenkinsxio/builder-go:0.1.332
     imageID: docker-pullable://gcr.io/jenkinsxio/builder-go@sha256:a3b9d596846270059398237a51111282338b6a2582a6e46f6f492ebc19b4e29e
     lastState: {}
-    name: step-codecov-upload
+    name: build-step-codecov-upload
     ready: false
     restartCount: 0
     state:
@@ -368,7 +390,7 @@ status:
     image: rawlingsj/builder-jx:wip34
     imageID: docker-pullable://rawlingsj/builder-jx@sha256:f78ab020e7ee7143270ebea90d013e1c2420b70cebc135dfa965464da175b29c
     lastState: {}
-    name: step-git-merge
+    name: build-step-git-merge
     ready: false
     restartCount: 0
     state:
@@ -382,7 +404,7 @@ status:
     image: gcr.io/abayer-jx-experiment/git-init:v20190508-91b53326
     imageID: docker-pullable://gcr.io/abayer-jx-experiment/git-init@sha256:de30e3ee6e12b7d7aa6638e87fa36436c2b5e77f024af7c7f1a4846955a45e19
     lastState: {}
-    name: step-git-source-jenkins-x-jx-pr-4135-integratio-lxddq
+    name: build-step-git-source-jenkins-x-jx-pr-4135-integratio-lxddq
     ready: false
     restartCount: 0
     state:
@@ -396,7 +418,7 @@ status:
     image: alpine/helm:2.12.3
     imageID: docker-pullable://alpine/helm@sha256:0ed203b85eada6a4b259142772f818ba2eb8dac2b5b7a676756af554e9505fae
     lastState: {}
-    name: step-init-helm
+    name: build-step-init-helm
     ready: false
     restartCount: 0
     state:
@@ -410,7 +432,7 @@ status:
     image: jenkinsxio/jx:2.0.128
     imageID: docker-pullable://jenkinsxio/jx@sha256:bd0b60eecbb6d47974fa5f7583589afcbbea0f3ad5e041ef1b026472d006f331
     lastState: {}
-    name: step-init-jx
+    name: build-step-init-jx
     ready: false
     restartCount: 0
     state:
@@ -424,7 +446,7 @@ status:
     image: jenkinsxio/jx:2.0.128
     imageID: docker-pullable://jenkinsxio/jx@sha256:bd0b60eecbb6d47974fa5f7583589afcbbea0f3ad5e041ef1b026472d006f331
     lastState: {}
-    name: step-stash-test-results
+    name: build-step-stash-test-results
     ready: false
     restartCount: 0
     state:
@@ -438,7 +460,7 @@ status:
     image: gcr.io/jenkinsxio/builder-go:0.1.477
     imageID: docker-pullable://gcr.io/jenkinsxio/builder-go@sha256:50b50a30a673867db6128a760de9b8da6bf194a63451cb632bb1217ab95070c7
     lastState: {}
-    name: step-test-integration
+    name: build-step-test-integration
     ready: false
     restartCount: 0
     state:
@@ -448,13 +470,27 @@ status:
         finishedAt: 2019-06-07T18:47:06Z
         reason: Completed
         startedAt: 2019-06-07T18:14:25Z
+  - containerID: docker://88239795fc6d7f22af33f9b9ad165348c7209fa130e751547fb9fc9b19757936
+    image: gcr.io/abayer-jx-experiment/nop:v20190508-91b53326
+    imageID: docker-pullable://gcr.io/abayer-jx-experiment/nop@sha256:93442619c2c282d4efffd6864aac3433205158d95f6a4dab98baafdf3c7cf5f6
+    lastState: {}
+    name: nop
+    ready: false
+    restartCount: 0
+    state:
+      terminated:
+        containerID: docker://88239795fc6d7f22af33f9b9ad165348c7209fa130e751547fb9fc9b19757936
+        exitCode: 0
+        finishedAt: 2019-06-07T18:47:37Z
+        reason: Completed
+        startedAt: 2019-06-07T18:14:26Z
   hostIP: 10.132.0.52
   initContainerStatuses:
   - containerID: docker://3e0a5feae98a1f1d92c272017e7e830bd674b583fcc6b72a4a7c0580c034d056
     image: gcr.io/abayer-jx-experiment/creds-init:v20190508-91b53326
     imageID: docker-pullable://gcr.io/abayer-jx-experiment/creds-init@sha256:bef4483127b56b5aa3c0edbddb09f321508b6d43f7d90f77fe11cf79363f1b1d
     lastState: {}
-    name: step-credential-initializer-9g4st
+    name: build-step-credential-initializer-9g4st
     ready: true
     restartCount: 0
     state:
@@ -468,7 +504,7 @@ status:
     image: gcr.io/abayer-jx-experiment/bash:v20190508-91b53326
     imageID: docker-pullable://gcr.io/abayer-jx-experiment/bash@sha256:223c0ea771731579fdbaff7ce595e023337c8a03cfbe4dc0704ae7435d0cedb7
     lastState: {}
-    name: step-working-dir-initializer-2zdml
+    name: build-step-working-dir-initializer-2zdml
     ready: true
     restartCount: 0
     state:
@@ -482,7 +518,7 @@ status:
     image: gcr.io/abayer-jx-experiment/entrypoint:v20190508-91b53326
     imageID: docker-pullable://gcr.io/abayer-jx-experiment/entrypoint@sha256:934772312238f550c40ec0f55f04208cf9b9687e4f73d2c7d466e89cddeddedf
     lastState: {}
-    name: step-place-tools
+    name: build-step-place-tools
     ready: true
     restartCount: 0
     state:

@@ -51,7 +51,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/git-init-afd2a379df7ac007f1e3a5fc75688a50@sha256:3328df25df332c6cdd2c55bdc1f56df824259d83829614687e8fe222b0cc45d9
       imagePullPolicy: IfNotPresent
-      name: step-git-source-abayer-js-test-repo-master-xhn7s
+      name: build-step-git-source-abayer-js-test-repo-master-xhn7s
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -99,7 +99,7 @@ items:
         value: "true"
       image: jenkinsxio/builder-nodejs:0.1.263
       imagePullPolicy: IfNotPresent
-      name: step-step2
+      name: build-step-step2
       resources:
         requests:
           cpu: 400m
@@ -161,7 +161,7 @@ items:
         value: "true"
       image: jenkinsxio/builder-nodejs:0.1.263
       imagePullPolicy: IfNotPresent
-      name: step-step3
+      name: build-step-step3
       resources:
         requests:
           cpu: 400m
@@ -207,7 +207,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       imagePullPolicy: IfNotPresent
-      name: step-source-mkdir-abayer-js-test-repo-master-4khd9
+      name: build-step-source-mkdir-abayer-js-test-repo-master-4khd9
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -241,7 +241,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       imagePullPolicy: IfNotPresent
-      name: step-source-copy-abayer-js-test-repo-master-ndlp6
+      name: build-step-source-copy-abayer-js-test-repo-master-ndlp6
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -258,6 +258,16 @@ items:
         name: tekton-bot-token-7qpmg
         readOnly: true
       workingDir: /workspace
+    - image: us.gcr.io/abayer-jx-experiment/nop-8138dea5c7f2e77549dee5f965401dd9@sha256:0fb367048925303f6dae0cc0da7748d350ac8306dc5b361f83f306bc2320efa2
+      imagePullPolicy: IfNotPresent
+      name: nop
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: tekton-bot-token-7qpmg
+        readOnly: true
     dnsPolicy: ClusterFirst
     initContainers:
     - args:
@@ -267,7 +277,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/creds-init-4d3f1e062aee819de054755415941ee3@sha256:d4923a30b5a4292fb48df1bd2d1f2940ba40acb16b7f6b4ccface4d5bd2ad008
       imagePullPolicy: IfNotPresent
-      name: step-credential-initializer-w2fj5
+      name: build-step-credential-initializer-w2fj5
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -293,7 +303,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/entrypoint-fec85961206220d94e063e541ce30870@sha256:10e2a043d8fb52e6e05f633e7627aa9103d08330a97b9944b9b62a9c099e23d1
       imagePullPolicy: IfNotPresent
-      name: step-place-tools
+      name: build-step-place-tools
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -387,7 +397,7 @@ items:
       image: sha256:5d723e447cb929fa593ab16c4e7f947884c0a2756b6ea37fa836d705904a406d
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/git-init-afd2a379df7ac007f1e3a5fc75688a50@sha256:3328df25df332c6cdd2c55bdc1f56df824259d83829614687e8fe222b0cc45d9
       lastState: {}
-      name: step-git-source-abayer-js-test-repo-master-xhn7s
+      name: build-step-git-source-abayer-js-test-repo-master-xhn7s
       ready: false
       restartCount: 0
       state:
@@ -401,7 +411,7 @@ items:
       image: sha256:b7961858c8377a41682b890bdb6c248120595a1cca13f8958ce9fb004f6ed736
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       lastState: {}
-      name: step-source-copy-abayer-js-test-repo-master-ndlp6
+      name: build-step-source-copy-abayer-js-test-repo-master-ndlp6
       ready: false
       restartCount: 0
       state:
@@ -415,7 +425,7 @@ items:
       image: sha256:b7961858c8377a41682b890bdb6c248120595a1cca13f8958ce9fb004f6ed736
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       lastState: {}
-      name: step-source-mkdir-abayer-js-test-repo-master-4khd9
+      name: build-step-source-mkdir-abayer-js-test-repo-master-4khd9
       ready: false
       restartCount: 0
       state:
@@ -429,7 +439,7 @@ items:
       image: jenkinsxio/builder-nodejs:0.1.263
       imageID: docker-pullable://jenkinsxio/builder-nodejs@sha256:c03247a3051d05cb728be382958f0f25a80102e51442ea416c65f44b941ab083
       lastState: {}
-      name: step-step2
+      name: build-step-step2
       ready: false
       restartCount: 0
       state:
@@ -443,7 +453,7 @@ items:
       image: jenkinsxio/builder-nodejs:0.1.263
       imageID: docker-pullable://jenkinsxio/builder-nodejs@sha256:c03247a3051d05cb728be382958f0f25a80102e51442ea416c65f44b941ab083
       lastState: {}
-      name: step-step3
+      name: build-step-step3
       ready: false
       restartCount: 0
       state:
@@ -453,13 +463,27 @@ items:
           finishedAt: 2019-03-05T20:06:38Z
           reason: Completed
           startedAt: 2019-03-05T20:06:37Z
+    - containerID: docker://c2711de2139ce67c8ddad4997905126f16779527acdecd03ad5ac84caf6a5d79
+      image: sha256:11576a3a7921a1efb230dd0984b9d15b7e02188bb0a064d3e003e02e4c7079de
+      imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/nop-8138dea5c7f2e77549dee5f965401dd9@sha256:0fb367048925303f6dae0cc0da7748d350ac8306dc5b361f83f306bc2320efa2
+      lastState: {}
+      name: nop
+      ready: false
+      restartCount: 0
+      state:
+        terminated:
+          containerID: docker://c2711de2139ce67c8ddad4997905126f16779527acdecd03ad5ac84caf6a5d79
+          exitCode: 0
+          finishedAt: 2019-03-05T20:06:38Z
+          reason: Completed
+          startedAt: 2019-03-05T20:06:38Z
     hostIP: 10.138.0.11
     initContainerStatuses:
     - containerID: docker://ab7ed9ba7d5f3c778a35f5d3c926b94a1802042f1a3b4407edbdc83144cee40d
       image: sha256:32db3dd6d028d7d56e49776e6e53198f6e1a75984fbe116c0310bbda6ffb8aeb
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/creds-init-4d3f1e062aee819de054755415941ee3@sha256:d4923a30b5a4292fb48df1bd2d1f2940ba40acb16b7f6b4ccface4d5bd2ad008
       lastState: {}
-      name: step-credential-initializer-w2fj5
+      name: build-step-credential-initializer-w2fj5
       ready: true
       restartCount: 0
       state:
@@ -473,7 +497,7 @@ items:
       image: sha256:5a0e115a242b6263de469b523ace779bad7d6cdd6dc50f5b2e2a35395cdf1500
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/entrypoint-fec85961206220d94e063e541ce30870@sha256:10e2a043d8fb52e6e05f633e7627aa9103d08330a97b9944b9b62a9c099e23d1
       lastState: {}
-      name: step-place-tools
+      name: build-step-place-tools
       ready: true
       restartCount: 0
       state:
@@ -534,7 +558,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       imagePullPolicy: IfNotPresent
-      name: step-create-dir-workspace-x8nzk
+      name: build-step-create-dir-workspace-x8nzk
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -566,7 +590,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       imagePullPolicy: IfNotPresent
-      name: step-source-copy-workspace-t56lp
+      name: build-step-source-copy-workspace-t56lp
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -616,7 +640,7 @@ items:
         value: "true"
       image: jenkinsxio/builder-nodejs:0.1.263
       imagePullPolicy: IfNotPresent
-      name: step-step2
+      name: build-step-step2
       resources:
         requests:
           cpu: 400m
@@ -678,7 +702,7 @@ items:
         value: "true"
       image: jenkinsxio/builder-nodejs:0.1.263
       imagePullPolicy: IfNotPresent
-      name: step-step3
+      name: build-step-step3
       resources:
         requests:
           cpu: 400m
@@ -724,7 +748,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       imagePullPolicy: IfNotPresent
-      name: step-source-mkdir-abayer-js-test-repo-master-ffwwq
+      name: build-step-source-mkdir-abayer-js-test-repo-master-ffwwq
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -758,7 +782,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       imagePullPolicy: IfNotPresent
-      name: step-source-copy-abayer-js-test-repo-master-kzrf5
+      name: build-step-source-copy-abayer-js-test-repo-master-kzrf5
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -775,6 +799,16 @@ items:
         name: tekton-bot-token-7qpmg
         readOnly: true
       workingDir: /workspace
+    - image: us.gcr.io/abayer-jx-experiment/nop-8138dea5c7f2e77549dee5f965401dd9@sha256:0fb367048925303f6dae0cc0da7748d350ac8306dc5b361f83f306bc2320efa2
+      imagePullPolicy: IfNotPresent
+      name: nop
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: tekton-bot-token-7qpmg
+        readOnly: true
     dnsPolicy: ClusterFirst
     initContainers:
     - args:
@@ -784,7 +818,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/creds-init-4d3f1e062aee819de054755415941ee3@sha256:d4923a30b5a4292fb48df1bd2d1f2940ba40acb16b7f6b4ccface4d5bd2ad008
       imagePullPolicy: IfNotPresent
-      name: step-credential-initializer-cdlb9
+      name: build-step-credential-initializer-cdlb9
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -810,7 +844,7 @@ items:
         value: /builder/home
       image: us.gcr.io/abayer-jx-experiment/entrypoint-fec85961206220d94e063e541ce30870@sha256:10e2a043d8fb52e6e05f633e7627aa9103d08330a97b9944b9b62a9c099e23d1
       imagePullPolicy: IfNotPresent
-      name: step-place-tools
+      name: build-step-place-tools
       resources: {}
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
@@ -886,15 +920,15 @@ items:
       type: Initialized
     - lastProbeTime: null
       lastTransitionTime: 2019-03-05T20:07:05Z
-      message: 'containers with unready status: [step-create-dir-workspace-x8nzk
-        step-source-copy-workspace-t56lp step-step2]'
+      message: 'containers with unready status: [build-step-create-dir-workspace-x8nzk
+        build-step-source-copy-workspace-t56lp build-step-step2 nop]'
       reason: ContainersNotReady
       status: "False"
       type: Ready
     - lastProbeTime: null
       lastTransitionTime: null
-      message: 'containers with unready status: [step-create-dir-workspace-x8nzk
-        step-source-copy-workspace-t56lp step-step2]'
+      message: 'containers with unready status: [build-step-create-dir-workspace-x8nzk
+        build-step-source-copy-workspace-t56lp build-step-step2 nop]'
       reason: ContainersNotReady
       status: "False"
       type: ContainersReady
@@ -907,7 +941,7 @@ items:
       image: sha256:b7961858c8377a41682b890bdb6c248120595a1cca13f8958ce9fb004f6ed736
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       lastState: {}
-      name: step-create-dir-workspace-x8nzk
+      name: build-step-create-dir-workspace-x8nzk
       ready: false
       restartCount: 0
       state:
@@ -921,7 +955,7 @@ items:
       image: sha256:b7961858c8377a41682b890bdb6c248120595a1cca13f8958ce9fb004f6ed736
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       lastState: {}
-      name: step-source-copy-abayer-js-test-repo-master-kzrf5
+      name: build-step-source-copy-abayer-js-test-repo-master-kzrf5
       ready: true
       restartCount: 0
       state:
@@ -931,7 +965,7 @@ items:
       image: sha256:b7961858c8377a41682b890bdb6c248120595a1cca13f8958ce9fb004f6ed736
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       lastState: {}
-      name: step-source-copy-workspace-t56lp
+      name: build-step-source-copy-workspace-t56lp
       ready: false
       restartCount: 0
       state:
@@ -945,7 +979,7 @@ items:
       image: sha256:b7961858c8377a41682b890bdb6c248120595a1cca13f8958ce9fb004f6ed736
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c
       lastState: {}
-      name: step-source-mkdir-abayer-js-test-repo-master-ffwwq
+      name: build-step-source-mkdir-abayer-js-test-repo-master-ffwwq
       ready: true
       restartCount: 0
       state:
@@ -955,7 +989,7 @@ items:
       image: jenkinsxio/builder-nodejs:0.1.263
       imageID: docker-pullable://jenkinsxio/builder-nodejs@sha256:c03247a3051d05cb728be382958f0f25a80102e51442ea416c65f44b941ab083
       lastState: {}
-      name: step-step2
+      name: build-step-step2
       ready: false
       restartCount: 0
       state:
@@ -969,19 +1003,33 @@ items:
       image: jenkinsxio/builder-nodejs:0.1.263
       imageID: docker-pullable://jenkinsxio/builder-nodejs@sha256:c03247a3051d05cb728be382958f0f25a80102e51442ea416c65f44b941ab083
       lastState: {}
-      name: step-step3
+      name: build-step-step3
       ready: true
       restartCount: 0
       state:
         running:
           startedAt: 2019-03-05T20:07:17Z
+    - containerID: docker://ac66d97b5053a67b6e9fc30f9b58b924818e8c59c8826035e0d99d8a144ad05d
+      image: sha256:11576a3a7921a1efb230dd0984b9d15b7e02188bb0a064d3e003e02e4c7079de
+      imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/nop-8138dea5c7f2e77549dee5f965401dd9@sha256:0fb367048925303f6dae0cc0da7748d350ac8306dc5b361f83f306bc2320efa2
+      lastState: {}
+      name: nop
+      ready: false
+      restartCount: 0
+      state:
+        terminated:
+          containerID: docker://ac66d97b5053a67b6e9fc30f9b58b924818e8c59c8826035e0d99d8a144ad05d
+          exitCode: 0
+          finishedAt: 2019-03-05T20:07:18Z
+          reason: Completed
+          startedAt: 2019-03-05T20:07:18Z
     hostIP: 10.138.0.11
     initContainerStatuses:
     - containerID: docker://8217dcb0d9157914ea7be2df4c14273be961229b4b46c3282f079cf9de7a827b
       image: sha256:32db3dd6d028d7d56e49776e6e53198f6e1a75984fbe116c0310bbda6ffb8aeb
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/creds-init-4d3f1e062aee819de054755415941ee3@sha256:d4923a30b5a4292fb48df1bd2d1f2940ba40acb16b7f6b4ccface4d5bd2ad008
       lastState: {}
-      name: step-credential-initializer-cdlb9
+      name: build-step-credential-initializer-cdlb9
       ready: true
       restartCount: 0
       state:
@@ -995,7 +1043,7 @@ items:
       image: sha256:5a0e115a242b6263de469b523ace779bad7d6cdd6dc50f5b2e2a35395cdf1500
       imageID: docker-pullable://us.gcr.io/abayer-jx-experiment/entrypoint-fec85961206220d94e063e541ce30870@sha256:10e2a043d8fb52e6e05f633e7627aa9103d08330a97b9944b9b62a9c099e23d1
       lastState: {}
-      name: step-place-tools
+      name: build-step-place-tools
       ready: true
       restartCount: 0
       state:

@@ -448,6 +448,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	containersTerminated := len(containerStatuses) > 0
 	for _, c := range containerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
+		name = strings.Replace(strings.TrimPrefix(c.Name, "step-"), "-", " ", -1)
 		title := strings.Title(name)
 		_, stage, _ := kube.GetOrCreateStage(activity, title)
 
@@ -728,6 +729,7 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 		containersTerminated = len(containerStatuses) > 0
 		for _, c := range containerStatuses {
 			name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
+			name = strings.Replace(strings.TrimPrefix(c.Name, "step-"), "-", " ", -1)
 			title := strings.Title(name)
 			step, _ := kube.GetOrCreateStepInStage(stage, title)
 			running := c.State.Running
