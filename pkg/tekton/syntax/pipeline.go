@@ -29,7 +29,7 @@ import (
 
 const (
 	// GitMergeImage is the default image name that is used in the git merge step of a pipeline
-	GitMergeImage = "gcr.io/jenkinsxio/builder-jx:0.1.527"
+	GitMergeImage = "gcr.io/jenkinsxio/builder-jx"
 
 	// WorkingDirRoot is the root directory for working directories.
 	WorkingDirRoot = "/workspace"
@@ -1164,7 +1164,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	stepCounter := 0
-	defaultTaskSpec, err := getDefaultTaskSpec(env, stageContainer, defaultImage)
+	defaultTaskSpec, err := getDefaultTaskSpec(env, stageContainer, defaultImage, versionsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -1769,12 +1769,16 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 }
 
 // todo JR lets remove this when we switch tekton to using git merge type pipelineresources
-func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container, defaultImage string) (tektonv1alpha1.TaskSpec, error) {
+func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container, defaultImage string, versionsDir string) (tektonv1alpha1.TaskSpec, error) {
+	var err error
 	image := defaultImage
 	if image == "" {
 		image = os.Getenv("BUILDER_JX_IMAGE")
 		if image == "" {
-			image = GitMergeImage
+			image, err = version.ResolveDockerImage(versionsDir, GitMergeImage)
+			if err != nil {
+				return tektonv1alpha1.TaskSpec{}, err
+			}
 		}
 	}
 

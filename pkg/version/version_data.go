@@ -29,7 +29,7 @@ const (
 	// KindPackage represents a package version
 	KindPackage VersionKind = "packages"
 
-	// KindDocker represents a docker image version
+	// KindDocker represents a docker resolveImage version
 	KindDocker VersionKind = "docker"
 )
 
@@ -255,7 +255,9 @@ func ForEachKindVersion(wrkDir string, kind VersionKind, callback Callback) erro
 	return nil
 }
 
-// ResolveDockerImage ensures the given docker image has a valid version if there is one in the version stream
+// ResolveDockerImage resolves the version of the specified image against the version stream defined in versionsDir.
+// If there is a version defined for the image in the version stream 'image:<version>' is returned, otherwise the
+// passed image name is returned as is.
 func ResolveDockerImage(versionsDir, image string) (string, error) {
 	// lets check if we already have a version
 	path := strings.SplitN(image, ":", 2)
@@ -278,8 +280,9 @@ func ResolveDockerImage(versionsDir, image string) (string, error) {
 		}
 	}
 	if info.Version == "" {
-		log.Logger().Warnf("could not find a stable version of docker image: %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/", image, versionsDir)
-		log.Logger().Infof("Please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k docker -n %s -v 1.2.3", image)))
+		log.Logger().Warnf("could not find a stable version for Docker image: %s in %s", image, versionsDir)
+		log.Logger().Warn("for background see: https://jenkins-x.io/architecture/version-stream/")
+		log.Logger().Infof("please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k docker -n %s -v 1.2.3", image)))
 		return image, nil
 	}
 	prefix := strings.TrimSuffix(strings.TrimSpace(image), ":")
