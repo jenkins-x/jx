@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 
-	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -56,22 +56,17 @@ func (o *VersionOptions) Run() error {
 	packages, table := o.GetPackageVersions(o.Namespace, o.HelmTLS)
 
 	// os version
-	version, err := o.GetOsVersion()
+	osVersion, err := o.GetOsVersion()
 	if err != nil {
 		log.Logger().Warnf("Failed to get OS version: %s", err)
 	} else {
-		table.AddRow("Operating System", util.ColorInfo(version))
+		table.AddRow("Operating System", util.ColorInfo(osVersion))
 	}
 
 	table.Render()
 
 	if !o.NoVersionCheck {
-		newVersion, err := o.GetLatestJXVersion()
-		if err != nil {
-			return errors.Wrap(err, "getting latest jx version")
-		}
-
-		return o.upgradeCli(newVersion)
+		return o.upgradeCliIfNeeded()
 	}
 	if o.NoVerify {
 		return nil
@@ -87,20 +82,30 @@ func (o *VersionOptions) Run() error {
 	return versionResolver.VerifyPackages(packages)
 }
 
-func (o *VersionOptions) upgradeCli(newVersion semver.Version) error {
-	app := util.ColorInfo("jx")
-	log.Logger().Warnf("\nA new %s version is available: %s", app, util.ColorInfo(newVersion.String()))
-	if o.BatchMode {
-		log.Logger().Warnf("To upgrade to this new version use: %s", util.ColorInfo("jx upgrade cli"))
-	} else {
-		message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
-		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
-			options := &upgrade.UpgradeCLIOptions{
-				CreateOptions: create.CreateOptions{
-					CommonOptions: o.CommonOptions,
-				},
+func (o *VersionOptions) upgradeCliIfNeeded() error {
+	currentVersion, err := version.GetSemverVersion()
+	if err != nil {
+		return errors.Wrap(err, "getting current jx version")
+	}
+	newVersion, err := o.GetLatestJXVersion()
+	if err != nil {
+		return errors.Wrap(err, "getting latest jx version")
+	}
+	if currentVersion.LT(newVersion) {
+		app := util.ColorInfo("jx")
+		log.Logger().Warnf("\nA new %s version is available: %s", app, util.ColorInfo(newVersion.String()))
+		if o.BatchMode {
+			log.Logger().Warnf("To upgrade to this new version use: %s", util.ColorInfo("jx upgrade cli"))
+		} else {
+			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
+			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
+				options := &upgrade.UpgradeCLIOptions{
+					CreateOptions: create.CreateOptions{
+						CommonOptions: o.CommonOptions,
+					},
+				}
+				return options.Run()
 			}
-			return options.Run()
 		}
 	}
 	return nil
