@@ -158,10 +158,7 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		}
 	}
 
-	domain := util.GetMapValueAsStringViaPath(values, "domain")
-	if domain == "" {
-		util.SetMapValueViaPath(values, "domain", requirements.Ingress.Domain)
-	}
+	util.SetMapValueViaPath(values, "domain", requirements.Ingress.Domain)
 
 	subDomain := "." + ns + "."
 
@@ -226,10 +223,7 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		util.SetMapValueViaPath(values, "tls", true)
 	}
 
-	current := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
-	if current == "" {
-		util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
-	}
+	util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
 
 	projectID := util.GetMapValueAsStringViaPath(values, "projectID")
 	if projectID == "" {
