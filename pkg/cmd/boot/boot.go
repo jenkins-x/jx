@@ -25,7 +25,7 @@ import (
 
 const (
 	defaultBootRepository          = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
-	defaultCloudBeesBootRepository = "https://github.com/cloudbees/cloudbees-jenkins-x-boot-config"
+	defaultCloudBeesBootRepository = "https://github.com/cloudbees/cloudbees-jenkins-x-boot-config.git"
 )
 
 // BootOptions options for the command

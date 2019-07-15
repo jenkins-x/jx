@@ -49,7 +49,7 @@ func NewCmdStepBootVault(commonOpts *opts.CommonOptions) *cobra.Command {
 		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
-		Use:     "boot vault",
+		Use:     "vault",
 		Short:   "This step boots up Vault in the current cluster if its enabled in the 'jx-requirements.yml' file and is not already installed",
 		Long:    stepBootVaultLong,
 		Example: stepBootVaultExample,
