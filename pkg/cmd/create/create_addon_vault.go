@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/config"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -92,7 +93,7 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 	}
 	log.Logger().Infof("Installing %s...", util.ColorInfo(releaseName))
 
-	resolver, err := o.CreateVersionResolver(opts.DefaultVersionsURL, "")
+	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
 	if err != nil {
 		return errors.Wrap(err, "creating the docker image version resolver")
 	}

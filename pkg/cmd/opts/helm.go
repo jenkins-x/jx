@@ -3,6 +3,7 @@ package opts
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -459,7 +460,7 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 		}
 	}
 	if versionRepository == "" {
-		versionRepository = DefaultVersionsURL
+		versionRepository = config.DefaultVersionsURL
 	}
 
 	log.Logger().Debugf("Current configuration dir: %s", configDir)

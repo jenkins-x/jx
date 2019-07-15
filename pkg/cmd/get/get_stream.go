@@ -1,6 +1,7 @@
 package get
 
 import (
+	"github.com/jenkins-x/jx/pkg/config"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -64,7 +65,7 @@ func NewCmdGetStream(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "docker", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))
-	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", config.DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	return cmd
 }
