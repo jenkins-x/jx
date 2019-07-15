@@ -288,8 +288,8 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 			}
 
 			requirements.Cluster.Provider = strings.TrimSpace(strings.ToLower(requirements.Cluster.Provider))
-			requirements.Cluster.Provider = strings.TrimSpace(requirements.Cluster.ProjectID)
-			requirements.Cluster.Provider = strings.TrimSpace(strings.ToLower(requirements.Cluster.Zone))
+			requirements.Cluster.ProjectID = strings.TrimSpace(requirements.Cluster.ProjectID)
+			requirements.Cluster.Zone = strings.TrimSpace(strings.ToLower(requirements.Cluster.Zone))
 			requirements.Cluster.ClusterName = strings.TrimSpace(strings.ToLower(requirements.Cluster.ClusterName))
 			requirements.Cluster.EnvironmentGitOwner = strings.TrimSpace(strings.ToLower(requirements.Cluster.EnvironmentGitOwner))
 
