@@ -46,13 +46,20 @@ func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, 
 	}
 
 	// This is a temporary solution until we add the "context" label to PipelineActivities
-	labelsFilter = strings.Replace(labelsFilter, "repository=", "repo=", 1)
 	if context != "" {
 		labelsFilter = modifyFilterForPipelineRun(labelsFilter, context)
 	}
 	tektonPRs, _ := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{
 		LabelSelector: labelsFilter,
 	})
+
+	// Handle the old "repo" tag as well for legacy purposes.
+	if len(tektonPRs.Items) == 0 {
+		labelsFilter = strings.Replace(labelsFilter, "repository=", "repo=", 1)
+		tektonPRs, _ = tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{
+			LabelSelector: labelsFilter,
+		})
+	}
 
 	sort.Slice(tektonPRs.Items, func(i, j int) bool {
 		return tektonPRs.Items[i].CreationTimestamp.After(tektonPRs.Items[j].CreationTimestamp.Time)

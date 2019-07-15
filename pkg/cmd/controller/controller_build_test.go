@@ -122,6 +122,51 @@ func TestUpdateForStage(t *testing.T) {
 
 	for i, c := range containers {
 		step := stage.Steps[i]
+		name := strings.Replace(strings.TrimPrefix(c.Name, "step-"), "-", " ", -1)
+		title := strings.Title(name)
+		if title != step.Name {
+			// Using t.Errorf instead of an assert here because we want to see all the misordered names, not just the first one.
+			t.Errorf("For step %d, expected step with name %s, but found %s", i, title, step.Name)
+		}
+	}
+}
+
+func TestUpdateForStagePreTekton051(t *testing.T) {
+	pod := tekton_helpers_test.AssertLoadSinglePod(t, path.Join("test_data", "controller_build", "update_stage_info_pre_tekton_0.5.1"))
+	si := &tekton.StageInfo{
+		Name:           "ci",
+		CreatedTime:    *parseTime(t, "2019-06-07T18:14:19-00:00"),
+		FirstStepImage: "gcr.io/abayer-jx-experiment/creds-init:v20190508-91b53326",
+		PodName:        "jenkins-x-jx-pr-4135-integratio-42-ci-kdjkp-pod-d964e6",
+		TaskRun:        "jenkins-x-jx-pr-4135-integratio-42-ci-kdjkp",
+		Task:           "jenkins-x-jx-pr-4135-integratio-ci-42",
+		Parents:        []string{},
+		Pod:            pod,
+	}
+
+	act := &v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "jenkins-x-jx-pr-4135-42",
+		},
+		Spec: v1.PipelineActivitySpec{
+			GitURL:    "https://github.com/jenkins-x/jx",
+			GitBranch: "PR-4135",
+		},
+	}
+
+	updateForStage(si, act)
+
+	containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+
+	assert.Len(t, act.Spec.Steps, 1, "No steps/stages found on activity")
+	assert.NotNil(t, act.Spec.Steps[0].Stage, "First step on activity is not a stage")
+
+	stage := act.Spec.Steps[0].Stage
+
+	assert.Equal(t, len(containers), len(stage.Steps), "%d containers found in pod, but %d steps found in stage", len(containers), len(stage.Steps))
+
+	for i, c := range containers {
+		step := stage.Steps[i]
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
 		if title != step.Name {
