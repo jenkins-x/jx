@@ -1,6 +1,10 @@
 package version_test
 
 import (
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -83,5 +87,40 @@ func AssertPackageVersion(t *testing.T, resolver *opts.VersionResolver, name str
 	} else {
 		t.Logf("got expected error %s\n", err.Error())
 		assert.Error(t, err, "expected an invalid version %s for package %s", version, name)
+	}
+}
+
+func TestResolveDockerImage(t *testing.T) {
+	var testCases = []struct {
+		dataDir               string
+		resolveImage          string
+		expectedResolvedImage string
+		expectError           bool
+		errorMessage          string
+	}{
+		{"foo", "foo", "foo", false, ""},
+		{dataDir, "foo", "foo", false, ""},
+		{dataDir, "builder-jx", "builder-jx", false, ""},
+		{dataDir, "jenkinsxio/builder-jx", "jenkinsxio/builder-jx", false, ""},
+		{dataDir, "gcr.io/jenkinsxio/builder-jx", "gcr.io/jenkinsxio/builder-jx:1.0.0", false, ""},
+		{dataDir, "docker.io/fubar", "fubar:2.0.0", false, ""},
+		{dataDir, "docker.io/snafu", "snafu", false, ""},
+		{dataDir, "susfu", "susfu", true, "failed to unmarshal YAML"},
+	}
+
+	log.SetOutput(ioutil.Discard)
+	defer log.SetOutput(os.Stderr)
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("test_resolve_%s", testCase.resolveImage), func(t *testing.T) {
+			actualResolvedImage, err := version.ResolveDockerImage(dataDir, testCase.resolveImage)
+			if testCase.expectError {
+				assert.Error(t, err, "expected call to ResolveDockerImage to fail")
+				assert.Contains(t, err.Error(), testCase.errorMessage, "error message does not match")
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.expectedResolvedImage, actualResolvedImage, "image was not resolved as expected.")
+			}
+		})
 	}
 }
