@@ -97,7 +97,7 @@ func NewCmdCreateJenkinsUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
 	cmd.Flags().BoolVarP(&options.NoREST, "no-rest", "", false, "Disables the use of REST calls to automatically find the API token if the user and password are known")
-	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate teh API token if it already exists")
+	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate the API token if it already exists")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The namespace of the secret where the Jenkins API token will be stored")
 	cmd.Flags().DurationVarP(&options.HealthTimeout, "health-timeout", "", 30*time.Minute, "The maximum duration to wait for the Jenkins service to be healthy before trying to create the API token")
 	return cmd
@@ -134,7 +134,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = o.FindServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
+		server, err = o.FindServer(config, &o.ServerFlags, "Jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return errors.Wrapf(err, "searching server %s: %s", o.ServerFlags.ServerName, o.ServerFlags.ServerURL)
 		}
@@ -181,9 +181,9 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		err = o.getAPITokenFromREST(server.URL, userAuth)
 		if err != nil {
 			if o.BatchMode {
-				return errors.Wrapf(err, "generating the API token over REST API of server %q", server.URL)
+				return errors.Wrapf(err, "generating the API token from REST API of server %q", server.URL)
 			}
-			log.Logger().Warnf("failed to generate API token over REST API of server %s due to: %s", server.URL, err.Error())
+			log.Logger().Warnf("failed to generate API token from REST API of server %s due to: %s", server.URL, err.Error())
 			log.Logger().Info("So unfortunately you will have to provide this by hand...\n")
 		}
 	}
@@ -197,7 +197,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
 		if err != nil {
-			return errors.Wrapf(err, "updating the jenkins auth configuration for user %q", o.Username)
+			return errors.Wrapf(err, "updating the Jenkins auth configuration for user %q", o.Username)
 		}
 		if userAuth.IsInvalid() {
 			return fmt.Errorf("you did not properly define the user authentication")
