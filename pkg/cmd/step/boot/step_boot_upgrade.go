@@ -42,7 +42,7 @@ func NewCmdStepBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
-		Use:     "boot upgrade",
+		Use:     "upgrade",
 		Short:   "This step checks the version stream for updates to jenkins-x charts",
 		Long:    stepBootUpgradeLong,
 		Example: stepBootUpgradeExample,
