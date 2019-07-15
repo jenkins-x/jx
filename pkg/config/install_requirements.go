@@ -47,6 +47,10 @@ const (
 	WebhookTypeLighthouse WebhookType = "lighthouse"
 	// WebhookTypeJenkins specifies that we use jenkins webhooks
 	WebhookTypeJenkins WebhookType = "jenkins"
+	// DefaultVersionsURL default version stream url
+	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
+	// DefaultVersionsRef default version stream ref
+	DefaultVersionsRef = "master"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments
@@ -119,6 +123,14 @@ type ClusterConfig struct {
 	Zone string `json:"zone,omitempty"`
 }
 
+// VersionStreamConfig contains version stream config
+type VersionStreamConfig struct {
+	// URL of the version stream to use
+	URL string `json:"url"`
+	// Ref of the version stream to use
+	Ref string `json:"ref"`
+}
+
 // RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
 	// Cluster contains cluster specific requirements
@@ -140,6 +152,8 @@ type RequirementsConfig struct {
 	Ingress IngressConfig `json:"ingress"`
 	// Storage contains storage requirements
 	Storage StorageConfig `json:"storage"`
+	// VersionStream contains version stream info
+	VersionStream VersionStreamConfig `json:"versionStream"`
 }
 
 // NewRequirementsConfig creates a default configuration file
@@ -331,5 +345,11 @@ func (c *RequirementsConfig) IsLazyCreateSecrets(flag string) (bool, error) {
 func (c *RequirementsConfig) addDefaults() {
 	if c.Webhook == WebhookTypeNone {
 		c.Webhook = WebhookTypeProw
+	}
+	if c.VersionStream.URL == "" {
+		c.VersionStream.URL = DefaultVersionsURL
+	}
+	if c.VersionStream.Ref == "" {
+		c.VersionStream.Ref = DefaultVersionsRef
 	}
 }

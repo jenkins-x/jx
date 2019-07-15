@@ -2,6 +2,7 @@ package pr
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -84,7 +85,7 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.C
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryGitURL, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryGitURL, "repo", "r", config.DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the version to update. e.g. the name of the chart like 'jenkins-x/prow'")

@@ -151,7 +151,7 @@ func (o *StepBDDOptions) Run() error {
 	}
 
 	if o.InstallOptions.Flags.VersionsRepository == "" {
-		o.InstallOptions.Flags.VersionsRepository = opts.DefaultVersionsURL
+		o.InstallOptions.Flags.VersionsRepository = config.DefaultVersionsURL
 	}
 
 	gitProviderUrl := o.gitProviderUrl()

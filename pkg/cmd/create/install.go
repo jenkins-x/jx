@@ -406,7 +406,7 @@ func bindInstallConfigToFlags(cmd *cobra.Command) {
 
 func (flags *InstallFlags) AddCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", opts.DefaultCloudEnvironmentsURL, "Cloud Environments Git repo")
-	cmd.Flags().StringVarP(&flags.VersionsRepository, "versions-repo", "", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&flags.VersionsRepository, "versions-repo", "", config.DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&flags.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }

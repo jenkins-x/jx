@@ -3,6 +3,7 @@ package get
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/config"
 	"path/filepath"
 	"strings"
 
@@ -63,7 +64,7 @@ func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Comman
 			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", config.DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	cmd.Flags().StringVarP(&options.StableBranch, "stable-branch", "", defaultStableVersionBranch, "the versions git repository branch to compare against")
 	cmd.Flags().StringVarP(&options.TestingBranch, "testing-branch", "", defaultStableVersionBranch, "the versions git repository branch to clone")

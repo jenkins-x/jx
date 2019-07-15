@@ -42,6 +42,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
+	cmd.AddCommand(boot.NewCmdStepBootUpgrade(commonOpts))
 	cmd.AddCommand(boot.NewCmdStepBootVault(commonOpts))
 	cmd.AddCommand(buildpack.NewCmdStepBuildPack(commonOpts))
 	cmd.AddCommand(NewCmdStepBDD(commonOpts))

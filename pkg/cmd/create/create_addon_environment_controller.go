@@ -3,6 +3,7 @@ package create
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
+	config2 "github.com/jenkins-x/jx/pkg/config"
 	"strconv"
 	"strings"
 
@@ -272,7 +273,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		SetValues:      setValues,
 		HelmUpdate:     true,
 		Repository:     kube.DefaultChartMuseumURL,
-		VersionsGitURL: opts.DefaultVersionsURL,
+		VersionsGitURL: config2.DefaultVersionsURL,
 	}
 	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {

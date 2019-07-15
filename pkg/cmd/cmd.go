@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cmd/profile"
 
 	"github.com/jenkins-x/jx/pkg/cmd/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/cloudbees"
@@ -92,6 +93,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	updateCommands := update.NewCmdUpdate(commonOpts)
 
 	installCommands := []*cobra.Command{
+		profile.NewCmdProfile(commonOpts),
 		boot.NewCmdBoot(commonOpts),
 		create.NewCmdInstall(commonOpts),
 		uninstall.NewCmdUninstall(commonOpts),
