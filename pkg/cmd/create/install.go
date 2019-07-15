@@ -547,15 +547,16 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "getting install configuration")
 	}
-	// Check the provided flags before starting any installation
-	err = options.CheckFlags()
-	if err != nil {
-		return errors.Wrap(err, "checking the provided flags")
-	}
 
 	err = options.selectJenkinsInstallation()
 	if err != nil {
 		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+
+	// Check the provided flags before starting any installation
+	err = options.CheckFlags()
+	if err != nil {
+		return errors.Wrap(err, "checking the provided flags")
 	}
 
 	if options.Flags.CloudBeesDomain != "" {
