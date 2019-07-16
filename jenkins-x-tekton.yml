@@ -116,7 +116,7 @@ pipelineConfig:
                 command: ./jx/bdd/tekton/ci.sh
 
               - name: stash-test-results
-                image: gcr.io/jenkinsxio/builder-jx:covered-${inputs.params.version}
+                image: gcr.io/jenkinsxio/jx:covered-${inputs.params.version}
                 command: jx
                 # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
                 args: ['step', 'stash', '-c', 'tekton-e2e-tests', '-p', 'build/reports/junit.xml', '--bucket-url', 'gs://jx-prod-logs']
