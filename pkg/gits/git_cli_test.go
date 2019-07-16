@@ -208,4 +208,156 @@ var _ = Describe("Git CLI", func() {
 			})
 		})
 	})
+
+	Describe("Get version tags", func() {
+		var (
+			tag2SHA string
+			tag3SHA string
+		)
+
+		Context("when tags are on master", func() {
+			BeforeEach(func() {
+				gits.WriteFile(Fail, repoDir, "a.txt", "a")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "first commit")
+				gits.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+				gits.WriteFile(Fail, repoDir, "b.txt", "b")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "second commit")
+				tag2SHA = gits.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+
+				gits.WriteFile(Fail, repoDir, "c.txt", "c")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "third commit")
+				tag3SHA = gits.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+			})
+
+			It("#GetCurrentGitTagSHA", func() {
+				sha, tag, err := git.GetCurrentGitTagSHA(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag3SHA))
+				Expect(tag).Should(Equal("v0.0.3"))
+			})
+
+			It("#GetPreviousGitTagSHA", func() {
+				sha, tag, err := git.GetPreviousGitTagSHA(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2SHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+		})
+
+		Context("when tags are made on release branches", func() {
+			BeforeEach(func() {
+				By("creating commit on master")
+				gits.WriteFile(Fail, repoDir, "a.txt", "a")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "first master commit")
+
+				By("creating first release branch")
+				gits.Branch(Fail, repoDir, "release_0_0_1")
+				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "adding version")
+				gits.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+				By("creating commit on master")
+				gits.Checkout(Fail, repoDir, "master")
+				gits.WriteFile(Fail, repoDir, "b.txt", "b")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "second master commit")
+
+				By("creating second release branch")
+				gits.Branch(Fail, repoDir, "release_0_0_2")
+				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "adding version")
+				tag2SHA = gits.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+
+				By("creating commit on master")
+				gits.Checkout(Fail, repoDir, "master")
+				gits.WriteFile(Fail, repoDir, "c.txt", "c")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "third master commit")
+
+				By("creating third release branch")
+				gits.Branch(Fail, repoDir, "release_0_0_3")
+				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "adding version")
+				tag3SHA = gits.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+			})
+
+			It("#GetCurrentGitTagSHA", func() {
+				sha, tag, err := git.GetCurrentGitTagSHA(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag3SHA))
+				Expect(tag).Should(Equal("v0.0.3"))
+			})
+
+			It("#GetPreviousGitTagSHA", func() {
+				sha, tag, err := git.GetPreviousGitTagSHA(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2SHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+		})
+
+		Context("when tags are made in detached HEAD mode", func() {
+			BeforeEach(func() {
+				By("creating commit on master")
+				gits.WriteFile(Fail, repoDir, "a.txt", "a")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "first master commit")
+
+				By("detaching HEAD and creating first release")
+				gits.DetachHead(Fail, repoDir)
+				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "adding version")
+				gits.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+				By("creating commit on master")
+				gits.Checkout(Fail, repoDir, "master")
+				gits.WriteFile(Fail, repoDir, "b.txt", "b")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "second master commit")
+
+				By("detaching HEAD and creating second release")
+				gits.DetachHead(Fail, repoDir)
+				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "adding version")
+				tag2SHA = gits.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+
+				By("creating commit on master")
+				gits.Checkout(Fail, repoDir, "master")
+				gits.WriteFile(Fail, repoDir, "c.txt", "c")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "third master commit")
+
+				By("detaching HEAD and creating second release")
+				gits.DetachHead(Fail, repoDir)
+				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
+				gits.Add(Fail, repoDir)
+				gits.Commit(Fail, repoDir, "adding version")
+				tag3SHA = gits.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+			})
+
+			It("#GetCurrentGitTagSHA", func() {
+				sha, tag, err := git.GetCurrentGitTagSHA(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag3SHA))
+				Expect(tag).Should(Equal("v0.0.3"))
+			})
+
+			It("#GetPreviousGitTagSHA", func() {
+				sha, tag, err := git.GetPreviousGitTagSHA(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2SHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+		})
+	})
 })
