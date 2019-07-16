@@ -243,9 +243,26 @@ func waitForContainerToStart(kubeClient kubernetes.Interface, ns string, pod *co
 // StreamPipelinePersistentLogs reads logs from the provided bucket URL and writes them using the provided LogWriter
 func StreamPipelinePersistentLogs(logWriter LogWriter, logsURL string) error {
 	//TODO: This should be changed in the future when other bucket providers are supported
-	bytes, err := gke.DownloadFileFromBucket(logsURL)
+	urlParts := strings.Split(logsURL, "://")
+	var scheme string
+	if len(urlParts) > 1 {
+		scheme = urlParts[0]
+	}
+	var logBytes []byte
+	var err error
+	switch scheme {
+	case "gs":
+		logBytes, err = gke.DownloadFileFromBucket(logsURL)
+	case "http":
+		fallthrough
+	case "https":
+		return logWriter.WriteLog("The build pods for this build have been garbage collected and long term storage bucket configuration wasn't found for this environment")
+	default:
+		return logWriter.WriteLog(fmt.Sprintf("The provided logsURL scheme is not supported: %s", scheme))
+	}
+
 	if err != nil {
 		return errors.Wrapf(err, "there was a problem obtaining the log file %s", logsURL)
 	}
-	return logWriter.WriteLog(string(bytes))
+	return logWriter.WriteLog(string(logBytes))
 }
