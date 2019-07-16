@@ -201,7 +201,6 @@ func NewRequirementsConfig() *RequirementsConfig {
 	return &RequirementsConfig{
 		SecretStorage: SecretStorageTypeLocal,
 		Webhook:       WebhookTypeProw,
-		Kaniko:        true,
 	}
 }
 
