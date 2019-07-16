@@ -690,23 +690,9 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 	return answer, nil
 }
 
-// GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
+// GetPreviousGitTagSHA returns the previous git SHA and tag from the repository at the given directory
 func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, string, error) {
-	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--tags", "--always")
-	if err != nil {
-		return "", "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
-	}
-
-	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--tags", "--always", latestTag+"^^")
-	if err != nil {
-		return "", "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
-	}
-
-	previousTagSha, err := g.gitCmdWithOutput(dir, "rev-list", "-n", "1", previousTag)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "running for git rev-list -n 1 %s", previousTag)
-	}
-	return previousTagSha, previousTag, nil
+	return g.nthTagSHA(dir, 2)
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
@@ -726,17 +712,7 @@ func (g *GitCLI) GetRevisionBeforeDateText(dir string, dateText string) (string,
 
 // GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
 func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, string, error) {
-	args := []string{"rev-list", "--tags", "--max-count=1"}
-	sha, err := g.gitCmdWithOutput(dir, args...)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
-	}
-	args = []string{"describe", sha}
-	tag, err := g.gitCmdWithOutput(dir, args...)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
-	}
-	return sha, tag, nil
+	return g.nthTagSHA(dir, 1)
 }
 
 // GetLatestCommitMessage returns the latest git commit message
@@ -942,4 +918,34 @@ func (g *GitCLI) RevParse(dir string, rev string) (string, error) {
 // SetUpstreamTo will set the given branch to track the origin branch with the same name
 func (g *GitCLI) SetUpstreamTo(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("origin/%s", branch), branch)
+}
+
+// nthTagSHA return the SHA and tag name of nth tag in reverse chronological order from the repository at the given directory.
+// If the nth tag does not exist empty strings without an error are returned.
+func (g *GitCLI) nthTagSHA(dir string, n int) (string, string, error) {
+	args := []string{
+		"for-each-ref",
+		"--sort=-creatordate",
+		"--format=%(objectname)%00%(refname:short)",
+		fmt.Sprintf("--count=%d", n),
+		"refs/tags",
+	}
+	out, err := g.gitCmdWithOutput(dir, args...)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
+	}
+
+	tagList := strings.Split(out, "\n")
+
+	if len(tagList) < n {
+		return "", "", nil
+	}
+
+	fields := strings.Split(tagList[n-1], "\x00")
+
+	if len(fields) != 2 {
+		return "", "", errors.Errorf("Unexpected format for returned tag and sha: '%s'", tagList[n-1])
+	}
+
+	return fields[0], fields[1], nil
 }

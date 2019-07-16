@@ -1,6 +1,7 @@
 package gits
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
@@ -35,10 +36,16 @@ func HeadSha(fail func(string, ...int), repoDir string) string {
 		fail("unable to read file")
 	}
 
-	headRef := strings.TrimPrefix(string(data), "ref: ")
-	headRef = strings.Trim(headRef, "\n")
+	var sha string
+	if strings.HasPrefix(string(data), "ref:") {
+		headRef := strings.TrimPrefix(string(data), "ref: ")
+		headRef = strings.Trim(headRef, "\n")
+		sha = ReadRef(fail, repoDir, headRef)
+	} else {
+		sha = string(data)
+	}
 
-	return ReadRef(fail, repoDir, headRef)
+	return sha
 }
 
 // ReadRef reads the commit SHA of the specified ref. Needs to be of the form /refs/heads/<name>.
@@ -65,7 +72,7 @@ func Commit(fail func(string, ...int), repoDir string, message string) string {
 // Tag creates an annotated tag.
 func Tag(fail func(string, ...int), repoDir string, tag string, message string) string {
 	GitCmd(fail, repoDir, "tag", "-a", "-m", message, tag)
-	return HeadSha(fail, repoDir)
+	return ReadRef(fail, repoDir, fmt.Sprintf("/refs/tags/%s", tag))
 }
 
 // Checkout switches to the specified branch.
