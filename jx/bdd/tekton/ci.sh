@@ -8,7 +8,7 @@ export GH_OWNER="cb-kubecd"
 
 export GH_CREDS_PSW="$(jx step credential -s jenkins-x-bot-test-github | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
 export JENKINS_CREDS_PSW="$(jx step credential -s  test-jenkins-user | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
-export GKE_SA="$(jx step credential -k bdd-credentials.json -s bdd-secret -f sa.json)"
+export GKE_SA="$(jx step credential -k bdd-credentials.json -s bdd-secret -f sa.json | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
 export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 export GINKGO_ARGS="-v"
 
