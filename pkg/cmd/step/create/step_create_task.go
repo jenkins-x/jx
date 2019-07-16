@@ -231,9 +231,16 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
+	if o.VersionResolver == nil {
+		o.VersionResolver, err = o.CreateVersionResolver("", "")
+		if err != nil {
+			return errors.Wrap(err, "Unable to create version resolver")
+		}
+	}
+
 	pr, err := o.parsePullRefs()
 	if err != nil {
-		return errors.Wrapf(err, "Unable to find or parse PULL_REFS from custom environment")
+		return errors.Wrap(err, "Unable to find or parse PULL_REFS from custom environment")
 	}
 
 	exists, err := o.effectiveProjectConfigExists()
@@ -378,12 +385,6 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		o.DefaultImage = syntax.DefaultContainerImage
 	}
 	log.Logger().Debugf("cloning git for %s", o.CloneGitURL)
-	if o.VersionResolver == nil {
-		o.VersionResolver, err = o.CreateVersionResolver("", "")
-		if err != nil {
-			return nil, err
-		}
-	}
 	if o.KanikoImage == "" {
 		o.KanikoImage = syntax.KanikoDockerImage
 	}
