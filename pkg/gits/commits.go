@@ -3,7 +3,6 @@ package gits
 import (
 	"bytes"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -203,25 +202,7 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepository) (stri
 		}
 	}
 
-	ups := releaseSpec.DependencyUpdates
-
-	sort.Slice(ups, func(i, j int) bool {
-		if ups[i].Owner == ups[j].Owner {
-			if ups[i].Repo == ups[j].Repo {
-				if ups[i].Component == ups[j].Component {
-					if ups[i].FromVersion == ups[j].FromVersion {
-						return ups[i].ToVersion < ups[j].ToVersion
-					}
-					return ups[i].FromVersion < ups[j].FromVersion
-				}
-				return ups[i].Component < ups[j].Component
-			}
-			return ups[i].Repo < ups[j].Repo
-		}
-		return ups[i].Owner < ups[j].Owner
-	})
-
-	if len(ups) > 0 {
+	if len(releaseSpec.DependencyUpdates) > 0 {
 		buffer.WriteString("\n### Dependency Updates\n\n")
 		var previous v1.DependencyUpdate
 		sequence := make([]v1.DependencyUpdate, 0)

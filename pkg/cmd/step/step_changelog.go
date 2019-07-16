@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -391,6 +392,8 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 
+	release.Spec.DependencyUpdates = CollapseDependencyUpdates(release.Spec.DependencyUpdates)
+
 	// lets try to update the release
 	markdown, err := gits.GenerateMarkdown(&release.Spec, gitInfo)
 	if err != nil {
@@ -515,6 +518,7 @@ func (o *StepChangelogOptions) Run() error {
 	o.State.Release = release
 	// now lets marshal the release YAML
 	data, err := yaml.Marshal(release)
+
 	if err != nil {
 		return err
 	}
@@ -842,4 +846,73 @@ func (o *StepChangelogOptions) getTemplateResult(releaseSpec *v1.ReleaseSpec, te
 	err = tmpl.Execute(writer, releaseSpec)
 	writer.Flush()
 	return buffer.String(), err
+}
+
+//CollapseDependencyUpdates takes a raw set of dependencyUpdates, removes duplicates and collapses multiple updates to
+// the same org/repo:components into a sungle update
+func CollapseDependencyUpdates(dependencyUpdates []v1.DependencyUpdate) []v1.DependencyUpdate {
+	// Sort the dependency updates. This makes the outputs more readable, and it also allows us to more easily do duplicate removal and collapsing
+
+	sort.Slice(dependencyUpdates, func(i, j int) bool {
+		if dependencyUpdates[i].Owner == dependencyUpdates[j].Owner {
+			if dependencyUpdates[i].Repo == dependencyUpdates[j].Repo {
+				if dependencyUpdates[i].Component == dependencyUpdates[j].Component {
+					if dependencyUpdates[i].FromVersion == dependencyUpdates[j].FromVersion {
+						return dependencyUpdates[i].ToVersion < dependencyUpdates[j].ToVersion
+					}
+					return dependencyUpdates[i].FromVersion < dependencyUpdates[j].FromVersion
+				}
+				return dependencyUpdates[i].Component < dependencyUpdates[j].Component
+			}
+			return dependencyUpdates[i].Repo < dependencyUpdates[j].Repo
+		}
+		return dependencyUpdates[i].Owner < dependencyUpdates[j].Owner
+	})
+
+	// Collapse  entries
+	collapsed := make([]v1.DependencyUpdate, 0)
+
+	if len(dependencyUpdates) > 0 {
+		start := dependencyUpdates[0]
+
+		end := v1.DependencyUpdate{}
+		for _, u := range dependencyUpdates {
+			if start.Owner != u.Owner || start.Repo != u.Repo || start.Component != u.Component {
+				collapsed = append(collapsed, v1.DependencyUpdate{
+					DependencyUpdateDetails: v1.DependencyUpdateDetails{
+						Owner:              start.Owner,
+						Repo:               start.Repo,
+						Component:          start.Component,
+						URL:                start.URL,
+						Host:               start.Host,
+						FromVersion:        start.FromVersion,
+						FromReleaseHTMLURL: start.FromReleaseHTMLURL,
+						FromReleaseName:    start.FromReleaseName,
+						ToVersion:          end.ToVersion,
+						ToReleaseName:      end.ToReleaseName,
+						ToReleaseHTMLURL:   end.ToReleaseHTMLURL,
+					},
+				})
+				start = u
+			} else {
+				end = u
+			}
+		}
+		collapsed = append(collapsed, v1.DependencyUpdate{
+			DependencyUpdateDetails: v1.DependencyUpdateDetails{
+				Owner:              start.Owner,
+				Repo:               start.Repo,
+				Component:          start.Component,
+				URL:                start.URL,
+				Host:               start.Host,
+				FromVersion:        start.FromVersion,
+				FromReleaseHTMLURL: start.FromReleaseHTMLURL,
+				FromReleaseName:    start.FromReleaseName,
+				ToVersion:          end.ToVersion,
+				ToReleaseName:      end.ToReleaseName,
+				ToReleaseHTMLURL:   end.ToReleaseHTMLURL,
+			},
+		})
+	}
+	return collapsed
 }
