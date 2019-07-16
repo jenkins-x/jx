@@ -251,6 +251,9 @@ func (options *ImportOptions) Run() error {
 
 		if options.UseDefaultGit {
 			userAuth = config.CurrentUser(server, options.CommonOptions.InCluster())
+		} else if options.GitRepositoryOptions.Username != "" {
+			userAuth = config.GetOrCreateUserAuth(server.URL, options.GitRepositoryOptions.Username)
+			log.Logger().Infof("Using Git user name: %s", options.GitRepositoryOptions.Username)
 		} else {
 			// Get the org in case there is more than one user auth on the server and batchMode is true
 			org := options.getOrganisationOrCurrentUser()
@@ -270,7 +273,10 @@ func (options *ImportOptions) Run() error {
 				options.Git().PrintCreateRepositoryGenerateAccessToken(server, username, options.Out)
 				return nil
 			}
-			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, true, options.BatchMode, f, options.In, options.Out, options.Err)
+			if options.GitRepositoryOptions.ApiToken != "" {
+				userAuth.ApiToken = options.GitRepositoryOptions.ApiToken
+			}
+			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, false, options.BatchMode, f, options.In, options.Out, options.Err)
 			if err != nil {
 				return err
 			}
