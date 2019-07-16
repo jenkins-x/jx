@@ -155,10 +155,11 @@ func parsePath(path string, info *GitRepository) (*GitRepository, error) {
 
 	arr := strings.Split(trimPath, "/")
 	if len(arr) >= 2 {
-		// We're assuming the beginning of the path is of the form /<org>/<repo>
-		info.Organisation = arr[0]
-		info.Project = arr[0]
-		info.Name = arr[1]
+		infoLenth := len(arr)
+		// We're assuming the ending of the path is of the form /<org>/<repo>
+		info.Organisation = arr[infoLenth-2]
+		info.Project = arr[infoLenth-2]
+		info.Name = arr[infoLenth-1]
 
 		return info, nil
 	}

@@ -235,17 +235,21 @@ func (options *ImportOptions) Run() error {
 		}
 		config := authConfigSvc.Config()
 		var server *auth.AuthServer
-		if options.RepoURL != "" {
-			gitInfo, err := gits.ParseGitURL(options.RepoURL)
-			if err != nil {
-				return err
-			}
-			serverURL := gitInfo.HostURLWithoutUser()
-			server = config.GetOrCreateServer(serverURL)
+		if options.GitRepositoryOptions.ServerURL != "" {
+			server = config.GetOrCreateServer(options.GitRepositoryOptions.ServerURL)
 		} else {
-			server, err = config.PickOrCreateServer(gits.GitHubURL, options.GitRepositoryOptions.ServerURL, "Which Git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
-			if err != nil {
-				return err
+			if options.RepoURL != "" {
+				gitInfo, err := gits.ParseGitURL(options.RepoURL)
+				if err != nil {
+					return err
+				}
+				serverURL := gitInfo.HostURLWithoutUser()
+				server = config.GetOrCreateServer(serverURL)
+			} else {
+				server, err = config.PickOrCreateServer(gits.GitHubURL, options.GitRepositoryOptions.ServerURL, "Which Git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
+				if err != nil {
+					return err
+				}
 			}
 		}
 

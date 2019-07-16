@@ -51,9 +51,10 @@ func TestParseGitURL(t *testing.T) {
 		{
 			"http://test-user@auth.example.com/scm/bar/foo.git", "auth.example.com", "bar", "foo",
 		},
-		{
-			"https://bitbucketserver.com/projects/myproject/repos/foo/pull-requests/1", "bitbucketserver.com", "myproject", "foo",
-		},
+		// this test case is invalid git repository, should be deleted
+//		{
+//			"https://bitbucketserver.com/projects/myproject/repos/foo/pull-requests/1", "bitbucketserver.com", "myproject", "foo",
+//		},
 	}
 	for _, data := range testCases {
 		info, err := gits.ParseGitURL(data.url)
