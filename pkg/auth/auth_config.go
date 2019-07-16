@@ -356,13 +356,15 @@ func (c *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUse
 			return err
 		}
 	}
-	if fn != nil {
-		err := fn(auth.Username)
-		if err != nil {
-			return err
+	if auth.ApiToken == "" {
+		if fn != nil {
+			err := fn(auth.Username)
+			if err != nil {
+				return err
+			}
 		}
+		auth.ApiToken, err = util.PickPassword("API Token:", "", in, out, outErr)
 	}
-	auth.ApiToken, err = util.PickPassword("API Token:", "", in, out, outErr)
 	return err
 }
 
