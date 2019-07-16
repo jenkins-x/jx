@@ -41,7 +41,7 @@ func TestGetClusterClient(t *testing.T) {
 
 func TestNotACR(t *testing.T) {
 	azureCLI := aks.NewAzureRunner()
-	config, registry, id, err := azureCLI.GetRegistry("rg", "name", "azure.docker.io")
+	config, registry, id, err := azureCLI.GetRegistry("", "rg", "name", "azure.docker.io")
 	assert.Equal(t, "", config)
 	assert.Equal(t, "azure.docker.io", registry)
 	assert.Equal(t, "", id)
@@ -56,10 +56,25 @@ func TestNoRegistrySet(t *testing.T) {
 	})
 	azureCLI := aks.NewAzureRunnerWithCommander(runner)
 
-	config, registry, id, err := azureCLI.GetRegistry("rg", "azure", "")
+	config, registry, id, err := azureCLI.GetRegistry("", "rg", "azure", "")
 	assert.Equal(t, `{"auths":{"azure.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
 	assert.Equal(t, "azure.azurecr.io", registry)
 	assert.Equal(t, "fakeid", id)
+	assert.Nil(t, err)
+}
+
+func TestSubscriptionSet(t *testing.T) {
+	RegisterMockTestingT(t)
+	runner := mocks.NewMockCommander()
+	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues {
+		return []ReturnValue{showResult(runner), nil}
+	})
+	azureCLI := aks.NewAzureRunnerWithCommander(runner)
+
+	config, registry, id, err := azureCLI.GetRegistry("sub", "rg", "azuresub", "")
+	assert.Equal(t, `{"auths":{"azure.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
+	assert.Equal(t, "azuresub.azurecr.io", registry)
+	assert.Equal(t, "fakeidsub", id)
 	assert.Nil(t, err)
 }
 
@@ -71,10 +86,25 @@ func TestRegistry404(t *testing.T) {
 	})
 	azureCLI := aks.NewAzureRunnerWithCommander(runner)
 
-	config, registry, id, err := azureCLI.GetRegistry("newrg", "newacr", "notfound.azurecr.io")
+	config, registry, id, err := azureCLI.GetRegistry("", "newrg", "newacr", "notfound.azurecr.io")
 	assert.Equal(t, `{"auths":{"newacr.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
 	assert.Equal(t, "newacr.azurecr.io", registry)
 	assert.Equal(t, "fakeidxxx", id)
+	assert.Nil(t, err)
+}
+
+func TestRegistry404WithSubSet(t *testing.T) {
+	RegisterMockTestingT(t)
+	runner := mocks.NewMockCommander()
+	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues {
+		return []ReturnValue{showResult(runner), nil}
+	})
+	azureCLI := aks.NewAzureRunnerWithCommander(runner)
+
+	config, registry, id, err := azureCLI.GetRegistry("sub", "newrg", "newacr", "notfound.azurecr.io")
+	assert.Equal(t, `{"auths":{"newacr.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
+	assert.Equal(t, "newacr.azurecr.io", registry)
+	assert.Equal(t, "fakeidsub", id)
 	assert.Nil(t, err)
 }
 
@@ -95,8 +125,25 @@ func showResult(runner *mocks.MockCommander) string {
 				"uri": "azure.azurecr.io"
 			}
 		]`
+	} else if reflect.DeepEqual(args, []string{"acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}", "--subscription", "sub"}) {
+		return `[
+			{
+				"group": "musekeen",
+				"id": "fakeidnotused",
+				"name": "jenkinsx",
+				"uri": "jenkinsx.azurecr.io"
+			},
+			{
+				"group": "musekeen",
+				"id": "fakeidsub",
+				"name": "azure",
+				"uri": "azuresub.azurecr.io"
+			}
+		]`
 	} else if reflect.DeepEqual(args, []string{"acr", "create", "-g", "newrg", "-n", "newacr", "--sku", "Standard", "--admin-enabled", "--query", "id", "-o", "tsv"}) {
 		return `fakeidxxx`
+	} else if reflect.DeepEqual(args, []string{"acr", "create", "-g", "newrg", "-n", "newacr", "--sku", "Standard", "--admin-enabled", "--query", "id", "-o", "tsv", "--subscription", "sub"}) {
+		return `fakeidsub`
 	} else {
 		return `{
 			"passwords": [
