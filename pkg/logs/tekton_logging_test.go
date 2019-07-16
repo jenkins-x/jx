@@ -3,8 +3,6 @@ package logs
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path"
 	"regexp"
@@ -292,28 +290,38 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 	assert.Equal(t, containersNumber, len(n))
 }
 
-func TestStreamPipelinePersistentLogs(t *testing.T) {
-	t.Skip("Skipping until we have a way to mock the gcloud commands")
+func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 	_, _, _, opts, _ := getFakeClientsAndNs(t)
 	opts.SkipAuthSecretsMerge = true
 	writer := TestWriter{}
 	r, fakeStdout, _ := os.Pipe()
 	log.SetOutput(fakeStdout)
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		fmt.Fprintf(w, `Logs stored in a bucket`)
-	}))
-
-	err := StreamPipelinePersistentLogs(writer, server.URL)
+	err := StreamPipelinePersistentLogs(writer, "http://nonBucketUrl")
 	assert.NoError(t, err)
 
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)
 	r.Close()
 
-	assert.Contains(t, string(outBytes), "Logs stored in a bucket")
+	assert.Contains(t, string(outBytes), "The build pods for this build have been garbage collected and long term storage bucket configuration wasn't found for this environment")
+}
+
+func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
+	_, _, _, opts, _ := getFakeClientsAndNs(t)
+	opts.SkipAuthSecretsMerge = true
+	writer := TestWriter{}
+	r, fakeStdout, _ := os.Pipe()
+	log.SetOutput(fakeStdout)
+
+	err := StreamPipelinePersistentLogs(writer, "s3://nonSupportedBucket")
+	assert.NoError(t, err)
+
+	fakeStdout.Close()
+	outBytes, _ := ioutil.ReadAll(r)
+	r.Close()
+
+	assert.Contains(t, string(outBytes), "The provided logsURL scheme is not supported: s3")
 }
 
 // Helper method, not supposed to be a test by itself
