@@ -24,7 +24,7 @@ jenkins:
 # override the pipelinerunner image
 pipelinerunner:
   image:
-    repository: docker.io/jenkinsxio/builder-maven
+    repository: gcr.io/jenkinsxio/builder-maven
     tag: $VERSION
   env:
     GIT_AUTHOR_NAME: "jenkins-x-bot"
