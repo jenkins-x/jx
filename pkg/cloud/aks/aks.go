@@ -89,7 +89,7 @@ func (az *AzureRunner) GetClusterClient(server string) (string, string, string, 
 }
 
 // GetRegistry Return the docker registry config, registry login server and resource id, error
-func (az *AzureRunner) GetRegistry(resourceGroup string, name string, registry string) (string, string, string, error) {
+func (az *AzureRunner) GetRegistry(azureRegistrySubscription string, resourceGroup string, name string, registry string) (string, string, string, error) {
 	registryID := ""
 	loginServer := registry
 	dockerConfig := ""
@@ -102,7 +102,7 @@ func (az *AzureRunner) GetRegistry(resourceGroup string, name string, registry s
 		return dockerConfig, loginServer, registryID, nil
 	}
 
-	acrRG, acrName, registryID, err := az.getRegistryID(loginServer)
+	acrRG, acrName, registryID, err := az.getRegistryID(azureRegistrySubscription, loginServer)
 	if err != nil {
 		return dockerConfig, loginServer, registryID, err
 	}
@@ -110,12 +110,12 @@ func (az *AzureRunner) GetRegistry(resourceGroup string, name string, registry s
 	if registryID == "" {
 		acrRG = resourceGroup
 		acrName = name
-		registryID, loginServer, err = az.createRegistry(acrRG, acrName)
+		registryID, loginServer, err = az.createRegistry(azureRegistrySubscription, acrRG, acrName)
 		if err != nil {
 			return dockerConfig, loginServer, registryID, err
 		}
 	}
-	dockerConfig, err = az.getACRCredential(acrRG, acrName)
+	dockerConfig, err = az.getACRCredential(azureRegistrySubscription, acrRG, acrName)
 	return dockerConfig, loginServer, registryID, err
 }
 
@@ -128,12 +128,24 @@ func (az *AzureRunner) AssignRole(client string, registry string) {
 }
 
 // getRegistryID returns acrRG, acrName, acrID, error
-func (az *AzureRunner) getRegistryID(loginServer string) (string, string, string, error) {
+func (az *AzureRunner) getRegistryID(azureRegistrySubscription string, loginServer string) (string, string, string, error) {
 	acrRG := ""
 	acrName := ""
 	acrID := ""
 
-	acrList, err := az.azureCLI("acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}")
+	acrListArgs := []string{
+		"acr",
+		"list",
+		"--query",
+		"[].{uri:loginServer,id:id,name:name,group:resourceGroup}",
+	}
+
+	if azureRegistrySubscription != "" {
+		acrListArgs = append(acrListArgs, "--subscription", azureRegistrySubscription)
+	}
+
+	acrList, err := az.azureCLI(acrListArgs...)
+
 	if err != nil {
 		log.Logger().Infof("Registry %s is not exist", util.ColorInfo(loginServer))
 	} else {
@@ -155,8 +167,28 @@ func (az *AzureRunner) getRegistryID(loginServer string) (string, string, string
 }
 
 // createRegistry return resource ID, login server and error
-func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string, string, error) {
-	registryID, err := az.azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id", "-o", "tsv")
+func (az *AzureRunner) createRegistry(azureRegistrySubscription string, resourceGroup string, name string) (string, string, error) {
+	acrCreateArgs := []string{
+		"acr",
+		"create",
+		"-g",
+		resourceGroup,
+		"-n",
+		name,
+		"--sku",
+		"Standard",
+		"--admin-enabled",
+		"--query",
+		"id",
+		"-o",
+		"tsv",
+	}
+
+	if azureRegistrySubscription != "" {
+		acrCreateArgs = append(acrCreateArgs, "--subscription", azureRegistrySubscription)
+	}
+
+	registryID, err := az.azureCLI(acrCreateArgs...)
 	if err != nil {
 		log.Logger().Infof("Failed to create ACR %s in resource group %s", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", "", err
@@ -165,8 +197,22 @@ func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string
 }
 
 // getACRCredential return .dockerconfig value for the ACR
-func (az *AzureRunner) getACRCredential(resourceGroup string, name string) (string, error) {
-	credstr, err := az.azureCLI("acr", "credential", "show", "-g", resourceGroup, "-n", name)
+func (az *AzureRunner) getACRCredential(azureRegistrySubscription string, resourceGroup string, name string) (string, error) {
+	showCredArgs := []string{
+		"acr",
+		"credential",
+		"show",
+		"-g",
+		resourceGroup,
+		"-n",
+		name,
+	}
+
+	if azureRegistrySubscription != "" {
+		showCredArgs = append(showCredArgs, "--subscription", azureRegistrySubscription)
+	}
+
+	credstr, err := az.azureCLI(showCredArgs...)
 	if err != nil {
 		log.Logger().Infof("Failed to get credential for ACR %s in resource group %s", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", err

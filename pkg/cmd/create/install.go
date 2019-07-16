@@ -99,6 +99,7 @@ type InstallFlags struct {
 	Domain                      string
 	ExposeControllerURLTemplate string
 	ExposeControllerPathMode    string
+	AzureRegistrySubscription   string
 	DockerRegistry              string
 	DockerRegistryOrg           string
 	Provider                    string
@@ -363,6 +364,7 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install command to fail if there is already an installation. Otherwise lets update the installation")
+	cmd.Flags().StringVarP(&flags.AzureRegistrySubscription, "azure-acr-subscription", "", "", "The Azure subscription under which the specified docker-registry is located")
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
 	cmd.Flags().StringVarP(&flags.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker Registry organiation/user to create images inside. On GCP this is typically your Google Project ID.")
 	cmd.Flags().StringVarP(&flags.ExposeControllerURLTemplate, "exposecontroller-urltemplate", "", "", "The ExposeController urltemplate for how services should be exposed as URLs. Defaults to being empty, which in turn defaults to \"{{.Service}}.{{.Namespace}}.{{.Domain}}\".")
@@ -2079,7 +2081,7 @@ func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.
 			return "", "", errors.Wrap(err, "getting cluster from Azure")
 		}
 		registryID := ""
-		config, dockerRegistry, registryID, err := azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)
+		config, dockerRegistry, registryID, err := azureCLI.GetRegistry(options.Flags.AzureRegistrySubscription, resourceGroup, name, dockerRegistry)
 		if err != nil {
 			return "", "", errors.Wrap(err, "getting registry configuration from Azure")
 		}
