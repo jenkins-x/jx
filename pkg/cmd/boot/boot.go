@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spf13/cobra"
 
@@ -81,6 +82,12 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run runs this command
 func (o *BootOptions) Run() error {
 	info := util.ColorInfo
+	kubeClient, err := o.KubeClient()
+	_, err = kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("Please ensure you are connected to a cluster and then retry %s\n"+
+			"Alternatively create a new cluster using %s ", info("jx boot"), info("jx create cluster"))
+	}
 
 	projectConfig, pipelineFile, err := config.LoadProjectConfig(o.Dir)
 	if err != nil {
