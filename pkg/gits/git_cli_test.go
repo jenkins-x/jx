@@ -2,10 +2,14 @@ package gits_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	. "github.com/onsi/ginkgo"
@@ -192,3 +196,32 @@ var _ = Describe("Git CLI", func() {
 		})
 	})
 })
+
+func TestTags(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	dir, err := ioutil.TempDir("", "")
+	assert.NoError(t, err)
+	err = gitter.Init(dir)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(dir, "README.md"), []byte("Hello"), 0655)
+	assert.NoError(t, err)
+	err = gitter.Add(dir, "README.md")
+	assert.NoError(t, err)
+	err = gitter.CommitDir(dir, "commit 1")
+	assert.NoError(t, err)
+	err = gitter.CreateTag(dir, "v0.0.1", "version 0.0.1")
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(dir, "README.md"), []byte("Hello again"), 0655)
+	assert.NoError(t, err)
+	err = gitter.Add(dir, "README.md")
+	assert.NoError(t, err)
+	err = gitter.CommitDir(dir, "commit 3")
+	assert.NoError(t, err)
+	err = gitter.CreateTag(dir, "v0.0.2", "version 0.0.2")
+	assert.NoError(t, err)
+	tags, err := gitter.Tags(dir)
+	assert.NoError(t, err)
+	assert.Len(t, tags, 2)
+	assert.Contains(t, tags, "v0.0.1")
+	assert.Contains(t, tags, "v0.0.2")
+}
