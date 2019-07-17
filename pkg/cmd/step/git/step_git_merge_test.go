@@ -168,10 +168,10 @@ var _ = Describe("step git merge", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			logLines := strings.Split(stdout, "\n")
+			logLines = deleteEmpty(logLines)
+			Expect(len(logLines)).Should(Equal(4))
 			Expect(strings.TrimSpace(logLines[0])).Should(Equal("MERGED SHA SUBJECT"))
 			Expect(strings.TrimSpace(logLines[1])).Should(MatchRegexp(".* Merge commit '.*'"))
-			Expect(strings.TrimSpace(logLines[2])).Should(Equal(fmt.Sprintf("%s  c commit", branchCSha[:9])))
-			Expect(strings.TrimSpace(logLines[3])).Should(Equal(fmt.Sprintf("%s  b commit", branchBSha[:9])))
 		})
 	})
 
@@ -207,4 +207,14 @@ func readStdOut(r *os.File, w *os.File) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+func deleteEmpty(s []string) []string {
+	var clean []string
+	for _, str := range s {
+		if str != "" {
+			clean = append(clean, str)
+		}
+	}
+	return clean
 }

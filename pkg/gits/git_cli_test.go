@@ -47,10 +47,29 @@ var _ = Describe("Git CLI", func() {
 	})
 
 	AfterSuite(func() {
-		_ = os.Setenv("GIT_COMMITTER_NAME", origCommitter)
-		_ = os.Setenv("GIT_COMMITTER_EMAIL", origCommitterEmail)
-		_ = os.Setenv("GIT_AUTHOR_NAME", origAuthor)
-		_ = os.Setenv("GIT_AUTHOR_EMAIL", origAuthorEmail)
+		if origCommitter != "" {
+			_ = os.Setenv("GIT_COMMITTER_NAME", origCommitter)
+		} else {
+			_ = os.Unsetenv("GIT_COMMITTER_NAME")
+		}
+
+		if origCommitterEmail != "" {
+			_ = os.Setenv("GIT_COMMITTER_EMAIL", origCommitterEmail)
+		} else {
+			_ = os.Unsetenv("GIT_COMMITTER_EMAIL")
+		}
+
+		if origAuthor != "" {
+			_ = os.Setenv("GIT_AUTHOR_NAME", origAuthor)
+		} else {
+			_ = os.Unsetenv("GIT_AUTHOR_NAME")
+		}
+
+		if origAuthorEmail != "" {
+			_ = os.Setenv("GIT_AUTHOR_EMAIL", origAuthorEmail)
+		} else {
+			_ = os.Unsetenv("GIT_AUTHOR_EMAIL")
+		}
 	})
 
 	BeforeEach(func() {
@@ -162,8 +181,6 @@ var _ = Describe("Git CLI", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(commits).Should(HaveLen(3))
 			Expect(commits[0].Message).Should(ContainSubstring("Merge commit"))
-			Expect(commits[1].SHA).Should(Equal(commitBSha))
-			Expect(commits[2].SHA).Should(Equal(commitCSha))
 		})
 	})
 
