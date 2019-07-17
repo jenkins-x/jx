@@ -145,7 +145,7 @@ pipelineConfig:
                 - /workspace/source/charts/jx/Makefile
 
               - name: update-bot
-                image: gcr.io/jenkinsxio/jx:2.0.475
+                image: gcr.io/jenkinsxio/jx:2.0.478
                 command: ./jx/scripts/update-bot.sh
 
               #- name: distro
