@@ -756,10 +756,13 @@ func (g *GitCLI) Tags(dir string) ([]string, error) {
 
 // FilterTags returns all tags from the repository at the given directory that match the filter
 func (g *GitCLI) FilterTags(dir string, filter string) ([]string, error) {
-	tags := []string{}
-	text, err := g.gitCmdWithOutput(dir, "tag", "--list", filter)
+	args := []string{"tag"}
+	if filter != "" {
+		args = append(args, "--list", filter)
+	}
+	text, err := g.gitCmdWithOutput(dir, args...)
 	if err != nil {
-		return tags, err
+		return nil, err
 	}
 	text = strings.TrimSuffix(text, "\n")
 	return strings.Split(text, "\n"), nil
@@ -767,7 +770,7 @@ func (g *GitCLI) FilterTags(dir string, filter string) ([]string, error) {
 
 // CreateTag creates a tag with the given name and message in the repository at the given directory
 func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
-	return g.gitCmd("", "tag", "-fa", tag, "-m", msg)
+	return g.gitCmd(dir, "tag", "-fa", tag, "-m", msg)
 }
 
 // PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
