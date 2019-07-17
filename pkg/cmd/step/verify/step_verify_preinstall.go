@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/factory"
@@ -257,7 +256,9 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 					}
 				}
 				if requirements.Cluster.ClusterName == "" {
-					defaultClusterName := strings.ToLower(randomdata.SillyName())
+					kubeConfig, _, err := o.Kube().LoadConfig()
+					context := kube.Cluster(kubeConfig)
+					defaultClusterName := clusterNameFromContext(context)
 					requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", defaultClusterName, true,
 						"The name for your cluster", o.In, o.Out, o.Err)
 					if err != nil {
@@ -457,4 +458,16 @@ func modifyMapIfNotBlank(m map[string]string, key string, value string) {
 	if value != "" {
 		m[key] = value
 	}
+}
+
+func clusterNameFromContext(context string) string {
+	pos := strings.LastIndex(context, "_")
+	if pos == -1 {
+		return ""
+	}
+	adjustedPos := pos + 1
+	if adjustedPos >= len(context) {
+		return ""
+	}
+	return context[adjustedPos:]
 }
