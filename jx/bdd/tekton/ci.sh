@@ -39,7 +39,7 @@ echo "running the BDD tests with JX_HOME = $JX_HOME"
 
 git clone https://github.com/jenkins-x/jenkins-x-versions.git
 
-${JX} step bdd \
+jx step bdd \
     --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
     --config jenkins-x-versions/jx/bdd/tekton/cluster.yaml \
     --gopath /tmp \
