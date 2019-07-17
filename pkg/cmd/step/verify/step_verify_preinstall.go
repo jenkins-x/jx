@@ -259,6 +259,9 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 					kubeConfig, _, err := o.Kube().LoadConfig()
 					context := kube.Cluster(kubeConfig)
 					defaultClusterName := clusterNameFromContext(context)
+					if defaultClusterName != "" {
+						log.Logger().Infof("Currently connected cluster is %s", util.ColorInfo(defaultClusterName))
+					}
 					requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", defaultClusterName, true,
 						"The name for your cluster", o.In, o.Out, o.Err)
 					if err != nil {
