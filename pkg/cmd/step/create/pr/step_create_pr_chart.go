@@ -33,7 +33,7 @@ var (
 type StepCreatePullRequestChartsOptions struct {
 	StepCreatePrOptions
 
-	Name string
+	Names []string
 }
 
 // NewCmdStepCreatePullRequestChart Creates a new Command object
@@ -62,7 +62,7 @@ func NewCmdStepCreatePullRequestChart(commonOpts *opts.CommonOptions) *cobra.Com
 		},
 	}
 	AddStepCreatePrFlags(cmd, &options.StepCreatePrOptions)
-	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the property to update")
+	cmd.Flags().StringArrayVarP(&options.Names, "name", "n", make([]string, 0), "The name of the property to update")
 	return cmd
 }
 
@@ -71,7 +71,7 @@ func (o *StepCreatePullRequestChartsOptions) ValidateChartsOptions() error {
 	if err := o.ValidateOptions(); err != nil {
 		return errors.WithStack(err)
 	}
-	if o.Name == "" {
+	if len(o.Names) == 0 {
 		return util.MissingOption("name")
 	}
 	if o.SrcGitURL == "" {
@@ -97,7 +97,9 @@ func (o *StepCreatePullRequestChartsOptions) Run() error {
 					if err != nil {
 						return errors.Wrapf(err, "loading %s", path)
 					}
-					oldVersions = append(oldVersions, helm.UpdateRequirementsToNewVersion(requirements, o.Name, o.Version)...)
+					for _, name := range o.Names {
+						oldVersions = append(oldVersions, helm.UpdateRequirementsToNewVersion(requirements, name, o.Version)...)
+					}
 					err = helm.SaveFile(path, *requirements)
 					if err != nil {
 						return errors.Wrapf(err, "saving %s", path)
@@ -107,18 +109,21 @@ func (o *StepCreatePullRequestChartsOptions) Run() error {
 					if err != nil {
 						return errors.Wrapf(err, "reading %s", path)
 					}
-					re, err := regexp.Compile(fmt.Sprintf(`(?m)^\s*Image: %s:(.*)$`, o.Name))
-					if err != nil {
-						return errors.WithStack(err)
-					}
-					newValues := util.ReplaceAllStringSubmatchFunc(re, string(values), func(groups []util.Group) []string {
-						answer := make([]string, 0)
-						for i := range groups {
-							oldVersions = append(oldVersions, groups[i].Value)
-							answer = append(answer, o.Version)
+					newValues := string(values)
+					for _, name := range o.Names {
+						re, err := regexp.Compile(fmt.Sprintf(`(?m)^\s*Image: %s:(.*)$`, name))
+						if err != nil {
+							return errors.WithStack(err)
 						}
-						return answer
-					})
+						newValues = util.ReplaceAllStringSubmatchFunc(re, newValues, func(groups []util.Group) []string {
+							answer := make([]string, 0)
+							for i := range groups {
+								oldVersions = append(oldVersions, groups[i].Value)
+								answer = append(answer, o.Version)
+							}
+							return answer
+						})
+					}
 					err = ioutil.WriteFile(path, []byte(newValues), info.Mode())
 					if err != nil {
 						return errors.Wrapf(err, "writing %s", path)
