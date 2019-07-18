@@ -1169,6 +1169,69 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					syntax_helpers_test.StructureStagePrevious("A Working Stage")),
 			),
 		},
+		{
+			name: "volumes",
+			expected: syntax_helpers_test.ParsedPipeline(
+				syntax_helpers_test.PipelineOptions(
+					syntax_helpers_test.PipelineVolume(&corev1.Volume{
+						Name: "top-level-volume",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "top-level-volume",
+								ReadOnly:  true,
+							},
+						},
+					}),
+				),
+				syntax_helpers_test.PipelineAgent("some-image"),
+				syntax_helpers_test.PipelineStage("A Working Stage",
+					syntax_helpers_test.StageOptions(
+						syntax_helpers_test.StageVolume(&corev1.Volume{
+							Name: "stage-level-volume",
+							VolumeSource: corev1.VolumeSource{
+								GCEPersistentDisk: &corev1.GCEPersistentDiskVolumeSource{
+									PDName: "stage-level-volume",
+								},
+							},
+						}),
+					),
+					syntax_helpers_test.StageStep(
+						syntax_helpers_test.StepCmd("echo"),
+						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
+						syntax_helpers_test.StepName("A Step With Spaces And Such"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+				),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("source"))),
+						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+						tb.Step("a-step-with-spaces-and-such", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
+						tb.TaskVolume("stage-level-volume", tb.VolumeSource(corev1.VolumeSource{
+							GCEPersistentDisk: &corev1.GCEPersistentDiskVolumeSource{
+								PDName: "stage-level-volume",
+							},
+						})),
+						tb.TaskVolume("top-level-volume", tb.VolumeSource(corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "top-level-volume",
+								ReadOnly:  true,
+							},
+						})),
+					)),
+			},
+			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
+				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			),
+		},
 	}
 
 	for _, tt := range tests {
@@ -1539,6 +1602,10 @@ func TestFailedValidation(t *testing.T) {
 				Paths:   []string{"steps"},
 			}).ViaFieldIndex("stages", 0),
 		},
+		{
+			name:          "volume_missing_name",
+			expectedError: apis.ErrMissingField("name").ViaFieldIndex("volumes", 0).ViaField("options"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -1668,6 +1735,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 		syntax_helpers_test.PipelineOptions(
 			syntax_helpers_test.PipelineOptionsRetry(5),
 			syntax_helpers_test.PipelineOptionsTimeout(30, syntax.TimeoutUnitSeconds),
+			syntax_helpers_test.PipelineVolume(&corev1.Volume{Name: "banana"}),
 		),
 		syntax_helpers_test.PipelineEnvVar("ANIMAL", "MONKEY"),
 		syntax_helpers_test.PipelineEnvVar("FRUIT", "BANANA"),
@@ -1689,6 +1757,8 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				syntax_helpers_test.StageOptionsUnstash("some-name", ""),
 				syntax_helpers_test.StageOptionsTimeout(15, syntax.TimeoutUnitMinutes),
 				syntax_helpers_test.StageOptionsRetry(2),
+				syntax_helpers_test.StageVolume(&corev1.Volume{Name: "apple"}),
+				syntax_helpers_test.StageVolume(&corev1.Volume{Name: "orange"}),
 			),
 			syntax_helpers_test.StageStep(
 				syntax_helpers_test.StepCmd("echo"),
@@ -1749,6 +1819,9 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				Time: 30,
 				Unit: syntax.TimeoutUnitSeconds,
 			},
+			Volumes: []*corev1.Volume{{
+				Name: "banana",
+			}},
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -1801,6 +1874,11 @@ func TestParsedPipelineHelpers(t *testing.T) {
 							Unit: syntax.TimeoutUnitMinutes,
 						},
 						Retry: 2,
+						Volumes: []*corev1.Volume{{
+							Name: "apple",
+						}, {
+							Name: "orange",
+						}},
 					},
 				},
 				Steps: []syntax.Step{{

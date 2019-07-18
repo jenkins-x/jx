@@ -245,6 +245,18 @@ func (in *RootOptions) DeepCopyInto(out *RootOptions) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
+	if in.Volumes != nil {
+		in, out := &in.Volumes, &out.Volumes
+		*out = make([]*v1.Volume, len(*in))
+		for i := range *in {
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(v1.Volume)
+				(*in)[i].DeepCopyInto((*out)[i])
+			}
+		}
+	}
 	return
 }
 

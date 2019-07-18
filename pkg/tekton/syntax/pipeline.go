@@ -116,6 +116,7 @@ type RootOptions struct {
 	// like CPU/RAM requests/limits, secrets, ports, etc. Some of these things will end up with native syntax approaches
 	// down the road.
 	ContainerOptions *corev1.Container `json:"containerOptions,omitempty"`
+	Volumes          []*corev1.Volume  `json:"volumes,omitempty"`
 }
 
 // Stash defines files to be saved for use in a later stage, marked with a name
@@ -781,7 +782,23 @@ func validateRootOptions(o *RootOptions) *apis.FieldError {
 			}
 		}
 
+		for i, v := range o.Volumes {
+			if err := validateVolume(v).ViaFieldIndex("volumes", i); err != nil {
+				return err
+			}
+		}
+
 		return validateContainerOptions(o.ContainerOptions).ViaField("containerOptions")
+	}
+
+	return nil
+}
+
+func validateVolume(v *corev1.Volume) *apis.FieldError {
+	if v != nil {
+		if v.Name == "" {
+			return apis.ErrMissingField("name")
+		}
 	}
 
 	return nil
@@ -1115,12 +1132,13 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, versionsDir string, labels map[string]string, defaultImage string) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, parentVolumes []*corev1.Volume, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, versionsDir string, labels map[string]string, defaultImage string) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
 
 	stageContainer := &corev1.Container{}
+	var stageVolumes []*corev1.Volume
 
 	if s.Options != nil {
 		o := s.Options
@@ -1133,6 +1151,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if o.ContainerOptions != nil {
 				stageContainer = o.ContainerOptions
 			}
+			stageVolumes = o.Volumes
 		}
 		if o.Stash != nil {
 			return nil, errors.New("Stash on stage not yet supported")
@@ -1154,6 +1173,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 		stageContainer = merged
 	}
+	stageVolumes = append(stageVolumes, parentVolumes...)
 
 	env := scopedEnv(s.GetEnv(), parentEnv)
 
@@ -1210,6 +1230,11 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 		// We don't want to dupe volumes for the Task if there are multiple steps
 		volumes := make(map[string]corev1.Volume)
+
+		for _, v := range stageVolumes {
+			volumes[v.Name] = *v
+		}
+
 		for _, step := range s.Steps {
 			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, sourceDir, baseWorkingDir, env, stageContainer, podTemplates, versionsDir, stepCounter)
 			if err != nil {
@@ -1249,7 +1274,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates, versionsDir, labels, defaultImage)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nestedPreviousSibling, podTemplates, versionsDir, labels, defaultImage)
 			if err != nil {
 				return nil, err
 			}
@@ -1266,7 +1291,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 
 		for _, nested := range s.Parallel {
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates, versionsDir, labels, defaultImage)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nil, podTemplates, versionsDir, labels, defaultImage)
 			if err != nil {
 				return nil, err
 			}
@@ -1467,6 +1492,8 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	}
 
 	var parentContainer *corev1.Container
+	var parentVolumes []*corev1.Volume
+
 	baseWorkingDir := j.WorkingDir
 
 	if j.Options != nil {
@@ -1475,6 +1502,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 			return nil, nil, nil, errors.New("Retry at top level not yet supported")
 		}
 		parentContainer = o.ContainerOptions
+		parentVolumes = o.Volumes
 	}
 
 	p := &tektonv1alpha1.Pipeline{
@@ -1518,7 +1546,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
 
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates, versionsDir, labels, defaultImage)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, parentVolumes, 0, nil, previousStage, podTemplates, versionsDir, labels, defaultImage)
 		if err != nil {
 			return nil, nil, nil, err
 		}
