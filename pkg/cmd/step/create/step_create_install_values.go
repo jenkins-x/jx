@@ -186,6 +186,23 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "You must provide a valid email address to enable TLS so you can receive notifications from LetsEncrypt about your certificates")
 		}
+
+		util.SetMapValueViaPath(values, "tls", true)
+	}
+
+	sub := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
+	if sub == "" {
+		util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
+	}
+
+	projectID := util.GetMapValueAsStringViaPath(values, "projectID")
+	if projectID == "" {
+		util.SetMapValueViaPath(values, "projectID", requirements.Cluster.ProjectID)
+	}
+
+	requirements.SaveConfig(requirementsFileName)
+	if err != nil {
+		return values, nil
 	}
 	return nil
 }
