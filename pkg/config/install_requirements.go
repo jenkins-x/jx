@@ -161,6 +161,12 @@ type ClusterConfig struct {
 	GitKind string `json:"gitKind,omitempty"`
 	// GitServer is the URL of the git server
 	GitServer string `json:"gitServer,omitempty"`
+	// ExternalDNSSAName the service account name for external dns
+	ExternalDNSSAName string `json:"externalDNSSAName,omitempty"`
+	// VaultSAName the service account name for vault
+	VaultSAName string `json:"vaultSAName,omitempty"`
+	// KanikoSAName the service account name for kaniko
+	KanikoSAName string `json:"kanikoSAName,omitempty"`
 }
 
 // VersionStreamConfig contains version stream config
