@@ -29,6 +29,30 @@ var (
 const (
 	// RequirementsConfigFileName is the name of the requirements configuration file
 	RequirementsConfigFileName = "jx-requirements.yml"
+	// RequirementDomainIssuerUsername contains the username used for basic auth when requesting a domain
+	RequirementDomainIssuerUsername = "JX_REQUIREMENT_DOMAIN_ISSUER_USERNAME"
+	// RequirementDomainIssuerPassword contains the password used for basic auth when requesting a domain
+	RequirementDomainIssuerPassword = "JX_REQUIREMENT_DOMAIN_ISSUER_USERNAME"
+	// RequirementDomainIssuerURL contains the URL to the service used when requesting a domain
+	RequirementDomainIssuerURL = "JX_REQUIREMENT_DOMAIN_ISSUER_URL"
+	// RequirementTerraform if Terraform was used to create the cluster
+	RequirementTerraform = "JX_REQUIREMENT_TERRAFORM"
+	// RequirementClusterName is the cluster name
+	RequirementClusterName = "JX_REQUIREMENT_CLUSTER_NAME"
+	// RequirementProject is the cloudprovider project
+	RequirementProject = "JX_REQUIREMENT_PROJECT"
+	// RequirementZone zone the cluster is in
+	RequirementZone = "JX_REQUIREMENT_ZONE"
+	// RequirementEnvGitOwner the default git owner for environment repositories if none is specified explicitly
+	RequirementEnvGitOwner = "JX_REQUIREMENT_ENV_GIT_OWNER"
+	// RequirementExternalDNSServiceAccountName the service account name for external dns
+	RequirementExternalDNSServiceAccountName = "JX_REQUIREMENT_EXTERNALDNS_SA_NAME"
+	// RequirementVaultServiceAccountName the service account name for vault
+	RequirementVaultServiceAccountName = "JX_REQUIREMENT_VAULT_SA_NAME"
+	// RequirementKanikoServiceAccountName the service account name for kaniko
+	RequirementKanikoServiceAccountName = "JX_REQUIREMENT_KANIKO_SA_NAME"
+	// RequirementKaniko if kaniko is required
+	RequirementKaniko = "JX_REQUIREMENT_KANIKO"
 )
 
 // SecretStorageType is the type of storage used for secrets
@@ -100,6 +124,8 @@ type IngressConfig struct {
 	NamespaceSubDomain string `json:"namespaceSubDomain"`
 	// TLS enable automated TLS using certmanager
 	TLS TLSConfig `json:"tls"`
+	// DomainIssuerURL contains a URL used to retrieve a Domain
+	DomainIssuerURL string `json:"domainIssuerURL,omitempty"`
 }
 
 // TLSConfig contains TLS specific requirements

@@ -256,34 +256,3 @@ func TestCheckFlags(t *testing.T) {
 		})
 	}
 }
-
-func TestVerifyDomainName(t *testing.T) {
-	t.Parallel()
-	invalidErr := "domain name %s contains invalid characters"
-	lengthErr := "domain name %s has fewer than 3 or greater than 63 characters"
-
-	domain := "wine.com"
-	assert.Equal(t, create.ValidateDomainName(domain), nil)
-	domain = "more-wine.com"
-	assert.Equal(t, create.ValidateDomainName(domain), nil)
-	domain = "wine-and-cheese.com"
-	assert.Equal(t, create.ValidateDomainName(domain), nil)
-	domain = "wine-and-cheese.tasting.com"
-	assert.Equal(t, create.ValidateDomainName(domain), nil)
-	domain = "wine123.com"
-	assert.Equal(t, create.ValidateDomainName(domain), nil)
-	domain = "wine.cheese.com"
-	assert.Equal(t, create.ValidateDomainName(domain), nil)
-	domain = "win_e.com"
-	assert.Equal(t, create.ValidateDomainName(domain), nil)
-
-	domain = "win?e.com"
-	assert.EqualError(t, create.ValidateDomainName(domain), fmt.Sprintf(invalidErr, domain))
-	domain = "win%e.com"
-	assert.EqualError(t, create.ValidateDomainName(domain), fmt.Sprintf(invalidErr, domain))
-	domain = "om"
-
-	assert.EqualError(t, create.ValidateDomainName(domain), fmt.Sprintf(lengthErr, domain))
-	domain = "some.really.long.domain.that.should.be.longer.than.the.maximum.63.characters.com"
-	assert.EqualError(t, create.ValidateDomainName(domain), fmt.Sprintf(lengthErr, domain))
-}

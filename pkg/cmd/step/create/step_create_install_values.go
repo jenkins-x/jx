@@ -1,8 +1,11 @@
 package create
 
 import (
+	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/mail"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -11,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/tenant"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -186,67 +190,61 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "You must provide a valid email address to enable TLS so you can receive notifications from LetsEncrypt about your certificates")
 		}
-
-		util.SetMapValueViaPath(values, "tls", true)
 	}
 
-	sub := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
-	if sub == "" {
-		util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
-	}
-
-	projectID := util.GetMapValueAsStringViaPath(values, "projectID")
-	if projectID == "" {
-		util.SetMapValueViaPath(values, "projectID", requirements.Cluster.ProjectID)
-	}
-
-	requirements.SaveConfig(requirementsFileName)
-	if err != nil {
-		return values, nil
-	}
-	return nil
+	return requirements.SaveConfig(requirementsFileName)
 }
 
 func (o *StepCreateInstallValuesOptions) discoverIngressDomain(requirements *config.RequirementsConfig, requirementsFileName string) error {
 	client, err := o.KubeClient()
+	var domain string
 	if err != nil {
 		return errors.Wrap(err, "getting the kubernetes client")
 	}
 	if requirements.Ingress.Domain != "" {
 		return nil
 	}
-	if o.Provider == "" {
-		o.Provider = requirements.Cluster.Provider
-		if o.Provider == "" {
-			log.Logger().Warnf("No provider configured\n")
+	if requirements.Ingress.DomainIssuerURL != "" {
+		domain, err = o.getDomainFromIssuer(requirements.Ingress.DomainIssuerURL, requirements.Cluster.ProjectID)
+		if err != nil {
+			return errors.Wrap(err, "issuing domain")
 		}
 	}
-	domain, err := o.GetDomain(client, "",
-		o.Provider,
-		o.IngressNamespace,
-		o.IngressService,
-		o.ExternalIP)
-	if err != nil {
-		return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
-	}
 	if domain == "" {
-		hasHost, err := o.waitForIngressControllerHost(client, o.IngressNamespace, o.IngressService)
+		if o.Provider == "" {
+			o.Provider = requirements.Cluster.Provider
+			if o.Provider == "" {
+				log.Logger().Warnf("No provider configured\n")
+			}
+		}
+		domain, err = o.GetDomain(client, "",
+			o.Provider,
+			o.IngressNamespace,
+			o.IngressService,
+			o.ExternalIP)
 		if err != nil {
 			return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
 		}
-		if hasHost {
-			domain, err = o.GetDomain(client, "",
-				o.Provider,
-				o.IngressNamespace,
-				o.IngressService,
-				o.ExternalIP)
+		if domain == "" {
+			hasHost, err := o.waitForIngressControllerHost(client, o.IngressNamespace, o.IngressService)
 			if err != nil {
 				return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
 			}
-		} else {
-			log.Logger().Warnf("could not find host for  ingress service %s/%s\n", o.IngressNamespace, o.IngressService)
+			if hasHost {
+				domain, err = o.GetDomain(client, "",
+					o.Provider,
+					o.IngressNamespace,
+					o.IngressService,
+					o.ExternalIP)
+				if err != nil {
+					return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
+				}
+			} else {
+				log.Logger().Warnf("could not find host for  ingress service %s/%s\n", o.IngressNamespace, o.IngressService)
+			}
 		}
 	}
+
 	if domain == "" {
 		return fmt.Errorf("failed to discover domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
 	}
@@ -295,4 +293,34 @@ func (o *StepCreateInstallValuesOptions) waitForIngressControllerHost(kubeClient
 		return false, err
 	}
 	return true, nil
+}
+func (o *StepCreateInstallValuesOptions) getDomainFromIssuer(domainIssuerURL, projectID string) (string, error) {
+
+	_, err := url.ParseRequestURI(domainIssuerURL)
+	if err != nil {
+		return "", errors.Wrapf(err, "parsing Domain Issuer URL %s", domainIssuerURL)
+	}
+	username := os.Getenv(config.RequirementDomainIssuerUsername)
+	password := os.Getenv(config.RequirementDomainIssuerPassword)
+
+	if username == "" {
+		return "", errors.Errorf("no %s environment variable found", config.RequirementDomainIssuerUsername)
+	}
+	if password == "" {
+		return "", errors.Errorf("no %s environment variable found", config.RequirementDomainIssuerPassword)
+	}
+
+	tenantServiceAuth := fmt.Sprintf("%s:%s", username, password)
+	tCli := tenant.NewTenantClient()
+	return tCli.GetTenantSubDomain(domainIssuerURL, tenantServiceAuth, projectID, o.GCloud())
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func redirectPolicyFunc(req *http.Request, via []*http.Request) error {
+	req.Header.Add("Authorization", "Basic "+basicAuth("username1", "password123"))
+	return nil
 }

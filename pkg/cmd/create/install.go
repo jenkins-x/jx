@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -269,12 +268,6 @@ var (
 		# If you know the cloud provider you can pass this as a CLI argument. E.g. for AWS
 		jx install --provider=aws
 `)
-	allowedDomainRegex = regexp.MustCompile("^(([a-zA-Z]{1})|" +
-		"([a-zA-Z]{1}[a-zA-Z]{1})|" +
-		"([a-zA-Z]{1}[0-9]{1})|" +
-		"([0-9]{1}[a-zA-Z]{1})|" +
-		"([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9])).([a-zA-Z]{2,6}|" +
-		"[a-zA-Z0-9-]{2,30}.[a-zA-Z]{2,3})$")
 )
 
 // NewCmdInstall creates a command object for the generic "install" action, which
@@ -3348,49 +3341,12 @@ func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tena
 	// Create a TenantClient
 	tCli := tenant.NewTenantClient()
 	var err error
-	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID)
+	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, options.GCloud())
 	if err != nil {
 		return "", errors.Wrap(err, "getting domain from tenant service")
 	}
-	err = ValidateDomainName(domain)
-	if err != nil {
-		return "", errors.Wrap(err, "domain name failed validation")
-	}
-
-	// Checking whether dns api is enabled
-	err = options.GCloud().EnableAPIs(projectID, "dns")
-	if err != nil {
-		return "", errors.Wrap(err, "enabling the dns api")
-	}
-
-	// Create domain if it doesn't exist and return name servers list
-	managedZone, nameServers, err := options.GCloud().CreateDNSZone(projectID, domain)
-	if err != nil {
-		return "", errors.Wrap(err, "while trying to create the tenants subdomain zone")
-	}
-
-	log.Logger().Infof("%s domain is operating on the following nameservers %v", domain, nameServers)
-	err = tCli.PostTenantZoneNameServers(tenantServiceURL, tenantServiceAuth, projectID, domain, managedZone, nameServers)
-	if err != nil {
-		return "", errors.Wrap(err, "posting the name service list to the tenant service")
-	}
 
 	return domain, nil
-}
-
-// ValidateDomainName checks for compliance in a supplied domain name
-func ValidateDomainName(domain string) error {
-	// Check whether the domain is greater than 3 and fewer than 63 characters in length
-	if len(domain) < 3 || len(domain) > 63 {
-		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 63 characters", domain)
-		return err
-	}
-	// Ensure each part of the domain name only contains lower/upper case characters, numbers and dashes
-	if !allowedDomainRegex.MatchString(domain) {
-		err := fmt.Errorf("domain name %v contains invalid characters", domain)
-		return err
-	}
-	return nil
 }
 
 func installConfigKey(key string) string {
