@@ -2,9 +2,6 @@ package boot
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/profile"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -21,11 +18,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-)
-
-const (
-	defaultBootRepository          = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
-	defaultCloudBeesBootRepository = "https://github.com/cloudbees/cloudbees-jenkins-x-boot-config.git"
 )
 
 // BootOptions options for the command
@@ -74,7 +66,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the Jenkins X Pipeline, requirements and charts")
-	cmd.Flags().StringVarP(&options.GitURL, "git-url", "u", defaultBootRepository, "the Git clone URL for the JX Boot source to boot up")
+	cmd.Flags().StringVarP(&options.GitURL, "git-url", "u", config.DefaultBootRepository, "the Git clone URL for the JX Boot source to boot up")
 	return cmd
 }
 
@@ -94,8 +86,8 @@ func (o *BootOptions) Run() error {
 		log.Logger().Infof("No Jenkins X pipeline file %s found. You are not running this command from inside a Jenkins X Boot git clone", info(pipelineFile))
 
 		gitURL := o.GitURL
-		if o.loadActiveProfile() == profile.CloudBeesProfile && gitURL == defaultBootRepository {
-			gitURL = defaultCloudBeesBootRepository
+		if config.LoadActiveInstallProfile() == config.CloudBeesProfile && gitURL == config.DefaultBootRepository {
+			gitURL = config.DefaultCloudBeesBootRepository
 		}
 		if gitURL == "" {
 			return util.MissingOption("git-url")
@@ -220,23 +212,6 @@ func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig
 		}
 	}
 	return nil
-}
-
-func (o *BootOptions) loadActiveProfile() string {
-	jxHome, err := util.ConfigDir()
-	if err == nil {
-		profileSettingsFile := filepath.Join(jxHome, profile.DefaultProfileFile)
-		exists, err := util.FileExists(profileSettingsFile)
-		if err == nil && exists {
-			jxProfle := profile.JxProfile{}
-			data, err := ioutil.ReadFile(profileSettingsFile)
-			err = yaml.Unmarshal(data, &jxProfle)
-			if err == nil {
-				return jxProfle.InstallType
-			}
-		}
-	}
-	return profile.OpenSourceProfile
 }
 
 // FindBootNamespace finds the namespace to boot Jenkins X into based on the pipeline and requirements

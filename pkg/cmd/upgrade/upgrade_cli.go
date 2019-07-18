@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/config"
 	"runtime"
 
 	"github.com/blang/semver"
@@ -61,6 +62,9 @@ func NewCmdUpgradeCLI(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *UpgradeCLIOptions) Run() error {
+	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
+		o.NoBrew = true
+	}
 	candidateInstallVersion, err := o.candidateInstallVersion()
 	if err != nil {
 		return err

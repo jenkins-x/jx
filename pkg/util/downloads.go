@@ -80,6 +80,21 @@ func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, e
 	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
 }
 
+// GetLatestVersionStringCloudBeesBucketURLs return the latest version from a list of buckets with the version at the end of the path
+func GetLatestVersionStringCloudBeesBucketURLs(versionStrings []string) (semver.Version, error) {
+	versions := make([]semver.Version, 0)
+	for _, versionStr := range versionStrings {
+		versionPaths := strings.Split(versionStr, "/")
+		version, err := semver.New(versionPaths[len(versionPaths)-2])
+		if err != nil {
+			return semver.Version{}, err
+		}
+		versions = append(versions, *version)
+	}
+	semver.Sort(versions)
+	return versions[len(versions)-1], nil
+}
+
 // GetLatestReleaseFromGitHub gets the latest Release from a specific github repo
 func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) {
 	// Github has low (60/hour) unauthenticated limits from a single IP address. Try to get the latest release via HTTP

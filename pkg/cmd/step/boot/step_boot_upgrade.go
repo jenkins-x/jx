@@ -12,6 +12,8 @@ import (
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"path/filepath"
+	"strings"
 )
 
 // StepBootUpgradeOptions contains the command line flags
@@ -83,7 +85,21 @@ func (o *StepBootUpgradeOptions) Run() error {
 	versionsUpdates := false
 	for depIndex := range platformRequirements.Dependencies {
 		dep := platformRequirements.Dependencies[depIndex]
-		chartName := "jenkins-x/" + dep.Name
+		glob := filepath.Join(versionsRepoDir, string(version2.KindChart), "*", dep.Name+".yml")
+		paths, err := filepath.Glob(glob)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find chart dependency %s in version stream", dep.Name)
+		}
+		if len(paths) > 1 {
+			log.Logger().Warnf("%s is listed multiple times in the version stream", dep.Name)
+			continue
+		}
+		if len(paths) < 1 {
+			log.Logger().Warnf("%s is not listed in the version stream", dep.Name)
+			continue
+		}
+		pathParts := strings.Split(paths[0], "/")
+		chartName := pathParts[len(pathParts)-2] + "/" + strings.Replace(pathParts[len(pathParts)-1], ".yml", "", -1)
 		newVersion, err := version2.LoadStableVersionNumber(versionsRepoDir, version2.KindChart, chartName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load version of chart %s in dir %s", chartName, versionsRepoDir)

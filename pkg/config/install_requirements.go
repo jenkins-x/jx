@@ -51,6 +51,16 @@ const (
 	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
 	// DefaultVersionsRef default version stream ref
 	DefaultVersionsRef = "master"
+	// DefaultProfileFile location of profle config
+	DefaultProfileFile = "profile.yaml"
+	// OpenSourceProfile constant for OSS profile
+	OpenSourceProfile = "oss"
+	// CloudBeesProfile constant for CloudBees profile
+	CloudBeesProfile = "cloudbees"
+	// DefaultBootRepository default git repo for boot
+	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
+	// DefaultCloudBeesBootRepository boot git repo to use when using cloudbees profile
+	DefaultCloudBeesBootRepository = "https://github.com/cloudbees/cloudbees-jenkins-x-boot-config.git"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments
@@ -86,6 +96,11 @@ type TLSConfig struct {
 	// Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production
 	// server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/
 	Production bool `json:"production"`
+}
+
+// JxInstallProfile contains the jx profile info
+type JxInstallProfile struct {
+	InstallType string
 }
 
 // StorageEntryConfig contains dns specific requirements for a kind of storage
@@ -202,6 +217,24 @@ func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
 	}
 	config, err := LoadRequirementsConfigFile(fileName)
 	return config, fileName, err
+}
+
+// LoadActiveInstallProfile loads the active install profile
+func LoadActiveInstallProfile() string {
+	jxHome, err := util.ConfigDir()
+	if err == nil {
+		profileSettingsFile := filepath.Join(jxHome, DefaultProfileFile)
+		exists, err := util.FileExists(profileSettingsFile)
+		if err == nil && exists {
+			jxProfle := JxInstallProfile{}
+			data, err := ioutil.ReadFile(profileSettingsFile)
+			err = yaml.Unmarshal(data, &jxProfle)
+			if err == nil {
+				return jxProfle.InstallType
+			}
+		}
+	}
+	return OpenSourceProfile
 }
 
 // GetParentDir returns the parent directory without a trailing separator

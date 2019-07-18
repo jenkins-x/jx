@@ -3,6 +3,7 @@ package profile
 import (
 	"errors"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -14,23 +15,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 )
 
-const (
-	// DefaultProfileFile location of profle config
-	DefaultProfileFile = "profile.yaml"
-	// OpenSourceProfile constant for OSS profile
-	OpenSourceProfile = "oss"
-	// CloudBeesProfile constant for CloudBees profile
-	CloudBeesProfile = "cloudbees"
-)
-
 // Profile contains the command line options
 type Profile struct {
 	*opts.CommonOptions
-}
-
-// JxProfile contains the jx profile info
-type JxProfile struct {
-	InstallType string
 }
 
 var (
@@ -73,22 +60,22 @@ func (o *Profile) Run() error {
 	if len(o.Args) < 1 {
 		return errors.New("Please specify a valid profile of cloudbees or oss ")
 	}
-	activatedProfle := OpenSourceProfile
-	if o.Args[0] == CloudBeesProfile {
-		activatedProfle = CloudBeesProfile
+	activatedProfle := config.OpenSourceProfile
+	if o.Args[0] == config.CloudBeesProfile {
+		activatedProfle = config.CloudBeesProfile
 	}
 	jxHome, err := util.ConfigDir()
 	if err != nil {
 		return err
 	}
-	profileSettingsFile := filepath.Join(jxHome, DefaultProfileFile)
-	jxProfle := JxProfile{
+	profileSettingsFile := filepath.Join(jxHome, config.DefaultProfileFile)
+	jxProfle := config.JxInstallProfile{
 		InstallType: activatedProfle,
 	}
 	data, err := yaml.Marshal(jxProfle)
 	if err == nil {
 		err = ioutil.WriteFile(profileSettingsFile, data, util.DefaultWritePermissions)
-		if activatedProfle == CloudBeesProfile {
+		if activatedProfle == config.CloudBeesProfile {
 			log.Logger().Info("Activating the CloudBees Jenkins X Distribution")
 		} else {
 			log.Logger().Info("Activating the Jenkins X Profile")
