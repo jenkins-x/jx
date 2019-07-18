@@ -121,6 +121,12 @@ type ClusterConfig struct {
 	Region string `json:"region,omitempty"`
 	// Zone the cloud zone being used
 	Zone string `json:"zone,omitempty"`
+	// ExternalDNSSAName the service account name for external dns
+	ExternalDNSSAName string `json:"externalDNSSAName,omitempty"`
+	// VaultSAName the service account name for vault
+	VaultSAName string `json:"vaultSAName,omitempty"`
+	// KanikoSAName the service account name for kaniko
+	KanikoSAName string `json:"kanikoSAName,omitempty"`
 }
 
 // VersionStreamConfig contains version stream config

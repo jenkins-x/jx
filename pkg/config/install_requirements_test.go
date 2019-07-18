@@ -25,6 +25,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	requirements.SecretStorage = expectedSecretStorage
 	requirements.Cluster.ClusterName = expectedClusterName
 	requirements.Ingress.Domain = expectedDomain
+	requirements.Kaniko = true
 
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
@@ -50,6 +51,27 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	assert.Equal(t, expectedDomain, requirements.Ingress.Domain, "requirements.Domain")
 }
 
+func TestRequirementsConfigMarshalExistingFileKanikoFalse(t *testing.T) {
+	t.Parallel()
+
+	dir, err := ioutil.TempDir("", "test-requirements-config-")
+	assert.NoError(t, err, "should create a temporary config dir")
+
+	file := filepath.Join(dir, config.RequirementsConfigFileName)
+	requirements := config.NewRequirementsConfig()
+	requirements.Kaniko = false
+
+	err = requirements.SaveConfig(file)
+	assert.NoError(t, err, "failed to save file %s", file)
+
+	requirements, fileName, err := config.LoadRequirementsConfig(dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", dir)
+	assert.FileExists(t, fileName)
+
+	assert.Equal(t, false, requirements.Kaniko, "requirements.Kaniko")
+
+}
+
 func TestRequirementsConfigMarshalInEmptyDir(t *testing.T) {
 	t.Parallel()
 
@@ -62,6 +84,7 @@ func TestRequirementsConfigMarshalInEmptyDir(t *testing.T) {
 	assert.NoError(t, err, "failed to check file exists %s", fileName)
 	assert.False(t, exists, "file should not exist %s", fileName)
 
-	assert.Equal(t, true, requirements.Kaniko, "requirements.Kaniko")
+	assert.Equal(t, config.WebhookTypeProw, requirements.Webhook, "requirements.WebhookTypeProw")
+	assert.Equal(t, false, requirements.Kaniko, "requirements.Kaniko")
 	assert.Equal(t, config.SecretStorageTypeLocal, requirements.SecretStorage, "requirements.SecretStorage")
 }
