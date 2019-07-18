@@ -94,9 +94,9 @@ type iamBinding struct {
 	Role    string   `json:"role"`
 }
 
-func (options *GCGKEOptions) addFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Flags.ProjectID, "project", "p", "", "The google project id to create the GC script for")
-	cmd.Flags().BoolVarP(&options.Flags.RunNow, "run-now", "", false, "Execute the script")
+func (o *GCGKEOptions) addFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Flags.ProjectID, "project", "p", "", "The google project id to create the GC script for")
+	cmd.Flags().BoolVarP(&o.Flags.RunNow, "run-now", "", false, "Execute the script")
 }
 
 // NewCmdGCGKE is a command object for the "step" command
@@ -224,9 +224,9 @@ set -euo pipefail
 	return err
 }
 
-func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
-	o := &opts.CommonOptions{}
-	data, err := o.GetCommandOutput("", "gcloud", "compute", "firewall-rules", "list", "--format", "json", "--project", p.Flags.ProjectID)
+func (o *GCGKEOptions) cleanUpFirewalls() (string, error) {
+	co := &opts.CommonOptions{}
+	data, err := co.GetCommandOutput("", "gcloud", "compute", "firewall-rules", "list", "--format", "json", "--project", o.Flags.ProjectID)
 	if err != nil {
 		return "", err
 	}
@@ -237,7 +237,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		return "", err
 	}
 
-	out, err := o.GetCommandOutput("", "gcloud", "container", "clusters", "list", "--project", p.Flags.ProjectID)
+	out, err := co.GetCommandOutput("", "gcloud", "container", "clusters", "list", "--project", o.Flags.ProjectID)
 	if err != nil {
 		return "", err
 	}
@@ -271,7 +271,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 	}
 
 	if nameToDelete != nil {
-		args := "gcloud compute firewall-rules delete --quiet --project " + p.Flags.ProjectID
+		args := "gcloud compute firewall-rules delete --quiet --project " + o.Flags.ProjectID
 		for _, name := range nameToDelete {
 			args = args + " " + name
 		}
@@ -345,7 +345,17 @@ func (o *GCGKEOptions) cleanUpAddresses() ([]string, error) {
 }
 
 func (o *GCGKEOptions) cleanUpServiceAccounts() ([]string, error) {
-	serviceAccounts, err := o.getFilteredServiceAccounts()
+	serviceAccounts, err := o.getServiceAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	clusters, err := o.getClusters()
+	if err != nil {
+		return nil, err
+	}
+
+	serviceAccounts, err = o.getFilteredServiceAccounts(serviceAccounts, clusters)
 	if err != nil {
 		return nil, err
 	}
@@ -353,6 +363,7 @@ func (o *GCGKEOptions) cleanUpServiceAccounts() ([]string, error) {
 
 	if len(serviceAccounts) > 0 {
 		for _, sa := range serviceAccounts {
+			log.Logger().Debugf("About to delete service account %s", sa)
 			line = append(line, fmt.Sprintf("gcloud iam service-accounts delete %s --quiet --project %s", sa.Email, o.Flags.ProjectID))
 		}
 	}
@@ -441,30 +452,39 @@ func (o *GCGKEOptions) getUnusedDisksForZone(z zone) ([]disk, error) {
 	return disks, nil
 }
 
-func (o *GCGKEOptions) getFilteredServiceAccounts() ([]serviceAccount, error) {
-	serviceAccounts, err := o.getServiceAccounts()
-	if err != nil {
-		return nil, err
-	}
-
-	clusters, err := o.getClusters()
-	if err != nil {
-		return nil, err
-	}
+func (o *GCGKEOptions) getFilteredServiceAccounts(serviceAccounts []serviceAccount, clusters []cluster) ([]serviceAccount, error) {
 
 	filteredServiceAccounts := []serviceAccount{}
 	for _, sa := range serviceAccounts {
 		if isServiceAccount(sa.DisplayName) {
 			sz := len(sa.DisplayName)
 			clusterName := sa.DisplayName[:sz-3]
-
-			if !o.clusterExists(clusters, clusterName) {
-				log.Logger().Debugf("cluster %s does not exist", clusterName)
-				filteredServiceAccounts = append(filteredServiceAccounts, sa)
+			if strings.HasPrefix(clusterName, "pr") {
+				// clusters with '-' in names such as BDD test clusters
+				// e.g. pr-331-170-gitop-vt
+				clusterNameParts := strings.Split(clusterName, "-")
+				if len(clusterNameParts) > 2 {
+					clusterNamePrefix := clusterNameParts[0] + "-" + clusterNameParts[1] + "-" + clusterNameParts[2]
+					if !o.clusterExistsWithPrefix(clusters, clusterNamePrefix) {
+						log.Logger().Debugf("cluster with prefix %s does not exist", clusterNamePrefix)
+						filteredServiceAccounts = append(filteredServiceAccounts, sa)
+						log.Logger().Debugf("Adding service account to filtered service account list %s", sa.DisplayName)
+					} else {
+						log.Logger().Debugf("cluster with prefix %s exists, excluding service account %s", clusterNamePrefix, sa.DisplayName)
+					}
+				}
+			} else {
+				if !o.clusterExists(clusters, clusterName) {
+					// clusters that don't start with pr
+					log.Logger().Debugf("cluster %s does not exist", clusterName)
+					filteredServiceAccounts = append(filteredServiceAccounts, sa)
+					log.Logger().Debugf("Adding service account to filtered service account list %s", sa.DisplayName)
+				} else {
+					log.Logger().Debugf("cluster %s exists, excluding service account %s", clusterName, sa.DisplayName)
+				}
 			}
 		}
 	}
-
 	return filteredServiceAccounts, nil
 }
 
@@ -487,6 +507,15 @@ func (o *GCGKEOptions) getServiceAccounts() ([]serviceAccount, error) {
 		}
 	}
 	return serviceAccounts, nil
+}
+
+func (o *GCGKEOptions) clusterExistsWithPrefix(clusters []cluster, clusterNamePrefix string) bool {
+	for _, cluster := range clusters {
+		if strings.HasPrefix(cluster.Name, clusterNamePrefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func (o *GCGKEOptions) clusterExists(clusters []cluster, clusterName string) bool {
