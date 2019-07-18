@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +18,15 @@ import (
 
 const (
 	basePath = "/api/v1"
+)
+
+var (
+	allowedDomainRegex = regexp.MustCompile("^(([a-zA-Z]{1})|" +
+		"([a-zA-Z]{1}[a-zA-Z]{1})|" +
+		"([a-zA-Z]{1}[0-9]{1})|" +
+		"([0-9]{1}[a-zA-Z]{1})|" +
+		"([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9])).([a-zA-Z]{2,6}|" +
+		"[a-zA-Z0-9-]{2,30}.[a-zA-Z]{2,3})$")
 )
 
 type tenantClient struct {
@@ -54,7 +65,7 @@ type Result struct {
 	Message string `json:"message"`
 }
 
-func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string) (string, error) {
+func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, gcloud gke.GClouder) (string, error) {
 	url := fmt.Sprintf("%s%s/domain", tenantServiceURL, basePath)
 	var domainName, reqBody = "", []byte{}
 	reqStruct := dRequest{
@@ -77,6 +88,29 @@ func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServ
 		domainName = d.Data.Subdomain
 	} else {
 		return "", errors.Errorf("projectID is empty")
+	}
+
+	err = ValidateDomainName(domainName)
+	if err != nil {
+		return "", errors.Wrap(err, "domain name failed validation")
+	}
+
+	// Checking whether dns api is enabled
+	err = gcloud.EnableAPIs(projectID, "dns")
+	if err != nil {
+		return "", errors.Wrap(err, "enabling the dns api")
+	}
+
+	// Create domain if it doesn't exist and return name servers list
+	managedZone, nameServers, err := gcloud.CreateDNSZone(projectID, domainName)
+	if err != nil {
+		return "", errors.Wrap(err, "while trying to create the tenants subdomain zone")
+	}
+
+	log.Logger().Infof("%s domain is operating on the following nameservers %v", domainName, nameServers)
+	err = tCli.PostTenantZoneNameServers(tenantServiceURL, tenantServiceAuth, projectID, domainName, managedZone, nameServers)
+	if err != nil {
+		return "", errors.Wrap(err, "posting the name service list to the tenant service")
 	}
 	return domainName, nil
 }
@@ -169,4 +203,19 @@ func getBasicAuthUserAndPassword(auth string) (string, string) {
 		return creds[0], creds[1]
 	}
 	return "", ""
+}
+
+// ValidateDomainName checks for compliance in a supplied domain name
+func ValidateDomainName(domain string) error {
+	// Check whether the domain is greater than 3 and fewer than 63 characters in length
+	if len(domain) < 3 || len(domain) > 63 {
+		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 63 characters", domain)
+		return err
+	}
+	// Ensure each part of the domain name only contains lower/upper case characters, numbers and dashes
+	if !allowedDomainRegex.MatchString(domain) {
+		err := fmt.Errorf("domain name %v contains invalid characters", domain)
+		return err
+	}
+	return nil
 }
