@@ -266,6 +266,23 @@ func (g *GCloud) BucketExists(projectID string, bucketName string) (bool, error)
 	return strings.Contains(output, fullBucketName), nil
 }
 
+// ListObjects checks if a Google Storage bucket exists
+func (g *GCloud) ListObjects(bucketName string, path string) ([]string, error) {
+	fullBucketName := fmt.Sprintf("gs://%s/%s", bucketName, path)
+	args := []string{"ls", fullBucketName}
+
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		log.Logger().Infof("Error checking bucket exists: %s, %s", output, err)
+		return []string{}, err
+	}
+	return strings.Split(output, "\n"), nil
+}
+
 // CreateBucket creates a new Google Storage bucket
 func (g *GCloud) CreateBucket(projectID string, bucketName string, location string) error {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
