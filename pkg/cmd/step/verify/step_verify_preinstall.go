@@ -281,7 +281,6 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 			if requirements.SecretStorage == config.SecretStorageTypeVault {
 				secretsLocation = string(secrets.VaultLocationKind)
 			}
-
 			modifyMapIfNotBlank(configMap.Data, kube.KubeProvider, requirements.Cluster.Provider)
 			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.Cluster.ProjectID)
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.Cluster.ClusterName)
@@ -296,14 +295,17 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 
 // gatherRequirements gathers cluster requirements and connects to the cluster if required
 func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.RequirementsConfig, requirementsFileName string) (*config.RequirementsConfig, error) {
-	isTerraform := os.Getenv("JX_REQUIREMENT_TERRAFORM")
 	if o.BatchMode {
+		isTerraform := os.Getenv("JX_REQUIREMENT_TERRAFORM")
 		if isTerraform == "true" {
 			requirements.Terraform = true
 			requirements.Cluster.ClusterName = os.Getenv("JX_REQUIREMENT_CLUSTER_NAME")
 			requirements.Cluster.ProjectID = os.Getenv("JX_REQUIREMENT_PROJECT")
 			requirements.Cluster.Zone = os.Getenv("JX_REQUIREMENT_ZONE")
 			requirements.Cluster.EnvironmentGitOwner = os.Getenv("JX_REQUIREMENT_ENV_GIT_OWNER")
+			requirements.Cluster.ExternalDNSSAName = os.Getenv("JX_REQUIREMENT_EXTERNALDNS_SA_NAME")
+			requirements.Cluster.VaultSAName = os.Getenv("JX_REQUIREMENT_VAULT_SA_NAME")
+			requirements.Cluster.KanikoSAName = os.Getenv("JX_REQUIREMENT_KANIKO_SA_NAME")
 			kaniko := os.Getenv("JX_REQUIREMENT_KANIKO")
 			if kaniko == "false" {
 				requirements.Kaniko = false

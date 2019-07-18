@@ -1,6 +1,6 @@
 // +build integration
 
-package verify_test
+package verify
 
 import (
 	"os"
@@ -68,6 +68,54 @@ func TestStepVerifyPreInstallNoKanikoLazyCreate(t *testing.T) {
 	assert.NoErrorf(t, err, "the command should not have failed as we should have lazily created the deploy namespace")
 }
 
+func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
+
+	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "set_cluster_req_via_envvar"))
+	// we default to lazy create if not using terraform
+	err = options.verifyInstallConfig()
+	assert.NoErrorf(t, err, "the command should not have failed as we should have lazily created the deploy namespace")
+
+	t.Parallel()
+
+	commonOpts := opts.CommonOptions{
+		BatchMode: false,
+	}
+	o := StepCreateInstallValuesOptions{
+		StepOptions: opts.StepOptions{
+			CommonOptions: &commonOpts,
+		},
+	}
+
+	dir, err := ioutil.TempDir("", "test_set_cluster_req_via_envvar")
+	assert.NoError(t, err, "should create a temporary config dir")
+
+	o.Dir = dir
+	file := filepath.Join(o.Dir, config.RequirementsConfigFileName)
+	requirements := getBaseRequirements()
+
+	// using nip.io on gke should disable the use of external dns as we cannot transfer domain ownership to google dns
+	requirements.Ingress.Domain = "34.76.24.247.nip.io"
+	requirements.Cluster.Provider = "gke"
+
+	err = requirements.SaveConfig(file)
+	assert.NoError(t, err, "failed to save file %s", file)
+
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	values := make(map[string]interface{})
+	_, err = o.defaultMissingValues(values)
+
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+
+	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	assert.FileExists(t, fileName)
+
+	assert.Equal(t, false, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
+
+}
 func createTestStepVerifyPreInstallOptions(dir string) *verify.StepVerifyPreInstallOptions {
 	options := &verify.StepVerifyPreInstallOptions{
 		DisableVerifyHelm:    true,
