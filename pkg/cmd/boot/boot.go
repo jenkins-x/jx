@@ -186,6 +186,12 @@ func (o *BootOptions) Run() error {
 	so.AdditionalEnvVars = map[string]string{
 		"JX_NO_TILLER": "true",
 	}
+
+	so.VersionResolver, err = o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem creating a version resolver from versions stream repository %s and ref %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	}
+
 	if o.BatchMode {
 		so.AdditionalEnvVars["JX_BATCH_MODE"] = "true"
 	}
