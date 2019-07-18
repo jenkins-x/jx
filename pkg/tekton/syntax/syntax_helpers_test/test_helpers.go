@@ -159,6 +159,29 @@ func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
 	}
 }
 
+// PipelineVolume adds a volume to the RootOptions for the pipeline
+func PipelineVolume(volume *corev1.Volume) PipelineOptionsOp {
+	return func(options *syntax.RootOptions) {
+		if options.Volumes == nil {
+			options.Volumes = []*corev1.Volume{}
+		}
+		options.Volumes = append(options.Volumes, volume)
+	}
+}
+
+// StageVolume adds a volume to the StageOptions for the stage
+func StageVolume(volume *corev1.Volume) StageOptionsOp {
+	return func(options *syntax.StageOptions) {
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
+		if options.Volumes == nil {
+			options.Volumes = []*corev1.Volume{}
+		}
+		options.Volumes = append(options.Volumes, volume)
+	}
+}
+
 // PipelineContainerOptions sets the containerOptions for the pipeline
 func PipelineContainerOptions(ops ...builder.ContainerOp) PipelineOptionsOp {
 	return func(options *syntax.RootOptions) {
