@@ -223,7 +223,10 @@ func (o *StepCreateInstallValuesOptions) defaultMissingValues(values map[string]
 		util.SetMapValueViaPath(values, "tls", true)
 	}
 
-	util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
+	sub := util.GetMapValueAsStringViaPath(values, "namespaceSubDomain")
+	if sub == "" {
+		util.SetMapValueViaPath(values, "namespaceSubDomain", subDomain)
+	}
 
 	projectID := util.GetMapValueAsStringViaPath(values, "projectID")
 	if projectID == "" {
