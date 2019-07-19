@@ -72,7 +72,7 @@ func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, 
 			prBuildNumber = findLegacyPipelineRunBuildNumber(&pr)
 		}
 		paName := createPipelineActivityName(pr.Labels, prBuildNumber)
-		if _, exists := paMap[paName]; exists {
+		if _, exists := paMap[paName]; exists && len(pr.Status.TaskRuns) > 0 {
 			nameWithContext := fmt.Sprintf("%s %s", paName, pr.Labels["context"])
 			replacePipelineActivityNameWithEnrichedName(paMap, paName, nameWithContext)
 			names = append(names, nameWithContext)
