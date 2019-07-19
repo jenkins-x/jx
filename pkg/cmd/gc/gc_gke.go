@@ -382,6 +382,10 @@ func (o *GCGKEOptions) cleanUpServiceAccounts() ([]string, error) {
 		return nil, err
 	}
 
+	if len(iam) == 0 {
+		line = append(line, "# No iam policy bindings found for deletion\n")
+	}
+
 	line = append(line, iam...)
 
 	if len(line) == 0 {
@@ -457,35 +461,38 @@ func (o *GCGKEOptions) getFilteredServiceAccounts(serviceAccounts []serviceAccou
 	filteredServiceAccounts := []serviceAccount{}
 	for _, sa := range serviceAccounts {
 		if isServiceAccount(sa.DisplayName) {
-			sz := len(sa.DisplayName)
-			clusterName := sa.DisplayName[:sz-3]
-			if strings.HasPrefix(clusterName, "pr") {
-				// clusters with '-' in names such as BDD test clusters
-				// e.g. pr-331-170-gitop-vt
-				clusterNameParts := strings.Split(clusterName, "-")
-				if len(clusterNameParts) > 2 {
-					clusterNamePrefix := clusterNameParts[0] + "-" + clusterNameParts[1] + "-" + clusterNameParts[2]
-					if !o.clusterExistsWithPrefix(clusters, clusterNamePrefix) {
-						log.Logger().Debugf("cluster with prefix %s does not exist", clusterNamePrefix)
-						filteredServiceAccounts = append(filteredServiceAccounts, sa)
-						log.Logger().Debugf("Adding service account to filtered service account list %s", sa.DisplayName)
-					} else {
-						log.Logger().Debugf("cluster with prefix %s exists, excluding service account %s", clusterNamePrefix, sa.DisplayName)
-					}
-				}
-			} else {
-				if !o.clusterExists(clusters, clusterName) {
-					// clusters that don't start with pr
-					log.Logger().Debugf("cluster %s does not exist", clusterName)
-					filteredServiceAccounts = append(filteredServiceAccounts, sa)
-					log.Logger().Debugf("Adding service account to filtered service account list %s", sa.DisplayName)
-				} else {
-					log.Logger().Debugf("cluster %s exists, excluding service account %s", clusterName, sa.DisplayName)
-				}
+			if o.shouldRemoveServiceAccount(sa.DisplayName, clusters) {
+				log.Logger().Debugf("Adding service account to filtered service account list %s", sa.DisplayName)
+				filteredServiceAccounts = append(filteredServiceAccounts, sa)
 			}
 		}
 	}
 	return filteredServiceAccounts, nil
+}
+
+func (o *GCGKEOptions) shouldRemoveServiceAccount(saDisplayName string, clusters []cluster) bool {
+	sz := len(saDisplayName)
+	clusterName := saDisplayName[:sz-3]
+	if strings.HasPrefix(clusterName, "pr") {
+		// clusters with '-' in names such as BDD test clusters
+		// e.g. pr-331-170-gitop-vt
+		clusterNameParts := strings.Split(clusterName, "-")
+		if len(clusterNameParts) > 2 {
+			clusterNamePrefix := clusterNameParts[0] + "-" + clusterNameParts[1] + "-" + clusterNameParts[2]
+			if !o.clusterExistsWithPrefix(clusters, clusterNamePrefix) {
+				log.Logger().Debugf("cluster with prefix %s does not exist", clusterNamePrefix)
+				return true
+			}
+		}
+	} else {
+		if !o.clusterExists(clusters, clusterName) {
+			// clusters that don't start with pr
+			log.Logger().Debugf("cluster %s does not exist", clusterName)
+			return true
+		}
+	}
+	log.Logger().Debugf("cluster %s exists, excluding service account %s", clusterName, saDisplayName)
+	return false
 }
 
 func (o *GCGKEOptions) getServiceAccounts() ([]serviceAccount, error) {
@@ -566,10 +573,7 @@ func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, e
 				displayName := saName[:strings.IndexByte(saName, '@')]
 
 				if isServiceAccount(displayName) {
-					sz := len(displayName)
-					clusterName := displayName[:sz-3]
-
-					if !o.clusterExists(clusters, clusterName) {
+					if o.shouldRemoveServiceAccount(displayName, clusters) {
 						cmd := fmt.Sprintf("gcloud projects remove-iam-policy-binding %s --member=%s --role=%s --quiet", o.Flags.ProjectID, m, b.Role)
 						line = append(line, cmd)
 					}
