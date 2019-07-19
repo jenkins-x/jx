@@ -592,8 +592,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 
 			// lets ensure that there's git repositories setup
 			o.ensureTestEnvironmentRepoSetup(requirements, "staging")
-			// TODO lets not do production just yet to avoid making too many git repos on github.com
-			//ensureTestEnvironmentRepoSetup(requirements, "production")
+			o.ensureTestEnvironmentRepoSetup(requirements, "production")
 
 			err = requirements.SaveConfig(requirementsFile)
 			if err != nil {
