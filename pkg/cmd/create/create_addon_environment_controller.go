@@ -24,17 +24,18 @@ import (
 
 const (
 	DefaultEnvCtrlReleaseName = "jxet"
+	DefaultEnvCtrlNamespace   = "jx"
 )
 
 var (
 	createAddonEnvironmentControllerLong = templates.LongDesc(`
-		Create an Environment Controller to handle webhooks and promote changes from GitOps 
+		Create an Environment Controller to handle webhooks and promote changes from GitOps
 `)
 
 	createAddonEnvironmentControllerExample = templates.Examples(`
 		# Creates the environment controller using a specific environment git repository, project, git user, chart repo
 		jx create addon envctl -s https://github.com/myorg/env-production.git --project-id myproject --docker-registry gcr.io --cluster-rbac true --user mygituser --token mygittoken
-		
+
 	`)
 )
 
@@ -269,7 +270,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		Chart:          "environment-controller",
 		ReleaseName:    o.ReleaseName,
 		Version:        o.Version,
-		Ns:             ns,
+		Ns:             o.Namespace,
 		SetValues:      setValues,
 		HelmUpdate:     true,
 		Repository:     kube.DefaultChartMuseumURL,
