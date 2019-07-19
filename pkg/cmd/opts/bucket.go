@@ -3,12 +3,13 @@ package opts
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"io"
 	"net/url"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
@@ -101,7 +102,7 @@ func (o *CommonOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket, cb *Cre
 		}
 	}
 	if cb.GKEProjectID == "" {
-		cb.GKEProjectID, err = o.GetGoogleProjectId()
+		cb.GKEProjectID, err = o.GetGoogleProjectID("")
 		if err != nil {
 			return err
 		}

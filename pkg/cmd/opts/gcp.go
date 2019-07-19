@@ -15,8 +15,8 @@ import (
 // GkeClusterListHeader header name for GCP project ID when listing the GKE clusters
 const GkeClusterListHeader = "PROJECT_ID"
 
-// GetGoogleProjectId asks to chose from existing projects or optionally creates one if none exist
-func (o *CommonOptions) GetGoogleProjectId() (string, error) {
+// GetGoogleProjectID asks to chose from existing projects or optionally creates one if none exist
+func (o *CommonOptions) GetGoogleProjectID(defaultProject string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	out, err := o.GetCommandOutput("", "gcloud", "projects", "list")
 	if err != nil {
@@ -61,7 +61,9 @@ func (o *CommonOptions) GetGoogleProjectId() (string, error) {
 			Help:    "Select a Google Project to create the cluster in",
 		}
 
-		if currentProject, err := gke.GetCurrentProject(); err == nil && currentProject != "" {
+		if defaultProject != "" {
+			prompts.Default = defaultProject
+		} else if currentProject, err := gke.GetCurrentProject(); err == nil && currentProject != "" {
 			prompts.Default = currentProject
 		}
 
@@ -79,12 +81,16 @@ func (o *CommonOptions) GetGoogleProjectId() (string, error) {
 }
 
 // GetGoogleZone returns the GCP zone
-func (o *CommonOptions) GetGoogleZone(projectId string) (string, error) {
-	configuredZone, err := o.GetCommandOutput("", "gcloud", "config", "get-value", "compute/zone")
-	if err != nil {
-		return "", errors.Wrap(err, "getting google zone")
+func (o *CommonOptions) GetGoogleZone(projectID string, defaultZone string) (string, error) {
+	if defaultZone == "" {
+		var err error
+		defaultZone, err = o.GetCommandOutput("", "gcloud", "config", "get-value", "compute/zone")
+		if err != nil {
+			return "", errors.Wrap(err, "getting google zone")
+		}
 	}
-	return o.GetGoogleZoneWithDefault(projectId, configuredZone)
+
+	return o.GetGoogleZoneWithDefault(projectID, defaultZone)
 }
 
 // GetGoogleRegion returns the GCP region

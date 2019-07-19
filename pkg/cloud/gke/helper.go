@@ -4,6 +4,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -139,4 +141,13 @@ func GetGoogleMachineTypes() []string {
 		"n1-highcpu-64",
 		"n1-highcpu-96",
 	}
+}
+
+// ParseContext parses the context string for GKE and gets the GKE project, GKE zone and cluster name
+func ParseContext(context string) (string, string, string, error) {
+	parts := strings.Split(context, "_")
+	if len(parts) != 4 {
+		return "", "", "", errors.Errorf("unable to parse %s as <project id>_<zone>_<cluster name>", context)
+	}
+	return parts[1], parts[2], parts[3], nil
 }

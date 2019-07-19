@@ -34,15 +34,15 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -59,8 +59,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -2237,7 +2237,7 @@ func (options *InstallOptions) ConfigureKaniko() error {
 			}
 		}
 		if projectID == "" {
-			projectID, err = options.GetGoogleProjectId()
+			projectID, err = options.GetGoogleProjectID("")
 			if err != nil {
 				return errors.Wrap(err, "getting the GCP project ID")
 			}
@@ -2508,7 +2508,7 @@ func (options *InstallOptions) ensureGKEInstallValuesAreFilled() error {
 	}
 
 	if options.installValues[kube.Zone] == "" {
-		gcpCurrentZone, err := options.GetGoogleZone(options.installValues[kube.ProjectID])
+		gcpCurrentZone, err := options.GetGoogleZone(options.installValues[kube.ProjectID], "")
 		if err != nil {
 			return errors.Wrap(err, "asking for the zone to create the bucket into")
 		}

@@ -2,9 +2,10 @@ package create
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
 	"github.com/jenkins-x/jx/pkg/config"
-	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -243,7 +244,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	}
 
 	if o.GKEProjectID == "" {
-		o.GKEProjectID, err = o.GetGoogleProjectId()
+		o.GKEProjectID, err = o.GetGoogleProjectID("")
 		if err != nil {
 			return err
 		}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/factory"
@@ -246,27 +248,55 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 			}
 
 			if requirements.Cluster.Provider == cloud.GKE {
+				var currentProject, currentZone, currentClusterName string
+				autoAcceptDefaults := false
+				if requirements.Cluster.ProjectID == "" || requirements.Cluster.Zone == "" || requirements.Cluster.ClusterName == "" {
+					kubeConfig, _, err := o.Kube().LoadConfig()
+					if err != nil {
+						return errors.Wrapf(err, "loading kubeconfig")
+					}
+					context := kube.Cluster(kubeConfig)
+					currentProject, currentZone, currentClusterName, err = gke.ParseContext(context)
+					if err != nil {
+						return errors.Wrapf(err, "")
+					}
+					if currentClusterName != "" && currentProject != "" && currentZone != "" {
+						log.Logger().Infof("")
+						log.Logger().Infof("Currently connected cluster is %s in %s in project %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentZone), util.ColorInfo(currentProject))
+						autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
+					} else {
+						log.Logger().Infof("Enter the cluster you want to jx boot")
+					}
+				}
+
 				if requirements.Cluster.ProjectID == "" {
-					requirements.Cluster.ProjectID, err = o.GetGoogleProjectId()
+					if autoAcceptDefaults && currentProject != "" {
+						requirements.Cluster.ProjectID = currentProject
+					} else {
+						requirements.Cluster.ProjectID, err = o.GetGoogleProjectID(currentProject)
+					}
 				}
 				if requirements.Cluster.Zone == "" {
-					requirements.Cluster.Zone, err = o.GetGoogleZone(requirements.Cluster.ProjectID)
-					if err != nil {
-						return errors.Wrap(err, "getting GKE Zone")
+					if autoAcceptDefaults && currentZone != "" {
+						requirements.Cluster.Zone = currentZone
+					} else {
+						requirements.Cluster.Zone, err = o.GetGoogleZone(requirements.Cluster.ProjectID, currentZone)
+						if err != nil {
+							return errors.Wrap(err, "getting GKE Zone")
+						}
 					}
 				}
 				if requirements.Cluster.ClusterName == "" {
-					kubeConfig, _, err := o.Kube().LoadConfig()
-					context := kube.Cluster(kubeConfig)
-					defaultClusterName := clusterNameFromContext(context)
-					if defaultClusterName != "" {
-						log.Logger().Infof("Currently connected cluster is %s", util.ColorInfo(defaultClusterName))
+					if autoAcceptDefaults && currentClusterName != "" {
+						requirements.Cluster.ClusterName = currentClusterName
+					} else {
+						requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
+							"The name for your cluster", o.In, o.Out, o.Err)
+						if err != nil {
+							return errors.Wrap(err, "getting GKE Zone")
+						}
 					}
-					requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", defaultClusterName, true,
-						"The name for your cluster", o.In, o.Out, o.Err)
-					if err != nil {
-						return errors.Wrap(err, "getting GKE Zone")
-					}
+
 				}
 			} else {
 				// lets check we want to try installation as we've only tested on GKE at the moment
@@ -461,16 +491,4 @@ func modifyMapIfNotBlank(m map[string]string, key string, value string) {
 	if value != "" {
 		m[key] = value
 	}
-}
-
-func clusterNameFromContext(context string) string {
-	pos := strings.LastIndex(context, "_")
-	if pos == -1 {
-		return ""
-	}
-	adjustedPos := pos + 1
-	if adjustedPos >= len(context) {
-		return ""
-	}
-	return context[adjustedPos:]
 }
