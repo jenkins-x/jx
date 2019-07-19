@@ -1,6 +1,6 @@
 # JX 
 
-JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.io/)
+JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.io/)
 
 
 [![GoDoc](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://godoc.org/github.com/jenkins-x/jx)
@@ -12,15 +12,15 @@ JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.
 [![Reviewed by Hound](https://img.shields.io/badge/reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 [![Coverage Status](https://codecov.io/gh/jenkins-x/jx/branch/master/graph/badge.svg)](https://codecov.io/gh/jenkins-x/jx)
 
-<a href="http://jenkins-x.io/">
-  <img src="http://jenkins-x.io/img/profile.png" alt="Jenkins X icon" width="100" height="123"/>
+<a href="https://jenkins-x.io/">
+  <img src="https://jenkins-x.io/img/profile.png" alt="Jenkins X icon" width="100" height="123"/>
 </a>
 
 
 
 ## Installing
 
-Check out [how to install jx](http://jenkins-x.io/getting-started/install/)
+Check out [how to install jx](https://jenkins-x.io/getting-started/install/)
 
 ## Getting Help
 
@@ -32,20 +32,20 @@ Or to get help on a specific command, say, `create` then type:
 
     jx help create
 
-You can also browse the [jx command reference documentation](http://jenkins-x.io/commands/jx/)
+You can also browse the [jx command reference documentation](https://jenkins-x.io/commands/jx/)
 
 ## Getting Started
 
-Please check out the [Getting Started Guide](http://jenkins-x.io/getting-started/) on how to 
+Please check out the [Getting Started Guide](https://jenkins-x.io/getting-started/) on how to 
 
-* [create new Kubernetes clusters with Jenkins X](http://jenkins-x.io/getting-started/create-cluster/)
-* [install Jenkins X on existing clusters](http://jenkins-x.io/getting-started/install-on-cluster/)
+* [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/getting-started/create-cluster/)
+* [install Jenkins X on existing clusters](https://jenkins-x.io/getting-started/install-on-cluster/)
 
-Then [what to do next when you have Jenkins X installed](http://jenkins-x.io/getting-started/next/)
+Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/getting-started/next/)
     
 ## Reference
 
-* [Command Line Reference](http://jenkins-x.io/commands/jx/#jx)
+* [Command Line Reference](https://jenkins-x.io/commands/jx/#jx)
   
   
 ## Opening Consoles
