@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -16,8 +17,8 @@ var (
 `)
 
 	deleteAddonEnvironmentControllerExample = templates.Examples(`
-		# Deletes the environment controller 
-		jx delete addon envctl 
+		# Deletes the environment controller
+		jx delete addon envctl
 	`)
 )
 
@@ -26,6 +27,7 @@ type DeleteAddonEnvironmentControllerOptions struct {
 	DeleteAddonOptions
 
 	ReleaseName string
+	Namespace   string
 }
 
 // NewCmdDeleteAddonEnvironmentController creates a command object for the "create" command
@@ -51,6 +53,7 @@ func NewCmdDeleteAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 	}
 
 	cmd.Flags().StringVarP(&options.ReleaseName, opts.OptionRelease, "r", create.DefaultEnvCtrlReleaseName, "The chart release name")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", create.DefaultEnvCtrlNamespace, "The Namespace to delete from")
 	options.addFlags(cmd)
 	return cmd
 }
@@ -62,9 +65,9 @@ func (o *DeleteAddonEnvironmentControllerOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(opts.OptionRelease)
 	}
-	err := o.DeleteChart(o.ReleaseName, o.Purge)
+	err := o.Helm().DeleteRelease(o.Namespace, o.ReleaseName, o.Purge)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to delete environment-controller chart")
 	}
 	log.Logger().Infof("Addon %s deleted successfully", util.ColorInfo(o.ReleaseName))
 
