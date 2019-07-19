@@ -317,15 +317,15 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 // verifyStorage verifies the associated buckets exist or if enabled lazily create them
 func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.RequirementsConfig, requirementsFileName string) error {
 	storage := &requirements.Storage
-	err := o.verifyStorageEntry(requirements, requirementsFileName, &storage.Logs, "Logs")
+	err := o.verifyStorageEntry(requirements, requirementsFileName, &storage.Logs, "logs", "Long term log storage")
 	if err != nil {
 		return err
 	}
-	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Reports, "Reports")
+	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Reports, "reports", "Long term report storage")
 	if err != nil {
 		return err
 	}
-	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Repository, "Repository")
+	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Repository, "repository", "Chart repository")
 	if err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 	return nil
 }
 
-func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.RequirementsConfig, requirementsFileName string, storageEntryConfig *config.StorageEntryConfig, name string) error {
+func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.RequirementsConfig, requirementsFileName string, storageEntryConfig *config.StorageEntryConfig, name string, text string) error {
 	kubeProvider := requirements.Cluster.Provider
 	if !storageEntryConfig.Enabled {
 		if requirements.IsCloudProvider() {
@@ -354,8 +354,8 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 		if scheme == "" {
 			scheme = "s3"
 		}
-		message := fmt.Sprintf("storage bucket URL (%s://bucketName) for %s: ", scheme, name)
-		help := fmt.Sprintf("please enter the URL of the bucket to use for storage like %s://bucketName or leave blank to disable cloud storage", scheme)
+		message := fmt.Sprintf("%s bucket URL. Press enter to create and use a new bucket", text)
+		help := fmt.Sprintf("please enter the URL of the bucket to use for storage using the format %s://<bucket-name>", scheme)
 		value, err := util.PickValue(message, "", false, help, o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrapf(err, "failed to pick storage bucket for %s", name)
@@ -363,8 +363,8 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 
 		if value == "" {
 			if provider == nil {
-				log.Logger().Warnf("the kubernete provider %s has no BucketProvider in jx yet so we cannot lazily create buckets - so long term stor\n", kubeProvider)
-				log.Logger().Warnf("long term storage for %s will be disabled until you provide an existing bucket URL\n", name)
+				log.Logger().Warnf("the kubernetes provider %s has no BucketProvider in jx yet so we cannot lazily create buckets", kubeProvider)
+				log.Logger().Warnf("long term storage for %s will be disabled until you provide an existing bucket URL", name)
 				return nil
 			}
 			safeClusterName := naming.ToValidName(requirements.Cluster.ClusterName)
@@ -386,7 +386,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 
 	if storageEntryConfig.URL != "" {
 		if provider == nil {
-			log.Logger().Warnf("the kubernete provider %s has no BucketProvider in jx yet - so you have to manually setup and verify your bucket URLs exist\n", kubeProvider)
+			log.Logger().Warnf("the kubernetes provider %s has no BucketProvider in jx yet - so you have to manually setup and verify your bucket URLs exist\n", kubeProvider)
 			log.Logger().Infof("please verify this bucket exists: %s\n", util.ColorInfo(storageEntryConfig.URL))
 			return nil
 		}
