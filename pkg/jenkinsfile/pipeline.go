@@ -689,7 +689,7 @@ func ExtendPipelines(pipelineName string, parent, base *PipelineLifecycles, over
 	for _, override := range overrides {
 		if override.MatchesPipeline(pipelineName) {
 			// If no name, stage, or agent is specified, remove the whole pipeline.
-			if override.Name == "" && override.Stage == "" && override.Agent == nil {
+			if override.Name == "" && override.Stage == "" && override.Agent == nil && override.ContainerOptions == nil && len(override.Volumes) == 0 {
 				return &PipelineLifecycles{}
 			}
 
