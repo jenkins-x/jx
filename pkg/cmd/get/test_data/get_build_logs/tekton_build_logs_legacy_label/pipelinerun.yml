@@ -34,3 +34,15 @@ spec:
         name: fakeowner-fakerepo-fakebranch
   serviceAccount: tekton-bot
   timeout: 240h0m0s
+status:
+  conditions:
+    - lastTransitionTime: 2019-07-19T18:30:02Z
+      message: Not all Tasks in the Pipeline have finished executing
+      reason: Running
+      status: Unknown
+      type: Succeeded
+  startTime: 2019-07-19T18:30:02Z
+  taskRuns:
+    faketaskrun:
+      pipelineTaskName: faketask
+      status:

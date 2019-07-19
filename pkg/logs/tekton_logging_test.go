@@ -63,6 +63,9 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
+	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{}
+
 	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      "PR1",
@@ -79,6 +82,9 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 				{Name: "version", Value: "v1"},
 				{Name: "build_id", Value: "1"},
 			},
+		},
+		Status: v1alpha1.PipelineRunStatus{
+			TaskRuns: taskRunStatusMap,
 		},
 	})
 	assert.NoError(t, err)
