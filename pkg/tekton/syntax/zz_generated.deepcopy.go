@@ -165,6 +165,27 @@ func (in *PipelineOverride) DeepCopyInto(out *PipelineOverride) {
 			**out = **in
 		}
 	}
+	if in.ContainerOptions != nil {
+		in, out := &in.ContainerOptions, &out.ContainerOptions
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(v1.Container)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	if in.Volumes != nil {
+		in, out := &in.Volumes, &out.Volumes
+		*out = make([]*v1.Volume, len(*in))
+		for i := range *in {
+			if (*in)[i] == nil {
+				(*out)[i] = nil
+			} else {
+				(*out)[i] = new(v1.Volume)
+				(*in)[i].DeepCopyInto((*out)[i])
+			}
+		}
+	}
 	return
 }
 

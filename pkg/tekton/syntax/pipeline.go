@@ -253,13 +253,15 @@ var allOverrideTypes = []StepOverrideType{StepOverrideReplace, StepOverrideBefor
 
 // PipelineOverride allows for overriding named steps, stages, or pipelines in the build pack or default pipeline
 type PipelineOverride struct {
-	Pipeline string            `json:"pipeline,omitempty"`
-	Stage    string            `json:"stage,omitempty"`
-	Name     string            `json:"name,omitempty"`
-	Step     *Step             `json:"step,omitempty"`
-	Steps    []*Step           `json:"steps,omitempty"`
-	Type     *StepOverrideType `json:"type,omitempty"`
-	Agent    *Agent            `json:"agent,omitempty"`
+	Pipeline         string            `json:"pipeline,omitempty"`
+	Stage            string            `json:"stage,omitempty"`
+	Name             string            `json:"name,omitempty"`
+	Step             *Step             `json:"step,omitempty"`
+	Steps            []*Step           `json:"steps,omitempty"`
+	Type             *StepOverrideType `json:"type,omitempty"`
+	Agent            *Agent            `json:"agent,omitempty"`
+	ContainerOptions *corev1.Container `json:"containerOptions,omitempty"`
+	Volumes          []*corev1.Volume  `json:"volumes,omitempty"`
 }
 
 var _ apis.Validatable = (*ParsedPipeline)(nil)
@@ -1869,6 +1871,28 @@ func ExtendParsedPipeline(pipeline *ParsedPipeline, override *PipelineOverride) 
 	if override.Agent != nil {
 		pipeline.Agent = override.Agent
 	}
+	if override.ContainerOptions != nil {
+		containerOptionsCopy := *override.ContainerOptions
+		if pipeline.Options == nil {
+			pipeline.Options = &RootOptions{}
+		}
+		if pipeline.Options.ContainerOptions == nil {
+			pipeline.Options.ContainerOptions = &containerOptionsCopy
+		} else {
+			mergedContainer, err := MergeContainers(pipeline.Options.ContainerOptions, &containerOptionsCopy)
+			if err != nil {
+				log.Logger().Warnf("couldn't merge override container options: %s", err)
+			} else {
+				pipeline.Options.ContainerOptions = mergedContainer
+			}
+		}
+	}
+	if len(override.Volumes) > 0 {
+		if pipeline.Options == nil {
+			pipeline.Options = &RootOptions{}
+		}
+		pipeline.Options.Volumes = append(pipeline.Options.Volumes, override.Volumes...)
+	}
 
 	var newStages []Stage
 	for _, s := range pipeline.Stages {
@@ -1931,9 +1955,37 @@ func ExtendStage(stage Stage, override *PipelineOverride) Stage {
 			// we're removing this stage, so return an empty stage.
 			if len(newSteps) > 0 {
 				stage.Steps = newSteps
-			} else if override.Agent == nil {
+			} else if override.Agent == nil && override.ContainerOptions == nil && len(override.Volumes) == 0 {
 				return Stage{}
 			}
+		}
+
+		if override.ContainerOptions != nil {
+			containerOptionsCopy := *override.ContainerOptions
+			if stage.Options == nil {
+				stage.Options = &StageOptions{
+					RootOptions: &RootOptions{},
+				}
+			}
+			if stage.Options.ContainerOptions == nil {
+				stage.Options.ContainerOptions = &containerOptionsCopy
+			} else {
+				mergedContainer, err := MergeContainers(stage.Options.ContainerOptions, &containerOptionsCopy)
+				if err != nil {
+					log.Logger().Warnf("couldn't merge override container options: %s", err)
+				} else {
+					stage.Options.ContainerOptions = mergedContainer
+				}
+			}
+		}
+
+		if len(override.Volumes) > 0 {
+			if stage.Options == nil {
+				stage.Options = &StageOptions{
+					RootOptions: &RootOptions{},
+				}
+			}
+			stage.Options.Volumes = append(stage.Options.Volumes, override.Volumes...)
 		}
 	}
 	if len(stage.Stages) > 0 {

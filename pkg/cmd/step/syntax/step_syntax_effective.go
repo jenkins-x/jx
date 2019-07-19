@@ -379,11 +379,6 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 
 	if lifecycles != nil && lifecycles.Pipeline != nil {
 		parsed = lifecycles.Pipeline
-		for _, override := range pipelines.Overrides {
-			if override.MatchesPipeline(kind) {
-				parsed = syntax.ExtendParsedPipeline(parsed, override)
-			}
-		}
 	} else {
 		args := jenkinsfile.CreatePipelineArguments{
 			Lifecycles:        lifecycles,
@@ -420,6 +415,12 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 			return nil, errors.Wrapf(err, "Could not merge containerOptions from parent")
 		}
 		parsed.Options.ContainerOptions = mergedContainer
+	}
+
+	for _, override := range pipelines.Overrides {
+		if override.MatchesPipeline(kind) {
+			parsed = syntax.ExtendParsedPipeline(parsed, override)
+		}
 	}
 
 	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
