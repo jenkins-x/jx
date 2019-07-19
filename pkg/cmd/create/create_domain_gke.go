@@ -1,11 +1,12 @@
 package create
 
 import (
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -75,7 +76,7 @@ func (o *DomainGKEOptions) Run() error {
 		if o.BatchMode {
 			return errors.Wrapf(err, "please provide a Google Project ID using --%s  when running in batch mode", ProjectID)
 		}
-		o.ProjectID, err = o.GetGoogleProjectId()
+		o.ProjectID, err = o.GetGoogleProjectID("")
 		if err != nil {
 			return errors.Wrap(err, "while trying to get Google Project ID")
 		}

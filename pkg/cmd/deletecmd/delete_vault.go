@@ -155,11 +155,11 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 	}
 
 	if o.GKEProjectID == "" {
-		projectId, err := o.GetGoogleProjectId()
+		projectID, err := o.GetGoogleProjectID("")
 		if err != nil {
 			return err
 		}
-		o.GKEProjectID = projectId
+		o.GKEProjectID = projectID
 	}
 	err = o.RunCommandVerbose("gcloud", "config", "set", "project", o.GKEProjectID)
 	if err != nil {
@@ -167,7 +167,7 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 	}
 
 	if o.GKEZone == "" {
-		zone, err := o.GetGoogleZone(o.GKEProjectID)
+		zone, err := o.GetGoogleZone(o.GKEProjectID, "")
 		if err != nil {
 			return err
 		}

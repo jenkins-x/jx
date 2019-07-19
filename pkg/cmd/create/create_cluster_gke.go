@@ -214,7 +214,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	projectId := o.Flags.ProjectId
 	if projectId == "" {
-		projectId, err = o.GetGoogleProjectId()
+		projectId, err = o.GetGoogleProjectID("")
 		if err != nil {
 			return err
 		}
@@ -304,7 +304,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 					return err
 				}
 			} else {
-				zone, err = o.GetGoogleZone(projectId)
+				zone, err = o.GetGoogleZone(projectId, "")
 				if err != nil {
 					return err
 				}

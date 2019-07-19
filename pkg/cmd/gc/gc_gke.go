@@ -3,6 +3,7 @@ package gc
 import (
 	"strings"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -15,7 +16,6 @@ import (
 
 	"os"
 
-	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -135,11 +135,11 @@ func (o *GCGKEOptions) Run() error {
 			}
 			o.Flags.ProjectID = projectID
 		} else {
-			projectId, err := o.GetGoogleProjectId()
+			projectID, err := o.GetGoogleProjectID("")
 			if err != nil {
 				return err
 			}
-			o.Flags.ProjectID = projectId
+			o.Flags.ProjectID = projectID
 		}
 	}
 
