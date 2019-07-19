@@ -517,7 +517,6 @@ func ApplySchedulersDirectly(jxClient versioned.Interface, namespace string, sou
 
 //GitOpsOptions are options for running AddToEnvironmentRepo
 type GitOpsOptions struct {
-	ConfigureGitFn  gits.ConfigureGitFn
 	Gitter          gits.Gitter
 	Verbose         bool
 	Helmer          helm.Helmer
@@ -570,7 +569,6 @@ func (o *GitOpsOptions) AddToEnvironmentRepo(cfg *config.Config, plugs *plugins.
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitFn,
 		Gitter:        o.Gitter,
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   o.GitProvider,
@@ -706,7 +704,6 @@ func (o *GitOpsOptions) AddSchedulersToEnvironmentRepo(sourceRepositoryGroups []
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitFn,
 		Gitter:        o.Gitter,
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   o.GitProvider,

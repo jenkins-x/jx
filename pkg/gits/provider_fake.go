@@ -1,9 +1,11 @@
 package gits
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	errors2 "github.com/pkg/errors"
 )
 
@@ -63,11 +66,14 @@ type FakeRepository struct {
 	issueCount         int
 	Releases           map[string]*GitRelease
 	PullRequestCounter int
+	BaseDir            string
+	CloneDir           string
 }
 
 type FakeProvider struct {
-	Server             auth.AuthServer
-	User               auth.UserAuth
+	Server auth.AuthServer
+	User   auth.UserAuth
+
 	Organizations      []GitOrganisation
 	Repositories       map[string][]*FakeRepository
 	ForkedRepositories map[string][]*FakeRepository
@@ -108,12 +114,22 @@ func (f *FakeProvider) CreateRepository(org string, name string, private bool) (
 
 func (f *FakeProvider) GetRepository(org string, name string) (*GitRepository, error) {
 	repos, ok := f.Repositories[org]
-	if !ok {
-		return nil, fmt.Errorf("organization '%s' not found", org)
-	}
-	for _, repo := range repos {
-		if repo.GitRepo.Name == name {
-			return repo.GitRepo, nil
+	if ok {
+		for _, repo := range repos {
+			if repo.GitRepo.Name == name {
+				return repo.GitRepo, nil
+			}
+		}
+	} else {
+		repos, ok := f.ForkedRepositories[org]
+		if ok {
+			for _, repo := range repos {
+				if repo.GitRepo.Name == name {
+					return repo.GitRepo, nil
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("organization '%s' not found", org)
 		}
 	}
 	return nil, fmt.Errorf("repository '%s' not found within the organization '%s'", name, org)
@@ -126,14 +142,43 @@ func (f *FakeProvider) DeleteRepository(org string, name string) error {
 			return nil
 		}
 	}
+	// Now look to see if there is a fork
 	return fmt.Errorf("repository '%s' not found within the organization '%s'", name, org)
 }
 
 func (f *FakeProvider) ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error) {
 	for _, repo := range f.Repositories[originalOrg] {
 		if repo.GitRepo.Name == name {
-			f.ForkedRepositories[destinationOrg] = append(f.ForkedRepositories[destinationOrg], repo)
-			return repo.GitRepo, nil
+			if destinationOrg == "" {
+				destinationOrg = f.User.Username
+			}
+			data, err := json.Marshal(repo)
+			if err != nil {
+				return nil, errors.Wrapf(err, "copying %+v", data)
+			}
+			fork := FakeRepository{}
+			err = json.Unmarshal(data, &fork)
+			if err != nil {
+				return nil, errors.Wrapf(err, "copying %+v", data)
+			}
+			fork.Owner = destinationOrg
+			fork.GitRepo.Organisation = destinationOrg
+			fork.GitRepo.Fork = true
+			fork.GitRepo.URL = fmt.Sprintf("https://fake.git/%s/%s.git", destinationOrg, name)
+			fork.GitRepo.HTMLURL = fmt.Sprintf("https://fake.git/%s/%s", destinationOrg, name)
+			fork.GitRepo.Project = destinationOrg
+			if fork.BaseDir != "" {
+				fork.CloneDir = filepath.Join(fork.BaseDir, destinationOrg)
+				err := util.CopyDir(repo.CloneDir, fork.CloneDir, true)
+				if err != nil {
+					return nil, errors.WithStack(err)
+				}
+				fork.GitRepo.CloneURL = fmt.Sprintf("file://%s", fork.CloneDir)
+			} else {
+				fork.GitRepo.CloneURL = fmt.Sprintf("https://fake.git/%s/%s.git", destinationOrg, name)
+			}
+			f.ForkedRepositories[destinationOrg] = append(f.ForkedRepositories[destinationOrg], &fork)
+			return fork.GitRepo, nil
 		}
 	}
 	return nil, fmt.Errorf("repository '%s' not found within the organization '%s'", name, originalOrg)
@@ -228,7 +273,7 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 
 // UpdatePullRequest updates the pull request number with the new data
 func (f *FakeProvider) UpdatePullRequest(data *GitPullRequestArguments, number int) (*GitPullRequest, error) {
-	return nil, errors2.Errorf("Not yet implemented for fake")
+	return nil, errors.Errorf("Not yet implemented for fake")
 }
 
 func (f *FakeProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
@@ -710,8 +755,8 @@ func (f *FakeProvider) GetContent(org string, name string, path string, ref stri
 // ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 // before creating a pull request
 func (r *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
-	// TODO assuming forking doesn't work yet?
-	return false
+	// Simple algorithm to always ask for a fork if the username is not the same as the CurrentUsername
+	return originalOwner != r.CurrentUsername()
 }
 
 func (r *FakeRepository) String() string {
@@ -723,24 +768,65 @@ func (r *FakeRepository) Name() string {
 }
 
 // NewFakeRepository creates a new fake repository
-func NewFakeRepository(owner string, repoName string) *FakeRepository {
-	return &FakeRepository{
+func NewFakeRepository(owner string, repoName string, addFiles func(dir string) error, gitter Gitter) (*FakeRepository, error) {
+	repo := FakeRepository{
 		Owner: owner,
 		GitRepo: &GitRepository{
 			Name:         repoName,
 			CloneURL:     "https://fake.git/" + owner + "/" + repoName + ".git",
 			HTMLURL:      "https://fake.git/" + owner + "/" + repoName,
+			URL:          "https://fake.git/" + owner + "/" + repoName + ".git",
+			Scheme:       "https",
+			Host:         "fake.git",
 			Organisation: owner,
 		},
 		PullRequests: map[int]*FakePullRequest{},
 		Commits:      []*FakeCommit{},
 	}
+	if addFiles != nil && gitter != nil {
+		dir, err := ioutil.TempDir("", "")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		cloneDir := filepath.Join(dir, owner)
+		err = os.MkdirAll(cloneDir, 0755)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		err = gitter.Init(cloneDir)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		err = addFiles(cloneDir)
+		if err != nil {
+			return nil, errors2.Wrapf(err, "adding files to %s", dir)
+		}
+		err = gitter.Add(cloneDir, "-A")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		err = gitter.CommitDir(cloneDir, "Initial Commit")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		// Now we need to detach ourselves from master to allow others to push
+		err = gitter.Checkout(cloneDir, "--detach")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		repo.BaseDir = dir
+		repo.CloneDir = cloneDir
+		repo.GitRepo.CloneURL = fmt.Sprintf("file://%s", cloneDir)
+	}
+	return &repo, nil
 }
 
 // NewFakeRepository creates a new fake repository
 func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 	provider := &FakeProvider{
-		Repositories: map[string][]*FakeRepository{},
+		Repositories:       map[string][]*FakeRepository{},
+		ForkedRepositories: map[string][]*FakeRepository{},
 	}
 	for _, repo := range repositories {
 		owner := repo.Owner

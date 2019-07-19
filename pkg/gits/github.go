@@ -151,7 +151,7 @@ func (p *GitHubProvider) ListRepositoriesForUser(user string) ([]*GitRepository,
 
 		}
 		for _, repo := range repos {
-			answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
+			answer = append(answer, toGitHubRepo(asText(repo.Name), owner, repo))
 		}
 		if len(repos) < pageSize || len(repos) == 0 {
 			break
@@ -190,14 +190,14 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 					PerPage: pageSize,
 				},
 			}
-			repos, _, err = p.Client.Repositories.List(p.Context, owner, options)
+			repos, _, err = p.Client.Repositories.List(p.Context, org, options)
 			if err != nil {
 				return answer, err
 			}
 
 		}
 		for _, repo := range repos {
-			answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
+			answer = append(answer, toGitHubRepo(asText(repo.Name), org, repo))
 		}
 		if len(repos) < pageSize || len(repos) == 0 {
 			break
@@ -281,7 +281,7 @@ func (p *GitHubProvider) GetRepository(org string, name string) (*GitRepository,
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get repository %s/%s due to: %s", org, name, err)
 	}
-	return toGitHubRepo(name, repo), nil
+	return toGitHubRepo(name, org, repo), nil
 }
 
 func (p *GitHubProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
@@ -296,7 +296,7 @@ func (p *GitHubProvider) CreateRepository(org string, name string, private bool)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", org, name, err)
 	}
-	return toGitHubRepo(name, repo), nil
+	return toGitHubRepo(name, org, repo), nil
 }
 
 func (p *GitHubProvider) DeleteRepository(org string, name string) error {
@@ -311,7 +311,7 @@ func (p *GitHubProvider) DeleteRepository(org string, name string) error {
 	return err
 }
 
-func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
+func toGitHubRepo(name string, org string, repo *github.Repository) *GitRepository {
 	return &GitRepository{
 		Name:             name,
 		AllowMergeCommit: util.DereferenceBool(repo.AllowMergeCommit),
@@ -322,6 +322,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		Language:         asText(repo.Language),
 		Stars:            asInt(repo.StargazersCount),
 		Private:          util.DereferenceBool(repo.Private),
+		Organisation:     org,
 	}
 }
 
@@ -336,28 +337,27 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 		if destinationOrg != "" {
 			msg = fmt.Sprintf(" to %s", destinationOrg)
 		}
-		owner := destinationOrg
-		if owner == "" {
-			owner = p.Username
+		if destinationOrg == "" {
+			destinationOrg = p.Username
 		}
 		if strings.Contains(err.Error(), "try again later") {
-			log.Logger().Warnf("Waiting for the fork of %s/%s to appear...", owner, name)
+			log.Logger().Warnf("Waiting for the fork of %s/%s to appear...", destinationOrg, name)
 			// lets wait for the fork to occur...
 			start := time.Now()
 			deadline := start.Add(time.Minute)
 			for {
 				time.Sleep(5 * time.Second)
-				repo, _, err = p.Client.Repositories.Get(p.Context, owner, name)
+				repo, _, err = p.Client.Repositories.Get(p.Context, destinationOrg, name)
 				if repo != nil && err == nil {
 					break
 				}
 				t := time.Now()
 				if t.After(deadline) {
-					return nil, fmt.Errorf("Gave up waiting for Repository %s/%s to appear: %s", owner, name, err)
+					return nil, fmt.Errorf("gave up waiting for Repository %s/%s to appear: %s", destinationOrg, name, err)
 				}
 			}
 		} else {
-			return nil, fmt.Errorf("Failed to fork repository %s/%s%s due to: %s", originalOrg, name, msg, err)
+			return nil, fmt.Errorf("failed to fork repository %s/%s%s due to: %s", originalOrg, name, msg, err)
 		}
 	}
 	answer := &GitRepository{
@@ -366,6 +366,7 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
+		Organisation:     destinationOrg,
 		Fork:             true,
 	}
 	return answer, nil
@@ -996,6 +997,7 @@ func (p *GitHubProvider) RenameRepository(org string, name string, newName strin
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
+		Organisation:     org,
 	}
 	return answer, nil
 }

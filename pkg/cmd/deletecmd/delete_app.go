@@ -3,7 +3,6 @@ package deletecmd
 import (
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/pkg/errors"
 
@@ -46,9 +45,6 @@ type DeleteAppOptions struct {
 	Namespace   string
 	Purge       bool
 	Alias       string
-
-	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback gits.ConfigureGitFn
 }
 
 // NewCmdDeleteApp creates a command object for this command
@@ -115,7 +111,6 @@ func (o *DeleteAppOptions) Run() error {
 		installOptions.GitProvider = gitProvider
 		installOptions.Gitter = o.Git()
 		installOptions.EnvironmentsDir = environmentsDir
-		installOptions.ConfigureGitFn = o.ConfigureGitCallback
 	}
 	if !o.GitOps {
 		err := o.EnsureHelm()

@@ -1,11 +1,12 @@
 package get_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step/get"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/get"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/acarl005/stripansi"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -31,7 +32,7 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	repoNameUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	repoName := repoNameUUID.String()
-	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
+	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 	testBranch := "test-app-version-bump"
 	stableBranch := "master"
@@ -96,7 +97,7 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	repoNameUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	repoName := repoNameUUID.String()
-	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
+	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 	testBranch := "test-app-version-bump"
 	stableBranch := "master"

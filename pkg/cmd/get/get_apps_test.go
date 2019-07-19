@@ -2,13 +2,14 @@ package get_test
 
 import (
 	"errors"
-	"github.com/jenkins-x/jx/pkg/cmd/get"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/get"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	uuid "github.com/satori/go.uuid"
@@ -43,7 +44,6 @@ func TestGetAppsGitops(t *testing.T) {
 			CommonOptions: testOptions.CommonOptions,
 		},
 	}
-	getAppOptions.ConfigureGitFn = testOptions.ConfigureGitFn
 	r, fakeStdout, _ := os.Pipe()
 	getAppOptions.CommonOptions.Out = fakeStdout
 	getAppOptions.Args = []string{}

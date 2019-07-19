@@ -474,7 +474,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 	repoNameUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	repoName := repoNameUUID.String()
-	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
+	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 
 	for _, tt := range cases {

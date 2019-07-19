@@ -44,7 +44,7 @@ func TestCreateValuesFileWithVault(t *testing.T) {
 		assert.NoError(t, err)
 		testRepoName := testRepoNameUUID.String()
 		devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
-		devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
+		devEnvRepo, _ := gits.NewFakeRepository(testOrgName, devEnvRepoName, nil, nil)
 		mockFactory := clients_test.NewMockFactory()
 		commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)
 		mockVaultClient := vault_test.NewMockClient()

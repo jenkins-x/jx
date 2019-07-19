@@ -1,13 +1,14 @@
 package helm_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
@@ -26,7 +27,7 @@ func TestApplyAppsTemplateOverrides(t *testing.T) {
 
 	envsDir, err := testOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	absoluteRepoPath := filepath.Join(envsDir, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.GitRepo.Name)
+	absoluteRepoPath := filepath.Join(envsDir, testOptions.DevEnv.Name)
 
 	//Create the charts folder
 	chartsPath := filepath.Join(absoluteRepoPath, "charts")

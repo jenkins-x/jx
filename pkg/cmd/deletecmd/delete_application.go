@@ -73,9 +73,6 @@ type DeleteApplicationOptions struct {
 	// calculated fields
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
-
-	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback gits.ConfigureGitFn
 }
 
 // NewCmdDeleteApplication creates a command object for this command
@@ -382,7 +379,6 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		Message:    "The command `jx delete application` was run by " + username + " and it generated this Pull Request",
 	}
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitCallback,
 		Gitter:        o.Git(),
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,

@@ -6,8 +6,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/add"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/pkg/errors"
@@ -62,9 +60,6 @@ type UpgradeAppsOptions struct {
 
 	Namespace string
 	Set       []string
-
-	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback gits.ConfigureGitFn
 }
 
 // NewCmdUpgradeApps defines the command
@@ -177,7 +172,6 @@ func (o *UpgradeAppsOptions) Run() error {
 		}
 
 		installOpts.GitProvider = gitProvider
-		installOpts.ConfigureGitFn = o.ConfigureGitCallback
 		installOpts.Gitter = o.Git()
 	}
 	if !o.GitOps {

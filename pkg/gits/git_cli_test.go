@@ -5,15 +5,15 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/jenkins-x/jx/pkg/log"
-
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGitCLI(t *testing.T) {
@@ -393,4 +393,147 @@ func TestTags(t *testing.T) {
 	assert.Len(t, tags, 2)
 	assert.Contains(t, tags, "v0.0.1")
 	assert.Contains(t, tags, "v0.0.2")
+}
+
+func TestGitCLI_Stash(t *testing.T) {
+	tests := []struct {
+		name        string
+		g           *gits.GitCLI
+		initFn      func(dir string, gitter gits.Gitter) error
+		postPush    func(dir string) error
+		postPop     func(dir string) error
+		wantPushErr bool
+		wantPopErr  bool
+	}{
+		{
+			name: "README",
+			initFn: func(dir string, gitter gits.Gitter) error {
+				err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				err = gitter.Add(dir, "*")
+				assert.NoError(t, err)
+				return nil
+			},
+			postPush: func(dir string) error {
+				_, err := os.Stat(filepath.Join(dir, "README"))
+				assert.Error(t, err)
+				assert.True(t, os.IsNotExist(err))
+				return nil
+			},
+			postPop: func(dir string) error {
+				_, err := os.Stat(filepath.Join(dir, "README"))
+				assert.NoError(t, err)
+				data, err := ioutil.ReadFile(filepath.Join(dir, "README"))
+				assert.NoError(t, err)
+				assert.Equal(t, "Hello!", string(data))
+				return nil
+			},
+		}, {
+			name: "NothingToPop",
+			initFn: func(dir string, gitter gits.Gitter) error {
+				return nil
+			},
+			postPush: func(dir string) error {
+				_, err := os.Stat(filepath.Join(dir, "README"))
+				assert.Error(t, err)
+				assert.True(t, os.IsNotExist(err))
+				return nil
+			},
+			postPop: func(dir string) error {
+				_, err := os.Stat(filepath.Join(dir, "README"))
+				assert.Error(t, err)
+				assert.True(t, os.IsNotExist(err))
+				return nil
+			},
+			wantPopErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := gits.NewGitCLI()
+			dir, err := ioutil.TempDir("", "")
+			defer func() {
+				os.RemoveAll(dir)
+			}()
+			assert.NoError(t, err)
+			err = g.Init(dir)
+			assert.NoError(t, err)
+			err = g.AddCommit(dir, "Initial Commit")
+			assert.NoError(t, err)
+			err = tt.initFn(dir, g)
+			assert.NoError(t, err)
+			err = g.StashPush(dir)
+			if tt.wantPushErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			err = tt.postPush(dir)
+			assert.NoError(t, err)
+
+			err = g.StashPop(dir)
+			if tt.wantPopErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			err = tt.postPop(dir)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestGitCLI_Remotes(t *testing.T) {
+	tests := []struct {
+		initFn  func(dir string, gitter gits.Gitter) error
+		name    string
+		g       *gits.GitCLI
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "origin",
+			initFn: func(dir string, gitter gits.Gitter) error {
+				rDir, err := ioutil.TempDir("", "")
+				defer func() {
+					os.RemoveAll(rDir)
+				}()
+				assert.NoError(t, err)
+				err = gitter.Init(rDir)
+				assert.NoError(t, err)
+				err = gitter.AddCommit(rDir, "Initial Commit")
+				assert.NoError(t, err)
+				err = gitter.AddRemote(dir, "origin", fmt.Sprintf("file://%s", rDir))
+				assert.NoError(t, err)
+				return nil
+			},
+			want: []string{"origin"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := gits.NewGitCLI()
+			dir, err := ioutil.TempDir("", "")
+			defer func() {
+				os.RemoveAll(dir)
+			}()
+			assert.NoError(t, err)
+			err = g.Init(dir)
+			assert.NoError(t, err)
+			err = g.AddCommit(dir, "Initial Commit")
+			assert.NoError(t, err)
+			err = tt.initFn(dir, g)
+			assert.NoError(t, err)
+			got, err := g.Remotes(dir)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GitCLI.Remotes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GitCLI.Remotes() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

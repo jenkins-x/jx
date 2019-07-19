@@ -2,8 +2,14 @@ package scheduler_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/scheduler"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
@@ -13,15 +19,10 @@ import (
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/prow"
 	uuid "github.com/satori/go.uuid"
-	"io/ioutil"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/test-infra/prow/plugins"
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
 
 	cmd_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -101,7 +102,7 @@ func TestStepSchedulerConfigApplyGitopsAll(t *testing.T) {
 	assert.NoError(t, err)
 	envDir, err := testOptions.StepSchedulerConfigApplyOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.Name())
+	devEnvDir := filepath.Join(envDir, testOptions.DevEnvName)
 	verifyProwGitopsConfig(err, testOptions, devEnvDir, t)
 }
 
@@ -126,7 +127,7 @@ func TestStepSchedulerConfigApplyGitopsDefaultScheduler(t *testing.T) {
 	assert.NoError(t, err)
 	envDir, err := testOptions.StepSchedulerConfigApplyOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.Name())
+	devEnvDir := filepath.Join(envDir, testOptions.DevEnvName)
 	verifyProwGitopsConfig(err, testOptions, devEnvDir, t)
 }
 
@@ -151,7 +152,7 @@ func TestStepSchedulerConfigApplyGitopsRepoScheduler(t *testing.T) {
 	assert.NoError(t, err)
 	envDir, err := testOptions.StepSchedulerConfigApplyOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.Name())
+	devEnvDir := filepath.Join(envDir, testOptions.DevEnvName)
 	verifyProwGitopsConfig(err, testOptions, devEnvDir, t)
 }
 
@@ -176,7 +177,7 @@ func TestStepSchedulerConfigApplyGitopsRepoGroupScheduler(t *testing.T) {
 	assert.NoError(t, err)
 	envDir, err := testOptions.StepSchedulerConfigApplyOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.DevEnvRepo.Owner, testOptions.DevEnvRepo.Name())
+	devEnvDir := filepath.Join(envDir, testOptions.DevEnvName)
 	verifyProwGitopsConfig(err, testOptions, devEnvDir, t)
 }
 
@@ -215,6 +216,7 @@ type StepSchedulerApplyTestOptions struct {
 	StepSchedulerConfigApplyOptions *scheduler.StepSchedulerConfigApplyOptions
 	DevEnvRepo                      *gits.FakeRepository
 	DevRepoName                     string
+	DevEnvName                      string
 	TestType                        string
 }
 
@@ -227,6 +229,7 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 	o.StepSchedulerConfigApplyOptions.Agent = "prow"
 	o.StepSchedulerConfigApplyOptions.CommonOptions = &commonOpts
 	o.TestType = testType
+	gitter := gits.NewGitCLI()
 	devEnvRepoName := ""
 	jxResources := []runtime.Object{}
 	schedulers := o.loadSchedulers(testType)
@@ -249,13 +252,31 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 	assert.NoError(t, err)
 	testRepoName := testRepoNameUUID.String()
 	devEnvRepoName = fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
+	devEnv := kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,
+		devEnvRepoName))
+	addFiles := func(dir string) error {
+		// Really we should have a dummy environment chart but for now let's just mock it out as needed
+		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
+		if err != nil {
+			return err
+		}
+		data, err := yaml.Marshal(devEnv)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "dev-env.yaml"), data, 0755)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	devEnvRepo, _ := gits.NewFakeRepository(testOrgName, devEnvRepoName, addFiles, gitter)
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
 	fakeGitProvider.User.Username = testOrgName
-	devEnv := kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,
-		devEnvRepoName))
+
 	if !gitOps {
 		devEnv.Spec.Source.URL = ""
 		devEnv.Spec.Source.Ref = ""
@@ -274,27 +295,9 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 	jxResources = append(jxResources, devEnv, sourceRepo)
 	o.DevEnvRepo = devEnvRepo
 	o.DevRepoName = testRepoName
+	o.DevEnvName = devEnv.Name
 	if gitOps {
-		o.StepSchedulerConfigApplyOptions.ConfigureGitCallback = func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
-			err := gitter.Init(dir)
-			if err != nil {
-				return err
-			}
-			// Really we should have a dummy environment chart but for now let's just mock it out as needed
-			err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
-			if err != nil {
-				return err
-			}
-			data, err := yaml.Marshal(devEnv)
-			if err != nil {
-				return err
-			}
-			err = ioutil.WriteFile(filepath.Join(dir, "templates", "dev-env.yaml"), data, 0755)
-			if err != nil {
-				return err
-			}
-			return gitter.AddCommit(dir, "Initial Commit")
-		}
+
 		pluginConfig := &plugins.Configuration{}
 		pluginYAML, err := yaml.Marshal(pluginConfig)
 		assert.NoError(t, err)
@@ -317,7 +320,7 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 		testhelpers.ConfigureTestOptionsWithResources(o.StepSchedulerConfigApplyOptions.CommonOptions,
 			kubeResources,
 			jxResources,
-			gits.NewGitLocal(),
+			gitter,
 			fakeGitProvider,
 			o.StepSchedulerConfigApplyOptions.Helm(),
 			installerMock,

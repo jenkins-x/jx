@@ -36,8 +36,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn: o.ConfigureGitFn,
-		Gitter:      o.Gitter,
+		Gitter: o.Gitter,
 		ModifyChartFn: environments.CreateAddRequirementFn(app, alias, version,
 			repository, o.valuesFiles, dir, o.Verbose, o.Helmer),
 		GitProvider: o.GitProvider,
@@ -96,8 +95,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn: o.ConfigureGitFn,
-		Gitter:      o.Gitter,
+		Gitter: o.Gitter,
 		ModifyChartFn: environments.CreateUpgradeRequirementsFn(all, app, alias, version, username, password,
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
 		GitProvider: o.GitProvider,
@@ -149,7 +147,6 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitFn,
 		Gitter:        o.Gitter,
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   o.GitProvider,
@@ -165,14 +162,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 
 // GetApps retrieves all the apps information for the given appNames from the repository and / or the CRD API
 func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string) (*v1.AppList, error)) (*v1.AppList, error) {
-
-	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitFn,
-		Gitter:        o.Gitter,
-		ModifyChartFn: nil,
-		GitProvider:   o.GitProvider,
-	}
-	dir, _, _, err := gits.ForkAndPullPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, options.ConfigGitFn)
+	dir, _, _, _, err := gits.ForkAndPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't pull the environment repository from %s", o.DevEnv.Name)
 	}

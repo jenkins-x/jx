@@ -2,18 +2,13 @@ package gits
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
-	"path/filepath"
-	"runtime/debug"
 	"sort"
 	"strings"
 
 	uuid "github.com/satori/go.uuid"
-
-	"github.com/jenkins-x/jx/pkg/auth"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -194,7 +189,7 @@ func GitProviderURL(text string) string {
 // It creates a branch called branchName from a base.
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
-func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, autoMerge bool, dryRun bool, gitter Gitter, provider GitProvider) (*PullRequestInfo, error) {
+func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, autoMerge bool, dryRun bool, gitter Gitter, provider GitProvider) (*PullRequestInfo, error) {
 	if commit {
 
 		err := gitter.Add(dir, "-A")
@@ -220,16 +215,17 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 
 	headPrefix := ""
 
-	username := provider.CurrentUsername()
-	if username == "" {
-		return nil, fmt.Errorf("no git user name found")
+	username := upstreamRepo.Organisation
+	if forkRepo != nil {
+		username = forkRepo.Organisation
 	}
-	if gitInfo.Organisation != username && gitInfo.Fork {
+
+	if upstreamRepo.Organisation != username {
 		headPrefix = username + ":"
 	}
 
 	gha := &GitPullRequestArguments{
-		GitRepository: gitInfo,
+		GitRepository: upstreamRepo,
 		Title:         prDetails.Title,
 		Body:          prDetails.Message,
 		Base:          base,
@@ -238,9 +234,9 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 	if filter != nil && push {
 
 		// lets rebase an existing PR
-		existingPrs, err := FilterOpenPullRequests(provider, gitInfo.Organisation, gitInfo.Name, *filter)
+		existingPrs, err := FilterOpenPullRequests(provider, upstreamRepo.Organisation, upstreamRepo.Name, *filter)
 		if err != nil {
-			return nil, errors.Wrapf(err, "finding existing PRs using filter %s on repo %s/%s", filter.String(), gitInfo.Organisation, gitInfo.Name)
+			return nil, errors.Wrapf(err, "finding existing PRs using filter %s on repo %s/%s", filter.String(), upstreamRepo.Organisation, upstreamRepo.Name)
 		}
 
 		if len(existingPrs) > 1 {
@@ -252,16 +248,16 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 			for _, pr := range existingPrs {
 				prs = append(prs, pr.URL)
 			}
-			log.Logger().Debugf("Found more than one PR %s using filter %s on repo %s/%s so rebasing latest PR %s", strings.Join(prs, ", "), filter.String(), gitInfo.Organisation, gitInfo.Name, existingPrs[:1][0].URL)
+			log.Logger().Debugf("Found more than one PR %s using filter %s on repo %s/%s so rebasing latest PR %s", strings.Join(prs, ", "), filter.String(), upstreamRepo.Organisation, upstreamRepo.Name, existingPrs[:1][0].URL)
 			//
 			existingPrs = existingPrs[:1]
 		}
 		if len(existingPrs) == 1 {
 			pr := existingPrs[0]
 			// We can only update an existing PR if the owner of that PR is this user!
-			if util.DereferenceString(pr.HeadOwner) == username && pr.HeadRef != nil && pr.Number != nil {
+			if util.DereferenceString(pr.HeadOwner) == forkRepo.Organisation && pr.HeadRef != nil && pr.Number != nil {
 				remote := "origin"
-				if gitInfo.Fork {
+				if forkRepo != nil && forkRepo.Fork {
 					remote = "upstream"
 				}
 				url := pr.URL
@@ -383,194 +379,185 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 	}, nil
 }
 
-// ForkAndPullPullRepo pulls the specified gitUrl into baseDir/org/repo using gitter, creating a remote fork if needed using the git provider
-func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchName string, provider GitProvider, gitter Gitter, configGitFn ConfigureGitFn) (string, string, *GitRepository, error) {
+// ForkAndPullRepo pulls the specified gitUrl into dir using gitter, creating a remote fork if needed using the git provider
+//
+// If there are existing files in dir (and dir is already a git clone), the existing files will pushed into the stash
+// and then popped at the end. If they cannot be popped then an error will be returned which can be checked for using
+// IsCouldNotPopTheStashError
+func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName string, provider GitProvider, gitter Gitter) (string, string, *GitRepository, *GitRepository, error) {
+	// Validate the arguments
 	if gitURL == "" {
-		return "", "", nil, fmt.Errorf("No source gitter URL")
+		return "", "", nil, nil, fmt.Errorf("gitURL cannot be nil")
 	}
-	gitInfo, err := ParseGitURL(gitURL)
-	gitInfo.Fork = false
-	if err != nil {
-		return "", "", nil, errors.Wrapf(err, "failed to parse gitter URL %s", gitURL)
-	}
-
-	username := ""
-	userDetails := auth.UserAuth{}
-	originalOrg := gitInfo.Organisation
-	originalRepo := gitInfo.Name
-
 	if provider == nil {
-		log.Logger().Warnf("No GitProvider specified!")
-		debug.PrintStack()
-	} else {
-		userDetails = provider.UserAuth()
-		username = provider.CurrentUsername()
-
-		// lets check if we need to fork the repository...
-		if originalOrg != username && username != "" && originalOrg != "" && provider.ShouldForkForPullRequest(originalOrg, originalRepo, username) {
-			gitInfo.Fork = true
-		}
+		return "", "", nil, nil, errors.Errorf("provider cannot be nil for %s", gitURL)
+	}
+	originalInfo, err := ParseGitURL(gitURL)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to parse gitter URL %s", gitURL)
 	}
 
-	dir := filepath.Join(baseDir, gitInfo.Organisation, gitInfo.Name)
+	username := provider.CurrentUsername()
+	userDetails := provider.UserAuth()
+	originalOrg := originalInfo.Organisation
+	originalRepo := originalInfo.Name
+	originRemote := "origin"
+	upstreamRemote := originRemote
+
+	// lets check if we need to fork the repository...
+	fork := false
+	if originalOrg != username && username != "" && originalOrg != "" && provider.ShouldForkForPullRequest(originalOrg, originalRepo, username) {
+		fork = true
+	}
+
+	// Check if we are working with an existing dir
+	dirExists, err := util.FileExists(dir)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to check if directory %s dirExists", dir)
+	}
+	dirIsGitRepo := false
+	if dirExists {
+		d, _, err := gitter.FindGitConfigDir(dir)
+		if err != nil {
+			return "", "", nil, nil, errors.Wrapf(err, "checking if %s is already a git repository", dir)
+		}
+		dirIsGitRepo = dir == d
+	}
 
 	if baseRef == "" {
 		baseRef = "master"
 	}
 
-	if gitInfo.Fork {
-		if provider == nil {
-			return "", "", nil, errors.Wrapf(err, "no Git Provider specified for gitter URL %s", gitURL)
-		}
-		repo, err := provider.GetRepository(username, originalRepo)
-		if err != nil {
-			// lets try create a fork - using a blank organisation to force a user specific fork
-			repo, err = provider.ForkRepository(originalOrg, originalRepo, "")
-			if err != nil {
-				return "", "", nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
-			}
-			log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
-		}
-
-		// lets only use this repository if it is a fork
-		if !repo.Fork {
-			gitInfo.Fork = false
-		} else {
-			dir, err = ioutil.TempDir("", fmt.Sprintf("fork-%s-%s", gitInfo.Organisation, gitInfo.Name))
-			if err != nil {
-				return "", "", nil, errors.Wrap(err, "failed to create temp dir")
-			}
-
-			err = os.MkdirAll(dir, util.DefaultWritePermissions)
-			if err != nil {
-				return "", "", nil, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
-			}
-			cloneGitURL, err := gitter.CreatePushURL(repo.CloneURL, &userDetails)
-			if err != nil {
-				return "", "", nil, errors.Wrapf(err, "failed to get clone URL from %s and user %s", repo.CloneURL, username)
-			}
-			err = gitter.Clone(cloneGitURL, dir)
-			if err != nil {
-				return "", "", nil, errors.WithStack(err)
-			}
-			err = gitter.FetchBranch(dir, "origin")
-			if err != nil {
-				return "", "", nil, errors.Wrapf(err, "fetching from %s", cloneGitURL)
-			}
-			err = gitter.SetRemoteURL(dir, "upstream", gitURL)
-			if err != nil {
-				return "", "", nil, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
-			}
-			if configGitFn != nil {
-				err = configGitFn(dir, gitInfo, gitter)
-				if err != nil {
-					return "", "", nil, errors.WithStack(err)
-				}
-			}
-			branchName, err := computeBranchName(baseRef, branchName, dir, gitter)
-			if err != nil {
-				return "", "", nil, errors.WithStack(err)
-			}
-			if branchName != "master" {
-				err = gitter.CreateBranch(dir, branchName)
-				if err != nil {
-					return "", "", nil, errors.WithStack(err)
-				}
-
-				err = gitter.Checkout(dir, branchName)
-				if err != nil {
-					return "", "", nil, errors.WithStack(err)
-				}
-			}
-			err = gitter.ResetToUpstream(dir, baseRef)
-			if err != nil {
-				return "", "", nil, errors.Wrapf(err, "resetting forked branch %s to upstream version", baseRef)
-			}
-			return dir, baseRef, gitInfo, nil
-		}
-	}
-
-	// now lets clone the fork and pull it...
-	exists, err := util.FileExists(dir)
+	// It's important to go via the provider to get the info and urls for cloning so that we resolve the URL to a clone
+	// url. This is also useful for tests
+	upstreamInfo, err := provider.GetRepository(originalOrg, originalRepo)
 	if err != nil {
-		return "", "", nil, errors.Wrapf(err, "failed to check if directory %s exists", dir)
+		return "", "", nil, nil, errors.Wrapf(err, "getting repository %s/%s", originalOrg, originalRepo)
+	}
+	cloneURL := upstreamInfo.CloneURL
+
+	var forkInfo *GitRepository
+	// Create or use a fork on the git provider if needed
+	if fork {
+		forkInfo, err = provider.GetRepository(username, originalRepo)
+		if err != nil {
+			log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", username, originalRepo).Error())
+			// lets try create a fork as it probably doesn't exist- using a blank organisation to force a user specific fork
+			forkInfo, err = provider.ForkRepository(originalOrg, originalRepo, "")
+			if err != nil {
+				return "", "", nil, nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
+			}
+			log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(forkInfo.HTMLURL))
+		}
+		cloneURL = forkInfo.CloneURL
 	}
 
-	if exists {
-		if configGitFn != nil {
-			err = configGitFn(dir, gitInfo, gitter)
-			if err != nil {
-				return "", "", nil, errors.WithStack(err)
-			}
-		}
-		// lets check the gitter remote URL is setup correctly
-		err = gitter.SetRemoteURL(dir, "origin", gitURL)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-		err = gitter.Stash(dir)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-		branchName, err := computeBranchName(baseRef, branchName, dir, gitter)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-		if branchName != "master" {
-			err = gitter.CreateBranch(dir, branchName)
-			if err != nil {
-				return "", "", nil, errors.WithStack(err)
-			}
-		}
-		err = gitter.Checkout(dir, branchName)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-		err = gitter.FetchBranch(dir, "origin", baseRef)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-		err = gitter.Merge(dir, baseRef)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-	} else {
+	cloneGitURL, err := gitter.CreatePushURL(cloneURL, &userDetails)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
+	}
+
+	// Prepare the git repo
+
+	if !dirExists {
+		// If the directory doesn't already exist, create it
 		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
-			return "", "", nil, fmt.Errorf("failed to create directory %s due to %s", dir, err)
-		}
-		cloneGitURL, err := gitter.CreatePushURL(gitURL, &userDetails)
-		if err != nil {
-			return "", "", nil, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
-		}
-
-		err = gitter.Clone(cloneGitURL, dir)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-		if configGitFn != nil {
-			err = configGitFn(dir, gitInfo, gitter)
-			if err != nil {
-				return "", "", nil, errors.WithStack(err)
-			}
-		}
-		branchName, err := computeBranchName(baseRef, branchName, dir, gitter)
-		if err != nil {
-			return "", "", nil, errors.WithStack(err)
-		}
-		if branchName != "master" {
-			err = gitter.CreateBranch(dir, branchName)
-			if err != nil {
-				return "", "", nil, errors.WithStack(err)
-			}
-
-			err = gitter.Checkout(dir, branchName)
-			if err != nil {
-				return "", "", nil, errors.WithStack(err)
-			}
+			return "", "", nil, nil, fmt.Errorf("failed to create directory %s due to %s", dir, err)
 		}
 	}
-	return dir, baseRef, gitInfo, nil
+
+	stashed := false
+	if !dirIsGitRepo {
+		err = gitter.Init(dir)
+		if err != nil {
+			return "", "", nil, nil, errors.Wrapf(err, "failed to run git init in %s", dir)
+		}
+		// Need an initial commit to make branching work. We'll do an empty commit
+		err = gitter.AddCommit(dir, "initial commit")
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+	} else {
+		err = gitter.StashPush(dir)
+		stashed = true
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+	}
+
+	// The long form of "git clone" has the advantage of working fine on an existing git repo and avoids checking out master
+	// and then another branch
+	err = gitter.SetRemoteURL(dir, originRemote, cloneGitURL)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to set %s url to %s", originRemote, cloneGitURL)
+	}
+	if fork {
+		upstreamRemote = "upstream"
+		err := gitter.SetRemoteURL(dir, upstreamRemote, upstreamInfo.CloneURL)
+		if err != nil {
+			return "", "", nil, nil, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
+		}
+	}
+
+	err = gitter.FetchBranch(dir, originRemote, branchName)
+	if err != nil && !IsCouldntFindRemoteRefError(err, branchName) { // We can safely ignore missing remote branches, as they just don't exist
+		return "", "", nil, nil, errors.Wrapf(err, "fetching %s %s", originRemote, branchName)
+	}
+
+	if upstreamRemote != originRemote || baseRef != branchName {
+		// We're going to start our work from baseRef on the upstream
+		err = gitter.FetchBranch(dir, upstreamRemote, baseRef)
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+	}
+
+	// Work out what branch to use and check it out
+	localBranchName, remoteBranchExists, err := computeBranchName(baseRef, branchName, dir, gitter)
+	if err != nil {
+		return "", "", nil, nil, errors.WithStack(err)
+	}
+	localBranches, err := gitter.LocalBranches(dir)
+	if err != nil {
+		return "", "", nil, nil, errors.WithStack(err)
+	}
+	localBranchExists := util.Contains(localBranches, localBranchName)
+
+	if !localBranchExists {
+		err = gitter.CreateBranch(dir, localBranchName)
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+	}
+	err = gitter.Checkout(dir, localBranchName)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to run git checkout %s", localBranchName)
+	}
+	// We always want to make sure our local branch is in the right state, whether we created it checked it out
+	err = gitter.ResetHard(dir, fmt.Sprintf("%s/%s", upstreamRemote, baseRef))
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to run git reset --hard %s/%s", upstreamRemote, baseRef)
+	}
+
+	// one possibility is that the baseRef is not in the same state as an already existing branch, so let's merge in the
+	// already existing branch from the users fork. This is idempotent (safe if that's already the state)
+	// Only do this if the remote branch exists
+	if remoteBranchExists {
+		err = gitter.Merge(dir, fmt.Sprintf("%s/%s", originRemote, branchName))
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+	}
+
+	if stashed {
+		err = gitter.StashPop(dir)
+		if err != nil && !IsNoStashEntriesError(err) { // Ignore no stashes as that's just because there was nothing to stash
+			return "", "", nil, nil, errors.Wrapf(err, "unable to pop the stash")
+		}
+	}
+
+	return dir, baseRef, upstreamInfo, forkInfo, nil
 }
 
 // A PullRequestFilter defines a filter for finding pull requests
@@ -580,6 +567,9 @@ type PullRequestFilter struct {
 }
 
 func (f *PullRequestFilter) String() string {
+	if f.Number != nil {
+		return fmt.Sprintf("Pull Request #%d", f.Number)
+	}
 	return strings.Join(f.Labels, ", ")
 }
 
@@ -615,7 +605,7 @@ func FilterOpenPullRequests(provider GitProvider, owner string, repo string, fil
 	return answer, nil
 }
 
-func computeBranchName(baseRef string, branchName string, dir string, gitter Gitter) (string, error) {
+func computeBranchName(baseRef string, branchName string, dir string, gitter Gitter) (string, bool, error) {
 
 	if branchName == "" {
 		branchName = baseRef
@@ -624,17 +614,17 @@ func computeBranchName(baseRef string, branchName string, dir string, gitter Git
 
 	branchNames, err := gitter.RemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to load remote branch names")
+		return "", false, errors.Wrapf(err, "Failed to load remote branch names")
 	}
 	if util.StringArrayIndex(branchNames, validBranchName) >= 0 {
 		// lets append a UUID as the branch name already exists
 		branchNameUUID, err := uuid.NewV4()
 		if err != nil {
-			return "", errors.WithStack(err)
+			return "", false, errors.WithStack(err)
 		}
-		validBranchName += "-" + branchNameUUID.String()
+		return fmt.Sprintf("%s-%s", validBranchName, branchNameUUID.String()), true, nil
 	}
-	return validBranchName, nil
+	return validBranchName, false, nil
 }
 
 //IsUnadvertisedObjectError returns true if the reason for the error is that the request was for an object that is unadvertised (i.e. doesn't exist)
@@ -646,4 +636,20 @@ func parseAuthor(l string) (string, string) {
 	open := strings.Index(l, "<")
 	close := strings.Index(l, ">")
 	return strings.TrimSpace(l[:open]), strings.TrimSpace(l[open+1 : close])
+}
+
+// IsCouldntFindRemoteRefError returns true if the error is due to the remote ref not being found
+func IsCouldntFindRemoteRefError(err error, ref string) bool {
+	return strings.Contains(strings.ToLower(err.Error()), fmt.Sprintf("couldn't find remote ref %s", ref))
+}
+
+// IsCouldNotPopTheStashError returns true if the error is due to the stash not being able to be popped, often because
+// whatever is in the stash cannot be applied to the new state
+func IsCouldNotPopTheStashError(err error) bool {
+	return strings.Contains(err.Error(), "could not pop the stash")
+}
+
+// IsNoStashEntriesError returns true if the error is due to no stash entries found
+func IsNoStashEntriesError(err error) bool {
+	return strings.Contains(err.Error(), "No stash entries found.")
 }

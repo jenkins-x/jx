@@ -5,8 +5,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 
@@ -30,15 +28,11 @@ type AddAppOptions struct {
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
 
-	Repo     string
-	Username string
-	Password string
-	Alias    string
-	Prefixes []string
-
-	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback gits.ConfigureGitFn
-
+	Repo        string
+	Username    string
+	Password    string
+	Alias       string
+	Prefixes    []string
 	Namespace   string
 	Version     string
 	ReleaseName string
@@ -185,7 +179,6 @@ func (o *AddAppOptions) Run() error {
 			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
 		}
 		installOpts.GitProvider = gitProvider
-		installOpts.ConfigureGitFn = o.ConfigureGitCallback
 		installOpts.Gitter = o.Git()
 	}
 	if !o.GitOps {

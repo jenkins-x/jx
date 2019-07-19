@@ -2,8 +2,9 @@ package users_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
@@ -281,7 +282,7 @@ func TestFindUserWithNoEmailButSameGitLogin(t *testing.T) {
 func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
 	fakeProvider := gits.NewFakeProvider(fakeRepo)
 	fakeProvider.Type = gits.Fake
 

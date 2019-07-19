@@ -2,10 +2,11 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -214,7 +215,7 @@ func (o *DeleteBranchOptions) cloneOrPullRepository(org string, repo string, git
 		if err != nil {
 			return dir, err
 		}
-		err = o.Git().Stash(dir)
+		err = o.Git().StashPush(dir)
 		return dir, err
 	} else {
 		err := os.MkdirAll(dir, util.DefaultWritePermissions)

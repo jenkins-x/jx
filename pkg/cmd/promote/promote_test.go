@@ -2,14 +2,15 @@ package promote_test
 
 import (
 	"encoding/json"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/cmd/controller"
-	"github.com/jenkins-x/jx/pkg/cmd/promote"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cmd/controller"
+	"github.com/jenkins-x/jx/pkg/cmd/promote"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/petergtz/pegomock"
 
@@ -37,26 +38,25 @@ func TestPromoteToProductionRun(t *testing.T) {
 	version := "1.2.0"
 
 	promoteOptions := &promote.PromoteOptions{
-		Environment:          "production",                   // --env production
-		Application:          "my-app",                       // --app my-app
-		Pipeline:             testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Build:                testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Version:              version,                        // --version 1.2.0
-		ReleaseName:          "",
-		LocalHelmRepoName:    "",
-		HelmRepositoryURL:    "",
-		NoHelmUpdate:         true, // --no-helm-update
-		AllAutomatic:         false,
-		NoMergePullRequest:   false,
-		NoPoll:               true, // --no-poll
-		NoWaitAfterMerge:     false,
-		IgnoreLocalFiles:     true,
-		Timeout:              "1h",
-		PullRequestPollTime:  "20s",
-		Filter:               "",
-		Alias:                "",
-		Namespace:            "jx",
-		ConfigureGitCallback: testEnv.ConfigureGitFolderFn,
+		Environment:         "production",                   // --env production
+		Application:         "my-app",                       // --app my-app
+		Pipeline:            testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:               testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Version:             version,                        // --version 1.2.0
+		ReleaseName:         "",
+		LocalHelmRepoName:   "",
+		HelmRepositoryURL:   "",
+		NoHelmUpdate:        true, // --no-helm-update
+		AllAutomatic:        false,
+		NoMergePullRequest:  false,
+		NoPoll:              true, // --no-poll
+		NoWaitAfterMerge:    false,
+		IgnoreLocalFiles:    true,
+		Timeout:             "1h",
+		PullRequestPollTime: "20s",
+		Filter:              "",
+		Alias:               "",
+		Namespace:           "jx",
 	}
 	commonOpts := *testEnv.CommonOptions
 	promoteOptions.CommonOptions = &commonOpts // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
@@ -94,26 +94,25 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 	// jx promote --batch-mode --app my-app --env production --no-merge --no-helm-update
 
 	promoteOptions := &promote.PromoteOptions{
-		Environment:          "production",                   // --env production
-		Application:          "my-app",                       // --app my-app
-		Pipeline:             testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Build:                testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Version:              "",
-		ReleaseName:          "",
-		LocalHelmRepoName:    "",
-		HelmRepositoryURL:    "",
-		NoHelmUpdate:         true, // --no-helm-update
-		AllAutomatic:         false,
-		NoMergePullRequest:   true,  // --no-merge
-		NoPoll:               false, // note polling enabled
-		NoWaitAfterMerge:     false,
-		IgnoreLocalFiles:     true,
-		Timeout:              "1h",
-		PullRequestPollTime:  "20s",
-		Filter:               "",
-		Alias:                "",
-		Namespace:            "jx",
-		ConfigureGitCallback: testEnv.ConfigureGitFolderFn,
+		Environment:         "production",                   // --env production
+		Application:         "my-app",                       // --app my-app
+		Pipeline:            testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:               testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Version:             "",
+		ReleaseName:         "",
+		LocalHelmRepoName:   "",
+		HelmRepositoryURL:   "",
+		NoHelmUpdate:        true, // --no-helm-update
+		AllAutomatic:        false,
+		NoMergePullRequest:  true,  // --no-merge
+		NoPoll:              false, // note polling enabled
+		NoWaitAfterMerge:    false,
+		IgnoreLocalFiles:    true,
+		Timeout:             "1h",
+		PullRequestPollTime: "20s",
+		Filter:              "",
+		Alias:               "",
+		Namespace:           "jx",
 	}
 
 	commonOpts := *testEnv.CommonOptions
@@ -165,26 +164,25 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 	// jx promote --batch-mode --app my-app --env production --no-helm-update
 
 	promoteOptions := &promote.PromoteOptions{
-		Environment:          "production",                   // --env production
-		Application:          "my-app",                       // --app my-app
-		Pipeline:             testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Build:                testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Version:              "",
-		ReleaseName:          "",
-		LocalHelmRepoName:    "",
-		HelmRepositoryURL:    "",
-		NoHelmUpdate:         true, // --no-helm-update
-		AllAutomatic:         false,
-		NoMergePullRequest:   false, // note auto-merge enabled
-		NoPoll:               false, // note polling enabled
-		NoWaitAfterMerge:     false,
-		IgnoreLocalFiles:     true,
-		Timeout:              "1h",
-		PullRequestPollTime:  "20s",
-		Filter:               "",
-		Alias:                "",
-		Namespace:            "jx",
-		ConfigureGitCallback: testEnv.ConfigureGitFolderFn,
+		Environment:         "production",                   // --env production
+		Application:         "my-app",                       // --app my-app
+		Pipeline:            testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:               testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Version:             "",
+		ReleaseName:         "",
+		LocalHelmRepoName:   "",
+		HelmRepositoryURL:   "",
+		NoHelmUpdate:        true, // --no-helm-update
+		AllAutomatic:        false,
+		NoMergePullRequest:  false, // note auto-merge enabled
+		NoPoll:              false, // note polling enabled
+		NoWaitAfterMerge:    false,
+		IgnoreLocalFiles:    true,
+		Timeout:             "1h",
+		PullRequestPollTime: "20s",
+		Filter:              "",
+		Alias:               "",
+		Namespace:           "jx",
 	}
 
 	commonOpts := *testEnv.CommonOptions
@@ -228,14 +226,13 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type TestEnv struct {
-	Activity             *v1.PipelineActivity
-	WorkflowOptions      *controller.ControllerWorkflowOptions
-	CommonOptions        *opts.CommonOptions
-	FakeGitProvider      *gits.FakeProvider
-	DevRepo              *gits.FakeRepository
-	StagingRepo          *gits.FakeRepository
-	ProdRepo             *gits.FakeRepository
-	ConfigureGitFolderFn gits.ConfigureGitFn
+	Activity        *v1.PipelineActivity
+	WorkflowOptions *controller.ControllerWorkflowOptions
+	CommonOptions   *opts.CommonOptions
+	FakeGitProvider *gits.FakeProvider
+	DevRepo         *gits.FakeRepository
+	StagingRepo     *gits.FakeRepository
+	ProdRepo        *gits.FakeRepository
 }
 
 // Prepares an initial configuration with a typical environment setup.
@@ -247,21 +244,6 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	stagingRepoName := "environment-staging"
 	prodRepoName := "environment-production"
 
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
-	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
-
-	// Needed for another helpe
-
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
-	fakeGitProvider.User.Username = testOrgName
-
-	o := &controller.ControllerWorkflowOptions{
-		CommonOptions: &opts.CommonOptions{},
-		NoWatch:       true,
-		Namespace:     "jx",
-	}
-
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+"."+
 		"git")
 	production := kube.NewPermanentEnvironmentWithGit("production",
@@ -270,13 +252,12 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 		production.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 	}
 
-	err := testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
+	gitter := gits.NewGitCLI()
+	commonOpts := &opts.CommonOptions{}
+
+	err := testhelpers.CreateTestEnvironmentDir(commonOpts)
 	assert.NoError(t, err)
-	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
-		err := gitter.Init(dir)
-		if err != nil {
-			return err
-		}
+	addFiles := func(dir string) error {
 		// Really we should have a dummy environment chart but for now let's just mock it out as needed
 		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
 		if err != nil {
@@ -298,22 +279,35 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 		if err != nil {
 			return err
 		}
-		return gitter.AddCommit(dir, "Initial Commit")
+		return nil
 	}
 
-	o.ConfigureGitFn = configureGitFn
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	stagingRepo, _ := gits.NewFakeRepository(testOrgName, stagingRepoName, addFiles, gitter)
+	prodRepo, _ := gits.NewFakeRepository(testOrgName, prodRepoName, addFiles, gitter)
+
+	// Needed for another helpe
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+	fakeGitProvider.User.Username = testOrgName
+
+	o := &controller.ControllerWorkflowOptions{
+		CommonOptions: commonOpts,
+		NoWatch:       true,
+		Namespace:     "jx",
+	}
 
 	workflowName := "default"
 
 	mockHelmer := helm_test.NewMockHelmer()
-	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+	testhelpers.ConfigureTestOptionsWithResources(commonOpts,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
 			production,
 			kube.NewPreviewEnvironment("preview-pr-1"),
 		},
-		gits.NewGitLocal(),
+		gitter,
 		fakeGitProvider,
 		mockHelmer,
 		resources_mock.NewMockInstaller(),
@@ -378,14 +372,13 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	testhelpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 
 	return &TestEnv{
-		Activity:             a,
-		CommonOptions:        o.CommonOptions,
-		WorkflowOptions:      o,
-		FakeGitProvider:      fakeGitProvider,
-		DevRepo:              fakeRepo,
-		StagingRepo:          stagingRepo,
-		ProdRepo:             prodRepo,
-		ConfigureGitFolderFn: configureGitFn,
+		Activity:        a,
+		CommonOptions:   o.CommonOptions,
+		WorkflowOptions: o,
+		FakeGitProvider: fakeGitProvider,
+		DevRepo:         fakeRepo,
+		StagingRepo:     stagingRepo,
+		ProdRepo:        prodRepo,
 	}, nil
 }
 

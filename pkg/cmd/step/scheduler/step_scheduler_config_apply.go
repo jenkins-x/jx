@@ -4,7 +4,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -15,8 +14,6 @@ type StepSchedulerConfigApplyOptions struct {
 	opts.StepOptions
 	Agent         string
 	ApplyDirectly bool
-	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback gits.ConfigureGitFn
 }
 
 var (
@@ -95,7 +92,6 @@ func (o *StepSchedulerConfigApplyOptions) Run() error {
 				return errors.Wrapf(err, "creating git provider for %s", devEnv.Spec.Source.URL)
 			}
 			opts.GitProvider = gitProvider
-			opts.ConfigureGitFn = o.ConfigureGitCallback
 			opts.Gitter = o.Git()
 			opts.Helmer = o.Helm()
 			err = opts.AddToEnvironmentRepo(cfg, plugs, kubeClient, ns)

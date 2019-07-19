@@ -34,16 +34,15 @@ import (
 //StepCreatePrOptions are the common options for all PR creation steps
 type StepCreatePrOptions struct {
 	opts.StepCreateOptions
-	Results     *gits.PullRequestInfo
-	ConfigGitFn gits.ConfigureGitFn
-	BranchName  string
-	GitURLs     []string
-	Base        string
-	Fork        bool
-	SrcGitURL   string
-	Component   string
-	Version     string
-	DryRun      bool
+	Results    *gits.PullRequestInfo
+	BranchName string
+	GitURLs    []string
+	Base       string
+	Fork       bool
+	SrcGitURL  string
+	Component  string
+	Version    string
+	DryRun     bool
 }
 
 // NewCmdStepCreatePr Steps a command object for the "step" command
@@ -143,9 +142,14 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 			return errors.Wrapf(err, "creating git provider for directory %s", dir)
 		}
 
-		dir, _, gitInfo, err := gits.ForkAndPullPullRepo(gitURL, dir, o.Base, o.BranchName, provider, o.Git(), o.ConfigGitFn)
+		dir, _, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, dir, o.Base, o.BranchName, provider, o.Git())
 		if err != nil {
 			return errors.Wrapf(err, "failed to fork and pull %s", o.GitURLs)
+		}
+
+		gitInfo := upstreamInfo
+		if forkInfo != nil {
+			gitInfo = forkInfo
 		}
 
 		oldVersions, err := update(dir, gitInfo)
@@ -187,7 +191,7 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 			oldVersionsStr = oldVersionsStr + fmt.Sprintf(" and %s", strings.Join(dedupedNonSemantic, ", "))
 		}
 
-		commitMessage, details, updateDependency, assets, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, gitInfo, oldVersionsStr, o.Version, o.Component)
+		commitMessage, details, updateDependency, assets, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, upstreamInfo, oldVersionsStr, o.Version, o.Component)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -292,7 +296,7 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 				"updatebot",
 			},
 		}
-		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, gitInfo, o.Base, details, filter, true, commitMessage, true, true, o.DryRun, o.Git(), provider)
+		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, true, commitMessage, true, true, o.DryRun, o.Git(), provider)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
 		}

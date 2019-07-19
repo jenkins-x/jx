@@ -38,26 +38,24 @@ type ModifyChartFn func(requirements *helm.Requirements, metadata *chart.Metadat
 // EnvironmentPullRequestOptions are options for creating a pull request against an environment.
 // The provide a Gitter client for performing git operations, a GitProvider client for talking to the git provider,
 // a callback ModifyChartFn which is where the changes you want to make are defined,
-// and a ConfigureGitFn which is run allowing you to add external git configuration.
 type EnvironmentPullRequestOptions struct {
 	Gitter        gits.Gitter
 	GitProvider   gits.GitProvider
 	ModifyChartFn ModifyChartFn
-	ConfigGitFn   gits.ConfigureGitFn
 }
 
 // Create a pull request against the environment repository for env.
 // The EnvironmentPullRequestOptions are used to provide a Gitter client for performing git operations,
 // a GitProvider client for talking to the git provider,
-// a callback ModifyChartFn which is where the changes you want to make are defined,
-// and a ConfigureGitFn which is run allowing you to add external git configuration.
+// a callback ModifyChartFn which is where the changes you want to make are defined.
 // The branchNameText defines the branch name used, the title is used for both the commit and the pull request title,
 // the message as the body for both the commit and the pull request,
 // and the pullRequestInfo for any existing PR that exists to modify the environment that we want to merge these
 // changes into.
 func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
 	pullRequestDetails *gits.PullRequestDetails, filter *gits.PullRequestFilter, chartName string, autoMerge bool) (*gits.PullRequestInfo, error) {
-	dir, base, gitInfo, err := gits.ForkAndPullPullRepo(env.Spec.Source.URL, environmentsDir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, o.ConfigGitFn)
+	dir := filepath.Join(environmentsDir, env.Name)
+	dir, base, upstreamURL, forkURL, err := gits.ForkAndPullRepo(env.Spec.Source.URL, dir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "pulling environment repo %s into %s", env.Spec.Source.URL,
@@ -68,7 +66,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if err != nil {
 		return nil, err
 	}
-	return gits.PushRepoAndCreatePullRequest(dir, gitInfo, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, autoMerge, false, o.Gitter, o.GitProvider)
+	return gits.PushRepoAndCreatePullRequest(dir, upstreamURL, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, autoMerge, false, o.Gitter, o.GitProvider)
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function
