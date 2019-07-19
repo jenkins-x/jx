@@ -95,9 +95,9 @@ func (g *GitLocal) UpdateRemote(dir, url string) error {
 	return g.GitCLI.UpdateRemote(dir, url)
 }
 
-// Stash stashes the current changes from the given directory
-func (g *GitLocal) Stash(dir string) error {
-	return g.GitCLI.Stash(dir)
+// StashPush stashes the current changes from the given directory
+func (g *GitLocal) StashPush(dir string) error {
+	return g.GitCLI.StashPush(dir)
 }
 
 // CheckoutRemoteBranch checks out the given remote tracking branch
@@ -447,4 +447,14 @@ func (g *GitLocal) RevParse(dir string, rev string) (string, error) {
 // SetUpstreamTo will set the given branch to track the origin branch with the same name
 func (g *GitLocal) SetUpstreamTo(dir string, branch string) error {
 	return g.GitCLI.SetUpstreamTo(dir, branch)
+}
+
+// Remotes will list the names of the remotes
+func (g *GitLocal) Remotes(dir string) ([]string, error) {
+	return g.GitCLI.Remotes(dir)
+}
+
+// StashPop runs git stash pop
+func (g *GitLocal) StashPop(dir string) error {
+	return g.GitCLI.StashPop(dir)
 }

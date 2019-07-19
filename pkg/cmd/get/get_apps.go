@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -23,11 +22,10 @@ import (
 // GetAppsOptions containers the CLI options
 type GetAppsOptions struct {
 	GetOptions
-	Namespace      string
-	ShowStatus     bool
-	GitOps         bool
-	DevEnv         *v1.Environment
-	ConfigureGitFn gits.ConfigureGitFn
+	Namespace  string
+	ShowStatus bool
+	GitOps     bool
+	DevEnv     *v1.Environment
 }
 
 type appsResult struct {
@@ -158,7 +156,6 @@ func (o *GetAppsOptions) Run() error {
 		installOptions.GitProvider = gitProvider
 		installOptions.Gitter = o.Git()
 		installOptions.EnvironmentsDir = environmentsDir
-		installOptions.ConfigureGitFn = o.ConfigureGitFn
 	}
 
 	apps, err := installOptions.GetApps(o.Args)

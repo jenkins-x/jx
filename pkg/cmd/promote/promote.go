@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -68,9 +68,6 @@ type PromoteOptions struct {
 	PullRequestPollTime     string
 	Filter                  string
 	Alias                   string
-
-	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback gits.ConfigureGitFn
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -486,7 +483,6 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitCallback,
 		Gitter:        o.Git(),
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,

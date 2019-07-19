@@ -104,8 +104,12 @@ func (o *CreatePullRequestOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for directory %s", o.Dir)
 	}
-	if o.Fork {
-		gitInfo.Fork = true
+	var forkInfo *gits.GitRepository
+	if o.Fork && provider.CurrentUsername() != gitInfo.Organisation {
+		forkInfo, err = provider.GetRepository(provider.CurrentUsername(), gitInfo.Name)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get %s/%s, does the fork exist? Try running without --fork", provider.CurrentUsername(), gitInfo.Name)
+		}
 	}
 
 	details, err := o.createPullRequestDetails(gitInfo)
@@ -113,7 +117,7 @@ func (o *CreatePullRequestOptions) Run() error {
 		return errors.WithStack(err)
 	}
 
-	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, o.Base, details, nil, o.Push, details.Message, o.Push, false, false, o.Git(), provider)
+	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, forkInfo, o.Base, details, nil, o.Push, details.Message, o.Push, false, false, o.Git(), provider)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
 	}

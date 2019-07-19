@@ -217,6 +217,7 @@ type Gitter interface {
 	GetRemoteUrl(config *gitcfg.Config, name string) string
 	RemoteUpdate(dir string) error
 	LocalBranches(dir string) ([]string, error)
+	Remotes(dir string) ([]string, error)
 
 	Branch(dir string) (string, error)
 	CreateBranchFrom(dir string, branchName string, startPoint string) error
@@ -233,7 +234,8 @@ type Gitter interface {
 	ResetHard(dir string, commitish string) error
 	RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error
 
-	Stash(dir string) error
+	StashPush(dir string) error
+	StashPop(dir string) error
 
 	Remove(dir, fileName string) error
 	RemoveForce(dir, fileName string) error
@@ -265,9 +267,6 @@ type Gitter interface {
 
 	SetUpstreamTo(dir string, branch string) error
 }
-
-// ConfigureGitFn callback to optionally configure git before its used for creating commits and PRs
-type ConfigureGitFn func(dir string, gitInfo *GitRepository, gitAdapter Gitter) error
 
 // PullRequestDetails is the details for creating a pull request
 type PullRequestDetails struct {

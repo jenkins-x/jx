@@ -51,6 +51,8 @@ const (
 	namespace = "jx"
 )
 
+var timeout = 5 * time.Second
+
 func TestAddAppForGitOps(t *testing.T) {
 	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
 		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
@@ -71,13 +73,12 @@ func TestAddAppForGitOps(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Alias:                alias,
-			Repo:                 repo,
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true, // Flag default when run on CLI
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    version,
+			Alias:      alias,
+			Repo:       repo,
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true, // Flag default when run on CLI
 		}
 		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
 			Metadata: &chart.Metadata{
@@ -111,7 +112,9 @@ func TestAddAppForGitOps(t *testing.T) {
 			}
 		}
 		assert.Len(r, found, 1)
-		assert.Equal(r, version, found[0].Version)
+		if len(found) == 1 {
+			assert.Equal(r, version, found[0].Version)
+		}
 		app := &jenkinsv1.App{}
 		appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
 		_ = yaml.Unmarshal(appBytes, app)
@@ -143,13 +146,12 @@ func TestAddAppForGitOpsWithShortName(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Alias:                alias,
-			Repo:                 repo,
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true, // Flag default when run on CLI
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    version,
+			Alias:      alias,
+			Repo:       repo,
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true, // Flag default when run on CLI
 		}
 		pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
 			map[string]string{
@@ -233,12 +235,11 @@ func TestAddAppWithSecrets(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true, // Flag default when run on CLI
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    version,
+			Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true, // Flag default when run on CLI
 		}
 		o.Args = []string{name}
 		o.BatchMode = false
@@ -382,12 +383,11 @@ func TestAddAppWithDefaults(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true, // Flag default when run on CLI
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    version,
+			Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true, // Flag default when run on CLI
 		}
 		o.Args = []string{name}
 
@@ -515,13 +515,12 @@ func TestStashValues(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true, // Flag default when run on CLI
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
-			Namespace:            namespace,
+			Version:    version,
+			Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true, // Flag default when run on CLI
+			Namespace:  namespace,
 		}
 		o.Args = []string{name}
 
@@ -596,13 +595,12 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Alias:                alias,
-			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true, // Flag default when run on CLI
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    version,
+			Alias:      alias,
+			Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true, // Flag default when run on CLI
 		}
 		o.Args = []string{name}
 		o.BatchMode = false
@@ -686,12 +684,11 @@ func TestAddApp(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              version,
-		Repo:                 kube.DefaultChartMuseumURL,
-		GitOps:               false,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Version:    version,
+		Repo:       kube.DefaultChartMuseumURL,
+		GitOps:     false,
+		DevEnv:     testOptions.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 	o.Args = []string{name}
 	err = o.Run()
@@ -744,12 +741,11 @@ func TestAddAppWithShortName(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              version,
-		Repo:                 kube.DefaultChartMuseumURL,
-		GitOps:               false,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Version:    version,
+		Repo:       kube.DefaultChartMuseumURL,
+		GitOps:     false,
+		DevEnv:     testOptions.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 
 	pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
@@ -828,10 +824,9 @@ func TestAddAppFromPath(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		GitOps:               false,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		GitOps:     false,
+		DevEnv:     testOptions.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 
 	o.Args = []string{chartDir}
@@ -876,11 +871,10 @@ func TestAddLatestApp(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Repo:                 kube.DefaultChartMuseumURL,
-		GitOps:               false,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Repo:       kube.DefaultChartMuseumURL,
+		GitOps:     false,
+		DevEnv:     testOptions.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 	o.Args = []string{name}
 	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
@@ -950,14 +944,13 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		ValuesFiles:          []string{file.Name()},
+		Version:     version,
+		Alias:       alias,
+		Repo:        "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+		GitOps:      true,
+		DevEnv:      testOptions.DevEnv,
+		HelmUpdate:  true, // Flag default when run on CLI
+		ValuesFiles: []string{file.Name()},
 	}
 	o.Args = []string{name}
 	err = o.Run()
@@ -1008,13 +1001,12 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Version:    version,
+		Alias:      alias,
+		Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+		GitOps:     true,
+		DevEnv:     testOptions.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 	o.Args = []string{name}
 	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
@@ -1081,13 +1073,12 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              version,
-		Alias:                alias,
-		Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Version:    version,
+		Alias:      alias,
+		Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+		GitOps:     true,
+		DevEnv:     testOptions.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 	o.Verbose = true
 	o.Args = []string{name}
@@ -1147,12 +1138,11 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Alias:                alias,
-		Repo:                 kube.DefaultChartMuseumURL,
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Alias:      alias,
+		Repo:       kube.DefaultChartMuseumURL,
+		GitOps:     true,
+		DevEnv:     testOptions.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 	o.Args = []string{name}
 	o.Verbose = true
@@ -1217,13 +1207,12 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Alias:                alias,
-			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true,
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    version,
+			Alias:      alias,
+			Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true,
 		}
 		o.Args = []string{name}
 		o.BatchMode = false
@@ -1327,13 +1316,12 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: &commonOpts,
 			},
-			Version:              version,
-			Alias:                alias,
-			Repo:                 "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
-			GitOps:               true,
-			DevEnv:               testOptions.DevEnv,
-			HelmUpdate:           true,
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    version,
+			Alias:      alias,
+			Repo:       "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true,
 		}
 		o.Args = []string{name}
 		o.BatchMode = false

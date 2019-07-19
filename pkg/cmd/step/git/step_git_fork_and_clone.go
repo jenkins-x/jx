@@ -85,7 +85,7 @@ func (o *StepGitForkAndCloneOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "getting git provider for %s", gitURL)
 	}
-	dir, baseRef, gitInfo, err := gits.ForkAndPullPullRepo(gitURL, o.Dir, o.BaseRef, "", provider, o.Git(), nil)
+	dir, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, o.Dir, o.BaseRef, "", provider, o.Git())
 	if err != nil {
 		return errors.Wrapf(err, "forking and pulling %s", gitURL)
 	}
@@ -95,10 +95,10 @@ func (o *StepGitForkAndCloneOptions) Run() error {
 		// Must use fmt.Print() as we need to write to stdout
 		fmt.Print(dir)
 	}
-	if gitInfo.Fork {
-		log.Logger().Infof("Forked %s and pulled it into %s checking out %s", gitURL, dir, baseRef)
+	if forkInfo != nil {
+		log.Logger().Infof("Forked %s to %s and pulled it into %s checking out %s", upstreamInfo.URL, forkInfo.URL, dir, baseRef)
 	} else {
-		log.Logger().Infof("Pulled %s (%s) into %s", gitURL, baseRef, dir)
+		log.Logger().Infof("Pulled %s (%s) into %s", upstreamInfo.URL, baseRef, dir)
 	}
 
 	return nil

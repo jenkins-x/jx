@@ -5,12 +5,13 @@ package controller_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/controller"
 	"github.com/jenkins-x/jx/pkg/cmd/promote"
@@ -46,23 +47,12 @@ func TestSequentialWorkflow(t *testing.T) {
 	stagingRepoName := "environment-staging"
 	prodRepoName := "environment-production"
 
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
-	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
-
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
-	fakeGitProvider.User.Username = testOrgName
-
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
-	staging.Spec.Order = 100
-	production.Spec.Order = 200
 
-	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
-		err := gitter.Init(dir)
-		if err != nil {
-			return err
-		}
+	gitter := gits.NewGitCLI()
+
+	addFiles := func(dir string) error {
 		// Really we should have a dummy environment chart but for now let's just mock it out as needed
 		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
 		if err != nil {
@@ -84,14 +74,23 @@ func TestSequentialWorkflow(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		return gitter.AddCommit(dir, "Initial Commit")
+		return nil
 	}
 
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	stagingRepo, _ := gits.NewFakeRepository(testOrgName, stagingRepoName, addFiles, gitter)
+	prodRepo, _ := gits.NewFakeRepository(testOrgName, prodRepoName, addFiles, gitter)
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+	fakeGitProvider.User.Username = testOrgName
+
+	staging.Spec.Order = 100
+	production.Spec.Order = 200
+
 	o := &controller.ControllerWorkflowOptions{
-		CommonOptions:  &opts.CommonOptions{},
-		NoWatch:        true,
-		Namespace:      "jx",
-		ConfigureGitFn: configureGitFn,
+		CommonOptions: &opts.CommonOptions{},
+		NoWatch:       true,
+		Namespace:     "jx",
 	}
 
 	myFlowName := "myflow"
@@ -111,7 +110,7 @@ func TestSequentialWorkflow(t *testing.T) {
 				step2,
 			),
 		},
-		gits.NewGitLocal(),
+		gitter,
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
@@ -214,22 +213,13 @@ func TestWorkflowManualPromote(t *testing.T) {
 	stagingRepoName := "environment-staging"
 	prodRepoName := "environment-production"
 
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
-	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
-
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
-	fakeGitProvider.User.Username = testOrgName
-
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
 	production.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 
-	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
-		err := gitter.Init(dir)
-		if err != nil {
-			return err
-		}
+	gitter := gits.NewGitCLI()
+
+	addFiles := func(dir string) error {
 		// Really we should have a dummy environment chart but for now let's just mock it out as needed
 		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
 		if err != nil {
@@ -251,14 +241,20 @@ func TestWorkflowManualPromote(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		return gitter.AddCommit(dir, "Initial Commit")
+		return nil
 	}
 
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	stagingRepo, _ := gits.NewFakeRepository(testOrgName, stagingRepoName, addFiles, gitter)
+	prodRepo, _ := gits.NewFakeRepository(testOrgName, prodRepoName, addFiles, gitter)
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+	fakeGitProvider.User.Username = testOrgName
+
 	o := &controller.ControllerWorkflowOptions{
-		CommonOptions:  &opts.CommonOptions{},
-		NoWatch:        true,
-		Namespace:      "jx",
-		ConfigureGitFn: configureGitFn,
+		CommonOptions: &opts.CommonOptions{},
+		NoWatch:       true,
+		Namespace:     "jx",
 	}
 
 	workflowName := "default"
@@ -271,7 +267,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
 			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
 		},
-		gits.NewGitLocal(),
+		gitter,
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
@@ -319,17 +315,16 @@ func TestWorkflowManualPromote(t *testing.T) {
 	// now lets do a manual promotion
 	version := a.Spec.Version
 	po := &promote.PromoteOptions{
-		Application:          testRepoName,
-		Environment:          "production",
-		Pipeline:             a.Spec.Pipeline,
-		Build:                a.Spec.Build,
-		Version:              version,
-		NoPoll:               true,
-		IgnoreLocalFiles:     true,
-		HelmRepositoryURL:    helm.InClusterHelmRepositoryURL,
-		LocalHelmRepoName:    kube.LocalHelmRepoName,
-		Namespace:            "jx",
-		ConfigureGitCallback: configureGitFn,
+		Application:       testRepoName,
+		Environment:       "production",
+		Pipeline:          a.Spec.Pipeline,
+		Build:             a.Spec.Build,
+		Version:           version,
+		NoPoll:            true,
+		IgnoreLocalFiles:  true,
+		HelmRepositoryURL: helm.InClusterHelmRepositoryURL,
+		LocalHelmRepoName: kube.LocalHelmRepoName,
+		Namespace:         "jx",
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
@@ -400,6 +395,8 @@ func TestParallelWorkflow(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
+	gitter := gits.NewGitCLI()
+
 	testOrgName := "jstrachan"
 	testRepoName := "parallelrepo"
 
@@ -411,22 +408,11 @@ func TestParallelWorkflow(t *testing.T) {
 	envRepoNameB := "environment-" + envNameB
 	envRepoNameC := "environment-" + envNameC
 
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	repoA := gits.NewFakeRepository(testOrgName, envRepoNameA)
-	repoB := gits.NewFakeRepository(testOrgName, envRepoNameB)
-	repoC := gits.NewFakeRepository(testOrgName, envRepoNameC)
-
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, repoA, repoB, repoC)
-
 	envA := kube.NewPermanentEnvironmentWithGit(envNameA, "https://fake.git/"+testOrgName+"/"+envRepoNameA+".git")
 	envB := kube.NewPermanentEnvironmentWithGit(envNameB, "https://fake.git/"+testOrgName+"/"+envRepoNameB+".git")
 	envC := kube.NewPermanentEnvironmentWithGit(envNameC, "https://fake.git/"+testOrgName+"/"+envRepoNameC+".git")
 
-	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
-		err := gitter.Init(dir)
-		if err != nil {
-			return err
-		}
+	addFiles := func(dir string) error {
 		// Really we should have a dummy environment chart but for now let's just mock it out as needed
 		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
 		if err != nil {
@@ -456,14 +442,20 @@ func TestParallelWorkflow(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		return gitter.AddCommit(dir, "Initial Commit")
+		return nil
 	}
 
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, gitter)
+	repoA, _ := gits.NewFakeRepository(testOrgName, envRepoNameA, addFiles, gitter)
+	repoB, _ := gits.NewFakeRepository(testOrgName, envRepoNameB, addFiles, gitter)
+	repoC, _ := gits.NewFakeRepository(testOrgName, envRepoNameC, addFiles, gitter)
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, repoA, repoB, repoC)
+
 	o := &controller.ControllerWorkflowOptions{
-		CommonOptions:  &opts.CommonOptions{},
-		NoWatch:        true,
-		Namespace:      "jx",
-		ConfigureGitFn: configureGitFn,
+		CommonOptions: &opts.CommonOptions{},
+		NoWatch:       true,
+		Namespace:     "jx",
 	}
 
 	myFlowName := "myflow"
@@ -486,7 +478,7 @@ func TestParallelWorkflow(t *testing.T) {
 				step3,
 			),
 		},
-		gits.NewGitLocal(),
+		gitter,
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
@@ -606,27 +598,19 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
+	gitter := gits.NewGitCLI()
+
 	testOrgName := "jstrachan"
 	testRepoName := "myrepo"
 	stagingRepoName := "environment-staging"
 	prodRepoName := "environment-production"
-
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
-	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
-
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
 	staging.Spec.Order = 100
 	production.Spec.Order = 200
 
-	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
-		err := gitter.Init(dir)
-		if err != nil {
-			return err
-		}
+	addFiles := func(dir string) error {
 		// Really we should have a dummy environment chart but for now let's just mock it out as needed
 		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
 		if err != nil {
@@ -648,14 +632,19 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		return gitter.AddCommit(dir, "Initial Commit")
+		return nil
 	}
 
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	stagingRepo, _ := gits.NewFakeRepository(testOrgName, stagingRepoName, addFiles, gitter)
+	prodRepo, _ := gits.NewFakeRepository(testOrgName, prodRepoName, addFiles, gitter)
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+
 	o := &controller.ControllerWorkflowOptions{
-		CommonOptions:  &opts.CommonOptions{},
-		NoWatch:        true,
-		Namespace:      "jx",
-		ConfigureGitFn: configureGitFn,
+		CommonOptions: &opts.CommonOptions{},
+		NoWatch:       true,
+		Namespace:     "jx",
 	}
 
 	myFlowName := "myflow"
@@ -675,7 +664,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 				step2,
 			),
 		},
-		gits.NewGitLocal(),
+		gitter,
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),

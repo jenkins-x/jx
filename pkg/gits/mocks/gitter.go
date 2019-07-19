@@ -1045,6 +1045,25 @@ func (mock *MockGitter) RemoteUpdate(_param0 string) error {
 	return ret0
 }
 
+func (mock *MockGitter) Remotes(_param0 string) ([]string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Remotes", params, []reflect.Type{reflect.TypeOf((*[]string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 []string
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].([]string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitter) Remove(_param0 string, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -1248,12 +1267,27 @@ func (mock *MockGitter) ShallowCloneBranch(_param0 string, _param1 string, _para
 	return ret0
 }
 
-func (mock *MockGitter) Stash(_param0 string) error {
+func (mock *MockGitter) StashPop(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
 	}
 	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("Stash", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("StashPop", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockGitter) StashPush(_param0 string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("StashPush", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
 		if result[0] != nil {
@@ -3227,6 +3261,33 @@ func (c *MockGitter_RemoteUpdate_OngoingVerification) GetAllCapturedArguments() 
 	return
 }
 
+func (verifier *VerifierMockGitter) Remotes(_param0 string) *MockGitter_Remotes_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Remotes", params, verifier.timeout)
+	return &MockGitter_Remotes_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_Remotes_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_Remotes_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *MockGitter_Remotes_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierMockGitter) Remove(_param0 string, _param1 string) *MockGitter_Remove_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Remove", params, verifier.timeout)
@@ -3642,23 +3703,50 @@ func (c *MockGitter_ShallowCloneBranch_OngoingVerification) GetAllCapturedArgume
 	return
 }
 
-func (verifier *VerifierMockGitter) Stash(_param0 string) *MockGitter_Stash_OngoingVerification {
+func (verifier *VerifierMockGitter) StashPop(_param0 string) *MockGitter_StashPop_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Stash", params, verifier.timeout)
-	return &MockGitter_Stash_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "StashPop", params, verifier.timeout)
+	return &MockGitter_StashPop_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockGitter_Stash_OngoingVerification struct {
+type MockGitter_StashPop_OngoingVerification struct {
 	mock              *MockGitter
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockGitter_Stash_OngoingVerification) GetCapturedArguments() string {
+func (c *MockGitter_StashPop_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *MockGitter_Stash_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockGitter_StashPop_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitter) StashPush(_param0 string) *MockGitter_StashPush_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "StashPush", params, verifier.timeout)
+	return &MockGitter_StashPush_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_StashPush_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_StashPush_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *MockGitter_StashPush_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

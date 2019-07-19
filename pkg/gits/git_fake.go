@@ -27,7 +27,7 @@ type GitTag struct {
 
 // GitFake provides a fake Gitter
 type GitFake struct {
-	Remotes        []GitRemote
+	GitRemotes     []GitRemote
 	Branches       []string
 	BranchesRemote []string
 	CurrentBranch  string
@@ -207,12 +207,12 @@ func (g *GitFake) AddRemote(dir string, name string, url string) error {
 		Name: name,
 		URL:  url,
 	}
-	g.Remotes = append(g.Remotes, r)
+	g.GitRemotes = append(g.GitRemotes, r)
 	return nil
 }
 
 func (g *GitFake) findRemote(name string) (*GitRemote, error) {
-	for _, remote := range g.Remotes {
+	for _, remote := range g.GitRemotes {
 		if remote.Name == name {
 			return &remote, nil
 		}
@@ -228,7 +228,7 @@ func (g *GitFake) SetRemoteURL(dir string, name string, gitURL string) error {
 			Name: name,
 			URL:  gitURL,
 		}
-		g.Remotes = append(g.Remotes, r)
+		g.GitRemotes = append(g.GitRemotes, r)
 		return nil
 	}
 	remote.URL = gitURL
@@ -291,10 +291,10 @@ func (g *GitFake) RemoteBranchNames(dir string, prefix string) ([]string, error)
 
 // GetRemoteUrl get the remote URL
 func (g *GitFake) GetRemoteUrl(config *gitcfg.Config, name string) string {
-	if len(g.Remotes) == 0 {
+	if len(g.GitRemotes) == 0 {
 		return ""
 	}
-	return g.Remotes[0].URL
+	return g.GitRemotes[0].URL
 }
 
 // Branch returns the current branch
@@ -377,8 +377,8 @@ func (g *GitFake) FetchBranchShallow(dir string, repo string, refspec ...string)
 	return nil
 }
 
-// Stash git stash
-func (g *GitFake) Stash(dir string) error {
+// StashPush git stash
+func (g *GitFake) StashPush(dir string) error {
 	return nil
 }
 
@@ -578,5 +578,19 @@ func (g *GitFake) RevParse(dir string, rev string) (string, error) {
 
 // SetUpstreamTo will set the given branch to track the origin branch with the same name
 func (g *GitFake) SetUpstreamTo(dir string, branch string) error {
+	return nil
+}
+
+// Remotes will list the names of the remotes
+func (g *GitFake) Remotes(dir string) ([]string, error) {
+	answer := make([]string, 0)
+	for _, r := range g.GitRemotes {
+		answer = append(answer, r.Name)
+	}
+	return answer, nil
+}
+
+// StashPop does nothing
+func (g *GitFake) StashPop(dir string) error {
 	return nil
 }

@@ -2,13 +2,14 @@ package upgrade_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 
 	"github.com/jenkins-x/jx/pkg/cmd/add"
 
@@ -49,13 +50,12 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              newVersion.String(),
-		Alias:                alias,
-		Repo:                 helm.FakeChartmusuem,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Version:    newVersion.String(),
+		Alias:      alias,
+		Repo:       helm.FakeChartmusuem,
+		GitOps:     true,
+		HelmUpdate: true,
+		DevEnv:     testOptions.DevEnv,
 	}
 	o.Args = []string{name}
 
@@ -114,13 +114,12 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              newVersion.String(),
-		Alias:                alias,
-		Repo:                 kube.DefaultChartMuseumURL,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Version:    newVersion.String(),
+		Alias:      alias,
+		Repo:       kube.DefaultChartMuseumURL,
+		GitOps:     true,
+		HelmUpdate: true,
+		DevEnv:     testOptions.DevEnv,
 	}
 	pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
 		map[string]string{
@@ -199,11 +198,6 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 		assert.NoError(r, err)
 		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
-		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-		assert.NoError(r, err)
-		assert.Equal(r, `name: testing
-`, string(existingValues))
-
 		// Now let's upgrade
 
 		newVersion, err := semver.Parse(version)
@@ -213,13 +207,12 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
-			Version:              newVersion.String(),
-			Alias:                alias,
-			Repo:                 helm.FakeChartmusuem,
-			GitOps:               true,
-			HelmUpdate:           true,
-			DevEnv:               testOptions.DevEnv,
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    newVersion.String(),
+			Alias:      alias,
+			Repo:       helm.FakeChartmusuem,
+			GitOps:     true,
+			HelmUpdate: true,
+			DevEnv:     testOptions.DevEnv,
 		}
 		o.Args = []string{name}
 
@@ -257,7 +250,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 		_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 		assert.NoError(r, err)
 		// Validate the updated values.yaml
-		existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
 		assert.NoError(r, err)
 		assert.Equal(r, `name: testing
 species: human
@@ -290,12 +283,6 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 		envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 		assert.NoError(r, err)
 		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
-
-		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-		assert.NoError(r, err)
-		assert.Equal(r, `name: testing
-`, string(existingValues))
-
 		// Now let's upgrade
 
 		newVersion, err := semver.Parse(version)
@@ -305,13 +292,12 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
-			Version:              newVersion.String(),
-			Alias:                alias,
-			Repo:                 helm.FakeChartmusuem,
-			GitOps:               true,
-			HelmUpdate:           true,
-			DevEnv:               testOptions.DevEnv,
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    newVersion.String(),
+			Alias:      alias,
+			Repo:       helm.FakeChartmusuem,
+			GitOps:     true,
+			HelmUpdate: true,
+			DevEnv:     testOptions.DevEnv,
 		}
 		o.Args = []string{name}
 		o.BatchMode = false
@@ -362,7 +348,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 		_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 		assert.NoError(r, err)
 		// Validate the updated values.yaml
-		existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
 		assert.NoError(r, err)
 		assert.Equal(r, `name: testing
 species: martian
@@ -396,11 +382,6 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 		assert.NoError(r, err)
 		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
-		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
-		assert.NoError(r, err)
-		assert.Equal(r, `name: testing
-`, string(existingValues))
-
 		// Now let's upgrade
 
 		newVersion, err := semver.Parse(version)
@@ -410,14 +391,13 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
-			Version:              newVersion.String(),
-			Alias:                alias,
-			Repo:                 helm.FakeChartmusuem,
-			GitOps:               true,
-			HelmUpdate:           true,
-			DevEnv:               testOptions.DevEnv,
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
-			AskAll:               true,
+			Version:    newVersion.String(),
+			Alias:      alias,
+			Repo:       helm.FakeChartmusuem,
+			GitOps:     true,
+			HelmUpdate: true,
+			DevEnv:     testOptions.DevEnv,
+			AskAll:     true,
 		}
 		o.Args = []string{name}
 		o.BatchMode = false
@@ -469,7 +449,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 		_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 		assert.NoError(r, err)
 		// Validate the updated values.yaml
-		existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+		existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
 		assert.NoError(r, err)
 		assert.Equal(r, `name: mark
 species: martian
@@ -506,13 +486,12 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 			AddOptions: add.AddOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
-			Version:              newVersion.String(),
-			Alias:                alias,
-			Repo:                 helm.FakeChartmusuem,
-			GitOps:               true,
-			HelmUpdate:           true,
-			DevEnv:               testOptions.DevEnv,
-			ConfigureGitCallback: testOptions.ConfigureGitFn,
+			Version:    newVersion.String(),
+			Alias:      alias,
+			Repo:       helm.FakeChartmusuem,
+			GitOps:     true,
+			HelmUpdate: true,
+			DevEnv:     testOptions.DevEnv,
 		}
 		o.Args = []string{name}
 
@@ -575,13 +554,12 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Version:              newVersion.String(),
-		Alias:                alias,
-		Repo:                 helm.FakeChartmusuem,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Version:    newVersion.String(),
+		Alias:      alias,
+		Repo:       helm.FakeChartmusuem,
+		GitOps:     true,
+		HelmUpdate: true,
+		DevEnv:     testOptions.DevEnv,
 	}
 	o.Args = []string{name}
 
@@ -645,11 +623,10 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		AddOptions: add.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Repo:                 helm.FakeChartmusuem,
-		GitOps:               true,
-		HelmUpdate:           true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Repo:       helm.FakeChartmusuem,
+		GitOps:     true,
+		HelmUpdate: true,
+		DevEnv:     testOptions.DevEnv,
 	}
 
 	helm_test.StubFetchChart(name1, "", helm.FakeChartmusuem, &chart.Chart{

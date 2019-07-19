@@ -218,9 +218,14 @@ func (g *GitCLI) RemoteUpdate(dir string) error {
 	return g.gitCmd(dir, "remote", "update")
 }
 
-// Stash stashes the current changes from the given directory
-func (g *GitCLI) Stash(dir string) error {
-	return g.gitCmd(dir, "stash")
+// StashPush stashes the current changes from the given directory
+func (g *GitCLI) StashPush(dir string) error {
+	return g.gitCmd(dir, "stash", "push")
+}
+
+// StashPop applies the last stash , will error if there is no stash. Error can be checked using IsNoStashEntriesError
+func (g *GitCLI) StashPop(dir string) error {
+	return g.gitCmd(dir, "stash", "pop")
 }
 
 // CheckoutRemoteBranch checks out the given remote tracking branch
@@ -446,6 +451,10 @@ func (g *GitCLI) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string
 	u, err := url.Parse(cloneURL)
 	if err != nil {
 		// already a git/ssh url?
+		return cloneURL, nil
+	}
+	// The file scheme doesn't support auth
+	if u.Scheme == "file" {
 		return cloneURL, nil
 	}
 	if userAuth.Username != "" || userAuth.ApiToken != "" {
@@ -948,4 +957,13 @@ func (g *GitCLI) nthTagSHA(dir string, n int) (string, string, error) {
 	}
 
 	return fields[0], fields[1], nil
+}
+
+// Remotes will list the names of the remotes
+func (g *GitCLI) Remotes(dir string) ([]string, error) {
+	out, err := g.gitCmdWithOutput(dir, "remote")
+	if err != nil {
+		return nil, errors.Wrapf(err, "running git remote")
+	}
+	return strings.Split(out, "\n"), nil
 }

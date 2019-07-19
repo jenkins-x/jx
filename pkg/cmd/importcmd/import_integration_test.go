@@ -137,9 +137,9 @@ func createFakeGitProvider() *gits.FakeProvider {
 	stagingRepoName := "environment-staging"
 	prodRepoName := "environment-production"
 
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
-	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	stagingRepo, _ := gits.NewFakeRepository(testOrgName, stagingRepoName, nil, nil)
+	prodRepo, _ := gits.NewFakeRepository(testOrgName, prodRepoName, nil, nil)
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 	userAuth := auth.UserAuth{

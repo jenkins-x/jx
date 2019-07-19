@@ -36,7 +36,6 @@ import (
 
 // AppTestOptions contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type AppTestOptions struct {
-	ConfigureGitFn  gits.ConfigureGitFn
 	CommonOptions   *opts.CommonOptions
 	FakeGitProvider *gits.FakeProvider
 	DevRepo         *gits.FakeRepository
@@ -55,7 +54,7 @@ type AppTestOptions struct {
 
 // GetFullDevEnvDir returns a dev environment including org name and env
 func (o *AppTestOptions) GetFullDevEnvDir(envDir string) (name string) {
-	return filepath.Join(envDir, o.OrgName, o.DevEnvRepoInfo.Name)
+	return filepath.Join(envDir, o.DevEnv.Name)
 
 }
 
@@ -74,12 +73,11 @@ func (o *AppTestOptions) AddApp(values map[string]interface{}, prefix string) (s
 		AddOptions: add.AddOptions{
 			CommonOptions: o.CommonOptions,
 		},
-		Version:              version,
-		Repo:                 kube.DefaultChartMuseumURL,
-		GitOps:               false,
-		DevEnv:               o.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: o.ConfigureGitFn,
+		Version:    version,
+		Repo:       kube.DefaultChartMuseumURL,
+		GitOps:     false,
+		DevEnv:     o.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
@@ -99,18 +97,15 @@ func (o *AppTestOptions) AddApp(values map[string]interface{}, prefix string) (s
 // DirectlyAddAppToGitOps modifies the environment git repo directly to add a dummy app
 func (o *AppTestOptions) DirectlyAddAppToGitOps(appName string, values map[string]interface{}, prefix string) (name string,
 	alias string, version string, err error) {
-	envDir, err := o.CommonOptions.EnvironmentsDir()
+	dir := o.DevEnvRepo.CloneDir
+
+	err = o.CommonOptions.Git().Checkout(dir, "master")
 	if err != nil {
-		return "", "", "", err
-	}
-	devEnvDir := o.GetFullDevEnvDir(envDir)
-	err = os.MkdirAll(devEnvDir, 0700)
-	if err != nil {
-		return "", "", "", err
+		return "", "", "", errors.Wrapf(err, "checking out master")
 	}
 
 	// Update the requirements
-	fileName := filepath.Join(devEnvDir, helm.RequirementsFileName)
+	fileName := filepath.Join(dir, helm.RequirementsFileName)
 	requirements := helm.Requirements{}
 	if _, err := os.Stat(fileName); err == nil {
 		data, err := ioutil.ReadFile(fileName)
@@ -134,7 +129,9 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(appName string, values map[strin
 	}
 	alias = fmt.Sprintf("%s-alias", name)
 	version = "0.0.1"
-	name = fmt.Sprintf("%s-%s", prefix, name)
+	if prefix != "" {
+		name = fmt.Sprintf("%s-%s", prefix, name)
+	}
 	requirements.Dependencies = append(requirements.Dependencies, &helm.Dependency{
 		Name:       name,
 		Alias:      alias,
@@ -149,10 +146,14 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(appName string, values map[strin
 	if err != nil {
 		return "", "", "", err
 	}
+	err = o.CommonOptions.Git().Add(dir, helm.RequirementsFileName)
+	if err != nil {
+		return "", "", "", errors.Wrapf(err, "adding %s to git", fileName)
+	}
 
 	// Add the values.yaml
 	if values != nil {
-		appDir := filepath.Join(devEnvDir, name)
+		appDir := filepath.Join(dir, name)
 		fileName := filepath.Join(appDir, helm.ValuesFileName)
 		err := os.MkdirAll(appDir, 0700)
 		if err != nil {
@@ -166,6 +167,21 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(appName string, values map[strin
 		if err != nil {
 			return "", "", "", errors.Wrapf(err, "writing %s\n%s\n", fileName, string(data))
 		}
+		err = o.CommonOptions.Git().Add(dir, filepath.Join(name, helm.ValuesFileName))
+		if err != nil {
+			return "", "", "", errors.Wrapf(err, "adding %s to git", fileName)
+		}
+	}
+
+	err = o.CommonOptions.Git().CommitDir(dir, fmt.Sprintf("directly adding %s", name))
+	if err != nil {
+		return "", "", "", errors.Wrapf(err, "running git commit in %s", dir)
+	}
+
+	// Go back to a detached head
+	err = o.CommonOptions.Git().Checkout(dir, "--detach")
+	if err != nil {
+		return "", "", "", errors.Wrapf(err, "detaching from master")
 	}
 
 	return name, alias, version, nil
@@ -213,20 +229,13 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 	assert.NoError(t, err)
 	testRepoName := testRepoNameUUID.String()
 	devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
 
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
-	fakeGitProvider.User.Username = testOrgName
-
-	MockFactoryFakeClients(mockFactory)
+	gitter := gits.NewGitCLI()
 
 	var devEnv *jenkinsv1.Environment
 	if gitOps {
 		devEnv = kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,
 			devEnvRepoName))
-		devEnv.Spec.Source.URL = devEnvRepo.GitRepo.CloneURL
-		devEnv.Spec.Source.Ref = "master"
 		o.MockVaultClient = vault_test.NewMockClient()
 		pegomock.When(mockFactory.SecretsLocation()).ThenReturn(pegomock.ReturnValue(secrets.VaultLocationKind))
 		pegomock.When(mockFactory.CreateSystemVaultClient(pegomock.AnyString())).ThenReturn(pegomock.ReturnValue(o.
@@ -234,26 +243,8 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 	} else {
 		devEnv = kube.NewPermanentEnvironment("dev")
 	}
-	o.MockHelmer = helm_test.NewMockHelmer()
-	installerMock := resources_test.NewMockInstaller()
-	ConfigureTestOptionsWithResources(o.CommonOptions,
-		[]runtime.Object{},
-		[]runtime.Object{
-			devEnv,
-		},
-		gits.NewGitLocal(),
-		fakeGitProvider,
-		o.MockHelmer,
-		installerMock,
-	)
 
-	err = CreateTestEnvironmentDir(o.CommonOptions)
-	assert.NoError(t, err)
-	o.ConfigureGitFn = func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
-		err := gitter.Init(dir)
-		if err != nil {
-			return err
-		}
+	addFiles := func(dir string) error {
 		// Really we should have a dummy environment chart but for now let's just mock it out as needed
 		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
 		if err != nil {
@@ -297,8 +288,37 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 			}
 		}
 
-		return gitter.AddCommit(dir, "Initial Commit")
+		return nil
 	}
+
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	devEnvRepo, _ := gits.NewFakeRepository(testOrgName, devEnvRepoName, addFiles, gitter)
+
+	if gitOps {
+		devEnv.Spec.Source.URL = devEnvRepo.GitRepo.URL
+		devEnv.Spec.Source.Ref = "master"
+	}
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
+	fakeGitProvider.User.Username = testOrgName
+
+	MockFactoryFakeClients(mockFactory)
+
+	o.MockHelmer = helm_test.NewMockHelmer()
+	installerMock := resources_test.NewMockInstaller()
+	ConfigureTestOptionsWithResources(o.CommonOptions,
+		[]runtime.Object{},
+		[]runtime.Object{
+			devEnv,
+		},
+		gitter,
+		fakeGitProvider,
+		o.MockHelmer,
+		installerMock,
+	)
+
+	err = CreateTestEnvironmentDir(o.CommonOptions)
+	assert.NoError(t, err)
 	o.FakeGitProvider = fakeGitProvider
 	o.DevRepo = fakeRepo
 	o.DevEnvRepo = devEnvRepo

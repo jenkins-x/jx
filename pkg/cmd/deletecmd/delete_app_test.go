@@ -2,11 +2,12 @@ package deletecmd_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	uuid "github.com/satori/go.uuid"
 
@@ -37,11 +38,10 @@ func TestDeleteAppForGitOps(t *testing.T) {
 	commonOpts := *testOptions.CommonOptions
 
 	o := &deletecmd.DeleteAppOptions{
-		CommonOptions:        &commonOpts,
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		Alias:                alias,
+		CommonOptions: &commonOpts,
+		GitOps:        true,
+		DevEnv:        testOptions.DevEnv,
+		Alias:         alias,
 	}
 	o.Args = []string{name}
 
@@ -83,11 +83,10 @@ func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
 	commonOpts := *testOptions.CommonOptions
 
 	o := &deletecmd.DeleteAppOptions{
-		CommonOptions:        &commonOpts,
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		Alias:                alias,
+		CommonOptions: &commonOpts,
+		GitOps:        true,
+		DevEnv:        testOptions.DevEnv,
+		Alias:         alias,
 	}
 	o.Args = []string{shortName}
 
@@ -125,9 +124,8 @@ func TestDeleteApp(t *testing.T) {
 
 	commonOpts := *testOptions.CommonOptions
 	o := &deletecmd.DeleteAppOptions{
-		CommonOptions:        &commonOpts,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		CommonOptions: &commonOpts,
+		DevEnv:        testOptions.DevEnv,
 	}
 	o.Args = []string{name}
 
@@ -152,10 +150,9 @@ func TestDeleteAppWithShortName(t *testing.T) {
 
 	commonOpts := *testOptions.CommonOptions
 	o := &deletecmd.DeleteAppOptions{
-		CommonOptions:        &commonOpts,
-		GitOps:               true,
-		DevEnv:               testOptions.DevEnv,
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		CommonOptions: &commonOpts,
+		GitOps:        true,
+		DevEnv:        testOptions.DevEnv,
 	}
 	o.Args = []string{shortName}
 

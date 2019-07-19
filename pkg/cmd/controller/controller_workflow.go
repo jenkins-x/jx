@@ -51,9 +51,6 @@ type ControllerWorkflowOptions struct {
 	PullRequestPollDuration *time.Duration
 	workflowMap             map[string]*v1.Workflow
 	pipelineMap             map[string]*v1.PipelineActivity
-
-	// Allow Git to be configured
-	ConfigureGitFn gits.ConfigureGitFn
 }
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
@@ -354,17 +351,16 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 
 func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envName string, pipelineName string, build string, version string) *promote.PromoteOptions {
 	po := &promote.PromoteOptions{
-		Application:          repoName,
-		Environment:          envName,
-		Pipeline:             pipelineName,
-		Build:                build,
-		Version:              version,
-		NoPoll:               true,
-		IgnoreLocalFiles:     true,
-		HelmRepositoryURL:    helm.InClusterHelmRepositoryURL,
-		LocalHelmRepoName:    kube.LocalHelmRepoName,
-		Namespace:            o.Namespace,
-		ConfigureGitCallback: o.ConfigureGitFn,
+		Application:       repoName,
+		Environment:       envName,
+		Pipeline:          pipelineName,
+		Build:             build,
+		Version:           version,
+		NoPoll:            true,
+		IgnoreLocalFiles:  true,
+		HelmRepositoryURL: helm.InClusterHelmRepositoryURL,
+		LocalHelmRepoName: kube.LocalHelmRepoName,
+		Namespace:         o.Namespace,
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
