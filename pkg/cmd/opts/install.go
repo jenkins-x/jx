@@ -1640,6 +1640,7 @@ func GetSafeUsername(username string) string {
 	return username
 }
 
+// AddDummyApplication creates the dummy prow jenkins app
 func (o *CommonOptions) AddDummyApplication(client kubernetes.Interface, devNamespace string, settings *jenkinsv1.TeamSettings) error {
 
 	var err error
