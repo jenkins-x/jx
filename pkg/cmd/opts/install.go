@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1639,6 +1640,22 @@ func GetSafeUsername(username string) string {
 	return username
 }
 
+func (o *CommonOptions) AddDummyApplication(client kubernetes.Interface, devNamespace string, settings *jenkinsv1.TeamSettings) error {
+
+	var err error
+	log.Logger().Infof("Setting up prow config into namespace %s", util.ColorInfo(devNamespace))
+
+	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
+	_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	if err != nil {
+		err = prow.AddApplication(client, []string{"jenkins-x/dummy"}, devNamespace, "base", settings)
+		if err != nil {
+			return errors.Wrap(err, "adding dummy application")
+		}
+	}
+	return nil
+}
+
 // InstallProw installs prow
 func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string, valuesFiles []string) error {
 	if o.ReleaseName == "" {
@@ -1697,12 +1714,8 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		return errors.Wrap(err, "reading the team settings")
 	}
 
-	log.Logger().Infof("Setting up prow config into namespace %s", util.ColorInfo(devNamespace))
-
-	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
-	_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
-	if err != nil {
-		err = prow.AddApplication(client, []string{"jenkins-x/dummy"}, devNamespace, "base", settings)
+	if !isGitOps {
+		err = o.AddDummyApplication(client, devNamespace, settings)
 		if err != nil {
 			return errors.Wrap(err, "adding dummy application")
 		}

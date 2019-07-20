@@ -1858,6 +1858,18 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 			if err != nil {
 				return errors.Wrap(err, "configuring Jenkins")
 			}
+		} else {
+			client, devNamespace, err := options.KubeClientAndDevNamespace()
+
+			settings, err := options.TeamSettings()
+			if err != nil {
+				return errors.Wrap(err, "reading the team settings")
+			}
+
+			options.AddDummyApplication(client, devNamespace, settings)
+			if err != nil {
+				return errors.Wrap(err, "adding dummy application")
+			}
 		}
 
 		jxClient, devNs, err := options.JXClientAndDevNamespace()
