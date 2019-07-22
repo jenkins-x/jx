@@ -274,6 +274,9 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 						requirements.Cluster.ProjectID = currentProject
 					} else {
 						requirements.Cluster.ProjectID, err = o.GetGoogleProjectID(currentProject)
+						if err != nil {
+							return errors.Wrap(err, "getting project ID")
+						}
 					}
 				}
 				if requirements.Cluster.Zone == "" {
@@ -293,7 +296,7 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 						requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
 							"The name for your cluster", o.In, o.Out, o.Err)
 						if err != nil {
-							return errors.Wrap(err, "getting GKE Zone")
+							return errors.Wrap(err, "getting cluster name")
 						}
 					}
 
