@@ -92,6 +92,8 @@ type IngressConfig struct {
 	ExternalDNS bool `json:"externalDNS"`
 	// Domain to expose ingress endpoints
 	Domain string `json:"domain"`
+	// NamespaceSubDomain the sub domain expression to expose ingress. Defaults to ".jx."
+	NamespaceSubDomain string `json:"namespaceSubDomain"`
 	// TLS enable automated TLS using certmanager
 	TLS TLSConfig `json:"tls"`
 }
@@ -137,10 +139,14 @@ type ClusterConfig struct {
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// Provider the kubernetes provider (e.g. gke)
 	Provider string `json:"provider,omitempty"`
+	// Namespace the namespace to install the dev environment
+	Namespace string `json:"namespace,omitempty"`
 	// ProjectID the cloud project ID e.g. on GCP
 	ProjectID string `json:"project,omitempty"`
 	// ClusterName the logical name of the cluster
 	ClusterName string `json:"clusterName,omitempty"`
+	// VaultName the name of the vault if using vault for secretts
+	VaultName string `json:"vaultName,omitempty"`
 	// Region the cloud region being used
 	Region string `json:"region,omitempty"`
 	// Zone the cloud zone being used
@@ -319,7 +325,6 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 			log.Logger().Warnf("failed to turn environment %s with value %#v into a map: %s\n", k, env, err.Error())
 		}
 	}
-	log.Logger().Infof("Enviroments: %#v\n", answer)
 	return answer
 }
 
@@ -393,6 +398,12 @@ func (c *RequirementsConfig) addDefaults() {
 	}
 	if c.VersionStream.Ref == "" {
 		c.VersionStream.Ref = DefaultVersionsRef
+	}
+	if c.Cluster.Namespace == "" {
+		c.Cluster.Namespace = "jx"
+	}
+	if c.Ingress.NamespaceSubDomain == "" {
+		c.Ingress.NamespaceSubDomain = "." + c.Cluster.Namespace + "."
 	}
 }
 

@@ -215,7 +215,7 @@ func (o *StepCreateInstallValuesOptions) discoverIngressDomain(requirements *con
 	if domain == "" {
 		hasHost, err := o.waitForIngressControllerHost(client, o.IngressNamespace, o.IngressService)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
 		}
 		if hasHost {
 			domain, err = o.GetDomain(client, "",
@@ -226,17 +226,19 @@ func (o *StepCreateInstallValuesOptions) discoverIngressDomain(requirements *con
 			if err != nil {
 				return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
 			}
+		} else {
+			log.Logger().Warnf("could not find host for  ingress service %s/%s\n", o.IngressNamespace, o.IngressService)
 		}
-		if domain == "" {
-			return fmt.Errorf("failed to discover domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
-		}
-		requirements.Ingress.Domain = domain
-		err = requirements.SaveConfig(requirementsFileName)
-		if err != nil {
-			return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
-		}
-		log.Logger().Infof("defaulting the domain to %s\n", util.ColorInfo(domain))
 	}
+	if domain == "" {
+		return fmt.Errorf("failed to discover domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
+	}
+	requirements.Ingress.Domain = domain
+	err = requirements.SaveConfig(requirementsFileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
+	}
+	log.Logger().Infof("defaulting the domain to %s and modified %s\n", util.ColorInfo(domain), util.ColorInfo(requirementsFileName))
 	return nil
 }
 

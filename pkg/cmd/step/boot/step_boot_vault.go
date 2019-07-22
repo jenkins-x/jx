@@ -1,7 +1,11 @@
 package boot
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"text/template"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
@@ -9,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
@@ -17,6 +22,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/helm/pkg/chartutil"
 )
 
 // StepBootVaultOptions contains the command line flags
@@ -81,6 +88,22 @@ func (o *StepBootVaultOptions) Run() error {
 		return nil
 	}
 
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrapf(err, "failed to create kubernetes client")
+	}
+
+	systemVaultName, err := kubevault.SystemVaultName(o.Kube())
+	if err != nil {
+		return errors.Wrap(err, "building the system vault name from cluster name")
+	}
+	requirements.Cluster.VaultName = systemVaultName
+
+	noExposeVault, err := o.verifyVaultIngress(requirements, kubeClient, ns, systemVaultName)
+	if err != nil {
+		return err
+	}
+
 	ic, err := o.createIngressConfig(requirements)
 	if err != nil {
 		return err
@@ -97,6 +120,7 @@ func (o *StepBootVaultOptions) Run() error {
 		Namespace:           ns,
 		RecreateVaultBucket: true,
 		IngressConfig:       ic,
+		NoExposeVault:       noExposeVault,
 		// TODO - load from a local yaml file if available?
 		// AWSConfig:           o.AWSConfig,
 	}
@@ -142,20 +166,12 @@ func (o *StepBootVaultOptions) Run() error {
 		return errors.Wrap(err, "unable to install vault operator")
 	}
 
+	log.Logger().Infof("vault operator installed in namespace %s", ns)
+
 	// Create a new System vault
 	vaultOperatorClient, err := cvo.VaultOperatorClient()
 	if err != nil {
 		return err
-	}
-
-	systemVaultName, err := kubevault.SystemVaultName(o.Kube())
-	if err != nil {
-		return errors.Wrap(err, "building the system vault name from cluster name")
-	}
-
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes client")
 	}
 
 	// lets store the system vault name
@@ -168,6 +184,8 @@ func (o *StepBootVaultOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
 	}
+
+	log.Logger().Infof("finding vault in namespace %s", ns)
 
 	if kubevault.FindVault(vaultOperatorClient, systemVaultName, ns) {
 		log.Logger().Infof("System vault named %s in namespace %s already exists",
@@ -194,4 +212,68 @@ func (o *StepBootVaultOptions) createIngressConfig(requirements *config.Requirem
 		TLS:     tls.Enabled,
 	}
 	return ic, nil
+}
+
+// verifyVaultIngress verifies there is a Vault ingress and if not create one if there is a file at
+func (o *StepBootVaultOptions) verifyVaultIngress(requirements *config.RequirementsConfig, kubeClient kubernetes.Interface, ns string, systemVaultName string) (bool, error) {
+	fileName := filepath.Join(o.Dir, "vault-ing.tmpl.yaml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to check if file exists %s", fileName)
+	}
+	if !exists {
+		log.Logger().Warnf("failed to find file %s\n", fileName)
+		return false, nil
+	}
+	data, err := readYamlTemplate(fileName, requirements)
+	if err != nil {
+		return true, errors.Wrapf(err, "failed to load vault ingress template file %s", fileName)
+	}
+
+	log.Logger().Infof("applying vault ingress in namespace %s for vault name %s\n", util.ColorInfo(ns), util.ColorInfo(systemVaultName))
+
+	tmpFile, err := ioutil.TempFile("", "vault-ingress-")
+	if err != nil {
+		return true, errors.Wrapf(err, "failed to create temporary file for vault YAML")
+	}
+
+	tmpFileName := tmpFile.Name()
+	err = ioutil.WriteFile(tmpFileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return true, errors.Wrapf(err, "failed to save vault ingress YAML file %s", tmpFileName)
+	}
+
+	args := []string{"apply", "--force", "-f", tmpFileName, "-n", ns}
+	err = o.RunCommand("kubectl", args...)
+	if err != nil {
+		return true, errors.Wrapf(err, "failed to apply vault ingress YAML")
+	}
+	return true, nil
+}
+
+// readYamlTemplate evaluates the given go template file and returns the output data
+func readYamlTemplate(templateFile string, requirements *config.RequirementsConfig) ([]byte, error) {
+	_, name := filepath.Split(templateFile)
+	funcMap := helm.NewFunctionMap()
+	tmpl, err := template.New(name).Option("missingkey=error").Funcs(funcMap).ParseFiles(templateFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse Secrets template: %s", templateFile)
+	}
+
+	requirementsMap, err := requirements.ToMap()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed turn requirements into a map: %v", requirements)
+	}
+
+	templateData := map[string]interface{}{
+		"Requirements": chartutil.Values(requirementsMap),
+		"Environments": chartutil.Values(requirements.EnvironmentMap()),
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, templateData)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to execute Secrets template: %s", templateFile)
+	}
+	data := buf.Bytes()
+	return data, nil
 }

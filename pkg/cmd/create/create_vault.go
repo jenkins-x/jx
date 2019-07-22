@@ -61,6 +61,7 @@ type CreateVaultOptions struct {
 	Namespace           string
 	SecretsPathPrefix   string
 	RecreateVaultBucket bool
+	NoExposeVault       bool
 
 	IngressConfig kube.IngressConfig
 }
@@ -102,6 +103,7 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
 	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
 	cmd.Flags().BoolVarP(&options.RecreateVaultBucket, "recreate", "", true, "If the bucket already exists delete it so its created empty for the vault")
+	cmd.Flags().BoolVarP(&options.NoExposeVault, "no-expose", "", false, "If enabled disable the exposing of the vault")
 
 	return cmd
 }
@@ -196,6 +198,10 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 		return errors.Wrap(err, "creating vault")
 	}
 
+	if o.NoExposeVault {
+		log.Logger().Infof("not exposing vault %s exposed", vaultName)
+		return nil
+	}
 	log.Logger().Infof("Exposing Vault...")
 	err = o.exposeVault(vaultName)
 	if err != nil {
