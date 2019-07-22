@@ -80,18 +80,6 @@ func TestCreateInstallValues(t *testing.T) {
 
 	err = o.Run()
 	require.NoError(t, err, "failed to run step")
-
-	fileName := filepath.Join(outputDir, "cluster", "values.yaml")
-
-	t.Logf("Generated values file at %s\n", fileName)
-
-	assert.FileExists(t, fileName, "failed to create valid file")
-
-	values, err := helm.LoadValuesFile(fileName)
-	require.NoError(t, err, "failed to load file %s", fileName)
-
-	AssertMapPathValueAsString(t, values, "namespaceSubDomain", ".jx.")
-	AssertMapPathValueAsString(t, values, "domain", expectedDomain)
 }
 
 func TestExternalDNSDisabledDomainNotOwned(t *testing.T) {

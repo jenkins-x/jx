@@ -17,6 +17,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+var (
+	// autoDnsSuffixes the DNS suffixes of any auto-DNS services
+	autoDnsSuffixes = []string{
+		".nip.io",
+		".xip.io",
+	}
+)
+
 const (
 	// RequirementsConfigFileName is the name of the requirements configuration file
 	RequirementsConfigFileName = "jx-requirements.yml"
@@ -385,4 +393,15 @@ func (c *RequirementsConfig) addDefaults() {
 	if c.VersionStream.Ref == "" {
 		c.VersionStream.Ref = DefaultVersionsRef
 	}
+}
+
+// IsAutoDNSDomain returns true if the domain is configured to use an auto DNS sub domain like
+// '.nip.io' or '.xip.io'
+func (i *IngressConfig) IsAutoDNSDomain() bool {
+	for _, suffix := range autoDnsSuffixes {
+		if strings.HasSuffix(i.Domain, suffix) {
+			return true
+		}
+	}
+	return false
 }
