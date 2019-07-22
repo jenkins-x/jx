@@ -403,7 +403,7 @@ func (c *RequirementsConfig) addDefaults() {
 		c.Cluster.Namespace = "jx"
 	}
 	if c.Ingress.NamespaceSubDomain == "" {
-		c.Ingress.NamespaceSubDomain = "." + c.Cluster.Namespace + "."
+		c.Ingress.NamespaceSubDomain = "-" + c.Cluster.Namespace + "-"
 	}
 }
 
