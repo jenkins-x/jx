@@ -10,8 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 // StepGitValidateOptions contains the command line flags
 type StepGitValidateOptions struct {
 	opts.StepOptions
@@ -51,7 +49,7 @@ func NewCmdStepGitValidate(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-//  Run the main method
+// Run validates git config
 func (o *StepGitValidateOptions) Run() error {
 	// lets ignore errors which indicate no value set
 	userName, _ := o.Git().Username("")
@@ -90,6 +88,4 @@ func (o *StepGitValidateOptions) Run() error {
 	log.Logger().Infof("Git configured for user: %s and email %s", util.ColorInfo(userName), util.ColorInfo(userEmail))
 	return nil
 
-
 }
-
