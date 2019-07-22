@@ -20,6 +20,9 @@ export GINKGO_ARGS="-v"
 export JX_DISABLE_DELETE_APP="true"
 export JX_DISABLE_DELETE_REPO="true"
 
+# Disable manual promotion test for bdd context
+export JX_BDD_SKIP_MANUAL_PROMOTION="true"
+
 echo ""
 git config --global credential.helper store
 git config --global --add user.name JenkinsXBot
