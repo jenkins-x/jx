@@ -383,7 +383,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 				log.Logger().Infof("Copying chart override %s", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
-					log.Logger().Warnf("Error copying template %s to %s", overrideSrc, overrideDst)
+					log.Logger().Warnf("Error copying template %s to %s %v", overrideSrc, overrideDst, err)
 				}
 
 			}
@@ -415,7 +415,7 @@ func (o *StepHelmApplyOptions) applyAppsTemplateOverrides(chartName string) erro
 				log.Logger().Infof("Copying chart override %s", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
-					log.Logger().Warnf("Error copying template %s to %s", overrideSrc, overrideDst)
+					log.Logger().Warnf("Error copying template %s to %s %v", overrideSrc, overrideDst, err)
 				}
 				if err = os.Remove(chartArchives[0]); err != nil {
 					return defineAppsChartOverridingError(chartName, err)
