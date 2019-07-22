@@ -18,17 +18,18 @@ type StepGitValidateOptions struct {
 }
 
 var (
-	StepGitValidateLong = templates.LongDesc(`
+	stepGitValidateLong = templates.LongDesc(`
 		This pipeline step validates that the .gitconfig is correctly configured
 
 `)
 
-	StepGitValidateExample = templates.Examples(`
+	stepGitValidateExample = templates.Examples(`
 		# validates the user.name & user.email values are set in the .gitconfig
 		jx step git validate
 `)
 )
 
+// NewCmdStepGitValidate creates a command to validate gitconfig
 func NewCmdStepGitValidate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitValidateOptions{
 		StepOptions: opts.StepOptions{
@@ -38,8 +39,8 @@ func NewCmdStepGitValidate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "validate",
 		Short:   "Validates the .gitconfig is correctly configured",
-		Long:    StepGitValidateLong,
-		Example: StepGitValidateExample,
+		Long:    stepGitValidateLong,
+		Example: stepGitValidateExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -50,6 +51,7 @@ func NewCmdStepGitValidate(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
+//  Run the main method
 func (o *StepGitValidateOptions) Run() error {
 	// lets ignore errors which indicate no value set
 	userName, _ := o.Git().Username("")
