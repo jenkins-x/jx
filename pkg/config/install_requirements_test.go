@@ -65,3 +65,18 @@ func TestRequirementsConfigMarshalInEmptyDir(t *testing.T) {
 	assert.Equal(t, true, requirements.Kaniko, "requirements.Kaniko")
 	assert.Equal(t, config.SecretStorageTypeLocal, requirements.SecretStorage, "requirements.SecretStorage")
 }
+
+func TestRequirementsConfigIngressAutoDNS(t *testing.T) {
+	t.Parallel()
+
+	requirements := config.NewRequirementsConfig()
+
+	requirements.Ingress.Domain = "1.2.3.4.nip.io"
+	assert.Equal(t, true, requirements.Ingress.IsAutoDNSDomain(), "requirements.Ingress.IsAutoDNSDomain() for domain %s", requirements.Ingress.Domain)
+
+	requirements.Ingress.Domain = "foo.bar"
+	assert.Equal(t, false, requirements.Ingress.IsAutoDNSDomain(), "requirements.Ingress.IsAutoDNSDomain() for domain %s", requirements.Ingress.Domain)
+
+	requirements.Ingress.Domain = ""
+	assert.Equal(t, false, requirements.Ingress.IsAutoDNSDomain(), "requirements.Ingress.IsAutoDNSDomain() for domain %s", requirements.Ingress.Domain)
+}

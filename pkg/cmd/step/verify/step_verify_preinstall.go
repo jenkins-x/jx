@@ -114,6 +114,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	err = o.verifyIngress(requirements, requirementsFileName)
+	if err != nil {
+		return err
+	}
+
 	no := &namespace.NamespaceOptions{}
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{ns}
@@ -496,6 +501,19 @@ func (o *StepVerifyPreInstallOptions) verifyConfigMapExists(kubeClient kubernete
 		}
 	}
 	log.Logger().Infof("verified there is a ConfigMap %s in namespace %s\n", info(name), info(ns))
+	return nil
+}
+
+func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.RequirementsConfig, requirementsFileName string) error {
+	domain := requirements.Ingress.Domain
+	if requirements.Ingress.IsAutoDNSDomain() {
+		log.Logger().Infof("clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated\n", util.ColorInfo(domain))
+		requirements.Ingress.Domain = ""
+		err := requirements.SaveConfig(requirementsFileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
+		}
+	}
 	return nil
 }
 

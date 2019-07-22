@@ -3,7 +3,6 @@ package verify
 import (
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -162,32 +160,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelpValues(requirements
 		useHTTP = "false"
 		tlsAcme = "true"
 	}
-	namespaceSubDomain := ""
 	exposer := "Ingress"
-
-	clustersYamlFile := filepath.Join(o.Dir, "cluster", "values.yaml")
-	exists, err := util.FileExists(clustersYamlFile)
-	if err != nil {
-		return config.HelmValuesConfig{}, errors.Wrapf(err, "failed to check file exists: %s", clustersYamlFile)
-	}
-	if exists {
-		data, err := helm.LoadValuesFile(clustersYamlFile)
-		if err != nil {
-			return config.HelmValuesConfig{}, errors.Wrapf(err, "failed to load clusters YAML file: %s", clustersYamlFile)
-		}
-		log.Logger().Infof("found ingress configuration %#v\n", data)
-
-		if domain == "" {
-			domain = util.GetMapValueAsStringViaPath(data, "domain")
-		}
-		if namespaceSubDomain == "" {
-			namespaceSubDomain = util.GetMapValueAsStringViaPath(data, "namespaceSubDomain")
-		}
-	} else {
-		log.Logger().Warnf("could not find: %s\n", clustersYamlFile)
-
-	}
-
 	helmValues := config.HelmValuesConfig{
 		ExposeController: &config.ExposeController{
 			Config: config.ExposeControllerConfig{
