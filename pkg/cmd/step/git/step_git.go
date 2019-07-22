@@ -36,6 +36,7 @@ func NewCmdStepGit(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepGitEnvs(commonOpts))
 	cmd.AddCommand(NewCmdStepGitMerge(commonOpts))
 	cmd.AddCommand(NewCmdStepGitForkAndClone(commonOpts))
+	cmd.AddCommand(NewCmdStepGitValidate(commonOpts))
 	return cmd
 }
 
