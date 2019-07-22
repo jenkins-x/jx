@@ -63,7 +63,15 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	assert.NoError(t, err)
 
 	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
-	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{}
+	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{
+		Status: &v1alpha1.TaskRunStatus{
+			Steps: []v1alpha1.StepState{{
+				ContainerState: corev1.ContainerState{
+					Running: &corev1.ContainerStateRunning{},
+				},
+			}},
+		},
+	}
 
 	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
 		ObjectMeta: v12.ObjectMeta{
@@ -110,6 +118,86 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	_, exists := paNames[names[0]]
 	assert.True(t, exists, "There should be a matching PipelineActivity in the paMap")
 	assert.Equal(t, len(names), len(paNames))
+}
+
+func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.T) {
+	jxClient, tektonClient, _, _, ns := getFakeClientsAndNs(t)
+
+	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PA1",
+			Namespace: ns,
+			Labels: map[string]string{
+				v1.LabelRepository: "fakerepo",
+				v1.LabelBranch:     "fakebranch",
+				v1.LabelOwner:      "fakeowner",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
+		},
+	})
+	assert.NoError(t, err)
+
+	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
+	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{
+		Status: &v1alpha1.TaskRunStatus{
+			Steps: []v1alpha1.StepState{{
+				ContainerState: corev1.ContainerState{
+					Waiting: &corev1.ContainerStateWaiting{
+						Message: "Pending",
+					},
+				},
+			}},
+		},
+	}
+
+	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PR1",
+			Namespace: ns,
+			Labels: map[string]string{
+				tekton.LabelRepo:    "fakerepo",
+				tekton.LabelBranch:  "fakebranch",
+				tekton.LabelOwner:   "fakeowner",
+				tekton.LabelContext: "fakecontext",
+			},
+		},
+		Spec: v1alpha1.PipelineRunSpec{
+			Params: []v1alpha1.Param{
+				{Name: "version", Value: "v1"},
+				{Name: "build_id", Value: "1"},
+			},
+		},
+		Status: v1alpha1.PipelineRunStatus{
+			TaskRuns: taskRunStatusMap,
+		},
+	})
+	assert.NoError(t, err)
+
+	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PR2",
+			Namespace: ns,
+			Labels: map[string]string{
+				tekton.LabelBuild:   "2",
+				tekton.LabelRepo:    "fakerepo",
+				tekton.LabelBranch:  "fakebranch",
+				tekton.LabelOwner:   "fakeowner",
+				tekton.LabelContext: "tekton",
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{}, "fakecontext")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 0, len(names))
+	assert.Equal(t, 1, len(paNames))
 }
 
 func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {

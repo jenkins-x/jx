@@ -63,6 +63,32 @@ func TestGetTektonLogsForRunningBuild(t *testing.T) {
 	}
 }
 
+func TestGetTektonLogsForRunningBuildWithPendingPod(t *testing.T) {
+	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
+	commonOpts.BatchMode = true
+	testCaseDir := path.Join("test_data", "get_build_logs", "tekton_build_logs_pending")
+
+	activities := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(activities)
+
+	tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)}
+	tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
+
+	kubeClient := kubeMocks.NewSimpleClientset()
+
+	ns := "jx"
+
+	o := &GetBuildLogsOptions{
+		GetOptions: GetOptions{
+			CommonOptions: &commonOpts,
+		},
+	}
+
+	_, err := o.getTektonLogs(kubeClient, tektonClient, jxClient, ns)
+	assert.NotNil(t, err)
+	assert.Equal(t, "there are no build logs for the supplied filters", err.Error())
+}
+
 func TestGetTektonLogsForRunningBuildWithLegacyRepoLabel(t *testing.T) {
 	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
 	commonOpts.BatchMode = true
