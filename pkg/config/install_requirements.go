@@ -18,10 +18,11 @@ import (
 )
 
 var (
-	// autoDnsSuffixes the DNS suffixes of any auto-DNS services
-	autoDnsSuffixes = []string{
+	// autoDNSSuffixes the DNS suffixes of any auto-DNS services
+	autoDNSSuffixes = []string{
 		".nip.io",
 		".xip.io",
+		".beesdns.com",
 	}
 )
 
@@ -398,7 +399,7 @@ func (c *RequirementsConfig) addDefaults() {
 // IsAutoDNSDomain returns true if the domain is configured to use an auto DNS sub domain like
 // '.nip.io' or '.xip.io'
 func (i *IngressConfig) IsAutoDNSDomain() bool {
-	for _, suffix := range autoDnsSuffixes {
+	for _, suffix := range autoDNSSuffixes {
 		if strings.HasSuffix(i.Domain, suffix) {
 			return true
 		}
