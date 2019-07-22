@@ -83,14 +83,14 @@ func (o *CommonOptions) defaultInitHelmConfig() InitHelmConfig {
 func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 	var err error
 
-	skipTiller := config.SkipTiller
+	o.SkipTiller = config.SkipTiller
 	if config.Helm3 {
 		log.Logger().Debugf("Using %s", util.ColorInfo("helm3"))
-		skipTiller = true
+		o.SkipTiller = true
 	} else {
 		log.Logger().Debugf("Using %s", util.ColorInfo("helm2"))
 	}
-	if !skipTiller {
+	if !o.SkipTiller {
 		log.Logger().Infof("Configuring %s", util.ColorInfo("tiller"))
 		client, curNs, err := o.KubeClientAndNamespace()
 		if err != nil {
@@ -214,7 +214,6 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 		}
 	} else {
 		log.Logger().Debugf("Skipping %s", util.ColorInfo("tiller"))
-		o.NoTiller = true
 	}
 
 	if config.Helm3 {
