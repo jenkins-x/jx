@@ -111,7 +111,7 @@ func (o *BootOptions) Run() error {
 			}
 		}
 
-		exists, err = util.FileExists(pipelineFile)
+		exists, err = util.FileExists(cloneDir)
 		if err != nil {
 			return err
 		}

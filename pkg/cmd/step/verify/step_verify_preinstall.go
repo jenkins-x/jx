@@ -140,6 +140,15 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	err = o.EnsureHelm()
+	if err != nil {
+		return err
+	}
+	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, kube.DefaultChartMuseumJxRepoName, "", "")
+	if err != nil {
+		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
+	}
+
 	if requirements.Kaniko {
 		if requirements.Cluster.Provider == cloud.GKE {
 			log.Logger().Infof("validating the kaniko secret in namespace %s\n", info(ns))
