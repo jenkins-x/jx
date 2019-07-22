@@ -1,12 +1,13 @@
 package create
 
 import (
-	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -47,7 +48,7 @@ func TestCreateInstallValues(t *testing.T) {
 	}
 
 	ingressHostName := "1.2.3.4"
-	expectedDomain := ingressHostName + ".nip.io"
+	//expectedDomain := ingressHostName + ".nip.io"
 
 	runtimeObjects := []runtime.Object{
 		&corev1.Service{
@@ -112,10 +113,8 @@ func TestExternalDNSDisabledDomainNotOwned(t *testing.T) {
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 
-	values := make(map[string]interface{})
-	_, err = o.defaultMissingValues(values)
-
-	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	err = o.Run()
+	assert.NoError(t, err, "failed to run step in dir %s", o.Dir)
 
 	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
@@ -155,10 +154,8 @@ func TestExternalDNSDisabledNotGKE(t *testing.T) {
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 
-	values := make(map[string]interface{})
-	_, err = o.defaultMissingValues(values)
-
-	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
+	err = o.Run()
+	assert.NoError(t, err, "failed to run step in dir %s", o.Dir)
 
 	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
