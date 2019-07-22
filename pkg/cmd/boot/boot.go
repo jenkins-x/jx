@@ -74,6 +74,11 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *BootOptions) Run() error {
 	info := util.ColorInfo
 
+	err := o.verifyClusterConnection()
+	if err != nil {
+		return err
+	}
+
 	projectConfig, pipelineFile, err := config.LoadProjectConfig(o.Dir)
 	if err != nil {
 		return err
@@ -240,4 +245,13 @@ func FindBootNamespace(projectConfig *config.ProjectConfig, requirementsConfig *
 		}
 	}
 	return ""
+}
+
+func (o *BootOptions) verifyClusterConnection() error {
+	_, err := o.KubeClient()
+	if err != nil {
+		return fmt.Errorf("You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n" +
+			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
+	}
+	return nil
 }
