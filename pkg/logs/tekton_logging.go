@@ -73,7 +73,7 @@ func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, 
 			prBuildNumber = findLegacyPipelineRunBuildNumber(&pr)
 		}
 		paName := createPipelineActivityName(pr.Labels, prBuildNumber)
-		if _, exists := paMap[paName]; exists && len(pr.Status.TaskRuns) > 0 {
+		if _, exists := paMap[paName]; exists && pipelineRunIsCompleteOrRunningWithNonPendingPod(&pr) {
 			nameWithContext := fmt.Sprintf("%s %s", paName, pr.Labels["context"])
 			replacePipelineActivityNameWithEnrichedName(paMap, paName, nameWithContext)
 			names = append(names, nameWithContext)
@@ -81,6 +81,24 @@ func GetTektonPipelinesWithActivePipelineActivity(jxClient versioned.Interface, 
 	}
 
 	return names, paMap, nil
+}
+
+func pipelineRunIsCompleteOrRunningWithNonPendingPod(pr *v1alpha12.PipelineRun) bool {
+	if pr.Status.CompletionTime != nil {
+		return true
+	}
+	if len(pr.Status.TaskRuns) > 0 {
+		for _, v := range pr.Status.TaskRuns {
+			if v.Status != nil {
+				for _, stepState := range v.Status.Steps {
+					if stepState.Waiting == nil {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 func modifyFilterForPipelineRun(labelsFilter string, context string) string {

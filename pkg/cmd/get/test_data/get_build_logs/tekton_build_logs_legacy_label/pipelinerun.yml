@@ -46,3 +46,18 @@ status:
     faketaskrun:
       pipelineTaskName: faketask
       status:
+        conditions:
+          - lastTransitionTime: "2019-07-22T17:36:16Z"
+            reason: Building
+            status: Unknown
+            type: Succeeded
+        podName: meta-fakeowner-fakerepo-build-1-app-extension-kvvp6-pod-fcf1fe
+        startTime: "2019-07-22T17:35:01Z"
+        steps:
+          - name: build-container-build
+            terminated:
+              containerID: docker://cc11f0d75b64bb2c33cd2ce495fc2d33fcffbbde4e27643c1a074e2014e9de54
+              exitCode: 0
+              finishedAt: "2019-07-22T17:36:00Z"
+              reason: Completed
+              startedAt: "2019-07-22T17:35:07Z"
