@@ -186,7 +186,7 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 
 	webhooks, err := git.ListWebHooks(owner, repoName)
 	if err != nil {
-		log.Logger().Infof("no webhooks found repository %s/%s/n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		log.Logger().Infof("no webhooks found repository %s/%s", util.ColorInfo(owner), util.ColorInfo(repoName))
 	}
 
 	webHookArgs := &gits.GitWebHookArguments{
