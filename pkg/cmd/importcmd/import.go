@@ -913,13 +913,13 @@ func (options *ImportOptions) doImport() error {
 		if err != nil {
 			return err
 		}
-		return options.addProwConfig(gitURL)
+		return options.addProwConfig(gitURL, gitProvider.Kind())
 	}
 
 	return options.ImportProject(gitURL, options.Dir, jenkinsfile, options.BranchPattern, options.Credentials, false, gitProvider, authConfigSvc, false, options.BatchMode)
 }
 
-func (options *ImportOptions) addProwConfig(gitURL string) error {
+func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return err
@@ -943,7 +943,16 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		if err != nil {
 			return err
 		}
-		sr, err := kube.GetOrCreateSourceRepository(jxClient, currentNamespace, gitInfo.Name, gitInfo.Organisation, gitInfo.HostURLWithoutUser())
+		callback := func(sr *v1.SourceRepository) {
+			sr.Spec.ProviderKind = gitKind
+			sr.Spec.URL = gitInfo.HTMLURL
+			if sr.Spec.URL == "" {
+				sr.Spec.URL = gitInfo.URL
+			}
+			sr.Spec.HTTPCloneURL = gitInfo.HttpCloneURL()
+			sr.Spec.SSHCloneURL = gitInfo.SSHURL
+		}
+		sr, err := kube.GetOrCreateSourceRepositoryCallback(jxClient, currentNamespace, gitInfo.Name, gitInfo.Organisation, gitInfo.HostURLWithoutUser(), callback)
 		log.Logger().Debugf("have SourceRepository: %s\n", sr.Name)
 
 		// lets update the Scheduler if one is specified and its different to the default

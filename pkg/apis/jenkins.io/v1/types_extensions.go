@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	strcase "github.com/stoewer/go-strcase"
+	"github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -504,8 +504,17 @@ type SourceRepositorySpec struct {
 	Org      string `json:"org,omitempty" protobuf:"bytes,3,opt,name=org"`
 	Repo     string `json:"repo,omitempty" protobuf:"bytes,4,opt,name=repo"`
 	// ProviderName is a logical name for the provider without any URL scheme which can be used in a label selector
-	ProviderName string            `json:"providerName,omitempty" protobuf:"bytes,5,opt,name=providerName"`
-	Scheduler    ResourceReference `json:"scheduler,omitempty" protobuf:"bytes,5,opt,name=scheduler"`
+	ProviderName string `json:"providerName,omitempty" protobuf:"bytes,5,opt,name=providerName"`
+	// ProviderKind is the kind of provider (github / bitbucketcloud / bitbucketserver etc)
+	ProviderKind string `json:"providerKind,omitempty" protobuf:"bytes,6,opt,name=providerKind"`
+	// URL is the web URL of the project page
+	URL string `json:"url,omitempty" protobuf:"bytes,7,opt,name=url"`
+	// SSHCloneURL is the git URL to clone this repository using SSH
+	SSHCloneURL string `json:"sshCloneURL,omitempty" protobuf:"bytes,8,opt,name=sshCloneURL"`
+	// HTTPCloneURL is the git URL to clone this repository using HTTP/HTTPS
+	HTTPCloneURL string `json:"httpCloneURL,omitempty" protobuf:"bytes,9,opt,name=httpCloneURL"`
+	// Scheduler a reference to a custom scheduler otherwise we default to the Team's Scededuler
+	Scheduler ResourceReference `json:"scheduler,omitempty" protobuf:"bytes,10,opt,name=scheduler"`
 }
 
 // AppSpec provides details of the metadata for an App
