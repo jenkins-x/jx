@@ -74,6 +74,12 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	requirements, err = o.gatherRequirements(requirements, requirementsFileName)
+	if err != nil {
+		return err
+	}
+
 	o.LazyCreate, err = requirements.IsLazyCreateSecrets(o.LazyCreateFlag)
 	if err != nil {
 		return err
@@ -275,126 +281,6 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 				secretsLocation = string(secrets.VaultLocationKind)
 			}
 
-			if o.BatchMode {
-				msg := "please specify '%s' in jx-requirements when running  in  batch mode"
-				if requirements.Cluster.Provider == "" {
-					return errors.Errorf(msg, "provider")
-				}
-				if requirements.Cluster.ProjectID == "" {
-					return errors.Errorf(msg, "project")
-				}
-				if requirements.Cluster.Zone == "" {
-					return errors.Errorf(msg, "zone")
-				}
-				if requirements.Cluster.EnvironmentGitOwner == "" {
-					return errors.Errorf(msg, "environmentGitOwner")
-				}
-				if requirements.Cluster.ClusterName == "" {
-					return errors.Errorf(msg, "clusterName")
-				}
-			}
-			var err error
-			if requirements.Cluster.Provider == "" {
-				requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.In, o.Out, o.Err)
-				if err != nil {
-					return errors.Wrap(err, "selecting Kubernetes provider")
-				}
-			}
-
-			if requirements.Cluster.Provider == cloud.GKE {
-				var currentProject, currentZone, currentClusterName string
-				autoAcceptDefaults := false
-				if requirements.Cluster.ProjectID == "" || requirements.Cluster.Zone == "" || requirements.Cluster.ClusterName == "" {
-					kubeConfig, _, err := o.Kube().LoadConfig()
-					if err != nil {
-						return errors.Wrapf(err, "loading kubeconfig")
-					}
-					context := kube.Cluster(kubeConfig)
-					currentProject, currentZone, currentClusterName, err = gke.ParseContext(context)
-					if err != nil {
-						return errors.Wrapf(err, "")
-					}
-					if currentClusterName != "" && currentProject != "" && currentZone != "" {
-						log.Logger().Infof("")
-						log.Logger().Infof("Currently connected cluster is %s in %s in project %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentZone), util.ColorInfo(currentProject))
-						autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
-					} else {
-						log.Logger().Infof("Enter the cluster you want to jx boot")
-					}
-				}
-
-				if requirements.Cluster.ProjectID == "" {
-					if autoAcceptDefaults && currentProject != "" {
-						requirements.Cluster.ProjectID = currentProject
-					} else {
-						requirements.Cluster.ProjectID, err = o.GetGoogleProjectID(currentProject)
-						if err != nil {
-							return errors.Wrap(err, "getting project ID")
-						}
-					}
-				}
-				if requirements.Cluster.Zone == "" {
-					if autoAcceptDefaults && currentZone != "" {
-						requirements.Cluster.Zone = currentZone
-					} else {
-						requirements.Cluster.Zone, err = o.GetGoogleZone(requirements.Cluster.ProjectID, currentZone)
-						if err != nil {
-							return errors.Wrap(err, "getting GKE Zone")
-						}
-					}
-				}
-				if requirements.Cluster.ClusterName == "" {
-					if autoAcceptDefaults && currentClusterName != "" {
-						requirements.Cluster.ClusterName = currentClusterName
-					} else {
-						requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
-							"The name for your cluster", o.In, o.Out, o.Err)
-						if err != nil {
-							return errors.Wrap(err, "getting cluster name")
-						}
-					}
-
-				}
-				if !autoAcceptDefaults {
-					err = o.GCloud().ConnectToCluster(requirements.Cluster.ProjectID, requirements.Cluster.Zone, requirements.Cluster.ClusterName)
-					if err != nil {
-						return err
-					}
-				}
-			} else {
-				// lets check we want to try installation as we've only tested on GKE at the moment
-				confirmed := util.Confirm("jx boot has only be validated on GKE, we'd love feedback and contributions for other Kubernetes providers",
-					true, "", o.In, o.Out, o.Err)
-				if !confirmed {
-					return nil
-				}
-			}
-
-			if requirements.Cluster.EnvironmentGitOwner == "" {
-				requirements.Cluster.EnvironmentGitOwner, err = util.PickValue(
-					"Git Owner name for environment repositories",
-					"",
-					true,
-					"Jenkins X leverages GitOps to track and control what gets deployed into environments.  This "+
-						"requires a Git repository per environment.  This question is asking for the Git Owner where these"+
-						"repositories will live",
-					o.In, o.Out, o.Err)
-				if err != nil {
-					return errors.Wrap(err, "getting GKE Zone")
-				}
-			}
-
-			requirements.Cluster.Provider = strings.TrimSpace(strings.ToLower(requirements.Cluster.Provider))
-			requirements.Cluster.ProjectID = strings.TrimSpace(requirements.Cluster.ProjectID)
-			requirements.Cluster.Zone = strings.TrimSpace(strings.ToLower(requirements.Cluster.Zone))
-			requirements.Cluster.ClusterName = strings.TrimSpace(strings.ToLower(requirements.Cluster.ClusterName))
-			requirements.Cluster.EnvironmentGitOwner = strings.TrimSpace(strings.ToLower(requirements.Cluster.EnvironmentGitOwner))
-
-			requirements.SaveConfig(requirementsFileName)
-			if err != nil {
-				return err
-			}
-
 			modifyMapIfNotBlank(configMap.Data, kube.KubeProvider, requirements.Cluster.Provider)
 			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.Cluster.ProjectID)
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.Cluster.ClusterName)
@@ -405,6 +291,130 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
 	}
 	return nil
+}
+
+// gatherRequirements gathers cluster requirements and connects to the cluster if required
+func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.RequirementsConfig, requirementsFileName string) (*config.RequirementsConfig, error) {
+	if o.BatchMode {
+		msg := "please specify '%s' in jx-requirements when running  in  batch mode"
+		if requirements.Cluster.Provider == "" {
+			return nil, errors.Errorf(msg, "provider")
+		}
+		if requirements.Cluster.ProjectID == "" {
+			return nil, errors.Errorf(msg, "project")
+		}
+		if requirements.Cluster.Zone == "" {
+			return nil, errors.Errorf(msg, "zone")
+		}
+		if requirements.Cluster.EnvironmentGitOwner == "" {
+			return nil, errors.Errorf(msg, "environmentGitOwner")
+		}
+		if requirements.Cluster.ClusterName == "" {
+			return nil, errors.Errorf(msg, "clusterName")
+		}
+	}
+	var err error
+	if requirements.Cluster.Provider == "" {
+		requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.In, o.Out, o.Err)
+		if err != nil {
+			return nil, errors.Wrap(err, "selecting Kubernetes provider")
+		}
+	}
+
+	if requirements.Cluster.Provider == cloud.GKE {
+		var currentProject, currentZone, currentClusterName string
+		autoAcceptDefaults := false
+		if requirements.Cluster.ProjectID == "" || requirements.Cluster.Zone == "" || requirements.Cluster.ClusterName == "" {
+			kubeConfig, _, err := o.Kube().LoadConfig()
+			if err != nil {
+				return nil, errors.Wrapf(err, "loading kubeconfig")
+			}
+			context := kube.Cluster(kubeConfig)
+			currentProject, currentZone, currentClusterName, err = gke.ParseContext(context)
+			if err != nil {
+				return nil, errors.Wrapf(err, "")
+			}
+			if currentClusterName != "" && currentProject != "" && currentZone != "" {
+				log.Logger().Infof("")
+				log.Logger().Infof("Currently connected cluster is %s in %s in project %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentZone), util.ColorInfo(currentProject))
+				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
+			} else {
+				log.Logger().Infof("Enter the cluster you want to jx boot")
+			}
+		}
+
+		if requirements.Cluster.ProjectID == "" {
+			if autoAcceptDefaults && currentProject != "" {
+				requirements.Cluster.ProjectID = currentProject
+			} else {
+				requirements.Cluster.ProjectID, err = o.GetGoogleProjectID(currentProject)
+				if err != nil {
+					return nil, errors.Wrap(err, "getting project ID")
+				}
+			}
+		}
+		if requirements.Cluster.Zone == "" {
+			if autoAcceptDefaults && currentZone != "" {
+				requirements.Cluster.Zone = currentZone
+			} else {
+				requirements.Cluster.Zone, err = o.GetGoogleZone(requirements.Cluster.ProjectID, currentZone)
+				if err != nil {
+					return nil, errors.Wrap(err, "getting GKE Zone")
+				}
+			}
+		}
+		if requirements.Cluster.ClusterName == "" {
+			if autoAcceptDefaults && currentClusterName != "" {
+				requirements.Cluster.ClusterName = currentClusterName
+			} else {
+				requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
+					"The name for your cluster", o.In, o.Out, o.Err)
+				if err != nil {
+					return nil, errors.Wrap(err, "getting cluster name")
+				}
+			}
+
+		}
+		if !autoAcceptDefaults {
+			// connect to the specified cluster if different from the currently connected one
+			log.Logger().Infof("Connecting to cluster %s", util.ColorInfo(requirements.Cluster.ClusterName))
+			err = o.GCloud().ConnectToCluster(requirements.Cluster.ProjectID, requirements.Cluster.Zone, requirements.Cluster.ClusterName)
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		// lets check we want to try installation as we've only tested on GKE at the moment
+		confirmed := util.Confirm("jx boot has only be validated on GKE, we'd love feedback and contributions for other Kubernetes providers",
+			true, "", o.In, o.Out, o.Err)
+		if !confirmed {
+			return nil, nil
+		}
+	}
+
+	if requirements.Cluster.EnvironmentGitOwner == "" {
+		requirements.Cluster.EnvironmentGitOwner, err = util.PickValue(
+			"Git Owner name for environment repositories",
+			"",
+			true,
+			"Jenkins X leverages GitOps to track and control what gets deployed into environments.  This "+
+				"requires a Git repository per environment.  This question is asking for the Git Owner where these"+
+				"repositories will live",
+			o.In, o.Out, o.Err)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting GKE Zone")
+		}
+	}
+
+	requirements.Cluster.Provider = strings.TrimSpace(strings.ToLower(requirements.Cluster.Provider))
+	requirements.Cluster.ProjectID = strings.TrimSpace(requirements.Cluster.ProjectID)
+	requirements.Cluster.Zone = strings.TrimSpace(strings.ToLower(requirements.Cluster.Zone))
+	requirements.Cluster.ClusterName = strings.TrimSpace(strings.ToLower(requirements.Cluster.ClusterName))
+	requirements.Cluster.EnvironmentGitOwner = strings.TrimSpace(strings.ToLower(requirements.Cluster.EnvironmentGitOwner))
+
+	requirements.SaveConfig(requirementsFileName)
+
+	return requirements, nil
 }
 
 // verifyStorage verifies the associated buckets exist or if enabled lazily create them
