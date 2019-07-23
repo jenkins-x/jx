@@ -48,7 +48,7 @@ func PickPassword(message string, help string, in terminal.FileReader, out termi
 }
 
 // PickNameWithDefault gets the user to pick an option from a list of options, with a default option specified
-func PickNameWithDefault(names []string, message string, defaultValue string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+var PickNameWithDefault = func(names []string, message string, defaultValue string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	name := ""
 	if len(names) == 0 {
 		return "", nil

@@ -3,7 +3,7 @@ package kube
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 )
@@ -22,7 +22,7 @@ var (
 
 // GetQuickstartLocations returns the current quickstart locations. If no locations are defined
 // yet lets return the defaults
-func GetQuickstartLocations(jxClient versioned.Interface, ns string) ([]v1.QuickStartLocation, error) {
+var GetQuickstartLocations = func(jxClient versioned.Interface, ns string) ([]v1.QuickStartLocation, error) {
 	var answer []v1.QuickStartLocation
 	env, err := EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {

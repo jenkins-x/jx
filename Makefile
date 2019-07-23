@@ -194,6 +194,9 @@ test-report-html: make-reports-dir get-test-deps test ## Create the test report 
 test-verbose: make-reports-dir ## Run the unit tests in verbose mode
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -v $(COVERFLAGS) -failfast ./...
 
+test-cmd-create: make-reports-dir ## Run the unit tests in verbose mode
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -v $(COVERFLAGS) -failfast ./pkg/cmd/create
+
 test-slow-report: get-test-deps test-slow make-reports-dir
 	@gocov convert $(COVER_OUT) | gocov report
 

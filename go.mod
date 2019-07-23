@@ -89,7 +89,7 @@ require (
 	github.com/onsi/gomega v1.4.3
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
-	github.com/petergtz/pegomock v2.2.0+incompatible
+	github.com/petergtz/pegomock v2.5.0+incompatible
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.8.0

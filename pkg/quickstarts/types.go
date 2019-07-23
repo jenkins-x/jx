@@ -21,6 +21,7 @@ type QuickstartFilter struct {
 	Language    string
 	Framework   string
 	Owner       string
+	Platform    string
 	Text        string
 	ProjectName string
 	Tags        []string

@@ -2,13 +2,15 @@ package opts
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/spf13/viper"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/spf13/pflag"
@@ -23,7 +25,6 @@ import (
 	"github.com/pkg/errors"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/golang-jenkins"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -468,8 +469,13 @@ func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string
 	return jxClient, ns, err
 }
 
-// JXClientAndDevNamespace returns and creates the jx client and dev namespace
+// JXClientAndDevNamespace invokes JXClientAndDevNamespaceVar (mainly for testing)
 func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, error) {
+	return JXClientAndDevNamespaceVar(o)
+}
+
+// JXClientAndDevNamespaceVar returns and creates the jx client and dev namespace
+var JXClientAndDevNamespaceVar = func(o *CommonOptions) (versioned.Interface, string, error) {
 	if o.jxClient == nil {
 		jxClient, ns, err := o.JXClient()
 		if err != nil {

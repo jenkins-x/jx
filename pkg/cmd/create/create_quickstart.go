@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -57,10 +58,15 @@ var (
 // CreateQuickstartOptions the options for the create quickstart command
 type CreateQuickstartOptions struct {
 	CreateProjectOptions
+	QuickstartOptions
+	GitProvider gits.GitProvider
+}
+
+type QuickstartOptions struct {
+	// CreateProjectOptions
 
 	GitHubOrganisations []string
 	Filter              quickstarts.QuickstartFilter
-	GitProvider         gits.GitProvider
 	GitHost             string
 	IgnoreTeam          bool
 }
@@ -89,17 +95,22 @@ func NewCmdCreateQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	options.addCreateAppFlags(cmd)
+	AddQuickstartFlags(cmd, &options.QuickstartOptions)
+	return cmd
+}
 
+// AddQuickstartFlags adds flags used for the Kuberentes `create quickstart` command.
+func AddQuickstartFlags(cmd *cobra.Command, options *QuickstartOptions) {
 	cmd.Flags().StringArrayVarP(&options.GitHubOrganisations, "organisations", "g", []string{}, "The GitHub organisations to query for quickstarts")
 	cmd.Flags().StringArrayVarP(&options.Filter.Tags, "tag", "t", []string{}, "The tags on the quickstarts to filter")
 	cmd.Flags().StringVarP(&options.Filter.Owner, "owner", "", "", "The owner to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Language, "language", "l", "", "The language to filter on")
-	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
 	cmd.Flags().StringVarP(&options.GitHost, "git-host", "", "", "The Git server host if not using GitHub when pushing created project")
 	cmd.Flags().StringVarP(&options.Filter.Text, "filter", "f", "", "The text filter")
+	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
+	cmd.Flags().StringVarP(&options.Filter.Platform, "platform", "", "kubernetes", "The platform where the apps are deployed. Currently supported platforms: kubernetes, serverless")
 	cmd.Flags().StringVarP(&options.Filter.ProjectName, "project-name", "p", "", "The project name (for use with -b batch mode)")
 	cmd.Flags().BoolVarP(&options.Filter.AllowML, "machine-learning", "", false, "Allow machine-learning quickstarts in results")
-	return cmd
 }
 
 // Run implements the generic Create command
@@ -109,7 +120,7 @@ func (o *CreateQuickstartOptions) Run() error {
 		return err
 	}
 	config := authConfigSvc.Config()
-
+	authConfigSvc.Config()
 	var locations []v1.QuickStartLocation
 	if !o.IgnoreTeam {
 		jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -164,69 +175,84 @@ func (o *CreateQuickstartOptions) Run() error {
 
 		o.Filter.ProjectName = details.RepoName
 	}
-
-	model, err := o.LoadQuickstartsFromMap(config, gitMap)
+	err = o.SetQuickstartPlatform()
 	if err != nil {
-		return fmt.Errorf("failed to load quickstarts: %s", err)
+		return fmt.Errorf("Failed to retrieve the platform: %s", err)
 	}
-	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
-	if err != nil {
-		return err
-	}
-	if q == nil {
-		return fmt.Errorf("no quickstart chosen")
-	}
-
-	// Prevent accidental attempts to use ML Project Sets in create quickstart
-	if isMLProjectSet(q.Quickstart) {
-		return fmt.Errorf("you have tried to select a machine-learning quickstart projectset please try again using jx create mlquickstart instead")
-	}
-	dir := o.OutDir
-	if dir == "" {
-		dir, err = os.Getwd()
+	genDir := ""
+	// TODO: This block is too long and hard to test. Move it into a separate function
+	if o.Filter.Platform == "kubernetes" {
+		model, err := o.LoadQuickstartsFromMap(config, gitMap)
+		if err != nil {
+			return fmt.Errorf("failed to load quickstarts: %s", err)
+		}
+		q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
-	}
-	genDir, err := o.createQuickstart(q, dir)
-	if err != nil {
-		return err
-	}
-
-	// if there is a charts folder named after the app name, lets rename it to the generated app name
-	folder := ""
-	if q.Quickstart != nil {
-		folder = q.Quickstart.Name
-	}
-	idx := strings.LastIndex(folder, "/")
-	if idx > 0 {
-		folder = folder[idx+1:]
-	}
-	if folder != "" {
-		chartsDir := filepath.Join(genDir, "charts", folder)
-		exists, err := util.FileExists(chartsDir)
-		if err != nil {
-			return err
+		if q == nil {
+			return fmt.Errorf("no quickstart chosen")
 		}
-		if exists {
-			o.PostDraftPackCallback = func() error {
-				_, appName := filepath.Split(genDir)
-				appChartDir := filepath.Join(genDir, "charts", appName)
 
-				log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s", chartsDir, appChartDir)
-				err := util.CopyDirOverwrite(chartsDir, appChartDir)
-				if err != nil {
-					return err
-				}
-				err = os.RemoveAll(chartsDir)
-				if err != nil {
-					return err
-				}
-				return o.Git().Remove(genDir, filepath.Join("charts", folder))
+		// Prevent accidental attempts to use ML Project Sets in create quickstart
+		if isMLProjectSet(q.Quickstart) {
+			return fmt.Errorf("you have tried to select a machine-learning quickstart projectset please try again using jx create mlquickstart instead")
+		}
+		dir := o.OutDir
+		if dir == "" {
+			dir, err = os.Getwd()
+			if err != nil {
+				return err
 			}
-		} else {
-			log.Logger().Infof("### NO charts folder %s", chartsDir)
 		}
+		genDir, err := o.createQuickstart(q, dir)
+		if err != nil {
+			return err
+		}
+
+		// if there is a charts folder named after the app name, lets rename it to the generated app name
+		folder := ""
+		if q.Quickstart != nil {
+			folder = q.Quickstart.Name
+		}
+		idx := strings.LastIndex(folder, "/")
+		if idx > 0 {
+			folder = folder[idx+1:]
+		}
+		if folder != "" {
+			chartsDir := filepath.Join(genDir, "charts", folder)
+			exists, err := util.FileExists(chartsDir)
+			if err != nil {
+				return err
+			}
+			if exists {
+				o.PostDraftPackCallback = func() error {
+					_, appName := filepath.Split(genDir)
+					appChartDir := filepath.Join(genDir, "charts", appName)
+
+					log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s", chartsDir, appChartDir)
+					err := util.CopyDirOverwrite(chartsDir, appChartDir)
+					if err != nil {
+						return err
+					}
+					err = os.RemoveAll(chartsDir)
+					if err != nil {
+						return err
+					}
+					return o.Git().Remove(genDir, filepath.Join("charts", folder))
+				}
+			} else {
+				log.Logger().Infof("### NO charts folder %s", chartsDir)
+			}
+		}
+	} else {
+		// TODO: Implement the logic for creating the repo and the files.
+		// TODO: Install `serverless` if not already installed`
+		// TODO: Retrieve the list of templates through `serverless create --help`
+		// TODO: Convert the templates into a new parameter `provider` (e.g., `aws`) and `language` (e.g., `nodejs`)
+		// TODO: Use `serverless` to create all the files except `jenkins-x.yml`. The command could be similar to `serverless create --template [...] --name [...]`
+		// TODO: Get pipeline.yml from a repo and convert it into `jenkins-x.yml`. We might need to have one template for each `provider`. An example can be found in https://github.com/vfarcic/aws-lambda-js/blob/master/jenkins-x.yml.
+		// TODO: Make sure to reuse coommon code from the previous (`kubernetes`) block
 	}
 	log.Logger().Infof("Created project at %s\n", util.ColorInfo(genDir))
 
@@ -237,6 +263,31 @@ func (o *CreateQuickstartOptions) Run() error {
 	}
 
 	return o.ImportCreatedProject(genDir)
+}
+
+// SetQuickstartPlatform sets the platform (e.g., kubernetes or serverless)
+func (o *CreateQuickstartOptions) SetQuickstartPlatform() error {
+	if o.BatchMode {
+		if len(o.Filter.Platform) == 0 {
+			o.Filter.Platform = "kubernetes"
+		}
+	} else {
+		platform, err := util.PickNameWithDefault(
+			[]string{"kubernetes", "serverless"},
+			"Pick the deployment platform:",
+			"kubernetes",
+			"",
+			o.In,
+			o.Out,
+			o.Err,
+		)
+		if err != nil {
+			return errors.Wrap(err, "Could not retrieve the platform")
+		} else {
+			o.Filter.Platform = platform
+		}
+	}
+	return nil
 }
 
 func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm, dir string) (string, error) {
@@ -313,7 +364,6 @@ func findFirstDirectory(dir string) (string, error) {
 // LoadQuickstartsFromMap Load all quickstarts
 func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
-
 	for gitURL, m := range gitMap {
 		for _, location := range m {
 			kind := location.GitKind

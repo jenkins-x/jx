@@ -1,5 +1,6 @@
 package opts
 
+// TODO: Create an interface to simplify mocking instead of using `var`
 import (
 	"fmt"
 	"io/ioutil"
@@ -11,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -69,8 +70,13 @@ func (o *CommonOptions) SetFakeKubeClient() error {
 	return nil
 }
 
-// CreateGitAuthConfigService creates git auth config service
+// CreateGitAuthConfigService invokes CreateGitAuthConfigServiceVar
 func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error) {
+	return CreateGitAuthConfigServiceVar(o)
+}
+
+// CreateGitAuthConfigServiceVar creates git auth config service
+var CreateGitAuthConfigServiceVar = func(o *CommonOptions) (auth.ConfigService, error) {
 	var secrets *corev1.SecretList
 	var err error
 	if !o.SkipAuthSecretsMerge {

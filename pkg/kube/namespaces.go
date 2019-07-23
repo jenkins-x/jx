@@ -49,8 +49,13 @@ func EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient kubernetes.Interface
 	return err
 }
 
-// EnsureDevEnvironmentSetup ensures that the Environment is created in the given namespace
+// EnsureDevEnvironmentSetup invokes EnsureDevEnvironmentSetupVar (mostly for testing)
 func EnsureDevEnvironmentSetup(jxClient versioned.Interface, ns string) (*v1.Environment, error) {
+	return EnsureDevEnvironmentSetupVar(jxClient, ns)
+}
+
+// EnsureDevEnvironmentSetupVar ensures that the Environment is created in the given namespace
+var EnsureDevEnvironmentSetupVar = func(jxClient versioned.Interface, ns string) (*v1.Environment, error) {
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(LabelValueDevEnvironment, metav1.GetOptions{})
 	if err != nil {
