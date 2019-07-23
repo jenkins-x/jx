@@ -6,7 +6,7 @@ items:
       creationTimestamp: "2019-07-02T12:34:56Z"
       generation: 1
       labels:
-        tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-8
+        tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
         branch: fakebranch
         build: "1"
         created-by-prow: "true"
@@ -14,15 +14,15 @@ items:
         prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
         repo: fakerepo
         tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
-      name: fakeowner-fakerepo-fakebranch-8
+      name: fakeowner-fakerepo-fakebranch-1
       namespace: jx
       ownerReferences:
         - apiVersion: tekton.dev/v1alpha1
           kind: pipeline
-          name: fakeowner-fakerepo-fakebranch-8
+          name: fakeowner-fakerepo-fakebranch-1
           uid: cc57794e-9cc5-11e9-aa2e-42010a8a00fe
       resourceVersion: "236414"
-      selfLink: /apis/tekton.dev/v1alpha1/namespaces/jx/pipelineruns/fakeowner-fakerepo-fakebranch-8
+      selfLink: /apis/tekton.dev/v1alpha1/namespaces/jx/pipelineruns/fakeowner-fakerepo-fakebranch-1
       uid: cc59f237-9cc5-11e9-aa2e-42010a8a00fe
     spec:
       params:
@@ -32,7 +32,7 @@ items:
           value: "1"
       pipelineRef:
         apiVersion: tekton.dev/v1alpha1
-        name: fakeowner-fakerepo-fakebranch-8
+        name: fakeowner-fakerepo-fakebranch-1
       resources:
         - name: fakeowner-fakerepo-fakebranch
           resourceRef:
