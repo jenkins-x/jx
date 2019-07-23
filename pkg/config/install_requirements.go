@@ -151,6 +151,12 @@ type ClusterConfig struct {
 	Region string `json:"region,omitempty"`
 	// Zone the cloud zone being used
 	Zone string `json:"zone,omitempty"`
+	// GitName is the name of the default git service
+	GitName string `json:"gitName,omitempty"`
+	// GitKind is the kind of git server (github, bitbucketserver etc)
+	GitKind string `json:"gitKind,omitempty"`
+	// GitServer is the URL of the git server
+	GitServer string `json:"gitServer,omitempty"`
 }
 
 // VersionStreamConfig contains version stream config
@@ -401,6 +407,15 @@ func (c *RequirementsConfig) addDefaults() {
 	}
 	if c.Cluster.Namespace == "" {
 		c.Cluster.Namespace = "jx"
+	}
+	if c.Cluster.GitKind == "" {
+		c.Cluster.GitKind = "github"
+	}
+	if c.Cluster.GitServer == "" {
+		c.Cluster.GitServer = "https://github.com"
+	}
+	if c.Cluster.GitName == "" {
+		c.Cluster.GitName = c.Cluster.GitKind
 	}
 	if c.Ingress.NamespaceSubDomain == "" {
 		c.Ingress.NamespaceSubDomain = "-" + c.Cluster.Namespace + "."
