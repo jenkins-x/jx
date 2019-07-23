@@ -72,6 +72,23 @@ func (i *GitRepository) HostURL() string {
 	return answer
 }
 
+func (i *GitRepository) URLWithoutUser() string {
+	u := i.URL
+	if u != "" {
+		u2, err := url.Parse(u)
+		if err == nil {
+			u2.User = nil
+			return u2.String()
+		}
+
+	}
+	host := i.Host
+	if !strings.Contains(host, ":/") {
+		host = "https://" + host
+	}
+	return host
+}
+
 func (i *GitRepository) HostURLWithoutUser() string {
 	u := i.URL
 	if u != "" {

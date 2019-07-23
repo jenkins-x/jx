@@ -182,6 +182,11 @@ func GenerateSourceRepoResource(name string, gitInfo *gits.GitRepository, revisi
 
 	}
 
+	// lets use the URL property as this preserves any provider specific paths; e.g. `/scm` on bitbucket server
+	u := gitInfo.URL
+	if u == "" {
+		u = gitInfo.HttpsURL()
+	}
 	resource := &pipelineapi.PipelineResource{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: syntax.TektonAPIVersion,
@@ -199,7 +204,7 @@ func GenerateSourceRepoResource(name string, gitInfo *gits.GitRepository, revisi
 				},
 				{
 					Name:  "url",
-					Value: gitInfo.HttpsURL(),
+					Value: u,
 				},
 			},
 		},

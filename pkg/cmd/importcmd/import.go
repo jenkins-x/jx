@@ -944,12 +944,16 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 			return err
 		}
 		callback := func(sr *v1.SourceRepository) {
+			u := gitInfo.URLWithoutUser()
 			sr.Spec.ProviderKind = gitKind
-			sr.Spec.URL = gitInfo.HTMLURL
+			sr.Spec.URL = u
 			if sr.Spec.URL == "" {
-				sr.Spec.URL = gitInfo.URL
+				sr.Spec.URL = gitInfo.HTMLURL
 			}
-			sr.Spec.HTTPCloneURL = gitInfo.HttpCloneURL()
+			sr.Spec.HTTPCloneURL = u
+			if sr.Spec.HTTPCloneURL == "" {
+				sr.Spec.HTTPCloneURL = gitInfo.HttpCloneURL()
+			}
 			sr.Spec.SSHCloneURL = gitInfo.SSHURL
 		}
 		sr, err := kube.GetOrCreateSourceRepositoryCallback(jxClient, currentNamespace, gitInfo.Name, gitInfo.Organisation, gitInfo.HostURLWithoutUser(), callback)
