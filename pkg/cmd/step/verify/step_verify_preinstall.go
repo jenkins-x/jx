@@ -355,6 +355,12 @@ func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.
 					}
 
 				}
+				if !autoAcceptDefaults {
+					err = o.GCloud().ConnectToCluster(requirements.Cluster.ProjectID, requirements.Cluster.Zone, requirements.Cluster.ClusterName)
+					if err != nil {
+						return err
+					}
+				}
 			} else {
 				// lets check we want to try installation as we've only tested on GKE at the moment
 				confirmed := util.Confirm("jx boot has only be validated on GKE, we'd love feedback and contributions for other Kubernetes providers",

@@ -1053,6 +1053,26 @@ func (g *GCloud) IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error
 	return false, nil
 }
 
+func (g *GCloud) ConnectToCluster(projectID, zone, clusterName string) error {
+	args := []string{"container",
+		"clusters",
+		"get-credentials",
+		clusterName,
+		"--zone",
+		zone,
+		"--project", projectID}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return errors.Wrapf(err, "failed to connect to cluster %s", clusterName)
+	}
+	return nil
+}
+
 // UserLabel returns a string identifying current user that can be used as a label
 func (g *GCloud) UserLabel() string {
 	user, err := osUser.Current()
