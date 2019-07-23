@@ -1053,6 +1053,7 @@ func (g *GCloud) IsGCSWriteRoleEnabled(cluster string, zone string) (bool, error
 	return false, nil
 }
 
+// ConnectToCluster connects to the specified cluster
 func (g *GCloud) ConnectToCluster(projectID, zone, clusterName string) error {
 	args := []string{"container",
 		"clusters",
