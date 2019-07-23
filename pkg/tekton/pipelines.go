@@ -412,3 +412,22 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 
 	return nil
 }
+
+// PipelineRunIsNotPending returns true if the PipelineRun has completed or has running steps.
+func PipelineRunIsNotPending(pr *pipelineapi.PipelineRun) bool {
+	if pr.Status.CompletionTime != nil {
+		return true
+	}
+	if len(pr.Status.TaskRuns) > 0 {
+		for _, v := range pr.Status.TaskRuns {
+			if v.Status != nil {
+				for _, stepState := range v.Status.Steps {
+					if stepState.Waiting == nil {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
