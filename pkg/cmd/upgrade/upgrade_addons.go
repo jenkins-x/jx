@@ -131,6 +131,15 @@ func (o *UpgradeAddonsOptions) Run() error {
 	}
 
 	for _, k := range keys {
+		if k == "jx-prow" {
+			//installing prow
+			log.Logger().Infof("Upgrading prow")
+			upgradeAddonProwOptions := &UpgradeAddonProwOptions{
+				UpgradeAddonsOptions: *o,
+			}
+			upgradeAddonProwOptions.Upgrade()
+			continue
+		}
 		chart := charts[k]
 		status := releases[k].Status
 		name := k

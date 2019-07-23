@@ -76,14 +76,10 @@ func (o *UpgradeAddonProwOptions) Run() error {
 	ns := o.Namespace
 	if ns == "" {
 		_, ns, err = o.JXClientAndDevNamespace()
+		o.Namespace = ns
 		if err != nil {
 			return err
 		}
-	}
-
-	kubeClient, _, err := o.KubeClientAndDevNamespace()
-	if err != nil {
-		return err
 	}
 
 	releases, _, err := o.Helm().ListReleases(ns)
@@ -95,19 +91,6 @@ func (o *UpgradeAddonProwOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
-	// first lets get the existing hmac and oauth tokens so we can use them when reinstalling
-	oauthSecret, err := kubeClient.CoreV1().Secrets(ns).Get("oauth-token", metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	oauthToken := string(oauthSecret.Data["oauth"])
-
-	hmacSecret, err := kubeClient.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	hmacToken := string(hmacSecret.Data["hmac"])
 
 	for _, release := range releases {
 		if release.ReleaseName == "knative-build" && (release.Status == "DEPLOYED" || release.Status == "FAILED") {
@@ -142,6 +125,30 @@ func (o *UpgradeAddonProwOptions) Run() error {
 			}
 		}
 	}
+	return o.Upgrade()
+}
+
+// Upgrade Prow
+func (o *UpgradeAddonProwOptions) Upgrade() error {
+
+	kubeClient, _, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
+	// first lets get the existing hmac and oauth tokens so we can use them when reinstalling
+	oauthSecret, err := kubeClient.CoreV1().Secrets(o.Namespace).Get("oauth-token", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	oauthToken := string(oauthSecret.Data["oauth"])
+
+	hmacSecret, err := kubeClient.CoreV1().Secrets(o.Namespace).Get("hmac-token", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	hmacToken := string(hmacSecret.Data["hmac"])
+
 	// now let's reinstall prow
 	err = o.DeleteChart("jx-prow", true)
 	if err != nil {
