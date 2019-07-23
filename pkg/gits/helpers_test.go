@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -1368,6 +1370,444 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, content, data)
 			}
+		})
+	}
+}
+
+func TestPushRepoAndCreatePullRequest(t *testing.T) {
+	type args struct {
+		gitURL     string
+		forkGitURL string
+		dir        string
+		commit     bool
+		push       bool
+		autoMerge  bool
+		dryRun     bool
+		commitMsg  string
+		branch     string
+		labels     []string
+		filter     *gits.PullRequestFilter
+		provider   *gits.FakeProvider
+		gitter     gits.Gitter
+		initFn     func(args *args) error // initFn allows us to run some code at the start of the test
+		cleanFn    func(args *args)
+	}
+	type test struct {
+		name    string
+		args    args
+		dir     string
+		wantErr bool
+		postFn  func(args *args, test *test) error
+	}
+	tests := []test{
+		{
+			name: "CreatePullRequestDoingCommitAndPush",
+			args: args{
+				gitter: gits.NewGitCLI(),
+				initFn: func(args *args) error {
+					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						if err != nil {
+							return errors.WithStack(err)
+						}
+						return nil
+					}, args.gitter)
+					args.provider = gits.NewFakeProvider(acmeRepo)
+					args.dir, err = ioutil.TempDir("", "")
+					assert.NoError(t, err)
+
+					// Let's clone the repo to dir and write a file
+					err = os.MkdirAll(args.dir, 0755)
+					assert.NoError(t, err)
+					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
+					assert.NoError(t, err)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					assert.NoError(t, err)
+					return nil
+				},
+				cleanFn: func(args *args) {
+					for _, o := range args.provider.Repositories {
+						for _, r := range o {
+							if r.BaseDir != "" {
+								err := os.RemoveAll(r.BaseDir)
+								assert.NoError(t, err)
+							}
+						}
+					}
+					err := os.RemoveAll(args.dir)
+					assert.NoError(t, err)
+				},
+				gitURL:   fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
+				dir:      "",  // set by initFn
+				provider: nil, // set by initFn
+				push:     true,
+				commit:   true,
+			},
+			postFn: func(args *args, test *test) error {
+
+				return nil
+			},
+		},
+		{
+			name: "CreatePullRequestWithExistingCommitAndPush",
+			args: args{
+				gitter: gits.NewGitCLI(),
+				initFn: func(args *args) error {
+					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						if err != nil {
+							return errors.WithStack(err)
+						}
+						return nil
+					}, args.gitter)
+					args.provider = gits.NewFakeProvider(acmeRepo)
+					args.dir, err = ioutil.TempDir("", "")
+					assert.NoError(t, err)
+
+					// Let's clone the repo to dir and write a file, and commit it
+					err = os.MkdirAll(args.dir, 0755)
+					assert.NoError(t, err)
+					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
+					assert.NoError(t, err)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					assert.NoError(t, err)
+					err = args.gitter.Add(args.dir, "CONTRIBUTING")
+					assert.NoError(t, err)
+					err = args.gitter.CommitDir(args.dir, "commit")
+					assert.NoError(t, err)
+					return nil
+				},
+				cleanFn: func(args *args) {
+					for _, o := range args.provider.Repositories {
+						for _, r := range o {
+							if r.BaseDir != "" {
+								err := os.RemoveAll(r.BaseDir)
+								assert.NoError(t, err)
+							}
+						}
+					}
+					err := os.RemoveAll(args.dir)
+					assert.NoError(t, err)
+				},
+				gitURL:    fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
+				dir:       "",  // set by initFn
+				provider:  nil, // set by initFn
+				push:      true,
+				commitMsg: "commit",
+			},
+			postFn: func(args *args, test *test) error {
+
+				return nil
+			},
+		},
+		{
+			name: "CreatePullRequestWithExistingCommitAndExistingPush",
+			args: args{
+				gitter: gits.NewGitCLI(),
+				initFn: func(args *args) error {
+					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						if err != nil {
+							return errors.WithStack(err)
+						}
+						return nil
+					}, args.gitter)
+					args.provider = gits.NewFakeProvider(acmeRepo)
+					args.dir, err = ioutil.TempDir("", "")
+					assert.NoError(t, err)
+
+					// Let's clone the repo to dir and write a file, and commit it
+					err = os.MkdirAll(args.dir, 0755)
+					assert.NoError(t, err)
+					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
+					assert.NoError(t, err)
+					err = args.gitter.CreateBranch(args.dir, "other")
+					assert.NoError(t, err)
+					err = args.gitter.Checkout(args.dir, "other")
+					assert.NoError(t, err)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					assert.NoError(t, err)
+					err = args.gitter.Add(args.dir, "CONTRIBUTING")
+					assert.NoError(t, err)
+					err = args.gitter.CommitDir(args.dir, "commit")
+					assert.NoError(t, err)
+					err = args.gitter.Push(args.dir, "origin", false, false, "HEAD")
+					assert.NoError(t, err)
+					return nil
+				},
+				cleanFn: func(args *args) {
+					for _, o := range args.provider.Repositories {
+						for _, r := range o {
+							if r.BaseDir != "" {
+								err := os.RemoveAll(r.BaseDir)
+								assert.NoError(t, err)
+							}
+						}
+					}
+					err := os.RemoveAll(args.dir)
+					assert.NoError(t, err)
+				},
+				gitURL:    fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
+				dir:       "",  // set by initFn
+				provider:  nil, // set by initFn
+				push:      false,
+				commitMsg: "commit",
+				branch:    "other",
+			},
+			postFn: func(args *args, test *test) error {
+
+				return nil
+			},
+		},
+		{
+			name: "UpdatePullRequestDoingCommitAndPush",
+			args: args{
+				gitter: gits.NewGitCLI(),
+				initFn: func(args *args) error {
+					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						if err != nil {
+							return errors.WithStack(err)
+						}
+						return nil
+					}, args.gitter)
+					args.provider = gits.NewFakeProvider(acmeRepo)
+					args.dir, err = ioutil.TempDir("", "")
+					assert.NoError(t, err)
+
+					// Let's create a pull request
+
+					// Let's clone the repo to dir and write a file
+					err = os.MkdirAll(args.dir, 0755)
+					assert.NoError(t, err)
+					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
+					assert.NoError(t, err)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					assert.NoError(t, err)
+					return nil
+				},
+				cleanFn: func(args *args) {
+					for _, o := range args.provider.Repositories {
+						for _, r := range o {
+							if r.BaseDir != "" {
+								err := os.RemoveAll(r.BaseDir)
+								assert.NoError(t, err)
+							}
+						}
+					}
+					err := os.RemoveAll(args.dir)
+					assert.NoError(t, err)
+				},
+				gitURL:   fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
+				dir:      "",  // set by initFn
+				provider: nil, // set by initFn
+				push:     true,
+				commit:   true,
+			},
+			postFn: func(args *args, test *test) error {
+
+				return nil
+			},
+		},
+		{
+			name: "CreatePullRequestWithExistingCommitAndPush",
+			args: args{
+				gitter: gits.NewGitCLI(),
+				initFn: func(args *args) error {
+					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						if err != nil {
+							return errors.WithStack(err)
+						}
+						return nil
+					}, args.gitter)
+					args.provider = gits.NewFakeProvider(acmeRepo)
+					args.dir, err = ioutil.TempDir("", "")
+					assert.NoError(t, err)
+
+					// Let's clone the repo to dir and write a file, and commit it
+					err = os.MkdirAll(args.dir, 0755)
+					assert.NoError(t, err)
+					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
+					assert.NoError(t, err)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					assert.NoError(t, err)
+					err = args.gitter.Add(args.dir, "CONTRIBUTING")
+					assert.NoError(t, err)
+					err = args.gitter.CommitDir(args.dir, "commit")
+					assert.NoError(t, err)
+					return nil
+				},
+				cleanFn: func(args *args) {
+					for _, o := range args.provider.Repositories {
+						for _, r := range o {
+							if r.BaseDir != "" {
+								err := os.RemoveAll(r.BaseDir)
+								assert.NoError(t, err)
+							}
+						}
+					}
+					err := os.RemoveAll(args.dir)
+					assert.NoError(t, err)
+				},
+				gitURL:    fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
+				dir:       "",  // set by initFn
+				provider:  nil, // set by initFn
+				push:      true,
+				commitMsg: "commit",
+			},
+			postFn: func(args *args, test *test) error {
+
+				return nil
+			},
+		},
+		{
+			name: "CreatePullRequestWithExistingCommitAndExistingPush",
+			args: args{
+				gitter: gits.NewGitCLI(),
+				initFn: func(args *args) error {
+					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						if err != nil {
+							return errors.WithStack(err)
+						}
+						return nil
+					}, args.gitter)
+					args.provider = gits.NewFakeProvider(acmeRepo)
+					args.dir, err = ioutil.TempDir("", "")
+					assert.NoError(t, err)
+
+					// Let's clone the repo to dir and write a file, and commit it
+					err = os.MkdirAll(args.dir, 0755)
+					assert.NoError(t, err)
+					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
+					assert.NoError(t, err)
+					err = args.gitter.CreateBranch(args.dir, "other")
+					assert.NoError(t, err)
+					err = args.gitter.Checkout(args.dir, "other")
+					assert.NoError(t, err)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					assert.NoError(t, err)
+					err = args.gitter.Add(args.dir, "CONTRIBUTING")
+					assert.NoError(t, err)
+					err = args.gitter.CommitDir(args.dir, "commit")
+					assert.NoError(t, err)
+					err = args.gitter.Push(args.dir, "origin", false, false, "HEAD")
+					assert.NoError(t, err)
+					return nil
+				},
+				cleanFn: func(args *args) {
+					for _, o := range args.provider.Repositories {
+						for _, r := range o {
+							if r.BaseDir != "" {
+								err := os.RemoveAll(r.BaseDir)
+								assert.NoError(t, err)
+							}
+						}
+					}
+					err := os.RemoveAll(args.dir)
+					assert.NoError(t, err)
+				},
+				gitURL:    fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
+				dir:       "",  // set by initFn
+				provider:  nil, // set by initFn
+				push:      false,
+				commitMsg: "commit",
+				branch:    "other",
+			},
+			postFn: func(args *args, test *test) error {
+
+				return nil
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.args.initFn(&tt.args)
+			assert.NoError(t, err)
+			upstreamRepo, err := gits.ParseGitURL(tt.args.gitURL)
+			assert.NoError(t, err)
+			// Need to do this to make sure the CloneURL is correct
+			upstreamRepo, err = tt.args.provider.GetRepository(upstreamRepo.Organisation, upstreamRepo.Name)
+			assert.NoError(t, err)
+			var forkRepo *gits.GitRepository
+			if tt.args.forkGitURL != "" {
+				forkRepo, err = gits.ParseGitURL(tt.args.forkGitURL)
+				assert.NoError(t, err)
+				forkRepo, err = tt.args.provider.GetRepository(forkRepo.Organisation, forkRepo.Name)
+				assert.NoError(t, err)
+			}
+			uuid, err := uuid.NewV4()
+			assert.NoError(t, err)
+			if tt.args.branch == "" {
+				tt.args.branch = uuid.String()
+			}
+			prDetails := gits.PullRequestDetails{
+				BranchName: tt.args.branch,
+				Title:      fmt.Sprintf("chore: bump %s", uuid.String()),
+				Message:    fmt.Sprintf("bump %s", uuid.String()),
+			}
+			commitMsg := fmt.Sprintf("chore(deps): blah")
+			if tt.args.commitMsg != "" {
+				commitMsg = tt.args.commitMsg
+			}
+
+			prInfo, err := gits.PushRepoAndCreatePullRequest(tt.args.dir, upstreamRepo, forkRepo, "master", &prDetails, tt.args.filter, tt.args.commit, commitMsg, tt.args.push, tt.args.dryRun, tt.args.gitter, tt.args.provider, tt.args.labels)
+			err2 := tt.postFn(&tt.args, &tt)
+			assert.NoError(t, err2)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			if err != nil {
+				return
+			}
+
+			//validate the returned data
+			assert.Equal(t, prDetails.Title, prInfo.PullRequest.Title)
+			assert.Equal(t, prDetails.Message, prInfo.PullRequest.Body)
+			assert.Equal(t, prDetails.BranchName, util.DereferenceString(prInfo.PullRequest.HeadRef))
+			assert.Equal(t, prDetails.Title, prInfo.PullRequestArguments.Title)
+			assert.Equal(t, prDetails.Message, prInfo.PullRequestArguments.Body)
+			assert.Equal(t, prDetails.BranchName, prInfo.PullRequestArguments.Head)
+			assert.Equal(t, tt.args.gitURL, prInfo.PullRequestArguments.GitRepository.URL)
+			if tt.args.autoMerge {
+				assert.Contains(t, prInfo.PullRequest.Labels, "updatebot")
+			}
+
+			pr, err := tt.args.provider.GetPullRequest("acme", upstreamRepo, 1)
+			assert.NoError(t, err)
+			assert.Equal(t, prDetails.Title, pr.Title)
+			assert.Equal(t, prDetails.Message, pr.Body)
+			assert.Equal(t, prDetails.BranchName, util.DereferenceString(pr.HeadRef))
+
+			// reclone the repo and check CONTRIBUTING.md is there
+			// Do this regardless as the tests will either have the function under test do this or will do it themselves
+			dir, err := ioutil.TempDir("", "")
+			assert.NoError(t, err)
+			gitInfo, err := tt.args.provider.GetRepository("acme", "roadrunner")
+			assert.NoError(t, err)
+			err = tt.args.gitter.Clone(gitInfo.CloneURL, dir)
+			assert.NoError(t, err)
+			err = tt.args.gitter.FetchBranch(dir, "origin")
+			assert.NoError(t, err)
+			branches, err := tt.args.gitter.RemoteBranches(dir)
+			assert.NoError(t, err)
+			assert.Contains(t, branches, fmt.Sprintf("origin/%s", prDetails.BranchName))
+			err = tt.args.gitter.CheckoutRemoteBranch(dir, fmt.Sprintf("%s", prDetails.BranchName))
+			assert.NoError(t, err)
+			assert.FileExists(t, filepath.Join(dir, "CONTRIBUTING"))
+			data, err := ioutil.ReadFile(filepath.Join(dir, "CONTRIBUTING"))
+			assert.NoError(t, err)
+			assert.Equal(t, "Welcome!", string(data))
+			msg, err := tt.args.gitter.GetLatestCommitMessage(dir)
+			assert.NoError(t, err)
+			assert.Equal(t, commitMsg, msg)
+
+			// validate the files exist
+			tt.args.cleanFn(&tt.args)
 		})
 	}
 }

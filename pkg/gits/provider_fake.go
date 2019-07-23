@@ -240,7 +240,7 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 		Number:         &number,
 		Mergeable:      nil,
 		Merged:         nil,
-		HeadRef:        nil,
+		HeadRef:        &data.Head,
 		State:          nil,
 		StatusesURL:    nil,
 		IssueURL:       nil,
