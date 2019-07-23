@@ -748,9 +748,33 @@ func (b *BitbucketServerProvider) MergePullRequest(pr *GitPullRequest, message s
 	return nil
 }
 
+func (b *BitbucketServerProvider) parseWebHookURL(data *GitWebHookArguments) (string, string, error) {
+	repoURL := data.Repo.URL
+	owner := data.Repo.Organisation
+	repoName := data.Repo.Name
+	if repoURL == "" {
+		repository, err := b.GetRepository(owner, repoName)
+		if err != nil {
+			return "", "", errors.Wrapf(err, "failed to find repository %s/%s in server %s", owner, repoName, b.Server.URL)
+		}
+		repoURL = repository.URL
+		if repoURL == "" {
+			repoURL = repository.HTMLURL
+		}
+		if repoURL == "" {
+			return "", "", errors.Wrapf(err, "repository %s/%s on server %s has no URL", owner, repoName, b.Server.URL)
+		}
+	}
+	projectKey, repo := parseBitBucketServerURL(repoURL)
+	return projectKey, repo, nil
+}
+
 // CreateWebHook adds a new webhook to a git repository
 func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error {
-	projectKey, repo := parseBitBucketServerURL(data.Repo.URL)
+	projectKey, repo, err := b.parseWebHookURL(data)
+	if err != nil {
+		return err
+	}
 
 	if data.URL == "" {
 		return errors.New("missing property URL")
@@ -839,7 +863,10 @@ func (b *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*Gi
 
 // UpdateWebHook is used to update a webhook on a git repository.  It is best to pass in the webhook ID.
 func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
-	projectKey, repo := parseBitBucketServerURL(data.Repo.URL)
+	projectKey, repo, err := b.parseWebHookURL(data)
+	if err != nil {
+		return err
+	}
 
 	if data.URL == "" {
 		return errors.New("missing property URL")
