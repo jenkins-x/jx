@@ -62,6 +62,7 @@ type CreateQuickstartOptions struct {
 	GitProvider gits.GitProvider
 }
 
+// QuickstartOptions the subset of options
 type QuickstartOptions struct {
 	// CreateProjectOptions
 
@@ -246,7 +247,6 @@ func (o *CreateQuickstartOptions) Run() error {
 			}
 		}
 	} else {
-		// TODO: Implement the logic for creating the repo and the files.
 		// TODO: Install `serverless` if not already installed`
 		// TODO: Retrieve the list of templates through `serverless create --help`
 		// TODO: Convert the templates into a new parameter `provider` (e.g., `aws`) and `language` (e.g., `nodejs`)
@@ -262,6 +262,8 @@ func (o *CreateQuickstartOptions) Run() error {
 		o.ConfigureImportOptions(details)
 	}
 
+	println("xxxxx")
+	println(genDir)
 	return o.ImportCreatedProject(genDir)
 }
 
@@ -283,9 +285,8 @@ func (o *CreateQuickstartOptions) SetQuickstartPlatform() error {
 		)
 		if err != nil {
 			return errors.Wrap(err, "Could not retrieve the platform")
-		} else {
-			o.Filter.Platform = platform
 		}
+		o.Filter.Platform = platform
 	}
 	return nil
 }
