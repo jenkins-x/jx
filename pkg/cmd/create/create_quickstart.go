@@ -262,8 +262,6 @@ func (o *CreateQuickstartOptions) Run() error {
 		o.ConfigureImportOptions(details)
 	}
 
-	println("xxxxx")
-	println(genDir)
 	return o.ImportCreatedProject(genDir)
 }
 
