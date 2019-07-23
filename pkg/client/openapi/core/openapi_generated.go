@@ -5725,9 +5725,38 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref common.ReferenceCallb
 							Format:      "",
 						},
 					},
+					"providerKind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProviderKind is the kind of provider (github / bitbucketcloud / bitbucketserver etc)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL is the web URL of the project page",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"sshCloneURL": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SSHCloneURL is the git URL to clone this repository using SSH",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"httpCloneURL": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTPCloneURL is the git URL to clone this repository using HTTP/HTTPS",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"scheduler": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+							Description: "Scheduler a reference to a custom scheduler otherwise we default to the Team's Scededuler",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
 				},

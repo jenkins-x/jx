@@ -2266,10 +2266,17 @@ definitions:
     properties:
       description:
         type: string
+      httpCloneURL:
+        description: HTTPCloneURL is the git URL to clone this repository using HTTP/HTTPS
+        type: string
       org:
         type: string
       provider:
         description: Provider stores the URL of the git provider such as https://github.com
+        type: string
+      providerKind:
+        description: ProviderKind is the kind of provider (github / bitbucketcloud
+          / bitbucketserver etc)
         type: string
       providerName:
         description: ProviderName is a logical name for the provider without any URL
@@ -2279,6 +2286,14 @@ definitions:
         type: string
       scheduler:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
+        description: Scheduler a reference to a custom scheduler otherwise we default
+          to the Team's Scededuler
+      sshCloneURL:
+        description: SSHCloneURL is the git URL to clone this repository using SSH
+        type: string
+      url:
+        description: URL is the web URL of the project page
+        type: string
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep:
     description: StageActivityStep represents a stage of zero to more sub steps in
