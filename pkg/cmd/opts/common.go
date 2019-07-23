@@ -541,7 +541,7 @@ func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		noTillerFlag := os.Getenv("JX_NO_TILLER")
-		if o.SkipTiller || noTillerFlag == "true" {
+		if noTillerFlag == "true" || o.SkipTiller  {
 			o.EnableRemoteKubeCluster()
 			if o.helm != nil {
 				return o.helm
@@ -549,7 +549,7 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		}
 		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
-			if o.SkipTiller || noTillerFlag == "true" {
+			if noTillerFlag == "true" || o.SkipTiller {
 				helmTemplate = true
 			} else {
 				log.Logger().Warnf("Failed to retrieve team settings: %v - falling back to default settings...", err)
