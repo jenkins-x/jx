@@ -504,7 +504,7 @@ items:
         sidecar.istio.io/inject: "false"
       creationTimestamp: "2019-07-02T12:34:56Z"
       labels:
-        jenkins.io/task-stage-name: from-buil-dpack
+        jenkins.io/task-stage-name: from-build-pack
         tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
         tekton.dev/pipelineRun: fakeowner-fakerepo-fakebranch-1
         tekton.dev/task: fakeowner-fakerepo-fakebranch-from-fakebranch-1

@@ -2,11 +2,12 @@ package logs
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/tekton"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/tekton"
 
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -151,7 +152,7 @@ func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tekton
 }
 
 // GetRunningBuildLogs obtains the logs of the provided PipelineActivity and streams the running build pods' logs using the provided LogWriter
-func GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, writer LogWriter) error {
+func GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, writer LogWriter) error {
 	pipelineRunNames, err := getPipelineRunNamesForActivity(pa, tektonClient)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get PipelineRun names for activity %s in namespace %s", pa.Name, pa.Namespace)
@@ -159,50 +160,60 @@ func GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, kubeClient k
 	pipelineRunsLogged := make(map[string]bool)
 	foundLogs := false
 
+	// This method will be executed by both the CLI and the UI, we don't know if the UI has color enabled, so we are using a local instance instead of the global one
+	c := color.New(color.FgGreen)
+	c.EnableColor()
 	for len(pipelineRunNames) > len(pipelineRunsLogged) {
-		pods, err := builds.GetBuildPods(kubeClient, pa.Namespace)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get build pods in namespace %s", pa.Namespace)
-		}
+		for _, prName := range pipelineRunNames {
+			_, runSeen := pipelineRunsLogged[prName]
+			if !runSeen {
+				structure, err := jxClient.JenkinsV1().PipelineStructures(pa.Namespace).Get(prName, metav1.GetOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "failed to get pipeline structure for %s in namespace %s", prName, pa.Namespace)
+				}
 
-		sort.Slice(pods, func(i, j int) bool {
-			return pods[i].CreationTimestamp.Before(&pods[j].CreationTimestamp)
-		})
+				allStages := structure.GetAllStagesWithSteps()
+				stagesSeen := make(map[string]bool)
 
-		runsSeenForPods := make(map[string]bool)
-		// This method will be executed by both the CLI and the UI, we don't know if the UI has color enabled, so we are using a local instance instead of the global one
-		c := color.New(color.FgGreen)
-		c.EnableColor()
-		for _, pod := range pods {
-			stageName := pod.Labels["jenkins.io/task-stage-name"]
-			pipelineRun := pod.Labels[builds.LabelPipelineRunName]
-			_, seen := pipelineRunsLogged[pipelineRun]
-
-			params := builds.CreateBuildPodInfo(pod)
-			if !seen && params.Organisation == pa.Spec.GitOwner && params.Repository == pa.Spec.GitRepository &&
-				strings.ToLower(params.Branch) == strings.ToLower(pa.Spec.GitBranch) && params.Build == pa.Spec.Build {
-				runsSeenForPods[pipelineRun] = true
-				foundLogs = true
-				containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
-				for i, ic := range containers {
-					pod, err = waitForContainerToStart(kubeClient, pa.Namespace, pod, i, writer)
-					err = writer.WriteLog(fmt.Sprintf("Showing logs for build %v stage %s and container %s\n", c.Sprintf(buildName), c.Sprintf(stageName), c.Sprintf(ic.Name)))
+				// Repeat until we've seen pods for all stages
+				for len(allStages) > len(stagesSeen) {
+					pods, err := builds.GetPipelineRunPods(kubeClient, pa.Namespace, prName)
 					if err != nil {
-						return errors.Wrapf(err, "there was a problem writing a single line into the logs writer")
+						return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", prName, pa.Namespace)
 					}
-					err = writer.StreamLog(pa.Namespace, pod, &ic)
-					if err != nil {
-						return errors.Wrapf(err, "there was a problem writing into the stream writer")
+					sort.Slice(pods, func(i, j int) bool {
+						return pods[i].CreationTimestamp.Before(&pods[j].CreationTimestamp)
+					})
+
+					for _, pod := range pods {
+						stageName := pod.Labels["jenkins.io/task-stage-name"]
+						params := builds.CreateBuildPodInfo(pod)
+
+						if _, seen := stagesSeen[stageName]; !seen && params.Organisation == pa.Spec.GitOwner && params.Repository == pa.Spec.GitRepository &&
+							strings.ToLower(params.Branch) == strings.ToLower(pa.Spec.GitBranch) && params.Build == pa.Spec.Build {
+							stagesSeen[stageName] = true
+							pipelineRunsLogged[prName] = true
+							foundLogs = true
+
+							containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+							for i, ic := range containers {
+								pod, err = waitForContainerToStart(kubeClient, pa.Namespace, pod, i, writer)
+								err = writer.WriteLog(fmt.Sprintf("Showing logs for build %v stage %s and container %s\n", c.Sprintf(buildName), c.Sprintf(stageName), c.Sprintf(ic.Name)))
+								if err != nil {
+									return errors.Wrapf(err, "there was a problem writing a single line into the logs writer")
+								}
+								err = writer.StreamLog(pa.Namespace, pod, &ic)
+								if err != nil {
+									return errors.Wrapf(err, "there was a problem writing into the stream writer")
+								}
+							}
+						}
+					}
+					if !foundLogs {
+						break
 					}
 				}
 			}
-		}
-		pipelineRunNames, err = getPipelineRunNamesForActivity(pa, tektonClient)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get PipelineRun names for activity %s in namespace %s", pa.Name, pa.Namespace)
-		}
-		for k, v := range runsSeenForPods {
-			pipelineRunsLogged[k] = v
 		}
 		if !foundLogs {
 			break

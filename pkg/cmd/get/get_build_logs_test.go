@@ -28,7 +28,8 @@ func TestGetTektonLogsForRunningBuild(t *testing.T) {
 	testCaseDir := path.Join("test_data", "get_build_logs", "tekton_build_logs")
 
 	activities := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
-	jxClient := jxfake.NewSimpleClientset(activities)
+	structure := tekton_helpers_test.AssertLoadSinglePipelineStructure(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(activities, structure)
 
 	tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)}
 	tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
@@ -69,7 +70,8 @@ func TestGetTektonLogsForRunningBuildWithLegacyRepoLabel(t *testing.T) {
 	testCaseDir := path.Join("test_data", "get_build_logs", "tekton_build_logs_legacy_label")
 
 	activities := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
-	jxClient := jxfake.NewSimpleClientset(activities)
+	structure := tekton_helpers_test.AssertLoadSinglePipelineStructure(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(activities, structure)
 
 	tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)}
 	tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
@@ -110,7 +112,8 @@ func TestGetTektonLogsForRunningBuildWithWaitTime(t *testing.T) {
 	testCaseDir := path.Join("test_data", "get_build_logs", "tekton_build_logs")
 
 	activities := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
-	jxClient := jxfake.NewSimpleClientset(activities)
+	structure := tekton_helpers_test.AssertLoadSinglePipelineStructure(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(activities, structure)
 
 	tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)}
 	tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
@@ -230,5 +233,49 @@ func TestWithMetapipeline(t *testing.T) {
 	r.Close()
 	output := stripansi.Strip(string(outBytes))
 	assert.Contains(t, output, "stage app-extension")
-	assert.Contains(t, output, "stage from-buil-dpack")
+	assert.Contains(t, output, "stage from-build-pack")
+}
+
+func TestGetTektonLogsForRunningBuildWithMultipleStages(t *testing.T) {
+	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
+	commonOpts.BatchMode = true
+	testCaseDir := path.Join("test_data", "get_build_logs", "multiple_stages")
+
+	activities := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
+	structure := tekton_helpers_test.AssertLoadSinglePipelineStructure(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(activities, structure)
+
+	tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadSinglePipelineRun(t, testCaseDir)}
+	tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
+
+	pods := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+	kubeClient := kubeMocks.NewSimpleClientset(pods)
+
+	ns := "jx"
+
+	o := &GetBuildLogsOptions{
+		GetOptions: GetOptions{
+			CommonOptions: &commonOpts,
+		},
+	}
+
+	r, fakeStdout, _ := os.Pipe()
+	log.SetOutput(fakeStdout)
+	o.CommonOptions.Out = fakeStdout
+
+	_, err := o.getTektonLogs(kubeClient, tektonClient, jxClient, ns)
+	assert.NoError(t, err)
+
+	fakeStdout.Close()
+	outBytes, _ := ioutil.ReadAll(r)
+	r.Close()
+	output := stripansi.Strip(string(outBytes))
+
+	assert.Contains(t, output, "Build logs for abayer/js-test-repo/master #1")
+	for _, pod := range pods.Items {
+		containers, _, _ := kube.GetContainersWithStatusAndIsInit(&pod)
+		for _, c := range containers {
+			assert.Contains(t, output, fmt.Sprintf("Showing logs for build abayer/js-test-repo/master #1 stage %s and container %s", pod.Labels["jenkins.io/task-stage-name"], c.Name))
+		}
+	}
 }
