@@ -72,6 +72,7 @@ func (i *GitRepository) HostURL() string {
 	return answer
 }
 
+// URLWithoutUser returns the URL without any user/password
 func (i *GitRepository) URLWithoutUser() string {
 	u := i.URL
 	if u != "" {
