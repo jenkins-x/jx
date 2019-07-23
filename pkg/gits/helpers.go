@@ -234,6 +234,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		Body:          prDetails.Message,
 		Base:          base,
 	}
+	var existingPr *GitPullRequest
 
 	forkPushURL, err := gitter.CreatePushURL(cloneURL, &userAuth)
 	if err != nil {
@@ -241,7 +242,6 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 	}
 
 	if filter != nil && push {
-
 		// lets rebase an existing PR
 		existingPrs, err := FilterOpenPullRequests(provider, upstreamRepo.Organisation, upstreamRepo.Name, *filter)
 		if err != nil {
@@ -258,129 +258,110 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 				prs = append(prs, pr.URL)
 			}
 			log.Logger().Debugf("Found more than one PR %s using filter %s on repo %s/%s so rebasing latest PR %s", strings.Join(prs, ", "), filter.String(), upstreamRepo.Organisation, upstreamRepo.Name, existingPrs[:1][0].URL)
-			//
-			existingPrs = existingPrs[:1]
-		}
-		if len(existingPrs) == 1 {
-			pr := existingPrs[0]
+			existingPr = existingPrs[0]
+		} else if len(existingPrs) == 1 {
+			existingPr = existingPrs[0]
 			// We can only update an existing PR if the owner of that PR is this user!
-			if util.DereferenceString(pr.HeadOwner) == username && pr.HeadRef != nil && pr.Number != nil {
-				remote := "origin"
-				if forkRepo != nil && forkRepo.Fork {
-					remote = "upstream"
-				}
-				url := pr.URL
-				changeBranch, err := gitter.Branch(dir)
-				if err != nil {
-					return nil, errors.WithStack(err)
-				}
-				localBranchUUID, err := uuid.NewV4()
-				if err != nil {
-					return nil, errors.Wrapf(err, "creating UUID for local branch")
-				}
-				// We use this "dummy" local branch to pull into to avoid having to work with FETCH_HEAD as our local
-				// representation of the remote branch. This is an oddity of the pull/%d/head remote.
-				localBranch := localBranchUUID.String()
-				existingBranchName := *pr.HeadRef
-				fetchRefSpec := fmt.Sprintf("pull/%d/head:%s", *pr.Number, localBranch)
-				err = gitter.FetchBranch(dir, remote, fetchRefSpec)
-				if err != nil {
-					return nil, errors.Wrapf(err, "fetching %s for merge", fetchRefSpec)
-				}
-
-				err = gitter.CreateBranchFrom(dir, prDetails.BranchName, localBranch)
-				if err != nil {
-					return nil, errors.Wrapf(err, "creating branch %s from %s", prDetails.BranchName, fetchRefSpec)
-				}
-				err = gitter.Checkout(dir, prDetails.BranchName)
-				if err != nil {
-					return nil, errors.Wrapf(err, "checking out branch %s", prDetails.BranchName)
-				}
-				err = gitter.MergeTheirs(dir, changeBranch)
-				if err != nil {
-					return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, fetchRefSpec)
-				}
-				err = gitter.RebaseTheirs(dir, fmt.Sprintf(localBranch), "", true)
-				if err != nil {
-					return nil, errors.WithStack(err)
-				}
-				if dryRun {
-					log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(pr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
-					return nil, nil
-				}
-
-				err = gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", prDetails.BranchName, existingBranchName))
-				if err != nil {
-					return nil, errors.Wrapf(err, "pushing merged branch %s", existingBranchName)
-				}
-
-				gha.Head = headPrefix + existingBranchName
-				// work out the minimal similar title
-				if strings.HasPrefix(pr.Title, "chore(deps): bump ") {
-					origWords := strings.Split(pr.Title, " ")
-					newWords := strings.Split(prDetails.Title, " ")
-					answer := make([]string, 0)
-					for i, w := range newWords {
-						if len(origWords) > i && origWords[i] == w {
-							answer = append(answer, w)
-						}
-					}
-					if answer[len(answer)-1] == "bump" {
-						// if there are no similarities in the actual dependency, then add a generic form of words
-						answer = append(answer, "dependency", "versions")
-					}
-					if answer[len(answer)-1] == "to" || answer[len(answer)-1] == "from" {
-						// remove trailing prepositions
-						answer = answer[:len(answer)-1]
-					}
-					gha.Title = strings.Join(answer, " ")
-				} else {
-					gha.Title = prDetails.Title
-				}
-				gha.Body = fmt.Sprintf("%s\n<hr />\n\n%s", prDetails.Message, pr.Body)
-
-				pr, err := provider.UpdatePullRequest(gha, *pr.Number)
-				if err != nil {
-					return nil, errors.Wrapf(err, "updating pull request %s", url)
-				}
-				log.Logger().Infof("Updated Pull Request: %s", util.ColorInfo(pr.URL))
-				return &PullRequestInfo{
-					GitProvider:          provider,
-					PullRequest:          pr,
-					PullRequestArguments: gha,
-				}, nil
-			}
-		} else {
-			log.Logger().Debugf("Did not find any PRs to rebase, creating a new one")
 		}
 	}
-
-	if dryRun {
-		log.Logger().Infof("Commit created but not pushed; would have created new pull request with %s and used commit message %s. Please manually delete %s when you are done.", prDetails.String(), commitMessage, util.ColorInfo(dir))
-		return nil, nil
-	}
-
-	if push {
-		// We can only choose a branch name if we are doing the push!
-		var err error
-		prDetails.BranchName, err = computeBranchName(base, prDetails.BranchName, dir, gitter)
+	remoteBranch := prDetails.BranchName
+	if existingPr != nil && util.DereferenceString(existingPr.HeadOwner) == username && existingPr.HeadRef != nil && existingPr.Number != nil {
+		remote := "origin"
+		if forkRepo != nil && forkRepo.Fork {
+			remote = "upstream"
+		}
+		changeBranch, err := gitter.Branch(dir)
 		if err != nil {
-			return nil, errors.Wrapf(err, "computing branch name for %s", prDetails.BranchName)
+			return nil, errors.WithStack(err)
+		}
+		localBranchUUID, err := uuid.NewV4()
+		if err != nil {
+			return nil, errors.Wrapf(err, "creating UUID for local branch")
+		}
+		// We use this "dummy" local branch to pull into to avoid having to work with FETCH_HEAD as our local
+		// representation of the remote branch. This is an oddity of the pull/%d/head remote.
+		localBranch := localBranchUUID.String()
+		remoteBranch = *existingPr.HeadRef
+		fetchRefSpec := fmt.Sprintf("pull/%d/head:%s", *existingPr.Number, localBranch)
+		err = gitter.FetchBranch(dir, remote, fetchRefSpec)
+		if err != nil {
+			return nil, errors.Wrapf(err, "fetching %s for merge", fetchRefSpec)
+		}
+
+		err = gitter.CreateBranchFrom(dir, prDetails.BranchName, localBranch)
+		if err != nil {
+			return nil, errors.Wrapf(err, "creating branch %s from %s", prDetails.BranchName, fetchRefSpec)
+		}
+		err = gitter.Checkout(dir, prDetails.BranchName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "checking out branch %s", prDetails.BranchName)
+		}
+		err = gitter.MergeTheirs(dir, changeBranch)
+		if err != nil {
+			return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, fetchRefSpec)
+		}
+		err = gitter.RebaseTheirs(dir, fmt.Sprintf(localBranch), "", true)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	if dryRun {
+		log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(existingPr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
+		return nil, nil
+	} else if push {
+		err := gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
+		if err != nil {
+			return nil, errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
+		}
+	}
+	var pr *GitPullRequest
+	if existingPr != nil {
+		gha.Head = headPrefix + remoteBranch
+		// work out the minimal similar title
+		if strings.HasPrefix(existingPr.Title, "chore(deps): bump ") {
+			origWords := strings.Split(existingPr.Title, " ")
+			newWords := strings.Split(prDetails.Title, " ")
+			answer := make([]string, 0)
+			for i, w := range newWords {
+				if len(origWords) > i && origWords[i] == w {
+					answer = append(answer, w)
+				}
+			}
+			if answer[len(answer)-1] == "bump" {
+				// if there are no similarities in the actual dependency, then add a generic form of words
+				answer = append(answer, "dependency", "versions")
+			}
+			if answer[len(answer)-1] == "to" || answer[len(answer)-1] == "from" {
+				// remove trailing prepositions
+				answer = answer[:len(answer)-1]
+			}
+			gha.Title = strings.Join(answer, " ")
+		} else {
+			gha.Title = prDetails.Title
+		}
+		gha.Body = fmt.Sprintf("%s\n<hr />\n\n%s", prDetails.Message, existingPr.Body)
+		var err error
+		pr, err = provider.UpdatePullRequest(gha, *existingPr.Number)
+		if err != nil {
+			return nil, errors.Wrapf(err, "updating pull request %s", existingPr.URL)
 		}
 		err = gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", prDetails.BranchName))
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-	}
-	gha.Head = headPrefix + prDetails.BranchName
+		log.Logger().Infof("Updated Pull Request: %s", util.ColorInfo(pr.URL))
+	} else {
+		gha.Head = headPrefix + prDetails.BranchName
 
-	pr, err := provider.CreatePullRequest(gha)
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating pull request with arguments %v", gha.String())
+		pr, err = provider.CreatePullRequest(gha)
+		if err != nil {
+			return nil, errors.Wrapf(err, "creating pull request with arguments %v", gha.String())
+		}
+		log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	}
-	log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	if labels != nil {
 		number := *pr.Number
+		var err error
 		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, labels)
 		if err != nil {
 			return nil, err
