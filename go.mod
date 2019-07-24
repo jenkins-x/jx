@@ -25,7 +25,6 @@ require (
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d
 	github.com/chromedp/chromedp v0.1.1
-	github.com/cloudflare/cfssl v0.0.0-20190409034051-768cd563887f
 	github.com/codeship/codeship-go v0.0.0-20180717142545-7793ca823354
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
@@ -69,7 +68,6 @@ require (
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jetstack/cert-manager v0.5.2
-	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/knative/build v0.5.0
 	github.com/knative/pkg v0.0.0-20190402181056-ff46edef0ae5
