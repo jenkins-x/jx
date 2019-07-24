@@ -13,7 +13,6 @@ pushd jx-docs/content/commands
   git add *
   git commit --allow-empty -a -m "updated jx commands & API docs from $VERSION"
   git fetch origin && git rebase origin/master
-  git push origin
 popd
 
 
@@ -25,7 +24,6 @@ pushd jx-docs/content
   git add *
   git commit --allow-empty -a -m "updated jx Json Schema from $VERSION"
   git fetch origin && git rebase origin/master
-  git push origin
 popd
 
 echo "Updating the JX CLI & API reference docs"
@@ -36,6 +34,8 @@ pushd jx-docs/static/apidocs
   git add *
   git commit --allow-empty -a -m "updated jx API docs from $VERSION"
   git fetch origin && git rebase origin/master
-  git push origin
 popd
 
+pushd jx-docs
+  git push origin
+popd
