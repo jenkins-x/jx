@@ -185,6 +185,22 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									sht.StepImage("nodejs"), sht.StepName("promote-jx-promote")),
 							),
 						),
+						SetVersion: &jenkinsfile.PipelineLifecycle{
+							Steps: []*jxsyntax.Step{{
+								Image: "nodejs",
+								Steps: []*jxsyntax.Step{{
+									Comment: "so we can retrieve the version in later steps",
+									Name:    "next-version",
+									Sh:      "echo \\$(jx-release-version) > VERSION",
+									Steps:   []*jxsyntax.Step{},
+								}, {
+									Name:  "tag-version",
+									Sh:    "jx step tag --version \\$(cat VERSION)",
+									Steps: []*jxsyntax.Step{},
+								}},
+							}},
+							PreSteps: []*jxsyntax.Step{},
+						},
 					},
 				},
 			},
@@ -450,6 +466,26 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									sht.StepImage("maven"), sht.StepName("promote-jx-promote")),
 							),
 						),
+						SetVersion: &jenkinsfile.PipelineLifecycle{
+							Steps: []*jxsyntax.Step{{
+								Image: "maven",
+								Steps: []*jxsyntax.Step{{
+									Comment: "so we can retrieve the version in later steps",
+									Name:    "next-version",
+									Sh:      "echo \\$(jx-release-version) > VERSION",
+									Steps:   []*jxsyntax.Step{},
+								}, {
+									Name:  "set-version",
+									Sh:    "mvn versions:set -DnewVersion=\\$(cat VERSION)",
+									Steps: []*jxsyntax.Step{},
+								}, {
+									Name:  "tag-version",
+									Sh:    "jx step tag --version \\$(cat VERSION)",
+									Steps: []*jxsyntax.Step{},
+								}},
+							}},
+							PreSteps: []*jxsyntax.Step{},
+						},
 					},
 				},
 			},

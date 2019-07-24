@@ -343,7 +343,8 @@ func (o *StepSyntaxEffectiveOptions) CreateEffectivePipeline(packsDir string, pr
 			return nil, errors.Wrapf(err, "failed to create effective pipeline for release")
 		}
 		pipelines.Release = &jenkinsfile.PipelineLifecycles{
-			Pipeline: parsed,
+			Pipeline:   parsed,
+			SetVersion: releaseLifecycles.SetVersion,
 		}
 	}
 	if pipelines.PullRequest != nil {
@@ -353,7 +354,8 @@ func (o *StepSyntaxEffectiveOptions) CreateEffectivePipeline(packsDir string, pr
 			return nil, errors.Wrapf(err, "failed to create effective pipeline for pull request")
 		}
 		pipelines.PullRequest = &jenkinsfile.PipelineLifecycles{
-			Pipeline: parsed,
+			Pipeline:   parsed,
+			SetVersion: prLifecycles.SetVersion,
 		}
 	}
 	if pipelines.Feature != nil {
@@ -363,7 +365,8 @@ func (o *StepSyntaxEffectiveOptions) CreateEffectivePipeline(packsDir string, pr
 			return nil, errors.Wrapf(err, "failed to create effective pipeline for pull request")
 		}
 		pipelines.Feature = &jenkinsfile.PipelineLifecycles{
-			Pipeline: parsed,
+			Pipeline:   parsed,
+			SetVersion: featureLifecycles.SetVersion,
 		}
 	}
 
