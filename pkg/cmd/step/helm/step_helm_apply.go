@@ -24,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -39,6 +40,7 @@ type StepHelmApplyOptions struct {
 	Wait               bool
 	Force              bool
 	DisableHelmVersion bool
+	Boot               bool
 	Vault              bool
 	UseTempDir         bool
 	NoVault            bool
@@ -91,6 +93,7 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Helm secrets are stored in vault")
+	cmd.Flags().BoolVarP(&options.Boot, "boot", "", false, "In Boot mode we load the Version Stream from the 'jx-requirements.yml' and use that to replace any missing versions in the 'reuqirements.yaml' file from the Version Stream")
 	cmd.Flags().BoolVarP(&options.NoVault, "no-vault", "", false, "Disables loading secrets from Vault. e.g. if bootstrapping core services like Ingress before we have a Vault")
 	cmd.Flags().BoolVarP(&options.NoMasking, "no-masking", "", false, "The effective 'values.yaml' file is output to the console with parameters masked. Enabling this flag will show the unmasked secrets in the console output")
 	cmd.Flags().BoolVarP(&options.UseTempDir, "use-temp-dir", "", true, "Whether to build and apply the helm chart from a temporary directory - to avoid updating the local values.yaml file from the generated file as part of the apply which could get accidentally checked into git")
@@ -292,6 +295,13 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	log.Logger().Infof("Using values files: %s", strings.Join(valueFiles, ", "))
+
+	if o.Boot {
+		err = o.replaceMissingVersionsFromVersionStream(requirements, dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to replace missing versions in the requirements.yaml in dir %s", dir)
+		}
+	}
 
 	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts(), valueFiles)
 	if err != nil {
@@ -525,4 +535,82 @@ func (o *StepHelmApplyOptions) overwriteProviderValues(requirements *config.Requ
 
 	data, err := yaml.Marshal(values)
 	return data, err
+}
+
+func (o *StepHelmApplyOptions) replaceMissingVersionsFromVersionStream(requirementsConfig *config.RequirementsConfig, dir string) error {
+	fileName := filepath.Join(dir, helm.RequirementsFileName)
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check for file %s", fileName)
+	}
+	if !exists {
+		log.Logger().Infof("no requirements file: %s so not checking for missing versions\n", fileName)
+		return nil
+	}
+
+	vs := requirementsConfig.VersionStream
+	log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
+
+	resolver, err := o.CreateVersionResolver(vs.URL, vs.Ref)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create version resolver")
+	}
+
+	prefixes, err := resolver.GetRepositoryPrefixes()
+	if err != nil {
+		return errors.Wrapf(err, "failed to load repository prefixes")
+	}
+
+	err = o.verifyRequirementsYAML(resolver, prefixes, fileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to replace missing versions in file %s", fileName)
+	}
+	return nil
+}
+
+func (o *StepHelmApplyOptions) verifyRequirementsYAML(resolver *opts.VersionResolver, prefixes *opts.RepositoryPrefixes, fileName string) error {
+	req, err := helm.LoadRequirementsFile(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load %s", fileName)
+	}
+
+	modified := false
+	for _, dep := range req.Dependencies {
+		if dep.Version == "" {
+			name := dep.Alias
+			if name == "" {
+				name = dep.Name
+			}
+			repo := dep.Repository
+			if repo == "" {
+				return fmt.Errorf("cannot to find a version for dependency %s in file %s as there is no 'repository'", name, fileName)
+			}
+
+			prefix := prefixes.PrefixForURL(repo)
+			if prefix == "" {
+				return fmt.Errorf("the helm repository %s does not have an associated prefix in in the 'charts/repositories.yml' file the version stream, so we cannot default the version in file %s", repo, fileName)
+			}
+			newVersion := ""
+			fullChartName := prefix + "/" + dep.Name
+			newVersion, err := resolver.StableVersionNumber(version.KindChart, fullChartName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to find version of chart %s in file %s", fullChartName, fileName)
+			}
+			if newVersion == "" {
+				return fmt.Errorf("failed to find a version for dependency %s in file %s in the current version stream - please either add an explicit version to this file or add chart %s to the version stream", name, fileName, fullChartName)
+			}
+			dep.Version = newVersion
+			modified = true
+			log.Logger().Infof("adding version %s to dependency %s in file %s", newVersion, name, fileName)
+		}
+	}
+
+	if modified {
+		err = helm.SaveFile(fileName, req)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save %s", fileName)
+		}
+		log.Logger().Infof("adding dependency versions to file %s", fileName)
+	}
+	return nil
 }
