@@ -1,10 +1,10 @@
 package verify
 
 import (
-	"github.com/cloudflare/cfssl/log"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -67,7 +67,7 @@ func NewCmdStepVerifyPackages(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepVerifyPackagesOptions) Run() error {
-	log.Infof("verifying the CLI packages\n")
+	log.Logger().Infof("verifying the CLI packages\n")
 
 	packages, table := o.GetPackageVersions(o.Namespace, o.HelmTLS)
 
@@ -86,7 +86,7 @@ func (o *StepVerifyPackagesOptions) Run() error {
 		return err
 	}
 
-	log.Infof("the CLI packages seem to be setup correctly\n")
+	log.Logger().Infof("the CLI packages seem to be setup correctly\n")
 	table.Render()
 
 	return nil

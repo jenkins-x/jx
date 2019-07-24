@@ -5,12 +5,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -43,7 +43,7 @@ func NewCmdStepVerifyGit(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepVerifyGitOptions) Run() error {
-	log.Infof("verifying the git Secrets\n")
+	log.Logger().Infof("verifying the git Secrets\n")
 
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
 	if err != nil {
@@ -51,7 +51,7 @@ func (o *StepVerifyGitOptions) Run() error {
 	}
 	info := util.ColorInfo
 	for _, secret := range secrets.Items {
-		log.Infof("verifying git Secret %s\n", info(secret.Name))
+		log.Logger().Infof("verifying git Secret %s\n", info(secret.Name))
 		annotations := secret.Annotations
 		data := secret.Data
 		if annotations == nil {
@@ -84,7 +84,7 @@ func (o *StepVerifyGitOptions) Run() error {
 		return fmt.Errorf("failed to find any Git servers from the Git Secrets. There should be a Secret with label %s=%s", kube.LabelKind, kube.ValueKindGit)
 	}
 	for _, server := range servers {
-		log.Infof("verifying git server %s at %s\n", info(server.Name), info(server.URL))
+		log.Logger().Infof("verifying git server %s at %s\n", info(server.Name), info(server.URL))
 
 		pipelineUser := config.PipeLineUsername
 		if pipelineUser == "" {
@@ -109,9 +109,9 @@ func (o *StepVerifyGitOptions) Run() error {
 			orgNames = append(orgNames, org.Login)
 		}
 		sort.Strings(orgNames)
-		log.Infof("found %d organisations in git server %s: %s\n", len(orgs), info(server.URL), info(strings.Join(orgNames, ", ")))
+		log.Logger().Infof("found %d organisations in git server %s: %s\n", len(orgs), info(server.URL), info(strings.Join(orgNames, ", ")))
 	}
 
-	log.Infof("git tokens seem to be setup correctly\n")
+	log.Logger().Infof("git tokens seem to be setup correctly\n")
 	return nil
 }
