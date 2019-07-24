@@ -188,6 +188,8 @@ type Gitter interface {
 
 	Init(dir string) error
 	Clone(url string, directory string) error
+	CloneBare(dir string, url string) error
+	PushMirror(dir string, url string) error
 
 	// ShallowCloneBranch TODO not sure if this method works any more - consider using ShallowClone(dir, url, branch, "")
 	ShallowCloneBranch(url string, branch string, directory string) error

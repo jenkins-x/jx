@@ -70,6 +70,10 @@ const (
 	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
 	// DefaultCloudBeesBootRepository boot git repo to use when using cloudbees profile
 	DefaultCloudBeesBootRepository = "https://github.com/cloudbees/cloudbees-jenkins-x-boot-config.git"
+	// DefaultCloudBeesVersionsURL default version stream url for cloudbees jenkins x distribution
+	DefaultCloudBeesVersionsURL = "https://github.com/cloudbees/cloudbees-jenkins-x-versions.git"
+	// DefaultCloudBeesVersionsRef default version stream ref for cloudbees jenkins x distribution
+	DefaultCloudBeesVersionsRef = "master"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments

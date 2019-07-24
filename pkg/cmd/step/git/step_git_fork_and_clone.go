@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -22,8 +24,8 @@ type StepGitForkAndCloneOptions struct {
 	Dir         string
 	BaseRef     string
 	PrintOutDir bool
-
-	OutputDir string
+	Duplicate   bool
+	OutputDir   string
 }
 
 var (
@@ -37,6 +39,11 @@ var (
 	StepGitForkAndCloneExample = templates.Examples(`
 		# Fork and clone the jx repo
 		jx step git fork-and-clone https://github.com/jenkins-x/jx.git
+
+		# Duplicate and clone the jx repo. This will create a new repo and mirror the contents of the source repo into,
+		# but it won't mark it as a fork in the git provider
+		jx step git fork-and-clone https://github.com/jenkins-x/jx.git --duplicate
+
 
 `)
 )
@@ -64,15 +71,13 @@ func NewCmdStepGitForkAndClone(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory in which the git repo is checked out, by default the working directory")
 	cmd.Flags().StringVarP(&options.BaseRef, "base", "", "master", "The base ref to start from")
 	cmd.Flags().BoolVarP(&options.BatchMode, opts.OptionBatchMode, "b", false, "Enable batch mode")
+	cmd.Flags().BoolVarP(&options.Duplicate, "duplicate", "", false, "Create a duplicate of a repo rather than a fork")
 	cmd.Flags().BoolVarP(&options.PrintOutDir, "print-out-dir", "", false, "prints the directory the fork has been cloned to on stdout")
 	return cmd
 }
 
 // Run implements the command
 func (o *StepGitForkAndCloneOptions) Run() error {
-	if len(o.Args) != 1 {
-		return errors.Errorf("Must specify exactly one git url but was %v", o.Args)
-	}
 	if o.Dir == "" {
 		dir, err := os.Getwd()
 		if err != nil {
@@ -80,12 +85,25 @@ func (o *StepGitForkAndCloneOptions) Run() error {
 		}
 		o.Dir = dir
 	}
-	gitURL := o.Args[0]
+	gitURL := ""
+	if len(o.Args) > 1 {
+		return errors.Errorf("Must specify exactly one git url but was %v", o.Args)
+	} else if len(o.Args) == 0 {
+		if os.Getenv("REPO_URL") != "" {
+			gitURL = os.Getenv("REPO_URL")
+		}
+	} else {
+		gitURL = o.Args[0]
+	}
+
+	if gitURL == "" {
+		return errors.Errorf("Must specify a git url on the CLI or using the environment variable REPO_URL")
+	}
 	provider, err := o.GitProviderForURL(gitURL, "git username")
 	if err != nil {
 		return errors.Wrapf(err, "getting git provider for %s", gitURL)
 	}
-	dir, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, o.Dir, o.BaseRef, "", provider, o.Git())
+	dir, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, o.Dir, o.BaseRef, "master", provider, o.Git(), o.Duplicate, "")
 	if err != nil {
 		return errors.Wrapf(err, "forking and pulling %s", gitURL)
 	}
@@ -96,7 +114,7 @@ func (o *StepGitForkAndCloneOptions) Run() error {
 		fmt.Print(dir)
 	}
 	if forkInfo != nil {
-		log.Logger().Infof("Forked %s to %s and pulled it into %s checking out %s", upstreamInfo.URL, forkInfo.URL, dir, baseRef)
+		log.Logger().Infof("Forked %s to %s, pulled it into %s and checked out %s", util.ColorInfo(upstreamInfo.HTMLURL), util.ColorInfo(forkInfo.HTMLURL), util.ColorInfo(dir), util.ColorInfo(baseRef))
 	} else {
 		log.Logger().Infof("Pulled %s (%s) into %s", upstreamInfo.URL, baseRef, dir)
 	}

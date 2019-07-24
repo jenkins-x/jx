@@ -284,19 +284,21 @@ func (p *GitHubProvider) GetRepository(org string, name string) (*GitRepository,
 	return toGitHubRepo(name, org, repo), nil
 }
 
-func (p *GitHubProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
+// CreateRepository creates a new repository under owner/name, optionally private
+func (p *GitHubProvider) CreateRepository(owner string, name string, private bool) (*GitRepository, error) {
 	repoConfig := &github.Repository{
 		Name:    github.String(name),
 		Private: github.Bool(private),
 	}
+	org := owner
 	if org == p.Username {
 		org = ""
 	}
 	repo, _, err := p.Client.Repositories.Create(p.Context, org, repoConfig)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", org, name, err)
+		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", owner, name, err)
 	}
-	return toGitHubRepo(name, org, repo), nil
+	return toGitHubRepo(name, owner, repo), nil
 }
 
 func (p *GitHubProvider) DeleteRepository(org string, name string) error {
@@ -318,6 +320,7 @@ func toGitHubRepo(name string, org string, repo *github.Repository) *GitReposito
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
+		URL:              util.DereferenceString(repo.URL),
 		Fork:             util.DereferenceBool(repo.Fork),
 		Language:         asText(repo.Language),
 		Stars:            asInt(repo.StargazersCount),
@@ -365,6 +368,7 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 		AllowMergeCommit: util.DereferenceBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
+		URL:              util.DereferenceString(repo.URL),
 		SSHURL:           asText(repo.SSHURL),
 		Organisation:     destinationOrg,
 		Fork:             true,

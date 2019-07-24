@@ -692,9 +692,14 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 	for _, line := range lines {
 		line = strings.TrimSpace(strings.TrimPrefix(line, "* "))
 		if prefix != "" {
-			line = strings.TrimPrefix(line, prefix)
+			if strings.HasPrefix(line, prefix) {
+				line = strings.TrimPrefix(line, prefix)
+				answer = append(answer, line)
+			}
+		} else {
+			answer = append(answer, line)
 		}
-		answer = append(answer, line)
+
 	}
 	return answer, nil
 }
@@ -750,7 +755,12 @@ func (g *GitCLI) FilterTags(dir string, filter string) ([]string, error) {
 		return nil, err
 	}
 	text = strings.TrimSuffix(text, "\n")
-	return strings.Split(text, "\n"), nil
+	split := strings.Split(text, "\n")
+	// Split will return the original string if it can't split it, and it may be empty
+	if len(split) == 1 && split[0] == "" {
+		return make([]string, 0), nil
+	}
+	return split, nil
 }
 
 // CreateTag creates a tag with the given name and message in the repository at the given directory
@@ -966,4 +976,22 @@ func (g *GitCLI) Remotes(dir string) ([]string, error) {
 		return nil, errors.Wrapf(err, "running git remote")
 	}
 	return strings.Split(out, "\n"), nil
+}
+
+// CloneBare will create a bare clone of url
+func (g *GitCLI) CloneBare(dir string, url string) error {
+	err := g.gitCmd(dir, "clone", "--bare", url, dir)
+	if err != nil {
+		return errors.Wrapf(err, "running git clone --bare %s", url)
+	}
+	return nil
+}
+
+// PushMirror will push the dir as a mirror to url
+func (g *GitCLI) PushMirror(dir string, url string) error {
+	err := g.gitCmd(dir, "push", "--mirror", url)
+	if err != nil {
+		return errors.Wrapf(err, "running git push --mirror %s", url)
+	}
+	return nil
 }

@@ -142,7 +142,7 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 			return errors.Wrapf(err, "creating git provider for directory %s", dir)
 		}
 
-		dir, _, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, dir, o.Base, o.BranchName, provider, o.Git())
+		dir, _, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, dir, o.Base, o.BranchName, provider, o.Git(), false, "")
 		if err != nil {
 			return errors.Wrapf(err, "failed to fork and pull %s", o.GitURLs)
 		}

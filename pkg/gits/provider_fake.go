@@ -15,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	errors2 "github.com/pkg/errors"
 )
 
 const jenkinsWebhookPath = "/jenkins-webhook/"
@@ -74,12 +73,14 @@ type FakeProvider struct {
 	Server auth.AuthServer
 	User   auth.UserAuth
 
-	Organizations      []GitOrganisation
-	Repositories       map[string][]*FakeRepository
-	ForkedRepositories map[string][]*FakeRepository
-	Type               FakeProviderType
-	Users              []*GitUser
-	WebHooks           []*GitWebHookArguments
+	Organizations            []GitOrganisation
+	Repositories             map[string][]*FakeRepository
+	ForkedRepositories       map[string][]*FakeRepository
+	Type                     FakeProviderType
+	Users                    []*GitUser
+	WebHooks                 []*GitWebHookArguments
+	Gitter                   Gitter
+	CreateRepositoryAddFiles func(dir string) error
 }
 
 func (f *FakeProvider) ListOrganisations() ([]GitOrganisation, error) {
@@ -99,17 +100,13 @@ func (f *FakeProvider) ListRepositories(org string) ([]*GitRepository, error) {
 }
 
 func (f *FakeProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
-	gitRepo := &GitRepository{
-		Name:         name,
-		Organisation: org,
+	r, err := NewFakeRepository(org, name, f.CreateRepositoryAddFiles, f.Gitter)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
-
-	repo := &FakeRepository{
-		GitRepo:      gitRepo,
-		PullRequests: nil,
-	}
-	f.Repositories[org] = append(f.Repositories[org], repo)
-	return gitRepo, nil
+	r.GitRepo.Private = private
+	f.Repositories[org] = append(f.Repositories[org], r)
+	return r.GitRepo, nil
 }
 
 func (f *FakeProvider) GetRepository(org string, name string) (*GitRepository, error) {
@@ -186,6 +183,12 @@ func (f *FakeProvider) ForkRepository(originalOrg string, name string, destinati
 
 func (f *FakeProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
 	for _, repo := range f.Repositories[org] {
+		if repo.GitRepo.Name == name {
+			repo.GitRepo.Name = newName
+			return repo.GitRepo, nil
+		}
+	}
+	for _, repo := range f.ForkedRepositories[org] {
 		if repo.GitRepo.Name == name {
 			repo.GitRepo.Name = newName
 			return repo.GitRepo, nil
@@ -689,7 +692,7 @@ func (f *FakeProvider) ListReleases(org string, name string) ([]*GitRelease, err
 func (f *FakeProvider) GetRelease(org string, name string, tag string) (*GitRelease, error) {
 	releases, err := f.ListReleases(org, name)
 	if err != nil {
-		return nil, errors2.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	for _, release := range releases {
 		if release.TagName == tag {
@@ -799,7 +802,7 @@ func NewFakeRepository(owner string, repoName string, addFiles func(dir string) 
 		}
 		err = addFiles(cloneDir)
 		if err != nil {
-			return nil, errors2.Wrapf(err, "adding files to %s", dir)
+			return nil, errors.Wrapf(err, "adding files to %s", dir)
 		}
 		err = gitter.Add(cloneDir, "-A")
 		if err != nil {
@@ -876,7 +879,7 @@ func (f *FakeProvider) AddLabelsToIssue(owner, repo string, number int, labels [
 func (f *FakeProvider) GetLatestRelease(org string, name string) (*GitRelease, error) {
 	releases, err := f.ListReleases(org, name)
 	if err != nil {
-		return nil, errors2.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	return releases[len(releases)-1], nil
 }

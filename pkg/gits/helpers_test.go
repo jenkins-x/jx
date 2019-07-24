@@ -196,6 +196,7 @@ func TestForkAndPullRepo(t *testing.T) {
 		dir        string
 		baseRef    string
 		branchName string
+		duplicate  bool
 		provider   *gits.FakeProvider
 		gitter     gits.Gitter
 		initFn     func(args *args) error // initFn allows us to run some code at the start of the test
@@ -263,6 +264,84 @@ func TestForkAndPullRepo(t *testing.T) {
 				// Need to dynamically set the directories as we make them up in the init
 				test.dir = args.dir
 				test.upstreamInfo.CloneURL = fmt.Sprintf("file://%s/acme", args.provider.Repositories["acme"][0].BaseDir)
+				return nil
+			},
+		}, {
+			name: "newDuplicateAndNewDir",
+			args: args{
+				gitter: gits.NewGitCLI(),
+				initFn: func(args *args) error {
+					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0755)
+						if err != nil {
+							return errors.WithStack(err)
+						}
+						return nil
+					}, args.gitter)
+					args.provider = gits.NewFakeProvider(acmeRepo)
+					args.provider.Gitter = args.gitter
+					args.provider.CreateRepositoryAddFiles = func(dir string) error {
+						err := ioutil.WriteFile(filepath.Join(dir, ".gitkeep"), []byte(""), 0655)
+						if err != nil {
+							return errors.Wrapf(err, "creating .gitkeep")
+						}
+						return nil
+					}
+					// Set the provider username to wile in order to create a fork
+					args.provider.User.Username = "wile"
+					uuid, err := uuid.NewV4()
+					assert.NoError(t, err)
+					args.dir = filepath.Join(os.TempDir(), fmt.Sprintf("git-dir-%s", uuid.String()))
+					return nil
+				},
+				cleanFn: func(args *args) {
+					for _, o := range args.provider.Repositories {
+						for _, r := range o {
+							if r.BaseDir != "" {
+								err := os.RemoveAll(r.BaseDir)
+								assert.NoError(t, err)
+							}
+						}
+					}
+					err := os.RemoveAll(args.dir)
+					assert.NoError(t, err)
+				},
+				gitURL:     fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
+				dir:        "",  // set by initFn
+				provider:   nil, // set by initFn
+				branchName: "master",
+				baseRef:    "master",
+				duplicate:  true,
+			},
+			baseRef: "master",
+			upstreamInfo: &gits.GitRepository{
+				Name:         "roadrunner",
+				URL:          "https://fake.git/wile/roadrunner.git",
+				HTMLURL:      "https://fake.git/wile/roadrunner",
+				Scheme:       "https",
+				Host:         "fake.git",
+				Organisation: "wile",
+				Fork:         false,
+			},
+			forkInfo: &gits.GitRepository{
+				Name:         "roadrunner",
+				URL:          "https://fake.git/wile/roadrunner.git",
+				HTMLURL:      "https://fake.git/wile/roadrunner",
+				Scheme:       "https",
+				Host:         "fake.git",
+				Organisation: "wile",
+				Fork:         false,
+			},
+			postFn: func(args *args, test *test) error {
+				test.dir = args.dir //make sure we end up with the same dir we start with
+				test.upstreamInfo.CloneURL = fmt.Sprintf("file://%s/wile", args.provider.Repositories["wile"][0].BaseDir)
+				test.forkInfo.CloneURL = fmt.Sprintf("file://%s/wile", args.provider.Repositories["wile"][0].BaseDir)
+				assert.Len(t, test.args.provider.ForkedRepositories, 0)
+				remotes, err := args.gitter.Remotes(args.dir)
+				assert.NoError(t, err)
+				assert.Len(t, remotes, 2)
+				assert.Contains(t, remotes, "origin")
+				assert.Contains(t, remotes, "upstream")
 				return nil
 			},
 		},
@@ -1055,7 +1134,7 @@ func TestForkAndPullRepo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.args.initFn(&tt.args)
 			assert.NoError(t, err)
-			dir, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(tt.args.gitURL, tt.args.dir, tt.args.baseRef, tt.args.branchName, tt.args.provider, tt.args.gitter)
+			dir, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(tt.args.gitURL, tt.args.dir, tt.args.baseRef, tt.args.branchName, tt.args.provider, tt.args.gitter, tt.args.duplicate, "")
 			err2 := tt.postFn(&tt.args, &tt)
 			assert.NoError(t, err2)
 

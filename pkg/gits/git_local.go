@@ -458,3 +458,13 @@ func (g *GitLocal) Remotes(dir string) ([]string, error) {
 func (g *GitLocal) StashPop(dir string) error {
 	return g.GitCLI.StashPop(dir)
 }
+
+// CloneBare does nothing
+func (g *GitLocal) CloneBare(dir string, url string) error {
+	return nil
+}
+
+// PushMirror does nothing
+func (g *GitLocal) PushMirror(dir string, url string) error {
+	return nil
+}
