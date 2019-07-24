@@ -275,6 +275,7 @@ func (o *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		for _, name := range nameToDelete {
 			args = args + " " + name
 		}
+		args = args + " || true"
 		return args, nil
 	}
 
@@ -296,7 +297,7 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 
 		for _, d := range disks {
 			if strings.HasPrefix(d.Name, "gke-") {
-				line = append(line, fmt.Sprintf("gcloud compute disks delete --zone=%s --quiet %s --project %s", z.Name, d.Name, o.Flags.ProjectID))
+				line = append(line, fmt.Sprintf("gcloud compute disks delete --zone=%s --quiet %s --project %s || true", z.Name, d.Name, o.Flags.ProjectID))
 			}
 		}
 	}
@@ -332,7 +333,7 @@ func (o *GCGKEOptions) cleanUpAddresses() ([]string, error) {
 			} else {
 				scope = "--global"
 			}
-			line = append(line, fmt.Sprintf("gcloud compute addresses delete %s %s --project %s", address.Name, scope, o.Flags.ProjectID))
+			line = append(line, fmt.Sprintf("gcloud compute addresses delete %s %s --project %s || true", address.Name, scope, o.Flags.ProjectID))
 		}
 		return line, nil
 	}
@@ -364,7 +365,7 @@ func (o *GCGKEOptions) cleanUpServiceAccounts() ([]string, error) {
 	if len(serviceAccounts) > 0 {
 		for _, sa := range serviceAccounts {
 			log.Logger().Debugf("About to delete service account %s", sa)
-			line = append(line, fmt.Sprintf("gcloud iam service-accounts delete %s --quiet --project %s", sa.Email, o.Flags.ProjectID))
+			line = append(line, fmt.Sprintf("gcloud iam service-accounts delete %s --quiet --project %s || true", sa.Email, o.Flags.ProjectID))
 		}
 	}
 
