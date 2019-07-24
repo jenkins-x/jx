@@ -116,6 +116,7 @@ func AddQuickstartFlags(cmd *cobra.Command, options *QuickstartOptions) {
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
+	// TODO: This is the main function and yet it contains too much code making it hard to understand and almost impossible to test it. Move blocks of code into new functions that can be easily replaced with fakes.
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
@@ -134,7 +135,6 @@ func (o *CreateQuickstartOptions) Run() error {
 			return err
 		}
 	}
-
 	// lets add any extra github organisations if they are not already configured
 	for _, org := range o.GitHubOrganisations {
 		found := false
@@ -154,7 +154,6 @@ func (o *CreateQuickstartOptions) Run() error {
 			})
 		}
 	}
-
 	gitMap := map[string]map[string]v1.QuickStartLocation{}
 	for _, loc := range locations {
 		m := gitMap[loc.GitURL]
@@ -164,7 +163,6 @@ func (o *CreateQuickstartOptions) Run() error {
 		}
 		m[loc.Owner] = loc
 	}
-
 	var details *gits.CreateRepoData
 	o.GitRepositoryOptions.Owner = o.ImportOptions.Organisation
 	o.GitRepositoryOptions.RepoName = o.ImportOptions.Repository
@@ -181,7 +179,6 @@ func (o *CreateQuickstartOptions) Run() error {
 		return fmt.Errorf("Failed to retrieve the platform: %s", err)
 	}
 	genDir := ""
-	// TODO: This block is too long and hard to test. Move it into a separate function
 	if o.Filter.Platform == "kubernetes" {
 		model, err := o.LoadQuickstartsFromMap(config, gitMap)
 		if err != nil {
@@ -247,12 +244,18 @@ func (o *CreateQuickstartOptions) Run() error {
 			}
 		}
 	} else {
-		// TODO: Install `serverless` if not already installed`
+		// TODO: Install `npm` if not already installed
+		// TODO: Use `npm` to install `serverless` if not already installed`
+		_, err := GetServerlessTemplates()
+		if err != nil {
+			return err
+		}
 		// TODO: Retrieve the list of templates through `serverless create --help`
 		// TODO: Convert the templates into a new parameter `provider` (e.g., `aws`) and `language` (e.g., `nodejs`)
 		// TODO: Use `serverless` to create all the files except `jenkins-x.yml`. The command could be similar to `serverless create --template [...] --name [...]`
 		// TODO: Get pipeline.yml from a repo and convert it into `jenkins-x.yml`. We might need to have one template for each `provider`. An example can be found in https://github.com/vfarcic/aws-lambda-js/blob/master/jenkins-x.yml.
 		// TODO: Make sure to reuse coommon code from the previous (`kubernetes`) block
+		// TODO: Create functional tests. They do not need to be extensive since almost everything is covered with unit tests.
 	}
 	log.Logger().Infof("Created project at %s\n", util.ColorInfo(genDir))
 

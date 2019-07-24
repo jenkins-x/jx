@@ -4,11 +4,13 @@ import (
 	"io"
 	"testing"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -180,9 +182,103 @@ func TestCreateQuickstartRunJXClientAndDevNamespaceVarReturnsError(t *testing.T)
 	assert.NotNil(t, err)
 }
 
-// *********
-// * Mocks *
-// *********
+func TestCreateQuickstartInvokesGetServerlessTemplatesWhenServerless(t *testing.T) {
+	// Setup
+	createGitAuthConfigServiceOrig := opts.CreateGitAuthConfigServiceVar
+	jxClientAndDevNamespaceOrig := opts.JXClientAndDevNamespaceVar
+	getQuickstartLocationsOrig := kube.GetQuickstartLocations
+	importCreatedProjectOrig := create.ImportCreatedProjectVar
+	defer func() {
+		opts.CreateGitAuthConfigServiceVar = createGitAuthConfigServiceOrig
+		opts.JXClientAndDevNamespaceVar = jxClientAndDevNamespaceOrig
+		kube.GetQuickstartLocations = getQuickstartLocationsOrig
+		create.ImportCreatedProjectVar = importCreatedProjectOrig
+	}()
+	opts.CreateGitAuthConfigServiceVar = func(o *opts.CommonOptions) (auth.ConfigService, error) {
+		cs := MockConfigService{}
+		return cs, nil
+	}
+	opts.JXClientAndDevNamespaceVar = func(o *opts.CommonOptions) (versioned.Interface, string, error) {
+		return nil, "", nil
+	}
+	kube.GetQuickstartLocations = func(jxClient versioned.Interface, ns string) ([]v1.QuickStartLocation, error) {
+		return nil, nil
+	}
+	create.ImportCreatedProjectVar = func(outDir string, o *create.CreateProjectOptions) error {
+		return nil
+	}
+	commonOpts := &opts.CommonOptions{
+		BatchMode: true,
+	}
+	opts := create.CreateQuickstartOptions{
+		CreateProjectOptions: create.CreateProjectOptions{
+			ImportOptions: importcmd.ImportOptions{
+				CommonOptions: commonOpts,
+			},
+		},
+	}
+	opts.Filter.Platform = "serverless"
+	getServerlessTemplatesOrig := create.GetServerlessTemplates
+	defer func() { create.GetServerlessTemplates = getServerlessTemplatesOrig }()
+	actual := false
+	create.GetServerlessTemplates = func() ([]string, error) {
+		actual = true
+		return []string{}, nil
+	}
+	// Execute
+	opts.Run()
+	// Validate
+	assert.True(t, actual)
+}
+
+func TestCreateQuickstartReturnsErrorWhenGetServerlessTemplatesFails(t *testing.T) {
+	// Setup
+	createGitAuthConfigServiceOrig := opts.CreateGitAuthConfigServiceVar
+	jxClientAndDevNamespaceOrig := opts.JXClientAndDevNamespaceVar
+	getQuickstartLocationsOrig := kube.GetQuickstartLocations
+	importCreatedProjectOrig := create.ImportCreatedProjectVar
+	defer func() {
+		opts.CreateGitAuthConfigServiceVar = createGitAuthConfigServiceOrig
+		opts.JXClientAndDevNamespaceVar = jxClientAndDevNamespaceOrig
+		kube.GetQuickstartLocations = getQuickstartLocationsOrig
+		create.ImportCreatedProjectVar = importCreatedProjectOrig
+	}()
+	opts.CreateGitAuthConfigServiceVar = func(o *opts.CommonOptions) (auth.ConfigService, error) {
+		cs := MockConfigService{}
+		return cs, nil
+	}
+	opts.JXClientAndDevNamespaceVar = func(o *opts.CommonOptions) (versioned.Interface, string, error) {
+		return nil, "", nil
+	}
+	kube.GetQuickstartLocations = func(jxClient versioned.Interface, ns string) ([]v1.QuickStartLocation, error) {
+		return nil, nil
+	}
+	create.ImportCreatedProjectVar = func(outDir string, o *create.CreateProjectOptions) error {
+		return nil
+	}
+	commonOpts := &opts.CommonOptions{
+		BatchMode: true,
+	}
+	opts := create.CreateQuickstartOptions{
+		CreateProjectOptions: create.CreateProjectOptions{
+			ImportOptions: importcmd.ImportOptions{
+				CommonOptions: commonOpts,
+			},
+		},
+	}
+	opts.Filter.Platform = "serverless"
+	getServerlessTemplatesOrig := create.GetServerlessTemplates
+	defer func() { create.GetServerlessTemplates = getServerlessTemplatesOrig }()
+	create.GetServerlessTemplates = func() ([]string, error) {
+		return []string{}, errors.New("this is an error")
+	}
+	// Execute
+	actual := opts.Run()
+	// Validate
+	assert.Error(t, actual)
+}
+
+// Mocks
 
 type MockConfigService struct{}
 

@@ -104,8 +104,13 @@ func (o *CreateOptions) Run() error {
 	return o.Cmd.Help()
 }
 
-// DoImport imports the project created at the given directory
+// ImportCreatedProject imports the project created at the given directory
 func (o *CreateProjectOptions) ImportCreatedProject(outDir string) error {
+	return ImportCreatedProjectVar(outDir, o)
+}
+
+// ImportCreatedProjectVar is invoked by ImportCreatedProjectVar so that it can be easily faked
+var ImportCreatedProjectVar = func(outDir string, o *CreateProjectOptions) error {
 	if o.DisableImport {
 		return nil
 	}
