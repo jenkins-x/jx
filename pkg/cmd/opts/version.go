@@ -1,17 +1,47 @@
 package opts
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/pkg/errors"
 )
 
 // VersionResolver resolves versions of charts, packages or docker images
 type VersionResolver struct {
 	VersionsDir string
+}
+
+// RepositoryPrefixes maps repository prefixes to URLs
+type RepositoryPrefixes struct {
+	Repositories []RepositoryURLs `json:"repositories"`
+	urlToPrefix  map[string]string
+}
+
+// PrefixForURL returns the repository prefix for the given URL
+func (p *RepositoryPrefixes) PrefixForURL(u string) string {
+	if p.urlToPrefix == nil {
+		p.urlToPrefix = map[string]string{}
+
+		for _, repo := range p.Repositories {
+			for _, url := range repo.URLs {
+				p.urlToPrefix[url] = repo.Prefix
+			}
+		}
+	}
+	return p.urlToPrefix[u]
+}
+
+// RepositoryURLs contains the prefix and URLS for a repository
+type RepositoryURLs struct {
+	Prefix string   `json:"prefix"`
+	URLs   []string `json:"urls"`
 }
 
 // CreateVersionResolver creates a new VersionResolver service
@@ -158,6 +188,28 @@ func (v *VersionResolver) VerifyPackage(name string, currentVersion string) erro
 		return err
 	}
 	return data.VerifyPackage(name, currentVersion, v.VersionsDir)
+}
+
+// GetRepositoryPrefixes loads the repository prefixes for the version stream
+func (v *VersionResolver) GetRepositoryPrefixes() (*RepositoryPrefixes, error) {
+	answer := &RepositoryPrefixes{}
+	fileName := filepath.Join(v.VersionsDir, "charts", "repositories.yml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to find file %s", fileName)
+	}
+	if !exists {
+		return answer, nil
+	}
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to load file %s", fileName)
+	}
+	err = yaml.Unmarshal(data, answer)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to unmarshal YAML in file %s", fileName)
+	}
+	return answer, nil
 }
 
 // GetVersionNumber returns the version number for the given kind and name or blank string if there is no locked version

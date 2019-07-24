@@ -63,6 +63,25 @@ func TestExactPackage(t *testing.T) {
 	AssertPackageVersion(t, resolver, "helm", "2.12.3", false)
 }
 
+// TestRepositories tests we can load the repository prefix -> URL maps
+func TestRepositories(t *testing.T) {
+	resolver := &opts.VersionResolver{
+		VersionsDir: dataDir,
+	}
+
+	prefixes, err := resolver.GetRepositoryPrefixes()
+	require.NoError(t, err, "GetRepositoryPrefixes() failed on dir %s", dataDir)
+
+	data := map[string]string{
+		"https://storage.googleapis.com/chartmuseum.jenkins-x.io": "jenkins-x",
+		"http://chartmuseum.jenkins-x.io":                         "jenkins-x",
+		"https://kubernetes-charts.storage.googleapis.com":        "stable",
+	}
+	for u, p := range data {
+		assert.Equal(t, p, prefixes.PrefixForURL(u), "failed to find correct repository prefix for URL %s", u)
+	}
+}
+
 // TestExactPackageVersionRange tests ranges of packages
 func TestExactPackageVersionRange(t *testing.T) {
 	resolver := &opts.VersionResolver{
