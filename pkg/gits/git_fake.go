@@ -594,3 +594,13 @@ func (g *GitFake) Remotes(dir string) ([]string, error) {
 func (g *GitFake) StashPop(dir string) error {
 	return nil
 }
+
+// CloneBare does nothing
+func (g *GitFake) CloneBare(dir string, url string) error {
+	return nil
+}
+
+// PushMirror does nothing
+func (g *GitFake) PushMirror(dir string, url string) error {
+	return nil
+}

@@ -2,6 +2,7 @@ package gits
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
@@ -191,7 +192,6 @@ func GitProviderURL(text string) string {
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
 func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, autoMerge bool, dryRun bool, gitter Gitter, provider GitProvider) (*PullRequestInfo, error) {
 	if commit {
-
 		err := gitter.Add(dir, "-A")
 		if err != nil {
 			return nil, errors.WithStack(err)
@@ -345,19 +345,24 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		}
 	}
 
-	gha.Head = headPrefix + prDetails.BranchName
-
 	if dryRun {
 		log.Logger().Infof("Commit created but not pushed; would have created new pull request with %s and used commit message %s. Please manually delete %s when you are done.", prDetails.String(), commitMessage, util.ColorInfo(dir))
 		return nil, nil
 	}
 
 	if push {
-		err := gitter.ForcePushBranch(dir, "HEAD", prDetails.BranchName)
+		// We can only choose a branch name if we are doing the push!
+		var err error
+		prDetails.BranchName, err = computeBranchName(base, prDetails.BranchName, dir, gitter)
+		if err != nil {
+			return nil, errors.Wrapf(err, "computing branch name for %s", prDetails.BranchName)
+		}
+		err = gitter.ForcePushBranch(dir, "HEAD", prDetails.BranchName)
 		if err != nil {
 			return nil, err
 		}
 	}
+	gha.Head = headPrefix + prDetails.BranchName
 
 	pr, err := provider.CreatePullRequest(gha)
 	if err != nil {
@@ -384,7 +389,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 // If there are existing files in dir (and dir is already a git clone), the existing files will pushed into the stash
 // and then popped at the end. If they cannot be popped then an error will be returned which can be checked for using
 // IsCouldNotPopTheStashError
-func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName string, provider GitProvider, gitter Gitter) (string, string, *GitRepository, *GitRepository, error) {
+func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName string, provider GitProvider, gitter Gitter, duplicate bool, forkName string) (string, string, *GitRepository, *GitRepository, error) {
 	// Validate the arguments
 	if gitURL == "" {
 		return "", "", nil, nil, fmt.Errorf("gitURL cannot be nil")
@@ -411,7 +416,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	}
 
 	// Check if we are working with an existing dir
-	dirExists, err := util.FileExists(dir)
+	dirExists, err := util.DirExists(dir)
 	if err != nil {
 		return "", "", nil, nil, errors.Wrapf(err, "failed to check if directory %s dirExists", dir)
 	}
@@ -435,19 +440,58 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 		return "", "", nil, nil, errors.Wrapf(err, "getting repository %s/%s", originalOrg, originalRepo)
 	}
 	cloneURL := upstreamInfo.CloneURL
+	if forkName == "" {
+		forkName = upstreamInfo.Name
+	}
 
 	var forkInfo *GitRepository
 	// Create or use a fork on the git provider if needed
-	if fork {
-		forkInfo, err = provider.GetRepository(username, originalRepo)
+	if fork || duplicate {
+		forkInfo, err = provider.GetRepository(username, forkName)
 		if err != nil {
-			log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", username, originalRepo).Error())
+			log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", username, forkName).Error())
 			// lets try create a fork as it probably doesn't exist- using a blank organisation to force a user specific fork
-			forkInfo, err = provider.ForkRepository(originalOrg, originalRepo, "")
-			if err != nil {
-				return "", "", nil, nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
+			if duplicate {
+
+				forkInfo, err = provider.CreateRepository(username, forkName, upstreamInfo.Private)
+				if err != nil {
+					return "", "", nil, nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", username, forkName)
+				}
+				dir, err := ioutil.TempDir("", "")
+				if err != nil {
+					return "", "", nil, nil, errors.WithStack(err)
+				}
+				err = gitter.CloneBare(dir, upstreamInfo.CloneURL)
+				if err != nil {
+					return "", "", nil, nil, errors.Wrapf(err, "failed to clone %s", upstreamInfo.CloneURL)
+				}
+				forkPushURL, err := gitter.CreatePushURL(forkInfo.CloneURL, &userDetails)
+				if err != nil {
+					return "", "", nil, nil, errors.Wrapf(err, "failed to create push URL for %s", forkInfo.CloneURL)
+				}
+				err = gitter.PushMirror(dir, forkPushURL)
+				if err != nil {
+					return "", "", nil, nil, errors.Wrapf(err, "failed to push %s", forkInfo.CloneURL)
+				}
+				log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo((upstreamInfo.HTMLURL)), util.ColorInfo(forkInfo.HTMLURL))
+				log.Logger().Infof("Setting upstream to %s\n", util.ColorInfo(forkInfo.HTMLURL))
+				upstreamInfo = forkInfo
+			} else {
+				forkInfo, err = provider.ForkRepository(originalOrg, originalRepo, "")
+				if err != nil {
+					return "", "", nil, nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
+				}
+				if forkName != "" {
+					renamedInfo, err := provider.RenameRepository(forkInfo.Organisation, forkInfo.Name, forkName)
+					if err != nil {
+						return "", "", nil, nil, errors.Wrapf(err, "failed to rename fork %s/%s to %s/%s", forkInfo.Organisation, forkInfo.Name, renamedInfo.Organisation, renamedInfo.Name)
+					}
+					forkInfo = renamedInfo
+				}
+				log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(forkInfo.HTMLURL))
 			}
-			log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(forkInfo.HTMLURL))
+		} else if duplicate {
+			upstreamInfo = forkInfo
 		}
 		cloneURL = forkInfo.CloneURL
 	}
@@ -514,10 +558,11 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	}
 
 	// Work out what branch to use and check it out
-	localBranchName, remoteBranchExists, err := computeBranchName(baseRef, branchName, dir, gitter)
+	branchExists, err := remoteBranchExists(baseRef, branchName, dir, gitter, originRemote)
 	if err != nil {
 		return "", "", nil, nil, errors.WithStack(err)
 	}
+	localBranchName := gitter.ConvertToValidBranchName(branchName)
 	localBranches, err := gitter.LocalBranches(dir)
 	if err != nil {
 		return "", "", nil, nil, errors.WithStack(err)
@@ -535,15 +580,23 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 		return "", "", nil, nil, errors.Wrapf(err, "failed to run git checkout %s", localBranchName)
 	}
 	// We always want to make sure our local branch is in the right state, whether we created it checked it out
-	err = gitter.ResetHard(dir, fmt.Sprintf("%s/%s", upstreamRemote, baseRef))
+	resetish := baseRef
+	remoteBaseRefExists, err := remoteBranchExists(baseRef, "", dir, gitter, upstreamRemote)
 	if err != nil {
-		return "", "", nil, nil, errors.Wrapf(err, "failed to run git reset --hard %s/%s", upstreamRemote, baseRef)
+		return "", "", nil, nil, errors.WithStack(err)
+	}
+	if remoteBaseRefExists {
+		resetish = fmt.Sprintf("%s/%s", upstreamRemote, baseRef)
+	}
+	err = gitter.ResetHard(dir, resetish)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to run git reset --hard %s", resetish)
 	}
 
 	// one possibility is that the baseRef is not in the same state as an already existing branch, so let's merge in the
 	// already existing branch from the users fork. This is idempotent (safe if that's already the state)
 	// Only do this if the remote branch exists
-	if remoteBranchExists {
+	if branchExists {
 		err = gitter.Merge(dir, fmt.Sprintf("%s/%s", originRemote, branchName))
 		if err != nil {
 			return "", "", nil, nil, errors.WithStack(err)
@@ -605,7 +658,7 @@ func FilterOpenPullRequests(provider GitProvider, owner string, repo string, fil
 	return answer, nil
 }
 
-func computeBranchName(baseRef string, branchName string, dir string, gitter Gitter) (string, bool, error) {
+func computeBranchName(baseRef string, branchName string, dir string, gitter Gitter) (string, error) {
 
 	if branchName == "" {
 		branchName = baseRef
@@ -614,17 +667,38 @@ func computeBranchName(baseRef string, branchName string, dir string, gitter Git
 
 	branchNames, err := gitter.RemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
-		return "", false, errors.Wrapf(err, "Failed to load remote branch names")
+		return "", errors.Wrapf(err, "Failed to load remote branch names")
 	}
 	if util.StringArrayIndex(branchNames, validBranchName) >= 0 {
 		// lets append a UUID as the branch name already exists
 		branchNameUUID, err := uuid.NewV4()
 		if err != nil {
-			return "", false, errors.WithStack(err)
+			return "", errors.WithStack(err)
 		}
-		return fmt.Sprintf("%s-%s", validBranchName, branchNameUUID.String()), true, nil
+
+		return fmt.Sprintf("%s-%s", validBranchName, branchNameUUID.String()), nil
 	}
-	return validBranchName, false, nil
+	return validBranchName, nil
+}
+
+func remoteBranchExists(baseRef string, branchName string, dir string, gitter Gitter, remoteName string) (bool, error) {
+
+	if branchName == "" {
+		branchName = baseRef
+	}
+	validBranchName := gitter.ConvertToValidBranchName(branchName)
+
+	branchNames, err := gitter.RemoteBranchNames(dir, fmt.Sprintf("remotes/%s/", remoteName))
+	if err != nil {
+		return false, errors.Wrapf(err, "Failed to load remote branch names")
+	}
+	if util.StringArrayIndex(branchNames, validBranchName) >= 0 {
+		if err != nil {
+			return false, errors.WithStack(err)
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
 //IsUnadvertisedObjectError returns true if the reason for the error is that the request was for an object that is unadvertised (i.e. doesn't exist)
@@ -652,4 +726,36 @@ func IsCouldNotPopTheStashError(err error) bool {
 // IsNoStashEntriesError returns true if the error is due to no stash entries found
 func IsNoStashEntriesError(err error) bool {
 	return strings.Contains(err.Error(), "No stash entries found.")
+}
+
+// FindTagForVersion will find a tag for a version number (first fetching the tags, then looking for a tag <version>
+// then trying the common convention v<version>). It will return the tag or an error if the tag can't be found.
+func FindTagForVersion(dir string, version string, gitter Gitter) (string, error) {
+	err := gitter.FetchTags(dir)
+	if err != nil {
+		return "", errors.Wrapf(err, "fetching tags for %s", dir)
+	}
+	answer := ""
+	tags, err := gitter.FilterTags(dir, version)
+	if err != nil {
+		return "", errors.Wrapf(err, "listing tags for %s", version)
+	}
+	if len(tags) == 1 {
+		answer = tags[0]
+	} else if len(tags) == 0 {
+		// try with v
+		filter := fmt.Sprintf("v%s", version)
+		tags, err := gitter.FilterTags(dir, filter)
+		if err != nil {
+			return "", errors.Wrapf(err, "listing tags for %s", filter)
+		}
+		if len(tags) == 1 {
+			answer = tags[0]
+		} else {
+			return "", errors.Errorf("cannot resolve %s to a single git object (searching for tag %s and tag %s), found %+v", version, version, filter, tags)
+		}
+	} else {
+		return "", errors.Errorf("cannot resolve %s to a single git object, found %+v", version, tags)
+	}
+	return answer, nil
 }

@@ -351,18 +351,20 @@ func DefaultEnvironments(c *config.RequirementsConfig, devGitInfo *gits.GitRepos
 	clusterName := c.Cluster.ClusterName
 	for i := range c.Environments {
 		env := &c.Environments[i]
-		if env.Key == kube.LabelValueDevEnvironment && devGitInfo != nil {
-			if env.Owner == "" {
-				env.Owner = devGitInfo.Organisation
-			}
-			if env.Repository == "" {
-				env.Repository = devGitInfo.Name
-			}
-			if env.GitServer == "" {
-				env.GitServer = devGitInfo.HostURL()
-			}
-			if env.GitKind == "" {
-				env.GitKind = gits.SaasGitKind(env.GitServer)
+		if !c.GitOps {
+			if env.Key == kube.LabelValueDevEnvironment && devGitInfo != nil {
+				if env.Owner == "" {
+					env.Owner = devGitInfo.Organisation
+				}
+				if env.Repository == "" {
+					env.Repository = devGitInfo.Name
+				}
+				if env.GitServer == "" {
+					env.GitServer = devGitInfo.HostURL()
+				}
+				if env.GitKind == "" {
+					env.GitKind = gits.SaasGitKind(env.GitServer)
+				}
 			}
 		}
 		if env.Owner == "" {

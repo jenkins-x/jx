@@ -55,7 +55,7 @@ type EnvironmentPullRequestOptions struct {
 func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
 	pullRequestDetails *gits.PullRequestDetails, filter *gits.PullRequestFilter, chartName string, autoMerge bool) (*gits.PullRequestInfo, error) {
 	dir := filepath.Join(environmentsDir, env.Name)
-	dir, base, upstreamURL, forkURL, err := gits.ForkAndPullRepo(env.Spec.Source.URL, dir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter)
+	dir, base, upstreamURL, forkURL, err := gits.ForkAndPullRepo(env.Spec.Source.URL, dir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, false, "")
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "pulling environment repo %s into %s", env.Spec.Source.URL,
