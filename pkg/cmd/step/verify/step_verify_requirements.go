@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/version"
@@ -78,9 +79,14 @@ func (o *StepVerifyRequirementsOptions) Run() error {
 			return err
 		}
 	}
-	log.Logger().Infof("verifying the helm requirements versions in dir: %s\n", o.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load boot requirements")
+	}
+	vs := requirements.VersionStream
+	log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
 
-	resolver, err := o.CreateVersionResolver("", "")
+	resolver, err := o.CreateVersionResolver(vs.URL, vs.Ref)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create version resolver")
 	}
