@@ -31,6 +31,9 @@ const (
 
 	// KindDocker represents a docker resolveImage version
 	KindDocker VersionKind = "docker"
+
+	// KindGit represents a git repository (e.g. for jx boot configuration or a build pack)
+	KindGit VersionKind = "git"
 )
 
 var (
@@ -39,12 +42,15 @@ var (
 		KindChart,
 		KindPackage,
 		KindDocker,
+		KindGit,
 	}
+
 	// KindStrings all the kinds as strings for validating CLI arguments
 	KindStrings = []string{
 		string(KindChart),
 		string(KindPackage),
 		string(KindDocker),
+		string(KindGit),
 	}
 )
 
