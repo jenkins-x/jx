@@ -68,6 +68,7 @@ func NewCmdCreateLile(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.OutDir, opts.OptionOutputDir, "o", "", "Relative directory to output the project to. Defaults to current directory")
+	cmd.Flags().BoolVar(&options.CommonOptions.NoBrew, opts.OptionNoBrew, false, "Disables brew package manager on MacOS when installing binary dependencies")
 
 	return cmd
 }

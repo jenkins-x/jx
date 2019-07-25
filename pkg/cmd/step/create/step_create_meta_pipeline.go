@@ -115,7 +115,6 @@ func NewCmdCreateMetaPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVar(&createPipelineNoApply, noApplyOptionName, false, "Disables creating the pipeline resources in the cluster and just outputs the generated resources to file")
 	cmd.Flags().StringVarP(&createPipelineOutDir, outputOptionName, "o", "out", "Used in conjunction with --no-apply to determine the directory into which to write the output")
 
-	options.AddCommonFlags(cmd)
 	options.setupViper(cmd)
 	return cmd
 }
