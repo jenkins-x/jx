@@ -111,6 +111,24 @@ func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) 
 	return version, err
 }
 
+// GetLatestReleaseFromGitHubURL returns the latest release version for the git URL
+func GetLatestReleaseFromGitHubURL(gitURL string) (string, error) {
+	const gitHubPrefix = "https://github.com/"
+	if !strings.HasPrefix(gitURL, gitHubPrefix) {
+		log.Logger().Warnf("cannot determine the latest release of version stream git URL %s\n", gitURL)
+		return "", nil
+	}
+	name := strings.TrimPrefix(gitURL, gitHubPrefix)
+	paths := strings.Split(name, "/")
+	if len(paths) <= 1 {
+		log.Logger().Warnf("cannot parse git URL %s so cannot determine the latest release\n", gitURL)
+		return "", nil
+	}
+	owner := paths[0]
+	repo := strings.TrimSuffix(paths[1], ".git")
+	return GetLatestReleaseFromGitHub(owner, repo)
+}
+
 func getLatestReleaseFromGithubUsingApi(githubOwner, githubRepo string) (string, error) {
 	client, release, resp, err := preamble()
 	release, resp, err = client.Repositories.GetLatestRelease(context.Background(), githubOwner, githubRepo)

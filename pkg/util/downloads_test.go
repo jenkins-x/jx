@@ -4,6 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_getLatestReleaseFromGithubUsingHttpRedirect(t *testing.T) {
@@ -99,4 +102,13 @@ func Test_getLatestReleaseFromGithubUsingHttpRedirect(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestGetLatestReleaseFromGitHubURL tests the util.GetLatestReleaseFromGitHubURL() function
+func TestGetLatestReleaseFromGitHubURL(t *testing.T) {
+	gitURL := "https://github.com/jenkins-x/jenkins-x-versions.git"
+	version, err := GetLatestReleaseFromGitHubURL(gitURL)
+	require.NoError(t, err, "failed to call GetLatestReleaseFromGitHubURL with %s", gitURL)
+	t.Logf("found version %s for git URL %s\n", version, gitURL)
+	assert.True(t, version != "", "failed to find a value for GetLatestReleaseFromGitHubURL with %s", gitURL)
 }

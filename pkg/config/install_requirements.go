@@ -403,6 +403,14 @@ func (c *RequirementsConfig) addDefaults() {
 		c.VersionStream.URL = DefaultVersionsURL
 	}
 	if c.VersionStream.Ref == "" {
+		var err error
+		u := c.VersionStream.URL
+		c.VersionStream.Ref, err = util.GetLatestReleaseFromGitHubURL(u)
+		if err != nil {
+			log.Logger().Warnf("failed to find the latest release of version stream %s due to: %s", u, err.Error())
+		}
+	}
+	if c.VersionStream.Ref == "" {
 		c.VersionStream.Ref = DefaultVersionsRef
 	}
 	if c.Cluster.Namespace == "" {
