@@ -3,13 +3,14 @@
 package verify_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/cmd/namespace"
-	"github.com/jenkins-x/jx/pkg/tests"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/cmd/namespace"
+	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/verify"
@@ -68,7 +69,10 @@ func TestStepVerifyPreInstallNoKanikoLazyCreate(t *testing.T) {
 }
 
 func createTestStepVerifyPreInstallOptions(dir string) *verify.StepVerifyPreInstallOptions {
-	options := &verify.StepVerifyPreInstallOptions{}
+	options := &verify.StepVerifyPreInstallOptions{
+		DisableVerifyHelm:    true,
+		TestKanikoSecretData: "test-kaniko-secret",
+	}
 	// fake the output stream to be checked later
 	commonOpts := opts.NewCommonOptionsWithFactory(nil)
 	options.CommonOptions = &commonOpts

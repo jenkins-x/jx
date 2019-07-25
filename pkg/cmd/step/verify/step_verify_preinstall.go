@@ -29,11 +29,13 @@ import (
 // StepVerifyPreInstallOptions contains the command line flags
 type StepVerifyPreInstallOptions struct {
 	StepVerifyOptions
-	Debug          bool
-	Dir            string
-	LazyCreate     bool
-	LazyCreateFlag string
-	Namespace      string
+	Debug                bool
+	Dir                  string
+	LazyCreate           bool
+	DisableVerifyHelm    bool
+	LazyCreateFlag       string
+	Namespace            string
+	TestKanikoSecretData string
 }
 
 // NewCmdStepVerifyPreInstall creates the `jx step verify pod` command
@@ -145,9 +147,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
-	err = o.verifyHelm(ns)
-	if err != nil {
-		return err
+	if !o.DisableVerifyHelm {
+		err = o.verifyHelm(ns)
+		if err != nil {
+			return err
+		}
 	}
 
 	if requirements.Kaniko {
@@ -189,10 +193,13 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 // EnsureHelm ensures helm is installed
 func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
 	// lets make sure we don't try use tiller
-	o.RemoteCluster = true
-	err := o.InstallHelm()
+	o.EnableRemoteKubeCluster()
+	_, err := o.Helm().Version(false)
 	if err != nil {
-		return errors.Wrap(err, "failed to install Helm")
+		err = o.InstallHelm()
+		if err != nil {
+			return errors.Wrap(err, "failed to install Helm")
+		}
 	}
 	cfg := opts.InitHelmConfig{
 		Namespace:       ns,
@@ -244,9 +251,13 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 		kube.ClusterName: requirements.Cluster.ClusterName,
 		kube.ProjectID:   requirements.Cluster.ProjectID,
 	})
-	err := io.ConfigureKaniko()
-	if err != nil {
-		return err
+	if o.TestKanikoSecretData != "" {
+		io.AdminSecretsService.Flags.KanikoSecret = o.TestKanikoSecretData
+	} else {
+		err := io.ConfigureKaniko()
+		if err != nil {
+			return err
+		}
 	}
 	data := io.AdminSecretsService.Flags.KanikoSecret
 	if data == "" {
