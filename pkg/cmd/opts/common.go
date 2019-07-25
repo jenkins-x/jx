@@ -131,6 +131,7 @@ type CommonOptions struct {
 	helm                   helm.Helmer
 	jenkinsClient          gojenkins.JenkinsClient
 	jxClient               versioned.Interface
+	gcloudClient           gke.GClouder
 	knbClient              buildclient.Interface
 	kserveClient           kserve.Interface
 	kubeClient             kubernetes.Interface
@@ -389,9 +390,14 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
+// SetGCloudClient set the gcloud client
+func (o *CommonOptions) SetGCloudClient(gcloudClient gke.GClouder) {
+	o.gcloudClient = gcloudClient
+}
+
 // GCloud returns the implementation of a gcloud helper
 func (o *CommonOptions) GCloud() gke.GClouder {
-	return &gke.GCloud{}
+	return o.gcloudClient
 }
 
 // TektonClient lazily creates a new Knative Pipeline client
