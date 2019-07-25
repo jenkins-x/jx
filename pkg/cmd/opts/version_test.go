@@ -23,10 +23,10 @@ func TestVersionGitRepository(t *testing.T) {
 		"https://github.com/jenkins-x/jenkins-x-boot-config.git": "1.2.3",
 	}
 
-	for gitUrl, expected := range testData {
-		actual, err := resolver.ResolveGitVersion(gitUrl)
-		if assert.NoError(t, err, "resolving git URL version %s", gitUrl) {
-			assert.Equal(t, expected, actual, "resolving git URL version %s", gitUrl)
+	for gitURL, expected := range testData {
+		actual, err := resolver.ResolveGitVersion(gitURL)
+		if assert.NoError(t, err, "resolving git URL version %s", gitURL) {
+			assert.Equal(t, expected, actual, "resolving git URL version %s", gitURL)
 		}
 	}
 }
