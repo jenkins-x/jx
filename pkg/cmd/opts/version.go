@@ -166,14 +166,14 @@ func (v *VersionResolver) StableVersionNumber(kind version.VersionKind, name str
 }
 
 // ResolveGitVersion resolves the version to use for the given git repository using the version stream
-func (v *VersionResolver) ResolveGitVersion(gitUrl string) (string, error) {
-	answer, err := v.StableVersionNumber(version.KindGit, gitUrl)
+func (v *VersionResolver) ResolveGitVersion(gitURL string) (string, error) {
+	answer, err := v.StableVersionNumber(version.KindGit, gitURL)
 	if err != nil {
 		return answer, err
 	}
 	if answer == "" {
-		path := version.GitURLToName(gitUrl)
-		log.Logger().Warnf("could not find a stable version for git repository: %s in %s", gitUrl, v.VersionsDir)
+		path := version.GitURLToName(gitURL)
+		log.Logger().Warnf("could not find a stable version for git repository: %s in %s", gitURL, v.VersionsDir)
 		log.Logger().Warn("for background see: https://jenkins-x.io/architecture/version-stream/")
 		log.Logger().Infof("please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k git -n %s -v 1.2.3", path)))
 	}
