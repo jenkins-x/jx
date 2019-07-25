@@ -143,3 +143,16 @@ func TestResolveDockerImage(t *testing.T) {
 		})
 	}
 }
+
+// TestGitURLToName tests version.GitURLToName()
+func TestGitURLToName(t *testing.T) {
+	data := map[string]string{
+		"https://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes":     "github.com/jenkins-x-buildpacks/jenkins-x-kubernetes",
+		"https://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes.git": "github.com/jenkins-x-buildpacks/jenkins-x-kubernetes",
+		"http://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes/":     "github.com/jenkins-x-buildpacks/jenkins-x-kubernetes",
+	}
+	for gitUrl, expected := range data {
+		actual := version.GitURLToName(gitUrl)
+		assert.Equal(t, expected, actual, "GitURLToName for %s", gitUrl)
+	}
+}

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -168,22 +167,17 @@ func (v *VersionResolver) StableVersionNumber(kind version.VersionKind, name str
 
 // ResolveGitVersion resolves the version to use for the given git repository using the version stream
 func (v *VersionResolver) ResolveGitVersion(gitUrl string) (string, error) {
-	gitInfo, err := gits.ParseGitURL(gitUrl)
+	answer, err := v.StableVersionNumber(version.KindGit, gitUrl)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse git URL: %s", gitUrl)
+		return answer, err
 	}
-
-	path := filepath.Join(gitInfo.Host, gitInfo.Organisation, gitInfo.Name)
-	version, err := v.StableVersionNumber(version.KindGit, path)
-	if err != nil {
-		return version, err
-	}
-	if version == "" {
+	if answer == "" {
+		path := version.GitURLToName(gitUrl)
 		log.Logger().Warnf("could not find a stable version for git repository: %s in %s", gitUrl, v.VersionsDir)
 		log.Logger().Warn("for background see: https://jenkins-x.io/architecture/version-stream/")
 		log.Logger().Infof("please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k git -n %s -v 1.2.3", path)))
 	}
-	return version, nil
+	return answer, nil
 }
 
 // VerifyPackages verifies that the package keys and current version numbers are at the required minimum versions
