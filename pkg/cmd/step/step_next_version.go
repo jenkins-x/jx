@@ -64,6 +64,10 @@ var (
 		jx step next-version --filename package.json
 		jx step next-version --filename package.json --tag
 		jx step next-version --filename package.json --tag --version 1.2.3
+
+		# lets use git to create a new version from a tag and tag git
+        jx step next-version --use-git-tag-only --tag
+              
 `)
 )
 
