@@ -149,10 +149,6 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, kube.DefaultChartMuseumJxRepoName, "", "")
-	if err != nil {
-		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
-	}
 
 	if requirements.Kaniko {
 		if requirements.Cluster.Provider == cloud.GKE {
@@ -212,6 +208,14 @@ func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
 		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
 	}
 	log.Logger().Infof("helm client is setup\n")
+
+	o.EnableRemoteKubeCluster()
+	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, kube.DefaultChartMuseumJxRepoName, "", "")
+	if err != nil {
+		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
+	}
+	log.Logger().Infof("ensure we have the helm repository %s\n", kube.DefaultChartMuseumURL)
+
 	return nil
 }
 
