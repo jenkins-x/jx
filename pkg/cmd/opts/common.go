@@ -540,7 +540,7 @@ func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		noTillerFlag := os.Getenv("JX_NO_TILLER")
-		if noTillerFlag == "true" {
+		if noTillerFlag == "true" || o.RemoteCluster {
 			o.EnableRemoteKubeCluster()
 			if o.helm != nil {
 				return o.helm

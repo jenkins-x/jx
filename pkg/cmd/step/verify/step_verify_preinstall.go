@@ -145,7 +145,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
-	err = o.EnsureHelm()
+	err = o.verifyHelm(ns)
 	if err != nil {
 		return err
 	}
@@ -187,6 +187,31 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!\n", info("jx boot"))
 	fmt.Println()
+	return nil
+}
+
+// EnsureHelm ensures helm is installed
+func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
+	// lets make sure we don't try use tiller
+	o.RemoteCluster = true
+	err := o.InstallHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to install Helm")
+	}
+	cfg := opts.InitHelmConfig{
+		Namespace:       ns,
+		OnlyHelmClient:  true,
+		Helm3:           false,
+		SkipTiller:      true,
+		GlobalTiller:    false,
+		TillerNamespace: "",
+		TillerRole:      "",
+	}
+	err = o.InitHelm(cfg)
+	if err != nil {
+		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
+	}
+	log.Logger().Infof("helm client is setup\n")
 	return nil
 }
 

@@ -971,6 +971,8 @@ func (o *CommonOptions) EnsureHelm() error {
 		return errors.Wrap(err, "failed to install Helm")
 	}
 	cfg := o.defaultInitHelmConfig()
+	cfg.SkipTiller = true
+	cfg.SkipTiller = true
 	err = o.InitHelm(cfg)
 	if err != nil {
 		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
