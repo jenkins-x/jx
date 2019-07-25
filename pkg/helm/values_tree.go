@@ -33,7 +33,7 @@ var DefaultValuesTreeIgnores = []string{
 // Any keys used that match files with the same name in the directory (
 // and have empty values) will be inlined as block scalars.
 // Standard UNIX glob patterns can be passed to IgnoreFile directories.
-func GenerateValues(requirements *config.RequirementsConfig, dir string, ignores []string, verbose bool, secretURLClient secreturl.Client) ([]byte, chartutil.Values, error) {
+func GenerateValues(requirements *config.RequirementsConfig, funcMap template.FuncMap, dir string, ignores []string, verbose bool, secretURLClient secreturl.Client) ([]byte, chartutil.Values, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
 		return nil, nil, err
@@ -48,8 +48,9 @@ func GenerateValues(requirements *config.RequirementsConfig, dir string, ignores
 	if err != nil {
 		return nil, params, err
 	}
-	funcMap := NewFunctionMap()
-
+	if funcMap == nil {
+		funcMap = NewFunctionMap()
+	}
 	if ignores == nil {
 		ignores = DefaultValuesTreeIgnores
 	}

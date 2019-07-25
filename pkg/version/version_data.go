@@ -137,8 +137,23 @@ func convertToVersion(text string) string {
 // LoadStableVersion loads the stable version data from the version configuration directory returning an empty object if there is
 // no specific stable version configuration available
 func LoadStableVersion(wrkDir string, kind VersionKind, name string) (*StableVersion, error) {
+	if kind == KindGit {
+		name = GitURLToName(name)
+	}
 	path := filepath.Join(wrkDir, string(kind), name+".yml")
 	return LoadStableVersionFile(path)
+}
+
+// GitURLToName lets trim any URL scheme and trailing .git or / from a git URL
+func GitURLToName(name string) string {
+	// lets trim the URL scheme
+	idx := strings.Index(name, "://")
+	if idx > 0 {
+		name = name[idx+3:]
+	}
+	name = strings.TrimSuffix(name, ".git")
+	name = strings.TrimSuffix(name, "/")
+	return name
 }
 
 // LoadStableVersionFile loads the stable version data from the given file name

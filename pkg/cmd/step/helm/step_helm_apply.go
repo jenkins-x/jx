@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+	"text/template"
 
 	"io/ioutil"
 	"os"
@@ -46,6 +47,8 @@ type StepHelmApplyOptions struct {
 	NoVault            bool
 	NoMasking          bool
 	ProviderValuesDir  string
+
+	versionResolver *opts.VersionResolver
 }
 
 var (
@@ -261,7 +264,11 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	DefaultEnvironments(requirements, devGitInfo)
 
-	chartValues, params, err := helm.GenerateValues(requirements, dir, nil, true, secretURLClient)
+	funcMap, err := o.createFuncMap(requirements)
+	if err != nil {
+		return err
+	}
+	chartValues, params, err := helm.GenerateValues(requirements, funcMap, dir, nil, true, secretURLClient)
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}
@@ -511,7 +518,11 @@ func (o *StepHelmApplyOptions) overwriteProviderValues(requirements *config.Requ
 		return valuesData, nil
 
 	}
-	funcMap := helm.NewFunctionMap()
+	funcMap, err := o.createFuncMap(requirements)
+	if err != nil {
+		return valuesData, err
+	}
+
 	overrideData, err := helm.ReadValuesYamlFileTemplateOutput(valuesTmplYamlFile, params, funcMap, requirements)
 	if err != nil {
 		return valuesData, errors.Wrapf(err, "failed to load provider specific helm value overrides %s", valuesTmplYamlFile)
@@ -537,6 +548,41 @@ func (o *StepHelmApplyOptions) overwriteProviderValues(requirements *config.Requ
 	return data, err
 }
 
+func (o *StepHelmApplyOptions) createFuncMap(requirementsConfig *config.RequirementsConfig) (template.FuncMap, error) {
+	funcMap := helm.NewFunctionMap()
+	resolver, err := o.getOrCreateVersionResolver(requirementsConfig)
+
+	if err != nil {
+		return funcMap, err
+	}
+
+	// represents the helm template function
+	// which can be used like: `{{ versionStream "chart" "foo/bar" }}
+	funcMap["versionStream"] = func(kindString, name string) string {
+		kind := version.VersionKind(kindString)
+		version, err := resolver.StableVersionNumber(kind, name)
+		if err != nil {
+			log.Logger().Errorf("failed to find %s version for %s in the version stream due to: %s\n", kindString, name, err.Error())
+		}
+		return version
+	}
+	return funcMap, nil
+}
+
+func (o *StepHelmApplyOptions) getOrCreateVersionResolver(requirementsConfig *config.RequirementsConfig) (*opts.VersionResolver, error) {
+	if o.versionResolver == nil {
+		vs := requirementsConfig.VersionStream
+		log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
+
+		var err error
+		o.versionResolver, err = o.CreateVersionResolver(vs.URL, vs.Ref)
+		if err != nil {
+			return o.versionResolver, errors.Wrapf(err, "failed to create version resolver")
+		}
+	}
+	return o.versionResolver, nil
+}
+
 func (o *StepHelmApplyOptions) replaceMissingVersionsFromVersionStream(requirementsConfig *config.RequirementsConfig, dir string) error {
 	fileName := filepath.Join(dir, helm.RequirementsFileName)
 	exists, err := util.FileExists(fileName)
@@ -551,7 +597,7 @@ func (o *StepHelmApplyOptions) replaceMissingVersionsFromVersionStream(requireme
 	vs := requirementsConfig.VersionStream
 	log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
 
-	resolver, err := o.CreateVersionResolver(vs.URL, vs.Ref)
+	resolver, err := o.getOrCreateVersionResolver(requirementsConfig)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create version resolver")
 	}

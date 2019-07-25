@@ -30,7 +30,7 @@ func TestValuesTreeTemplates(t *testing.T) {
 	localVaultDir := path.Join(testData, "local_vault_files")
 	secretURLClient := localvault.NewFileSystemClient(localVaultDir)
 
-	result, _, err := helm.GenerateValues(config.NewRequirementsConfig(), testData, nil, true, secretURLClient)
+	result, _, err := helm.GenerateValues(config.NewRequirementsConfig(), nil, testData, nil, true, secretURLClient)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedTemplatedValuesTree, string(result))
 }
