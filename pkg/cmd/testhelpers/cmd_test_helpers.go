@@ -26,6 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	kservefake "github.com/knative/serving/pkg/client/clientset/versioned/fake"
+	gcloudfake "github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -100,6 +101,7 @@ func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runti
 		}
 	}
 
+	o.SetGCloudClient(gcloudfake.NewMockGClouder())
 	client := fake.NewSimpleClientset(k8sObjects...)
 	o.SetKubeClient(client)
 	o.SetJxClient(v1fake.NewSimpleClientset(jxObjects...))
