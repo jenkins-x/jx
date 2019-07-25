@@ -587,6 +587,11 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		return err
 	}
 	if exists {
+		// lets modify the version stream to use the PR
+		if o.Flags.VersionsRepoPr {
+			requirements.VersionStream.Ref = o.InstallOptions.Flags.VersionsGitRef
+			log.Logger().Infof("setting the jx-requirements.yml version stream ref to: %s\n", util.ColorInfo(requirements.VersionStream.Ref))
+		}
 		if cluster.Name != requirements.Cluster.ClusterName {
 			requirements.Cluster.ClusterName = cluster.Name
 
