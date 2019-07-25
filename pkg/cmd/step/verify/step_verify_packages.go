@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -35,6 +36,7 @@ type StepVerifyPackagesOptions struct {
 	Namespace string
 	HelmTLS   bool
 	Packages  []string
+	Dir       string
 }
 
 // NewCmdStepVerifyPackages creates the `jx step verify pod` command
@@ -61,7 +63,7 @@ func NewCmdStepVerifyPackages(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to use to look for helm's tiller")
 	cmd.Flags().StringArrayVarP(&options.Packages, "packages", "p", []string{"jx", "kubectl", "git", "helm", "kaniko"}, "The packages to verify")
-
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to recursively look upwards for any 'jx-requirements.yml' file to determine the version stream")
 	return cmd
 }
 
@@ -76,7 +78,16 @@ func (o *StepVerifyPackagesOptions) Run() error {
 		verifyMap[k] = packages[k]
 	}
 
-	resolver, err := o.CreateVersionResolver("", "")
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load boot requirements")
+	}
+	vs := requirements.VersionStream
+	u := vs.URL
+	ref := vs.Ref
+	log.Logger().Infof("verifying the CLI package using version stream URL: %s and git ref: %s\n", u, vs.Ref)
+
+	resolver, err := o.CreateVersionResolver(u, ref)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create version resolver")
 	}
