@@ -693,7 +693,7 @@ func ExtendPipelines(pipelineName string, parent, base *PipelineLifecycles, over
 				return &PipelineLifecycles{}
 			}
 
-			l.Pipeline = syntax.ExtendParsedPipeline(l.Pipeline, override)
+			l.Pipeline = syntax.ApplyStepOverridesToPipeline(l.Pipeline, override)
 		}
 	}
 	return l

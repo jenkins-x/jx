@@ -490,6 +490,53 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				},
 			},
 		},
+	}, {
+		name:         "overrides-with-buildpack-using-jenkins-x-syntax",
+		pack:         "jx-syntax-in-buildpack",
+		repoName:     "jx-demo-qs",
+		organization: "abayer",
+		branch:       "master",
+		expected: &config.ProjectConfig{
+			BuildPack: "jx-syntax-in-buildpack",
+			PipelineConfig: &jenkinsfile.PipelineConfig{
+				Agent: &jxsyntax.Agent{
+					Image: "maven",
+					Label: "jenkins-maven",
+				},
+				Env: []corev1.EnvVar{},
+				Pipelines: jenkinsfile.Pipelines{
+					Overrides: []*jxsyntax.PipelineOverride{{
+						Pipeline: "release",
+						Stage:    "build",
+						Step: &jxsyntax.Step{
+							Command: "echo hi there",
+							Name:    "hi-there",
+						},
+						Name: "flake8",
+						Type: &overrideAfter,
+					}},
+					PullRequest: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("maven"),
+							sht.PipelineStage("build",
+								sht.StageStep(sht.StepCmd("source /root/.bashrc && flake8"), sht.StepImage("maven"),
+									sht.StepDir("/workspace/source"), sht.StepName("flake8")),
+							),
+						),
+					},
+					Release: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineAgent("maven"),
+							sht.PipelineStage("build",
+								sht.StageStep(sht.StepCmd("source /root/.bashrc && flake8"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+									sht.StepName("flake8")),
+								sht.StageStep(sht.StepCmd("echo hi there"), sht.StepName("hi-there")),
+							),
+						),
+					},
+				},
+			},
+		},
 	}}
 
 	k8sObjects := []runtime.Object{

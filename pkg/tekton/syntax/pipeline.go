@@ -1834,6 +1834,11 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container,
 	}, nil
 }
 
+// HasNonStepOverrides returns true if this override contains configuration like agent, containerOptions, or volumes.
+func (p *PipelineOverride) HasNonStepOverrides() bool {
+	return p.ContainerOptions != nil || p.Agent != nil || len(p.Volumes) > 0
+}
+
 // AsStepsSlice returns a possibly empty slice of the step or steps in this override
 func (p *PipelineOverride) AsStepsSlice() []*Step {
 	if p.Step != nil {
@@ -1861,42 +1866,16 @@ func (p *PipelineOverride) MatchesStage(name string) bool {
 	return false
 }
 
-// ExtendParsedPipeline applies an individual override to the pipeline, replacing named steps in specified stages (or all stages if
+// ApplyStepOverridesToPipeline applies an individual override to the pipeline, replacing named steps in specified stages (or all stages if
 // no stage name is specified).
-func ExtendParsedPipeline(pipeline *ParsedPipeline, override *PipelineOverride) *ParsedPipeline {
+func ApplyStepOverridesToPipeline(pipeline *ParsedPipeline, override *PipelineOverride) *ParsedPipeline {
 	if pipeline == nil || override == nil {
 		return pipeline
 	}
 
-	if override.Agent != nil {
-		pipeline.Agent = override.Agent
-	}
-	if override.ContainerOptions != nil {
-		containerOptionsCopy := *override.ContainerOptions
-		if pipeline.Options == nil {
-			pipeline.Options = &RootOptions{}
-		}
-		if pipeline.Options.ContainerOptions == nil {
-			pipeline.Options.ContainerOptions = &containerOptionsCopy
-		} else {
-			mergedContainer, err := MergeContainers(pipeline.Options.ContainerOptions, &containerOptionsCopy)
-			if err != nil {
-				log.Logger().Warnf("couldn't merge override container options: %s", err)
-			} else {
-				pipeline.Options.ContainerOptions = mergedContainer
-			}
-		}
-	}
-	if len(override.Volumes) > 0 {
-		if pipeline.Options == nil {
-			pipeline.Options = &RootOptions{}
-		}
-		pipeline.Options.Volumes = append(pipeline.Options.Volumes, override.Volumes...)
-	}
-
 	var newStages []Stage
 	for _, s := range pipeline.Stages {
-		overriddenStage := ExtendStage(s, override)
+		overriddenStage := ApplyStepOverridesToStage(s, override)
 		if !equality.Semantic.DeepEqual(overriddenStage, Stage{}) {
 			newStages = append(newStages, overriddenStage)
 		}
@@ -1917,49 +1896,65 @@ func stepPointerSliceToStepSlice(orig []*Step) []Step {
 	return newSteps
 }
 
-// ExtendStage applies a set of overrides to named steps in this stage and its children
-func ExtendStage(stage Stage, override *PipelineOverride) Stage {
+// ApplyNonStepOverridesToPipeline applies the non-step configuration from an individual override to the pipeline.
+func ApplyNonStepOverridesToPipeline(pipeline *ParsedPipeline, override *PipelineOverride) *ParsedPipeline {
+	if pipeline == nil || override == nil {
+		return pipeline
+	}
+
+	// Only apply this override to the top-level pipeline if no stage is specified.
+	if override.Stage == "" {
+		if override.Agent != nil {
+			pipeline.Agent = override.Agent
+		}
+		if override.ContainerOptions != nil {
+			containerOptionsCopy := *override.ContainerOptions
+			if pipeline.Options == nil {
+				pipeline.Options = &RootOptions{}
+			}
+			if pipeline.Options.ContainerOptions == nil {
+				pipeline.Options.ContainerOptions = &containerOptionsCopy
+			} else {
+				mergedContainer, err := MergeContainers(pipeline.Options.ContainerOptions, &containerOptionsCopy)
+				if err != nil {
+					log.Logger().Warnf("couldn't merge override container options: %s", err)
+				} else {
+					pipeline.Options.ContainerOptions = mergedContainer
+				}
+			}
+		}
+		if len(override.Volumes) > 0 {
+			if pipeline.Options == nil {
+				pipeline.Options = &RootOptions{}
+			}
+			pipeline.Options.Volumes = append(pipeline.Options.Volumes, override.Volumes...)
+		}
+	}
+
+	var newStages []Stage
+	for _, s := range pipeline.Stages {
+		overriddenStage := ApplyNonStepOverridesToStage(s, override)
+		if !equality.Semantic.DeepEqual(overriddenStage, Stage{}) {
+			newStages = append(newStages, overriddenStage)
+		}
+	}
+	pipeline.Stages = newStages
+
+	return pipeline
+}
+
+// ApplyNonStepOverridesToStage applies non-step overrides, such as stage agent, containerOptions, and volumes, to this
+// stage and its children.
+func ApplyNonStepOverridesToStage(stage Stage, override *PipelineOverride) Stage {
 	if override == nil {
 		return stage
 	}
 
-	if override.MatchesStage(stage.Name) {
+	// Since a traditional build pack only has one stage at this point, treat anything that's stage-specific as valid here.
+	if (override.MatchesStage(stage.Name) || stage.Name == DefaultStageNameForBuildPack) && override.Stage != "" {
 		if override.Agent != nil {
 			stage.Agent = override.Agent
 		}
-		if len(stage.Steps) > 0 {
-			var newSteps []Step
-			if override.Name != "" {
-				for _, s := range stage.Steps {
-					newSteps = append(newSteps, OverrideStep(s, override)...)
-				}
-			} else {
-				// If no step name was specified but there are steps, just replace all steps in the stage/lifecycle,
-				// or add the new steps before/after the existing steps in the stage/lifecycle
-				if steps := override.AsStepsSlice(); len(steps) > 0 {
-					if override.Type == nil || *override.Type == StepOverrideReplace {
-						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
-					} else if *override.Type == StepOverrideBefore {
-						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
-						newSteps = append(newSteps, stage.Steps...)
-					} else if *override.Type == StepOverrideAfter {
-						newSteps = append(newSteps, stage.Steps...)
-						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
-					}
-				}
-				// If there aren't any steps as well as no step name, then we're removing all steps from this stage/lifecycle,
-				// so just don't add anything to newSteps, and we'll end up returning an empty stage
-			}
-
-			// If newSteps isn't empty, use it for the stage's steps list. Otherwise, if no agent override is specified,
-			// we're removing this stage, so return an empty stage.
-			if len(newSteps) > 0 {
-				stage.Steps = newSteps
-			} else if override.Agent == nil && override.ContainerOptions == nil && len(override.Volumes) == 0 {
-				return Stage{}
-			}
-		}
-
 		if override.ContainerOptions != nil {
 			containerOptionsCopy := *override.ContainerOptions
 			if stage.Options == nil {
@@ -1991,14 +1986,72 @@ func ExtendStage(stage Stage, override *PipelineOverride) Stage {
 	if len(stage.Stages) > 0 {
 		var newStages []Stage
 		for _, s := range stage.Stages {
-			newStages = append(newStages, ExtendStage(s, override))
+			newStages = append(newStages, ApplyNonStepOverridesToStage(s, override))
 		}
 		stage.Stages = newStages
 	}
 	if len(stage.Parallel) > 0 {
 		var newParallel []Stage
 		for _, s := range stage.Parallel {
-			newParallel = append(newParallel, ExtendStage(s, override))
+			newParallel = append(newParallel, ApplyNonStepOverridesToStage(s, override))
+		}
+		stage.Parallel = newParallel
+	}
+
+	return stage
+}
+
+// ApplyStepOverridesToStage applies a set of overrides to named steps in this stage and its children
+func ApplyStepOverridesToStage(stage Stage, override *PipelineOverride) Stage {
+	if override == nil {
+		return stage
+	}
+
+	if override.MatchesStage(stage.Name) {
+		if len(stage.Steps) > 0 {
+			var newSteps []Step
+			if override.Name != "" {
+				for _, s := range stage.Steps {
+					newSteps = append(newSteps, OverrideStep(s, override)...)
+				}
+			} else {
+				// If no step name was specified but there are steps, just replace all steps in the stage/lifecycle,
+				// or add the new steps before/after the existing steps in the stage/lifecycle
+				if steps := override.AsStepsSlice(); len(steps) > 0 {
+					if override.Type == nil || *override.Type == StepOverrideReplace {
+						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
+					} else if *override.Type == StepOverrideBefore {
+						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
+						newSteps = append(newSteps, stage.Steps...)
+					} else if *override.Type == StepOverrideAfter {
+						newSteps = append(newSteps, stage.Steps...)
+						newSteps = append(newSteps, stepPointerSliceToStepSlice(steps)...)
+					}
+				}
+				// If there aren't any steps as well as no step name, then we're removing all steps from this stage/lifecycle,
+				// so just don't add anything to newSteps, and we'll end up returning an empty stage
+			}
+
+			// If newSteps isn't empty, use it for the stage's steps list. Otherwise, if no agent override is specified,
+			// we're removing this stage, so return an empty stage.
+			if len(newSteps) > 0 {
+				stage.Steps = newSteps
+			} else if !override.HasNonStepOverrides() {
+				return Stage{}
+			}
+		}
+	}
+	if len(stage.Stages) > 0 {
+		var newStages []Stage
+		for _, s := range stage.Stages {
+			newStages = append(newStages, ApplyStepOverridesToStage(s, override))
+		}
+		stage.Stages = newStages
+	}
+	if len(stage.Parallel) > 0 {
+		var newParallel []Stage
+		for _, s := range stage.Parallel {
+			newParallel = append(newParallel, ApplyStepOverridesToStage(s, override))
 		}
 		stage.Parallel = newParallel
 	}
