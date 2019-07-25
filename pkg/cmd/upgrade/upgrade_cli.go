@@ -57,6 +57,7 @@ func NewCmdUpgradeCLI(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific version to upgrade to (requires --no-brew on macOS)")
+	cmd.Flags().BoolVar(&options.CommonOptions.NoBrew, opts.OptionNoBrew, false, "Disables brew package manager on MacOS when installing binary dependencies")
 	return cmd
 }
 

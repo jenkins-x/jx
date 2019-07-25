@@ -62,7 +62,6 @@ func NewCmdStepSchedulerConfigMigrate(commonOpts *opts.CommonOptions) *cobra.Com
 			helper.CheckErr(err)
 		},
 	}
-	options.AddCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Agent, "agent", "", "prow", "The scheduler agent to use e.g. Prow")
 	cmd.Flags().StringVarP(&options.ProwConfigFileLocation, "prow-config-file", "", "", "The location of the config file to use")
 	cmd.Flags().StringVarP(&options.ProwPluginsFileLocation, "prow-plugins-file", "", "", "The location of the plugins file to use")
