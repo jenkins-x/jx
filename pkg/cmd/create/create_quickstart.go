@@ -246,11 +246,13 @@ func (o *CreateQuickstartOptions) Run() error {
 	} else {
 		// TODO: Install `npm` if not already installed
 		// TODO: Use `npm` to install `serverless` if not already installed`
-		_, err := GetServerlessTemplates()
+		templates, err := GetServerlessTemplates()
 		if err != nil {
 			return err
 		}
-		// TODO: Retrieve the list of templates through `serverless create --help`
+		for _, template := range templates {
+			println(template)
+		}
 		// TODO: Convert the templates into a new parameter `provider` (e.g., `aws`) and `language` (e.g., `nodejs`)
 		// TODO: Use `serverless` to create all the files except `jenkins-x.yml`. The command could be similar to `serverless create --template [...] --name [...]`
 		// TODO: Get pipeline.yml from a repo and convert it into `jenkins-x.yml`. We might need to have one template for each `provider`. An example can be found in https://github.com/vfarcic/aws-lambda-js/blob/master/jenkins-x.yml.
