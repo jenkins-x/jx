@@ -1,0 +1,28 @@
+agent:
+  label: jenkins-maven
+  container: maven
+pipelines:
+  pullRequest:
+    pipeline:
+      agent:
+        image:
+          maven
+      stages:
+        - name: build
+          steps:
+            - command: source /root/.bashrc && flake8
+              name: flake8
+              image: maven
+              dir: /workspace/source
+  release:
+    pipeline:
+      agent:
+        image:
+          maven
+      stages:
+        - name: build
+          steps:
+            - command: source /root/.bashrc && flake8
+              name: flake8
+              image: maven
+              dir: /workspace/source

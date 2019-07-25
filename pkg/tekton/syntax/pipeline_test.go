@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"path/filepath"
 	"testing"
 
@@ -12,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax/syntax_helpers_test"
+	sh "github.com/jenkins-x/jx/pkg/tekton/syntax/syntax_helpers_test"
 	"github.com/knative/pkg/apis"
 	"github.com/knative/pkg/kmp"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -45,13 +47,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 	}{
 		{
 			name: "simple_jenkinsfile",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
-						syntax_helpers_test.StepName("A Step With Spaces And Such"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
+						sh.StepName("A Step With Spaces And Such"),
 					),
 				),
 			),
@@ -61,7 +63,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -70,23 +72,23 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step("a-step-with-spaces-and-such", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "multiple_stages",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
 				),
-				syntax_helpers_test.PipelineStage("Another stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("again"))),
+				sh.PipelineStage("Another stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
@@ -98,7 +100,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -106,28 +108,28 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-another-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo again"), workingDir("/workspace/source")),
 				)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
-				syntax_helpers_test.StructureStage("Another stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-another-stage-1"),
-					syntax_helpers_test.StructureStagePrevious("A Working Stage")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+				sh.StructureStage("Another stage", sh.StructureStageTaskRef("somepipeline-another-stage-1"),
+					sh.StructureStagePrevious("A Working Stage")),
 			),
 		},
 		{
 			name: "nested_stages",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("Parent Stage",
-					syntax_helpers_test.StageSequential("A Working Stage",
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"))),
-					syntax_helpers_test.StageSequential("Another stage",
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("again"))),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("Parent Stage",
+					sh.StageSequential("A Working Stage",
+						sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world"))),
+					sh.StageSequential("Another stage",
+						sh.StageStep(sh.StepCmd("echo"), sh.StepArg("again"))),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -140,7 +142,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit, tb.ResourceTargetPath("source"))),
@@ -148,39 +150,39 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
-				tb.Task("somepipeline-another-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo again"), workingDir("/workspace/source")),
 				)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("Parent Stage",
-					syntax_helpers_test.StructureStageStages("A Working Stage", "Another stage")),
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("Parent Stage")),
-				syntax_helpers_test.StructureStage("Another stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-another-stage-1"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("Parent Stage"),
-					syntax_helpers_test.StructureStagePrevious("A Working Stage")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("Parent Stage",
+					sh.StructureStageStages("A Working Stage", "Another stage")),
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("Parent Stage")),
+				sh.StructureStage("Another stage", sh.StructureStageTaskRef("somepipeline-another-stage-1"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("Parent Stage"),
+					sh.StructureStagePrevious("A Working Stage")),
 			),
 		},
 		{
 			name: "parallel_stages",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("First Stage",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("first"))),
-				syntax_helpers_test.PipelineStage("Parent Stage",
-					syntax_helpers_test.StageParallel("A Working Stage",
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"))),
-					syntax_helpers_test.StageParallel("Another stage",
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("again"))),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("First Stage",
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("first"))),
+				sh.PipelineStage("Parent Stage",
+					sh.StageParallel("A Working Stage",
+						sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world"))),
+					sh.StageParallel("Another stage",
+						sh.StageStep(sh.StepCmd("echo"), sh.StepArg("again"))),
 				),
-				syntax_helpers_test.PipelineStage("Last Stage",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("last"))),
+				sh.PipelineStage("Last Stage",
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("last"))),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage-1",
@@ -198,7 +200,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage", "another-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-first-stage-1", "jx", syntax_helpers_test.TaskStageLabel("First Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-first-stage-1", "jx", sh.TaskStageLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -206,62 +208,62 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo first"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("source"))),
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
-				tb.Task("somepipeline-another-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo again"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-last-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Last Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-last-stage-1", "jx", sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo last"), workingDir("/workspace/source")),
 				)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("First Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-first-stage-1")),
-				syntax_helpers_test.StructureStage("Parent Stage",
-					syntax_helpers_test.StructureStageParallel("A Working Stage", "Another stage"),
-					syntax_helpers_test.StructureStagePrevious("First Stage"),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("First Stage", sh.StructureStageTaskRef("somepipeline-first-stage-1")),
+				sh.StructureStage("Parent Stage",
+					sh.StructureStageParallel("A Working Stage", "Another stage"),
+					sh.StructureStagePrevious("First Stage"),
 				),
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("Parent Stage"),
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("Parent Stage"),
 				),
-				syntax_helpers_test.StructureStage("Another stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-another-stage-1"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("Parent Stage"),
+				sh.StructureStage("Another stage", sh.StructureStageTaskRef("somepipeline-another-stage-1"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("Parent Stage"),
 				),
-				syntax_helpers_test.StructureStage("Last Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-last-stage-1"),
-					syntax_helpers_test.StructureStagePrevious("Parent Stage")),
+				sh.StructureStage("Last Stage", sh.StructureStageTaskRef("somepipeline-last-stage-1"),
+					sh.StructureStagePrevious("Parent Stage")),
 			),
 		},
 		{
 			name: "parallel_and_nested_stages",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("First Stage",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("first"))),
-				syntax_helpers_test.PipelineStage("Parent Stage",
-					syntax_helpers_test.StageParallel("A Working Stage",
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"))),
-					syntax_helpers_test.StageParallel("Nested In Parallel",
-						syntax_helpers_test.StageSequential("Another stage",
-							syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("again"))),
-						syntax_helpers_test.StageSequential("Some other stage",
-							syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("otherwise"))),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("First Stage",
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("first"))),
+				sh.PipelineStage("Parent Stage",
+					sh.StageParallel("A Working Stage",
+						sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world"))),
+					sh.StageParallel("Nested In Parallel",
+						sh.StageSequential("Another stage",
+							sh.StageStep(sh.StepCmd("echo"), sh.StepArg("again"))),
+						sh.StageSequential("Some other stage",
+							sh.StageStep(sh.StepCmd("echo"), sh.StepArg("otherwise"))),
 					),
 				),
-				syntax_helpers_test.PipelineStage("Last Stage",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("last"))),
+				sh.PipelineStage("Last Stage",
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("last"))),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage-1",
@@ -286,7 +288,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage", "some-other-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-first-stage-1", "jx", syntax_helpers_test.TaskStageLabel("First Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-first-stage-1", "jx", sh.TaskStageLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -294,85 +296,85 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo first"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("source"))),
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
-				tb.Task("somepipeline-another-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo again"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-some-other-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Some other stage"), tb.TaskSpec(
+				tb.Task("somepipeline-some-other-stage-1", "jx", sh.TaskStageLabel("Some other stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo otherwise"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-last-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Last Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-last-stage-1", "jx", sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo last"), workingDir("/workspace/source")),
 				)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("First Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-first-stage-1")),
-				syntax_helpers_test.StructureStage("Parent Stage",
-					syntax_helpers_test.StructureStageParallel("A Working Stage", "Nested In Parallel"),
-					syntax_helpers_test.StructureStagePrevious("First Stage"),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("First Stage", sh.StructureStageTaskRef("somepipeline-first-stage-1")),
+				sh.StructureStage("Parent Stage",
+					sh.StructureStageParallel("A Working Stage", "Nested In Parallel"),
+					sh.StructureStagePrevious("First Stage"),
 				),
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("Parent Stage"),
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("Parent Stage"),
 				),
-				syntax_helpers_test.StructureStage("Nested In Parallel",
-					syntax_helpers_test.StructureStageParent("Parent Stage"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageStages("Another stage", "Some other stage"),
+				sh.StructureStage("Nested In Parallel",
+					sh.StructureStageParent("Parent Stage"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageStages("Another stage", "Some other stage"),
 				),
-				syntax_helpers_test.StructureStage("Another stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-another-stage-1"),
-					syntax_helpers_test.StructureStageDepth(2),
-					syntax_helpers_test.StructureStageParent("Nested In Parallel"),
+				sh.StructureStage("Another stage", sh.StructureStageTaskRef("somepipeline-another-stage-1"),
+					sh.StructureStageDepth(2),
+					sh.StructureStageParent("Nested In Parallel"),
 				),
-				syntax_helpers_test.StructureStage("Some other stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-some-other-stage-1"),
-					syntax_helpers_test.StructureStageDepth(2),
-					syntax_helpers_test.StructureStageParent("Nested In Parallel"),
-					syntax_helpers_test.StructureStagePrevious("Another stage"),
+				sh.StructureStage("Some other stage", sh.StructureStageTaskRef("somepipeline-some-other-stage-1"),
+					sh.StructureStageDepth(2),
+					sh.StructureStageParent("Nested In Parallel"),
+					sh.StructureStagePrevious("Another stage"),
 				),
-				syntax_helpers_test.StructureStage("Last Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-last-stage-1"),
-					syntax_helpers_test.StructureStagePrevious("Parent Stage")),
+				sh.StructureStage("Last Stage", sh.StructureStageTaskRef("somepipeline-last-stage-1"),
+					sh.StructureStagePrevious("Parent Stage")),
 			),
 		},
 		{
 			name: "custom_workspaces",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("stage1",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("stage1",
+					sh.StageStep(sh.StepCmd("ls")),
 				),
-				syntax_helpers_test.PipelineStage("stage2",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageOptionsWorkspace(customWorkspace),
+				sh.PipelineStage("stage2",
+					sh.StageOptions(
+						sh.StageOptionsWorkspace(customWorkspace),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+					sh.StageStep(sh.StepCmd("ls")),
 				),
-				syntax_helpers_test.PipelineStage("stage3",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageOptionsWorkspace(defaultWorkspace),
+				sh.PipelineStage("stage3",
+					sh.StageOptions(
+						sh.StageOptionsWorkspace(defaultWorkspace),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+					sh.StageStep(sh.StepCmd("ls")),
 				),
-				syntax_helpers_test.PipelineStage("stage4",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageOptionsWorkspace(customWorkspace),
+				sh.PipelineStage("stage4",
+					sh.StageOptions(
+						sh.StageOptionsWorkspace(customWorkspace),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+					sh.StageStep(sh.StepCmd("ls")),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -392,7 +394,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("stage3")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-stage1-1", "jx", syntax_helpers_test.TaskStageLabel("stage1"), tb.TaskSpec(
+				tb.Task("somepipeline-stage1-1", "jx", sh.TaskStageLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -400,56 +402,56 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage2-1", "jx", syntax_helpers_test.TaskStageLabel("stage2"), tb.TaskSpec(
+				tb.Task("somepipeline-stage2-1", "jx", sh.TaskStageLabel("stage2"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage3-1", "jx", syntax_helpers_test.TaskStageLabel("stage3"), tb.TaskSpec(
+				tb.Task("somepipeline-stage3-1", "jx", sh.TaskStageLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage4-1", "jx", syntax_helpers_test.TaskStageLabel("stage4"), tb.TaskSpec(
+				tb.Task("somepipeline-stage4-1", "jx", sh.TaskStageLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("stage1", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage1-1")),
-				syntax_helpers_test.StructureStage("stage2", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage2-1"), syntax_helpers_test.StructureStagePrevious("stage1")),
-				syntax_helpers_test.StructureStage("stage3", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage3-1"), syntax_helpers_test.StructureStagePrevious("stage2")),
-				syntax_helpers_test.StructureStage("stage4", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage4-1"), syntax_helpers_test.StructureStagePrevious("stage3")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("stage1", sh.StructureStageTaskRef("somepipeline-stage1-1")),
+				sh.StructureStage("stage2", sh.StructureStageTaskRef("somepipeline-stage2-1"), sh.StructureStagePrevious("stage1")),
+				sh.StructureStage("stage3", sh.StructureStageTaskRef("somepipeline-stage3-1"), sh.StructureStagePrevious("stage2")),
+				sh.StructureStage("stage4", sh.StructureStageTaskRef("somepipeline-stage4-1"), sh.StructureStagePrevious("stage3")),
 			),
 		},
 		{
 			name: "inherited_custom_workspaces",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("stage1",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("stage1",
+					sh.StageStep(sh.StepCmd("ls")),
 				),
-				syntax_helpers_test.PipelineStage("stage2",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageOptionsWorkspace(customWorkspace),
+				sh.PipelineStage("stage2",
+					sh.StageOptions(
+						sh.StageOptionsWorkspace(customWorkspace),
 					),
-					syntax_helpers_test.StageSequential("stage3",
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+					sh.StageSequential("stage3",
+						sh.StageStep(sh.StepCmd("ls")),
 					),
-					syntax_helpers_test.StageSequential("stage4",
-						syntax_helpers_test.StageOptions(
-							syntax_helpers_test.StageOptionsWorkspace(defaultWorkspace),
+					sh.StageSequential("stage4",
+						sh.StageOptions(
+							sh.StageOptionsWorkspace(defaultWorkspace),
 						),
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+						sh.StageStep(sh.StepCmd("ls")),
 					),
-					syntax_helpers_test.StageSequential("stage5",
-						syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+					sh.StageSequential("stage5",
+						sh.StageStep(sh.StepCmd("ls")),
 					),
 				),
 			),
@@ -472,7 +474,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("stage4")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-stage1-1", "jx", syntax_helpers_test.TaskStageLabel("stage1"), tb.TaskSpec(
+				tb.Task("somepipeline-stage1-1", "jx", sh.TaskStageLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -480,59 +482,59 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage3-1", "jx", syntax_helpers_test.TaskStageLabel("stage3"), tb.TaskSpec(
+				tb.Task("somepipeline-stage3-1", "jx", sh.TaskStageLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage4-1", "jx", syntax_helpers_test.TaskStageLabel("stage4"), tb.TaskSpec(
+				tb.Task("somepipeline-stage4-1", "jx", sh.TaskStageLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage5-1", "jx", syntax_helpers_test.TaskStageLabel("stage5"), tb.TaskSpec(
+				tb.Task("somepipeline-stage5-1", "jx", sh.TaskStageLabel("stage5"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("stage1", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage1-1")),
-				syntax_helpers_test.StructureStage("stage2",
-					syntax_helpers_test.StructureStagePrevious("stage1"),
-					syntax_helpers_test.StructureStageStages("stage3", "stage4", "stage5"),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("stage1", sh.StructureStageTaskRef("somepipeline-stage1-1")),
+				sh.StructureStage("stage2",
+					sh.StructureStagePrevious("stage1"),
+					sh.StructureStageStages("stage3", "stage4", "stage5"),
 				),
-				syntax_helpers_test.StructureStage("stage3", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage3-1"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("stage2")),
-				syntax_helpers_test.StructureStage("stage4", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage4-1"),
-					syntax_helpers_test.StructureStagePrevious("stage3"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("stage2")),
-				syntax_helpers_test.StructureStage("stage5", syntax_helpers_test.StructureStageTaskRef("somepipeline-stage5-1"),
-					syntax_helpers_test.StructureStagePrevious("stage4"),
-					syntax_helpers_test.StructureStageDepth(1),
-					syntax_helpers_test.StructureStageParent("stage2")),
+				sh.StructureStage("stage3", sh.StructureStageTaskRef("somepipeline-stage3-1"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("stage2")),
+				sh.StructureStage("stage4", sh.StructureStageTaskRef("somepipeline-stage4-1"),
+					sh.StructureStagePrevious("stage3"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("stage2")),
+				sh.StructureStage("stage5", sh.StructureStageTaskRef("somepipeline-stage5-1"),
+					sh.StructureStagePrevious("stage4"),
+					sh.StructureStageDepth(1),
+					sh.StructureStageParent("stage2")),
 			),
 		},
 		{
 			name: "environment_at_top_and_in_stage",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineEnvVar("SOME_VAR", "A value for the env var"),
-				syntax_helpers_test.PipelineStage("A stage with environment",
-					syntax_helpers_test.StageEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("${SOME_OTHER_VAR}")),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("goodbye"), syntax_helpers_test.StepArg("${SOME_VAR} and ${ANOTHER_VAR}"),
-						syntax_helpers_test.StepEnvVar("SOME_VAR", "An overriding value"),
-						syntax_helpers_test.StepEnvVar("ANOTHER_VAR", "Yet another variable"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineEnvVar("SOME_VAR", "A value for the env var"),
+				sh.PipelineStage("A stage with environment",
+					sh.StageEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("${SOME_OTHER_VAR}")),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("goodbye"), sh.StepArg("${SOME_VAR} and ${ANOTHER_VAR}"),
+						sh.StepEnvVar("SOME_VAR", "An overriding value"),
+						sh.StepEnvVar("ANOTHER_VAR", "Yet another variable"),
 					),
 				),
 			),
@@ -543,7 +545,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
 				tb.Task("somepipeline-a-stage-with-environment-1", "jx",
-					syntax_helpers_test.TaskStageLabel("A stage with environment"),
+					sh.TaskStageLabel("A stage with environment"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -559,41 +561,41 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A stage with environment", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-stage-with-environment-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A stage with environment", sh.StructureStageTaskRef("somepipeline-a-stage-with-environment-1")),
 			),
 		},
 		{
 			name: "syntactic_sugar_step_and_a_command",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepStep("some-step"),
-						syntax_helpers_test.StepOptions(map[string]string{"firstParam": "some value", "secondParam": "some other value"})),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world")),
+					sh.StageStep(sh.StepStep("some-step"),
+						sh.StepOptions(map[string]string{"firstParam": "some value", "secondParam": "some other value"})),
 				),
 			),
 			expectedErrorMsg: "syntactic sugar steps not yet supported",
 		},
 		{
 			name: "post",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
-					syntax_helpers_test.StagePost(syntax.PostConditionSuccess,
-						syntax_helpers_test.PostAction("mail", map[string]string{
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world")),
+					sh.StagePost(syntax.PostConditionSuccess,
+						sh.PostAction("mail", map[string]string{
 							"to":      "foo@bar.com",
 							"subject": "Yay, it passed",
 						})),
-					syntax_helpers_test.StagePost(syntax.PostConditionFailure,
-						syntax_helpers_test.PostAction("slack", map[string]string{
+					sh.StagePost(syntax.PostConditionFailure,
+						sh.PostAction("slack", map[string]string{
 							"whatever": "the",
 							"slack":    "config",
 							"actually": "is. =)",
 						})),
-					syntax_helpers_test.StagePost(syntax.PostConditionAlways,
-						syntax_helpers_test.PostAction("junit", map[string]string{
+					sh.StagePost(syntax.PostConditionAlways,
+						sh.PostAction("junit", map[string]string{
 							"pattern": "target/surefire-reports/**/*.xml",
 						}),
 					),
@@ -603,35 +605,35 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "top_level_and_stage_options",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineOptions(
-					syntax_helpers_test.PipelineOptionsTimeout(50, "minutes"),
-					syntax_helpers_test.PipelineOptionsRetry(3),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineOptions(
+					sh.PipelineOptionsTimeout(50, "minutes"),
+					sh.PipelineOptionsRetry(3),
 				),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageOptionsTimeout(5, "seconds"),
-						syntax_helpers_test.StageOptionsRetry(4),
-						syntax_helpers_test.StageOptionsStash("Some Files", "somedir/**/*"),
-						syntax_helpers_test.StageOptionsUnstash("Earlier Files", "some/sub/dir"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageOptionsTimeout(5, "seconds"),
+						sh.StageOptionsRetry(4),
+						sh.StageOptionsStash("Some Files", "somedir/**/*"),
+						sh.StageOptionsUnstash("Earlier Files", "some/sub/dir"),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world")),
 				),
 			),
 			expectedErrorMsg: "Retry at top level not yet supported",
 		},
 		{
 			name: "stage_and_step_agent",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageAgent("some-image"),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
-						syntax_helpers_test.StepAgent("some-other-image"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineStage("A Working Stage",
+					sh.StageAgent("some-image"),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
+						sh.StepAgent("some-other-image"),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("goodbye")),
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("goodbye")),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -640,7 +642,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -650,19 +652,19 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step("step3", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo goodbye"), workingDir("/workspace/source")),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "mangled_task_names",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage(". -a- .",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage(". -a- .",
+					sh.StageStep(sh.StepCmd("ls")),
 				),
-				syntax_helpers_test.PipelineStage("Wööh!!!! - This is cool.",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("ls")),
+				sh.PipelineStage("Wööh!!!! - This is cool.",
+					sh.StageStep(sh.StepCmd("ls")),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -675,7 +677,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter(".--a--.")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-1", "jx", syntax_helpers_test.TaskStageLabel(". -a- ."), tb.TaskSpec(
+				tb.Task("somepipeline-a-1", "jx", sh.TaskStageLabel(". -a- ."), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -683,7 +685,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-wh-this-is-cool-1", "jx", syntax_helpers_test.TaskStageLabel("Wööh!!!! - This is cool."),
+				tb.Task("somepipeline-wh-this-is-cool-1", "jx", sh.TaskStageLabel("Wööh!!!! - This is cool."),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -691,20 +693,20 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage(". -a- .", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-1")),
-				syntax_helpers_test.StructureStage("Wööh!!!! - This is cool.", syntax_helpers_test.StructureStageTaskRef("somepipeline-wh-this-is-cool-1"), syntax_helpers_test.StructureStagePrevious(". -a- .")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage(". -a- .", sh.StructureStageTaskRef("somepipeline-a-1")),
+				sh.StructureStage("Wööh!!!! - This is cool.", sh.StructureStageTaskRef("somepipeline-wh-this-is-cool-1"), sh.StructureStagePrevious(". -a- .")),
 			),
 		},
 		{
 			name: "stage_timeout",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageOptionsTimeout(50, "minutes"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageOptionsTimeout(50, "minutes"),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world")),
 				),
 			),
 			/* TODO: Stop erroring out once we figure out how to handle task timeouts again
@@ -729,13 +731,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "top_level_timeout",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineOptions(
-					syntax_helpers_test.PipelineOptionsTimeout(50, "minutes"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineOptions(
+					sh.PipelineOptionsTimeout(50, "minutes"),
 				),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world")),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -744,7 +746,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -753,28 +755,28 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "loop_step",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineEnvVar("LANGUAGE", "rust"),
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageEnvVar("DISTRO", "gentoo"),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
-							syntax_helpers_test.LoopStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("${LANGUAGE}")),
-							syntax_helpers_test.LoopStep(syntax_helpers_test.StepLoop("DISTRO", []string{"fedora", "ubuntu", "debian"},
-								syntax_helpers_test.LoopStep(syntax_helpers_test.StepCmd("echo"),
-									syntax_helpers_test.StepArg("running"), syntax_helpers_test.StepArg("${LANGUAGE}"),
-									syntax_helpers_test.StepArg("on"), syntax_helpers_test.StepArg("${DISTRO}")),
+			expected: sh.ParsedPipeline(
+				sh.PipelineEnvVar("LANGUAGE", "rust"),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageEnvVar("DISTRO", "gentoo"),
+					sh.StageStep(
+						sh.StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
+							sh.LoopStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("${LANGUAGE}")),
+							sh.LoopStep(sh.StepLoop("DISTRO", []string{"fedora", "ubuntu", "debian"},
+								sh.LoopStep(sh.StepCmd("echo"),
+									sh.StepArg("running"), sh.StepArg("${LANGUAGE}"),
+									sh.StepArg("on"), sh.StepArg("${DISTRO}")),
 							)),
 						),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("after")),
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("after")),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -783,7 +785,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -818,24 +820,24 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "rust")),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "loop_step_with_name",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineEnvVar("LANGUAGE", "rust"),
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageEnvVar("DISTRO", "gentoo"),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
-							syntax_helpers_test.LoopStep(
-								syntax_helpers_test.StepName("echo-step"),
-								syntax_helpers_test.StepCmd("echo"),
-								syntax_helpers_test.StepArg("hello"),
-								syntax_helpers_test.StepArg("${LANGUAGE}")),
+			expected: sh.ParsedPipeline(
+				sh.PipelineEnvVar("LANGUAGE", "rust"),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageEnvVar("DISTRO", "gentoo"),
+					sh.StageStep(
+						sh.StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
+							sh.LoopStep(
+								sh.StepName("echo-step"),
+								sh.StepCmd("echo"),
+								sh.StepArg("hello"),
+								sh.StepArg("${LANGUAGE}")),
 						),
 					),
 				),
@@ -846,7 +848,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -861,21 +863,21 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "nodejs")),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage",
-					syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage",
+					sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "loop_with_syntactic_sugar_step",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
-							syntax_helpers_test.LoopStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("${LANGUAGE}")),
-							syntax_helpers_test.LoopStep(syntax_helpers_test.StepStep("some-step"),
-								syntax_helpers_test.StepOptions(map[string]string{"firstParam": "some value", "secondParam": "some other value"})),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
+							sh.LoopStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("${LANGUAGE}")),
+							sh.LoopStep(sh.StepStep("some-step"),
+								sh.StepOptions(map[string]string{"firstParam": "some value", "secondParam": "some other value"})),
 						),
 					),
 				),
@@ -884,18 +886,18 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "top_level_container_options",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineOptions(
-					syntax_helpers_test.PipelineContainerOptions(
-						syntax_helpers_test.ContainerResourceLimits("0.2", "128Mi"),
-						syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(
+					sh.PipelineContainerOptions(
+						sh.ContainerResourceLimits("0.2", "128Mi"),
+						sh.ContainerResourceRequests("0.1", "64Mi"),
 					),
 				),
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
 					),
 				),
 			),
@@ -905,45 +907,45 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("source"))),
 						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.2", "128Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+							sh.ContainerResourceLimits("0.2", "128Mi"),
+							sh.ContainerResourceRequests("0.1", "64Mi"),
 						),
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.2", "128Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+							sh.ContainerResourceLimits("0.2", "128Mi"),
+							sh.ContainerResourceRequests("0.1", "64Mi"),
 						),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "stage_overrides_top_level_container_options",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineOptions(
-					syntax_helpers_test.PipelineContainerOptions(
-						syntax_helpers_test.ContainerResourceLimits("0.2", "128Mi"),
-						syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(
+					sh.PipelineContainerOptions(
+						sh.ContainerResourceLimits("0.2", "128Mi"),
+						sh.ContainerResourceRequests("0.1", "64Mi"),
 					),
 				),
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageContainerOptions(
-							syntax_helpers_test.ContainerResourceLimits("0.4", "256Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.2", "128Mi"),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageContainerOptions(
+							sh.ContainerResourceLimits("0.4", "256Mi"),
+							sh.ContainerResourceRequests("0.2", "128Mi"),
 						),
 					),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
 					),
 				),
 			),
@@ -953,43 +955,43 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("source"))),
 						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.4", "256Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.2", "128Mi"),
+							sh.ContainerResourceLimits("0.4", "256Mi"),
+							sh.ContainerResourceRequests("0.2", "128Mi"),
 						),
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.4", "256Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.2", "128Mi"),
+							sh.ContainerResourceLimits("0.4", "256Mi"),
+							sh.ContainerResourceRequests("0.2", "128Mi"),
 						),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "merge_container_options",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineOptions(
-					syntax_helpers_test.PipelineContainerOptions(
-						syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(
+					sh.PipelineContainerOptions(
+						sh.ContainerResourceRequests("0.1", "64Mi"),
 					),
 				),
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageContainerOptions(
-							syntax_helpers_test.ContainerResourceLimits("0.4", "256Mi"),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageContainerOptions(
+							sh.ContainerResourceLimits("0.4", "256Mi"),
 						),
 					),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
 					),
 				),
 			),
@@ -999,39 +1001,39 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("source"))),
 						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.4", "256Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+							sh.ContainerResourceLimits("0.4", "256Mi"),
+							sh.ContainerResourceRequests("0.1", "64Mi"),
 						),
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.4", "256Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+							sh.ContainerResourceLimits("0.4", "256Mi"),
+							sh.ContainerResourceRequests("0.1", "64Mi"),
 						),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "stage_level_container_options",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageContainerOptions(
-							syntax_helpers_test.ContainerResourceLimits("0.2", "128Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageContainerOptions(
+							sh.ContainerResourceLimits("0.2", "128Mi"),
+							sh.ContainerResourceRequests("0.1", "64Mi"),
 						),
 					),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
 					),
 				),
 			),
@@ -1041,47 +1043,47 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("source"))),
 						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.2", "128Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+							sh.ContainerResourceLimits("0.2", "128Mi"),
+							sh.ContainerResourceRequests("0.1", "64Mi"),
 						),
 						tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source"),
-							syntax_helpers_test.ContainerResourceLimits("0.2", "128Mi"),
-							syntax_helpers_test.ContainerResourceRequests("0.1", "64Mi"),
+							sh.ContainerResourceLimits("0.2", "128Mi"),
+							sh.ContainerResourceRequests("0.1", "64Mi"),
 						),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "container_options_env_merge",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineOptions(
-					syntax_helpers_test.PipelineContainerOptions(
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineOptions(
+					sh.PipelineContainerOptions(
 						tb.EnvVar("SOME_VAR", "A value for the env var"),
 						tb.EnvVar("OVERRIDE_ENV", "Original value"),
 						tb.EnvVar("OVERRIDE_STAGE_ENV", "Original value"),
 					),
 				),
-				syntax_helpers_test.PipelineEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
-				syntax_helpers_test.PipelineEnvVar("OVERRIDE_ENV", "New value"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageContainerOptions(
+				sh.PipelineEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+				sh.PipelineEnvVar("OVERRIDE_ENV", "New value"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageContainerOptions(
 							tb.EnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "Original value"),
 						),
 					),
-					syntax_helpers_test.StageStep(syntax_helpers_test.StepCmd("echo"), syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
-					syntax_helpers_test.StageEnvVar("OVERRIDE_STAGE_ENV", "New value"),
-					syntax_helpers_test.StageEnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
+					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world")),
+					sh.StageEnvVar("OVERRIDE_STAGE_ENV", "New value"),
+					sh.StageEnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -1091,7 +1093,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
 				tb.Task("somepipeline-a-working-stage-1", "jx",
-					syntax_helpers_test.TaskStageLabel("A Working Stage"),
+					sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -1112,29 +1114,29 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 		{
 			name: "dir_on_pipeline_and_stage",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineDir("a-relative-dir"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world")),
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineDir("a-relative-dir"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
 				),
-				syntax_helpers_test.PipelineStage("Another stage",
-					syntax_helpers_test.StageDir("/an/absolute/dir"),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("again")),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("in another dir"),
-						syntax_helpers_test.StepDir("another-relative-dir/with/a/subdir"))),
+				sh.PipelineStage("Another stage",
+					sh.StageDir("/an/absolute/dir"),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again")),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("in another dir"),
+						sh.StepDir("another-relative-dir/with/a/subdir"))),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
@@ -1146,7 +1148,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -1154,7 +1156,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source/a-relative-dir")),
 				)),
-				tb.Task("somepipeline-another-stage-1", "jx", syntax_helpers_test.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -1163,17 +1165,17 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						workingDir("/workspace/source/another-relative-dir/with/a/subdir")),
 				)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
-				syntax_helpers_test.StructureStage("Another stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-another-stage-1"),
-					syntax_helpers_test.StructureStagePrevious("A Working Stage")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+				sh.StructureStage("Another stage", sh.StructureStageTaskRef("somepipeline-another-stage-1"),
+					sh.StructureStagePrevious("A Working Stage")),
 			),
 		},
 		{
 			name: "volumes",
-			expected: syntax_helpers_test.ParsedPipeline(
-				syntax_helpers_test.PipelineOptions(
-					syntax_helpers_test.PipelineVolume(&corev1.Volume{
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(
+					sh.PipelineVolume(&corev1.Volume{
 						Name: "top-level-volume",
 						VolumeSource: corev1.VolumeSource{
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
@@ -1183,10 +1185,10 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						},
 					}),
 				),
-				syntax_helpers_test.PipelineAgent("some-image"),
-				syntax_helpers_test.PipelineStage("A Working Stage",
-					syntax_helpers_test.StageOptions(
-						syntax_helpers_test.StageVolume(&corev1.Volume{
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageVolume(&corev1.Volume{
 							Name: "stage-level-volume",
 							VolumeSource: corev1.VolumeSource{
 								GCEPersistentDisk: &corev1.GCEPersistentDiskVolumeSource{
@@ -1195,10 +1197,10 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							},
 						}),
 					),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("hello"), syntax_helpers_test.StepArg("world"),
-						syntax_helpers_test.StepName("A Step With Spaces And Such"),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
+						sh.StepName("A Step With Spaces And Such"),
 					),
 				),
 			),
@@ -1208,7 +1210,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", syntax_helpers_test.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -1228,8 +1230,8 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						})),
 					)),
 			},
-			structure: syntax_helpers_test.PipelineStructure("somepipeline-1",
-				syntax_helpers_test.StructureStage("A Working Stage", syntax_helpers_test.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
 	}
@@ -1644,6 +1646,191 @@ func TestFailedValidation(t *testing.T) {
 	}
 }
 
+func getOverridesTestPipeline() *syntax.ParsedPipeline {
+	return sh.ParsedPipeline(
+		sh.PipelineAgent("some-image"),
+		sh.PipelineStage("A Working Stage",
+			sh.StageStep(
+				sh.StepCmd("echo"),
+				sh.StepArg("hello"), sh.StepArg("world")),
+		),
+		sh.PipelineStage("Another stage",
+			sh.StageStep(
+				sh.StepCmd("echo"),
+				sh.StepArg("again"))),
+	)
+}
+
+func getOverridesTestVolume() *corev1.Volume {
+	return &corev1.Volume{
+		Name: "stage-volume",
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: "stage-volume",
+				ReadOnly:  true,
+			},
+		},
+	}
+}
+
+func getOverridesTestContainerOptions() *corev1.Container {
+	return &corev1.Container{
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				"cpu":    resource.MustParse("100m"),
+				"memory": resource.MustParse("128Mi"),
+			},
+		},
+	}
+}
+
+func TestApplyNonStepOverridesToPipeline(t *testing.T) {
+	tests := []struct {
+		name     string
+		override *syntax.PipelineOverride
+		expected *syntax.ParsedPipeline
+	}{
+		{
+			name: "volume-on-whole-pipeline",
+			override: &syntax.PipelineOverride{
+				Volumes: []*corev1.Volume{getOverridesTestVolume()},
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(sh.PipelineVolume(getOverridesTestVolume())),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+		{
+			name: "volume-on-single-stage",
+			override: &syntax.PipelineOverride{
+				Stage:   "Another stage",
+				Volumes: []*corev1.Volume{getOverridesTestVolume()},
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageOptions(sh.StageVolume(getOverridesTestVolume())),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+		{
+			name: "containerOptions-on-whole-pipeline",
+			override: &syntax.PipelineOverride{
+				ContainerOptions: getOverridesTestContainerOptions(),
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(
+					sh.PipelineContainerOptions(
+						sh.ContainerResourceLimits("100m", "128Mi"),
+					),
+				),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+		{
+			name: "containerOptions-on-single-stage",
+			override: &syntax.PipelineOverride{
+				Stage:            "Another stage",
+				ContainerOptions: getOverridesTestContainerOptions(),
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageOptions(
+						sh.StageContainerOptions(
+							sh.ContainerResourceLimits("100m", "128Mi"),
+						),
+					),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+		{
+			name: "agent-on-whole-pipeline",
+			override: &syntax.PipelineOverride{
+				Agent: &syntax.Agent{
+					Image: "some-other-image",
+				},
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-other-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+		{
+			name: "agent-on-single-stage",
+			override: &syntax.PipelineOverride{
+				Stage: "Another stage",
+				Agent: &syntax.Agent{
+					Image: "some-other-image",
+				},
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageAgent("some-other-image"),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newPipeline := syntax.ApplyNonStepOverridesToPipeline(getOverridesTestPipeline(), tt.override)
+
+			if d, _ := kmp.SafeDiff(tt.expected, newPipeline); d != "" {
+				t.Errorf("Overridden pipeline did not match expected: %s", d)
+			}
+		})
+	}
+}
+
 func TestRfc1035LabelMangling(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -1730,79 +1917,79 @@ func workingDir(dir string) tb.ContainerOp {
 }
 
 func TestParsedPipelineHelpers(t *testing.T) {
-	input := syntax_helpers_test.ParsedPipeline(
-		syntax_helpers_test.PipelineAgent("some-image"),
-		syntax_helpers_test.PipelineOptions(
-			syntax_helpers_test.PipelineOptionsRetry(5),
-			syntax_helpers_test.PipelineOptionsTimeout(30, syntax.TimeoutUnitSeconds),
-			syntax_helpers_test.PipelineVolume(&corev1.Volume{Name: "banana"}),
+	input := sh.ParsedPipeline(
+		sh.PipelineAgent("some-image"),
+		sh.PipelineOptions(
+			sh.PipelineOptionsRetry(5),
+			sh.PipelineOptionsTimeout(30, syntax.TimeoutUnitSeconds),
+			sh.PipelineVolume(&corev1.Volume{Name: "banana"}),
 		),
-		syntax_helpers_test.PipelineEnvVar("ANIMAL", "MONKEY"),
-		syntax_helpers_test.PipelineEnvVar("FRUIT", "BANANA"),
-		syntax_helpers_test.PipelinePost(syntax.PostConditionSuccess,
-			syntax_helpers_test.PostAction("mail", map[string]string{
+		sh.PipelineEnvVar("ANIMAL", "MONKEY"),
+		sh.PipelineEnvVar("FRUIT", "BANANA"),
+		sh.PipelinePost(syntax.PostConditionSuccess,
+			sh.PostAction("mail", map[string]string{
 				"to":      "foo@bar.com",
 				"subject": "Yay, it passed",
 			})),
-		syntax_helpers_test.PipelinePost(syntax.PostConditionFailure,
-			syntax_helpers_test.PostAction("slack", map[string]string{
+		sh.PipelinePost(syntax.PostConditionFailure,
+			sh.PostAction("slack", map[string]string{
 				"whatever": "the",
 				"slack":    "config",
 				"actually": "is. =)",
 			})),
-		syntax_helpers_test.PipelineStage("A Working Stage",
-			syntax_helpers_test.StageOptions(
-				syntax_helpers_test.StageOptionsWorkspace(customWorkspace),
-				syntax_helpers_test.StageOptionsStash("some-name", "**/*"),
-				syntax_helpers_test.StageOptionsUnstash("some-name", ""),
-				syntax_helpers_test.StageOptionsTimeout(15, syntax.TimeoutUnitMinutes),
-				syntax_helpers_test.StageOptionsRetry(2),
-				syntax_helpers_test.StageVolume(&corev1.Volume{Name: "apple"}),
-				syntax_helpers_test.StageVolume(&corev1.Volume{Name: "orange"}),
+		sh.PipelineStage("A Working Stage",
+			sh.StageOptions(
+				sh.StageOptionsWorkspace(customWorkspace),
+				sh.StageOptionsStash("some-name", "**/*"),
+				sh.StageOptionsUnstash("some-name", ""),
+				sh.StageOptionsTimeout(15, syntax.TimeoutUnitMinutes),
+				sh.StageOptionsRetry(2),
+				sh.StageVolume(&corev1.Volume{Name: "apple"}),
+				sh.StageVolume(&corev1.Volume{Name: "orange"}),
 			),
-			syntax_helpers_test.StageStep(
-				syntax_helpers_test.StepCmd("echo"),
-				syntax_helpers_test.StepArg("hello"),
-				syntax_helpers_test.StepArg("world"),
+			sh.StageStep(
+				sh.StepCmd("echo"),
+				sh.StepArg("hello"),
+				sh.StepArg("world"),
 			),
 		),
-		syntax_helpers_test.PipelineStage("Parent Stage",
-			syntax_helpers_test.StageParallel("First Nested Stage",
-				syntax_helpers_test.StageAgent("some-other-image"),
-				syntax_helpers_test.StageStep(
-					syntax_helpers_test.StepCmd("echo"),
-					syntax_helpers_test.StepArg("hello"),
-					syntax_helpers_test.StepArg("world"),
-					syntax_helpers_test.StepAgent("some-other-image"),
+		sh.PipelineStage("Parent Stage",
+			sh.StageParallel("First Nested Stage",
+				sh.StageAgent("some-other-image"),
+				sh.StageStep(
+					sh.StepCmd("echo"),
+					sh.StepArg("hello"),
+					sh.StepArg("world"),
+					sh.StepAgent("some-other-image"),
 				),
-				syntax_helpers_test.StageEnvVar("STAGE_VAR_ONE", "some value"),
-				syntax_helpers_test.StageEnvVar("STAGE_VAR_TWO", "some other value"),
-				syntax_helpers_test.StagePost(syntax.PostConditionAlways,
-					syntax_helpers_test.PostAction("junit", map[string]string{
+				sh.StageEnvVar("STAGE_VAR_ONE", "some value"),
+				sh.StageEnvVar("STAGE_VAR_TWO", "some other value"),
+				sh.StagePost(syntax.PostConditionAlways,
+					sh.PostAction("junit", map[string]string{
 						"pattern": "target/surefire-reports/**/*.xml",
 					}),
 				),
 			),
-			syntax_helpers_test.StageParallel("Nested In Parallel",
-				syntax_helpers_test.StageSequential("Another stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepLoop("SOME_VAR", []string{"a", "b", "c"},
-							syntax_helpers_test.LoopStep(
-								syntax_helpers_test.StepCmd("echo"),
-								syntax_helpers_test.StepArg("SOME_VAR is ${SOME_VAR}"),
+			sh.StageParallel("Nested In Parallel",
+				sh.StageSequential("Another stage",
+					sh.StageStep(
+						sh.StepLoop("SOME_VAR", []string{"a", "b", "c"},
+							sh.LoopStep(
+								sh.StepCmd("echo"),
+								sh.StepArg("SOME_VAR is ${SOME_VAR}"),
 							),
 						),
 					),
 				),
-				syntax_helpers_test.StageSequential("Some other stage",
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepCmd("echo"),
-						syntax_helpers_test.StepArg("otherwise"),
-						syntax_helpers_test.StepDir(customWorkspace),
+				sh.StageSequential("Some other stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("otherwise"),
+						sh.StepDir(customWorkspace),
 					),
-					syntax_helpers_test.StageStep(
-						syntax_helpers_test.StepStep("some-step"),
-						syntax_helpers_test.StepOptions(map[string]string{"first": "arg", "second": "arg"}),
+					sh.StageStep(
+						sh.StepStep("some-step"),
+						sh.StepOptions(map[string]string{"first": "arg", "second": "arg"}),
 					),
 				),
 			),

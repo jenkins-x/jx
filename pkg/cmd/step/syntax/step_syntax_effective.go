@@ -382,6 +382,13 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 
 	if lifecycles != nil && lifecycles.Pipeline != nil {
 		parsed = lifecycles.Pipeline
+		if projectConfig.BuildPack == "" || projectConfig.BuildPack == "none" {
+			for _, override := range pipelines.Overrides {
+				if override.MatchesPipeline(kind) {
+					parsed = syntax.ApplyStepOverridesToPipeline(parsed, override)
+				}
+			}
+		}
 	} else {
 		args := jenkinsfile.CreatePipelineArguments{
 			Lifecycles:        lifecycles,
@@ -422,7 +429,7 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 
 	for _, override := range pipelines.Overrides {
 		if override.MatchesPipeline(kind) {
-			parsed = syntax.ExtendParsedPipeline(parsed, override)
+			parsed = syntax.ApplyNonStepOverridesToPipeline(parsed, override)
 		}
 	}
 

@@ -395,7 +395,10 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			err = createTask.setBuildValues()
 			assert.NoError(t, err)
 
-			effectiveProjectConfig, _ := createTask.createEffectiveProjectConfig(packsDir, projectConfig, projectConfigFile, resolver, ns)
+			effectiveProjectConfig, err := createTask.createEffectiveProjectConfig(packsDir, projectConfig, projectConfigFile, resolver, ns)
+			if err != nil && strings.Contains(err.Error(), "validation failed for Pipeline") {
+				t.Fatalf("Validation failure for effective pipeline: %s", err)
+			}
 			if effectiveProjectConfig != nil {
 				err = createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
 				assert.NoError(t, err)
