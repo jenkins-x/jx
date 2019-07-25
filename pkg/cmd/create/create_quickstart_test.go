@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -182,7 +183,7 @@ func TestCreateQuickstartRunJXClientAndDevNamespaceVarReturnsError(t *testing.T)
 	assert.NotNil(t, err)
 }
 
-func TestCreateQuickstartInvokesGetServerlessTemplatesWhenServerless(t *testing.T) {
+func TestCreateQuickstartInvokesGetServerlessQuickstartsWhenServerless(t *testing.T) {
 	// Setup
 	createGitAuthConfigServiceOrig := opts.CreateGitAuthConfigServiceVar
 	jxClientAndDevNamespaceOrig := opts.JXClientAndDevNamespaceVar
@@ -218,12 +219,12 @@ func TestCreateQuickstartInvokesGetServerlessTemplatesWhenServerless(t *testing.
 		},
 	}
 	opts.Filter.Platform = "serverless"
-	getServerlessTemplatesOrig := create.GetServerlessTemplates
-	defer func() { create.GetServerlessTemplates = getServerlessTemplatesOrig }()
+	GetServerlessQuickstartsOrig := create.GetServerlessQuickstarts
+	defer func() { create.GetServerlessQuickstarts = GetServerlessQuickstartsOrig }()
 	actual := false
-	create.GetServerlessTemplates = func() ([]string, error) {
+	create.GetServerlessQuickstarts = func() (*quickstarts.QuickstartModel, error) {
 		actual = true
-		return []string{}, nil
+		return quickstarts.NewQuickstartModel(), nil
 	}
 	// Execute
 	opts.Run()
@@ -231,17 +232,19 @@ func TestCreateQuickstartInvokesGetServerlessTemplatesWhenServerless(t *testing.
 	assert.True(t, actual)
 }
 
-func TestCreateQuickstartReturnsErrorWhenGetServerlessTemplatesFails(t *testing.T) {
+func TestCreateQuickstartReturnsErrorWhenGetServerlessQuickstartsFails(t *testing.T) {
 	// Setup
 	createGitAuthConfigServiceOrig := opts.CreateGitAuthConfigServiceVar
 	jxClientAndDevNamespaceOrig := opts.JXClientAndDevNamespaceVar
 	getQuickstartLocationsOrig := kube.GetQuickstartLocations
 	importCreatedProjectOrig := create.ImportCreatedProjectVar
+	GetServerlessQuickstartsOrig := create.GetServerlessQuickstarts
 	defer func() {
 		opts.CreateGitAuthConfigServiceVar = createGitAuthConfigServiceOrig
 		opts.JXClientAndDevNamespaceVar = jxClientAndDevNamespaceOrig
 		kube.GetQuickstartLocations = getQuickstartLocationsOrig
 		create.ImportCreatedProjectVar = importCreatedProjectOrig
+		create.GetServerlessQuickstarts = GetServerlessQuickstartsOrig
 	}()
 	opts.CreateGitAuthConfigServiceVar = func(o *opts.CommonOptions) (auth.ConfigService, error) {
 		cs := MockConfigService{}
@@ -267,15 +270,75 @@ func TestCreateQuickstartReturnsErrorWhenGetServerlessTemplatesFails(t *testing.
 		},
 	}
 	opts.Filter.Platform = "serverless"
-	getServerlessTemplatesOrig := create.GetServerlessTemplates
-	defer func() { create.GetServerlessTemplates = getServerlessTemplatesOrig }()
-	create.GetServerlessTemplates = func() ([]string, error) {
-		return []string{}, errors.New("this is an error")
+	create.GetServerlessQuickstarts = func() (*quickstarts.QuickstartModel, error) {
+		return quickstarts.NewQuickstartModel(), errors.New("this is an error")
 	}
 	// Execute
 	actual := opts.Run()
 	// Validate
 	assert.Error(t, actual)
+}
+
+func TestCreateQuickstartInvokesCreateServerlessQuickstartWhenServerless(t *testing.T) {
+	// Setup
+	createGitAuthConfigServiceOrig := opts.CreateGitAuthConfigServiceVar
+	jxClientAndDevNamespaceOrig := opts.JXClientAndDevNamespaceVar
+	getQuickstartLocationsOrig := kube.GetQuickstartLocations
+	importCreatedProjectOrig := create.ImportCreatedProjectVar
+	getServerlessQuickstartsOrig := create.GetServerlessQuickstarts
+	createSurveyVarOrig := quickstarts.CreateSurveyVar
+	createServerlessQuickstartOrig := create.CreateServerlessQuickstart
+	defer func() {
+		opts.CreateGitAuthConfigServiceVar = createGitAuthConfigServiceOrig
+		opts.JXClientAndDevNamespaceVar = jxClientAndDevNamespaceOrig
+		kube.GetQuickstartLocations = getQuickstartLocationsOrig
+		create.ImportCreatedProjectVar = importCreatedProjectOrig
+		create.GetServerlessQuickstarts = getServerlessQuickstartsOrig
+		quickstarts.CreateSurveyVar = createSurveyVarOrig
+		create.CreateServerlessQuickstart = createServerlessQuickstartOrig
+	}()
+	opts.CreateGitAuthConfigServiceVar = func(o *opts.CommonOptions) (auth.ConfigService, error) {
+		cs := MockConfigService{}
+		return cs, nil
+	}
+	opts.JXClientAndDevNamespaceVar = func(o *opts.CommonOptions) (versioned.Interface, string, error) {
+		return nil, "", nil
+	}
+	kube.GetQuickstartLocations = func(jxClient versioned.Interface, ns string) ([]v1.QuickStartLocation, error) {
+		return nil, nil
+	}
+	create.ImportCreatedProjectVar = func(outDir string, o *create.CreateProjectOptions) error {
+		return nil
+	}
+	commonOpts := &opts.CommonOptions{
+		BatchMode: true,
+	}
+	opts := create.CreateQuickstartOptions{
+		CreateProjectOptions: create.CreateProjectOptions{
+			ImportOptions: importcmd.ImportOptions{
+				CommonOptions: commonOpts,
+			},
+		},
+	}
+	opts.Filter.Platform = "serverless"
+	create.GetServerlessQuickstarts = func() (*quickstarts.QuickstartModel, error) {
+		return quickstarts.NewQuickstartModel(), nil
+	}
+	quickstarts.CreateSurveyVar = func(filter *quickstarts.QuickstartFilter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, model *quickstarts.QuickstartModel) (*quickstarts.QuickstartForm, error) {
+		qf := quickstarts.QuickstartForm{
+			Quickstart: &quickstarts.Quickstart{},
+		}
+		return &qf, nil
+	}
+	actual := false
+	create.CreateServerlessQuickstart = func(qf *quickstarts.QuickstartForm, dir string) error {
+		actual = true
+		return nil
+	}
+	// Execute
+	opts.Run()
+	// Validate
+	assert.True(t, actual)
 }
 
 // Mocks

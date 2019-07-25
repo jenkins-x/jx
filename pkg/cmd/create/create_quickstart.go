@@ -178,86 +178,91 @@ func (o *CreateQuickstartOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to retrieve the platform: %s", err)
 	}
-	genDir := ""
-	if o.Filter.Platform == "kubernetes" {
-		model, err := o.LoadQuickstartsFromMap(config, gitMap)
+	var model quickstarts.QuickstartModel
+	if o.Filter.Platform == "serverless" {
+		// TODO: Install `npm` if not already installed
+		// TODO: Use `npm` to install `serverless` if not already installed`
+		m, err := GetServerlessQuickstarts()
+		if err != nil {
+			return err
+		}
+		model = *m
+	} else {
+		m, err := o.LoadQuickstartsFromMap(config, gitMap)
 		if err != nil {
 			return fmt.Errorf("failed to load quickstarts: %s", err)
 		}
-		q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+		model = *m
+	}
+	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+	if err != nil {
+		return err
+	}
+	if q == nil {
+		return fmt.Errorf("no quickstart chosen")
+	}
+
+	// Prevent accidental attempts to use ML Project Sets in create quickstart
+	if isMLProjectSet(q.Quickstart) {
+		return fmt.Errorf("you have tried to select a machine-learning quickstart projectset please try again using jx create mlquickstart instead")
+	}
+
+	dir := o.OutDir
+	if dir == "" {
+		dir, err = os.Getwd()
 		if err != nil {
 			return err
 		}
-		if q == nil {
-			return fmt.Errorf("no quickstart chosen")
-		}
-
-		// Prevent accidental attempts to use ML Project Sets in create quickstart
-		if isMLProjectSet(q.Quickstart) {
-			return fmt.Errorf("you have tried to select a machine-learning quickstart projectset please try again using jx create mlquickstart instead")
-		}
-		dir := o.OutDir
-		if dir == "" {
-			dir, err = os.Getwd()
-			if err != nil {
-				return err
-			}
-		}
-		genDir, err := o.createQuickstart(q, dir)
-		if err != nil {
-			return err
-		}
-
-		// if there is a charts folder named after the app name, lets rename it to the generated app name
-		folder := ""
-		if q.Quickstart != nil {
-			folder = q.Quickstart.Name
-		}
-		idx := strings.LastIndex(folder, "/")
-		if idx > 0 {
-			folder = folder[idx+1:]
-		}
-		if folder != "" {
-			chartsDir := filepath.Join(genDir, "charts", folder)
-			exists, err := util.FileExists(chartsDir)
-			if err != nil {
-				return err
-			}
-			if exists {
-				o.PostDraftPackCallback = func() error {
-					_, appName := filepath.Split(genDir)
-					appChartDir := filepath.Join(genDir, "charts", appName)
-
-					log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s", chartsDir, appChartDir)
-					err := util.CopyDirOverwrite(chartsDir, appChartDir)
-					if err != nil {
-						return err
-					}
-					err = os.RemoveAll(chartsDir)
-					if err != nil {
-						return err
-					}
-					return o.Git().Remove(genDir, filepath.Join("charts", folder))
-				}
-			} else {
-				log.Logger().Infof("### NO charts folder %s", chartsDir)
-			}
-		}
-	} else {
-		// TODO: Install `npm` if not already installed
-		// TODO: Use `npm` to install `serverless` if not already installed`
-		templates, err := GetServerlessTemplates()
-		if err != nil {
-			return err
-		}
-		for _, template := range templates {
-			println(template)
-		}
-		// TODO: Convert the templates into a new parameter `provider` (e.g., `aws`) and `language` (e.g., `nodejs`)
-		// TODO: Use `serverless` to create all the files except `jenkins-x.yml`. The command could be similar to `serverless create --template [...] --name [...]`
-		// TODO: Get pipeline.yml from a repo and convert it into `jenkins-x.yml`. We might need to have one template for each `provider`. An example can be found in https://github.com/vfarcic/aws-lambda-js/blob/master/jenkins-x.yml.
-		// TODO: Make sure to reuse coommon code from the previous (`kubernetes`) block
+	}
+	genDir := ""
+	if o.Filter.Platform == "serverless" {
+		CreateServerlessQuickstart(q, dir)
+		// TODO: Confirm that the commands after this block can be use as they are.
+		// TODO: Get pipeline.yml from a repo and convert it into `jenkins-x.yml`. We might need to have one template for each `provider` (aws, azure, cloudflare, fn, google, kubeless, openwhisk, spotinst, and fail if there is no dedicated `pipeline.yml`. An example can be found in https://github.com/vfarcic/aws-lambda-js/blob/master/jenkins-x.yml.
+		// TODO: Make sure to reuse coommon code from the previous (`kubernetes`) block.
 		// TODO: Create functional tests. They do not need to be extensive since almost everything is covered with unit tests.
+		// TODO: Make sure that `language` and `framework` filters (arguments) work.
+	} else {
+		genDir, err = o.createQuickstart(q, dir)
+	}
+	if err != nil {
+		return err
+	}
+
+	// if there is a charts folder named after the app name, lets rename it to the generated app name
+	folder := ""
+	if q.Quickstart != nil {
+		folder = q.Quickstart.Name
+	}
+	idx := strings.LastIndex(folder, "/")
+	if idx > 0 {
+		folder = folder[idx+1:]
+	}
+	if folder != "" {
+		chartsDir := filepath.Join(genDir, "charts", folder)
+		exists, err := util.FileExists(chartsDir)
+		if err != nil {
+			return err
+		}
+		if exists {
+			o.PostDraftPackCallback = func() error {
+				_, appName := filepath.Split(genDir)
+				appChartDir := filepath.Join(genDir, "charts", appName)
+
+				log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s", chartsDir, appChartDir)
+				err := util.CopyDirOverwrite(chartsDir, appChartDir)
+				if err != nil {
+					return err
+				}
+				err = os.RemoveAll(chartsDir)
+				if err != nil {
+					return err
+				}
+				return o.Git().Remove(genDir, filepath.Join("charts", folder))
+			}
+		} else {
+			log.Logger().Infof("### NO charts folder %s", chartsDir)
+		}
 	}
 	log.Logger().Infof("Created project at %s\n", util.ColorInfo(genDir))
 
@@ -298,6 +303,8 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	q := f.Quickstart
 	answer := filepath.Join(dir, f.Name)
 	u := q.DownloadZipURL
+	println(u)
+	println(dir)
 	if u == "" {
 		return answer, fmt.Errorf("quickstart %s does not have a download zip URL", q.ID)
 	}

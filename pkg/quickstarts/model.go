@@ -74,8 +74,13 @@ func (model *QuickstartModel) Add(q *Quickstart) bool {
 	return false
 }
 
-// CreateSurvey creates a survey to query pick a quickstart
+// CreateSurvey invokes CreateSurveyVar to simplify fakes
 func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*QuickstartForm, error) {
+	return CreateSurveyVar(filter, batchMode, in, out, errOut, model)
+}
+
+// CreateSurveyVar creates a survey to query pick a quickstart
+var CreateSurveyVar = func(filter *QuickstartFilter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, model *QuickstartModel) (*QuickstartForm, error) {
 	surveyOpts := survey.WithStdio(in, out, errOut)
 	language := filter.Language
 	if language != "" {
