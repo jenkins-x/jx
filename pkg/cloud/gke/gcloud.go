@@ -11,13 +11,14 @@ import (
 
 	"time"
 
+	osUser "os/user"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	osUser "os/user"
 	"sigs.k8s.io/yaml"
 )
 
@@ -410,9 +411,14 @@ func (g *GCloud) DeleteBucket(bucketName string) error {
 	return nil
 }
 
-// GetRegionFromZone parses the region from a GCP zone name
+// GetRegionFromZone parses the region from a GCP zone name. TODO: Return an error if the format of the zone is not correct
 func GetRegionFromZone(zone string) string {
-	return zone[0 : len(zone)-2]
+	firstDash := strings.Index(zone, "-")
+	lastDash := strings.LastIndex(zone, "-")
+	if firstDash == lastDash { // It's a region, not a zone
+		return zone
+	}
+	return zone[0:lastDash]
 }
 
 // FindServiceAccount checks if a service account exists
