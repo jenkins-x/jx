@@ -185,6 +185,9 @@ make-reports-dir:
 test: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
 
+test-cloud-gke: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./pkg/cloud/gke -failfast -short ./pkg/cloud/gke
+
 test-report: make-reports-dir get-test-deps test ## Create the test report
 	@gocov convert $(COVER_OUT) | gocov report
 
