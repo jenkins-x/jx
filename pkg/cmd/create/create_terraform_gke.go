@@ -273,12 +273,10 @@ func NewCmdCreateTerraformGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := features.IsEnabled(cmd)
 			helper.CheckErr(err)
+
 			err = options.InstallOptions.CheckFeatures()
 			helper.CheckErr(err)
 
-			options.InstallOptions.Flags.Tekton = true
-			options.InstallOptions.Flags.Prow = true
-			options.InstallOptions.InitOptions.Flags.NoTiller = true
 			options.InstallOptions.Flags.Provider = "gke"
 
 			err = options.InstallOptions.CheckFlags()
@@ -799,6 +797,9 @@ func (options *TerraformGKEOptions) configureGKECluster(g *GKECluster, path stri
 		options.Flags.GKEUseEnhancedApis = true
 		options.Flags.GKEUseEnhancedScopes = true
 		options.InstallOptions.Flags.Kaniko = true
+		options.InstallOptions.Flags.Tekton = true
+		options.InstallOptions.Flags.Prow = true
+		options.InstallOptions.Flags.StaticJenkins = false
 	}
 
 	if !options.BatchMode {
@@ -1100,7 +1101,6 @@ func (options *TerraformGKEOptions) installJx(c Cluster, clusters []Cluster) err
 	if err != nil {
 		// jx is missing, install,
 		options.InstallOptions.Flags.DefaultEnvironmentPrefix = c.ClusterName()
-		options.InstallOptions.Flags.Prow = true
 		err = options.initAndInstall(c.Provider())
 		if err != nil {
 			return err
