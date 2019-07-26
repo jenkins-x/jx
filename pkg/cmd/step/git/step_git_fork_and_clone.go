@@ -24,7 +24,6 @@ type StepGitForkAndCloneOptions struct {
 	Dir         string
 	BaseRef     string
 	PrintOutDir bool
-	Duplicate   bool
 	OutputDir   string
 }
 
@@ -71,7 +70,6 @@ func NewCmdStepGitForkAndClone(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory in which the git repo is checked out, by default the working directory")
 	cmd.Flags().StringVarP(&options.BaseRef, "base", "", "master", "The base ref to start from")
 	cmd.Flags().BoolVarP(&options.BatchMode, opts.OptionBatchMode, "b", false, "Enable batch mode")
-	cmd.Flags().BoolVarP(&options.Duplicate, "duplicate", "", false, "Create a duplicate of a repo rather than a fork")
 	cmd.Flags().BoolVarP(&options.PrintOutDir, "print-out-dir", "", false, "prints the directory the fork has been cloned to on stdout")
 	return cmd
 }
@@ -103,7 +101,7 @@ func (o *StepGitForkAndCloneOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "getting git provider for %s", gitURL)
 	}
-	dir, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, o.Dir, o.BaseRef, "master", provider, o.Git(), o.Duplicate, "")
+	dir, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, o.Dir, o.BaseRef, "master", provider, o.Git(), "")
 	if err != nil {
 		return errors.Wrapf(err, "forking and pulling %s", gitURL)
 	}

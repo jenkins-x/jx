@@ -92,7 +92,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, server *auth.AuthServer, user *auth.UserAuth, requirements *config.RequirementsConfig) error {
+func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, server *auth.AuthServer, user *auth.UserAuth, requirements *config.RequirementsConfig) error {
 	gitURL := os.Getenv("REPO_URL")
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
@@ -134,9 +134,15 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, ser
 		commitish = "master"
 	}
 
-	_, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(gitURL, dir, commitish, "master", provider, o.Git(), true, gitRepoName)
+	// Duplicate the repo
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitsh(environmentsOrg, gitRepoName, gitURL, commitish, "master", o.Git(), provider)
 	if err != nil {
-		return errors.Wrapf(err, "forking and pulling %s", gitURL)
+		return errors.Wrapf(err, "duplicating %s to %s/%s", gitURL, environmentsOrg, gitRepoName)
+	}
+
+	_, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(duplicateInfo.CloneURL, dir, "master", "master", provider, o.Git(), gitRepoName)
+	if err != nil {
+		return errors.Wrapf(err, "forking and pulling %s", duplicateInfo.CloneURL)
 	}
 
 	details := gits.PullRequestDetails{
@@ -198,7 +204,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		err := o.prDevEnvironment(gitInfo.Name, server, userAuth, requirements)
+		err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, server, userAuth, requirements)
 		if err != nil {
 			return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
 		}
