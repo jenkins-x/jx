@@ -150,7 +150,7 @@ func (o *BootOptions) Run() error {
 			return fmt.Errorf("Cannot clone git repository to %s as the dir already exists. Maybe try 'cd %s' and re-run the 'jx boot' command?", repo, repo)
 		}
 
-		log.Logger().Infof("Cloning %s with version %s to %s\n", info(o.GitURL), info(version), info(cloneDir))
+		log.Logger().Infof("Cloning %s @ %s to %s\n", info(o.GitURL), info(version), info(cloneDir))
 
 		err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
 		if err != nil {

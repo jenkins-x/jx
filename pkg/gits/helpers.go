@@ -389,7 +389,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 // If there are existing files in dir (and dir is already a git clone), the existing files will pushed into the stash
 // and then popped at the end. If they cannot be popped then an error will be returned which can be checked for using
 // IsCouldNotPopTheStashError
-func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName string, provider GitProvider, gitter Gitter, duplicate bool, forkName string) (string, string, *GitRepository, *GitRepository, error) {
+func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName string, provider GitProvider, gitter Gitter, forkName string) (string, string, *GitRepository, *GitRepository, error) {
 	// Validate the arguments
 	if gitURL == "" {
 		return "", "", nil, nil, fmt.Errorf("gitURL cannot be nil")
@@ -446,52 +446,23 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 
 	var forkInfo *GitRepository
 	// Create or use a fork on the git provider if needed
-	if fork || duplicate {
+	if fork {
 		forkInfo, err = provider.GetRepository(username, forkName)
 		if err != nil {
 			log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", username, forkName).Error())
 			// lets try create a fork as it probably doesn't exist- using a blank organisation to force a user specific fork
-			if duplicate {
-
-				forkInfo, err = provider.CreateRepository(username, forkName, upstreamInfo.Private)
-				if err != nil {
-					return "", "", nil, nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", username, forkName)
-				}
-				dir, err := ioutil.TempDir("", "")
-				if err != nil {
-					return "", "", nil, nil, errors.WithStack(err)
-				}
-				err = gitter.CloneBare(dir, upstreamInfo.CloneURL)
-				if err != nil {
-					return "", "", nil, nil, errors.Wrapf(err, "failed to clone %s", upstreamInfo.CloneURL)
-				}
-				forkPushURL, err := gitter.CreatePushURL(forkInfo.CloneURL, &userDetails)
-				if err != nil {
-					return "", "", nil, nil, errors.Wrapf(err, "failed to create push URL for %s", forkInfo.CloneURL)
-				}
-				err = gitter.PushMirror(dir, forkPushURL)
-				if err != nil {
-					return "", "", nil, nil, errors.Wrapf(err, "failed to push %s", forkInfo.CloneURL)
-				}
-				log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo((upstreamInfo.HTMLURL)), util.ColorInfo(forkInfo.HTMLURL))
-				log.Logger().Infof("Setting upstream to %s\n", util.ColorInfo(forkInfo.HTMLURL))
-				upstreamInfo = forkInfo
-			} else {
-				forkInfo, err = provider.ForkRepository(originalOrg, originalRepo, "")
-				if err != nil {
-					return "", "", nil, nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
-				}
-				if forkName != "" {
-					renamedInfo, err := provider.RenameRepository(forkInfo.Organisation, forkInfo.Name, forkName)
-					if err != nil {
-						return "", "", nil, nil, errors.Wrapf(err, "failed to rename fork %s/%s to %s/%s", forkInfo.Organisation, forkInfo.Name, renamedInfo.Organisation, renamedInfo.Name)
-					}
-					forkInfo = renamedInfo
-				}
-				log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(forkInfo.HTMLURL))
+			forkInfo, err = provider.ForkRepository(originalOrg, originalRepo, "")
+			if err != nil {
+				return "", "", nil, nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 			}
-		} else if duplicate {
-			upstreamInfo = forkInfo
+			if forkName != "" {
+				renamedInfo, err := provider.RenameRepository(forkInfo.Organisation, forkInfo.Name, forkName)
+				if err != nil {
+					return "", "", nil, nil, errors.Wrapf(err, "failed to rename fork %s/%s to %s/%s", forkInfo.Organisation, forkInfo.Name, renamedInfo.Organisation, renamedInfo.Name)
+				}
+				forkInfo = renamedInfo
+			}
+			log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(forkInfo.HTMLURL))
 		}
 		cloneURL = forkInfo.CloneURL
 	}
@@ -609,7 +580,6 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 			return "", "", nil, nil, errors.Wrapf(err, "unable to pop the stash")
 		}
 	}
-
 	return dir, baseRef, upstreamInfo, forkInfo, nil
 }
 
@@ -758,4 +728,54 @@ func FindTagForVersion(dir string, version string, gitter Gitter) (string, error
 		return "", errors.Errorf("cannot resolve %s to a single git object, found %+v", version, tags)
 	}
 	return answer, nil
+}
+
+//DuplicateGitRepoFromCommitsh will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
+// head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo
+func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, gitter Gitter, provider GitProvider) (*GitRepository, error) {
+	duplicateInfo, err := provider.GetRepository(toOrg, toName)
+	// If the duplicate doesn't exist create it
+	if err != nil {
+		log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", toOrg, toName).Error())
+		fromInfo, err := ParseGitURL(fromGitURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
+		}
+		duplicateInfo, err = provider.CreateRepository(toOrg, toName, fromInfo.Private)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", toOrg, toName)
+		}
+		dir, err := ioutil.TempDir("", "")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		err = gitter.Clone(fromInfo.URL, dir)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.URL)
+		}
+		if !strings.Contains(fromCommitish, "/") {
+			// if the commitish looks like a tag, fetch the tags
+			err = gitter.FetchTags(dir)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.URL)
+			}
+		}
+		err = gitter.ResetHard(dir, fromCommitish)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
+		}
+		userDetails := provider.UserAuth()
+		duplicatePushURL, err := gitter.CreatePushURL(duplicateInfo.CloneURL, &userDetails)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
+		}
+		err = gitter.SetRemoteURL(dir, "origin", duplicatePushURL)
+		err = gitter.ForcePushBranch(dir, "HEAD", toBranch)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
+		}
+		log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo((fromInfo.HTMLURL)), util.ColorInfo(duplicateInfo.HTMLURL))
+		log.Logger().Infof("Setting upstream to %s\n", util.ColorInfo(duplicateInfo.HTMLURL))
+	}
+	return duplicateInfo, nil
 }

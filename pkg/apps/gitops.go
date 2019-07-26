@@ -162,7 +162,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 
 // GetApps retrieves all the apps information for the given appNames from the repository and / or the CRD API
 func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string) (*v1.AppList, error)) (*v1.AppList, error) {
-	dir, _, _, _, err := gits.ForkAndPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, false, "")
+	dir, _, _, _, err := gits.ForkAndPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't pull the environment repository from %s", o.DevEnv.Name)
 	}
