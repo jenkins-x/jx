@@ -390,7 +390,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 		} else {
 			maxNumOfNodes = defaultNodes
-			log.Logger().Infof(util.QuestionAnswer("Defaulting to maxiumum number of nodes", maxNumOfNodes))
+			log.Logger().Infof(util.QuestionAnswer("Defaulting to maximum number of nodes", maxNumOfNodes))
 		}
 	} else {
 		log.Logger().Infof(util.QuestionAnswer("Configured to maximum number of nodes", maxNumOfNodes))
