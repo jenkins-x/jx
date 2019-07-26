@@ -741,6 +741,10 @@ func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string
 		if err != nil {
 			return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
 		}
+		fromInfo, err = provider.GetRepository(fromInfo.Organisation, fromInfo.Name)
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting repo for %s/%s", fromInfo.Organisation, fromInfo.Name)
+		}
 		duplicateInfo, err = provider.CreateRepository(toOrg, toName, fromInfo.Private)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", toOrg, toName)
@@ -749,15 +753,21 @@ func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		err = gitter.Clone(fromInfo.URL, dir)
+		err = gitter.Clone(fromInfo.CloneURL, dir)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.URL)
+			return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.CloneURL)
 		}
 		if !strings.Contains(fromCommitish, "/") {
 			// if the commitish looks like a tag, fetch the tags
 			err = gitter.FetchTags(dir)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.URL)
+				return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.CloneURL)
+			}
+		} else {
+			parts := strings.Split(fromCommitish, "/")
+			err = gitter.FetchBranch(dir, parts[0], parts[1])
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
 			}
 		}
 		err = gitter.ResetHard(dir, fromCommitish)
