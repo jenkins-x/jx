@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	cc "github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
@@ -250,8 +251,34 @@ func FindBootNamespace(projectConfig *config.ProjectConfig, requirementsConfig *
 func (o *BootOptions) verifyClusterConnection() error {
 	_, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
+		log.Logger().Infof("You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
 			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
+		if util.Confirm(fmt.Sprintf("Would you like to create a new GKE cluster and %s it?", util.ColorInfo("jx boot")), false, "Enter Y to create and connect to a new gke cluster", o.In, o.Out, o.Err) {
+			err = o.clusterCreation()
+		} else {
+			return fmt.Errorf("please connect to a cluster to use %s", util.ColorInfo("jx boot"))
+		}
 	}
+	return nil
+}
+
+func (o *BootOptions) clusterCreation() error {
+	o.CommonOptions.AdvancedMode = true
+	options := cc.CreateClusterGKEOptions{
+		Flags: cc.CreateClusterGKEFlags{
+			SkipLogin: true,
+		},
+		CreateClusterOptions: cc.CreateClusterOptions{
+			SkipInstallation: true,
+			CreateOptions: cc.CreateOptions{
+				CommonOptions: o.CommonOptions,
+			},
+		},
+	}
+	err := options.Run()
+	if err != nil {
+		return err
+	}
+	log.Logger().Infof("You are now ready to %s!", util.ColorInfo("jx boot"))
 	return nil
 }
