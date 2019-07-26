@@ -1086,3 +1086,288 @@ func TestForkAndPullRepo(t *testing.T) {
 		})
 	}
 }
+
+func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	originalRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+		if err != nil {
+			return errors.Wrapf(err, "writing README")
+		}
+		return nil
+	}, gitter)
+	assert.NoError(t, err)
+
+	dir, err := ioutil.TempDir("", "")
+	assert.NoError(t, err)
+	err = gitter.Clone(originalRepo.GitRepo.CloneURL, dir)
+	assert.NoError(t, err)
+
+	err = gitter.CreateBranch(dir, "other")
+	assert.NoError(t, err)
+
+	err = gitter.Checkout(dir, "other")
+	assert.NoError(t, err)
+
+	err = ioutil.WriteFile(filepath.Join(dir, "LICENSE"), []byte("TODO"), 0655)
+	assert.NoError(t, err)
+
+	err = gitter.Add(dir, "LICENSE")
+	assert.NoError(t, err)
+
+	err = gitter.CommitDir(dir, "add license")
+	assert.NoError(t, err)
+
+	err = gitter.Push(dir)
+	assert.NoError(t, err)
+
+	err = gitter.CreateBranch(dir, "release")
+	assert.NoError(t, err)
+
+	err = gitter.Checkout(dir, "release")
+	assert.NoError(t, err)
+
+	err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+	assert.NoError(t, err)
+
+	err = gitter.Add(dir, "CONTRIBUTING")
+	assert.NoError(t, err)
+
+	err = gitter.CommitDir(dir, "add contributing")
+	assert.NoError(t, err)
+
+	err = gitter.CreateTag(dir, "v1.0.0", "1.0.0")
+	assert.NoError(t, err)
+
+	err = gitter.Push(dir)
+	assert.NoError(t, err)
+
+	err = gitter.PushTag(dir, "v1.0.0")
+	assert.NoError(t, err)
+	type args struct {
+		toOrg         string
+		toName        string
+		fromGitURL    string
+		fromCommitish string
+		toBranch      string
+		gitter        gits.Gitter
+	}
+	tests := []struct {
+		provider  *gits.FakeProvider
+		name      string
+		args      args
+		want      *gits.GitRepository
+		wantFiles map[string][]byte
+		wantErr   bool
+	}{
+		{
+			name: "sameOrg",
+			args: args{
+				toOrg:         "acme",
+				toName:        "wile",
+				fromGitURL:    "https://fake.git/acme/roadrunner.git",
+				fromCommitish: "master",
+				toBranch:      "master",
+				gitter:        gitter,
+			},
+			want: &gits.GitRepository{
+				Name:             "wile",
+				AllowMergeCommit: false,
+				HTMLURL:          "https://fake.git/acme/wile",
+				CloneURL:         "",
+				SSHURL:           "",
+				Language:         "",
+				Fork:             false,
+				Stars:            0,
+				URL:              "https://fake.git/acme/wile.git",
+				Scheme:           "https",
+				Host:             "fake.git",
+				Organisation:     "acme",
+				Project:          "",
+				Private:          false,
+			},
+			wantErr: false,
+			wantFiles: map[string][]byte{
+				"README": []byte("Hello!"),
+			},
+		},
+		{
+			name: "differentOrg",
+			args: args{
+				toOrg:         "coyote",
+				toName:        "wile",
+				fromGitURL:    "https://fake.git/acme/roadrunner.git",
+				fromCommitish: "master",
+				toBranch:      "master",
+				gitter:        gitter,
+			},
+			want: &gits.GitRepository{
+				Name:             "wile",
+				AllowMergeCommit: false,
+				HTMLURL:          "https://fake.git/coyote/wile",
+				CloneURL:         "",
+				SSHURL:           "",
+				Language:         "",
+				Fork:             false,
+				Stars:            0,
+				URL:              "https://fake.git/coyote/wile.git",
+				Scheme:           "https",
+				Host:             "fake.git",
+				Organisation:     "coyote",
+				Project:          "",
+				Private:          false,
+			},
+			wantErr: false,
+			wantFiles: map[string][]byte{
+				"README": []byte("Hello!"),
+			},
+		},
+		{
+			name: "tag",
+			args: args{
+				toOrg:         "coyote",
+				toName:        "wile",
+				fromGitURL:    "https://fake.git/acme/roadrunner.git",
+				fromCommitish: "v1.0.0",
+				toBranch:      "master",
+				gitter:        gitter,
+			},
+			want: &gits.GitRepository{
+				Name:             "wile",
+				AllowMergeCommit: false,
+				HTMLURL:          "https://fake.git/coyote/wile",
+				CloneURL:         "",
+				SSHURL:           "",
+				Language:         "",
+				Fork:             false,
+				Stars:            0,
+				URL:              "https://fake.git/coyote/wile.git",
+				Scheme:           "https",
+				Host:             "fake.git",
+				Organisation:     "coyote",
+				Project:          "",
+				Private:          false,
+			},
+			wantErr: false,
+			wantFiles: map[string][]byte{
+				"README":       []byte("Hello!"),
+				"CONTRIBUTING": []byte("Welcome!"),
+			},
+		}, {
+			name: "branch",
+			args: args{
+				toOrg:         "coyote",
+				toName:        "wile",
+				fromGitURL:    "https://fake.git/acme/roadrunner.git",
+				fromCommitish: "origin/other",
+				toBranch:      "master",
+				gitter:        gitter,
+			},
+			want: &gits.GitRepository{
+				Name:             "wile",
+				AllowMergeCommit: false,
+				HTMLURL:          "https://fake.git/coyote/wile",
+				CloneURL:         "",
+				SSHURL:           "",
+				Language:         "",
+				Fork:             false,
+				Stars:            0,
+				URL:              "https://fake.git/coyote/wile.git",
+				Scheme:           "https",
+				Host:             "fake.git",
+				Organisation:     "coyote",
+				Project:          "",
+				Private:          false,
+			},
+			wantErr: false,
+			wantFiles: map[string][]byte{
+				"README":  []byte("Hello!"),
+				"LICENSE": []byte("TODO"),
+			},
+		}, {
+			name: "destinationBranch",
+			args: args{
+				toOrg:         "coyote",
+				toName:        "wile",
+				fromGitURL:    "https://fake.git/acme/roadrunner.git",
+				fromCommitish: "origin/other",
+				toBranch:      "another",
+				gitter:        gitter,
+			},
+			want: &gits.GitRepository{
+				Name:             "wile",
+				AllowMergeCommit: false,
+				HTMLURL:          "https://fake.git/coyote/wile",
+				CloneURL:         "",
+				SSHURL:           "",
+				Language:         "",
+				Fork:             false,
+				Stars:            0,
+				URL:              "https://fake.git/coyote/wile.git",
+				Scheme:           "https",
+				Host:             "fake.git",
+				Organisation:     "coyote",
+				Project:          "",
+				Private:          false,
+			},
+			wantErr: false,
+			wantFiles: map[string][]byte{
+				"README":  []byte("Hello!"),
+				"LICENSE": []byte("TODO"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			provider := gits.NewFakeProvider(originalRepo)
+			provider.Gitter = gitter
+			provider.CreateRepositoryAddFiles = func(dir string) error {
+				err := ioutil.WriteFile(filepath.Join(dir, ".gitkeep"), []byte(""), 0655)
+				assert.NoError(t, err)
+				err = gitter.Add(dir, filepath.Join(dir, ".gitkeep"))
+				assert.NoError(t, err)
+				return nil
+			}
+			tt.provider = provider
+
+			got, err := gits.DuplicateGitRepoFromCommitsh(tt.args.toOrg, tt.args.toName, tt.args.fromGitURL, tt.args.fromCommitish, tt.args.toBranch, tt.args.gitter, tt.provider)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			} else {
+				assert.NoError(t, err)
+				if err != nil {
+					return
+				}
+			}
+			baseDir := ""
+			for _, r := range tt.provider.Repositories[got.Organisation] {
+				if r.Name() == got.Name {
+					baseDir = r.BaseDir
+				}
+			}
+			tt.want.CloneURL = fmt.Sprintf("file://%s/%s", baseDir, got.Organisation)
+			assert.Equal(t, tt.want, got)
+
+			// Make a clone
+			dir, err := ioutil.TempDir("", "")
+			assert.NoError(t, err)
+			err = gitter.Clone(got.CloneURL, dir)
+			assert.NoError(t, err)
+
+			err = gitter.FetchBranch(dir, "origin", tt.args.toBranch)
+			assert.NoError(t, err)
+
+			err = gitter.CheckoutRemoteBranch(dir, tt.args.toBranch)
+			assert.NoError(t, err)
+
+			for relPath, content := range tt.wantFiles {
+				path := filepath.Join(dir, relPath)
+				assert.FileExists(t, path)
+				data, err := ioutil.ReadFile(path)
+				assert.NoError(t, err)
+				assert.Equal(t, content, data)
+			}
+		})
+	}
+}
