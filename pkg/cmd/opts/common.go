@@ -397,6 +397,9 @@ func (o *CommonOptions) SetGCloudClient(gcloudClient gke.GClouder) {
 
 // GCloud returns the implementation of a gcloud helper
 func (o *CommonOptions) GCloud() gke.GClouder {
+	if o.gcloudClient == nil {
+		return &gke.GCloud{}
+	}
 	return o.gcloudClient
 }
 
