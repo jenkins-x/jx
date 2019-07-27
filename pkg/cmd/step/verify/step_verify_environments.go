@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/boot"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -151,7 +153,13 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 		Message:    "chore(config): update configuration",
 	}
 
-	_, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, baseRef, &details, nil, true, "chore(config): update configuration", true, false, false, o.Git(), provider)
+	filter := gits.PullRequestFilter{
+		Labels: []string{
+			boot.PullRequestLabel,
+		},
+	}
+
+	_, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, baseRef, &details, &filter, true, "chore(config): update configuration", true, false, o.Git(), provider, []string{boot.PullRequestLabel})
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", baseRef, details.BranchName)
 	}
