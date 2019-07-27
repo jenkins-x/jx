@@ -3,21 +3,24 @@ package operations
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/blang/semver"
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/dependencymatrix"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/gits/releases"
-	"github.com/pkg/errors"
+
 	"io"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/dependencymatrix"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/gits/releases"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 // PullRequestOperation provides a way to execute a PullRequest operation using Git

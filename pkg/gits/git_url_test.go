@@ -1,8 +1,9 @@
 package gits_test
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,67 @@ type parseGitURLData struct {
 	host         string
 	organisation string
 	name         string
+}
+
+type parseGitOrganizationURLData struct {
+	url          string
+	host         string
+	organisation string
+}
+
+func TestParseGitOrganizationURL(t *testing.T) {
+	t.Parallel()
+	testCases := []parseGitOrganizationURLData{
+		{
+			"git://host.xz/org/repo", "host.xz", "org",
+		},
+		{
+			"git://host.xz/org", "host.xz", "org",
+		},
+		{
+			"git://host.xz/org/repo.git", "host.xz", "org",
+		},
+		{
+			"git://host.xz/org/repo.git/", "host.xz", "org",
+		},
+		{
+			"git://github.com/jstrachan/npm-pipeline-test-project.git", "github.com", "jstrachan",
+		},
+		{
+			"https://github.com/fabric8io/foo.git", "github.com", "fabric8io",
+		},
+		{
+			"https://github.com/fabric8io/foo", "github.com", "fabric8io",
+		},
+		{
+			"git@github.com:jstrachan/npm-pipeline-test-project.git", "github.com", "jstrachan",
+		},
+		{
+			"git@github.com:bar/foo.git", "github.com", "bar",
+		},
+		{
+			"git@github.com:bar/foo", "github.com", "bar",
+		},
+		{
+			"bar/foo", "github.com", "bar",
+		},
+		{
+			"bar", "github.com", "bar",
+		},
+		{
+			"http://test-user@auth.example.com/scm/bar/foo.git", "auth.example.com", "bar",
+		},
+		{
+			"https://bitbucketserver.com/projects/myproject/repos/foo/pull-requests/1", "bitbucketserver.com", "myproject",
+		},
+	}
+	for _, data := range testCases {
+		info, err := gits.ParseGitOrganizationURL(data.url)
+		assert.Nil(t, err)
+		assert.NotNil(t, info)
+		assert.Equal(t, data.host, info.Host, "Host does not match for input %s", data.url)
+		assert.Equal(t, data.organisation, info.Organisation, "Organisation does not match for input %s", data.url)
+	}
 }
 
 func TestParseGitURL(t *testing.T) {

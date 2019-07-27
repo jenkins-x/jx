@@ -326,6 +326,11 @@ func toGitHubRepo(name string, org string, repo *github.Repository) *GitReposito
 		Stars:            asInt(repo.StargazersCount),
 		Private:          util.DereferenceBool(repo.Private),
 		Organisation:     org,
+		HasIssues:        util.DereferenceBool(repo.HasIssues),
+		OpenIssueCount:   util.DereferenceInt(repo.OpenIssuesCount),
+		HasWiki:          repo.GetHasWiki(),
+		HasProjects:      repo.GetHasProjects(),
+		Archived:         repo.GetArchived(),
 	}
 }
 
@@ -1119,7 +1124,9 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 }
 
 func (p *GitHubProvider) SearchIssues(org string, name string, filter string) ([]*GitIssue, error) {
-	opts := &github.IssueListByRepoOptions{}
+	opts := &github.IssueListByRepoOptions{
+		State: filter,
+	}
 	return p.searchIssuesWithOptions(org, name, opts)
 }
 
@@ -1449,4 +1456,78 @@ func (p *GitHubProvider) GetBranch(owner string, repo string, branch string) (*G
 		Commit:    &commit,
 	}
 	return &answer, nil
+}
+
+// GetProjects returns all the git projects in owner/repo
+func (p *GitHubProvider) GetProjects(owner string, repo string) ([]GitProject, error) {
+	answer := make([]GitProject, 0)
+	projects, _, err := p.Client.Repositories.ListProjects(p.Context, owner, repo, &github.ProjectListOptions{State: "open"})
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing projects for %s/%s", owner, repo)
+	}
+	for _, project := range projects {
+		answer = append(answer, p.toProject(project, ProjectOpen))
+	}
+	projects, _, err = p.Client.Repositories.ListProjects(p.Context, owner, repo, &github.ProjectListOptions{State: "closed"})
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing projects for %s/%s", owner, repo)
+	}
+	for _, project := range projects {
+		answer = append(answer, p.toProject(project, ProjectClosed))
+	}
+	return answer, nil
+}
+
+func (p *GitHubProvider) toProject(project *github.Project, state string) GitProject {
+	return GitProject{
+		Name:        project.GetName(),
+		Description: project.GetBody(),
+		Number:      project.GetNumber(),
+		State:       state,
+	}
+}
+
+//ConfigureFeatures sets specific features as enabled or disabled for owner/repo
+func (p *GitHubProvider) ConfigureFeatures(owner string, repo string, issues *bool, projects *bool, wikis *bool) (*GitRepository, error) {
+	r, _, err := p.Client.Repositories.Get(p.Context, owner, repo)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to get repository %s/%s", owner, repo)
+	}
+	if projects != nil {
+		r.HasProjects = projects
+	}
+	if wikis != nil {
+		r.HasWiki = wikis
+	}
+	if issues != nil {
+		r.HasIssues = issues
+	}
+	r, _, err = p.Client.Repositories.Edit(p.Context, owner, repo, r)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to edit repository %s/%s", owner, repo)
+	}
+	return toGitHubRepo(repo, owner, r), nil
+}
+
+// IsWikiEnabled returns true if a wiki is enabled for owner/repo
+func (p *GitHubProvider) IsWikiEnabled(owner string, repo string) (bool, error) {
+	gitURL := fmt.Sprintf("%s/%s/%s.wiki.git", p.Server.URL, owner, repo)
+	dir, err := ioutil.TempDir("", "")
+	defer func() {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			log.Logger().Warnf("unable to delete temp dir %s", dir)
+		}
+	}()
+	if err != nil {
+		return false, errors.Wrapf(err, "creating temp dir")
+	}
+	err = p.Git.Clone(gitURL, dir)
+	if err != nil {
+		if IsRepositoryNotExportedError(err) {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "cloning %s", gitURL)
+	}
+	return true, nil
 }

@@ -88,7 +88,7 @@ type GitProvider interface {
 
 	IssueURL(org string, name string, number int, isPull bool) string
 
-	SearchIssues(org string, name string, query string) ([]*GitIssue, error)
+	SearchIssues(org string, name string, state string) ([]*GitIssue, error)
 
 	SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error)
 
@@ -165,6 +165,12 @@ type GitProvider interface {
 	ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool
 
 	GetBranch(owner string, repo string, branch string) (*GitBranch, error)
+
+	GetProjects(owner string, repo string) ([]GitProject, error)
+
+	IsWikiEnabled(owner string, repo string) (bool, error)
+
+	ConfigureFeatures(owner string, repo string, issues *bool, projects *bool, wikis *bool) (*GitRepository, error)
 }
 
 // Gitter defines common git actions used by Jenkins X via git cli

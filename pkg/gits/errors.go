@@ -14,3 +14,11 @@ func IsEmptyCommitError(err error) bool {
 
 Otherwise, please use 'git reset'`)
 }
+
+// IsRepositoryNotExportedError checks if the clone error happens because the repository is not exported
+func IsRepositoryNotExportedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "repository not exported")
+}

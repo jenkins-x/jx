@@ -33,6 +33,11 @@ type GitRepository struct {
 	Organisation     string
 	Project          string
 	Private          bool
+	HasIssues        bool
+	OpenIssueCount   int
+	HasWiki          bool
+	HasProjects      bool
+	Archived         bool
 }
 
 type GitPullRequest struct {
@@ -209,6 +214,14 @@ type PullRequestInfo struct {
 	GitProvider          GitProvider
 	PullRequest          *GitPullRequest
 	PullRequestArguments *GitPullRequestArguments
+}
+
+// GitProject is a project for managing issues
+type GitProject struct {
+	Name        string
+	Description string
+	Number      int
+	State       string
 }
 
 // IsClosed returns true if the PullRequest has been closed

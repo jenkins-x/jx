@@ -819,3 +819,18 @@ func (p *GiteaProvider) UploadReleaseAsset(org string, repo string, id int64, na
 func (p *GiteaProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
 	return nil, nil
 }
+
+// GetProjects returns all the git projects in owner/repo
+func (p *GiteaProvider) GetProjects(owner string, repo string) ([]GitProject, error) {
+	return nil, nil
+}
+
+//ConfigureFeatures sets specific features as enabled or disabled for owner/repo
+func (p *GiteaProvider) ConfigureFeatures(owner string, repo string, issues *bool, projects *bool, wikis *bool) (*GitRepository, error) {
+	return nil, nil
+}
+
+// IsWikiEnabled returns true if a wiki is enabled for owner/repo
+func (p *GiteaProvider) IsWikiEnabled(owner string, repo string) (bool, error) {
+	return false, nil
+}
