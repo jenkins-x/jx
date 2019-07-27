@@ -31,39 +31,46 @@ type ResourceCreationOpts struct {
 }
 
 // CreateVaultResources will automatically create the preresiquites for vault on aws
-func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *string, *string, error) {
+func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *string, *string, *string, error) {
 	log.Logger().Infof("Creating vault presiquite resources with following values, %s, %s, %s, %s",
 		util.ColorInfo(vaultParams.Region),
 		util.ColorInfo(vaultParams.Domain),
 		util.ColorInfo(vaultParams.Username),
 		util.ColorInfo(vaultParams.TableName))
 
+	valueUUID, err := uuid.NewV4()
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating UUID failed")
+	}
+
+	// Create suffix to apply to resources
+	suffixString := valueUUID.String()[:7]
+
 	template := goformation.NewTemplate()
 
 	awsDynamoDbKey := "AWSDynamoDBTable"
-	dynamoDbTable := createDynamoDbTable(vaultParams.TableName)
+	dynamoDbTableName := vaultParams.TableName + "_" + suffixString
+	dynamoDbTable := createDynamoDbTable(dynamoDbTableName)
 	template.Resources[awsDynamoDbKey] = &dynamoDbTable
 
 	awsS3BucketKey := "AWSS3Bucket"
-	s3Name, s3Bucket, err := createS3Bucket(vaultParams.Region, vaultParams.Domain)
-	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
-	}
+	s3Name, s3Bucket := createS3Bucket(vaultParams.Region, vaultParams.Domain, suffixString)
 	template.Resources[awsS3BucketKey] = s3Bucket
 
 	awsIamUserKey := "AWSIAMUser"
-	iamUser := createIamUser(vaultParams.Username)
+	iamUsername := vaultParams.Username + suffixString
+	iamUser := createIamUser(iamUsername)
 	template.Resources[awsIamUserKey] = &iamUser
 
 	awsKmsKey := "AWSKMSKey"
 	kmsKey, err := createKmsKey([]string{awsIamUserKey})
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
 	}
 	template.Resources[awsKmsKey] = kmsKey
 
 	awsIamPolicy := "AWSIAMPolicy"
-	policy := createIamUserPolicy(vaultParams.Username, []string{awsDynamoDbKey, awsS3BucketKey, awsKmsKey, awsIamUserKey})
+	policy := createIamUserPolicy(iamUsername, []string{awsDynamoDbKey, awsS3BucketKey, awsKmsKey, awsIamUserKey})
 	template.Resources[awsIamPolicy] = &policy
 
 	log.Logger().Infof("Generating the vault cloudformation template")
@@ -71,7 +78,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	// and also the YAML AWS CloudFormation template
 	yaml, err := template.JSON()
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
 	}
 
 	log.Logger().Infof("Generated the vault cloudformation template successfully")
@@ -82,29 +89,24 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	yamlProcessed = strings.Replace(yamlProcessed, "\"BUCKET_JSON\"", `{ "Fn::Sub" : "${`+awsS3BucketKey+`.Arn}/*" }`, -1)
 	yamlProcessed = strings.Replace(yamlProcessed, "\"KMS_SUB_JSON\"", `{ "Fn::Sub" : "${`+awsKmsKey+`.Arn}" }`, -1)
 	yamlProcessed = strings.Replace(yamlProcessed, "\"DYNAMODB_JSON\"", `{ "Fn::Sub" : "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*" }`, -1)
-	yamlProcessed = strings.Replace(yamlProcessed, "\"KMS_USER_JSON\"", `[{ "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}, { "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/`+vaultParams.Username+`"}]`, -1)
-
-	valueUUID, err := uuid.NewV4()
-	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "Generating UUID failed")
-	}
+	yamlProcessed = strings.Replace(yamlProcessed, "\"KMS_USER_JSON\"", `[{ "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}, { "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/`+iamUsername+`"}]`, -1)
 
 	// Create dynamic stack name
-	stackName := stackNamePrefix + valueUUID.String()[:7]
+	stackName := stackNamePrefix + suffixString
 
 	runCloudformationTemplate(&yamlProcessed, &stackName)
 
 	kmsID, err := getKmsID(awsKmsKey, stackName)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
 	}
 
-	accessKey, keySecret, err := createAccessKey(vaultParams.Region, vaultParams.Username)
+	accessKey, keySecret, err := createAccessKey(vaultParams.Region, iamUsername)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
 	}
 
-	return accessKey, keySecret, kmsID, s3Name, nil
+	return accessKey, keySecret, kmsID, s3Name, &dynamoDbTableName, nil
 }
 
 func getKmsID(kmsKey string, stackName string) (*string, error) {
@@ -173,13 +175,8 @@ func createDynamoDbTable(tableName string) resources.AWSDynamoDBTable {
 	return configuation
 }
 
-func createS3Bucket(region string, domain string) (*string, *resources.AWSS3Bucket, error) {
-	valueUUID, err := uuid.NewV4()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	bucketName := "vault-unseal." + region + "." + domain + "." + valueUUID.String()[:7]
+func createS3Bucket(region string, domain string, suffixString string) (*string, *resources.AWSS3Bucket) {
+	bucketName := "vault-unseal." + region + "." + domain + "." + suffixString
 	log.Logger().Infof(bucketName)
 
 	bucketConfig := resources.AWSS3Bucket{
@@ -190,7 +187,7 @@ func createS3Bucket(region string, domain string) (*string, *resources.AWSS3Buck
 		},
 	}
 
-	return &bucketName, &bucketConfig, nil
+	return &bucketName, &bucketConfig
 }
 
 func createKmsKey(depends []string) (*resources.AWSKMSKey, error) {
@@ -256,8 +253,10 @@ func createIamUserPolicy(username string, depends []string) resources.AWSIAMPoli
 		Statement []PolicyDocument
 	}
 
+	policyName := "vault_" + username
+
 	policyDocument := resources.AWSIAMPolicy{
-		PolicyName: "vault",
+		PolicyName: policyName,
 		Users:      []string{username},
 		PolicyDocument: PolicyRoot{
 			Version: "2012-10-17",

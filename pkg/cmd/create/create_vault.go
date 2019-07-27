@@ -338,8 +338,6 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 	kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
 
 	if o.AutoCreate == true {
-		o.DynamoDBTable = autoCreateTableName
-
 		defaultRegion, err := amazon.ResolveRegionWithoutOptions()
 		if err != nil {
 			return errors.Wrap(err, "finding default AWS region")
@@ -352,11 +350,11 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 		domain := "jenkins-x-domain"
 		username := "vault_" + defaultRegion
 
-		accessKey, keySecret, kmsID, s3Name, err := awsvault.CreateVaultResources(awsvault.ResourceCreationOpts{
+		accessKey, keySecret, kmsID, s3Name, tableName, err := awsvault.CreateVaultResources(awsvault.ResourceCreationOpts{
 			Region:    defaultRegion,
 			Domain:    domain,
 			Username:  username,
-			TableName: o.DynamoDBTable,
+			TableName: autoCreateTableName,
 		})
 
 		if err != nil {
@@ -367,6 +365,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 		o.KMSKeyID = *kmsID
 		o.AccessKeyID = *accessKey
 		o.SecretAccessKey = *keySecret
+		o.DynamoDBTable = *tableName
 
 	} else {
 		if o.S3Bucket == "" {
