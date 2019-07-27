@@ -175,7 +175,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 		}
 	}
 
-	err = gitter.Push(dir)
+	err = gitter.Push(dir, "origin", false, false, "HEAD")
 	if err != nil {
 		return errors.Wrapf(err, "pushing to %s in dir %q", message, dir)
 	}

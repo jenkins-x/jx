@@ -192,6 +192,7 @@ func GitProviderURL(text string) string {
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
 func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, dryRun bool, gitter Gitter, provider GitProvider, labels []string) (*PullRequestInfo, error) {
+	userAuth := provider.UserAuth()
 	if commit {
 		err := gitter.Add(dir, "-A")
 		if err != nil {
@@ -217,8 +218,10 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 	headPrefix := ""
 
 	username := upstreamRepo.Organisation
+	cloneURL := upstreamRepo.CloneURL
 	if forkRepo != nil {
 		username = forkRepo.Organisation
+		cloneURL = forkRepo.CloneURL
 	}
 
 	if upstreamRepo.Organisation != username {
@@ -230,6 +233,11 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		Title:         prDetails.Title,
 		Body:          prDetails.Message,
 		Base:          base,
+	}
+
+	forkPushURL, err := gitter.CreatePushURL(cloneURL, &userAuth)
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating push URL for %s", cloneURL)
 	}
 
 	if filter != nil && push {
@@ -256,7 +264,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		if len(existingPrs) == 1 {
 			pr := existingPrs[0]
 			// We can only update an existing PR if the owner of that PR is this user!
-			if util.DereferenceString(pr.HeadOwner) == forkRepo.Organisation && pr.HeadRef != nil && pr.Number != nil {
+			if util.DereferenceString(pr.HeadOwner) == username && pr.HeadRef != nil && pr.Number != nil {
 				remote := "origin"
 				if forkRepo != nil && forkRepo.Fork {
 					remote = "upstream"
@@ -300,7 +308,8 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 					log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(pr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
 					return nil, nil
 				}
-				err = gitter.ForcePushBranch(dir, prDetails.BranchName, existingBranchName)
+
+				err = gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", prDetails.BranchName, existingBranchName))
 				if err != nil {
 					return nil, errors.Wrapf(err, "pushing merged branch %s", existingBranchName)
 				}
@@ -358,9 +367,9 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		if err != nil {
 			return nil, errors.Wrapf(err, "computing branch name for %s", prDetails.BranchName)
 		}
-		err = gitter.ForcePushBranch(dir, "HEAD", prDetails.BranchName)
+		err = gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", prDetails.BranchName))
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 	}
 	gha.Head = headPrefix + prDetails.BranchName
@@ -404,7 +413,6 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	}
 
 	username := provider.CurrentUsername()
-	userDetails := provider.UserAuth()
 	originalOrg := originalInfo.Organisation
 	originalRepo := originalInfo.Name
 	originRemote := "origin"
@@ -440,7 +448,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	if err != nil {
 		return "", "", nil, nil, errors.Wrapf(err, "getting repository %s/%s", originalOrg, originalRepo)
 	}
-	cloneURL := upstreamInfo.CloneURL
+	originURL := upstreamInfo.CloneURL
 	if forkName == "" {
 		forkName = upstreamInfo.Name
 	}
@@ -465,16 +473,10 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 			}
 			log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(forkInfo.HTMLURL))
 		}
-		cloneURL = forkInfo.CloneURL
-	}
-
-	cloneGitURL, err := gitter.CreatePushURL(cloneURL, &userDetails)
-	if err != nil {
-		return "", "", nil, nil, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
+		originURL = forkInfo.CloneURL
 	}
 
 	// Prepare the git repo
-
 	if !dirExists {
 		// If the directory doesn't already exist, create it
 		err := os.MkdirAll(dir, util.DefaultWritePermissions)
@@ -504,9 +506,9 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 
 	// The long form of "git clone" has the advantage of working fine on an existing git repo and avoids checking out master
 	// and then another branch
-	err = gitter.SetRemoteURL(dir, originRemote, cloneGitURL)
+	err = gitter.SetRemoteURL(dir, originRemote, originURL)
 	if err != nil {
-		return "", "", nil, nil, errors.Wrapf(err, "failed to set %s url to %s", originRemote, cloneGitURL)
+		return "", "", nil, nil, errors.Wrapf(err, "failed to set %s url to %s", originRemote, originURL)
 	}
 	if fork {
 		upstreamRemote = "upstream"
@@ -780,8 +782,8 @@ func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
 		}
-		err = gitter.SetRemoteURL(dir, "origin", duplicatePushURL)
-		err = gitter.ForcePushBranch(dir, "HEAD", toBranch)
+		err = gitter.SetRemoteURL(dir, "origin", duplicateInfo.CloneURL)
+		err = gitter.Push(dir, duplicatePushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", toBranch))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
 		}

@@ -144,7 +144,7 @@ func (g *GitFake) ShallowClone(dir string, url string, commitish string, pullReq
 }
 
 // Push performs a git push
-func (g *GitFake) Push(dir string) error {
+func (g *GitFake) Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error {
 	return nil
 }
 

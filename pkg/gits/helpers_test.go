@@ -482,7 +482,7 @@ func TestForkAndPullRepo(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(dir, "Second commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(dir)
+					err = args.gitter.Push(dir, "origin", false, false, "HEAD")
 					assert.NoError(t, err)
 
 					// Set the provider username to wile in order to use the fork
@@ -578,7 +578,7 @@ func TestForkAndPullRepo(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(dir, "Second commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(dir)
+					err = args.gitter.Push(dir, "origin", false, false, "HEAD")
 					assert.NoError(t, err)
 
 					// Set the provider username to wile in order to use the fork
@@ -672,7 +672,7 @@ func TestForkAndPullRepo(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(dir, "Second commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(dir)
+					err = args.gitter.Push(dir, "origin", false, false, "HEAD")
 					assert.NoError(t, err)
 
 					// Set the provider username to wile in order to use the fork
@@ -870,7 +870,7 @@ func TestForkAndPullRepo(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(dir, "Second commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(dir)
+					err = args.gitter.Push(dir, "origin", false, false, "HEAD")
 					assert.NoError(t, err)
 
 					// Set the provider username to wile in order to use the fork
@@ -973,7 +973,7 @@ func TestForkAndPullRepo(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(dir, "Second commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(dir)
+					err = args.gitter.Push(dir, "origin", false, false, "HEAD")
 					assert.NoError(t, err)
 
 					// Set the provider username to wile in order to use the fork
@@ -1118,7 +1118,7 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 	err = gitter.CommitDir(dir, "add license")
 	assert.NoError(t, err)
 
-	err = gitter.Push(dir)
+	err = gitter.Push(dir, "origin", false, false, "HEAD")
 	assert.NoError(t, err)
 
 	err = gitter.CreateBranch(dir, "release")
@@ -1139,7 +1139,7 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 	err = gitter.CreateTag(dir, "v1.0.0", "1.0.0")
 	assert.NoError(t, err)
 
-	err = gitter.Push(dir)
+	err = gitter.Push(dir, "origin", false, false, "HEAD")
 	assert.NoError(t, err)
 
 	err = gitter.PushTag(dir, "v1.0.0")

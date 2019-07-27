@@ -95,19 +95,19 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 }
 
 func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, server *auth.AuthServer, user *auth.UserAuth, requirements *config.RequirementsConfig) error {
-	gitURL := os.Getenv("REPO_URL")
-	gitInfo, err := gits.ParseGitURL(gitURL)
+	fromGitURL := os.Getenv("REPO_URL")
+	gitInfo, err := gits.ParseGitURL(fromGitURL)
 	if err != nil {
-		return errors.Wrapf(err, "parsing %s", gitURL)
+		return errors.Wrapf(err, "parsing %s", fromGitURL)
 	}
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	if err != nil {
-		return errors.Wrapf(err, "getting server kind for %s", gitURL)
+		return errors.Wrapf(err, "getting server kind for %s", fromGitURL)
 	}
 	provider, err := gitInfo.CreateProviderForUser(server, user, gitKind, o.Git())
 	if err != nil {
-		return errors.Wrapf(err, "getting git provider for %s", gitURL)
+		return errors.Wrapf(err, "getting git provider for %s", fromGitURL)
 	}
 	dir, err := filepath.Abs(o.Dir)
 	if err != nil {
@@ -137,14 +137,20 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 	}
 
 	// Duplicate the repo
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitsh(environmentsOrg, gitRepoName, gitURL, commitish, "master", o.Git(), provider)
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitsh(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", o.Git(), provider)
 	if err != nil {
-		return errors.Wrapf(err, "duplicating %s to %s/%s", gitURL, environmentsOrg, gitRepoName)
+		return errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, environmentsOrg, gitRepoName)
 	}
 
 	_, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(duplicateInfo.CloneURL, dir, "master", "master", provider, o.Git(), gitRepoName)
 	if err != nil {
 		return errors.Wrapf(err, "forking and pulling %s", duplicateInfo.CloneURL)
+	}
+
+	// Add a remote for the user that references the boot config that they originally used
+	err = o.Git().SetRemoteURL(dir, "jenkins-x", fromGitURL)
+	if err != nil {
+		return errors.Wrapf(err, "Setting jenkins-x remote to boot config %s", fromGitURL)
 	}
 
 	details := gits.PullRequestDetails{
