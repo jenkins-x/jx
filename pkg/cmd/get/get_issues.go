@@ -1,8 +1,9 @@
 package get
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
 
@@ -52,7 +53,7 @@ func NewCmdGetIssues(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The root project directory")
-
+	cmd.Flags().StringVarP(&options.Filter, "filter", "", "open", "The filter to use")
 	options.AddGetFlags(cmd)
 	return cmd
 }

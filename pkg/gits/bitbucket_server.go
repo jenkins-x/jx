@@ -1139,3 +1139,18 @@ func (b *BitbucketServerProvider) UploadReleaseAsset(org string, repo string, id
 func (b *BitbucketServerProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
 	return nil, nil
 }
+
+// GetProjects returns all the git projects in owner/repo
+func (b *BitbucketServerProvider) GetProjects(owner string, repo string) ([]GitProject, error) {
+	return nil, nil
+}
+
+//ConfigureFeatures sets specific features as enabled or disabled for owner/repo
+func (b *BitbucketServerProvider) ConfigureFeatures(owner string, repo string, issues *bool, projects *bool, wikis *bool) (*GitRepository, error) {
+	return nil, nil
+}
+
+// IsWikiEnabled returns true if a wiki is enabled for owner/repo
+func (b *BitbucketServerProvider) IsWikiEnabled(owner string, repo string) (bool, error) {
+	return false, nil
+}

@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/gits/features"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
@@ -396,4 +398,37 @@ func FindGitCredentials(gitProvider gits.GitProvider, secrets *corev1.SecretList
 		}
 	}
 	return ""
+}
+
+// DisableFeatures iterates over all the repositories in org (except those that match excludes) and disables issue
+// trackers, projects and wikis if they are not in use.
+//
+// Issue trackers are not in use if they have no open or closed issues
+// Projects are not in use if there are no open projects
+// Wikis are not in use if the provider returns that the wiki is not enabled
+//
+// Note that the requirement for issues is no issues at all so that we don't close issue trackers that have historic info
+//
+// If includes is not empty only those that match an include will be operated on. If dryRun is true, the operations to
+// be done will printed and but nothing done. If batchMode is false, then each change will be prompted.
+func (o *CommonOptions) DisableFeatures(orgs []string, includes []string, excludes []string, dryRun bool) error {
+	for _, org := range orgs {
+		info, err := gits.ParseGitOrganizationURL(org)
+		if err != nil {
+			return errors.Wrapf(err, "parsing %s", org)
+		}
+		kind, err := o.GitServerHostURLKind(info.HostURL())
+		if err != nil {
+			return errors.Wrapf(err, "determining git provider kind from %s", org)
+		}
+		provider, err := o.GitProviderForGitServerURL(info.HostURL(), kind)
+		if err != nil {
+			return errors.Wrapf(err, "creating git provider for %s", org)
+		}
+		err = features.DisableFeaturesForOrg(info.Organisation, includes, excludes, dryRun, o.BatchMode, provider, o.In, o.Out, o.Err)
+		if err != nil {
+			return errors.Wrapf(err, "disabling features for %s", org)
+		}
+	}
+	return nil
 }

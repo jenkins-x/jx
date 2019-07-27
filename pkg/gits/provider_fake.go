@@ -67,6 +67,8 @@ type FakeRepository struct {
 	PullRequestCounter int
 	BaseDir            string
 	CloneDir           string
+	Projects           []GitProject
+	WikiEnabled        bool
 }
 
 type FakeProvider struct {
@@ -552,7 +554,10 @@ func (f *FakeProvider) SearchIssues(org string, name string, query string) ([]*G
 		if repo.GitRepo.Name == name {
 			answer := []*GitIssue{}
 			for _, issue := range repo.Issues {
-				answer = append(answer, issue.Issue)
+				if query == "" || query == util.DereferenceString(issue.Issue.State) {
+					answer = append(answer, issue.Issue)
+				}
+
 			}
 			return answer, nil
 		}
@@ -757,9 +762,54 @@ func (f *FakeProvider) GetContent(org string, name string, path string, ref stri
 
 // ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 // before creating a pull request
-func (r *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+func (f *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
 	// Simple algorithm to always ask for a fork if the username is not the same as the CurrentUsername
-	return originalOwner != r.CurrentUsername()
+	return originalOwner != f.CurrentUsername()
+}
+
+// GetProjects returns all the git projects in owner/repo
+func (f *FakeProvider) GetProjects(owner string, repo string) ([]GitProject, error) {
+	if repos, ok := f.Repositories[owner]; ok {
+		for _, r := range repos {
+			if r.Name() == repo {
+				return r.Projects, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
+//ConfigureFeatures sets specific features as enabled or disabled for owner/repo
+func (f *FakeProvider) ConfigureFeatures(owner string, repo string, issues *bool, projects *bool, wikis *bool) (*GitRepository, error) {
+	if repos, ok := f.Repositories[owner]; ok {
+		for _, r := range repos {
+			if r.Name() == repo {
+				if issues != nil {
+					r.GitRepo.HasIssues = util.DereferenceBool(issues)
+				}
+				if projects != nil {
+					r.GitRepo.HasProjects = util.DereferenceBool(projects)
+				}
+				if wikis != nil {
+					r.GitRepo.HasWiki = util.DereferenceBool(wikis)
+				}
+			}
+			return r.GitRepo, nil
+		}
+	}
+	return nil, errors.Errorf("unable to find %s/%s", owner, repo)
+}
+
+// IsWikiEnabled returns true if a wiki is enabled for owner/repo
+func (f *FakeProvider) IsWikiEnabled(owner string, repo string) (bool, error) {
+	if repos, ok := f.Repositories[owner]; ok {
+		for _, r := range repos {
+			if r.Name() == repo {
+				return r.WikiEnabled, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 func (r *FakeRepository) String() string {

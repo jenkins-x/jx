@@ -759,3 +759,18 @@ func (g *GitlabProvider) UploadReleaseAsset(org string, repo string, id int64, n
 func (g *GitlabProvider) GetBranch(owner string, repo string, branch string) (*GitBranch, error) {
 	return nil, nil
 }
+
+// GetProjects returns all the git projects in owner/repo
+func (g *GitlabProvider) GetProjects(owner string, repo string) ([]GitProject, error) {
+	return nil, nil
+}
+
+//ConfigureFeatures sets specific features as enabled or disabled for owner/repo
+func (g *GitlabProvider) ConfigureFeatures(owner string, repo string, issues *bool, projects *bool, wikis *bool) (*GitRepository, error) {
+	return nil, nil
+}
+
+// IsWikiEnabled returns true if a wiki is enabled for owner/repo
+func (g *GitlabProvider) IsWikiEnabled(owner string, repo string) (bool, error) {
+	return false, nil
+}
