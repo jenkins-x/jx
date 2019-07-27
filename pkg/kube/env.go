@@ -456,7 +456,7 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 				if err != nil {
 					return nil, nil, errors.Wrap(err, "adding helm values to the forked environment repo")
 				}
-				err = git.Push(dir)
+				err = git.Push(dir, "origin", false, false, "HEAD")
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "pushing forked environment dir %q", dir)
 				}

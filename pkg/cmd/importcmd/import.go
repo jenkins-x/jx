@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/denormal/go-gitignore"
+	gitignore "github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -30,7 +30,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -394,7 +394,7 @@ func (options *ImportOptions) Run() error {
 		}
 	} else {
 		if shouldClone {
-			err = options.Git().Push(options.Dir)
+			err = options.Git().Push(options.Dir, "origin", false, false, "HEAD")
 			if err != nil {
 				return err
 			}

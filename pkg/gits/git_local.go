@@ -152,8 +152,8 @@ func (g *GitLocal) Branch(dir string) (string, error) {
 
 // Push pushes the changes from the repository at the given directory
 // Faked out
-func (g *GitLocal) Push(dir string) error {
-	return g.GitFake.Push(dir)
+func (g *GitLocal) Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error {
+	return g.GitFake.Push(dir, "origin", false, false)
 }
 
 // ForcePushBranch does a force push of the local branch into the remote branch of the repository at the given directory

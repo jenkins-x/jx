@@ -947,11 +947,14 @@ func (mock *MockGitter) PullUpstream(_param0 string) error {
 	return ret0
 }
 
-func (mock *MockGitter) Push(_param0 string) error {
+func (mock *MockGitter) Push(_param0 string, _param1 string, _param2 bool, _param3 bool, _param4 ...string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
 	}
-	params := []pegomock.Param{_param0}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	for _, param := range _param4 {
+		params = append(params, param)
+	}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("Push", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
@@ -3113,8 +3116,11 @@ func (c *MockGitter_PullUpstream_OngoingVerification) GetAllCapturedArguments() 
 	return
 }
 
-func (verifier *VerifierMockGitter) Push(_param0 string) *MockGitter_Push_OngoingVerification {
-	params := []pegomock.Param{_param0}
+func (verifier *VerifierMockGitter) Push(_param0 string, _param1 string, _param2 bool, _param3 bool, _param4 ...string) *MockGitter_Push_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	for _, param := range _param4 {
+		params = append(params, param)
+	}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Push", params, verifier.timeout)
 	return &MockGitter_Push_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -3124,17 +3130,38 @@ type MockGitter_Push_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockGitter_Push_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
+func (c *MockGitter_Push_OngoingVerification) GetCapturedArguments() (string, string, bool, bool, []string) {
+	_param0, _param1, _param2, _param3, _param4 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1]
 }
 
-func (c *MockGitter_Push_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockGitter_Push_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []bool, _param4 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]bool, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(bool)
+		}
+		_param3 = make([]bool, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(bool)
+		}
+		_param4 = make([][]string, len(params[4]))
+		for u := range params[0] {
+			_param4[u] = make([]string, len(params)-4)
+			for x := 4; x < len(params); x++ {
+				if params[x][u] != nil {
+					_param4[u][x-4] = params[x][u].(string)
+				}
+			}
 		}
 	}
 	return
