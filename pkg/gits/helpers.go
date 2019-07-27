@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	labelUpdatebot = "updatebot"
+	// LabelUpdatebot is the label applied to PRs created by updatebot
+	LabelUpdatebot = "updatebot"
 )
 
 // EnsureUserAndEmailSetup returns the user name and email for the gitter
@@ -190,7 +191,7 @@ func GitProviderURL(text string) string {
 // It creates a branch called branchName from a base.
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
-func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, autoMerge bool, dryRun bool, gitter Gitter, provider GitProvider) (*PullRequestInfo, error) {
+func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, dryRun bool, gitter Gitter, provider GitProvider, labels []string) (*PullRequestInfo, error) {
 	if commit {
 		err := gitter.Add(dir, "-A")
 		if err != nil {
@@ -369,13 +370,13 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		return nil, errors.Wrapf(err, "creating pull request with arguments %v", gha.String())
 	}
 	log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
-	if autoMerge {
+	if labels != nil {
 		number := *pr.Number
-		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, []string{labelUpdatebot})
+		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, labels)
 		if err != nil {
 			return nil, err
 		}
-		log.Logger().Infof("Added label %s to Pull Request %s", util.ColorInfo(labelUpdatebot), pr.URL)
+		log.Logger().Infof("Added label %s to Pull Request %s", util.ColorInfo(strings.Join(labels, ", ")), pr.URL)
 	}
 	return &PullRequestInfo{
 		GitProvider:          provider,

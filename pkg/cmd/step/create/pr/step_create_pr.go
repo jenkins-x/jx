@@ -296,7 +296,7 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir str
 				"updatebot",
 			},
 		}
-		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, true, commitMessage, true, true, o.DryRun, o.Git(), provider)
+		o.Results, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, true, commitMessage, true, o.DryRun, o.Git(), provider, []string{gits.LabelUpdatebot})
 		if err != nil {
 			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
 		}
