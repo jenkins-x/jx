@@ -46,8 +46,8 @@ type Cluster struct {
 	Status         string            `json:"status,omitempty"`
 }
 
-// getManagedZoneName constructs and returns a managed zone name using the domain value
-func getManagedZoneName(domain string) string {
+// generateManagedZoneName constructs and returns a managed zone name using the domain value
+func generateManagedZoneName(domain string) string {
 
 	var managedZoneName string
 
@@ -60,8 +60,8 @@ func getManagedZoneName(domain string) string {
 
 }
 
-// managedZoneExists checks for a given domain zone within the specified project
-func managedZoneExists(projectID string, domain string) (bool, error) {
+// getManagedZoneName checks for a given domain zone within the specified project and returns its name
+func getManagedZoneName(projectID string, domain string) (string, error) {
 	args := []string{"dns",
 		"managed-zones",
 		fmt.Sprintf("--project=%s", projectID),
@@ -77,7 +77,7 @@ func managedZoneExists(projectID string, domain string) (bool, error) {
 
 	output, err := cmd.RunWithoutRetry()
 	if err != nil {
-		return true, errors.Wrap(err, "executing gcloud dns managed-zones list command ")
+		return "", errors.Wrap(err, "executing gcloud dns managed-zones list command ")
 	}
 
 	type managedZone struct {
@@ -88,25 +88,25 @@ func managedZoneExists(projectID string, domain string) (bool, error) {
 
 	err = yaml.Unmarshal([]byte(output), &managedZones)
 	if err != nil {
-		return true, errors.Wrap(err, "unmarshalling gcloud response")
+		return "", errors.Wrap(err, "unmarshalling gcloud response")
 	}
 
-	if len(managedZones) > 0 {
-		return true, nil
+	if len(managedZones) == 1 {
+		return managedZones[0].Name, nil
 	}
 
-	return false, nil
+	return "", nil
 }
 
 // CreateManagedZone creates a managed zone for the given domain in the specified project
 func (g *GCloud) CreateManagedZone(projectID string, domain string) error {
-	zoneExists, err := managedZoneExists(projectID, domain)
+	managedZoneName, err := getManagedZoneName(projectID, domain)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine whether managed zone exists")
 	}
-	if !zoneExists {
+	if managedZoneName == "" {
 		log.Logger().Infof("Managed Zone doesn't exist for %s domain, creating...", domain)
-		managedZoneName := getManagedZoneName(domain)
+		managedZoneName := generateManagedZoneName(domain)
 		args := []string{"dns",
 			"managed-zones",
 			fmt.Sprintf("--project=%s", projectID),
@@ -149,14 +149,13 @@ func (g *GCloud) CreateDNSZone(projectID string, domain string) (string, []strin
 
 // GetManagedZoneNameServers retrieves a list of name servers associated with a zone
 func (g *GCloud) GetManagedZoneNameServers(projectID string, domain string) (string, []string, error) {
-	var managedZoneName, nameServers = "", []string{}
-	zoneExists, err := managedZoneExists(projectID, domain)
+	var nameServers = []string{}
+	managedZoneName, err := getManagedZoneName(projectID, domain)
 	if err != nil {
 		return "", []string{}, errors.Wrap(err, "unable to determine whether managed zone exists")
 	}
-	if zoneExists {
+	if managedZoneName != "" {
 		log.Logger().Infof("Getting nameservers for %s domain", domain)
-		managedZoneName = getManagedZoneName(domain)
 		args := []string{"dns",
 			"managed-zones",
 			fmt.Sprintf("--project=%s", projectID),
