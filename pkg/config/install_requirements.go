@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -24,6 +25,8 @@ var (
 		".xip.io",
 		".beesdns.com",
 	}
+
+	semanticVersionRegex = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$`)
 )
 
 const (
@@ -409,10 +412,16 @@ func (c *RequirementsConfig) addDefaults() {
 	if c.VersionStream.Ref == "" {
 		var err error
 		u := c.VersionStream.URL
-		c.VersionStream.Ref, err = util.GetLatestReleaseFromGitHubURL(u)
+		ref, err := util.GetLatestReleaseFromGitHubURL(u)
 		if err != nil {
 			log.Logger().Warnf("failed to find the latest release of version stream %s due to: %s", u, err.Error())
 		}
+
+		// for now lets use the tag for a version
+		if semanticVersionRegex.MatchString(ref) {
+			ref = "v" + ref
+		}
+		c.VersionStream.Ref = ref
 	}
 	if c.VersionStream.Ref == "" {
 		c.VersionStream.Ref = DefaultVersionsRef
