@@ -569,21 +569,27 @@ func (o *PreviewOptions) Run() error {
 		f := func() error {
 			resp, err := http.Get(url)
 			if err != nil {
-				return backoff.Permanent(err)
+				return errors.Errorf("preview application %s not available, error was %v", url, err)
 			}
 			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
 				return errors.Errorf("preview application %s not available, error was %d %s", url, resp.StatusCode, resp.Status)
 			}
 			return nil
 		}
+		notify := func(err error, d time.Duration) {
+			log.Logger().Warnf("%v, delaying for: %v", err, d)
+		}
+
 		exponentialBackOff := backoff.NewExponentialBackOff()
-		timeout := 5 * time.Minute
-		exponentialBackOff.MaxElapsedTime = timeout
+		exponentialBackOff.InitialInterval = 1 * time.Second
+		exponentialBackOff.MaxInterval = 1 * time.Minute
+		exponentialBackOff.MaxElapsedTime = 5 * time.Minute
 		exponentialBackOff.Reset()
-		err := backoff.Retry(f, exponentialBackOff)
+		err := backoff.RetryNotify(f, exponentialBackOff, notify)
 		if err != nil {
 			return errors.Wrapf(err, "error checking if preview application %s is available", url)
 		}
+
 		env, err = environmentsResource.Get(o.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
