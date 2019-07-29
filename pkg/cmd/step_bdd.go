@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
@@ -81,7 +82,7 @@ var (
 		# run the BDD tests in the current team
 		jx step bdd --use-current-team --git-provider-url=https://my.git.server.com
 
-        # create a new team for the tests, run the tests then tear everything down again 
+        # create a new team for the tests, run the tests then tear everything down again
 		jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://my.git.server.com --default-admin-password=myadminpwd --git-username myuser --git-api-token mygittoken
 `)
 )
