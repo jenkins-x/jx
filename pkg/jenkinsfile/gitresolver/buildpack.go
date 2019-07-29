@@ -2,13 +2,16 @@ package gitresolver
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 // InitBuildPack initialises the build pack URL and git ref returning the packs dir or an error
@@ -37,9 +40,43 @@ func InitBuildPack(gitter gits.Gitter, packURL string, packRef string) (string, 
 		return "", err
 	}
 	if packRef != "master" && packRef != "" {
-		err = gitter.CheckoutRemoteBranch(dir, packRef)
+		err = gitter.FetchTags(dir)
+		if err != nil {
+			return "", errors.Wrapf(err, "fetching tags from %s", packURL)
+		}
+		tags, err := gitter.FilterTags(dir, packRef)
+		if err != nil {
+			return "", errors.Wrapf(err, "filtering tags for %s", packRef)
+		}
+		if len(tags) == 0 {
+			tags, err = gitter.FilterTags(dir, fmt.Sprintf("v%s", packRef))
+			if err != nil {
+				return "", errors.Wrapf(err, "filtering tags for v%s", packRef)
+			}
+		}
+		if len(tags) == 1 {
+			tag := tags[0]
+			branchName := fmt.Sprintf("tag-%s", tag)
+			err = gitter.CreateBranchFrom(dir, branchName, tag)
+			if err != nil {
+				return "", errors.Wrapf(err, "creating branch %s from %s", branchName, tag)
+			}
+			err = gitter.Checkout(dir, branchName)
+			if err != nil {
+				return "", errors.Wrapf(err, "checking out branch %s", branchName)
+			}
+		} else {
+			if len(tags) > 1 {
+				log.Logger().Debug("more than one tag matched %s or v%s, ignoring tags", packRef, packRef)
+			}
+			err = gitter.CheckoutRemoteBranch(dir, packRef)
+			if err != nil {
+				return "", errors.Wrapf(err, "checking out tracking branch %s", packRef)
+			}
+		}
+
 	}
-	return filepath.Join(dir, "packs"), err
+	return filepath.Join(dir, "packs"), nil
 }
 
 func ensureBranchTracksOrigin(dir string, packRef string, gitter gits.Gitter) error {
