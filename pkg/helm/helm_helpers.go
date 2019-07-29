@@ -125,9 +125,15 @@ func (r *Requirements) SetAppVersion(app string, version string, repository stri
 	}
 	for _, dep := range r.Dependencies {
 		if dep != nil && dep.Name == app {
-			dep.Version = version
-			dep.Repository = repository
-			dep.Alias = alias
+			if version != dep.Version {
+				dep.Version = version
+			}
+			if repository != "" {
+				dep.Repository = repository
+			}
+			if alias != "" {
+				dep.Alias = alias
+			}
 			return
 		}
 	}

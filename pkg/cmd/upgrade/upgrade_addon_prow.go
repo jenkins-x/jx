@@ -1,18 +1,25 @@
 package upgrade
 
 import (
+	"fmt"
 	"github.com/hashicorp/go-version"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/environments"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	version2 "github.com/jenkins-x/jx/pkg/version"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
 var (
@@ -131,6 +138,10 @@ func (o *UpgradeAddonProwOptions) Run() error {
 // Upgrade Prow
 func (o *UpgradeAddonProwOptions) Upgrade() error {
 
+	isGitOps, devEnv := o.GetDevEnv()
+	if isGitOps {
+		return o.UpgradeViaGitOps(devEnv)
+	}
 	kubeClient, _, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -157,7 +168,8 @@ func (o *UpgradeAddonProwOptions) Upgrade() error {
 
 	o.OAUTHToken = oauthToken
 	o.HMACToken = hmacToken
-	isGitOps, _ := o.GetDevEnv()
+
+	gitOpsEnvDir := ""
 
 	_, pipelineUser, err := o.GetPipelineGitAuth()
 	if err != nil {
@@ -168,5 +180,75 @@ func (o *UpgradeAddonProwOptions) Upgrade() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	return o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName, nil)
+	return o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, gitOpsEnvDir, pipelineUserName, nil)
+
+}
+
+// UpgradeViaGitOps
+func (o *UpgradeAddonProwOptions) UpgradeViaGitOps(devEnv *jenkinsv1.Environment) error {
+
+	environmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrapf(err, "getting environments dir")
+	}
+
+	gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(devEnv.Spec.Source.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating git provider for %s", devEnv.Spec.Source.URL)
+	}
+
+	log.Logger().Debugf("Git URL %s", devEnv.Spec.Source.URL)
+
+	log.Logger().Debugf("Environment Dir %s", environmentsDir)
+
+	prowVersion, err := o.GetVersionNumber(version2.KindChart, "jenkins-x/prow", "", "")
+
+	log.Logger().Infof("About to upgrade prow to version %s", prowVersion)
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to get latest prow version")
+	}
+
+	// use a random string in the branch name to ensure we use a unique git branch and fail to push
+	rand, err := util.RandStringBytesMaskImprSrc(5)
+	if err != nil {
+		return errors.Wrapf(err, "failed to generate a random string for use in branch name")
+	}
+
+	versionBranchName := prowVersion
+	if versionBranchName == "" {
+		versionBranchName = "latest"
+	}
+
+	details := &gits.PullRequestDetails{
+		BranchName: "upgrade-add-on-prow-" + versionBranchName + "-" + rand,
+		Title:      "Prow to " + prowVersion,
+		Message:    fmt.Sprintf("Upgrade Prow to version %s", prowVersion),
+	}
+
+	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
+		templates map[string]string, dir string, info *gits.PullRequestDetails) error {
+
+		requirements.SetAppVersion("prow", prowVersion, "", "prow")
+		if o.Tekton {
+			tektonVersion, err := o.GetVersionNumber(version2.KindChart, "jenkins-x/tekton", "", "")
+			log.Logger().Infof("About to upgrade tekton to version %s", tektonVersion)
+			if err != nil {
+				return errors.Wrapf(err, "failed to get latest tekton version")
+			}
+			requirements.SetAppVersion("tekton", tektonVersion, "", "tekton")
+		}
+		return nil
+	}
+
+	options := environments.EnvironmentPullRequestOptions{
+		Gitter:        o.Git(),
+		ModifyChartFn: modifyChartFn,
+		GitProvider:   gitProvider,
+	}
+	_, err = options.Create(devEnv, environmentsDir, details, nil, "", false)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create a pull request to update prow version")
+	}
+	return err
 }

@@ -103,7 +103,7 @@ func (o *CreateAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	err = o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName, nil)
+	err = o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", pipelineUserName, nil)
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}
