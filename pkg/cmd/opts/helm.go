@@ -304,7 +304,7 @@ func (o *CommonOptions) AddHelmBinaryRepoIfMissing(url, repoName, username, pass
 }
 
 // InstallChartOrGitOps if using gitOps lets write files otherwise lets use helm
-func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gitOpsEnvDir string, releaseName string, chart string, alias string, version string, ns string, helmUpdate bool,
+func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsEnvDir string, releaseName string, chart string, alias string, version string, ns string, helmUpdate bool,
 	setValues []string, setSecrets []string, valueFiles []string, repo string) error {
 
 	if !isGitOps {

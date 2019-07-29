@@ -1658,7 +1658,7 @@ func (o *CommonOptions) AddDummyApplication(client kubernetes.Interface, devName
 }
 
 // InstallProw installs prow
-func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string, valuesFiles []string) error {
+func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsEnvDir string, gitUsername string, valuesFiles []string) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1744,7 +1744,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 			"auth.git.password="+o.OAUTHToken)
 
 		err = o.Retry(2, time.Second, func() (err error) {
-			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultTektonReleaseName,
+			return o.InstallChartOrGitOps(isGitOps, gitOpsEnvDir, kube.DefaultTektonReleaseName,
 				kube.ChartTekton, "tekton", "", devNamespace, true, setValues, ksecretValues, valuesFiles, "")
 		})
 		if err != nil {
@@ -1761,7 +1761,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		setValues = append(setValues, "build.auth.git.username="+gitUsername)
 		ksecretValues = append(ksecretValues, "build.auth.git.username="+gitUsername, "build.auth.git.password="+o.OAUTHToken)
 		err = o.Retry(2, time.Second, func() (err error) {
-			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildReleaseName,
+			return o.InstallChartOrGitOps(isGitOps, gitOpsEnvDir, kube.DefaultKnativeBuildReleaseName,
 				kube.ChartKnativeBuild, "knativebuild", "", devNamespace, true, setValues, ksecretValues, valuesFiles, "")
 		})
 		if err != nil {
@@ -1798,7 +1798,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 
 	secretValues := []string{"user=" + gitUsername, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	err = o.Retry(2, time.Second, func() (err error) {
-		return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, o.ReleaseName,
+		return o.InstallChartOrGitOps(isGitOps, gitOpsEnvDir, o.ReleaseName,
 			o.Chart, "prow", prowVersion, devNamespace, true, setValues, secretValues, valuesFiles, "")
 	})
 	if err != nil {
@@ -1808,7 +1808,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	if !useTekton {
 		log.Logger().Infof("\nInstalling BuildTemplates into namespace %s", util.ColorInfo(devNamespace))
 		err = o.Retry(2, time.Second, func() (err error) {
-			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultBuildTemplatesReleaseName,
+			return o.InstallChartOrGitOps(isGitOps, gitOpsEnvDir, kube.DefaultBuildTemplatesReleaseName,
 				kube.ChartBuildTemplates, "jxbuildtemplates", "", devNamespace, true, nil, nil, nil, "")
 		})
 		if err != nil {
@@ -1952,7 +1952,7 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 
 	log.Logger().Infof("\nInstalling External DNS into namespace %s", util.ColorInfo(devNamespace))
 	err = o.Retry(2, time.Second, func() (err error) {
-		return o.InstallChartOrGitOps(false, "", "", kube.DefaultExternalDNSReleaseName, kube.ChartExternalDNS,
+		return o.InstallChartOrGitOps(false, "", kube.DefaultExternalDNSReleaseName, kube.ChartExternalDNS,
 			kube.ChartExternalDNS, "", devNamespace, true, values, nil, nil, "")
 	})
 	if err != nil {
