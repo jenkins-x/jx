@@ -1332,7 +1332,7 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 			}
 			tt.provider = provider
 
-			got, err := gits.DuplicateGitRepoFromCommitsh(tt.args.toOrg, tt.args.toName, tt.args.fromGitURL, tt.args.fromCommitish, tt.args.toBranch, tt.args.gitter, tt.provider)
+			got, err := gits.DuplicateGitRepoFromCommitsh(tt.args.toOrg, tt.args.toName, tt.args.fromGitURL, tt.args.fromCommitish, tt.args.toBranch, false, tt.provider, tt.args.gitter)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return

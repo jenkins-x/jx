@@ -94,7 +94,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, server *auth.AuthServer, user *auth.UserAuth, requirements *config.RequirementsConfig) error {
+func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, privateRepo bool, user *auth.UserAuth, requirements *config.RequirementsConfig, server *auth.AuthServer) error {
 	fromGitURL := os.Getenv("REPO_URL")
 	gitInfo, err := gits.ParseGitURL(fromGitURL)
 	if err != nil {
@@ -137,7 +137,7 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 	}
 
 	// Duplicate the repo
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitsh(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", o.Git(), provider)
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitsh(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", privateRepo, provider, o.Git())
 	if err != nil {
 		return errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, environmentsOrg, gitRepoName)
 	}
@@ -195,7 +195,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 
 	// TODO
 	gitKind := gits.KindGitHub
-	privateRepo := false
+	privateRepo := requirements.Cluster.EnvironmentGitPrivate
 	prefix := ""
 
 	gitServerURL := gitInfo.HostURL()
@@ -218,7 +218,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, server, userAuth, requirements)
+		err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, privateRepo, userAuth, requirements, server)
 		if err != nil {
 			return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
 		}
