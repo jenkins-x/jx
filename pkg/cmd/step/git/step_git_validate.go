@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -63,7 +64,7 @@ func (o *StepGitValidateOptions) Run() error {
 			}
 		}
 		if userName == "" {
-			return fmt.Errorf("No Git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
+			return fmt.Errorf("no Git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
 		}
 		err = o.Git().SetUsername("", userName)
 		if err != nil {
@@ -78,7 +79,7 @@ func (o *StepGitValidateOptions) Run() error {
 			}
 		}
 		if userEmail == "" {
-			return fmt.Errorf("No Git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
+			return fmt.Errorf("no Git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
 		}
 		err = o.Git().SetEmail("", userEmail)
 		if err != nil {

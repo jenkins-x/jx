@@ -448,6 +448,13 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 
 	requirements.SaveConfig(requirementsFileName)
 
+	if requirements.Cluster.EnvironmentGitPrivate {
+		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s in jx-requirements.yaml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPrivate"), util.ColorInfo("false"))
+	} else {
+		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s jx-requirements.yaml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPrivate"), util.ColorInfo("true"))
+	}
+	log.Logger().Infof("\n")
+
 	return requirements, nil
 }
 

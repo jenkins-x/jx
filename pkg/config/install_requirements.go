@@ -170,6 +170,8 @@ type StorageConfig struct {
 type ClusterConfig struct {
 	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
+	// EnvironmentGitPrivate will request jx boot create private git repos for the environments
+	EnvironmentGitPrivate bool `json:"environmentGitPrivate,omitempty"`
 	// Provider the kubernetes provider (e.g. gke)
 	Provider string `json:"provider,omitempty"`
 	// Namespace the namespace to install the dev environment
