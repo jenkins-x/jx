@@ -8,7 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
@@ -571,6 +571,7 @@ controller:
 				Ns:          ingressNamespace,
 				SetValues:   values,
 				ValueFiles:  valuesFiles,
+				HelmUpdate:  true,
 			}
 			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
