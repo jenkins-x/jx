@@ -1,6 +1,6 @@
 // +build integration
 
-package verify
+package verify_test
 
 import (
 	"os"
