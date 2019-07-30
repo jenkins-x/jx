@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
@@ -25,6 +26,9 @@ func (b *GKEBucketProvider) CreateNewBucketForCluster(clusterName string, bucket
 	bucketURL := fmt.Sprintf("gs://%s-%s-%s", clusterName, bucketKind, uuid4.String())
 	if len(bucketURL) > 60 {
 		bucketURL = bucketURL[:60]
+	}
+	if strings.HasSuffix(bucketURL, "-") {
+		bucketURL = bucketURL[:59]
 	}
 	err := b.EnsureBucketIsCreated(bucketURL)
 	if err != nil {
