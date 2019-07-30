@@ -3,6 +3,9 @@
 package verify_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/config"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -71,8 +74,13 @@ func TestStepVerifyPreInstallNoKanikoLazyCreate(t *testing.T) {
 func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 
 	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "set_cluster_req_via_envvar"))
+
+	kc, origNamespace, err := options.KubeClientAndDevNamespace()
+	assert.NoError(t, err)
+	defer resetNamespace(t, origNamespace)
+
 	// we default to lazy create if not using terraform
-	err = options.verifyInstallConfig()
+	err = options.VerifyInstallConfig(kc, origNamespace, nil, "")
 	assert.NoErrorf(t, err, "the command should not have failed as we should have lazily created the deploy namespace")
 
 	t.Parallel()
@@ -80,7 +88,7 @@ func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 	commonOpts := opts.CommonOptions{
 		BatchMode: false,
 	}
-	o := StepCreateInstallValuesOptions{
+	o := &create.StepCreateInstallValuesOptions{
 		StepOptions: opts.StepOptions{
 			CommonOptions: &commonOpts,
 		},
@@ -101,15 +109,6 @@ func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 	assert.NoError(t, err, "failed to save file %s", file)
 
 	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
-	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
-	assert.FileExists(t, fileName)
-
-	values := make(map[string]interface{})
-	_, err = o.defaultMissingValues(values)
-
-	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
-
-	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 
@@ -142,4 +141,13 @@ func resetNamespace(t *testing.T, ns string) {
 	namespaceOptions.Args = []string{ns}
 	err := namespaceOptions.Run()
 	assert.NoError(t, err)
+}
+
+func getBaseRequirements() *config.RequirementsConfig {
+	requirements := config.NewRequirementsConfig()
+	requirements.Cluster.ProjectID = "test-project"
+	requirements.Cluster.ClusterName = "test-cluster"
+	requirements.Cluster.EnvironmentGitOwner = "test-org"
+	requirements.Cluster.Zone = "test-zone"
+	return requirements
 }

@@ -144,7 +144,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
-	err = o.verifyInstallConfig(kubeClient, ns, requirements, requirementsFileName)
+	err = o.VerifyInstallConfig(kubeClient, ns, requirements, requirementsFileName)
 	if err != nil {
 		return err
 	}
@@ -273,8 +273,8 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 	return o.createKanikoSecret(ns, data)
 }
 
-// verifyInstallConfig lets ensure we modify the install ConfigMap with the requirements
-func (o *StepVerifyPreInstallOptions) verifyInstallConfig(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig, requirementsFileName string) error {
+// VerifyInstallConfig lets ensure we modify the install ConfigMap with the requirements
+func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig, requirementsFileName string) error {
 	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
 		func(configMap *corev1.ConfigMap) error {
 			secretsLocation := string(secrets.FileSystemLocationKind)
