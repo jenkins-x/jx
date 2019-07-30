@@ -571,7 +571,7 @@ func (o *PreviewOptions) Run() error {
 			if err != nil {
 				return backoff.Permanent(err)
 			}
-			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 				return errors.Errorf("preview application %s not available, error was %d %s", url, resp.StatusCode, resp.Status)
 			}
 			return nil
