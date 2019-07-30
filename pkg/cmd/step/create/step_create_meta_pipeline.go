@@ -171,6 +171,8 @@ func (o *StepCreatePipelineOptions) Run() error {
 	branchIdentifier := o.determineBranchIdentifier(*pullRefs)
 	pipelineKind := o.determinePipelineKind(*pullRefs)
 
+	// resourceName is shared across all builds of a branch, while the pipelineName is unique for each build.
+	resourceName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, o.Context, tekton.MetaPipeline, nil, "")
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, o.Context, tekton.MetaPipeline, tektonClient, ns)
 	buildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, gitInfo, branchIdentifier, retryDuration, o.Context)
 	if err != nil {
@@ -196,6 +198,7 @@ func (o *StepCreatePipelineOptions) Run() error {
 		Namespace:        ns,
 		Context:          o.Context,
 		PipelineName:     pipelineName,
+		ResourceName:     resourceName,
 		PipelineKind:     pipelineKind,
 		BuildNumber:      buildNumber,
 		GitInfo:          *gitInfo,

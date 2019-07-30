@@ -1273,7 +1273,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				}
 			}
 
-			pipeline, tasks, structure, err := parsed.GenerateCRDs("somepipeline", "1", "jx", nil, testVersionsDir, nil, "source", nil, "")
+			pipeline, tasks, structure, err := parsed.GenerateCRDs("somepipeline", "1", "somepipeline", "jx", nil, testVersionsDir, nil, "source", nil, "")
 
 			if err != nil {
 				if tt.expectedErrorMsg != "" {
