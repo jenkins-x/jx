@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -54,6 +55,9 @@ func createUniqueBucketNameForCluster(clusterName string) string {
 	bucketName := fmt.Sprintf("%s-lts-%s", clusterName, uuid4.String())
 	if len(bucketName) > 60 {
 		bucketName = bucketName[:60]
+	}
+	if strings.HasSuffix(bucketName, "-") {
+		bucketName = bucketName[:59]
 	}
 	return bucketName
 }
