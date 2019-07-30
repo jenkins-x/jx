@@ -20,9 +20,9 @@ func TestGetRegionFromZone(t *testing.T) {
 
 func TestGetManagedZoneName(t *testing.T) {
 	t.Parallel()
-	d := getManagedZoneName("wine.cheese.co.uk")
+	d := generateManagedZoneName("wine.cheese.co.uk")
 	assert.Equal(t, d, "wine-cheese-co-uk-zone")
 
-	d = getManagedZoneName("planes.n.trains.com")
+	d = generateManagedZoneName("planes.n.trains.com")
 	assert.Equal(t, d, "planes-n-trains-com-zone")
 }
