@@ -80,7 +80,7 @@ func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 	defer resetNamespace(t, origNamespace)
 
 	// we default to lazy create if not using terraform
-	err = options.VerifyInstallConfig(kc, origNamespace, nil, "")
+	err = options.VerifyInstallConfig(kc, origNamespace, config.NewRequirementsConfig(), "")
 	assert.NoErrorf(t, err, "the command should not have failed as we should have lazily created the deploy namespace")
 
 	t.Parallel()
