@@ -286,6 +286,8 @@ func (o *StepCreateTaskOptions) Run() error {
 		return errors.Wrap(err, "Unable to load pod templates")
 	}
 
+	// resourceName is shared across all builds of a branch, while the pipelineName is unique for each build.
+	resourceName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline, nil, "")
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline, tektonClient, ns)
 
 	exists, err = o.effectiveProjectConfigExists()
@@ -316,7 +318,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	log.Logger().Debug("creating Tekton CRDs")
-	tektonCRDs, err := o.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
+	tektonCRDs, err := o.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRDs")
 	}
@@ -526,7 +528,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfig(packsDir string, pr
 }
 
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline
-func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *config.ProjectConfig, ns string, pipelineName string) (*tekton.CRDWrapper, error) {
+func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *config.ProjectConfig, ns string, pipelineName string, resourceName string) (*tekton.CRDWrapper, error) {
 	if effectiveProjectConfig == nil {
 		return nil, errors.New("effective project config cannot be nil")
 	}
@@ -536,13 +538,13 @@ func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *confi
 		return nil, errors.Wrapf(err, "unable to extract the requested pipeline")
 	}
 
-	pipeline, tasks, structure, err := effectivePipeline.GenerateCRDs(pipelineName, o.BuildNumber, ns, o.PodTemplates, o.VersionResolver.VersionsDir, o.getDefaultTaskInputs().Params, o.SourceName, o.labels, "")
+	pipeline, tasks, structure, err := effectivePipeline.GenerateCRDs(pipelineName, o.BuildNumber, resourceName, ns, o.PodTemplates, o.VersionResolver.VersionsDir, o.getDefaultTaskInputs().Params, o.SourceName, o.labels, "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "generation failed for Pipeline")
 	}
 
 	tasks, pipeline = o.enhanceTasksAndPipeline(tasks, pipeline, effectiveProjectConfig.PipelineConfig.Env)
-	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(pipelineName, o.GitInfo, o.Revision)}
+	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(resourceName, o.GitInfo, o.Revision)}
 
 	var timeout *metav1.Duration
 	if effectivePipeline.Options != nil && effectivePipeline.Options.Timeout != nil {

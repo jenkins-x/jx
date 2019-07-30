@@ -404,8 +404,9 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
+			resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, nil, "")
 			pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, tektonClient, ns)
-			crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
+			crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
 			if tt.expectingError {
 				if err == nil {
 					t.Fatalf("Expected an error generating CRDs")

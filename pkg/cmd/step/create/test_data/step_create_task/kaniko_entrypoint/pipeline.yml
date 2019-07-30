@@ -16,7 +16,7 @@ spec:
       images and helm charts
     name: version
   resources:
-  - name: jenkins-x-jx-fix-kaniko-special-9l9zj
+  - name: jenkins-x-jx-fix-kaniko-special
     type: git
   tasks:
   - name: ci
@@ -26,7 +26,7 @@ spec:
     resources:
       inputs:
       - name: workspace
-        resource: jenkins-x-jx-fix-kaniko-special-9l9zj
+        resource: jenkins-x-jx-fix-kaniko-special
     retries: 0
     taskRef:
       name: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
