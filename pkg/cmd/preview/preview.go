@@ -565,13 +565,13 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 	if url != "" {
-		// Wait for a 200 to make sure that the DNS has propagated
+		// Wait for a 200 or 401 to make sure that the DNS has propagated
 		f := func() error {
 			resp, err := http.Get(url)
 			if err != nil {
 				return errors.Errorf("preview application %s not available, error was %v", url, err)
 			}
-			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
+			if resp.StatusCode < 200 || (resp.StatusCode >= 300 && resp.StatusCode != 401) {
 				return errors.Errorf("preview application %s not available, error was %d %s", url, resp.StatusCode, resp.Status)
 			}
 			return nil
