@@ -200,16 +200,22 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 					appsList.Items = append(appsList.Items, resourcesInCRD.Items...)
 				} else {
 					appPath := filepath.Join(envDir, d.Name, "templates", "app.yaml")
-					appFile, err := ioutil.ReadFile(appPath)
+					exists, err := util.FileExists(appPath)
 					if err != nil {
-						return nil, errors.Wrapf(err, "there was a problem reading the app.yaml file of %s", d.Name)
+						return nil, errors.Wrapf(err, "there was a problem checking if %s exists", appPath)
 					}
-					app := v1.App{}
-					err = yaml.Unmarshal(appFile, &app)
-					if err != nil {
-						return nil, errors.Wrapf(err, "there was a problem unmarshalling the app.yaml file of %s", d.Name)
+					if exists {
+						appFile, err := ioutil.ReadFile(appPath)
+						if err != nil {
+							return nil, errors.Wrapf(err, "there was a problem reading the app.yaml file of %s", d.Name)
+						}
+						app := v1.App{}
+						err = yaml.Unmarshal(appFile, &app)
+						if err != nil {
+							return nil, errors.Wrapf(err, "there was a problem unmarshalling the app.yaml file of %s", d.Name)
+						}
+						appsList.Items = append(appsList.Items, app)
 					}
-					appsList.Items = append(appsList.Items, app)
 				}
 			}
 		}
