@@ -142,12 +142,17 @@ func BitbucketServerRepositoryToGitRepository(bRepo bitbucket.Repository) *GitRe
 		httpCloneURL = sshURL
 	}
 
+	htmlURL := bRepo.Links.Self[0].Href
 	return &GitRepository{
-		Name:     bRepo.Name,
-		HTMLURL:  bRepo.Links.Self[0].Href,
-		CloneURL: httpCloneURL,
-		SSHURL:   sshURL,
-		Fork:     isFork,
+		Name:         bRepo.Name,
+		HTMLURL:      htmlURL,
+		CloneURL:     httpCloneURL,
+		SSHURL:       sshURL,
+		URL:          htmlURL,
+		Fork:         isFork,
+		Private:      !bRepo.Public,
+		Organisation: strings.ToLower(bRepo.Project.Key),
+		Project:      bRepo.Project.Key,
 	}
 }
 
