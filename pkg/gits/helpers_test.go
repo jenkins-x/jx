@@ -1811,3 +1811,46 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestGetGitInfoFromDirectory(t *testing.T) {
+	t.Parallel()
+	gitter := gits.NewGitCLI()
+	owner := "fakeowner"
+	repo := "fakerepo"
+	originalRepo, err := gits.NewFakeRepository(owner, repo, func(dir string) error {
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+		if err != nil {
+			return errors.Wrapf(err, "writing README")
+		}
+		return nil
+	}, gitter)
+	defer os.RemoveAll(originalRepo.BaseDir)
+
+	assert.NoError(t, err)
+	dir, err := ioutil.TempDir("", "")
+	defer os.RemoveAll(dir)
+	assert.NoError(t, err)
+	err = gitter.Clone(originalRepo.GitRepo.CloneURL, dir)
+	assert.NoError(t, err)
+	err = gitter.UpdateRemote(dir, fmt.Sprintf("git@github.com:%s/%s.git", owner, repo))
+	assert.NoError(t, err)
+
+	url, ref, err := gits.GetGitInfoFromDirectory(dir, gitter)
+	assert.NoError(t, err)
+
+	assert.Equal(t, fmt.Sprintf("https://github.com/%s/%s", owner, repo), url)
+	assert.Equal(t, "master", ref)
+}
+
+func TestGetGitInfoFromDirectoryNoGit(t *testing.T) {
+	t.Parallel()
+	gitter := gits.NewGitCLI()
+	dir, err := ioutil.TempDir("", "")
+	defer os.RemoveAll(dir)
+	assert.NoError(t, err)
+
+	_, _, err = gits.GetGitInfoFromDirectory(dir, gitter)
+	assert.Error(t, err)
+
+	assert.Equal(t, fmt.Sprintf("there was a problem obtaining the remote Git URL of directory %s: failed to unmarshal  due to no GitConfDir defined", dir), err.Error())
+}
