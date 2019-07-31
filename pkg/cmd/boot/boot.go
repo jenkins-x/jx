@@ -72,8 +72,8 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the Jenkins X Pipeline, requirements and charts")
-	cmd.Flags().StringVarP(&options.GitURL, "git-url", "u", config.DefaultBootRepository, "override the Git clone URL for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-ref as well")
-	cmd.Flags().StringVarP(&options.GitRef, "git-ref", "", "master", "override the Git ref for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-url as well")
+	cmd.Flags().StringVarP(&options.GitURL, "git-url", "u", "", "override the Git clone URL for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-ref as well")
+	cmd.Flags().StringVarP(&options.GitRef, "git-ref", "", "", "override the Git ref for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-url as well")
 	cmd.Flags().StringVarP(&options.VersionStreamURL, "versions-repo", "", config.DefaultVersionsURL, "the bootstrap URL for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	cmd.Flags().StringVarP(&options.VersionStreamRef, "versions-ref", "", config.DefaultVersionsRef, "the bootstrap ref for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	return cmd
@@ -97,7 +97,23 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 
-	gitURL := o.GitURL
+	gitURL, gitRef, err := gits.GetGitInfoFromDirectory(o.Dir, o.Git())
+	if err != nil {
+		log.Logger().Warn(fmt.Sprintf("there was a problem obtaining the boot config repository git configuration, falling back to defaults"))
+		gitURL = config.DefaultBootRepository
+		gitRef = "master"
+	}
+
+	if o.GitURL != "" {
+		log.Logger().Infof("GitURL provided, overriding the current value: %s", util.ColorInfo(gitURL))
+		gitURL = o.GitURL
+	}
+
+	if o.GitRef != "" {
+		log.Logger().Infof("GitRef provided, overriding the current value: %s", util.ColorInfo(gitRef))
+		gitRef = o.GitRef
+	}
+
 	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.GitURL == config.DefaultBootRepository {
 		gitURL = config.DefaultCloudBeesBootRepository
 	}
@@ -227,8 +243,9 @@ func (o *BootOptions) Run() error {
 	so.InterpretMode = true
 	so.NoReleasePrepare = true
 	so.AdditionalEnvVars = map[string]string{
-		"JX_NO_TILLER": "true",
-		"REPO_URL":     gitURL,
+		"JX_NO_TILLER":    "true",
+		"REPO_URL":        gitURL,
+		"BASE_CONFIG_REF": gitRef,
 	}
 
 	so.VersionResolver, err = o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)

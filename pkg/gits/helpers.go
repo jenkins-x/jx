@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -772,4 +772,26 @@ func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string
 		log.Logger().Infof("Setting upstream to %s\n", util.ColorInfo(duplicateInfo.HTMLURL))
 	}
 	return duplicateInfo, nil
+}
+
+// GetGitInfoFromDirectory obtains remote origin HTTPS and current branch of a given directory and fails if it's not a git repository
+func GetGitInfoFromDirectory(dir string, gitter Gitter) (string, string, error) {
+	_, gitConfig, err := gitter.FindGitConfigDir(dir)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "there was a problem obtaining the git config dir of directory %s", dir)
+	}
+	remoteGitURL, err := gitter.DiscoverRemoteGitURL(gitConfig)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "there was a problem obtaining the remote Git URL of directory %s", dir)
+	}
+	currentBranch, err := gitter.Branch(dir)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "there was a problem obtaining the current branch on directory %s", dir)
+	}
+	g, err := ParseGitURL(remoteGitURL)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "there was a problem parsing the Git URL %s to HTTPS", remoteGitURL)
+	}
+
+	return g.HttpsURL(), currentBranch, nil
 }

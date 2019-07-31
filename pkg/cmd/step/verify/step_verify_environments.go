@@ -96,6 +96,11 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 
 func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, server *auth.AuthServer, user *auth.UserAuth, requirements *config.RequirementsConfig) error {
 	fromGitURL := os.Getenv("REPO_URL")
+	gitRef := os.Getenv("BASE_CONFIG_REF")
+
+	log.Logger().Debugf("Defined REPO_URL env variable value: %s", fromGitURL)
+	log.Logger().Debugf("Defined BASE_CONFIG_REF env variable value: %s", gitRef)
+
 	gitInfo, err := gits.ParseGitURL(fromGitURL)
 	if err != nil {
 		return errors.Wrapf(err, "parsing %s", fromGitURL)
@@ -114,26 +119,29 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 		return errors.Wrapf(err, "resolving %s to absolute path", o.Dir)
 	}
 
-	vs := requirements.VersionStream
-	u := vs.URL
-	ref := vs.Ref
-
-	resolver, err := o.CreateVersionResolver(u, ref)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create version resolver")
+	if fromGitURL == config.DefaultBootRepository && gitRef == "master" {
+		// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
+		resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create version resolver")
+		}
+		gitRef, err = resolver.ResolveGitVersion(fromGitURL)
+		if err != nil {
+			return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+		}
+		if gitRef == "" {
+			log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
+			gitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
+			if err != nil {
+				return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+			}
+		}
 	}
 
-	version, err := resolver.ResolveGitVersion("https://github.com/jenkins-x/jenkins-x-boot-config.git")
+	commitish, err := gits.FindTagForVersion(dir, gitRef, o.Git())
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
-	}
-
-	commitish, err := gits.FindTagForVersion(dir, version, o.Git())
-	if err != nil {
-		return errors.Wrapf(err, "finding tag for %s", version)
-	}
-	if commitish == "" {
-		commitish = "master"
+		log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", gitRef).Error())
+		commitish = fmt.Sprintf("%s/%s", "origin", gitRef)
 	}
 
 	// Duplicate the repo
