@@ -110,7 +110,7 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 		answer = names[0]
 	} else if batchMode {
 		// should not prompt for selection in batch mode so return an error
-		return nil, fmt.Errorf("More than one quickstart matches the current filter options. Try filtering based on other criteria (eg. Owner or Text)")
+		return nil, fmt.Errorf("More than one quickstart matches the current filter options. Try filtering based on other criteria (eg. Owner or Text): %v", names)
 	} else {
 		// if no single answer after filtering and we're not in batch mode then prompt
 		prompt := &survey.Select{
