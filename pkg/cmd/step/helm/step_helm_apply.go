@@ -2,14 +2,11 @@ package helm
 
 import (
 	"fmt"
-	"text/template"
-
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -25,11 +22,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/helm/pkg/chartutil"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -47,8 +42,6 @@ type StepHelmApplyOptions struct {
 	NoVault            bool
 	NoMasking          bool
 	ProviderValuesDir  string
-
-	versionResolver *opts.VersionResolver
 }
 
 var (
@@ -500,165 +493,4 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 		files = append(files, secretFile)
 	}
 	return files, nil
-}
-
-func (o *StepHelmApplyOptions) overwriteProviderValues(requirements *config.RequirementsConfig, requirementsFileName string, valuesData []byte, params chartutil.Values, providersValuesDir string) ([]byte, error) {
-	provider := requirements.Cluster.Provider
-	if provider == "" {
-		log.Logger().Warnf("No provider in the requirements file %s\n", requirementsFileName)
-		return valuesData, nil
-	}
-	valuesTmplYamlFile := filepath.Join(providersValuesDir, provider, "values.tmpl.yaml")
-	exists, err := util.FileExists(valuesTmplYamlFile)
-	if err != nil {
-		return valuesData, errors.Wrapf(err, "failed to check if file exists: %s", valuesTmplYamlFile)
-	}
-	log.Logger().Infof("Applying the kubernetes overrides at %s\n", util.ColorInfo(valuesTmplYamlFile))
-
-	if !exists {
-		log.Logger().Warnf("No provider specific values overrides exist in file %s\n", valuesTmplYamlFile)
-		return valuesData, nil
-
-	}
-	funcMap, err := o.createFuncMap(requirements)
-	if err != nil {
-		return valuesData, err
-	}
-
-	overrideData, err := helm.ReadValuesYamlFileTemplateOutput(valuesTmplYamlFile, params, funcMap, requirements)
-	if err != nil {
-		return valuesData, errors.Wrapf(err, "failed to load provider specific helm value overrides %s", valuesTmplYamlFile)
-	}
-	if len(overrideData) == 0 {
-		return valuesData, nil
-	}
-
-	// now lets apply the overrides
-	values, err := helm.LoadValues(valuesData)
-	if err != nil {
-		return valuesData, errors.Wrapf(err, "failed to unmarshal the default helm values")
-	}
-
-	overrides, err := helm.LoadValues(overrideData)
-	if err != nil {
-		return valuesData, errors.Wrapf(err, "failed to unmarshal the default helm values")
-	}
-
-	util.CombineMapTrees(values, overrides)
-
-	data, err := yaml.Marshal(values)
-	return data, err
-}
-
-func (o *StepHelmApplyOptions) createFuncMap(requirementsConfig *config.RequirementsConfig) (template.FuncMap, error) {
-	funcMap := helm.NewFunctionMap()
-	resolver, err := o.getOrCreateVersionResolver(requirementsConfig)
-
-	if err != nil {
-		return funcMap, err
-	}
-
-	// represents the helm template function
-	// which can be used like: `{{ versionStream "chart" "foo/bar" }}
-	funcMap["versionStream"] = func(kindString, name string) string {
-		kind := version.VersionKind(kindString)
-		version, err := resolver.StableVersionNumber(kind, name)
-		if err != nil {
-			log.Logger().Errorf("failed to find %s version for %s in the version stream due to: %s\n", kindString, name, err.Error())
-		}
-		return version
-	}
-	return funcMap, nil
-}
-
-func (o *StepHelmApplyOptions) getOrCreateVersionResolver(requirementsConfig *config.RequirementsConfig) (*opts.VersionResolver, error) {
-	if o.versionResolver == nil {
-		vs := requirementsConfig.VersionStream
-		log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
-
-		var err error
-		o.versionResolver, err = o.CreateVersionResolver(vs.URL, vs.Ref)
-		if err != nil {
-			return o.versionResolver, errors.Wrapf(err, "failed to create version resolver")
-		}
-	}
-	return o.versionResolver, nil
-}
-
-func (o *StepHelmApplyOptions) replaceMissingVersionsFromVersionStream(requirementsConfig *config.RequirementsConfig, dir string) error {
-	fileName := filepath.Join(dir, helm.RequirementsFileName)
-	exists, err := util.FileExists(fileName)
-	if err != nil {
-		return errors.Wrapf(err, "failed to check for file %s", fileName)
-	}
-	if !exists {
-		log.Logger().Infof("no requirements file: %s so not checking for missing versions\n", fileName)
-		return nil
-	}
-
-	vs := requirementsConfig.VersionStream
-	log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
-
-	resolver, err := o.getOrCreateVersionResolver(requirementsConfig)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create version resolver")
-	}
-
-	prefixes, err := resolver.GetRepositoryPrefixes()
-	if err != nil {
-		return errors.Wrapf(err, "failed to load repository prefixes")
-	}
-
-	err = o.verifyRequirementsYAML(resolver, prefixes, fileName)
-	if err != nil {
-		return errors.Wrapf(err, "failed to replace missing versions in file %s", fileName)
-	}
-	return nil
-}
-
-func (o *StepHelmApplyOptions) verifyRequirementsYAML(resolver *opts.VersionResolver, prefixes *opts.RepositoryPrefixes, fileName string) error {
-	req, err := helm.LoadRequirementsFile(fileName)
-	if err != nil {
-		return errors.Wrapf(err, "failed to load %s", fileName)
-	}
-
-	modified := false
-	for _, dep := range req.Dependencies {
-		if dep.Version == "" {
-			name := dep.Alias
-			if name == "" {
-				name = dep.Name
-			}
-			repo := dep.Repository
-			if repo == "" {
-				return fmt.Errorf("cannot to find a version for dependency %s in file %s as there is no 'repository'", name, fileName)
-			}
-
-			prefix := prefixes.PrefixForURL(repo)
-			if prefix == "" {
-				return fmt.Errorf("the helm repository %s does not have an associated prefix in in the 'charts/repositories.yml' file the version stream, so we cannot default the version in file %s", repo, fileName)
-			}
-			newVersion := ""
-			fullChartName := prefix + "/" + dep.Name
-			newVersion, err := resolver.StableVersionNumber(version.KindChart, fullChartName)
-			if err != nil {
-				return errors.Wrapf(err, "failed to find version of chart %s in file %s", fullChartName, fileName)
-			}
-			if newVersion == "" {
-				return fmt.Errorf("failed to find a version for dependency %s in file %s in the current version stream - please either add an explicit version to this file or add chart %s to the version stream", name, fileName, fullChartName)
-			}
-			dep.Version = newVersion
-			modified = true
-			log.Logger().Infof("adding version %s to dependency %s in file %s", newVersion, name, fileName)
-		}
-	}
-
-	if modified {
-		err = helm.SaveFile(fileName, req)
-		if err != nil {
-			return errors.Wrapf(err, "failed to save %s", fileName)
-		}
-		log.Logger().Infof("adding dependency versions to file %s", fileName)
-	}
-	return nil
 }
