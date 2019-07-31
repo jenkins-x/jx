@@ -26,6 +26,7 @@ type BootOptions struct {
 
 	Dir    string
 	GitURL string
+	GitRef string
 
 	// The bootstrap URL for the version stream. Once we have a jx-requirements.yaml files, we read that
 	VersionStreamURL string
@@ -71,7 +72,8 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the Jenkins X Pipeline, requirements and charts")
-	cmd.Flags().StringVarP(&options.GitURL, "git-url", "u", config.DefaultBootRepository, "the Git clone URL for the JX Boot source to start from")
+	cmd.Flags().StringVarP(&options.GitURL, "git-url", "u", config.DefaultBootRepository, "override the Git clone URL for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-ref as well")
+	cmd.Flags().StringVarP(&options.GitRef, "git-ref", "", "master", "override the Git ref for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-url as well")
 	cmd.Flags().StringVarP(&options.VersionStreamURL, "versions-repo", "", config.DefaultVersionsURL, "the bootstrap URL for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	cmd.Flags().StringVarP(&options.VersionStreamRef, "versions-ref", "", config.DefaultVersionsRef, "the bootstrap ref for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	return cmd
@@ -95,9 +97,9 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 
+	gitURL := o.GitURL
 	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.GitURL == config.DefaultBootRepository {
-		o.GitURL = config.DefaultCloudBeesBootRepository
-
+		gitURL = config.DefaultCloudBeesBootRepository
 	}
 	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.VersionStreamURL == config.DefaultVersionsURL {
 		o.VersionStreamURL = config.DefaultCloudBeesVersionsURL
@@ -107,33 +109,43 @@ func (o *BootOptions) Run() error {
 		o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
 
 	}
-	if o.GitURL == "" {
+	if gitURL == "" {
 		return util.MissingOption("git-url")
 	}
 
 	if !exists {
 		log.Logger().Infof("No Jenkins X pipeline file %s found. You are not running this command from inside a Jenkins X Boot git clone", info(pipelineFile))
 
-		gitInfo, err := gits.ParseGitURL(o.GitURL)
+		gitInfo, err := gits.ParseGitURL(gitURL)
 		if err != nil {
-			return errors.Wrapf(err, "failed to parse git URL %s", o.GitURL)
+			return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
 		}
 
 		repo := gitInfo.Name
 		cloneDir := filepath.Join(o.Dir, repo)
 
-		resolver, err := o.CreateVersionResolver(o.VersionStreamURL, o.VersionStreamRef)
-		if err != nil {
-			return errors.Wrapf(err, "failed to create version resolver")
-		}
+		if o.GitURL == config.DefaultBootRepository && o.GitRef == "master" {
+			// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
+			resolver, err := o.CreateVersionResolver(o.VersionStreamURL, o.VersionStreamRef)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create version resolver")
+			}
+			o.GitRef, err = resolver.ResolveGitVersion(gitURL)
+			if err != nil {
+				return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+			}
+			if o.GitRef == "" {
+				log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
+				o.GitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
+				if err != nil {
+					return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+				}
+			}
 
-		version, err := resolver.ResolveGitVersion("https://github.com/jenkins-x/jenkins-x-boot-config.git")
-		if err != nil {
-			return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
 		}
 
 		if !o.BatchMode {
-			log.Logger().Infof("To continue we will clone %s @ %s to %s", info(o.GitURL), info(version), info(cloneDir))
+			log.Logger().Infof("To continue we will clone %s @ %s to %s", info(gitURL), info(o.GitRef), info(cloneDir))
 
 			help := "A git clone of a Jenkins X Boot source repository is required for 'jx boot'"
 			message := "Do you want to clone the Jenkins X Boot Git repository?"
@@ -150,23 +162,21 @@ func (o *BootOptions) Run() error {
 			return fmt.Errorf("Cannot clone git repository to %s as the dir already exists. Maybe try 'cd %s' and re-run the 'jx boot' command?", repo, repo)
 		}
 
-		log.Logger().Infof("Cloning %s @ %s to %s\n", info(o.GitURL), info(version), info(cloneDir))
+		log.Logger().Infof("Cloning %s @ %s to %s\n", info(gitURL), info(o.GitRef), info(cloneDir))
 
 		err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create directory: %s", cloneDir)
 		}
 
-		err = o.Git().Clone(o.GitURL, cloneDir)
+		err = o.Git().Clone(gitURL, cloneDir)
 		if err != nil {
-			return errors.Wrapf(err, "failed to clone git URL %s to directory: %s", o.GitURL, cloneDir)
+			return errors.Wrapf(err, "failed to clone git URL %s to directory: %s", gitURL, cloneDir)
 		}
-		commitish, err := gits.FindTagForVersion(cloneDir, version, o.Git())
+		commitish, err := gits.FindTagForVersion(cloneDir, o.GitRef, o.Git())
 		if err != nil {
-			return errors.Wrapf(err, "finding tag for %s", version)
-		}
-		if commitish == "" {
-			commitish = "origin/master"
+			log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", o.GitRef).Error())
+			commitish = fmt.Sprintf("%s/%s", "origin", o.GitRef)
 		}
 		err = o.Git().ResetHard(cloneDir, commitish)
 		if err != nil {
@@ -187,7 +197,7 @@ func (o *BootOptions) Run() error {
 		}
 
 		if !exists {
-			return fmt.Errorf("The cloned repository %s does not include a Jenkins X Pipeline file at %s", o.GitURL, pipelineFile)
+			return fmt.Errorf("The cloned repository %s does not include a Jenkins X Pipeline file at %s", gitURL, pipelineFile)
 		}
 	}
 
@@ -218,7 +228,7 @@ func (o *BootOptions) Run() error {
 	so.NoReleasePrepare = true
 	so.AdditionalEnvVars = map[string]string{
 		"JX_NO_TILLER": "true",
-		"REPO_URL":     o.GitURL,
+		"REPO_URL":     gitURL,
 	}
 
 	so.VersionResolver, err = o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
