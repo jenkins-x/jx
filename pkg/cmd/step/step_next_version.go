@@ -106,7 +106,7 @@ func (o *StepNextVersionOptions) Run() error {
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		rev, tag, err := o.Git().GetCurrentGitTagSHA(o.Dir)
+		rev, tag, err := o.Git().GetCommitPointedToByLatestTag(o.Dir)
 		if err != nil {
 			return errors.WithStack(err)
 		}

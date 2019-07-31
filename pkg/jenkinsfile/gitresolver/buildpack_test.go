@@ -1,15 +1,17 @@
 package gitresolver
 
 import (
-	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/gits/testhelpers"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildPackInitClone(t *testing.T) {
@@ -63,11 +65,11 @@ func TestBuildPackInitClone(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Removing the remote tracking information, after executing InitBuildPack, it should have not failed and it should've set a remote tracking branch
-	gits.GitCmd(func(s string, i ...int) {}, gitDir, "branch", "--unset-upstream")
+	testhelpers.GitCmd(func(s string, i ...int) {}, gitDir, "branch", "--unset-upstream")
 
 	_, err = InitBuildPack(gitter, "", "master")
 
-	gits.GitCmd(func(s string, i ...int) {}, gitDir, "status", "-sb")
+	testhelpers.GitCmd(func(s string, i ...int) {}, gitDir, "status", "-sb")
 
 	args := []string{"status", "-sb"}
 	cmd := util.Command{

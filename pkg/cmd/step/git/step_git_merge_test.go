@@ -2,15 +2,16 @@ package git
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/gits/testhelpers"
+	"github.com/jenkins-x/jx/pkg/log"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 func TestStepGitMerge(t *testing.T) {
@@ -47,28 +48,28 @@ var _ = Describe("step git merge", func() {
 		repoDir, err = ioutil.TempDir("", "jenkins-x-git-test-repo-")
 		By(fmt.Sprintf("creating a test repository in '%s'", repoDir))
 		Expect(err).NotTo(HaveOccurred())
-		gits.GitCmd(Fail, repoDir, "init")
+		testhelpers.GitCmd(Fail, repoDir, "init")
 
 		By("adding single commit on master branch")
-		gits.WriteFile(Fail, repoDir, "a.txt", "a")
-		gits.Add(Fail, repoDir)
-		masterSha = gits.Commit(Fail, repoDir, "a commit")
+		testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+		testhelpers.Add(Fail, repoDir)
+		masterSha = testhelpers.Commit(Fail, repoDir, "a commit")
 
 		By("creating branch 'b' and adding a commit")
-		gits.Branch(Fail, repoDir, "b")
-		gits.WriteFile(Fail, repoDir, "b.txt", "b")
-		gits.Add(Fail, repoDir)
-		branchBSha = gits.Commit(Fail, repoDir, "b commit")
+		testhelpers.Branch(Fail, repoDir, "b")
+		testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+		testhelpers.Add(Fail, repoDir)
+		branchBSha = testhelpers.Commit(Fail, repoDir, "b commit")
 
 		By("creating branch 'c' and adding a commit")
-		gits.Checkout(Fail, repoDir, "master")
-		gits.Branch(Fail, repoDir, "c")
-		gits.WriteFile(Fail, repoDir, "c.txt", "c")
-		gits.Add(Fail, repoDir)
-		branchCSha = gits.Commit(Fail, repoDir, "c commit")
+		testhelpers.Checkout(Fail, repoDir, "master")
+		testhelpers.Branch(Fail, repoDir, "c")
+		testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+		testhelpers.Add(Fail, repoDir)
+		branchCSha = testhelpers.Commit(Fail, repoDir, "c commit")
 
 		By("checking out master")
-		gits.Checkout(Fail, repoDir, "master")
+		testhelpers.Checkout(Fail, repoDir, "master")
 	})
 
 	AfterEach(func() {
@@ -85,7 +86,7 @@ var _ = Describe("step git merge", func() {
 
 	Context("with command line options", func() {
 		It("succeeds", func() {
-			currentHeadSha := gits.HeadSha(Fail, repoDir)
+			currentHeadSha := testhelpers.HeadSha(Fail, repoDir)
 			Expect(currentHeadSha).Should(Equal(masterSha))
 
 			options := StepGitMergeOptions{
@@ -101,7 +102,7 @@ var _ = Describe("step git merge", func() {
 			err := options.Run()
 			Expect(err).NotTo(HaveOccurred())
 
-			currentHeadSha = gits.HeadSha(Fail, repoDir)
+			currentHeadSha = testhelpers.HeadSha(Fail, repoDir)
 			Expect(currentHeadSha).Should(Equal(branchBSha))
 		})
 	})
@@ -118,7 +119,7 @@ var _ = Describe("step git merge", func() {
 		})
 
 		It("succeeds", func() {
-			currentHeadSha := gits.HeadSha(Fail, repoDir)
+			currentHeadSha := testhelpers.HeadSha(Fail, repoDir)
 			Expect(currentHeadSha).Should(Equal(masterSha))
 
 			options := StepGitMergeOptions{
@@ -131,7 +132,7 @@ var _ = Describe("step git merge", func() {
 			err := options.Run()
 			Expect(err).NotTo(HaveOccurred())
 
-			currentHeadSha = gits.HeadSha(Fail, repoDir)
+			currentHeadSha = testhelpers.HeadSha(Fail, repoDir)
 			Expect(currentHeadSha).Should(Equal(branchBSha))
 		})
 	})
@@ -149,7 +150,7 @@ var _ = Describe("step git merge", func() {
 		})
 
 		It("merges all shas and creates a merge commit", func() {
-			currentHeadSha := gits.HeadSha(Fail, repoDir)
+			currentHeadSha := testhelpers.HeadSha(Fail, repoDir)
 			Expect(currentHeadSha).Should(Equal(masterSha))
 
 			options := StepGitMergeOptions{
@@ -188,7 +189,7 @@ var _ = Describe("step git merge", func() {
 				err := options.Run()
 				Expect(err).NotTo(HaveOccurred())
 
-				currentHeadSha := gits.HeadSha(Fail, repoDir)
+				currentHeadSha := testhelpers.HeadSha(Fail, repoDir)
 				Expect(currentHeadSha).Should(Equal(masterSha))
 			})
 

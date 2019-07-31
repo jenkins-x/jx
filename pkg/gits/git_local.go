@@ -273,9 +273,9 @@ func (g *GitLocal) RemoteBranchNames(dir string, prefix string) ([]string, error
 	return g.GitCLI.RemoteBranchNames(dir, prefix)
 }
 
-// GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
-func (g *GitLocal) GetPreviousGitTagSHA(dir string) (string, string, error) {
-	return g.GitCLI.GetPreviousGitTagSHA(dir)
+// GetCommitPointedToByPreviousTag returns the previous git tag from the repository at the given directory
+func (g *GitLocal) GetCommitPointedToByPreviousTag(dir string) (string, string, error) {
+	return g.GitCLI.GetCommitPointedToByPreviousTag(dir)
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
@@ -288,9 +288,9 @@ func (g *GitLocal) GetRevisionBeforeDateText(dir string, dateText string) (strin
 	return g.GitCLI.GetRevisionBeforeDateText(dir, dateText)
 }
 
-// GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
-func (g *GitLocal) GetCurrentGitTagSHA(dir string) (string, string, error) {
-	return g.GitCLI.GetCurrentGitTagSHA(dir)
+// GetCommitPointedToByLatestTag return the SHA of the current git tag from the repository at the given directory
+func (g *GitLocal) GetCommitPointedToByLatestTag(dir string) (string, string, error) {
+	return g.GitCLI.GetCommitPointedToByLatestTag(dir)
 }
 
 // GetLatestCommitMessage returns the latest git commit message

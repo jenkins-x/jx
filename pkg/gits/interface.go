@@ -253,8 +253,8 @@ type Gitter interface {
 	LoadFileFromBranch(dir string, branch string, file string) (string, error)
 
 	GetLatestCommitMessage(dir string) (string, error)
-	GetPreviousGitTagSHA(dir string) (string, string, error)
-	GetCurrentGitTagSHA(dir string) (string, string, error)
+	GetCommitPointedToByPreviousTag(dir string) (string, string, error)
+	GetCommitPointedToByLatestTag(dir string) (string, string, error)
 	FetchTags(dir string) error
 	Tags(dir string) ([]string, error)
 	FilterTags(dir string, filter string) ([]string, error)
