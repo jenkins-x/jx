@@ -299,17 +299,35 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		isTerraform := os.Getenv(config.RequirementTerraform)
 		if isTerraform == "true" {
 			requirements.Terraform = true
-			requirements.Cluster.ClusterName = os.Getenv(config.RequirementClusterName)
-			requirements.Cluster.ProjectID = os.Getenv(config.RequirementProject)
-			requirements.Cluster.Zone = os.Getenv(config.RequirementZone)
-			requirements.Cluster.EnvironmentGitOwner = os.Getenv(config.RequirementEnvGitOwner)
-			requirements.Cluster.ExternalDNSSAName = os.Getenv(config.RequirementExternalDNSServiceAccountName)
-			requirements.Cluster.VaultSAName = os.Getenv(config.RequirementVaultServiceAccountName)
-			requirements.Cluster.KanikoSAName = os.Getenv(config.RequirementKanikoServiceAccountName)
-			requirements.Ingress.DomainIssuerURL = os.Getenv(config.RequirementDomainIssuerURL)
-			kaniko := os.Getenv(config.RequirementKaniko)
-			if kaniko == "false" {
-				requirements.Kaniko = false
+			if "" != os.Getenv(config.RequirementClusterName) {
+				requirements.Cluster.ClusterName = os.Getenv(config.RequirementClusterName)
+			}
+			if "" != os.Getenv(config.RequirementProject) {
+				requirements.Cluster.ProjectID = os.Getenv(config.RequirementProject)
+			}
+			if "" != os.Getenv(config.RequirementZone) {
+				requirements.Cluster.Zone = os.Getenv(config.RequirementZone)
+			}
+			if "" != os.Getenv(config.RequirementEnvGitOwner) {
+				requirements.Cluster.EnvironmentGitOwner = os.Getenv(config.RequirementEnvGitOwner)
+			}
+			if "" != os.Getenv(config.RequirementExternalDNSServiceAccountName) {
+				requirements.Cluster.ExternalDNSSAName = os.Getenv(config.RequirementExternalDNSServiceAccountName)
+			}
+			if "" != os.Getenv(config.RequirementVaultServiceAccountName) {
+				requirements.Cluster.VaultSAName = os.Getenv(config.RequirementVaultServiceAccountName)
+			}
+			if "" != os.Getenv(config.RequirementKanikoServiceAccountName) {
+				requirements.Cluster.KanikoSAName = os.Getenv(config.RequirementKanikoServiceAccountName)
+			}
+			if "" != os.Getenv(config.RequirementDomainIssuerURL) {
+				requirements.Ingress.DomainIssuerURL = os.Getenv(config.RequirementDomainIssuerURL)
+			}
+			if "" != os.Getenv(config.RequirementKaniko) {
+				kaniko := os.Getenv(config.RequirementKaniko)
+				if kaniko == "true" {
+					requirements.Kaniko = true
+				}
 			}
 		}
 		msg := "please specify '%s' in jx-requirements when running  in  batch mode"
