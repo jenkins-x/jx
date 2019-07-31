@@ -431,8 +431,8 @@ func (g *GitFake) HasChanges(dir string) (bool, error) {
 	return g.Changes, nil
 }
 
-// GetPreviousGitTagSHA returns the previous git tag SHA
-func (g *GitFake) GetPreviousGitTagSHA(dir string) (string, string, error) {
+// GetCommitPointedToByPreviousTag returns the previous git tag SHA
+func (g *GitFake) GetCommitPointedToByPreviousTag(dir string) (string, string, error) {
 	len := len(g.Commits)
 	if len < 2 {
 		return "", "", errors.New("no previous commit found")
@@ -440,8 +440,8 @@ func (g *GitFake) GetPreviousGitTagSHA(dir string) (string, string, error) {
 	return g.Commits[len-2].SHA, "", nil
 }
 
-// GetCurrentGitTagSHA returns the current git tag sha
-func (g *GitFake) GetCurrentGitTagSHA(dir string) (string, string, error) {
+// GetCommitPointedToByLatestTag returns the current git tag sha
+func (g *GitFake) GetCommitPointedToByLatestTag(dir string) (string, string, error) {
 	len := len(g.Commits)
 	if len < 1 {
 		return "", "", errors.New("no current commit found")

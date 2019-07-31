@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/gits/testhelpers"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	. "github.com/onsi/ginkgo"
@@ -80,7 +82,7 @@ var _ = Describe("Git CLI", func() {
 		repoDir, err = ioutil.TempDir("", "jenkins-x-git-test-repo-")
 		Expect(err).NotTo(HaveOccurred())
 		By(fmt.Sprintf("creating a test repository in '%s'", repoDir))
-		gits.GitCmd(Fail, repoDir, "init")
+		testhelpers.GitCmd(Fail, repoDir, "init")
 	})
 
 	AfterEach(func() {
@@ -128,33 +130,33 @@ var _ = Describe("Git CLI", func() {
 
 		BeforeEach(func() {
 			By("adding commit a on master branch")
-			gits.WriteFile(Fail, repoDir, "a.txt", "a")
-			gits.Add(Fail, repoDir)
-			commitASha = gits.Commit(Fail, repoDir, "commit a")
+			testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+			testhelpers.Add(Fail, repoDir)
+			commitASha = testhelpers.Commit(Fail, repoDir, "commit a")
 
 			By("creating branch 'b' and adding a commit")
-			gits.Branch(Fail, repoDir, "b")
-			gits.WriteFile(Fail, repoDir, "b.txt", "b")
-			gits.Add(Fail, repoDir)
-			commitBSha = gits.Commit(Fail, repoDir, "commit b")
+			testhelpers.Branch(Fail, repoDir, "b")
+			testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+			testhelpers.Add(Fail, repoDir)
+			commitBSha = testhelpers.Commit(Fail, repoDir, "commit b")
 
 			By("creating branch 'c' and adding a commit")
-			gits.Checkout(Fail, repoDir, "master")
-			gits.Branch(Fail, repoDir, "c")
-			gits.WriteFile(Fail, repoDir, "c.txt", "c")
-			gits.Add(Fail, repoDir)
-			commitCSha = gits.Commit(Fail, repoDir, "commit c")
+			testhelpers.Checkout(Fail, repoDir, "master")
+			testhelpers.Branch(Fail, repoDir, "c")
+			testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+			testhelpers.Add(Fail, repoDir)
+			commitCSha = testhelpers.Commit(Fail, repoDir, "commit c")
 
-			gits.Checkout(Fail, repoDir, "master")
+			testhelpers.Checkout(Fail, repoDir, "master")
 			By("adding commit d on master branch")
-			gits.WriteFile(Fail, repoDir, "d.txt", "d")
-			gits.Add(Fail, repoDir)
-			commitDSha = gits.Commit(Fail, repoDir, "commit d")
+			testhelpers.WriteFile(Fail, repoDir, "d.txt", "d")
+			testhelpers.Add(Fail, repoDir)
+			commitDSha = testhelpers.Commit(Fail, repoDir, "commit d")
 
 			By("adding commit e on master branch")
-			gits.WriteFile(Fail, repoDir, "e.txt", "e")
-			gits.Add(Fail, repoDir)
-			commitESha = gits.Commit(Fail, repoDir, "commit e")
+			testhelpers.WriteFile(Fail, repoDir, "e.txt", "e")
+			testhelpers.Add(Fail, repoDir)
+			commitESha = testhelpers.Commit(Fail, repoDir, "commit e")
 		})
 
 		It("returns all commits in range", func() {
@@ -178,7 +180,7 @@ var _ = Describe("Git CLI", func() {
 		})
 
 		It("returns merge commits", func() {
-			gits.Merge(Fail, repoDir, commitBSha, commitCSha)
+			testhelpers.Merge(Fail, repoDir, commitBSha, commitCSha)
 			Expect(err).NotTo(HaveOccurred())
 
 			commits, err := git.GetCommits(repoDir, commitESha, "HEAD")
@@ -200,110 +202,179 @@ var _ = Describe("Git CLI", func() {
 
 		Context("when there are commits", func() {
 			BeforeEach(func() {
-				gits.WriteFile(Fail, repoDir, "a.txt", "foo")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "first commit")
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "first commit")
 			})
 
 			Specify("the sha of the last commit is returned", func() {
 				sha, err := git.GetLatestCommitSha(repoDir)
 				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(gits.ReadRef(Fail, repoDir, "refs/heads/master")))
+				Expect(sha).Should(Equal(testhelpers.ReadRef(Fail, repoDir, "refs/heads/master")))
 			})
 		})
 	})
 
 	Describe("Get version tags", func() {
 		var (
-			tag2SHA string
-			tag3SHA string
+			tag2SHA       string
+			tag3SHA       string
+			tag2CommitSHA string
+			tag3CommitSHA string
 		)
 
 		Context("when tags are on master", func() {
 			BeforeEach(func() {
-				gits.WriteFile(Fail, repoDir, "a.txt", "a")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "first commit")
-				gits.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "first commit")
+				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
 
-				gits.WriteFile(Fail, repoDir, "b.txt", "b")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "second commit")
-				tag2SHA = gits.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "second commit")
+				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
 
-				gits.WriteFile(Fail, repoDir, "c.txt", "c")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "third commit")
-				tag3SHA = gits.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "third commit")
+				tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+				tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
 			})
 
-			It("#GetCurrentGitTagSHA", func() {
-				sha, tag, err := git.GetCurrentGitTagSHA(repoDir)
+			It("#GetNthTagSHA1", func() {
+				sha, tag, err := git.NthTag(repoDir, 1)
 				Expect(err).Should(BeNil())
 				Expect(sha).Should(Equal(tag3SHA))
 				Expect(tag).Should(Equal("v0.0.3"))
 			})
 
-			It("#GetPreviousGitTagSHA", func() {
-				sha, tag, err := git.GetPreviousGitTagSHA(repoDir)
+			It("#GetNthTagSHA2", func() {
+				sha, tag, err := git.NthTag(repoDir, 2)
 				Expect(err).Should(BeNil())
 				Expect(sha).Should(Equal(tag2SHA))
 				Expect(tag).Should(Equal("v0.0.2"))
+			})
+			It("#GetCommitPointedToByLatestTag", func() {
+				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag3CommitSHA))
+				Expect(tag).Should(Equal("v0.0.3"))
+			})
+
+			It("#GetCommitPointedToByPreviousTag", func() {
+				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2CommitSHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+		})
+
+		Context("when there is only one tag", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "second commit")
+				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
+			})
+
+			It("#GetNthTagSHA1", func() {
+				sha, tag, err := git.NthTag(repoDir, 1)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2SHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+
+			It("#GetNthTagSHA2", func() {
+				sha, tag, err := git.NthTag(repoDir, 2)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(""))
+				Expect(tag).Should(Equal(""))
+			})
+			It("#GetCommitPointedToByLatestTag", func() {
+				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2CommitSHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+
+			It("#GetCommitPointedToByPreviousTag", func() {
+				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(""))
+				Expect(tag).Should(Equal(""))
 			})
 		})
 
 		Context("when tags are made on release branches", func() {
 			BeforeEach(func() {
 				By("creating commit on master")
-				gits.WriteFile(Fail, repoDir, "a.txt", "a")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "first master commit")
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "first master commit")
 
 				By("creating first release branch")
-				gits.Branch(Fail, repoDir, "release_0_0_1")
-				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "adding version")
-				gits.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+				testhelpers.Branch(Fail, repoDir, "release_0_0_1")
+				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "adding version")
+				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
 
 				By("creating commit on master")
-				gits.Checkout(Fail, repoDir, "master")
-				gits.WriteFile(Fail, repoDir, "b.txt", "b")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "second master commit")
+				testhelpers.Checkout(Fail, repoDir, "master")
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "second master commit")
 
 				By("creating second release branch")
-				gits.Branch(Fail, repoDir, "release_0_0_2")
-				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "adding version")
-				tag2SHA = gits.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				testhelpers.Branch(Fail, repoDir, "release_0_0_2")
+				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "adding version")
+				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
 
 				By("creating commit on master")
-				gits.Checkout(Fail, repoDir, "master")
-				gits.WriteFile(Fail, repoDir, "c.txt", "c")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "third master commit")
+				testhelpers.Checkout(Fail, repoDir, "master")
+				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "third master commit")
 
 				By("creating third release branch")
-				gits.Branch(Fail, repoDir, "release_0_0_3")
-				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "adding version")
-				tag3SHA = gits.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+				testhelpers.Branch(Fail, repoDir, "release_0_0_3")
+				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "adding version")
+				tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+				tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
 			})
 
-			It("#GetCurrentGitTagSHA", func() {
-				sha, tag, err := git.GetCurrentGitTagSHA(repoDir)
+			It("#GetNthTagSHA1", func() {
+				sha, tag, err := git.NthTag(repoDir, 1)
 				Expect(err).Should(BeNil())
 				Expect(sha).Should(Equal(tag3SHA))
 				Expect(tag).Should(Equal("v0.0.3"))
 			})
 
-			It("#GetPreviousGitTagSHA", func() {
-				sha, tag, err := git.GetPreviousGitTagSHA(repoDir)
+			It("#GetNthTagSHA2", func() {
+				sha, tag, err := git.NthTag(repoDir, 2)
 				Expect(err).Should(BeNil())
 				Expect(sha).Should(Equal(tag2SHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+			It("#GetCommitPointedToByLatestTag", func() {
+				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag3CommitSHA))
+				Expect(tag).Should(Equal("v0.0.3"))
+			})
+
+			It("#GetCommitPointedToByPreviousTag", func() {
+				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2CommitSHA))
 				Expect(tag).Should(Equal("v0.0.2"))
 			})
 		})
@@ -311,55 +382,70 @@ var _ = Describe("Git CLI", func() {
 		Context("when tags are made in detached HEAD mode", func() {
 			BeforeEach(func() {
 				By("creating commit on master")
-				gits.WriteFile(Fail, repoDir, "a.txt", "a")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "first master commit")
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "first master commit")
 
 				By("detaching HEAD and creating first release")
-				gits.DetachHead(Fail, repoDir)
-				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "adding version")
-				gits.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+				testhelpers.DetachHead(Fail, repoDir)
+				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "adding version")
+				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
 
 				By("creating commit on master")
-				gits.Checkout(Fail, repoDir, "master")
-				gits.WriteFile(Fail, repoDir, "b.txt", "b")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "second master commit")
+				testhelpers.Checkout(Fail, repoDir, "master")
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "second master commit")
 
 				By("detaching HEAD and creating second release")
-				gits.DetachHead(Fail, repoDir)
-				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "adding version")
-				tag2SHA = gits.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				testhelpers.DetachHead(Fail, repoDir)
+				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "adding version")
+				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
 
 				By("creating commit on master")
-				gits.Checkout(Fail, repoDir, "master")
-				gits.WriteFile(Fail, repoDir, "c.txt", "c")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "third master commit")
+				testhelpers.Checkout(Fail, repoDir, "master")
+				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "third master commit")
 
 				By("detaching HEAD and creating second release")
-				gits.DetachHead(Fail, repoDir)
-				gits.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
-				gits.Add(Fail, repoDir)
-				gits.Commit(Fail, repoDir, "adding version")
-				tag3SHA = gits.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+				testhelpers.DetachHead(Fail, repoDir)
+				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "adding version")
+				tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+				tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
 			})
 
-			It("#GetCurrentGitTagSHA", func() {
-				sha, tag, err := git.GetCurrentGitTagSHA(repoDir)
+			It("#GetNthTagSHA1", func() {
+				sha, tag, err := git.NthTag(repoDir, 1)
 				Expect(err).Should(BeNil())
 				Expect(sha).Should(Equal(tag3SHA))
 				Expect(tag).Should(Equal("v0.0.3"))
 			})
 
-			It("#GetPreviousGitTagSHA", func() {
-				sha, tag, err := git.GetPreviousGitTagSHA(repoDir)
+			It("#GetNthTagSHA2", func() {
+				sha, tag, err := git.NthTag(repoDir, 2)
 				Expect(err).Should(BeNil())
 				Expect(sha).Should(Equal(tag2SHA))
+				Expect(tag).Should(Equal("v0.0.2"))
+			})
+			It("#GetCommitPointedToByLatestTag", func() {
+				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag3CommitSHA))
+				Expect(tag).Should(Equal("v0.0.3"))
+			})
+
+			It("#GetCommitPointedToByPreviousTag", func() {
+				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2CommitSHA))
 				Expect(tag).Should(Equal("v0.0.2"))
 			})
 		})

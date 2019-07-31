@@ -1,13 +1,14 @@
-package gits
+package testhelpers
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // WriteFile creates a file with the specified name underneath the gitRepo directory adding the specified content.
@@ -65,7 +66,7 @@ func Add(fail func(string, ...int), repoDir string) {
 
 // Commit commits all staged changes with the specified commit message.
 func Commit(fail func(string, ...int), repoDir string, message string) string {
-	GitCmd(fail, repoDir, "commit", "-m", message)
+	GitCmd(fail, repoDir, "commit", "-m", message, "--no-gpg-sign")
 	return HeadSha(fail, repoDir)
 }
 
@@ -93,21 +94,28 @@ func DetachHead(fail func(string, ...int), repoDir string) {
 
 // Merge merges the specified commits into the current branch
 func Merge(fail func(string, ...int), repoDir string, commits ...string) {
-	args := []string{"merge"}
+	args := []string{"merge", "--no-gpg-sign"}
 	args = append(args, commits...)
 	GitCmd(fail, repoDir, args...)
 }
 
+// Revlist lists commits that are reachable by following the parent links from the given commit
+func Revlist(fail func(string, ...int), repoDir string, maxCount int, commit string) string {
+	args := []string{"rev-list", fmt.Sprintf("--max-count=%d", maxCount), commit}
+	return GitCmd(fail, repoDir, args...)
+}
+
 // GitCmd runs a git command with arguments in the specified git repository
-func GitCmd(fail func(string, ...int), repoDir string, args ...string) {
+func GitCmd(fail func(string, ...int), repoDir string, args ...string) string {
 	cmd := util.Command{
 		Dir:  repoDir,
 		Name: "git",
 		Args: args,
 	}
-	_, err := cmd.RunWithoutRetry()
+	out, err := cmd.RunWithoutRetry()
 	if err != nil {
 		log.Logger().Error(err.Error())
 		fail("unable to write file content")
 	}
+	return out
 }

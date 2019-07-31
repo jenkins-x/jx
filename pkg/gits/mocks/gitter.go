@@ -560,6 +560,52 @@ func (mock *MockGitter) GetAuthorEmailForCommit(_param0 string, _param1 string) 
 	return ret0, ret1
 }
 
+func (mock *MockGitter) GetCommitPointedToByLatestTag(_param0 string) (string, string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetCommitPointedToByLatestTag", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 string
+	var ret2 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
+	}
+	return ret0, ret1, ret2
+}
+
+func (mock *MockGitter) GetCommitPointedToByPreviousTag(_param0 string) (string, string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetCommitPointedToByPreviousTag", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 string
+	var ret2 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
+	}
+	return ret0, ret1, ret2
+}
+
 func (mock *MockGitter) GetCommits(_param0 string, _param1 string, _param2 string) ([]gits.GitCommit, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -577,29 +623,6 @@ func (mock *MockGitter) GetCommits(_param0 string, _param1 string, _param2 strin
 		}
 	}
 	return ret0, ret1
-}
-
-func (mock *MockGitter) GetCurrentGitTagSHA(_param0 string) (string, string, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockGitter().")
-	}
-	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("GetCurrentGitTagSHA", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 string
-	var ret1 string
-	var ret2 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(string)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(string)
-		}
-		if result[2] != nil {
-			ret2 = result[2].(error)
-		}
-	}
-	return ret0, ret1, ret2
 }
 
 func (mock *MockGitter) GetLatestCommitMessage(_param0 string) (string, error) {
@@ -638,29 +661,6 @@ func (mock *MockGitter) GetLatestCommitSha(_param0 string) (string, error) {
 		}
 	}
 	return ret0, ret1
-}
-
-func (mock *MockGitter) GetPreviousGitTagSHA(_param0 string) (string, string, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockGitter().")
-	}
-	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("GetPreviousGitTagSHA", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 string
-	var ret1 string
-	var ret2 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(string)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(string)
-		}
-		if result[2] != nil {
-			ret2 = result[2].(error)
-		}
-	}
-	return ret0, ret1, ret2
 }
 
 func (mock *MockGitter) GetRemoteUrl(_param0 *config.Config, _param1 string) string {
@@ -2474,6 +2474,60 @@ func (c *MockGitter_GetAuthorEmailForCommit_OngoingVerification) GetAllCapturedA
 	return
 }
 
+func (verifier *VerifierMockGitter) GetCommitPointedToByLatestTag(_param0 string) *MockGitter_GetCommitPointedToByLatestTag_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetCommitPointedToByLatestTag", params, verifier.timeout)
+	return &MockGitter_GetCommitPointedToByLatestTag_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_GetCommitPointedToByLatestTag_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_GetCommitPointedToByLatestTag_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *MockGitter_GetCommitPointedToByLatestTag_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitter) GetCommitPointedToByPreviousTag(_param0 string) *MockGitter_GetCommitPointedToByPreviousTag_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetCommitPointedToByPreviousTag", params, verifier.timeout)
+	return &MockGitter_GetCommitPointedToByPreviousTag_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_GetCommitPointedToByPreviousTag_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_GetCommitPointedToByPreviousTag_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *MockGitter_GetCommitPointedToByPreviousTag_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierMockGitter) GetCommits(_param0 string, _param1 string, _param2 string) *MockGitter_GetCommits_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetCommits", params, verifier.timeout)
@@ -2504,33 +2558,6 @@ func (c *MockGitter_GetCommits_OngoingVerification) GetAllCapturedArguments() (_
 		_param2 = make([]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockGitter) GetCurrentGitTagSHA(_param0 string) *MockGitter_GetCurrentGitTagSHA_OngoingVerification {
-	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetCurrentGitTagSHA", params, verifier.timeout)
-	return &MockGitter_GetCurrentGitTagSHA_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockGitter_GetCurrentGitTagSHA_OngoingVerification struct {
-	mock              *MockGitter
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockGitter_GetCurrentGitTagSHA_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
-}
-
-func (c *MockGitter_GetCurrentGitTagSHA_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
 		}
 	}
 	return
@@ -2580,33 +2607,6 @@ func (c *MockGitter_GetLatestCommitSha_OngoingVerification) GetCapturedArguments
 }
 
 func (c *MockGitter_GetLatestCommitSha_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockGitter) GetPreviousGitTagSHA(_param0 string) *MockGitter_GetPreviousGitTagSHA_OngoingVerification {
-	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetPreviousGitTagSHA", params, verifier.timeout)
-	return &MockGitter_GetPreviousGitTagSHA_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockGitter_GetPreviousGitTagSHA_OngoingVerification struct {
-	mock              *MockGitter
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockGitter_GetPreviousGitTagSHA_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
-}
-
-func (c *MockGitter_GetPreviousGitTagSHA_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

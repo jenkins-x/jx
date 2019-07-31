@@ -709,9 +709,21 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 	return answer, nil
 }
 
-// GetPreviousGitTagSHA returns the previous git SHA and tag from the repository at the given directory
-func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, string, error) {
-	return g.nthTagSHA(dir, 2)
+// GetCommitPointedToByPreviousTag return the SHA of the commit pointed to by the latest-but-1 git tag as well as the tag
+// name for the git repo in dir
+func (g *GitCLI) GetCommitPointedToByPreviousTag(dir string) (string, string, error) {
+	tagSHA, tagName, err := g.NthTag(dir, 2)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "getting commit pointed to by previous tag in %s", dir)
+	}
+	if tagSHA == "" {
+		return tagSHA, tagName, nil
+	}
+	commitSHA, err := g.gitCmdWithOutput(dir, "rev-list", "-n", "1", tagSHA)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "running for git rev-list -n 1 %s", tagSHA)
+	}
+	return commitSHA, tagName, err
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
@@ -729,9 +741,21 @@ func (g *GitCLI) GetRevisionBeforeDateText(dir string, dateText string) (string,
 	return g.gitCmdWithOutput(dir, "rev-list", "-1", "--before=\""+dateText+"\"", "--max-count=1", branch)
 }
 
-// GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
-func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, string, error) {
-	return g.nthTagSHA(dir, 1)
+// GetCommitPointedToByLatestTag return the SHA of the commit pointed to by the latest git tag as well as the tag name
+// for the git repo in dir
+func (g *GitCLI) GetCommitPointedToByLatestTag(dir string) (string, string, error) {
+	tagSHA, tagName, err := g.NthTag(dir, 1)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "getting commit pointed to by latest tag in %s", dir)
+	}
+	if tagSHA == "" {
+		return tagSHA, tagName, nil
+	}
+	commitSHA, err := g.gitCmdWithOutput(dir, "rev-list", "-n", "1", tagSHA)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "running for git rev-list -n 1 %s", tagSHA)
+	}
+	return commitSHA, tagName, err
 }
 
 // GetLatestCommitMessage returns the latest git commit message
@@ -944,9 +968,9 @@ func (g *GitCLI) SetUpstreamTo(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("origin/%s", branch), branch)
 }
 
-// nthTagSHA return the SHA and tag name of nth tag in reverse chronological order from the repository at the given directory.
+// NthTag return the SHA and tag name of nth tag in reverse chronological order from the repository at the given directory.
 // If the nth tag does not exist empty strings without an error are returned.
-func (g *GitCLI) nthTagSHA(dir string, n int) (string, string, error) {
+func (g *GitCLI) NthTag(dir string, n int) (string, string, error) {
 	args := []string{
 		"for-each-ref",
 		"--sort=-creatordate",
