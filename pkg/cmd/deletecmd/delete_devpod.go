@@ -68,7 +68,7 @@ func NewCmdDeleteDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *DeleteDevPodOptions) Run() error {
-	args := o.Args
+	devPods := o.Args
 
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
@@ -93,21 +93,23 @@ func (o *DeleteDevPodOptions) Run() error {
 		return fmt.Errorf("There are no DevPods for user %s in namespace %s. You can create one via: %s\n", info(userName), info(ns), info("jx create devpod"))
 	}
 
-	if len(args) == 0 {
-		args, err = util.PickNames(names, "Pick DevPod:", "", o.In, o.Out, o.Err)
+	if len(devPods) == 0 {
+		devPods, err = util.PickNames(names, "Pick DevPod:", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
 	}
-	deletePods := strings.Join(args, ", ")
 
-	if !util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted", o.In, o.Out, o.Err) {
+	deletePods := strings.Join(devPods, ", ")
+
+	if !o.BatchMode && !util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted", o.In, o.Out, o.Err) {
 		return nil
 	}
-	for _, name := range args {
+	for _, name := range devPods {
 		if util.StringArrayIndex(names, name) < 0 {
 			return util.InvalidOption(opts.OptionLabel, name, names)
 		}
+		log.Logger().Debugf("About to delete Devpod %s", name)
 		err = client.CoreV1().Pods(ns).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			return err
