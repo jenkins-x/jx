@@ -123,7 +123,6 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
-
 	err = o.verifyIngress(requirements, requirementsFileName)
 	if err != nil {
 		return err
