@@ -35,7 +35,7 @@ const (
 	// RequirementDomainIssuerUsername contains the username used for basic auth when requesting a domain
 	RequirementDomainIssuerUsername = "JX_REQUIREMENT_DOMAIN_ISSUER_USERNAME"
 	// RequirementDomainIssuerPassword contains the password used for basic auth when requesting a domain
-	RequirementDomainIssuerPassword = "JX_REQUIREMENT_DOMAIN_ISSUER_USERNAME"
+	RequirementDomainIssuerPassword = "JX_REQUIREMENT_DOMAIN_ISSUER_PASSWORD"
 	// RequirementDomainIssuerURL contains the URL to the service used when requesting a domain
 	RequirementDomainIssuerURL = "JX_REQUIREMENT_DOMAIN_ISSUER_URL"
 	// RequirementTerraform if Terraform was used to create the cluster
