@@ -427,7 +427,7 @@ func PipelineRunIsNotPending(pr *pipelineapi.PipelineRun) bool {
 		for _, v := range pr.Status.TaskRuns {
 			if v.Status != nil {
 				for _, stepState := range v.Status.Steps {
-					if stepState.Waiting == nil {
+					if stepState.Waiting == nil || stepState.Waiting.Reason == "PodInitializing" {
 						return true
 					}
 				}
