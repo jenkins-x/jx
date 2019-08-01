@@ -37,6 +37,7 @@ type StepVerifyPreInstallOptions struct {
 	LazyCreateFlag       string
 	Namespace            string
 	TestKanikoSecretData string
+	WorkloadIdentity     bool
 }
 
 // NewCmdStepVerifyPreInstall creates the `jx step verify pod` command
@@ -65,6 +66,8 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the install requirements file")
 	cmd.Flags().StringVarP(&options.LazyCreateFlag, "lazy-create", "", "", fmt.Sprintf("Specify true/false as to whether to lazily create missing resources. If not specified it is enabled if Terraform is not specified in the %s file", config.RequirementsConfigFileName))
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
+	cmd.Flags().BoolVarP(&options.WorkloadIdentity, "workload-identity", "", false, "Enable this if using GKE Workload Identity to avoid reconnecting to the Cluster.")
+
 	return cmd
 }
 
@@ -102,7 +105,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if o.LazyCreate {
 		log.Logger().Infof("we will try to lazily create any missing resources to get the current cluster ready to boot Jenkins X\n")
 	} else {
-		log.Logger().Infof("lazy create of cloud resources is disabled\n")
+		log.Logger().Warn("lazy create of cloud resources is disabled\n")
 
 	}
 
@@ -199,6 +202,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 // EnsureHelm ensures helm is installed
 func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
+	log.Logger().Debug("Verifying Helm...")
 	// lets make sure we don't try use tiller
 	o.EnableRemoteKubeCluster()
 	_, err := o.Helm().Version(false)
@@ -234,6 +238,7 @@ func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
 }
 
 func (o *StepVerifyPreInstallOptions) verifyDevNamespace(kubeClient kubernetes.Interface, ns string) error {
+	log.Logger().Debug("Verifying Dev Namespace...\n")
 	ns, envName, err := kube.GetDevNamespace(kubeClient, ns)
 	if err != nil {
 		return err
@@ -248,7 +253,7 @@ func (o *StepVerifyPreInstallOptions) verifyDevNamespace(kubeClient kubernetes.I
 }
 
 func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *config.RequirementsConfig, ns string) error {
-	log.Logger().Infof("lazily creating the kaniko secret\n")
+	log.Logger().Debugf("Lazily creating the kaniko secret\n")
 	io := &create.InstallOptions{}
 	io.CommonOptions = o.CommonOptions
 	io.Flags.Kaniko = true
@@ -275,6 +280,7 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 
 // VerifyInstallConfig lets ensure we modify the install ConfigMap with the requirements
 func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig, requirementsFileName string) error {
+	log.Logger().Debug("Verifying Install Config...")
 	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
 		func(configMap *corev1.ConfigMap) error {
 			secretsLocation := string(secrets.FileSystemLocationKind)
@@ -295,6 +301,7 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 
 // gatherRequirements gathers cluster requirements and connects to the cluster if required
 func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.RequirementsConfig, requirementsFileName string) (*config.RequirementsConfig, error) {
+	log.Logger().Debug("Gathering Requirements...")
 	if o.BatchMode {
 		isTerraform := os.Getenv(config.RequirementTerraform)
 		if isTerraform == "true" {
@@ -410,11 +417,15 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 
 		}
 		if !autoAcceptDefaults {
-			// connect to the specified cluster if different from the currently connected one
-			log.Logger().Infof("Connecting to cluster %s", util.ColorInfo(requirements.Cluster.ClusterName))
-			err = o.GCloud().ConnectToCluster(requirements.Cluster.ProjectID, requirements.Cluster.Zone, requirements.Cluster.ClusterName)
-			if err != nil {
-				return nil, err
+			if ! o.WorkloadIdentity {
+				// connect to the specified cluster if different from the currently connected one
+				log.Logger().Infof("Connecting to cluster %s", util.ColorInfo(requirements.Cluster.ClusterName))
+				err = o.GCloud().ConnectToCluster(requirements.Cluster.ProjectID, requirements.Cluster.Zone, requirements.Cluster.ClusterName)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				log.Logger().Info("Avoiding cluster reconnection due to Workload Identity")
 			}
 		}
 	} else {
@@ -460,6 +471,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 
 // verifyStorage verifies the associated buckets exist or if enabled lazily create them
 func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.RequirementsConfig, requirementsFileName string) error {
+	log.Logger().Debug("Verifying Storage...")
 	storage := &requirements.Storage
 	err := o.verifyStorageEntry(requirements, requirementsFileName, &storage.Logs, "logs", "Long term log storage")
 	if err != nil {
@@ -602,6 +614,7 @@ func (o *StepVerifyPreInstallOptions) verifyConfigMapExists(kubeClient kubernete
 }
 
 func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.RequirementsConfig, requirementsFileName string) error {
+	log.Logger().Debug("Verifying Ingress...")
 	domain := requirements.Ingress.Domain
 	if requirements.Ingress.IsAutoDNSDomain() {
 		log.Logger().Infof("clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated\n", util.ColorInfo(domain))
@@ -615,7 +628,13 @@ func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.Require
 }
 
 func modifyMapIfNotBlank(m map[string]string, key string, value string) {
-	if value != "" {
-		m[key] = value
+	if m != nil {
+		if value != "" {
+			m[key] = value
+		} else {
+			log.Logger().Debugf("Cannot update key %s, value is nil", key)
+		}
+	} else {
+		log.Logger().Debug("Cannot update key %s, map is nil", key)
 	}
 }

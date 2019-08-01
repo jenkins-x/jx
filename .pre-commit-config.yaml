@@ -5,3 +5,10 @@ repos:
     - id: detect-secrets
       args: ['--baseline', '.secrets.baseline']
       exclude: .*/tests/.*
+- repo: local
+  hooks:
+  - id: linter
+    name: Linter
+    entry: ./hack/linter.sh
+    language: script
+    files: \.x$
