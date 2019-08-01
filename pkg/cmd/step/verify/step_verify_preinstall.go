@@ -117,11 +117,12 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 			}
 			// lets rerun the verify step to ensure its all sorted now
 			err = o.verifyDevNamespace(kubeClient, ns)
+			if err != nil {
+				return errors.Wrapf(err, "failed to verify the namespace %s", ns)
+			}
 		}
 	}
-	if err != nil {
-		return err
-	}
+
 
 	err = o.verifyIngress(requirements, requirementsFileName)
 	if err != nil {
