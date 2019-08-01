@@ -142,7 +142,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 			commitish = "master"
 		}
 	}
-	err = g.ResetHard(dir, fmt.Sprintf("%s/%s", remoteName, commitish))
+	err = g.Reset(dir, fmt.Sprintf("%s/%s", remoteName, commitish), true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
 	}
@@ -389,8 +389,11 @@ func (g *GitCLI) CommitIfChanges(dir string, message string) error {
 
 // GetCommits returns the commits in a range, exclusive of startSha and inclusive of endSha
 func (g *GitCLI) GetCommits(dir string, startSha string, endSha string) ([]GitCommit, error) {
+	return g.getCommits(dir, fmt.Sprintf("%s..%s", startSha, endSha))
+}
+func (g *GitCLI) getCommits(dir string, args ...string) ([]GitCommit, error) {
 	// use a custom format to get commits, using %x1e to separate commits and %x1f to separate fields
-	args := []string{"log", "--format=%H%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%s%n%b%x1e", fmt.Sprintf("%s..%s", startSha, endSha)}
+	args = append([]string{"log", "--format=%H%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%s%n%b%x1e"}, args...)
 	out, err := g.gitCmdWithOutput(dir, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "running git %s", strings.Join(args, " "))
@@ -420,6 +423,12 @@ func (g *GitCLI) GetCommits(dir string, startSha string, endSha string) ([]GitCo
 		answer = append(answer, commit)
 	}
 	return answer, nil
+}
+
+// GetCommitsNotOnAnyRemote returns a list of commits which are on branch but not present on a remoteGet
+
+func (g *GitCLI) GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCommit, error) {
+	return g.getCommits(dir, branch, "--not", "--remotes")
 }
 
 // CommitDir commits all changes from the given directory
@@ -924,9 +933,16 @@ func (g *GitCLI) GetLatestCommitSha(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", "HEAD")
 }
 
-// ResetHard performs a git reset --hard back to the commitish specified
-func (g *GitCLI) ResetHard(dir string, commitish string) error {
-	return g.gitCmd(dir, "reset", "--hard", commitish)
+// Reset performs a git reset --hard back to the commitish specified
+func (g *GitCLI) Reset(dir string, commitish string, hard bool) error {
+	args := []string{"reset"}
+	if hard {
+		args = append(args, "--hard")
+	}
+	if commitish != "" {
+		args = append(args, commitish)
+	}
+	return g.gitCmd(dir, args...)
 }
 
 // MergeTheirs will do a recursive merge of commitish with the strategy option theirs
@@ -1023,4 +1039,9 @@ func (g *GitCLI) PushMirror(dir string, url string) error {
 		return errors.Wrapf(err, "running git push --mirror %s", url)
 	}
 	return nil
+}
+
+// CherryPick does a git cherry-pick of commit
+func (g *GitCLI) CherryPick(dir string, commitish string) error {
+	return g.gitCmd(dir, "cherry-pick", commitish)
 }

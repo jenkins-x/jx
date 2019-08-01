@@ -240,6 +240,11 @@ func (c *GitCommit) Subject() string {
 	return lines[0]
 }
 
+// OneLine returns the commit in the Oneline format
+func (c *GitCommit) OneLine() string {
+	return fmt.Sprintf("%s %s", c.ShortSha(), c.Subject())
+}
+
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	if server.Kind == "" {
 		server.Kind = SaasGitKind(server.URL)

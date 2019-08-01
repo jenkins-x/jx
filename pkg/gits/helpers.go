@@ -140,7 +140,7 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 	}
 	log.Logger().Debugf("ran git checkout %s in %s", baseBranch, dir)
 	// Ensure we are on the right revision
-	err = gitter.ResetHard(dir, baseSha)
+	err = gitter.Reset(dir, baseSha, true)
 	if err != nil {
 		return errors.Wrapf(err, "resetting %s to %s", baseBranch, baseSha)
 	}
@@ -524,17 +524,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	}
 	localBranchExists := util.Contains(localBranches, localBranchName)
 
-	if !localBranchExists {
-		err = gitter.CreateBranch(dir, localBranchName)
-		if err != nil {
-			return "", "", nil, nil, errors.WithStack(err)
-		}
-	}
-	err = gitter.Checkout(dir, localBranchName)
-	if err != nil {
-		return "", "", nil, nil, errors.Wrapf(err, "failed to run git checkout %s", localBranchName)
-	}
-	// We always want to make sure our local branch is in the right state, whether we created it checked it out
+	// We always want to make sure our local branch is in the right state, whether we created it or checked it out
 	resetish := baseRef
 	remoteBaseRefExists, err := remoteBranchExists(baseRef, "", dir, gitter, upstreamRemote)
 	if err != nil {
@@ -543,9 +533,51 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	if remoteBaseRefExists {
 		resetish = fmt.Sprintf("%s/%s", upstreamRemote, baseRef)
 	}
-	err = gitter.ResetHard(dir, resetish)
+
+	var toCherryPick []GitCommit
+	if !localBranchExists {
+		err = gitter.CreateBranch(dir, localBranchName)
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+	} else if dirExists {
+		toCherryPick, err = gitter.GetCommitsNotOnAnyRemote(dir, localBranchName)
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+	}
+
+	err = gitter.Checkout(dir, localBranchName)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to run git checkout %s", localBranchName)
+	}
+	err = gitter.Reset(dir, resetish, true)
 	if err != nil {
 		return "", "", nil, nil, errors.Wrapf(err, "failed to run git reset --hard %s", resetish)
+	}
+
+	// Merge in any local committed changes we found
+	if len(toCherryPick) > 0 {
+		log.Logger().Infof("Attempting to cherry pick commits that were on %s but not yet pushed", localBranchName)
+	}
+	for _, c := range toCherryPick {
+		err = gitter.CherryPick(dir, c.SHA)
+		if err != nil {
+			if IsEmptyCommitError(err) {
+				log.Logger().Infof("  Ignoring %s as is empty", c.OneLine())
+				err = gitter.Reset(dir, "", true)
+				if err != nil {
+					return "", "", nil, nil, errors.Wrapf(err, "running git reset --hard")
+				}
+			} else {
+				log.Logger().Warnf(errors.Wrapf(err, "Unable to cherry-pick %s", util.ColorWarning(c.SHA)).Error())
+			}
+		} else {
+			log.Logger().Infof("  Cherry-picked %s", c.OneLine())
+		}
+	}
+	if len(toCherryPick) > 0 {
+		log.Logger().Infof("")
 	}
 
 	// one possibility is that the baseRef is not in the same state as an already existing branch, so let's merge in the
@@ -754,7 +786,7 @@ func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string
 				return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
 			}
 		}
-		err = gitter.ResetHard(dir, fromCommitish)
+		err = gitter.Reset(dir, fromCommitish, true)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
 		}

@@ -194,7 +194,7 @@ func (o *BootOptions) Run() error {
 			log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", o.GitRef).Error())
 			commitish = fmt.Sprintf("%s/%s", "origin", o.GitRef)
 		}
-		err = o.Git().ResetHard(cloneDir, commitish)
+		err = o.Git().Reset(cloneDir, commitish, true)
 		if err != nil {
 			return errors.Wrapf(err, "setting HEAD to %s", commitish)
 		}

@@ -233,8 +233,9 @@ type Gitter interface {
 	FetchBranchUnshallow(dir string, repo string, refspec ...string) error
 	Merge(dir string, commitish string) error
 	MergeTheirs(dir string, commitish string) error
-	ResetHard(dir string, commitish string) error
+	Reset(dir string, commitish string, hard bool) error
 	RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error
+	CherryPick(dir string, commitish string) error
 
 	StashPush(dir string) error
 	StashPop(dir string) error
@@ -260,8 +261,9 @@ type Gitter interface {
 	FilterTags(dir string, filter string) ([]string, error)
 	CreateTag(dir string, tag string, msg string) error
 	GetLatestCommitSha(dir string) (string, error)
-	GetCommits(dir string, startSha string, endSha string) ([]GitCommit, error)
+	GetCommits(dir string, start string, end string) ([]GitCommit, error)
 	RevParse(dir string, rev string) (string, error)
+	GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCommit, error)
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
