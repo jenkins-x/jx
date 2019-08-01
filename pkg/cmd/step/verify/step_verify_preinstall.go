@@ -417,7 +417,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 
 		}
 		if !autoAcceptDefaults {
-			if ! o.WorkloadIdentity {
+			if !o.WorkloadIdentity {
 				// connect to the specified cluster if different from the currently connected one
 				log.Logger().Infof("Connecting to cluster %s", util.ColorInfo(requirements.Cluster.ClusterName))
 				err = o.GCloud().ConnectToCluster(requirements.Cluster.ProjectID, requirements.Cluster.Zone, requirements.Cluster.ClusterName)
