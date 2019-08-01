@@ -541,8 +541,8 @@ func (g *GitFake) GetLatestCommitSha(dir string) (string, error) {
 	return "", nil
 }
 
-// ResetHard performs a git reset --hard back to the commitish specified
-func (g *GitFake) ResetHard(dir string, commitish string) error {
+// Reset performs a git reset --hard back to the commitish specified
+func (g *GitFake) Reset(dir string, commitish string, hard bool) error {
 	return nil
 }
 
@@ -602,5 +602,15 @@ func (g *GitFake) CloneBare(dir string, url string) error {
 
 // PushMirror does nothing
 func (g *GitFake) PushMirror(dir string, url string) error {
+	return nil
+}
+
+// GetCommitsNotOnAnyRemote returns a list of commits which are on branch but not present on a remote
+func (g *GitFake) GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCommit, error) {
+	return nil, nil
+}
+
+// CherryPick does a git cherry-pick of commit
+func (g *GitFake) CherryPick(dir string, commit string) error {
 	return nil
 }

@@ -408,9 +408,9 @@ func (g *GitLocal) GetLatestCommitSha(dir string) (string, error) {
 	return g.GitCLI.GetLatestCommitSha(dir)
 }
 
-// ResetHard performs a git reset --hard back to the commitish specified
-func (g *GitLocal) ResetHard(dir string, commitish string) error {
-	return g.GitCLI.ResetHard(dir, commitish)
+// Reset performs a git reset --hard back to the commitish specified
+func (g *GitLocal) Reset(dir string, commitish string, hard bool) error {
+	return g.GitCLI.Reset(dir, commitish, true)
 }
 
 // RemoteUpdate performs a git remote update
@@ -467,4 +467,14 @@ func (g *GitLocal) CloneBare(dir string, url string) error {
 // PushMirror does nothing
 func (g *GitLocal) PushMirror(dir string, url string) error {
 	return nil
+}
+
+// GetCommitsNotOnAnyRemote returns a list of commits which are on branch but not present on a remote
+func (g *GitLocal) GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCommit, error) {
+	return g.GitCLI.GetCommitsNotOnAnyRemote(dir, branch)
+}
+
+// CherryPick does a git cherry-pick of commit
+func (g *GitLocal) CherryPick(dir string, commit string) error {
+	return g.GitCLI.CherryPick(dir, commit)
 }

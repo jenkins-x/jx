@@ -140,6 +140,21 @@ func (mock *MockGitter) CheckoutRemoteBranch(_param0 string, _param1 string) err
 	return ret0
 }
 
+func (mock *MockGitter) CherryPick(_param0 string, _param1 string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0, _param1}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CherryPick", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGitter) CleanForce(_param0 string, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -612,6 +627,25 @@ func (mock *MockGitter) GetCommits(_param0 string, _param1 string, _param2 strin
 	}
 	params := []pegomock.Param{_param0, _param1, _param2}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("GetCommits", params, []reflect.Type{reflect.TypeOf((*[]gits.GitCommit)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 []gits.GitCommit
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].([]gits.GitCommit)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
+func (mock *MockGitter) GetCommitsNotOnAnyRemote(_param0 string, _param1 string) ([]gits.GitCommit, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0, _param1}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetCommitsNotOnAnyRemote", params, []reflect.Type{reflect.TypeOf((*[]gits.GitCommit)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 []gits.GitCommit
 	var ret1 error
 	if len(result) != 0 {
@@ -1142,12 +1176,12 @@ func (mock *MockGitter) RepoName(_param0 string, _param1 string) string {
 	return ret0
 }
 
-func (mock *MockGitter) ResetHard(_param0 string, _param1 string) error {
+func (mock *MockGitter) Reset(_param0 string, _param1 string, _param2 bool) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
 	}
-	params := []pegomock.Param{_param0, _param1}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("ResetHard", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Reset", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
 		if result[0] != nil {
@@ -1665,6 +1699,37 @@ func (c *MockGitter_CheckoutRemoteBranch_OngoingVerification) GetCapturedArgumen
 }
 
 func (c *MockGitter_CheckoutRemoteBranch_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitter) CherryPick(_param0 string, _param1 string) *MockGitter_CherryPick_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CherryPick", params, verifier.timeout)
+	return &MockGitter_CherryPick_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_CherryPick_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_CherryPick_OngoingVerification) GetCapturedArguments() (string, string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *MockGitter_CherryPick_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -2558,6 +2623,37 @@ func (c *MockGitter_GetCommits_OngoingVerification) GetAllCapturedArguments() (_
 		_param2 = make([]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitter) GetCommitsNotOnAnyRemote(_param0 string, _param1 string) *MockGitter_GetCommitsNotOnAnyRemote_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetCommitsNotOnAnyRemote", params, verifier.timeout)
+	return &MockGitter_GetCommitsNotOnAnyRemote_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_GetCommitsNotOnAnyRemote_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_GetCommitsNotOnAnyRemote_OngoingVerification) GetCapturedArguments() (string, string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *MockGitter_GetCommitsNotOnAnyRemote_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
 		}
 	}
 	return
@@ -3500,23 +3596,23 @@ func (c *MockGitter_RepoName_OngoingVerification) GetAllCapturedArguments() (_pa
 	return
 }
 
-func (verifier *VerifierMockGitter) ResetHard(_param0 string, _param1 string) *MockGitter_ResetHard_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ResetHard", params, verifier.timeout)
-	return &MockGitter_ResetHard_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+func (verifier *VerifierMockGitter) Reset(_param0 string, _param1 string, _param2 bool) *MockGitter_Reset_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Reset", params, verifier.timeout)
+	return &MockGitter_Reset_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockGitter_ResetHard_OngoingVerification struct {
+type MockGitter_Reset_OngoingVerification struct {
 	mock              *MockGitter
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockGitter_ResetHard_OngoingVerification) GetCapturedArguments() (string, string) {
-	_param0, _param1 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+func (c *MockGitter_Reset_OngoingVerification) GetCapturedArguments() (string, string, bool) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MockGitter_ResetHard_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitter_Reset_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -3526,6 +3622,10 @@ func (c *MockGitter_ResetHard_OngoingVerification) GetAllCapturedArguments() (_p
 		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
+		}
+		_param2 = make([]bool, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(bool)
 		}
 	}
 	return
