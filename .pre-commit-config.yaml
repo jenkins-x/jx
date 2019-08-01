@@ -11,4 +11,4 @@ repos:
     name: Linter
     entry: ./hack/linter.sh
     language: script
-    files: \.x$
+    files: \.go$
