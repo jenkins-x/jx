@@ -635,6 +635,6 @@ func modifyMapIfNotBlank(m map[string]string, key string, value string) {
 			log.Logger().Debugf("Cannot update key %s, value is nil", key)
 		}
 	} else {
-		log.Logger().Debug("Cannot update key %s, map is nil", key)
+		log.Logger().Debugf("Cannot update key %s, map is nil", key)
 	}
 }
