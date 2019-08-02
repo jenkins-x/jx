@@ -363,7 +363,7 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 			log.Logger().Warnf("missing 'key' for Environment requirements %#v", env)
 			continue
 		}
-		m, err := toObjectMap(&env)
+		m, err := util.ToObjectMap(&env)
 		if err == nil {
 			ensureHasFields(m, "owner", "repository", "gitServer", "gitKind")
 			answer[k] = m
@@ -376,7 +376,7 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 
 // ToMap converts this object to a map of maps for use in helm templating
 func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
-	m, err := toObjectMap(c)
+	m, err := util.ToObjectMap(c)
 	if m != nil {
 		ensureHasFields(m, "provider", "project", "environmentGitOwner", "gitops", "webhook")
 	}
@@ -396,17 +396,6 @@ func ensureHasFields(m map[string]interface{}, keys ...string) {
 			m[k] = ""
 		}
 	}
-}
-
-// toObjectMap converts the given object into a map of strings/maps using YAML marshalling
-func toObjectMap(object interface{}) (map[string]interface{}, error) {
-	answer := map[string]interface{}{}
-	data, err := yaml.Marshal(object)
-	if err != nil {
-		return answer, err
-	}
-	err = yaml.Unmarshal(data, &answer)
-	return answer, err
 }
 
 // MissingRequirement returns an error if there is a missing property in the requirements

@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -99,23 +100,60 @@ func FindServiceURL(client kubernetes.Interface, namespace string, name string) 
 
 	// lets try find the service via Ingress
 	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
-	if ing != nil && err == nil {
+	if err == nil {
+		return IngressURL(ing), nil
+	}
+	return "", nil
+}
+
+// IngressURL returns the URL for the ingres
+func IngressURL(ing *v1beta1.Ingress) string {
+	if ing != nil {
 		if len(ing.Spec.Rules) > 0 {
 			rule := ing.Spec.Rules[0]
 			hostname := rule.Host
 			for _, tls := range ing.Spec.TLS {
 				for _, h := range tls.Hosts {
 					if h != "" {
-						return "https://" + h, nil
+						return "https://" + h
 					}
 				}
 			}
 			if hostname != "" {
-				return "http://" + hostname, nil
+				return "http://" + hostname
 			}
 		}
 	}
-	return "", nil
+	return ""
+}
+
+// IngressHost returns the ost for the ingres
+func IngressHost(ing *v1beta1.Ingress) string {
+	if ing != nil {
+		if len(ing.Spec.Rules) > 0 {
+			rule := ing.Spec.Rules[0]
+			hostname := rule.Host
+			for _, tls := range ing.Spec.TLS {
+				for _, h := range tls.Hosts {
+					if h != "" {
+						return h
+					}
+				}
+			}
+			if hostname != "" {
+				return hostname
+			}
+		}
+	}
+	return ""
+}
+
+// IngressProtocol returns the scheme (https / http) for the Ingress
+func IngressProtocol(ing *v1beta1.Ingress) string {
+	if ing != nil && len(ing.Spec.TLS) == 0 {
+		return "http"
+	}
+	return "https"
 }
 
 func FindServiceHostname(client kubernetes.Interface, namespace string, name string) (string, error) {
