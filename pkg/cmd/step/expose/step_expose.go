@@ -28,13 +28,9 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 )
 
-const (
-	PathModeUsePath = "path"
-)
-
 var (
-	// ApiServicePathAnnotationKey the standard annotation to indicate the exposed URL should include an API path in addition to the domain name
-	ApiServicePathAnnotationKey = "api.service.kubernetes.io/path"
+	// APIServicePathAnnotationKey the standard annotation to indicate the exposed URL should include an API path in addition to the domain name
+	APIServicePathAnnotationKey = "api.service.kubernetes.io/path"
 
 	// ExposeLabelKeys the labels used to indicate if a Service should be exposed
 	ExposeLabelKeys = []string{"fabric8.io/expose", "jenkins-x.io/expose"}
@@ -138,9 +134,8 @@ func (o *StepExposeOptions) Run() error {
 		if apierrors.IsNotFound(err) {
 			log.Logger().Warnf("No services found in namespace %s: %s", ns, err.Error())
 			return nil
-		} else {
-			return errors.Wrapf(err, "failed to query services in namespace %s", ns)
 		}
+		return errors.Wrapf(err, "failed to query services in namespace %s", ns)
 	}
 
 	for _, svc := range serviceList.Items {
@@ -309,7 +304,7 @@ func (o *StepExposeOptions) applyIngressAndUpdateService(client kubernetes.Inter
 	hostName := services.IngressHost(ingress)
 	exposeURL := services.IngressURL(ingress)
 
-	path := svc.Annotations[ApiServicePathAnnotationKey]
+	path := svc.Annotations[APIServicePathAnnotationKey]
 	if path == "" {
 		path = svc.Annotations["fabric8.io/ingress.path"]
 	}
