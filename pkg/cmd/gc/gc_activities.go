@@ -115,6 +115,8 @@ func (o *GCActivitiesOptions) Run() error {
 		return err
 	}
 
+	prowEnabled, err := o.IsProw()
+
 	pRun, err := apiClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get("pipelineruns.tekton.dev", metav1.GetOptions{})
 	if err != nil {
 		if !strings.Contains(err.Error(), "\"pipelineruns.tekton.dev\" not found") {
@@ -143,7 +145,7 @@ func (o *GCActivitiesOptions) Run() error {
 	}
 
 	var jobNames []string
-	if !tektonEnabled {
+	if !prowEnabled {
 		o.jclient, err = o.JenkinsClient()
 		if err != nil {
 			return err
@@ -189,7 +191,7 @@ func (o *GCActivitiesOptions) Run() error {
 			continue
 		}
 
-		if !tektonEnabled {
+		if !prowEnabled {
 			// if activity has no job in Jenkins delete it
 			matched := false
 			for _, j := range jobNames {
