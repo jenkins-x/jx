@@ -244,7 +244,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 		answer, err := activitiesClient.Create(a)
 		return answer, true, err
 	} else {
-		if !reflect.DeepEqual(&a.Spec, &oldSpec) || !reflect.DeepEqual(&a.Labels, &oldLabels) {
+		if !reflect.DeepEqual(&a.Spec, &oldSpec) || !reflect.DeepEqual(a.Labels, oldLabels) {
 			answer, err := activitiesClient.PatchUpdate(a)
 			if err != nil {
 				return answer, false, err
