@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
 	"github.com/jenkins-x/jx/pkg/cmd/step/env"
+	"github.com/jenkins-x/jx/pkg/cmd/step/expose"
 	"github.com/jenkins-x/jx/pkg/cmd/step/get"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/cmd/step/helm"
@@ -53,6 +54,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(create.NewCmdStepCreate(commonOpts))
 	cmd.AddCommand(step.NewCmdStepCustomPipeline(commonOpts))
 	cmd.AddCommand(env.NewCmdStepEnv(commonOpts))
+	cmd.AddCommand(expose.NewCmdStepExpose(commonOpts))
 	cmd.AddCommand(get.NewCmdStepGet(commonOpts))
 	cmd.AddCommand(git.NewCmdStepGit(commonOpts))
 	cmd.AddCommand(step.NewCmdStepGpgCredentials(commonOpts))
