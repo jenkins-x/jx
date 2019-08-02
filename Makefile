@@ -51,64 +51,12 @@ endif
 # set dev version unless VERSION is explicitly set via environment
 VERSION ?= $(shell echo "$$(git describe --abbrev=0 --tags 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
 
-# Various codecov.io variables that are set from the CI envrionment if present, otherwise from locally computed values
-
-CODECOV_NAME ?= integration
-
-#ARGS is extra args added to the codecov uploader
-CODECOV_ARGS := -n $(CODECOV_NAME) -F $(CODECOV_NAME) -s $(REPORTS_DIR)
-
-
-ifdef ($(andd $(REPO_NAME), $(REPO_OWNER)),)
-CODECOV_SLUG := $(REPO_OWNER)/$(REPO_NAME)
-else
-CODECOV_SLUG := $(ORG_REPO)
-endif
-
-ifdef PULL_PULL_SHA
-CODECOV_SHA := $(PULL_PULL_SHA)
-else ifdef PULL_BASE_SHA
-CODECOV_SHA := $(PULL_BASE_SHA)
-else
-CODECOV_SHA := $(shell git rev-parse HEAD 2> /dev/null || echo '')
-endif
-
-
-ifdef BUILD_NUMBER
-CODECOV_ARGS += -b $(BUILD_NUMBER)
-endif
-
-ifdef BRANCH_NAME
-CODECOV_BRANCH := $(BRANCH_NAME)
-else
-CODECOV_BRANCH := $(BRANCH)
-endif
-
-ifdef PULL_NUMBER
-CODECOV_ARGS += -P $(PULL_NUMBER)
-CODECOV_BRANCH := $(PULL_BASE_REF)
-endif
-
-ifeq ($(JOB_TYPE),postsubmit)
-CODECOV_TAG := v$(VERSION)
-CODECOV_ARGS += -T $(CODECOV_TAG)
-endif
-
-#End Codecov
-
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
 		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
-		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'\
-		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Flag=$(CODECOV_NAME)\
-		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Slug=$(CODECOV_SLUG)\
-		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Branch=$(CODECOV_BRANCH)\
-		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Sha=$(CODECOV_SHA)\
-		-X $(ROOT_PACKAGE)/cmd/jx/codecov.BuildNumber=$(BUILD_NUMBER)\
-		-X $(ROOT_PACKAGE)/cmd/jx/codecov.PullRequestNumber=$(PULL_NUMBER)\
-		-X $(ROOT_PACKAGE)/cmd/jx/codecov.Tag=$(CODECOV_TAG)"
+		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'"
 
 ifdef DEBUG
 BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
@@ -301,18 +249,6 @@ release-distro:
 .PHONY: clean
 clean: ## Clean the generated artifacts
 	rm -rf build release dist
-
-.PHONY: codecov-upload
-codecov-upload:
-	DOCKER_REPO="$(CODECOV_SLUG)" \
-	SOURCE_COMMIT="$(CODECOV_SHA)" \
-	SOURCE_BRANCH="$(CODECOV_BRANCH)" \
-	bash <(curl -s https://codecov.io/bash) $(CODECOV_ARGS)
-
-.PHONY: codecov-validate
-codecov-validate:
-	./jx/scripts/codecov-validate.sh
-
 
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
