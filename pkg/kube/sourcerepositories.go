@@ -101,7 +101,7 @@ func GetOrCreateSourceRepositoryCallback(jxClient versioned.Interface, ns string
 		if callback != nil {
 			callback(&copy)
 		}
-		if reflect.DeepEqual(&copy.Spec, sr.Spec) && reflect.DeepEqual(&copy.Labels, &sr.Labels) {
+		if reflect.DeepEqual(&copy.Spec, sr.Spec) && reflect.DeepEqual(copy.Labels, sr.Labels) {
 			return answer, nil
 		}
 		answer, err = repositories.Update(&copy)
