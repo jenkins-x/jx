@@ -334,6 +334,11 @@ func (o *StepExposeOptions) loadExposeControllerConfigFromValuesYAML(requirement
 		ic.Domain = util.GetMapValueAsStringViaPath(values, "expose.config.domain")
 	}
 
+	// lets detect TLS
+	if util.GetMapValueAsStringViaPath(values, "expose.config.tlsacme") == "true" || util.GetMapValueAsStringViaPath(values, "expose.config.http") == "false" {
+		ic.TLS.Enabled = true
+	}
+
 	// lets populate the sub domain if its missing
 	if ic.NamespaceSubDomain == "" {
 		ic.NamespaceSubDomain = "-" + requirements.Cluster.Namespace + "."
