@@ -24,127 +24,155 @@ import (
 
 func TestStepExpose(t *testing.T) {
 	t.Parallel()
+
+	type testData struct {
+		Dir, Domain, NamespaceSubDomain string
+		TLSEnabled                      bool
+	}
+
 	ns := "jx-staging"
-	commonOpts := opts.NewCommonOptionsWithFactory(nil)
-	o := &expose.StepExposeOptions{
-		Dir: "test_data",
-	}
-	o.CommonOptions = &commonOpts
-	o.Namespace = ns
+	subDomain := "-" + ns + "."
 
-	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
-		[]runtime.Object{},
-		[]runtime.Object{},
-		gits.NewGitCLI(),
-		nil,
-		helm.NewHelmCLI("helm", helm.V2, "", true),
-		resources_test.NewMockInstaller(),
-	)
-
-	kubeClient, err := o.KubeClient()
-	require.NoError(t, err)
-
-	expectedRequirements := &config.RequirementsConfig{
-		Ingress: config.IngressConfig{
+	tests := []testData{
+		{
+			Dir:                "test_data/http",
 			Domain:             "35.195.192.178.nip.io",
-			NamespaceSubDomain: "-" + ns + ".",
-		},
-	}
-	ings := []*v1beta1.Ingress{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "update-my-ingress",
-			},
-		},
-	}
-	svcs := []*corev1.Service{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "svc1",
-				Labels: map[string]string{
-					"fabric8.io/expose": "true",
-				},
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{
-					{
-						Name:     "http",
-						Protocol: "TCP",
-						Port:     80,
-					},
-				},
-			},
+			NamespaceSubDomain: subDomain,
+			TLSEnabled:         false,
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "update-my-ingress",
-				Labels: map[string]string{
-					"fabric8.io/expose": "true",
-				},
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{
-					{
-						Name:     "http",
-						Protocol: "TCP",
-						Port:     8080,
-					},
-				},
-			},
+			Dir:                "test_data/https",
+			Domain:             "my-domain.com",
+			NamespaceSubDomain: subDomain,
+			TLSEnabled:         true,
 		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dont-expose",
-				Labels: map[string]string{
-					"fabric8.io/expose": "false",
-				},
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{
-					{
-						Name:     "http",
-						Protocol: "TCP",
-						Port:     80,
-					},
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "no-expose-label",
-				Labels: map[string]string{
-					"fabric8.io/expose": "false",
-				},
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{
-					{
-						Name:     "http",
-						Protocol: "TCP",
-						Port:     80,
-					},
-				},
-			},
-		},
-	}
-	for _, ing := range ings {
-		_, err = kubeClient.ExtensionsV1beta1().Ingresses(ns).Create(ing)
-		require.NoError(t, err, "failed to create Ingress %s in namespace %s", ing.Name, ns)
 	}
 
-	for _, svc := range svcs {
-		_, err = kubeClient.CoreV1().Services(ns).Create(svc)
-		require.NoError(t, err, "failed to create Service %s in namespace %s", svc.Name, ns)
-	}
+	for _, td := range tests {
+		commonOpts := opts.NewCommonOptionsWithFactory(nil)
+		o := &expose.StepExposeOptions{
+			Dir: td.Dir,
+		}
+		o.CommonOptions = &commonOpts
+		o.Namespace = ns
 
-	err = o.Run()
-	assert.NoError(t, err)
+		testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+			[]runtime.Object{},
+			[]runtime.Object{},
+			gits.NewGitCLI(),
+			nil,
+			helm.NewHelmCLI("helm", helm.V2, "", true),
+			resources_test.NewMockInstaller(),
+		)
 
-	for _, svc := range svcs {
-		if expose.IsExposedService(svc) {
-			assertIngressForService(t, kubeClient, ns, svc, expectedRequirements)
-		} else {
-			assertNoIngressExistsForService(t, kubeClient, ns, svc)
+		kubeClient, err := o.KubeClient()
+		require.NoError(t, err)
+
+		expectedRequirements := &config.RequirementsConfig{
+			Ingress: config.IngressConfig{
+				Domain:             td.Domain,
+				NamespaceSubDomain: td.NamespaceSubDomain,
+				TLS: config.TLSConfig{
+					Enabled: td.TLSEnabled,
+				},
+			},
+		}
+		ings := []*v1beta1.Ingress{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "update-my-ingress",
+				},
+			},
+		}
+		svcs := []*corev1.Service{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "svc1",
+					Labels: map[string]string{
+						"fabric8.io/expose": "true",
+					},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						},
+					},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "update-my-ingress",
+					Labels: map[string]string{
+						"fabric8.io/expose": "true",
+					},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     8080,
+						},
+					},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "dont-expose",
+					Labels: map[string]string{
+						"fabric8.io/expose": "false",
+					},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						},
+					},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "no-expose-label",
+					Labels: map[string]string{
+						"fabric8.io/expose": "false",
+					},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						},
+					},
+				},
+			},
+		}
+		for _, ing := range ings {
+			_, err = kubeClient.ExtensionsV1beta1().Ingresses(ns).Create(ing)
+			require.NoError(t, err, "failed to create Ingress %s in namespace %s", ing.Name, ns)
+		}
+
+		for _, svc := range svcs {
+			_, err = kubeClient.CoreV1().Services(ns).Create(svc)
+			require.NoError(t, err, "failed to create Service %s in namespace %s", svc.Name, ns)
+		}
+
+		err = o.Run()
+		assert.NoError(t, err)
+
+		for _, svc := range svcs {
+			if expose.IsExposedService(svc) {
+				assertIngressForService(t, kubeClient, ns, svc, expectedRequirements)
+			} else {
+				assertNoIngressExistsForService(t, kubeClient, ns, svc)
+			}
 		}
 	}
 }
@@ -175,13 +203,28 @@ func assertIngressForService(t *testing.T, kubeClient kubernetes.Interface, ns s
 		t.Logf("Ingress %s is at the correct service port %d", svcName, int(servicePort))
 	}
 
-	expectedURL := "http://" + expectedHost
+	scheme := "http://"
+	if expectedRequirements.Ingress.TLS.Enabled {
+		scheme = "https://"
+	}
+	expectedURL := scheme + expectedHost
 	actualSvc, err := kubeClient.CoreV1().Services(ns).Get(svcName, metav1.GetOptions{})
 	require.NoError(t, err, "could not load Service %s", svcName)
 
 	actualURL := actualSvc.Annotations[expose.ExposeAnnotationKey]
 	if assert.Equal(t, expectedURL, actualURL, "the exposed service URL was not annotated correctly on the Service %s in namespace %s", svcName, ns) {
 		t.Logf("added the exposed URL %s to the Service %s using the annotation %s", actualURL, svcName, expose.ExposeAnnotationKey)
+	}
+
+	if expectedRequirements.Ingress.TLS.Enabled {
+		tlss := ingress.Spec.TLS
+		require.Equal(t, 1, len(tlss), "Ingress TLS count for Ingress %s", svcName)
+		tls := tlss[0]
+		t.Logf("got TLS secret name %s for Ingress %s", tls.SecretName, ingress.Name)
+
+		require.Equal(t, 1, len(tls.Hosts), "Ingress TLS host should be defined for Ingress %s", svcName)
+		host := tls.Hosts[0]
+		require.Equal(t, expectedHost, host, "Ingress TLS host for Ingress %s", svcName)
 	}
 }
 
