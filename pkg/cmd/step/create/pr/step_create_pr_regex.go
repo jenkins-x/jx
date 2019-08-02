@@ -53,6 +53,9 @@ type StepCreatePullRequestRegexOptions struct {
 	Regexp string
 	Files  []string
 	Kind   string
+
+	// PostChangeCallback is invoked after the source is changed in case any other processing is required
+	PostChangeCallback func(dir string, gitInfo *gits.GitRepository) error
 }
 
 // NewCmdStepCreatePullRequestRegex Creates a new Command object
@@ -177,6 +180,14 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 				}
 				if err != nil {
 					return nil, errors.WithStack(err)
+				}
+			}
+
+			// lets allow post procesing
+			if o.PostChangeCallback != nil {
+				err = o.PostChangeCallback(dir, gitInfo)
+				if err != nil {
+					return oldVersions, err
 				}
 			}
 			return oldVersions, nil
