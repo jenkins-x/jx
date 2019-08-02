@@ -5,16 +5,11 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/pkg/errors"
-
-	"github.com/jenkins-x/jx/cmd/jx/codecov"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -88,17 +83,6 @@ func TestSystem(t *testing.T) {
 				Err:  os.Stderr,
 			}
 			_, err := cmd.RunWithoutRetry()
-			if !disableSelfUpload {
-				if os.Getenv("CODECOV_TOKEN") == "" {
-					log.Logger().Errorf("cannot upload to codecov because CODECOV_TOKEN environment variable is not set")
-				} else {
-					err := uploadToCodecov(outFile, id)
-					if err != nil {
-						log.Logger().Errorf("cannot upload to codecov because %v", err)
-					}
-				}
-
-			}
 			if err != nil {
 				log.Logger().Error(err.Error())
 				os.Exit(1)
@@ -113,66 +97,6 @@ func TestSystem(t *testing.T) {
 	} else {
 		main()
 	}
-}
-
-func uploadToCodecov(outFile string, name string) error {
-	script, err := downloadCodecovUploader()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	err = os.Chmod(script, 0700)
-	if err != nil {
-		return errors.Wrapf(err, "making %s executable", script)
-	}
-	args := []string{
-		"-Z",
-		"-f",
-		outFile,
-		"-n",
-		name,
-	}
-	if codecov.Flag != "" {
-		args = append(args, "-F", codecov.Flag)
-	}
-	if codecov.BuildNumber != "" {
-		args = append(args, "-b", codecov.BuildNumber)
-	}
-	if codecov.PullRequestNumber != "" {
-		args = append(args, "-P", codecov.PullRequestNumber)
-	}
-	if codecov.Tag != "" {
-		args = append(args, "-T", codecov.Tag)
-	}
-	cmd := util.Command{
-		Name: script,
-		Env: map[string]string{
-			"DOCKER_REPO":   codecov.Slug,
-			"SOURCE_COMMIT": codecov.Sha,
-			"SOURCE_BRANCH": codecov.Branch,
-		},
-		Args: args,
-	}
-	out, err := cmd.RunWithoutRetry()
-	if err != nil {
-		log.Logger().Errorf("Running %s", cmd.String())
-		log.Logger().Errorf(out)
-		return errors.Wrapf(err, "error uploading coverage to codecov.io")
-
-	}
-	return nil
-}
-
-func downloadCodecovUploader() (string, error) {
-	script, err := ioutil.TempFile("", "codecov")
-	defer script.Close()
-	if err != nil {
-		return "", errors.Wrapf(err, "creating tempfile")
-	}
-	err = downloadFile(script, "https://codecov.io/bash")
-	if err != nil {
-		return "", errors.Wrapf(err, "downloading codecov uploader")
-	}
-	return script.Name(), nil
 }
 
 func downloadFile(out *os.File, url string) error {
