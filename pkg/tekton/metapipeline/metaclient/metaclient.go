@@ -210,6 +210,7 @@ func (o *MetaClient) getPodTemplates(kubeClient kubeclient.Interface, ns string,
 	return podTemplates, nil
 }
 
+// GetFactory returns the factory
 func (o *MetaClient) GetFactory() jxfactory.Factory {
 	if o.factory == nil {
 		o.factory = jxfactory.NewFactory()
