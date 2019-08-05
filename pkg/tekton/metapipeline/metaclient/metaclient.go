@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	jobOptionName       = "job"
 	pullRefOptionName   = "pull-refs"
 	sourceURLOptionName = "source-url"
 
@@ -39,7 +38,6 @@ type MetaClient struct {
 	SourceURL      string
 	PullRefs       string
 	Context        string
-	Job            string
 	ServiceAccount string
 	CustomLabels   []string
 	CustomEnvs     []string
@@ -156,9 +154,6 @@ func (o *MetaClient) validateArguments() error {
 
 	if o.SourceURL == "" {
 		return util.MissingOption(sourceURLOptionName)
-	}
-	if o.Job == "" {
-		return util.MissingOption(jobOptionName)
 	}
 	if o.PullRefs == "" {
 		return util.MissingOption(pullRefOptionName)
@@ -311,7 +306,7 @@ func (o *MetaClient) git() gits.Gitter {
 	return o.gitter
 }
 
-// SetGit sets the git client
-func (o *MetaClient) SetGit(git gits.Gitter) {
+// setGit sets the git client
+func (o *MetaClient) setGit(git gits.Gitter) {
 	o.gitter = git
 }
