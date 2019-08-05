@@ -22,13 +22,11 @@ import (
 )
 
 type factory struct {
-	Batch bool
-
 	kubeConfig      kube.Kuber
 	impersonateUser string
 	bearerToken     string
 	secretLocation  secrets.SecretLocation
-	offline         bool
+	kubeConfigCache *string
 }
 
 var _ Factory = (*factory)(nil)
@@ -87,7 +85,7 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 			&clientcmd.ClientConfigLoadingRules{Precedence: pathList},
 			&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterURL}}).ClientConfig()
 	}
-	kubeconfig := createKubeConfig(f.offline)
+	kubeconfig := f.createKubeConfigText()
 	var config *rest.Config
 	var err error
 	if kubeconfig != nil {
@@ -127,22 +125,17 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 	return config, nil
 }
 
-var kubeConfigCache *string
-
-func createKubeConfig(offline bool) *string {
-	if offline {
-		panic("not supposed to be making a network connection")
-	}
+func (f *factory) createKubeConfigText() *string {
 	var kubeconfig *string
-	if kubeConfigCache != nil {
-		return kubeConfigCache
+	if f.kubeConfigCache != nil {
+		return f.kubeConfigCache
 	}
 	if home := util.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
-	kubeConfigCache = kubeconfig
+	f.kubeConfigCache = kubeconfig
 	return kubeconfig
 }
 

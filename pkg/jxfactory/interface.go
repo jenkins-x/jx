@@ -12,7 +12,7 @@ import (
 )
 
 // Factory is the interface defined for Kubernetes, Jenkins X, and Tekton REST APIs
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/cmd/clients Factory -o mocks/factory.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/jxfactory Factory -o mocks/factory.go
 type Factory interface {
 	//
 	// Constructors

@@ -50,7 +50,7 @@ type MetaClient struct {
 	Verbose     bool
 	NoApply     *bool
 	versionsDir string
-	git         gits.Gitter
+	gitter      gits.Gitter
 	factory     jxfactory.Factory
 }
 
@@ -210,8 +210,8 @@ func (o *MetaClient) getPodTemplates(kubeClient kubeclient.Interface, ns string,
 	return podTemplates, nil
 }
 
-// GetFactory returns the factory
-func (o *MetaClient) GetFactory() jxfactory.Factory {
+// getFactory returns the factory
+func (o *MetaClient) getFactory() jxfactory.Factory {
 	if o.factory == nil {
 		o.factory = jxfactory.NewFactory()
 	}
@@ -219,7 +219,7 @@ func (o *MetaClient) GetFactory() jxfactory.Factory {
 }
 
 func (o *MetaClient) getClientsAndNamespace() (tektonclient.Interface, jxclient.Interface, kubeclient.Interface, string, error) {
-	f := o.GetFactory()
+	f := o.getFactory()
 
 	tektonClient, _, err := f.CreateTektonClient()
 	if err != nil {
@@ -252,22 +252,16 @@ func (o *MetaClient) determineBranchIdentifier(pullRef prow.PullRefs) string {
 	var branch string
 	switch prCount {
 	case 0:
-		{
-			// no pull requests to merge, taking base branch name as identifier
-			branch = pullRef.BaseBranch
-		}
+		// no pull requests to merge, taking base branch name as identifier
+		branch = pullRef.BaseBranch
 	case 1:
-		{
-			// single pull request, create synthetic PR identifier
-			for k := range pullRef.ToMerge {
-				branch = fmt.Sprintf("PR-%s", k)
-				break
-			}
+		// single pull request, create synthetic PR identifier
+		for k := range pullRef.ToMerge {
+			branch = fmt.Sprintf("PR-%s", k)
+			break
 		}
 	default:
-		{
-			branch = "batch"
-		}
+		branch = "batch"
 	}
 	log.Logger().Debugf("branch identifier for pull ref '%s' : '%s'", pullRef.String(), branch)
 	return branch
@@ -305,19 +299,19 @@ func (o *MetaClient) gitCloneVersionStream(jxClient jxclient.Interface, ns strin
 		ref = config.DefaultVersionsRef
 	}
 	log.Logger().WithField("url", url).WithField("ref", ref).Infof("shallow cloning version stream")
-	err = o.Git().ShallowClone(dir, url, ref, "")
+	err = o.git().ShallowClone(dir, url, ref, "")
 	return dir, err
 }
 
-// Git returns the git client
-func (o *MetaClient) Git() gits.Gitter {
-	if o.git == nil {
-		o.git = gits.NewGitCLI()
+// git returns the git client
+func (o *MetaClient) git() gits.Gitter {
+	if o.gitter == nil {
+		o.gitter = gits.NewGitCLI()
 	}
-	return o.git
+	return o.gitter
 }
 
 // SetGit sets the git client
 func (o *MetaClient) SetGit(git gits.Gitter) {
-	o.git = git
+	o.gitter = git
 }
