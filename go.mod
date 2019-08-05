@@ -50,7 +50,7 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
-	github.com/google/go-cmp v0.2.0
+	github.com/google/go-cmp v0.3.0
 	github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
@@ -66,6 +66,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c // indirect
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
+	github.com/jenkins-x/go-scm v1.5.21
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jetstack/cert-manager v0.5.2
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
@@ -120,7 +121,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	gocloud.dev v0.9.0
-	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f
 	golang.org/x/xerrors v0.0.0-20190513163551-3ee3066db522 // indirect
@@ -134,7 +135,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20190126160303-ccdd560a045f
 	k8s.io/apiextensions-apiserver v0.0.0-20190308081736-3a66ae4d2f93
-	k8s.io/apimachinery v0.0.0-20190122181752-bebe27e40fb7
+	k8s.io/apimachinery v0.0.0-20190703205208-4cfb76a8bf76
 	k8s.io/client-go v9.0.0+incompatible
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30

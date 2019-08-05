@@ -76,7 +76,7 @@ func (g *GitCLI) ShallowCloneBranch(url string, branch string, dir string) error
 
 // ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
 func (g *GitCLI) ShallowClone(dir string, url string, commitish string, pullRequest string) error {
-	return g.clone(dir, url, "", true, false, "master", commitish, pullRequest)
+	return g.clone(dir, url, "", true, false, "", commitish, pullRequest)
 }
 
 // clone is a safer implementation of the `git clone` method
