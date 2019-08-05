@@ -276,6 +276,8 @@ const (
 	AnnotationLocalDir = "jenkins.io/local-dir"
 	// AnnotationGitURLs the newline separated list of git URLs of the DevPods
 	AnnotationGitURLs = "jenkins.io/git-urls"
+	// AnnotationGitReportState used to annotate what state has been reported to git
+	AnnotationGitReportState = "jenkins.io/git-report-state"
 
 	// AnnotationIsDefaultStorageClass used to indicate a storageclass is default
 	AnnotationIsDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
