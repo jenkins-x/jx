@@ -291,8 +291,6 @@ func (o *MetaClient) gitCloneVersionStream(jxClient jxclient.Interface, ns strin
 	if err != nil {
 		return dir, err
 	}
-	os.RemoveAll(dir)
-
 	devEnv, err := kube.GetDevEnvironment(jxClient, ns)
 	if err != nil {
 		return dir, err
