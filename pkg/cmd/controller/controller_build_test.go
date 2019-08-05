@@ -131,6 +131,18 @@ func TestUpdateForStage(t *testing.T) {
 	}
 }
 
+func TestCreateReportTargetURL(t *testing.T) {
+	params := ReportParams{
+		Owner:      "jstrachan",
+		Repository: "myapp",
+		Branch:     "PR-5",
+		Build:      "3",
+		Context:    "jenkins-x",
+	}
+	actual := CreateReportTargetURL("https://myconsole.acme.com/{{ .Owner }}/{{ .Repository }}/{{ .Branch }}/{{ .Build }}", params)
+	assert.Equal(t, "https://myconsole.acme.com/jstrachan/myapp/PR-5/3", actual, "created git report URL for params %#v", params)
+}
+
 func TestUpdateForStagePreTekton051(t *testing.T) {
 	pod := tekton_helpers_test.AssertLoadSinglePod(t, path.Join("test_data", "controller_build", "update_stage_info_pre_tekton_0.5.1"))
 	si := &tekton.StageInfo{
