@@ -1,9 +1,11 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"path"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -20,7 +22,7 @@ func TestDockerImageGetsLabel(t *testing.T) {
 	o := &opts.CommonOptions{}
 	testhelpers.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, "", true))
 
-	resolver := &opts.VersionResolver{
+	resolver := &versionstream.VersionResolver{
 		VersionsDir: versionsDir,
 	}
 

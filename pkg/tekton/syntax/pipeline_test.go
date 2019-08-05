@@ -3,7 +3,9 @@ package syntax_test
 import (
 	"context"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/version"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -11,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	sh "github.com/jenkins-x/jx/pkg/tekton/syntax/syntax_helpers_test"
@@ -32,7 +33,7 @@ var (
 // TODO: Try to write some helper functions to make Pipeline and Task expect building less bloody verbose.
 func TestParseJenkinsfileYaml(t *testing.T) {
 	testVersionsDir := filepath.Join("test_data", "stable_versions")
-	resolvedGitMergeImage, err := version.ResolveDockerImage(testVersionsDir, syntax.GitMergeImage)
+	resolvedGitMergeImage, err := versionstream.ResolveDockerImage(testVersionsDir, syntax.GitMergeImage)
 	assert.NoError(t, err)
 
 	ctx := context.Background()

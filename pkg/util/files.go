@@ -545,3 +545,9 @@ func GlobAllFiles(basedir string, pattern string, fn func(string) error) error {
 	}
 	return nil
 }
+
+// ToValidFileSystemName converts the name to one that can safely be used on the filesystem
+func ToValidFileSystemName(name string) string {
+	replacer := strings.NewReplacer(".", "_", "/", "_")
+	return replacer.Replace(name)
+}

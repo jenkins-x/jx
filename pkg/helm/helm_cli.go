@@ -166,14 +166,21 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 }
 
 // SearchCharts searches for all the charts matching the given filter
-func (h *HelmCLI) SearchCharts(filter string) ([]ChartSummary, error) {
+func (h *HelmCLI) SearchCharts(filter string, allVersions bool) ([]ChartSummary, error) {
 	answer := []ChartSummary{}
-	output, err := h.runHelmWithOutput("search", filter)
+	args := []string{"search", filter}
+	if allVersions {
+		args = append(args, "--versions")
+	}
+	output, err := h.runHelmWithOutput(args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to search charts")
 	}
 	lines := strings.Split(output, "\n")
-	for _, line := range lines[1:] {
+	for _, line := range lines {
+		if strings.HasPrefix(line, "NAME") || line == "" {
+			continue
+		}
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, "\t")
 		chart := ChartSummary{}
@@ -536,28 +543,6 @@ func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, 
 	}
 	slice.SortStrings(keys)
 	return result, keys, nil
-}
-
-// SearchChartVersions search all version of the given chart
-func (h *HelmCLI) SearchChartVersions(chart string) ([]string, error) {
-	output, err := h.runHelmWithOutput("search", chart, "--versions")
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to search chart '%s'", chart)
-	}
-	versions := []string{}
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-	if len(lines) > 1 {
-		for _, line := range lines[1:] {
-			fields := strings.Fields(line)
-			if len(fields) > 1 {
-				v := fields[1]
-				if v != "" {
-					versions = append(versions, v)
-				}
-			}
-		}
-	}
-	return versions, nil
 }
 
 // FindChart find a chart in the current working directory, if no chart file is found an error is returned

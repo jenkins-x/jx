@@ -1,14 +1,15 @@
 package get
 
 import (
-	"github.com/jenkins-x/jx/pkg/config"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
@@ -64,7 +65,7 @@ func NewCmdGetStream(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "docker", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))
+	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "docker", "The kind of version. Possible values: "+strings.Join(versionstream.KindStrings, ", "))
 	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", config.DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	return cmd
@@ -82,8 +83,8 @@ func (o *GetStreamOptions) Run() error {
 	}
 	name := args[0]
 
-	kind := version.VersionKind(o.Kind)
-	if kind == version.KindDocker {
+	kind := versionstream.VersionKind(o.Kind)
+	if kind == versionstream.KindDocker {
 		result, err := resolver.ResolveDockerImage(name)
 		if err != nil {
 			return errors.Wrapf(err, "failed to resolve docker image %s", name)

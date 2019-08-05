@@ -5,13 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -109,7 +110,7 @@ func (o *StepVerifyRequirementsOptions) Run() error {
 	return err
 }
 
-func (o *StepVerifyRequirementsOptions) verifyRequirementsYAML(resolver *opts.VersionResolver, prefixes *opts.RepositoryPrefixes, fileName string) error {
+func (o *StepVerifyRequirementsOptions) verifyRequirementsYAML(resolver *versionstream.VersionResolver, prefixes *versionstream.RepositoryPrefixes, fileName string) error {
 	req, err := helm.LoadRequirementsFile(fileName)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load %s", fileName)
@@ -133,7 +134,7 @@ func (o *StepVerifyRequirementsOptions) verifyRequirementsYAML(resolver *opts.Ve
 			}
 			newVersion := ""
 			fullChartName := prefix + "/" + dep.Name
-			newVersion, err := resolver.StableVersionNumber(version.KindChart, fullChartName)
+			newVersion, err := resolver.StableVersionNumber(versionstream.KindChart, fullChartName)
 			if err != nil {
 				return errors.Wrapf(err, "failed to find version of chart %s in file %s", fullChartName, fileName)
 			}

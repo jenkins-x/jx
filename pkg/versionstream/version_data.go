@@ -1,4 +1,4 @@
-package version
+package versionstream
 
 import (
 	"fmt"
@@ -65,6 +65,8 @@ type StableVersion struct {
 	UpperLimit string `json:"upperLimit,omitempty"`
 	// GitURL the URL to the source code
 	GitURL string `json:"gitUrl,omitempty"`
+	// GitURL the URL to the source code
+	Component string `json:"component,omitempty"`
 	// URL the URL for the documentation
 	URL string `json:"url,omitempty"`
 }
@@ -232,50 +234,6 @@ func SaveStableVersionFile(path string, stableVersion *StableVersion) error {
 	return nil
 }
 
-// ForEachVersion processes all of the versions in the wrkDir using the given callback function.
-func ForEachVersion(wrkDir string, callback Callback) error {
-	for _, kind := range Kinds {
-		err := ForEachKindVersion(wrkDir, kind, callback)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// ForEachKindVersion processes all of the versions in the wrkDir and kind using the given callback function.
-func ForEachKindVersion(wrkDir string, kind VersionKind, callback Callback) error {
-	kindString := string(kind)
-	kindDir := filepath.Join(wrkDir, kindString)
-	glob := filepath.Join(kindDir, "*", "*.yml")
-	paths, err := filepath.Glob(glob)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find glob: %s", glob)
-	}
-	for _, path := range paths {
-		versionData, err := LoadStableVersionFile(path)
-		if err != nil {
-			return errors.Wrapf(err, "failed to load VersionData for file: %s", path)
-		}
-		name, err := filepath.Rel(kindDir, path)
-		if err != nil {
-			return errors.Wrapf(err, "failed to extract base path from %s", path)
-		}
-		ext := filepath.Ext(name)
-		if ext != "" {
-			name = strings.TrimSuffix(name, ext)
-		}
-		ok, err := callback(kind, name, versionData)
-		if err != nil {
-			return errors.Wrapf(err, "failed to process kind %s name %s", kindString, name)
-		}
-		if !ok {
-			break
-		}
-	}
-	return nil
-}
-
 // ResolveDockerImage resolves the version of the specified image against the version stream defined in versionsDir.
 // If there is a version defined for the image in the version stream 'image:<version>' is returned, otherwise the
 // passed image name is returned as is.
@@ -308,4 +266,115 @@ func ResolveDockerImage(versionsDir, image string) (string, error) {
 	}
 	prefix := strings.TrimSuffix(strings.TrimSpace(image), ":")
 	return prefix + ":" + info.Version, nil
+}
+
+// UpdateStableVersionFiles applies an update to the stable version files matched by globPattern, updating to version
+func UpdateStableVersionFiles(globPattern string, version string, excludeFiles ...string) ([]string, error) {
+	files, err := filepath.Glob(globPattern)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create glob from pattern %s", globPattern)
+	}
+	answer := make([]string, 0)
+
+	for _, path := range files {
+		_, name := filepath.Split(path)
+		if util.StringArrayIndex(excludeFiles, name) >= 0 {
+			continue
+		}
+		data, err := LoadStableVersionFile(path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to load oldVersion info for %s", path)
+		}
+		if data.Version == "" || data.Version == version {
+			continue
+		}
+		answer = append(answer, data.Version)
+		data.Version = version
+		err = SaveStableVersionFile(path, data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to save oldVersion info for %s", path)
+		}
+	}
+	return answer, nil
+}
+
+// UpdateStableVersion applies an update to the stable version file in dir/kindStr/name.yml, updating to version
+func UpdateStableVersion(dir string, kindStr string, name string, version string) ([]string, error) {
+	answer := make([]string, 0)
+	kind := VersionKind(kindStr)
+	data, err := LoadStableVersion(dir, kind, name)
+	if err != nil {
+		return nil, err
+	}
+	if data.Version == version {
+		return nil, nil
+	}
+	answer = append(answer, data.Version)
+	data.Version = version
+
+	err = SaveStableVersion(dir, kind, name, data)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to save versionstream file")
+	}
+	return answer, nil
+}
+
+// GetRepositoryPrefixes loads the repository prefixes for the version stream
+func GetRepositoryPrefixes(dir string) (*RepositoryPrefixes, error) {
+	answer := &RepositoryPrefixes{}
+	fileName := filepath.Join(dir, "charts", "repositories.yml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to find file %s", fileName)
+	}
+	if !exists {
+		return answer, nil
+	}
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to load file %s", fileName)
+	}
+	err = yaml.Unmarshal(data, answer)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to unmarshal YAML in file %s", fileName)
+	}
+	return answer, nil
+}
+
+// RepositoryPrefixes maps repository prefixes to URLs
+type RepositoryPrefixes struct {
+	Repositories []RepositoryURLs    `json:"repositories"`
+	urlToPrefix  map[string]string   `json:"-"`
+	prefixToURLs map[string][]string `json:"-"`
+}
+
+// RepositoryURLs contains the prefix and URLS for a repository
+type RepositoryURLs struct {
+	Prefix string   `json:"prefix"`
+	URLs   []string `json:"urls"`
+}
+
+// PrefixForURL returns the repository prefix for the given URL
+func (p *RepositoryPrefixes) PrefixForURL(u string) string {
+	if p.urlToPrefix == nil {
+		p.urlToPrefix = map[string]string{}
+
+		for _, repo := range p.Repositories {
+			for _, url := range repo.URLs {
+				p.urlToPrefix[url] = repo.Prefix
+			}
+		}
+	}
+	return p.urlToPrefix[u]
+}
+
+// URLsForPrefix returns the repository URLs for the given prefix
+func (p *RepositoryPrefixes) URLsForPrefix(prefix string) []string {
+	if p.prefixToURLs == nil {
+		p.prefixToURLs = make(map[string][]string)
+		for _, repo := range p.Repositories {
+			p.prefixToURLs[repo.Prefix] = repo.URLs
+		}
+	}
+	return p.prefixToURLs[prefix]
 }

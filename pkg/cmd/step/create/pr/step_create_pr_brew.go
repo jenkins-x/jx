@@ -60,7 +60,7 @@ func NewCmdStepCreatePullRequestBrew(commonOpts *opts.CommonOptions) *cobra.Comm
 
 // ValidateOptions validates the common options for brew pr steps
 func (o *StepCreatePullRequestBrewOptions) ValidateBrewOptions() error {
-	if err := o.ValidateOptions(); err != nil {
+	if err := o.ValidateOptions(false); err != nil {
 		return errors.WithStack(err)
 	}
 	if o.Sha == "" {

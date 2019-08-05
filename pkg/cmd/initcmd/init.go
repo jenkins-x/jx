@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
-	version2 "github.com/jenkins-x/jx/pkg/version"
-
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
@@ -556,7 +556,7 @@ controller:
 		}
 		chartName := "stable/nginx-ingress"
 
-		version, err := o.GetVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
+		version, err := o.GetVersionNumber(versionstream.KindChart, chartName, o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load version of chart %s", chartName)
 		}
