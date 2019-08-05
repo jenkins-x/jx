@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -2974,7 +2976,7 @@ func (options *InstallOptions) logNameServers() {
 
 // LoadVersionFromCloudEnvironmentsDir lets load the jenkins-x-platform version
 func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.ConfigStore) (string, error) {
-	version, err := version2.LoadStableVersionNumber(wrkDir, version2.KindChart, opts.JenkinsXPlatformChart)
+	version, err := versionstream.LoadStableVersionNumber(wrkDir, versionstream.KindChart, opts.JenkinsXPlatformChart)
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", opts.JenkinsXPlatformChart, wrkDir)
 	}

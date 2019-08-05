@@ -131,8 +131,8 @@ func (h *HelmTemplate) ListRepos() (map[string]string, error) {
 }
 
 // SearchCharts searches for all the charts matching the given filter
-func (h *HelmTemplate) SearchCharts(filter string) ([]ChartSummary, error) {
-	return h.Client.SearchCharts(filter)
+func (h *HelmTemplate) SearchCharts(filter string, allVersions bool) ([]ChartSummary, error) {
+	return h.Client.SearchCharts(filter, false)
 }
 
 // IsRepoMissing checks if the repository with the given URL is missing from helm
@@ -196,11 +196,6 @@ func (h *HelmTemplate) ListReleases(ns string) (map[string]ReleaseSummary, []str
 		}
 	}
 	return charts, keys, nil
-}
-
-// SearchChartVersions search all version of the given chart
-func (h *HelmTemplate) SearchChartVersions(chart string) ([]string, error) {
-	return h.Client.SearchChartVersions(chart)
 }
 
 // FindChart find a chart in the current working directory, if no chart file is found an error is returned

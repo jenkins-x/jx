@@ -4,21 +4,33 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/blang/semver"
-	"github.com/ghodss/yaml"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/vault"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/gits/releases"
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
+	"github.com/blang/semver"
+	"github.com/ghodss/yaml"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -35,9 +47,12 @@ type PullRequestOperation struct {
 	DryRun     bool
 }
 
+// ChangeFilesFn is the function called to create the pull request
+type ChangeFilesFn func(dir string, gitInfo *gits.GitRepository) ([]string, error)
+
 // CreatePullRequest will fork (if needed) and pull a git repo, then perform the update, and finally create or update a
 // PR for the change. Any open PR on the repo with the `updatebot` label will be updated.
-func (o *PullRequestOperation) CreatePullRequest(kind string, update func(dir string, gitInfo *gits.GitRepository) ([]string, error)) (*gits.PullRequestInfo, error) {
+func (o *PullRequestOperation) CreatePullRequest(kind string, update ChangeFilesFn) (*gits.PullRequestInfo, error) {
 	var result *gits.PullRequestInfo
 	for _, gitURL := range o.GitURLs {
 		dir, err := ioutil.TempDir("", "create-pr")
@@ -58,87 +73,16 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update func(dir st
 		if forkInfo != nil {
 			gitInfo = forkInfo
 		}
-
-		oldVersions, err := update(dir, gitInfo)
+		commitMessage, details, err := o.updateAndGenerateMessagesAndDependencyMatrix(dir, kind, upstreamInfo.Host, gitInfo, update)
 		if err != nil {
 			return nil, errors.WithStack(err)
-		}
-		nonSemantic := make([]string, 0)
-		semantic := make([]semver.Version, 0)
-		for _, v := range oldVersions {
-			sv, err := semver.Parse(v)
-			if err != nil {
-				nonSemantic = append(nonSemantic, v)
-			} else {
-				semantic = append(semantic, sv)
-			}
-		}
-		semver.Sort(semantic)
-		sort.Strings(nonSemantic)
-		dedupedSemantic := make([]string, 0)
-		dedupedNonSemantic := make([]string, 0)
-		previous := ""
-		for _, v := range nonSemantic {
-			if v != previous {
-				dedupedNonSemantic = append(dedupedNonSemantic, v)
-			}
-			previous = v
-		}
-		previous = ""
-		for _, v := range semantic {
-			vStr := v.String()
-			if vStr != previous {
-				dedupedSemantic = append(dedupedSemantic, vStr)
-			}
-			previous = vStr
-		}
-
-		oldVersionsStr := strings.Join(dedupedSemantic, ", ")
-		if len(dedupedNonSemantic) > 0 {
-			if oldVersionsStr != "" {
-				oldVersionsStr += " and "
-			}
-			oldVersionsStr = oldVersionsStr + strings.Join(dedupedNonSemantic, ", ")
-		}
-
-		commitMessage, details, updateDependency, assets, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, upstreamInfo, oldVersionsStr, o.Version, o.Component)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		var upstreamDependencyAsset *gits.GitReleaseAsset
-
-		for _, asset := range assets {
-			if asset.Name == dependencymatrix.DependencyUpdatesAssetName {
-				upstreamDependencyAsset = &asset
-				break
-			}
-		}
-
-		err = dependencymatrix.UpdateDependencyMatrix(dir, updateDependency)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		if upstreamDependencyAsset != nil {
-			updatedPaths, err := addDependencyMatrixUpdatePaths(upstreamDependencyAsset, updateDependency)
-			if err != nil {
-				return nil, errors.Wrap(err, "adding dependency updates")
-			}
-
-			for _, d := range updatedPaths {
-				err = dependencymatrix.UpdateDependencyMatrix(dir, d)
-				if err != nil {
-					return nil, errors.Wrapf(err, "updating dependency matrix with upstream dependency %+v", d)
-				}
-			}
 		}
 
 		labels := []string{"updatebot"}
 		filter := &gits.PullRequestFilter{
 			Labels: labels,
 		}
-		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, true, commitMessage, true, o.DryRun, o.Git(), provider, labels)
+		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, false, commitMessage, true, o.DryRun, o.Git(), provider, labels)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
 		}
@@ -146,7 +90,120 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update func(dir st
 	return result, nil
 }
 
-func addDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsset, updateDependency *v1.DependencyUpdate) ([]*v1.DependencyUpdate, error) {
+// WrapChangeFilesWithCommitFn wraps the passed ChangeFilesFn in a commit. This is useful for creating multiple commits
+// to batch e.g. in a single PR push/creation
+func (o *PullRequestOperation) WrapChangeFilesWithCommitFn(kind string, fn ChangeFilesFn) ChangeFilesFn {
+	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		commitMessage, prDetails, err := o.updateAndGenerateMessagesAndDependencyMatrix(dir, kind, gitInfo.Host, gitInfo, fn)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		err = o.Git().Add(dir, "-A")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		changed, err := o.Git().HasChanges(dir)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if !changed {
+			log.Logger().Warnf("No changes made to the source code in %s. Code must be up to date!", dir)
+			return nil, nil
+		}
+		if commitMessage == "" {
+			commitMessage = prDetails.Message
+		}
+		err = o.Git().CommitDir(dir, commitMessage)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return nil, nil
+	}
+}
+
+func (o *PullRequestOperation) updateAndGenerateMessagesAndDependencyMatrix(dir string, kind string, destHost string, gitInfo *gits.GitRepository, update ChangeFilesFn) (string, *gits.PullRequestDetails, error) {
+
+	oldVersions, err := update(dir, gitInfo)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	nonSemantic := make([]string, 0)
+	semantic := make([]semver.Version, 0)
+	for _, v := range oldVersions {
+		sv, err := semver.Parse(v)
+		if err != nil {
+			nonSemantic = append(nonSemantic, v)
+		} else {
+			semantic = append(semantic, sv)
+		}
+	}
+	semver.Sort(semantic)
+	sort.Strings(nonSemantic)
+	dedupedSemantic := make([]string, 0)
+	dedupedNonSemantic := make([]string, 0)
+	previous := ""
+	for _, v := range nonSemantic {
+		if v != previous {
+			dedupedNonSemantic = append(dedupedNonSemantic, v)
+		}
+		previous = v
+	}
+	previous = ""
+	for _, v := range semantic {
+		vStr := v.String()
+		if vStr != previous {
+			dedupedSemantic = append(dedupedSemantic, vStr)
+		}
+		previous = vStr
+	}
+
+	oldVersionsStr := strings.Join(dedupedSemantic, ", ")
+	if len(dedupedNonSemantic) > 0 {
+		if oldVersionsStr != "" {
+			oldVersionsStr += " and "
+		}
+		oldVersionsStr = oldVersionsStr + strings.Join(dedupedNonSemantic, ", ")
+	}
+
+	commitMessage, details, updateDependency, assets, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, destHost, oldVersionsStr, o.Version, o.Component)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+
+	var upstreamDependencyAsset *gits.GitReleaseAsset
+
+	for _, asset := range assets {
+		if asset.Name == dependencymatrix.DependencyUpdatesAssetName {
+			upstreamDependencyAsset = &asset
+			break
+		}
+	}
+
+	if updateDependency != nil {
+		err = dependencymatrix.UpdateDependencyMatrix(dir, updateDependency)
+		if err != nil {
+			return "", nil, errors.WithStack(err)
+		}
+	}
+
+	if upstreamDependencyAsset != nil {
+		updatedPaths, err := AddDependencyMatrixUpdatePaths(upstreamDependencyAsset, updateDependency)
+		if err != nil {
+			return "", nil, errors.Wrap(err, "adding dependency updates")
+		}
+
+		for _, d := range updatedPaths {
+			err = dependencymatrix.UpdateDependencyMatrix(dir, d)
+			if err != nil {
+				return "", nil, errors.Wrapf(err, "updating dependency matrix with upstream dependency %+v", d)
+			}
+		}
+	}
+	return commitMessage, details, nil
+}
+
+// AddDependencyMatrixUpdatePaths retrieves the upstreamDependencyAsset and converts it to a slice of DependencyUpdates, prepending the updateDependency to the path
+func AddDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsset, updateDependency *v1.DependencyUpdate) ([]*v1.DependencyUpdate, error) {
 	var upstreamUpdates dependencymatrix.DependencyUpdates
 	var updates []*v1.DependencyUpdate
 	resp, err := http.Get(upstreamDependencyAsset.BrowserDownloadURL)
@@ -228,7 +285,7 @@ func addDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsse
 
 // CreateDependencyUpdatePRDetails creates the PullRequestDetails for a pull request, taking the kind of change it is (an id)
 // the srcRepoUrl for the repo that caused the change, the destRepo for the repo receiving the change, the fromVersion and the toVersion
-func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRepoURL string, destRepo *gits.GitRepository, fromVersion string, toVersion string, component string) (string, *gits.PullRequestDetails, *v1.DependencyUpdate, []gits.GitReleaseAsset, error) {
+func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRepoURL string, destHost string, fromVersion string, toVersion string, component string) (string, *gits.PullRequestDetails, *v1.DependencyUpdate, []gits.GitReleaseAsset, error) {
 	var commitMessage, title, message strings.Builder
 	commitMessage.WriteString("chore(deps): bump ")
 	title.WriteString("chore(deps): bump ")
@@ -248,7 +305,7 @@ func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRe
 				URL:   srcRepoURL,
 			},
 		}
-		if srcRepo.Host != destRepo.Host {
+		if srcRepo.Host != destHost {
 			commitMessage.WriteString(srcRepoURL)
 			title.WriteString(srcRepoURL)
 			update.Host = srcRepo.Host
@@ -256,7 +313,7 @@ func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRe
 			titleStr := fmt.Sprintf("%s/%s", srcRepo.Organisation, srcRepo.Name)
 			commitMessage.WriteString(titleStr)
 			title.WriteString(titleStr)
-			update.Host = destRepo.Host
+			update.Host = destHost
 		}
 		repoStr := fmt.Sprintf("[%s/%s](%s)", srcRepo.Organisation, srcRepo.Name, srcRepoURL)
 		message.WriteString(repoStr)
@@ -309,6 +366,10 @@ func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRe
 				message.WriteString(fmt.Sprintf("to %s", toVersion))
 			}
 		}
+	} else {
+		commitMessage.WriteString(" versions")
+		title.WriteString(" versions")
+		message.WriteString(" versions")
 	}
 	message.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
 	commitMessage.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
@@ -317,4 +378,166 @@ func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRe
 		Title:      title.String(),
 		Message:    message.String(),
 	}, update, assets, nil
+}
+
+// CreatePullRequestRegexFn creates the ChangeFilesFn that will apply the regex, updating the matches to version over the files
+func CreatePullRequestRegexFn(version string, regex string, files ...string) (ChangeFilesFn, error) {
+	r, err := regexp.Compile(regex)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%s does not compile", regex)
+	}
+	namedCaptures := make([]bool, 0)
+	namedCapture := false
+	for i, n := range r.SubexpNames() {
+		if i == 0 {
+			continue
+		} else if n == "version" {
+			namedCaptures = append(namedCaptures, true)
+			namedCapture = true
+		} else {
+			namedCaptures = append(namedCaptures, false)
+		}
+	}
+	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		oldVersions := make([]string, 0)
+		for _, glob := range files {
+
+			matches, err := filepath.Glob(filepath.Join(dir, glob))
+			if err != nil {
+				return nil, errors.Wrapf(err, "applying glob %s", glob)
+			}
+
+			// iterate over the glob matches
+			for _, path := range matches {
+
+				data, err := ioutil.ReadFile(path)
+				if err != nil {
+					return nil, errors.Wrapf(err, "reading %s", path)
+				}
+				info, err := os.Stat(path)
+				if err != nil {
+					return nil, errors.WithStack(err)
+				}
+				s := string(data)
+				for _, b := range namedCaptures {
+					if b {
+						namedCapture = true
+					}
+				}
+				answer := util.ReplaceAllStringSubmatchFunc(r, s, func(groups []util.Group) []string {
+					answer := make([]string, 0)
+					for i, group := range groups {
+						if namedCapture {
+							// If we are using named capture, then replace only the named captures that have the right name
+							if namedCaptures[i] {
+								oldVersions = append(oldVersions, group.Value)
+								answer = append(answer, version)
+							} else {
+								answer = append(answer, group.Value)
+							}
+						} else {
+							oldVersions = append(oldVersions, group.Value)
+							answer = append(answer, version)
+						}
+
+					}
+					return answer
+				})
+				err = ioutil.WriteFile(path, []byte(answer), info.Mode())
+				if err != nil {
+					return nil, errors.Wrapf(err, "writing %s", path)
+				}
+			}
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
+		return oldVersions, nil
+	}, nil
+}
+
+// CreatePullRequestBuildersFn creates the ChangeFilesFn that will update the gcr.io/jenkinsxio/builder-*.yml images
+func CreatePullRequestBuildersFn(version string) ChangeFilesFn {
+	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		answer, err := versionstream.UpdateStableVersionFiles(filepath.Join(dir, string(versionstream.KindDocker), "gcr.io", "jenkinsxio", "builder-*.yml"), version, "builder-base.yml")
+		if err != nil {
+			return nil, errors.Wrap(err, "modifying the builder-*.yml image versions")
+		}
+		return answer, nil
+	}
+}
+
+// CreateChartChangeFilesFn creates the ChangeFilesFn for updating the chart with name to version. If the version is
+// empty it will fetch the latest version using helmer, using the vaultClient to get the repo creds or prompting using
+// in, out and outErr
+func CreateChartChangeFilesFn(name string, version string, kind string, pro *PullRequestOperation, helmer helm.Helmer,
+	vaultClient vault.Client, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ChangeFilesFn {
+	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		if version == "" && kind == string(versionstream.KindChart) {
+			parts := strings.Split(name, "/")
+			if len(parts) == 2 {
+				prefixes, err := versionstream.GetRepositoryPrefixes(dir)
+				if err != nil {
+					return nil, errors.Wrapf(err, "getting repository prefixes")
+				}
+				prefix := parts[0]
+				urls := prefixes.URLsForPrefix(prefix)
+				if len(urls) > 0 {
+					if len(urls) > 1 {
+						log.Logger().Warnf("helm repo %s has more than one url %+v, using first declared (%s)", prefix, urls, urls[0])
+					} else if len(urls) == 0 {
+						log.Logger().Warnf("helm repo %s has more than no urls, not adding", prefix)
+					}
+					prefix, err = helm.AddHelmRepoIfMissing(urls[0], prefix, "", "", helmer, vaultClient, in, out, outErr)
+					if err != nil {
+						return nil, errors.Wrapf(err, "adding repository %s with url %s", prefix, urls[0])
+					}
+				}
+				name = fmt.Sprintf("%s/%s", prefix, parts[1])
+			}
+			c, err := helm.FindLatestChart(name, helmer)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find latest chart version for %s", name)
+			}
+			version = c.ChartVersion
+			log.Logger().Infof("found latest version %s for chart %s\n", util.ColorInfo(version), util.ColorInfo(name))
+		}
+		pro.Version = version
+		if pro.SrcGitURL == "" {
+			sv, err := versionstream.LoadStableVersion(dir, versionstream.VersionKind(kind), name)
+			if err != nil {
+				return nil, errors.Wrapf(err, "loading stable version")
+			}
+			pro.SrcGitURL = sv.GitURL
+		}
+		if pro.SrcGitURL == "" {
+			err := helm.InspectChart(name, version, "", "", "", helmer, func(dir string) error {
+				fileName, err := helm.FindChartFileName(dir)
+				if err != nil {
+					return errors.Wrapf(err, "find chart file")
+				}
+				chart, err := helm.LoadChartFile(fileName)
+				if err != nil {
+					return errors.Wrapf(err, "loading chart file")
+				}
+				if len(chart.Sources) > 0 {
+					pro.SrcGitURL = chart.Sources[0]
+				} else {
+					return errors.Errorf("chart %s %s has no sources in Chart.yaml", name, version)
+				}
+				return nil
+			})
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find source repo for %s", name)
+			}
+		}
+		if pro.SrcGitURL == "" {
+			return nil, errors.Errorf("Unable to determine git url for dependency %s", name)
+		}
+		answer, err := versionstream.UpdateStableVersion(dir, kind, name, version)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return answer, nil
+	}
 }

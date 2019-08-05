@@ -3,6 +3,8 @@ package pr
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/gits/operations"
+
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -65,7 +67,7 @@ func NewCmdStepCreatePullRequestMake(commonOpts *opts.CommonOptions) *cobra.Comm
 
 // ValidateMakeOptions validates the common options for make pr steps
 func (o *StepCreatePullRequestMakeOptions) ValidateMakeOptions() error {
-	if err := o.ValidateOptions(); err != nil {
+	if err := o.ValidateOptions(false); err != nil {
 		return errors.WithStack(err)
 	}
 	if o.Name == "" {
@@ -83,15 +85,13 @@ func (o *StepCreatePullRequestMakeOptions) Run() error {
 	if err := o.ValidateMakeOptions(); err != nil {
 		return errors.WithStack(err)
 	}
-	ro := StepCreatePullRequestRegexOptions{
-		StepCreatePrOptions: o.StepCreatePrOptions,
-		Files:               []string{"Makefile", "Makefile.*"},
-		Regexp:              fmt.Sprintf(`^%s\s*:=\s*(?P<version>.+)`, o.Name),
-		Kind:                "make",
-	}
-	err := ro.Run()
+	fn, err := operations.CreatePullRequestRegexFn(o.Version, fmt.Sprintf(`^%s\s*:=\s*(?P<version>.+)`, o.Name), "Makefile", "Makefile.*")
 	if err != nil {
-		return errors.Wrapf(err, "executing regex %s on globs %+v", ro.Regexp, ro.Files)
+		return errors.WithStack(err)
+	}
+	err = o.CreatePullRequest("make", fn)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 	return nil
 }

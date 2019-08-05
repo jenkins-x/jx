@@ -629,7 +629,7 @@ func (o *InstallOptions) resolvePrefixesAgainstRepos(repository string, chartNam
 			possiblesRepoNames = append(possiblesRepoNames, repo)
 		}
 	}
-	charts, err := o.Helmer.SearchCharts("")
+	charts, err := o.Helmer.SearchCharts("", false)
 	if err != nil {
 		return "", errors.Wrapf(err, "searching charts")
 	}

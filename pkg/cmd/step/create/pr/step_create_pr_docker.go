@@ -62,7 +62,7 @@ func NewCmdStepCreatePullRequestDocker(commonOpts *opts.CommonOptions) *cobra.Co
 
 // ValidateDockersOptions validates the common options for docker pr steps
 func (o *StepCreatePullRequestDockersOptions) ValidateDockersOptions() error {
-	if err := o.ValidateOptions(); err != nil {
+	if err := o.ValidateOptions(false); err != nil {
 		return errors.WithStack(err)
 	}
 	if o.Name == "" {

@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/step/get"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
@@ -13,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
-	"github.com/jenkins-x/jx/pkg/version"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -56,19 +57,19 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	)
 	gitter := options.Git()
 	gitter.Init(testDir)
-	stableVersion := &version.StableVersion{
+	stableVersion := &versionstream.StableVersion{
 		Version: "1.0.0",
 		GitURL:  "fake",
 	}
 	gitter.AddRemote(testDir, "origin", fakeRepo.GitRepo.CloneURL)
-	version.SaveStableVersion(testDir, version.KindChart, "test-app", stableVersion)
+	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.Add(testDir, ".")
 	gitter.AddCommit(testDir, "Initial Commit")
 	gitter.Push(testDir, "origin", false, false, "HEAD")
 	gitter.CreateBranch(testDir, testBranch)
 	gitter.Checkout(testDir, testBranch)
 	stableVersion.Version = "1.0.1"
-	version.SaveStableVersion(testDir, version.KindChart, "test-app", stableVersion)
+	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.AddCommit(testDir, "Bump version")
 	gitter.Push(testDir, "origin", false, false, "HEAD")
 	gitter.Checkout(testDir, stableBranch)
@@ -121,19 +122,19 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	)
 	gitter := options.Git()
 	gitter.Init(testDir)
-	stableVersion := &version.StableVersion{
+	stableVersion := &versionstream.StableVersion{
 		Version: "1.0.0",
 		GitURL:  "fake",
 	}
 	gitter.AddRemote(testDir, "origin", fakeRepo.GitRepo.CloneURL)
-	version.SaveStableVersion(testDir, version.KindChart, "test-app", stableVersion)
+	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.Add(testDir, ".")
 	gitter.AddCommit(testDir, "Initial Commit")
 	gitter.Push(testDir, "origin", false, false, "HEAD")
 	gitter.CreateBranch(testDir, testBranch)
 	gitter.Checkout(testDir, testBranch)
 	stableVersion.Version = "1.0.1"
-	version.SaveStableVersion(testDir, version.KindChart, "test-app", stableVersion)
+	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.AddCommit(testDir, "Bump version")
 	gitter.CreateBranch(testDir, "1")
 	gitter.Checkout(testDir, stableBranch)

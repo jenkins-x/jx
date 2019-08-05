@@ -157,7 +157,7 @@ func TestAddAppForGitOpsWithShortName(t *testing.T) {
 			map[string]string{
 				"repo1": kube.DefaultChartMuseumURL,
 			}, nil)
-		pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString())).ThenReturn(
+		pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString(), pegomock.EqBool(false))).ThenReturn(
 			[]helm.ChartSummary{
 				{
 					Name:         fmt.Sprintf("repo1/%s", name),
@@ -752,7 +752,7 @@ func TestAddAppWithShortName(t *testing.T) {
 		map[string]string{
 			"repo1": kube.DefaultChartMuseumURL,
 		}, nil)
-	pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString())).ThenReturn(
+	pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString(), pegomock.EqBool(false))).ThenReturn(
 		[]helm.ChartSummary{
 			{
 				Name:         fmt.Sprintf("repo1/%s", name),

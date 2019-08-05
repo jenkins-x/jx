@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -48,7 +50,7 @@ type StepSyntaxEffectiveOptions struct {
 	PodTemplates map[string]*corev1.Pod
 
 	GitInfo         *gits.GitRepository
-	VersionResolver *opts.VersionResolver
+	VersionResolver *versionstream.VersionResolver
 }
 
 var (

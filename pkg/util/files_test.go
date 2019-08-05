@@ -126,3 +126,7 @@ func TestDeleteDirContentsExcept(t *testing.T) {
 		fmt.Sprintf("Expected tmp dir %s to be empty, but contains %v.", tmpDir, remainingFiles))
 
 }
+
+func TestToValidFileSystemName(t *testing.T) {
+	assert.Equal(t, util.ToValidFileSystemName("x.y/z"), "x_y_z")
+}

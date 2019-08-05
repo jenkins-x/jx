@@ -3,13 +3,15 @@ package opts
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
@@ -25,10 +27,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -318,7 +319,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsEnvDir string,
 
 	if version == "" {
 		var err error
-		version, err = o.GetVersionNumber(version2.KindChart, chart, "", "")
+		version, err = o.GetVersionNumber(versionstream.KindChart, chart, "", "")
 		if err != nil {
 			return err
 		}

@@ -2,12 +2,14 @@ package create
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 
@@ -114,7 +116,7 @@ type StepCreateTaskOptions struct {
 	pipelineParams       []pipelineapi.Param
 	version              string
 	previewVersionPrefix string
-	VersionResolver      *opts.VersionResolver
+	VersionResolver      *versionstream.VersionResolver
 	CloneDir             string
 }
 

@@ -2,11 +2,12 @@ package helm_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/mocks"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	kube_test "github.com/jenkins-x/jx/pkg/kube/mocks"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/stretchr/testify/assert"
@@ -331,13 +332,13 @@ func TestSearchChartVersions(t *testing.T) {
 	expectedArgs := []string{"search", chart, "--versions"}
 	helm, runner := createHelm(t, nil, expectedOutput)
 
-	versions, err := helm.SearchChartVersions(chart)
+	versions, err := helm.SearchCharts(chart, true)
 
 	assert.NoError(t, err, "should search chart versions without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
 	expectedVersions := []string{"0.0.1481", "0.0.1480", "0.0.1479"}
 	for i, version := range versions {
-		assert.Equal(t, expectedVersions[i], version, "should parse the version '%s'", version)
+		assert.Equal(t, expectedVersions[i], version.ChartVersion, "should parse the version '%s'", version)
 	}
 }
 

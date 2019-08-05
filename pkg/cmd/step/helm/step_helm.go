@@ -2,13 +2,14 @@ package helm
 
 import (
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/version"
-	"github.com/pkg/errors"
-	"k8s.io/helm/pkg/chartutil"
 	"path/filepath"
 	"text/template"
+
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/pkg/errors"
+	"k8s.io/helm/pkg/chartutil"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
@@ -37,7 +38,7 @@ type StepHelmOptions struct {
 	https       bool
 	GitProvider string
 
-	versionResolver *opts.VersionResolver
+	versionResolver *versionstream.VersionResolver
 }
 
 // NewCmdStepHelm Steps a command object for the "step" command
@@ -224,7 +225,7 @@ func (o *StepHelmOptions) discoverValuesFiles(dir string) ([]string, error) {
 	return valuesFiles, nil
 }
 
-func (o *StepHelmOptions) getOrCreateVersionResolver(requirementsConfig *config.RequirementsConfig) (*opts.VersionResolver, error) {
+func (o *StepHelmOptions) getOrCreateVersionResolver(requirementsConfig *config.RequirementsConfig) (*versionstream.VersionResolver, error) {
 	if o.versionResolver == nil {
 		vs := requirementsConfig.VersionStream
 		log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
@@ -238,7 +239,7 @@ func (o *StepHelmOptions) getOrCreateVersionResolver(requirementsConfig *config.
 	return o.versionResolver, nil
 }
 
-func (o *StepHelmOptions) verifyRequirementsYAML(resolver *opts.VersionResolver, prefixes *opts.RepositoryPrefixes, fileName string) error {
+func (o *StepHelmOptions) verifyRequirementsYAML(resolver *versionstream.VersionResolver, prefixes *versionstream.RepositoryPrefixes, fileName string) error {
 	req, err := helm.LoadRequirementsFile(fileName)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load %s", fileName)
@@ -262,7 +263,7 @@ func (o *StepHelmOptions) verifyRequirementsYAML(resolver *opts.VersionResolver,
 			}
 			newVersion := ""
 			fullChartName := prefix + "/" + dep.Name
-			newVersion, err := resolver.StableVersionNumber(version.KindChart, fullChartName)
+			newVersion, err := resolver.StableVersionNumber(versionstream.KindChart, fullChartName)
 			if err != nil {
 				return errors.Wrapf(err, "failed to find version of chart %s in file %s", fullChartName, fileName)
 			}
@@ -327,7 +328,7 @@ func (o *StepHelmOptions) createFuncMap(requirementsConfig *config.RequirementsC
 	// represents the helm template function
 	// which can be used like: `{{ versionStream "chart" "foo/bar" }}
 	funcMap["versionStream"] = func(kindString, name string) string {
-		kind := version.VersionKind(kindString)
+		kind := versionstream.VersionKind(kindString)
 		version, err := resolver.StableVersionNumber(kind, name)
 		if err != nil {
 			log.Logger().Errorf("failed to find %s version for %s in the version stream due to: %s\n", kindString, name, err.Error())
