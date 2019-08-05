@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -1450,7 +1450,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 			c.Command = []string{"/bin/sh", "-c"}
 		}
 
-		resolvedImage, err := version.ResolveDockerImage(versionsDir, c.Image)
+		resolvedImage, err := versionstream.ResolveDockerImage(versionsDir, c.Image)
 		if err != nil {
 			log.Logger().Warnf("failed to resolve step image version: %s due to %s", c.Image, err.Error())
 		} else {
@@ -1836,7 +1836,7 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container,
 	if image == "" {
 		image = os.Getenv("BUILDER_JX_IMAGE")
 		if image == "" {
-			image, err = version.ResolveDockerImage(versionsDir, GitMergeImage)
+			image, err = versionstream.ResolveDockerImage(versionsDir, GitMergeImage)
 			if err != nil {
 				return tektonv1alpha1.TaskSpec{}, err
 			}

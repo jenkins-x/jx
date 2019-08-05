@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/controller"
 	"github.com/jenkins-x/jx/pkg/cmd/promote"
@@ -323,7 +325,13 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 
 	// Mock out the search versions operation
 
-	pegomock.When(mockHelmer.SearchChartVersions(testRepoName)).ThenReturn([]string{"1.0.1"}, nil)
+	pegomock.When(mockHelmer.SearchCharts(testRepoName, true)).ThenReturn([]helm.ChartSummary{
+		{
+			Name:         testRepoName,
+			ChartVersion: "1.0.1",
+			AppVersion:   "1.0.1",
+		},
+	}, nil)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)

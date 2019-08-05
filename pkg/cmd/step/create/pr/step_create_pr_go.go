@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/gits/operations"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/pkg/errors"
 
@@ -72,7 +74,7 @@ func NewCmdStepCreatetPullRequestGo(commonOpts *opts.CommonOptions) *cobra.Comma
 
 // ValidateGoOptions validates the common options for make pr steps
 func (o *StepCreatetPullRequestGoOptions) ValidateGoOptions() error {
-	if err := o.ValidateOptions(); err != nil {
+	if err := o.ValidateOptions(false); err != nil {
 		return errors.WithStack(err)
 	}
 	if o.Name == "" {
@@ -90,18 +92,25 @@ func (o *StepCreatetPullRequestGoOptions) Run() error {
 	if err := o.ValidateGoOptions(); err != nil {
 		return errors.WithStack(err)
 	}
-	ro := StepCreatePullRequestRegexOptions{
-		StepCreatePrOptions: o.StepCreatePrOptions,
-		Files:               []string{"go.mod"},
-		Regexp:              fmt.Sprintf(`^\s*\Q%s\E\s+(?P<version>.+)`, o.Name),
-		Kind:                "go",
-		PostChangeCallback: func(dir string, gitInfo *gits.GitRepository) error {
-			return o.runGoBuild(dir)
-		},
-	}
-	err := ro.Run()
+	regex := fmt.Sprintf(`^\s*\Q%s\E\s+(?P<version>.+)`, o.Name)
+	fn, err := operations.CreatePullRequestRegexFn(o.Version, regex, "go.mod")
 	if err != nil {
-		return errors.Wrapf(err, "executing regex %s on globs %+v", ro.Regexp, ro.Files)
+		return errors.WithStack(err)
+	}
+	fn = func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		answer, err := fn(dir, gitInfo)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		err = o.runGoBuild(dir)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return answer, nil
+	}
+	err = o.CreatePullRequest("go", fn)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -115,7 +124,14 @@ func (o *StepCreatetPullRequestGoOptions) runGoBuild(dir string) error {
 	log.Logger().Infof("running the build command: %s in the directory %s to update the 'go.sum' file\n", util.ColorInfo(build), dir)
 
 	values := strings.Split(build, " ")
-	err := o.RunCommandVerboseAt(dir, values[0], values[1:]...)
-	log.Logger().Infof("")
-	return err
+	cmd := util.Command{
+		Dir:  dir,
+		Name: values[0],
+		Args: values[1:],
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return errors.Wrapf(err, "running %s", cmd.String())
+	}
+	return nil
 }

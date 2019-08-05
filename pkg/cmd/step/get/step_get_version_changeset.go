@@ -2,14 +2,15 @@ package get
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/config"
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 )
 
@@ -104,11 +105,11 @@ func (o *StepGetVersionChangeSetOptions) Run() error {
 			if modifier == "A" || modifier == "M" {
 				file := output[1]
 				if strings.HasSuffix(file, ".yml") {
-					stableVersion, err := version.LoadStableVersionFile(filepath.Join(o.VersionsDir, file))
+					stableVersion, err := versionstream.LoadStableVersionFile(filepath.Join(o.VersionsDir, file))
 					if err == nil {
 						if modifier == "M" {
 							fileData, _ := o.Git().LoadFileFromBranch(o.VersionsDir, o.StableBranch, file)
-							oldStableVersion, _ := version.LoadStableVersionFromData([]byte(fileData))
+							oldStableVersion, _ := versionstream.LoadStableVersionFromData([]byte(fileData))
 							oldApp := formatVersion(file, oldStableVersion)
 							appPreviousVersions = append(appPreviousVersions, oldApp)
 						}
@@ -127,8 +128,8 @@ func (o *StepGetVersionChangeSetOptions) Run() error {
 	return nil
 }
 
-func formatVersion(fileName string, stableVersion *version.StableVersion) string {
-	formattedVersion := strings.Replace(fileName, string(version.KindChart)+"/", string(version.KindChart)+":", 1)
+func formatVersion(fileName string, stableVersion *versionstream.StableVersion) string {
+	formattedVersion := strings.Replace(fileName, string(versionstream.KindChart)+"/", string(versionstream.KindChart)+":", 1)
 	formattedVersion = strings.Replace(formattedVersion, ".yml", "", 1)
 	formattedVersion = formattedVersion + ":" + stableVersion.Version
 	return formattedVersion

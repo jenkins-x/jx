@@ -68,7 +68,7 @@ func NewCmdStepCreatePullRequestChart(commonOpts *opts.CommonOptions) *cobra.Com
 
 // ValidateChartsOptions validates the common options for chart pr steps
 func (o *StepCreatePullRequestChartsOptions) ValidateChartsOptions() error {
-	if err := o.ValidateOptions(); err != nil {
+	if err := o.ValidateOptions(false); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(o.Names) == 0 {

@@ -1,20 +1,21 @@
-package opts_test
+package versionstream_test
 
 import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestVersionGitRepository(t *testing.T) {
 	t.Parallel()
 
-	versionsDir := path.Join("test_data", "jenkins-x-versions")
+	versionsDir := path.Join("test_data", "jenkins-x-versions-git-repo")
 	assert.DirExists(t, versionsDir)
 
-	resolver := &opts.VersionResolver{
+	resolver := &versionstream.VersionResolver{
 		VersionsDir: versionsDir,
 	}
 

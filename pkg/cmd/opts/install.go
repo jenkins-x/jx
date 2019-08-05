@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,8 +13,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Pallinder/go-randomdata"
-	"github.com/alexflint/go-filemutex"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/versionstream"
+	"k8s.io/client-go/kubernetes"
+
+	randomdata "github.com/Pallinder/go-randomdata"
+	filemutex "github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -32,10 +34,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/packages"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -292,7 +293,7 @@ func (o *CommonOptions) InstallOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			return err
 		}
 		versionFile := filepath.Join(configDir, "jenkins-x-versions", "packages", options.Binary+".yml")
-		ver, err := version.LoadStableVersionFile(versionFile)
+		ver, err := versionstream.LoadStableVersionFile(versionFile)
 		if err != nil {
 			return err
 		}
@@ -1770,7 +1771,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 
 		// lets use the stable knative build prow
 		if prowVersion == "" {
-			prowVersion, err = o.GetVersionNumber(version.KindChart, "jenkins-x/prow-knative", "", "")
+			prowVersion, err = o.GetVersionNumber(versionstream.KindChart, "jenkins-x/prow-knative", "", "")
 			if err != nil {
 				return errors.Wrap(err, "failed to find Prow Knative build version")
 			}

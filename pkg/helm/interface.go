@@ -22,14 +22,13 @@ type Helmer interface {
 		password string) error
 	DeleteRelease(ns string, releaseName string, purge bool) error
 	ListReleases(ns string) (map[string]ReleaseSummary, []string, error)
-	SearchChartVersions(chart string) ([]string, error)
 	FindChart() (string, error)
 	PackageChart() error
 	StatusRelease(ns string, releaseName string) error
 	StatusReleaseWithOutput(ns string, releaseName string, format string) (string, error)
 	Lint(valuesFiles []string) (string, error)
 	Version(tls bool) (string, error)
-	SearchCharts(filter string) ([]ChartSummary, error)
+	SearchCharts(filter string, allVersions bool) ([]ChartSummary, error)
 	SetHost(host string)
 	Env() map[string]string
 	DecryptSecrets(location string) error

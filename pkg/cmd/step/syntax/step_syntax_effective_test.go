@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/syntax"
@@ -583,7 +585,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 					Name:         tt.repoName,
 					Organisation: tt.organization,
 				},
-				VersionResolver: &opts.VersionResolver{
+				VersionResolver: &versionstream.VersionResolver{
 					VersionsDir: testVersionsDir,
 				},
 				SourceName: "source",

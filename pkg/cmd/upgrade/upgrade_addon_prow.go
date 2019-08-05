@@ -2,7 +2,8 @@ package upgrade
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-version"
+
+	version "github.com/hashicorp/go-version"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
@@ -15,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	version2 "github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -201,7 +202,7 @@ func (o *UpgradeAddonProwOptions) UpgradeViaGitOps(devEnv *jenkinsv1.Environment
 
 	log.Logger().Debugf("Environment Dir %s", environmentsDir)
 
-	prowVersion, err := o.GetVersionNumber(version2.KindChart, "jenkins-x/prow", "", "")
+	prowVersion, err := o.GetVersionNumber(versionstream.KindChart, "jenkins-x/prow", "", "")
 
 	log.Logger().Infof("About to upgrade prow to version %s", prowVersion)
 
@@ -231,7 +232,7 @@ func (o *UpgradeAddonProwOptions) UpgradeViaGitOps(devEnv *jenkinsv1.Environment
 
 		requirements.SetAppVersion("prow", prowVersion, "", "prow")
 		if o.Tekton {
-			tektonVersion, err := o.GetVersionNumber(version2.KindChart, "jenkins-x/tekton", "", "")
+			tektonVersion, err := o.GetVersionNumber(versionstream.KindChart, "jenkins-x/tekton", "", "")
 			log.Logger().Infof("About to upgrade tekton to version %s", tektonVersion)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get latest tekton version")
