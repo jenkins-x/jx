@@ -76,7 +76,7 @@ func (g *GitCLI) ShallowCloneBranch(url string, branch string, dir string) error
 
 // ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
 func (g *GitCLI) ShallowClone(dir string, url string, commitish string, pullRequest string) error {
-	return g.clone(dir, url, "", true, false, "", commitish, pullRequest)
+	return g.clone(dir, url, "", true, false, "master", commitish, pullRequest)
 }
 
 // clone is a safer implementation of the `git clone` method
@@ -142,16 +142,9 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 			commitish = "master"
 		}
 	}
-	if commitish == localBranch {
-		err = g.ResetHard(dir, fmt.Sprintf("%s/%s", remoteName, commitish))
-		if err != nil {
-			return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
-		}
-	} else {
-		err = g.ResetHard(dir, commitish)
-		if err != nil {
-			return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
-		}
+	err = g.ResetHard(dir, fmt.Sprintf("%s/%s", remoteName, commitish))
+	if err != nil {
+		return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
 	}
 	if verbose {
 		log.Logger().Infof("ran git reset --hard %s in directory %s", commitish, dir)
