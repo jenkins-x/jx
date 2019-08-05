@@ -142,9 +142,16 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 			commitish = "master"
 		}
 	}
-	err = g.ResetHard(dir, fmt.Sprintf("%s/%s", remoteName, commitish))
-	if err != nil {
-		return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
+	if commitish != localBranch && commitish != "master" {
+		err = g.ResetHard(dir, commitish)
+		if err != nil {
+			return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
+		}
+	} else {
+		err = g.ResetHard(dir, fmt.Sprintf("%s/%s", remoteName, commitish))
+		if err != nil {
+			return errors.Wrapf(err, "failed to reset hard to %s in directory %s", commitish, dir)
+		}
 	}
 	if verbose {
 		log.Logger().Infof("ran git reset --hard %s in directory %s", commitish, dir)
