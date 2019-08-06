@@ -8,10 +8,11 @@ import (
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -99,9 +100,9 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 	}
 	vaultClient, err := api.NewClient(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "crating vault client")
+		return nil, errors.Wrap(err, "creating vault client")
 	}
-
+	log.Logger().Debugf("connecting to vault on %s", vaultClient.Address())
 	// Wait for vault to be ready
 	err = waitForVault(vaultClient, healthInitialRetryDelay, healthhRetyTimeout)
 	if err != nil {

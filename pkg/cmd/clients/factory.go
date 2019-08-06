@@ -416,6 +416,7 @@ func (f *factory) ResetSecretsLocation() {
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
+	log.Logger().Debugf("creating system vault for namespace %s", namespace)
 	name, err := f.getVaultName(namespace)
 	if err != nil {
 		return nil, err
@@ -426,6 +427,7 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 // getVaultName gets the vault name from install configuration or builds a new name from
 // cluster name
 func (f *factory) getVaultName(namespace string) (string, error) {
+	log.Logger().Debugf("getting vault name for namespace %s", namespace)
 	kubeClient, _, err := f.CreateKubeClient()
 	if err != nil {
 		return "", err
@@ -433,16 +435,19 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 	var name string
 	if data, err := kube.ReadInstallValues(kubeClient, namespace); err == nil && data != nil {
 		name = data[kube.SystemVaultName]
+		log.Logger().Debugf("system vault name from config %s", name)
 		if name == "" {
 			clusterName := data[kube.ClusterName]
 			if clusterName != "" {
 				name = kubevault.SystemVaultNameForCluster(clusterName)
+				log.Logger().Debugf("vault name %s generated from cluster %s", name, clusterName)
 			}
 		}
 	}
 
 	if name == "" {
 		name, err = kubevault.SystemVaultName(f.kubeConfig)
+		log.Logger().Debugf("Vault name generated: %s", name)
 		if err != nil || name == "" {
 			return name, fmt.Errorf("could not find the system vault name in namespace %q", namespace)
 		}
@@ -740,6 +745,7 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
+		log.Logger().Errorf("Error creating vault operator client %s", err)
 		return nil, err
 	}
 	return vaultoperatorclient.NewForConfig(config)
