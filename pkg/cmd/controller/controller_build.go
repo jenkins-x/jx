@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,8 +10,6 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/go-scm/scm"
-	"github.com/jenkins-x/go-scm/scm/factory"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
@@ -23,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
-
 	"k8s.io/client-go/kubernetes"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -52,8 +48,6 @@ type ControllerBuildOptions struct {
 	TargetURLTemplate  string
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
-
-	scmClient *scm.Client
 
 	// private fields added for easier testing
 	gitHubProvider gits.GitProvider
@@ -120,12 +114,12 @@ func (o *ControllerBuildOptions) Run() error {
 		return err
 	}
 
-	if o.GitReporting {
-		o.scmClient, err = factory.NewClientFromEnvironment()
-		if err != nil {
-			return errors.Wrapf(err, "failed to create SCM client for git reporting")
+	if !o.GitReporting {
+		if os.Getenv("GIT_REPORTING") == "true" {
+			o.GitReporting = true
 		}
-
+	}
+	if o.GitReporting {
 		if o.TargetURLTemplate == "" {
 			o.TargetURLTemplate = os.Getenv("TARGET_URL_TEMPLATE")
 		}
@@ -1106,7 +1100,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	}
 	owner := activity.Spec.GitOwner
 	repo := activity.Spec.GitRepository
-
+	gitURL := activity.Spec.GitURL
 	activityStatus := activity.Spec.Status
 	status := toScmStatus(activityStatus)
 
@@ -1116,10 +1110,16 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		"gitOwner":    owner,
 		"gitRepo":     repo,
 		"gitSHA":      sha,
+		"gitURL":      gitURL,
 		"gitBranch":   activity.Spec.GitBranch,
-		"gitStatus":   status.String(),
+		"gitStatus":   status,
 		"buildNumber": activity.Spec.Build,
 		"duration":    util.DurationString(activity.Spec.StartedTimestamp, activity.Spec.CompletedTimestamp),
+	}
+	if gitURL == "" {
+		log.Logger().WithFields(fields).Debugf("Cannot report pipeline %s as we have no git SHA", activity.Name)
+		return
+
 	}
 	if sha == "" {
 		log.Logger().WithFields(fields).Debugf("Cannot report pipeline %s as we have no git SHA", activity.Name)
@@ -1138,7 +1138,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	if activity.Annotations == nil {
 		activity.Annotations = map[string]string{}
 	}
-	if !reportStatus(status) {
+	if status == "" {
 		return
 	}
 	switch activity.Annotations[kube.AnnotationGitReportState] {
@@ -1152,37 +1152,36 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 
 	activity.Annotations[kube.AnnotationGitReportState] = string(activityStatus)
 
-	fullRepo := owner + "/" + repo
 	pipelineContext := pri.Context
 	if pipelineContext == "" {
 		pipelineContext = "jenkins-x"
 	}
-
-	description := status.String()
+	description := status
 	targetURL := CreateReportTargetURL(o.TargetURLTemplate, ReportParams{
 		Owner:      owner,
 		Repository: repo,
 		Build:      activity.Spec.Build,
 		Context:    pipelineContext,
 	})
-	statusInput := &scm.StatusInput{
-		State:  status,
-		Label:  pipelineContext,
-		Desc:   description,
-		Target: targetURL,
+	gitRepoStatus := &gits.GitRepoStatus{
+		State:       status,
+		Context:     pipelineContext,
+		Description: description,
+		URL:         targetURL,
 	}
 
-	ctx := context.Background()
-	_, _, err := o.scmClient.Repositories.CreateStatus(ctx, fullRepo, sha, statusInput)
+	gitProvider, err := o.GitProviderForURL(gitURL, "git provider")
+	if err != nil {
+		log.Logger().WithFields(fields).WithError(err).Warnf("failed to create git provider")
+		return
+	}
+
+	_, err = gitProvider.UpdateCommitStatus(owner, repo, sha, gitRepoStatus)
 	if err != nil {
 		log.Logger().WithFields(fields).WithError(err).Warnf("failed to report git status")
 	} else {
 		log.Logger().WithFields(fields).Info("reported git status")
 	}
-}
-
-func reportStatus(s scm.State) bool {
-	return s != scm.StateUnknown
 }
 
 // ReportParams contains the parameters for target URL templates
@@ -1197,8 +1196,6 @@ func CreateReportTargetURL(templateText string, params ReportParams) string {
 		log.Logger().WithError(err).Warnf("failed to convert git ReportParams to a map for %#v", params)
 		return ""
 	}
-
-	log.Logger().Infof("templateData: %#v", templateData)
 
 	funcMap := helm.NewFunctionMap()
 	tmpl, err := template.New("target_url.tmpl").Option("missingkey=error").Funcs(funcMap).Parse(templateText)
@@ -1216,25 +1213,16 @@ func CreateReportTargetURL(templateText string, params ReportParams) string {
 	return buf.String()
 }
 
-func toScmStatus(status v1.ActivityStatusType) scm.State {
+func toScmStatus(status v1.ActivityStatusType) string {
 	switch status {
 	case v1.ActivityStatusTypeSucceeded:
-		return scm.StateSuccess
-	case v1.ActivityStatusTypeRunning:
-		return scm.StateRunning
-	case v1.ActivityStatusTypePending:
-		return scm.StatePending
-	case v1.ActivityStatusTypeFailed:
-		return scm.StateFailure
+		return "success"
+	case v1.ActivityStatusTypeRunning, v1.ActivityStatusTypePending:
+		return "pending"
 	case v1.ActivityStatusTypeError:
-		return scm.StateError
-	case v1.ActivityStatusTypeAborted:
-		return scm.StateCanceled
-
-	case v1.ActivityStatusTypeNotExecuted, v1.ActivityStatusTypeWaitingForApproval:
-		return scm.StateUnknown
+		return "error"
 	default:
-		return scm.StateUnknown
+		return "failure"
 	}
 }
 
