@@ -81,7 +81,7 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		revision = params.PullRef.BaseBranch
 	}
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.ResourceName, &params.GitInfo, revision)}
-	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.ServiceAccount, nil, nil)
+	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.ServiceAccount, nil, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
 	if err != nil {

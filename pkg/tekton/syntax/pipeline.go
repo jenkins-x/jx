@@ -15,6 +15,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -115,8 +116,9 @@ type RootOptions struct {
 	// pipeline, adding to configuration that can be configured through the syntax already. This includes things
 	// like CPU/RAM requests/limits, secrets, ports, etc. Some of these things will end up with native syntax approaches
 	// down the road.
-	ContainerOptions *corev1.Container `json:"containerOptions,omitempty"`
-	Volumes          []*corev1.Volume  `json:"volumes,omitempty"`
+	ContainerOptions              *corev1.Container `json:"containerOptions,omitempty"`
+	Volumes                       []*corev1.Volume  `json:"volumes,omitempty"`
+	DistributeParallelAcrossNodes bool              `json:"distributeParallelAcrossNodes,omitempty"`
 }
 
 // Stash defines files to be saved for use in a later stage, marked with a name
@@ -873,6 +875,13 @@ func validateStageOptions(o *StageOptions) *apis.FieldError {
 			}
 		}
 
+		if o.RootOptions != nil && o.RootOptions.DistributeParallelAcrossNodes {
+			return &apis.FieldError{
+				Message: "distributeParallelAcrossNodes cannot be used in a stage",
+				Paths:   []string{"distributeParallelAcrossNodes"},
+			}
+		}
+
 		return validateRootOptions(o.RootOptions)
 	}
 
@@ -967,6 +976,28 @@ func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	}
 
 	return env
+}
+
+// GetPossibleAffinityPolicy takes the pipeline name and returns the appropriate affinity policy for pods in this
+// pipeline given its configuration, specifically of options.distributeParallelAcrossNodes.
+func (j *ParsedPipeline) GetPossibleAffinityPolicy(name string) *corev1.Affinity {
+	if j.Options != nil && j.Options.DistributeParallelAcrossNodes {
+		return &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								pipeline.GroupName + pipeline.PipelineRunLabelKey: name,
+							},
+						},
+					},
+				}},
+			},
+		}
+	}
+	return nil
 }
 
 // AddContainerEnvVarsToPipeline allows for adding a slice of container environment variables directly to the
