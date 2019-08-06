@@ -115,7 +115,7 @@ func (o *ControllerBuildOptions) Run() error {
 	}
 
 	if !o.GitReporting {
-		if os.Getenv("GIT_REPORTING") == "true" {
+		if strings.ToLower(os.Getenv("GIT_REPORTING")) == "true" {
 			o.GitReporting = true
 		}
 	}
