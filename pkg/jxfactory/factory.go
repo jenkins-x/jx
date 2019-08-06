@@ -1,7 +1,6 @@
 package jxfactory
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -130,11 +129,11 @@ func (f *factory) createKubeConfigText() *string {
 	if f.kubeConfigCache != nil {
 		return f.kubeConfigCache
 	}
+	text := ""
 	if home := util.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		text = filepath.Join(home, ".kube", "config")
 	}
+	kubeconfig = &text
 	f.kubeConfigCache = kubeconfig
 	return kubeconfig
 }

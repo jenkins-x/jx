@@ -46,7 +46,7 @@ type MetaClient struct {
 	Results     tekton.CRDWrapper
 	OutDir      string
 	Verbose     bool
-	NoApply     *bool
+	NoApply     bool
 	versionsDir string
 	gitter      gits.Gitter
 	factory     jxfactory.Factory
@@ -78,6 +78,7 @@ func (o *MetaClient) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "unable to retrieve pod templates")
 	}
+	o.defaultImageFromPodTemplate(podTemplates)
 
 	branchIdentifier := o.determineBranchIdentifier(*pullRefs)
 	pipelineKind := o.determinePipelineKind(*pullRefs)
@@ -180,7 +181,7 @@ func (o *MetaClient) handleResult(tektonClient tektonclient.Interface,
 	gitInfo *gits.GitRepository) error {
 
 	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branch, gitInfo, &pullRefs, tekton.MetaPipeline)
-	if *o.NoApply {
+	if o.NoApply {
 		err := tektonCRDs.WriteToDisk(o.OutDir, pipelineActivity)
 		if err != nil {
 			return errors.Wrapf(err, "failed to output Tekton CRDs")
@@ -309,4 +310,19 @@ func (o *MetaClient) git() gits.Gitter {
 // setGit sets the git client
 func (o *MetaClient) setGit(git gits.Gitter) {
 	o.gitter = git
+}
+
+func (o *MetaClient) defaultImageFromPodTemplate(pods map[string]*corev1.Pod) {
+	pod := pods[o.DefaultImage]
+	if pod != nil {
+		containers := pod.Spec.Containers
+		if len(containers) > 0 {
+			c := containers[0]
+			image := c.Image
+			if image != "" {
+				log.Logger().Debugf("using default image for meta pipeline: %s", image)
+				o.DefaultImage = image
+			}
+		}
+	}
 }

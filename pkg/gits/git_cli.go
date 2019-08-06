@@ -158,7 +158,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 	}
 
 	// lets only create a remote tracking branch of localBranch == master
-	if localBranch == "master" || localBranch == commitish {
+	if commitish == "master" || localBranch == commitish {
 		err = g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("%s/%s", remoteName, commitish), localBranch)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set tracking information to %s/%s %s in directory %s", remoteName,
