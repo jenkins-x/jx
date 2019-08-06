@@ -52,7 +52,7 @@ type Client struct {
 
 // Create creates the meta pipeline
 func (c *Client) Create() error {
-	err := c.validateArguments()
+	err := c.ValidateArguments()
 	if err != nil {
 		return errors.Wrapf(err, "invalid arguments")
 	}
@@ -138,7 +138,8 @@ func (c *Client) Create() error {
 	return nil
 }
 
-func (c *Client) validateArguments() error {
+// ValidateArguments validates the arguments
+func (c *Client) ValidateArguments() error {
 	// default values
 	if c.DefaultImage == "" {
 		c.DefaultImage = syntax.DefaultContainerImage

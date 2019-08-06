@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -121,4 +122,22 @@ func (o *StepCreatePipelineOptions) Run() error {
 	// record the results in the struct for the case this command is called programmatically (HF)
 	o.Results = o.Client.Results
 	return nil
+}
+
+func (o *StepCreatePipelineOptions) validateCommandLineFlags() error {
+	if o.Client.SourceURL == "" {
+		return util.MissingOption(sourceURLOptionName)
+	}
+	_, err := util.ExtractKeyValuePairs(o.Client.CustomLabels, "=")
+	if err != nil {
+		return errors.Wrap(err, "unable to parse custom labels")
+	}
+	_, err = util.ExtractKeyValuePairs(o.Client.CustomEnvs, "=")
+	if err != nil {
+		return errors.Wrap(err, "unable to parse custom environment variables")
+	}
+	if o.Client.PullRefs == "" {
+		return util.MissingOption(pullRefOptionName)
+	}
+	return o.Client.ValidateArguments()
 }
