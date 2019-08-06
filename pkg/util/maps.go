@@ -99,6 +99,21 @@ func GetMapValueAsStringViaPath(m map[string]interface{}, path string) string {
 	return text
 }
 
+// GetMapValueAsIntViaPath returns the int value at the given path
+// mean `m["foo"]["bar"]["whatnot"]`
+func GetMapValueAsIntViaPath(m map[string]interface{}, path string) int {
+	value := GetMapValueViaPath(m, path)
+	n, ok := value.(int)
+	if !ok {
+		f, ok := value.(float64)
+		if ok {
+			return int(f)
+		}
+		return 0
+	}
+	return n
+}
+
 // GetMapValueAsMapViaPath returns the map value at the given path
 // mean `m["foo"]["bar"]["whatnot"]`
 func GetMapValueAsMapViaPath(m map[string]interface{}, path string) map[string]interface{} {
