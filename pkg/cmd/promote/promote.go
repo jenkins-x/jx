@@ -458,7 +458,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	details := gits.PullRequestDetails{
 		BranchName: "promote-" + app + "-" + versionName,
 		Title:      "chore: " + app + " to " + versionName,
-		Message:    fmt.Sprintf("Promote %s to version %s", app, versionName),
+		Message:    fmt.Sprintf("chore: Promote %s to version %s", app, versionName),
 	}
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
