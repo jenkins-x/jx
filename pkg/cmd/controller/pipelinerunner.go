@@ -370,21 +370,21 @@ func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(pipelineRun Pipeli
 	createPipelineOption := &create.StepCreatePipelineOptions{}
 	c := *o.CommonOptions
 	createPipelineOption.CommonOptions = &c
-	createPipelineOption.SourceURL = sourceURL
-	createPipelineOption.PullRefs = pullRefs.String()
-	createPipelineOption.Context = prowJobSpec.Context
-	createPipelineOption.Job = job
+	createPipelineOption.Client.SourceURL = sourceURL
+	createPipelineOption.Client.PullRefs = pullRefs.String()
+	createPipelineOption.Client.Context = prowJobSpec.Context
 
 	createPipelineOption.ServiceAccount = o.ServiceAccount
-	createPipelineOption.DefaultImage = o.MetaPipelineImage
+	createPipelineOption.Client.ServiceAccount = o.ServiceAccount
+	createPipelineOption.Client.DefaultImage = o.MetaPipelineImage
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range pipelineRun.Labels {
-		createPipelineOption.CustomLabels = append(createPipelineOption.CustomLabels, fmt.Sprintf("%s=%s", key, value))
+		createPipelineOption.Client.CustomLabels = append(createPipelineOption.Client.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
 	// turn map into string array with = separator to match type of custom env vars which are CLI flags
 	for key, value := range envs {
-		createPipelineOption.CustomEnvs = append(createPipelineOption.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
+		createPipelineOption.Client.CustomEnvs = append(createPipelineOption.Client.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
 	}
 
 	return createPipelineOption, nil

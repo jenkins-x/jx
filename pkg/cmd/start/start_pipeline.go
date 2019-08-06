@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	errors2 "github.com/pkg/errors"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
@@ -219,12 +220,14 @@ func (o *StartPipelineOptions) createMetaPipeline(jobname string) error {
 	}
 
 	po := create.StepCreatePipelineOptions{
-		SourceURL:    sourceURL,
-		Job:          jobname,
-		PullRefs:     pullRefs,
-		Context:      o.Context,
-		CustomLabels: o.CustomLabels,
-		CustomEnvs:   o.CustomEnvs,
+		Client: metapipeline.Client{
+			SourceURL:      sourceURL,
+			PullRefs:       pullRefs,
+			Context:        o.Context,
+			CustomLabels:   o.CustomLabels,
+			CustomEnvs:     o.CustomEnvs,
+			ServiceAccount: o.ServiceAccount,
+		},
 	}
 	po.CommonOptions = o.CommonOptions
 	po.ServiceAccount = o.ServiceAccount
