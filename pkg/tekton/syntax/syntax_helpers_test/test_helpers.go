@@ -281,6 +281,13 @@ func PipelineOptionsRetry(count int8) PipelineOptionsOp {
 	}
 }
 
+// PipelineOptionsDistributeParallelAcrossNodes sets the value for distributeParallelAcrossNodes
+func PipelineOptionsDistributeParallelAcrossNodes(b bool) PipelineOptionsOp {
+	return func(options *syntax.RootOptions) {
+		options.DistributeParallelAcrossNodes = b
+	}
+}
+
 // PipelineEnvVar add an environment variable, with specified name and value, to the pipeline.
 func PipelineEnvVar(name, value string) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
