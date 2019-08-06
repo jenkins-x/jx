@@ -33,7 +33,7 @@ pipelineConfig:
                 value: "2"
                 # Build a binary that can emit coverage
               - name: COVERED_BINARY
-                value: "true"
+                value: "false"
               - name: CODECOV_NAME
                 value: e2e
               - name: VERSION_PREFIX
