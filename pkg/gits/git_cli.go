@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,10 @@ import (
 
 const (
 	replaceInvalidBranchChars = '_'
+)
+
+var (
+	numberRegex = regexp.MustCompile("[0-9]")
 )
 
 // GitCLI implements common git actions based on git CLI
@@ -820,7 +825,12 @@ func (g *GitCLI) IsFork(dir string) (bool, error) {
 
 // Version returns the git version
 func (g *GitCLI) Version() (string, error) {
-	return g.gitCmdWithOutput("", "version")
+	out, err := g.gitCmdWithOutput("", "version")
+	idxs := numberRegex.FindStringIndex(out)
+	if len(idxs) > 0 {
+		return out[idxs[0]:], err
+	}
+	return out, err
 }
 
 // Username return the username from the git configuration
