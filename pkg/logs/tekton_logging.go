@@ -218,6 +218,10 @@ func GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, kubeClient k
 		if !foundLogs {
 			break
 		}
+		pipelineRunNames, err = getPipelineRunNamesForActivity(pa, tektonClient)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get PipelineRun names for activity %s in namespace %s", pa.Name, pa.Namespace)
+		}
 	}
 	if !foundLogs {
 		return errors.New("the build pods for this build have been garbage collected and the log was not found in the long term storage bucket")
