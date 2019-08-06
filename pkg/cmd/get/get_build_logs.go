@@ -430,7 +430,7 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 		return true, errors.New("there are no build logs for the supplied filters")
 	}
 
-	if pa.Spec.BuildLogsURL != "" {
+	if pa.Spec.BuildLogsURL != "" && !strings.HasPrefix(pa.Spec.BuildLogsURL, "http") {
 		return false, logs.StreamPipelinePersistentLogs(logWriter, pa.Spec.BuildLogsURL)
 	}
 
