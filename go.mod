@@ -30,7 +30,6 @@ require (
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
-	github.com/docker/docker v0.0.0-20171206114025-5e5fadb3c020
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.3.3 // indirect
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
@@ -66,7 +65,6 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c // indirect
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
-	github.com/jenkins-x/go-scm v1.5.21
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jetstack/cert-manager v0.5.2
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
