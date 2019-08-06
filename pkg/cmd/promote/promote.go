@@ -457,7 +457,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 
 	details := gits.PullRequestDetails{
 		BranchName: "promote-" + app + "-" + versionName,
-		Title:      app + " to " + versionName,
+		Title:      "chore: " + app + " to " + versionName,
 		Message:    fmt.Sprintf("Promote %s to version %s", app, versionName),
 	}
 
