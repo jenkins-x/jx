@@ -45,72 +45,70 @@ type MetaClient struct {
 
 	Results     tekton.CRDWrapper
 	OutDir      string
-	Verbose     bool
 	NoApply     bool
 	versionsDir string
 	gitter      gits.Gitter
 	factory     jxfactory.Factory
 }
 
-// Run creates the meta pipeline
-func (o *MetaClient) Run() error {
-	err := o.validateArguments()
+// Create creates the meta pipeline
+func (c *MetaClient) Create() error {
+	err := c.validateArguments()
+	if err != nil {
+		return errors.Wrapf(err, "invalid arguments")
+	}
+
+	gitInfo, err := gits.ParseGitURL(c.SourceURL)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("unable to determine needed git info from the specified git url '%s'", c.SourceURL))
+	}
+
+	pullRefs, err := prow.ParsePullRefs(c.PullRefs)
+	if err != nil {
+		return errors.Wrapf(err, "unable to parse pull ref '%s'", c.PullRefs)
+	}
+
+	tektonClient, jxClient, kubeClient, ns, err := c.getClientsAndNamespace()
 	if err != nil {
 		return err
 	}
 
-	gitInfo, err := gits.ParseGitURL(o.SourceURL)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("unable to determine needed git info from the specified git url '%s'", o.SourceURL))
-	}
-
-	pullRefs, err := prow.ParsePullRefs(o.PullRefs)
-	if err != nil {
-		return errors.Wrapf(err, "unable to parse pull ref '%s'", o.PullRefs)
-	}
-
-	tektonClient, jxClient, kubeClient, ns, err := o.getClientsAndNamespace()
-	if err != nil {
-		return err
-	}
-
-	podTemplates, err := o.getPodTemplates(kubeClient, ns, apps.AppPodTemplateName)
+	podTemplates, err := c.getPodTemplates(kubeClient, ns, apps.AppPodTemplateName)
 	if err != nil {
 		return errors.Wrap(err, "unable to retrieve pod templates")
 	}
-	o.defaultImageFromPodTemplate(podTemplates)
+	c.defaultImageFromPodTemplate(podTemplates)
 
-	branchIdentifier := o.determineBranchIdentifier(*pullRefs)
-	pipelineKind := o.determinePipelineKind(*pullRefs)
+	branchIdentifier := c.determineBranchIdentifier(*pullRefs)
+	pipelineKind := c.determinePipelineKind(*pullRefs)
 
 	// resourceName is shared across all builds of a branch, while the pipelineName is unique for each build.
-	resourceName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, o.Context, tekton.MetaPipeline, nil, "")
-	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, o.Context, tekton.MetaPipeline, tektonClient, ns)
-	buildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, gitInfo, branchIdentifier, retryDuration, o.Context)
+	resourceName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, c.Context, tekton.MetaPipeline, nil, "")
+	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, c.Context, tekton.MetaPipeline, tektonClient, ns)
+	buildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, gitInfo, branchIdentifier, retryDuration, c.Context)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine next build number")
 	}
 
-	if o.Verbose {
-		log.Logger().Infof("creating meta pipeline CRDs for build %s of repository '%s/%s'", buildNumber, gitInfo.Organisation, gitInfo.Name)
-	}
+	log.Logger().Debugf("creating meta pipeline CRDs for build %s of repository '%s/%s'", buildNumber, gitInfo.Organisation, gitInfo.Name)
+
 	extendingApps, err := metapipeline.GetExtendingApps(jxClient, ns)
 	if err != nil {
 		return err
 	}
 
-	if o.versionsDir == "" {
-		o.versionsDir, err = o.gitCloneVersionStream(jxClient, ns)
+	if c.versionsDir == "" {
+		c.versionsDir, err = c.gitCloneVersionStream(jxClient, ns)
 		if err != nil {
 			return err
 		}
 
-		defer os.RemoveAll(o.versionsDir)
+		defer os.RemoveAll(c.versionsDir)
 	}
 
 	crdCreationParams := metapipeline.CRDCreationParameters{
 		Namespace:        ns,
-		Context:          o.Context,
+		Context:          c.Context,
 		PipelineName:     pipelineName,
 		ResourceName:     resourceName,
 		PipelineKind:     pipelineKind,
@@ -120,58 +118,58 @@ func (o *MetaClient) Run() error {
 		PullRef:          *pullRefs,
 		SourceDir:        defaultCheckoutDir,
 		PodTemplates:     podTemplates,
-		ServiceAccount:   o.ServiceAccount,
-		Labels:           o.CustomLabels,
-		EnvVars:          o.CustomEnvs,
-		DefaultImage:     o.DefaultImage,
+		ServiceAccount:   c.ServiceAccount,
+		Labels:           c.CustomLabels,
+		EnvVars:          c.CustomEnvs,
+		DefaultImage:     c.DefaultImage,
 		Apps:             extendingApps,
-		VersionsDir:      o.versionsDir,
+		VersionsDir:      c.versionsDir,
 	}
 	tektonCRDs, err := metapipeline.CreateMetaPipelineCRDs(crdCreationParams)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRDs for meta pipeline")
 	}
 	// record the results in the struct for the case this command is called programmatically (HF)
-	o.Results = *tektonCRDs
+	c.Results = *tektonCRDs
 
-	err = o.handleResult(tektonClient, jxClient, tektonCRDs, buildNumber, branchIdentifier, *pullRefs, ns, gitInfo)
+	err = c.handleResult(tektonClient, jxClient, tektonCRDs, buildNumber, branchIdentifier, *pullRefs, ns, gitInfo)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *MetaClient) validateArguments() error {
+func (c *MetaClient) validateArguments() error {
 	// default values
-	if o.DefaultImage == "" {
-		o.DefaultImage = syntax.DefaultContainerImage
+	if c.DefaultImage == "" {
+		c.DefaultImage = syntax.DefaultContainerImage
 	}
-	if o.ServiceAccount == "" {
-		o.ServiceAccount = "tekton-bot"
+	if c.ServiceAccount == "" {
+		c.ServiceAccount = "tekton-bot"
 	}
-	if o.OutDir == "" {
-		o.OutDir = "out"
+	if c.OutDir == "" {
+		c.OutDir = "out"
 	}
 
-	if o.SourceURL == "" {
+	if c.SourceURL == "" {
 		return util.MissingOption(sourceURLOptionName)
 	}
-	if o.PullRefs == "" {
+	if c.PullRefs == "" {
 		return util.MissingOption(pullRefOptionName)
 	}
 
-	_, err := util.ExtractKeyValuePairs(o.CustomLabels, "=")
+	_, err := util.ExtractKeyValuePairs(c.CustomLabels, "=")
 	if err != nil {
 		return errors.Wrap(err, "unable to parse custom labels")
 	}
-	_, err = util.ExtractKeyValuePairs(o.CustomEnvs, "=")
+	_, err = util.ExtractKeyValuePairs(c.CustomEnvs, "=")
 	if err != nil {
 		return errors.Wrap(err, "unable to parse custom environment variables")
 	}
 	return nil
 }
 
-func (o *MetaClient) handleResult(tektonClient tektonclient.Interface,
+func (c *MetaClient) handleResult(tektonClient tektonclient.Interface,
 	jxClient jxclient.Interface,
 	tektonCRDs *tekton.CRDWrapper,
 	buildNumber string,
@@ -181,8 +179,8 @@ func (o *MetaClient) handleResult(tektonClient tektonclient.Interface,
 	gitInfo *gits.GitRepository) error {
 
 	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branch, gitInfo, &pullRefs, tekton.MetaPipeline)
-	if o.NoApply {
-		err := tektonCRDs.WriteToDisk(o.OutDir, pipelineActivity)
+	if c.NoApply {
+		err := tektonCRDs.WriteToDisk(c.OutDir, pipelineActivity)
 		if err != nil {
 			return errors.Wrapf(err, "failed to output Tekton CRDs")
 		}
@@ -191,14 +189,12 @@ func (o *MetaClient) handleResult(tektonClient tektonclient.Interface,
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}
-		if o.Verbose {
-			log.Logger().Infof("applied tekton CRDs for %s", tektonCRDs.PipelineRun().Name)
-		}
+		log.Logger().Debugf("applied tekton CRDs for %s", tektonCRDs.PipelineRun().Name)
 	}
 	return nil
 }
 
-func (o *MetaClient) getPodTemplates(kubeClient kubeclient.Interface, ns string, containerName string) (map[string]*corev1.Pod, error) {
+func (c *MetaClient) getPodTemplates(kubeClient kubeclient.Interface, ns string, containerName string) (map[string]*corev1.Pod, error) {
 	podTemplates, err := kube.LoadPodTemplates(kubeClient, ns)
 	if err != nil {
 		return nil, err
@@ -207,15 +203,15 @@ func (o *MetaClient) getPodTemplates(kubeClient kubeclient.Interface, ns string,
 }
 
 // getFactory returns the factory
-func (o *MetaClient) getFactory() jxfactory.Factory {
-	if o.factory == nil {
-		o.factory = jxfactory.NewFactory()
+func (c *MetaClient) getFactory() jxfactory.Factory {
+	if c.factory == nil {
+		c.factory = jxfactory.NewFactory()
 	}
-	return o.factory
+	return c.factory
 }
 
-func (o *MetaClient) getClientsAndNamespace() (tektonclient.Interface, jxclient.Interface, kubeclient.Interface, string, error) {
-	f := o.getFactory()
+func (c *MetaClient) getClientsAndNamespace() (tektonclient.Interface, jxclient.Interface, kubeclient.Interface, string, error) {
+	f := c.getFactory()
 
 	tektonClient, _, err := f.CreateTektonClient()
 	if err != nil {
@@ -243,7 +239,7 @@ func (o *MetaClient) getClientsAndNamespace() (tektonclient.Interface, jxclient.
 // or 'batch' for Prow batch builds.
 // The method makes the decision purely based on the Prow pull ref. At this stage we don't have the full ProwJov spec
 // available.
-func (o *MetaClient) determineBranchIdentifier(pullRef prow.PullRefs) string {
+func (c *MetaClient) determineBranchIdentifier(pullRef prow.PullRefs) string {
 	prCount := len(pullRef.ToMerge)
 	var branch string
 	switch prCount {
@@ -263,7 +259,7 @@ func (o *MetaClient) determineBranchIdentifier(pullRef prow.PullRefs) string {
 	return branch
 }
 
-func (o *MetaClient) determinePipelineKind(pullRef prow.PullRefs) string {
+func (c *MetaClient) determinePipelineKind(pullRef prow.PullRefs) string {
 	var kind string
 
 	prCount := len(pullRef.ToMerge)
@@ -276,7 +272,7 @@ func (o *MetaClient) determinePipelineKind(pullRef prow.PullRefs) string {
 	return kind
 }
 
-func (o *MetaClient) gitCloneVersionStream(jxClient jxclient.Interface, ns string) (string, error) {
+func (c *MetaClient) gitCloneVersionStream(jxClient jxclient.Interface, ns string) (string, error) {
 	dir, err := ioutil.TempDir("", "jx-version-repo-")
 	if err != nil {
 		return dir, err
@@ -295,25 +291,25 @@ func (o *MetaClient) gitCloneVersionStream(jxClient jxclient.Interface, ns strin
 		ref = config.DefaultVersionsRef
 	}
 	log.Logger().WithField("url", url).WithField("ref", ref).Infof("shallow cloning version stream")
-	err = o.git().ShallowClone(dir, url, ref, "")
+	err = c.git().ShallowClone(dir, url, ref, "")
 	return dir, err
 }
 
 // git returns the git client
-func (o *MetaClient) git() gits.Gitter {
-	if o.gitter == nil {
-		o.gitter = gits.NewGitCLI()
+func (c *MetaClient) git() gits.Gitter {
+	if c.gitter == nil {
+		c.gitter = gits.NewGitCLI()
 	}
-	return o.gitter
+	return c.gitter
 }
 
 // setGit sets the git client
-func (o *MetaClient) setGit(git gits.Gitter) {
-	o.gitter = git
+func (c *MetaClient) setGit(git gits.Gitter) {
+	c.gitter = git
 }
 
-func (o *MetaClient) defaultImageFromPodTemplate(pods map[string]*corev1.Pod) {
-	pod := pods[o.DefaultImage]
+func (c *MetaClient) defaultImageFromPodTemplate(pods map[string]*corev1.Pod) {
+	pod := pods[c.DefaultImage]
 	if pod != nil {
 		containers := pod.Spec.Containers
 		if len(containers) > 0 {
@@ -321,7 +317,7 @@ func (o *MetaClient) defaultImageFromPodTemplate(pods map[string]*corev1.Pod) {
 			image := c.Image
 			if image != "" {
 				log.Logger().Debugf("using default image for meta pipeline: %s", image)
-				o.DefaultImage = image
+				c.DefaultImage = image
 			}
 		}
 	}
