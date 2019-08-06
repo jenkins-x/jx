@@ -151,6 +151,7 @@ type CreatePipelineArguments struct {
 	GitName           string
 	GitOrg            string
 	ProjectID         string
+	Provider          string
 	DockerRegistry    string
 	DockerRegistryOrg string
 	KanikoImage       string
@@ -834,12 +835,34 @@ func (c *PipelineConfig) createPipelineSteps(step *syntax.Step, prefixPath strin
 			log.Logger().Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s", containerName)
 		}
 
-		s := syntax.Step{}
-		args.StepCounter++
 		prefix := prefixPath
 		if prefix != "" {
 			prefix += "-"
 		}
+
+		// skaffold build
+		log.Logger().Warnf("Checking %s", step.GetCommand())
+		if strings.Contains(step.GetCommand(), "skaffold build") {
+			if args.Provider == "gke" && args.UseKaniko {
+				kanikoCredentialStep := syntax.Step{}
+				args.StepCounter++
+				stepName := "kaniko-credentials"
+				kanikoCredentialStep.Name = prefix + stepName
+				kanikoCredentialStep.Command = "jx"
+				if args.CustomImage != "" {
+					kanikoCredentialStep.Image = args.CustomImage
+				} else {
+					kanikoCredentialStep.Image = containerName
+				}
+				kanikoCredentialStep.Dir = dir
+				kanikoCredentialStep.Arguments = []string{"step", "credential", "-s", "kaniko-secret", "-k", "kaniko-secret", "-f", "/builder/home/kaniko-secret.json"}
+				steps = append(steps, kanikoCredentialStep)
+			}
+		}
+
+		s := syntax.Step{}
+		args.StepCounter++
+
 		stepName := step.Name
 		if stepName == "" {
 			stepName = "step" + strconv.Itoa(1+args.StepCounter)
@@ -1001,6 +1024,11 @@ func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments
 				parsed.Options.ContainerOptions = &container
 			}
 		}
+	}
+
+	if args.Provider == "gke" && args.UseKaniko {
+		envVar := corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/builder/home/kaniko-secret.json"}
+		parsed.Options.ContainerOptions.Env = append(parsed.Options.ContainerOptions.Env, envVar)
 	}
 
 	return parsed, newCounter, nil

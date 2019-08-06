@@ -400,6 +400,7 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 			GitName:           o.GitInfo.Name,
 			GitOrg:            o.GitInfo.Organisation,
 			ProjectID:         o.ProjectID,
+			Provider:          "gke",
 			DockerRegistry:    o.getDockerRegistry(projectConfig),
 			DockerRegistryOrg: o.GetDockerRegistryOrg(projectConfig, o.GitInfo),
 			KanikoImage:       o.KanikoImage,
