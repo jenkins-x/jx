@@ -1519,7 +1519,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
 				{
-					Name: resourceIdentifier,
+					Name: pipelineIdentifier,
 					Type: tektonv1alpha1.PipelineResourceTypeGit,
 				},
 			},
