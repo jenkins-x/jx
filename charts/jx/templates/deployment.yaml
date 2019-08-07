@@ -20,12 +20,12 @@ spec:
         release: {{ .Release.Name }}
     spec:
 {{- if .Values.restartPolicy }}
-      restartPolicy: {{ .Values.restartPolicy | quote}}
+      restartPolicy: {{ .Values.restartPolicy }}
 {{- end }}
 {{- if .Values.serviceaccount.customName }}
-      serviceAccountName: {{ .Values.serviceaccount.customName | quote }}
+      serviceAccountName: {{ .Values.serviceaccount.customName }}
 {{- else if .Values.serviceaccount.enabled }}
-      serviceAccountName: {{ template "jx.fullname" . | quote}}
+      serviceAccountName: {{ template "jx.fullname" . }}
 {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -56,7 +56,7 @@ spec:
           env:
 {{- range $pkey, $pval := .Values.env }}
           - name: {{ $pkey }}
-            value: {{ $pval | quote }}
+            value: {{ $pval }}
 {{- end }}
 {{- end }}
           resources:
