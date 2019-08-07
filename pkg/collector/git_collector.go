@@ -124,7 +124,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 		return u, err
 	}
 
-	defer os.RemoveAll(ghPagesDir)
+	//defer os.RemoveAll(ghPagesDir)
 
 	toFile := filepath.Join(ghPagesDir, outputPath)
 	toDir, _ := filepath.Split(toFile)
@@ -175,6 +175,11 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter, br
 
 	err = gitClient.ShallowClone(ghPagesDir, sourceURL, branchName, "")
 	if err != nil {
+		os.RemoveAll(ghPagesDir)
+		ghPagesDir, err = ioutil.TempDir("", "jenkins-x-collect")
+		if err != nil {
+			return ghPagesDir, err
+		}
 		log.Logger().Infof("error doing shallow clone of branch %s: %v", branchName, err)
 		// swallow the error
 		log.Logger().Infof("No existing %s branch so creating it", branchName)
