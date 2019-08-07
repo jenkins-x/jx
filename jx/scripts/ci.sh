@@ -15,7 +15,7 @@ export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 # for BDD tests
 export GIT_PROVIDER_URL="https://github.beescloud.com"
 export GHE_TOKEN="$GHE_CREDS_PSW"
-export GINKGO_ARGS="-v"
+export GINKGO_ARGS="--progress --slowSpecThreshold=900"
 
 export JX_DISABLE_DELETE_APP="true"
 export JX_DISABLE_DELETE_REPO="true"
