@@ -403,28 +403,16 @@ func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) err
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
+			Name:        "URL",
+			Type:        "string",
+			Description: "The URL of the git repository",
+			JSONPath:    ".spec.url",
+		},
+		{
 			Name:        "Description",
 			Type:        "string",
 			Description: "A description of the source code repository - non-functional user-data",
 			JSONPath:    ".spec.description",
-		},
-		{
-			Name:        "Provider",
-			Type:        "string",
-			Description: "The source code provider (eg github) that the source repository is hosted in",
-			JSONPath:    ".spec.provider",
-		},
-		{
-			Name:        "Org",
-			Type:        "string",
-			Description: "The git organisation that the source repository belongs to",
-			JSONPath:    ".spec.org",
-		},
-		{
-			Name:        "Repo",
-			Type:        "string",
-			Description: "The name of the repository",
-			JSONPath:    ".spec.repo",
 		},
 	}
 	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
