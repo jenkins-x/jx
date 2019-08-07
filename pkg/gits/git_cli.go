@@ -444,7 +444,11 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Args: args,
 	}
 	output, err := cmd.RunWithoutRetry()
-	return errors.Wrapf(err, "git output: %s", output)
+	errStr := "(none)"
+	if err != nil {
+		errStr = err.Error()
+	}
+	return errors.Wrapf(err, "git output: %s, err: %s", output, errStr)
 }
 
 func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
