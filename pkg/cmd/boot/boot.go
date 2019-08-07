@@ -162,7 +162,7 @@ func (o *BootOptions) Run() error {
 		}
 
 		if !o.BatchMode {
-			log.Logger().Infof("To continue we will clone %s @ %s to %s", info(gitURL), info(o.GitRef), info(cloneDir))
+			log.Logger().Infof("To continue we will clone %s @ %s to %s", info(gitURL), info(gitRef), info(cloneDir))
 
 			help := "A git clone of a Jenkins X Boot source repository is required for 'jx boot'"
 			message := "Do you want to clone the Jenkins X Boot Git repository?"
@@ -179,7 +179,7 @@ func (o *BootOptions) Run() error {
 			return fmt.Errorf("Cannot clone git repository to %s as the dir already exists. Maybe try 'cd %s' and re-run the 'jx boot' command?", repo, repo)
 		}
 
-		log.Logger().Infof("Cloning %s @ %s to %s\n", info(gitURL), info(o.GitRef), info(cloneDir))
+		log.Logger().Infof("Cloning %s @ %s to %s\n", info(gitURL), info(gitRef), info(cloneDir))
 
 		err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
 		if err != nil {
@@ -190,10 +190,10 @@ func (o *BootOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to clone git URL %s to directory: %s", gitURL, cloneDir)
 		}
-		commitish, err := gits.FindTagForVersion(cloneDir, o.GitRef, o.Git())
+		commitish, err := gits.FindTagForVersion(cloneDir, gitRef, o.Git())
 		if err != nil {
 			log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", o.GitRef).Error())
-			commitish = fmt.Sprintf("%s/%s", "origin", o.GitRef)
+			commitish = fmt.Sprintf("%s/%s", "origin", gitRef)
 		}
 		err = o.Git().ResetHard(cloneDir, commitish)
 		if err != nil {
