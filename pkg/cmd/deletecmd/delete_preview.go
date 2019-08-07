@@ -116,7 +116,15 @@ func (o *DeletePreviewOptions) DeletePreview(name string) error {
 		return err
 	}
 
-	environment, err := kube.GetEnvironment(jxClient, ns, name)
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	devNs, _, err := kube.GetDevNamespace(kubeClient, ns)
+	if err != nil {
+		return err
+	}
+	environment, err := kube.GetEnvironment(jxClient, devNs, name)
 	if err != nil {
 		return err
 	}
