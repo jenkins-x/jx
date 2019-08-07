@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -57,10 +58,14 @@ func (o *StepGitValidateOptions) Run() error {
 	userEmail, _ := o.Git().Email("")
 	var err error
 	if userName == "" {
-		if !o.BatchMode {
-			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
-			if err != nil {
-				return err
+		// check the OS first
+		userName = os.Getenv("GIT_COMMITTER_NAME")
+		if userName == "" {
+			if !o.BatchMode {
+				userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		if userName == "" {
@@ -72,10 +77,14 @@ func (o *StepGitValidateOptions) Run() error {
 		}
 	}
 	if userEmail == "" {
-		if !o.BatchMode {
-			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
-			if err != nil {
-				return err
+		// check the OS first
+		userEmail = os.Getenv("GIT_COMMITTER_EMAIL")
+		if userEmail == "" {
+			if !o.BatchMode {
+				userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		if userEmail == "" {
