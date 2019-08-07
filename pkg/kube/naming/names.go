@@ -35,6 +35,9 @@ func ToValidNameTruncated(name string, maxLength int) string {
 }
 
 func toValidName(name string, allowDots bool, maxLength int) string {
+	if name == "" {
+		return ""
+	}
 	var buffer bytes.Buffer
 	first := true
 	lastCharDash := false
