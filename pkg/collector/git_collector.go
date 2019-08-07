@@ -154,7 +154,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 	if err != nil {
 		return u, err
 	}
-	err = gitClient.Push(ghPagesDir, "origin", false, false, "HEAD")
+	err = gitClient.Push(ghPagesDir, "origin", false, false, c.gitBranch)
 	return u, err
 }
 
