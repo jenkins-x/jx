@@ -865,10 +865,11 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 			}
 		}
 	}
-	o.Name = naming.ToValidName(o.Name)
 	if o.Name == "" {
 		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
 	}
+	o.Name = naming.ToValidName(o.Name)
+
 	if o.Namespace == "" {
 		prefix := ns + "-"
 		if len(prefix) > 63 {
