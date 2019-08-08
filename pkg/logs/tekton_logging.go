@@ -2,6 +2,12 @@ package logs
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
+	"github.com/jenkins-x/jx/pkg/util"
+	"io/ioutil"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -263,28 +269,54 @@ func waitForContainerToStart(kubeClient kubernetes.Interface, ns string, pod *co
 }
 
 // StreamPipelinePersistentLogs reads logs from the provided bucket URL and writes them using the provided LogWriter
-func StreamPipelinePersistentLogs(logWriter LogWriter, logsURL string) error {
+func StreamPipelinePersistentLogs(logWriter LogWriter, logsURL string, o *opts.CommonOptions) error {
 	//TODO: This should be changed in the future when other bucket providers are supported
-	urlParts := strings.Split(logsURL, "://")
-	var scheme string
-	if len(urlParts) > 1 {
-		scheme = urlParts[0]
+	u, err := url.Parse(logsURL)
+	if err != nil {
+		return errors.Wrapf(err, "unable to parse logs URL %s to retrieve scheme", logsURL)
 	}
 	var logBytes []byte
-	var err error
-	switch scheme {
+	switch u.Scheme {
 	case "gs":
 		logBytes, err = gke.DownloadFileFromBucket(logsURL)
+		if err != nil {
+			return errors.Wrapf(err, "there was a problem obtaining the log file from the configured bucket URL %s", logsURL)
+		}
 	case "http":
 		fallthrough
 	case "https":
-		return logWriter.WriteLog("The build pods for this build have been garbage collected and long term storage bucket configuration wasn't found for this environment")
+		logBytes, err = downloadLogFile(logsURL, o)
+		if err != nil {
+			return errors.Wrapf(err, "there was a problem obtaining the log file from the github pages URL %s", logsURL)
+		}
 	default:
-		return logWriter.WriteLog(fmt.Sprintf("The provided logsURL scheme is not supported: %s", scheme))
+		return logWriter.WriteLog(fmt.Sprintf("The provided logsURL scheme is not supported: %s", u.Scheme))
 	}
 
-	if err != nil {
-		return errors.Wrapf(err, "there was a problem obtaining the log file %s", logsURL)
+	if len(logBytes) == 0 {
+		return logWriter.WriteLog("The build pods for this build have been garbage collected and we couldn't find the any stored log file")
 	}
+
 	return logWriter.WriteLog(string(logBytes))
+}
+
+func downloadLogFile(logsURL string, o *opts.CommonOptions) ([]byte, error) {
+	f, _ := ioutil.TempFile("", uuid.New().String())
+	defer util.DeleteFile(f.Name())
+	unstashStep := step.StepUnstashOptions{
+		StepOptions: opts.StepOptions{
+			CommonOptions: o,
+		},
+		URL:    logsURL,
+		OutDir: f.Name(),
+	}
+	err := unstashStep.Run()
+	if err != nil {
+		return nil, err
+	}
+	logBytes, err := ioutil.ReadFile(f.Name())
+	if err != nil {
+		return nil, err
+	}
+	return logBytes, nil
 }

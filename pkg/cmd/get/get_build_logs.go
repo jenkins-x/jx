@@ -431,7 +431,8 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 	}
 
 	if pa.Spec.BuildLogsURL != "" {
-		return false, logs.StreamPipelinePersistentLogs(logWriter, pa.Spec.BuildLogsURL)
+		_ = logWriter.WriteLog(fmt.Sprintf("Obtaining stored build logs for %s", util.ColorInfo(name)))
+		return false, logs.StreamPipelinePersistentLogs(logWriter, pa.Spec.BuildLogsURL, o.CommonOptions)
 	}
 
 	_ = logWriter.WriteLog(fmt.Sprintf("Build logs for %s", util.ColorInfo(name)))
