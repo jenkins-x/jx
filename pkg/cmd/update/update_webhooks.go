@@ -205,7 +205,7 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 	if len(webhooks) > 0 {
 		// find matching hook
 		for _, webHook := range webhooks {
-			if o.matchesWebhookURL(webhookURL, webHook) {
+			if o.matchesWebhookURL(git, webhookURL, webHook) {
 				log.Logger().Infof("Found matching hook for url %s", util.ColorInfo(webHook.URL))
 				webHookArgs.ID = webHook.ID
 				webHookArgs.ExistingURL = o.PreviousHookUrl
@@ -214,6 +214,7 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 						return errors.Wrapf(err, "updating the webhook %q on repository '%s/%s'",
 							webhookURL, owner, repoName)
 					}
+					return nil
 				}
 			}
 		}
@@ -227,11 +228,14 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 	return nil
 }
 
-func (o *UpdateWebhooksOptions) matchesWebhookURL(webhookURL string, webHookArgs *gits.GitWebHookArguments) bool {
+func (o *UpdateWebhooksOptions) matchesWebhookURL(git gits.GitProvider, webhookURL string, webHookArgs *gits.GitWebHookArguments) bool {
 	if "" != o.PreviousHookUrl {
 		return o.PreviousHookUrl == webHookArgs.URL
 	}
 
+	if git.Kind() == "gitlab" {
+		return strings.HasPrefix(webHookArgs.URL, webhookURL)
+	}
 	if o.ExactHookMatch {
 		return webhookURL == webHookArgs.URL
 	} else {
