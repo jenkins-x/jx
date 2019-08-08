@@ -37,7 +37,7 @@ func (o *CommonOptions) GetDockerRegistryOrg(projectConfig *config.ProjectConfig
 func (o *CommonOptions) GetDockerRegistry(projectConfig *config.ProjectConfig) string {
 	dockerRegistry := ""
 	if projectConfig != nil {
-		dockerRegistry = projectConfig.DockerRegistryOwner
+		dockerRegistry = projectConfig.DockerRegistryHost
 	}
 	if dockerRegistry == "" {
 		dockerRegistry = os.Getenv("DOCKER_REGISTRY")
