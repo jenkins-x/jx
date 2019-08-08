@@ -345,10 +345,6 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		if err != nil {
 			return nil, errors.Wrapf(err, "updating pull request %s", existingPr.URL)
 		}
-		err = gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", prDetails.BranchName))
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
 		log.Logger().Infof("Updated Pull Request: %s", util.ColorInfo(pr.URL))
 	} else {
 		gha.Head = headPrefix + prDetails.BranchName
