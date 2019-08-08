@@ -3,6 +3,8 @@ package logs
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"regexp"
@@ -398,14 +400,21 @@ func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 	r, fakeStdout, _ := os.Pipe()
 	log.SetOutput(fakeStdout)
 
-	err := StreamPipelinePersistentLogs(writer, "http://nonBucketUrl")
+	exampleLogLine := "This is an example log line"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(200)
+		fmt.Fprintf(w, exampleLogLine)
+	}))
+
+	err := StreamPipelinePersistentLogs(writer, server.URL, &opts)
 	assert.NoError(t, err)
 
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)
 	r.Close()
 
-	assert.Contains(t, string(outBytes), "The build pods for this build have been garbage collected and long term storage bucket configuration wasn't found for this environment")
+	assert.Contains(t, string(outBytes), "This is an example log line")
 }
 
 func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
@@ -415,7 +424,7 @@ func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 	r, fakeStdout, _ := os.Pipe()
 	log.SetOutput(fakeStdout)
 
-	err := StreamPipelinePersistentLogs(writer, "s3://nonSupportedBucket")
+	err := StreamPipelinePersistentLogs(writer, "s3://nonSupportedBucket", &opts)
 	assert.NoError(t, err)
 
 	fakeStdout.Close()
