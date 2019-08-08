@@ -2,7 +2,6 @@ package gits
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -15,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	gitlab "github.com/xanzy/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 )
 
 type GitlabProvider struct {
@@ -440,8 +439,29 @@ func (g *GitlabProvider) ListCommitStatus(org string, repo string, sha string) (
 }
 
 // UpdateCommitStatus updates the commit status
-func (g *GitlabProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
-	return &GitRepoStatus{}, errors.New("TODO")
+func (g *GitlabProvider) UpdateCommitStatus(owner string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
+	statusOptions := &gitlab.SetCommitStatusOptions{
+		State:       gitlab.BuildStateValue(status.State),
+		Name:        &status.Context,
+		Context:     &status.Context,
+		Description: &status.Description,
+		TargetURL:   &status.TargetURL,
+	}
+	c, _, err := g.Client.Commits.SetCommitStatus(pid, sha, statusOptions, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &GitRepoStatus{
+		ID:          strconv.Itoa(c.ID),
+		Description: c.Description,
+		State:       c.Status,
+		Context:     c.Name,
+		TargetURL:   c.TargetURL,
+	}, err
 }
 
 func fromCommitStatus(status *gitlab.CommitStatus) *GitRepoStatus {
@@ -471,25 +491,66 @@ func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
 		return nil
 	}
 
+	flag := true
 	owner := owner(data.Owner, g.Username)
 	webhookURL := util.UrlJoin(data.URL, owner, data.Repo.Name)
 	opt := &gitlab.AddProjectHookOptions{
-		URL:   &webhookURL,
-		Token: &data.Secret,
+		URL:                 &webhookURL,
+		Token:               &data.Secret,
+		PushEvents:          &flag,
+		MergeRequestsEvents: &flag,
+		IssuesEvents:        &flag,
+		NoteEvents:          &flag,
 	}
-
 	_, _, err = g.Client.Projects.AddProjectHook(pid, opt)
 	return err
 }
 
 // ListWebHooks lists the webhooks
 func (g *GitlabProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
-	webHooks := []*GitWebHookArguments{}
-	return webHooks, fmt.Errorf("not implemented!")
+	answer := []*GitWebHookArguments{}
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return answer, err
+	}
+	opt := &gitlab.ListProjectHooksOptions{}
+	hooks, _, err := g.Client.Projects.ListProjectHooks(pid, opt, nil)
+	for _, hook := range hooks {
+		answer = append(answer, gitLabToGitHook(owner, repo, hook))
+	}
+	return answer, err
+}
+
+func gitLabToGitHook(owner string, repo string, hook *gitlab.ProjectHook) *GitWebHookArguments {
+	return &GitWebHookArguments{
+		ID:    int64(hook.ID),
+		Owner: owner,
+		Repo: &GitRepository{
+			Organisation: owner,
+			Name:         repo,
+		},
+		URL: hook.URL,
+	}
 }
 
 func (g *GitlabProvider) UpdateWebHook(data *GitWebHookArguments) error {
-	return fmt.Errorf("not implemented!")
+	pid, err := g.projectId(data.Owner, g.Username, data.Repo.Name)
+	if err != nil {
+		return nil
+	}
+	flag := true
+	owner := owner(data.Owner, g.Username)
+	webhookURL := util.UrlJoin(data.URL, owner, data.Repo.Name)
+	opt := &gitlab.EditProjectHookOptions{
+		URL:                 &webhookURL,
+		Token:               &data.Secret,
+		PushEvents:          &flag,
+		MergeRequestsEvents: &flag,
+		IssuesEvents:        &flag,
+		NoteEvents:          &flag,
+	}
+	_, _, err = g.Client.Projects.EditProjectHook(pid, int(data.ID), opt)
+	return err
 }
 
 func (g *GitlabProvider) SearchIssues(org, repo, query string) ([]*GitIssue, error) {
@@ -525,7 +586,6 @@ func (g *GitlabProvider) GetIssue(org, repo string, number int) (*GitIssue, erro
 	if err != nil {
 		return nil, err
 	}
-
 	issue, _, err := g.Client.Issues.GetIssue(pid, number)
 	if err != nil {
 		return nil, err
