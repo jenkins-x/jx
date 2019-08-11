@@ -337,9 +337,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 			return errors.Wrap(err, "finding default AWS region")
 		}
 
-		o.DynamoDBRegion = defaultRegion
-		o.KMSRegion = defaultRegion
-		o.S3Region = defaultRegion
+		o.ApplyDefaultRegionIfEmpty(&defaultRegion)
 
 		domain := "jenkins-x-domain"
 		username := "vault_" + defaultRegion
@@ -352,7 +350,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 		})
 
 		if err != nil {
-			return errors.Wrap(err, "An error occurred while creating the vault resources")
+			return errors.Wrap(err, "an error occurred while creating the vault resources")
 		}
 
 		o.S3Bucket = *s3Name
@@ -363,33 +361,19 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 
 	} else {
 		if o.S3Bucket == "" {
-			return fmt.Errorf("Missing S3 bucket flag")
+			return fmt.Errorf("missing S3 bucket flag")
 		}
 		if o.KMSKeyID == "" {
-			return fmt.Errorf("Missing AWS KMS key id flag")
+			return fmt.Errorf("missing AWS KMS key id flag")
 		}
 		if o.AccessKeyID == "" {
-			return fmt.Errorf("Missing AWS access key id flag")
+			return fmt.Errorf("missing AWS access key id flag")
 		}
 		if o.SecretAccessKey == "" {
-			return fmt.Errorf("Missing AWS secret access key flag")
+			return fmt.Errorf("missing AWS secret access key flag")
 		}
-		if o.DynamoDBRegion == "" || o.KMSRegion == "" || o.S3Region == "" {
-			defaultRegion, err := amazon.ResolveRegionWithoutOptions()
-			if err != nil {
-				return errors.Wrap(err, "finding default AWS region")
-			}
-			log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
-			if o.DynamoDBRegion == "" {
-				o.DynamoDBRegion = defaultRegion
-			}
-			if o.KMSRegion == "" {
-				o.KMSRegion = defaultRegion
-			}
-			if o.S3Region == "" {
-				o.S3Region = defaultRegion
-			}
-		}
+
+		o.ApplyDefaultRegionIfEmpty(nil)
 	}
 
 	awsServiceAccountSecretName, err := awsvault.StoreAWSCredentialsIntoSecret(kubeClient, o.AccessKeyID, o.SecretAccessKey, vaultName, o.Namespace)
@@ -459,4 +443,30 @@ func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace,
 // AuthServiceAccountName creates a service account name for a given vault and cluster name
 func AuthServiceAccountName(vaultName string) string {
 	return fmt.Sprintf("%s-%s", vaultName, "auth-sa")
+}
+
+// ApplyDefaultRegionIfEmpty TODO : Testing in progress, comment to be removed after testing
+func (o *CreateVaultOptions) ApplyDefaultRegionIfEmpty(enforcedDefault *string) error {
+	if o.DynamoDBRegion == "" || o.KMSRegion == "" || o.S3Region == "" {
+		defaultRegion := *enforcedDefault
+		var err error
+		if enforcedDefault == nil {
+			defaultRegion, err = amazon.ResolveRegionWithoutOptions()
+			if err != nil {
+				return errors.Wrap(err, "finding default AWS region")
+			}
+		}
+
+		log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
+		if o.DynamoDBRegion == "" {
+			o.DynamoDBRegion = defaultRegion
+		}
+		if o.KMSRegion == "" {
+			o.KMSRegion = defaultRegion
+		}
+		if o.S3Region == "" {
+			o.S3Region = defaultRegion
+		}
+	}
+	return nil
 }
