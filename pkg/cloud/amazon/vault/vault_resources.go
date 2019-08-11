@@ -73,7 +73,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	policy := createIamUserPolicy(iamUsername, []string{awsDynamoDbKey, awsS3BucketKey, awsKmsKey, awsIamUserKey})
 	template.Resources[awsIamPolicy] = &policy
 
-	log.Logger().Infof("Generating the vault cloudformation template")
+	log.Logger().Debugf("Generating the vault cloudformation template")
 
 	// and also the YAML AWS CloudFormation template
 	yaml, err := template.JSON()
@@ -81,7 +81,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
 	}
 
-	log.Logger().Infof("Generated the vault cloudformation template successfully")
+	log.Logger().Debugf("Generated the vault cloudformation template successfully")
 
 	// had issues with json on resource, temporary workaround
 	yamlProcessed := string(yaml)
@@ -110,7 +110,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 }
 
 func getKmsID(kmsKey string, stackName string) (*string, error) {
-	log.Logger().Infof("Retrieving the vault kms id")
+	log.Logger().Debugf("Retrieving the vault kms id")
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
@@ -127,7 +127,7 @@ func getKmsID(kmsKey string, stackName string) (*string, error) {
 		return nil, errors.Wrapf(err, "Unable to retrieve kms Id")
 	}
 
-	log.Logger().Infof("Retrieved the vault kms id successfully")
+	log.Logger().Debugf("Retrieved the vault kms id successfully")
 	return output.StackResourceDetail.PhysicalResourceId, nil
 }
 
@@ -177,7 +177,7 @@ func createDynamoDbTable(tableName string) resources.AWSDynamoDBTable {
 
 func createS3Bucket(region string, domain string, suffixString string) (*string, *resources.AWSS3Bucket) {
 	bucketName := "vault-unseal." + region + "." + domain + "." + suffixString
-	log.Logger().Infof(bucketName)
+	log.Logger().Debugf(bucketName)
 
 	bucketConfig := resources.AWSS3Bucket{
 		AccessControl: "Private",
@@ -350,7 +350,7 @@ func runCloudformationTemplate(templateBody *string, stackName *string) error {
 		return errors.Wrapf(err, "Unable to create vault preresiquite resources")
 	}
 
-	log.Logger().Infof("Ran the vault cloudformation template successfully")
+	log.Logger().Debugf("Ran the vault cloudformation template successfully")
 	return nil
 }
 
@@ -369,6 +369,6 @@ func createAccessKey(region string, username string) (*string, *string, error) {
 		return nil, nil, errors.Wrapf(err, "Unable to create access key")
 	}
 
-	log.Logger().Infof("Created the vault access key successfully")
+	log.Logger().Debugf("Created the vault access key successfully")
 	return result.AccessKey.AccessKeyId, result.AccessKey.SecretAccessKey, nil
 }
