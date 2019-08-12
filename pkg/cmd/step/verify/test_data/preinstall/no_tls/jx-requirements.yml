@@ -14,7 +14,7 @@ ingress:
   namespaceSubDomain: -jx.
   tls:
     email: ""
-    enabled: true
+    enabled: false
     production: false
 secretStorage: local
 storage:

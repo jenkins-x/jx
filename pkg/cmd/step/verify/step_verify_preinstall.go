@@ -99,6 +99,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	err = o.verifyTLS(requirements)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	o.SetDevNamespace(ns)
 
 	log.Logger().Infof("verifying the kubernetes cluster before we try to boot Jenkins X in namespace: %s", info(ns))
@@ -485,6 +490,33 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 		return err
 	}
 	log.Logger().Infof("the storage looks good")
+	return nil
+}
+
+func (o *StepVerifyPreInstallOptions) verifyTLS(requirements *config.RequirementsConfig) error {
+	if !requirements.Ingress.TLS.Enabled {
+		confirm := false
+		if requirements.SecretStorage == config.SecretStorageTypeVault {
+			log.Logger().Warnf("Vault is enabled and TLS is not enabled. This means your secrets will be sent to and from your cluster in the clear. We do not recommend you do this.")
+			confirm = true
+		}
+		if requirements.Webhook != config.WebhookTypeNone {
+			log.Logger().Warnf("TLS is not enabled so your webhooks will be called using HTTP. This means your webhook secret will be sent to your cluster in the clear. We do not recommend you do this.")
+			confirm = true
+		}
+		if confirm {
+			if o.BatchMode {
+				return errors.Errorf("cannot continue because TLS is not enabled.")
+			}
+			message := fmt.Sprintf("Do you wish to continue?")
+			help := fmt.Sprintf("Jenkins X needs TLS enabled to send secrets securely. We strongly recommend enabling TLS.")
+			value := util.Confirm(message, false, help, o.In, o.Out, o.Err)
+			if !value {
+				return errors.Errorf("cannot continue because TLS is not enabled.")
+			}
+		}
+
+	}
 	return nil
 }
 
