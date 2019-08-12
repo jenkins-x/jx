@@ -2,9 +2,10 @@ package boot
 
 import (
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
@@ -219,6 +220,11 @@ func (o *BootOptions) Run() error {
 	}
 
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	if requirements.VersionStream.URL == "" && requirements.VersionStream.Ref == "" {
+		requirements.VersionStream.URL = o.VersionStreamURL
+		requirements.VersionStream.Ref = o.VersionStreamRef
+	}
+
 	if err != nil {
 		return err
 	}

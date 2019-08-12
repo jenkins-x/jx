@@ -428,26 +428,6 @@ func (c *RequirementsConfig) addDefaults() {
 	if c.Webhook == WebhookTypeNone {
 		c.Webhook = WebhookTypeProw
 	}
-	if c.VersionStream.URL == "" {
-		c.VersionStream.URL = DefaultVersionsURL
-	}
-	if c.VersionStream.Ref == "" {
-		var err error
-		u := c.VersionStream.URL
-		ref, err := util.GetLatestReleaseFromGitHubURL(u)
-		if err != nil {
-			log.Logger().Warnf("failed to find the latest release of version stream %s due to: %s", u, err.Error())
-		}
-
-		// for now lets use the tag for a version
-		if semanticVersionRegex.MatchString(ref) {
-			ref = "v" + ref
-		}
-		c.VersionStream.Ref = ref
-	}
-	if c.VersionStream.Ref == "" {
-		c.VersionStream.Ref = DefaultVersionsRef
-	}
 	if c.Cluster.Namespace == "" {
 		c.Cluster.Namespace = "jx"
 	}
