@@ -1,6 +1,7 @@
 package tekton
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
 	"os"
@@ -122,6 +123,30 @@ func (crds *CRDWrapper) ObjectReferences() []kube.ObjectReference {
 		log.Logger().Warnf("no tasks, pipeline or PipelineRuns created")
 	}
 	return resources
+}
+
+func (crds *CRDWrapper) String() string {
+	var allResources []interface{}
+	allResources = append(allResources, crds.pipeline)
+	for _, task := range crds.tasks {
+		allResources = append(allResources, task)
+	}
+	for _, resource := range crds.resources {
+		allResources = append(allResources, resource)
+	}
+	allResources = append(allResources, crds.pipelineRun)
+
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+	for i, resource := range allResources {
+		buffer.WriteString(util.PrettyPrint(resource))
+		if i < len(allResources)-1 {
+			buffer.WriteString(",")
+		}
+	}
+	buffer.WriteString("]")
+
+	return buffer.String()
 }
 
 // TODO: Use the same YAML lib here as in buildpipeline/pipeline.go

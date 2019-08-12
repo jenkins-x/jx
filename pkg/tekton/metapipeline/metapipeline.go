@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"path/filepath"
-	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -42,27 +40,27 @@ type CRDCreationParameters struct {
 	Context          string
 	PipelineName     string
 	ResourceName     string
-	PipelineKind     string
+	PipelineKind     PipelineKind
 	BuildNumber      string
 	GitInfo          gits.GitRepository
 	BranchIdentifier string
-	PullRef          prow.PullRefs
+	PullRef          PullRef
 	SourceDir        string
 	PodTemplates     map[string]*corev1.Pod
 	ServiceAccount   string
-	Labels           []string
-	EnvVars          []string
+	Labels           map[string]string
+	EnvVars          map[string]string
 	DefaultImage     string
 	Apps             []jenkinsv1.App
 	VersionsDir      string
 }
 
-// CreateMetaPipelineCRDs creates the Tekton CRDs needed to execute the meta pipeline.
+// createMetaPipelineCRDs creates the Tekton CRDs needed to execute the meta pipeline.
 // The meta pipeline is responsible to checkout the source repository at the right revision, allows Jenkins-X Apps
 // to modify the pipeline (via modifying the configuration on the file system) and finally triggering the actual
 // build pipeline.
 // An error is returned in case the creation of the Tekton CRDs fails.
-func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, error) {
+func createMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, error) {
 	parsedPipeline, err := createPipeline(params)
 	if err != nil {
 		return nil, err
@@ -78,9 +76,9 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		return nil, err
 	}
 
-	revision := params.PullRef.BaseSha
+	revision := params.PullRef.BaseSHA()
 	if revision == "" {
-		revision = params.PullRef.BaseBranch
+		revision = params.PullRef.BaseBranch()
 	}
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.ResourceName, &params.GitInfo, revision)}
 	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.ServiceAccount, nil, nil, nil)
@@ -93,9 +91,9 @@ func CreateMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 	return tektonCRDs, nil
 }
 
-// GetExtendingApps returns the list of apps which are installed in the cluster registered for extending the pipeline.
+// getExtendingApps returns the list of apps which are installed in the cluster registered for extending the pipeline.
 // An app registers its interest in extending the pipeline by having the 'pipeline-extension' label set.
-func GetExtendingApps(jxClient versioned.Interface, namespace string) ([]jenkinsv1.App, error) {
+func getExtendingApps(jxClient versioned.Interface, namespace string) ([]jenkinsv1.App, error) {
 	listOptions := metav1.ListOptions{}
 	listOptions.LabelSelector = fmt.Sprintf(apps.AppTypeLabel+" in (%s)", apps.PipelineExtension)
 	appsList, err := jxClient.JenkinsV1().Apps(namespace).List(listOptions)
@@ -147,8 +145,8 @@ func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
 	step = stepEffectivePipeline(params)
 	steps = append(steps, step)
 
-	log.Logger().Debugf("creating pipeline steps for extending apps")
 	// 3)
+	log.Logger().Debugf("creating pipeline steps for extending apps")
 	for _, app := range params.Apps {
 		if app.Spec.PipelineExtension == nil {
 			log.Logger().Warnf("Skipping app %s in meta pipeline. It contains label %s with value %s, but does not contain PipelineExtension fields.", app.Name, apps.AppTypeLabel, apps.PipelineExtension)
@@ -174,16 +172,16 @@ func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
 	return steps, nil
 }
 
-func stepMergePullRefs(pullRefs prow.PullRefs) syntax.Step {
+func stepMergePullRefs(pullRef PullRef) syntax.Step {
 	// we only need to run the merge step in case there is anything to merge
 	// Tekton has at this stage the base branch already checked out
-	if len(pullRefs.ToMerge) == 0 {
+	if len(pullRef.pullRequests) == 0 {
 		return stepSkip(mergePullRefsStepName, "Nothing to merge")
 	}
 
-	args := []string{"--verbose", "--baseBranch", pullRefs.BaseBranch, "--baseSHA", pullRefs.BaseSha}
-	for _, mergeSha := range pullRefs.ToMerge {
-		args = append(args, "--sha", mergeSha)
+	args := []string{"--verbose", "--baseBranch", pullRef.BaseBranch(), "--baseSHA", pullRef.BaseSHA()}
+	for _, pr := range pullRef.pullRequests {
+		args = append(args, "--sha", pr.MergeSHA)
 	}
 
 	step := syntax.Step{
@@ -216,9 +214,9 @@ func stepEffectivePipeline(params CRDCreationParameters) syntax.Step {
 
 func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	args := []string{"--clone-dir", filepath.Join(tektonBaseDir, params.SourceDir)}
-	args = append(args, "--kind", params.PipelineKind)
-	for prID := range params.PullRef.ToMerge {
-		args = append(args, "--pr-number", prID)
+	args = append(args, "--kind", params.PipelineKind.String())
+	for _, pr := range params.PullRef.PullRequests() {
+		args = append(args, "--pr-number", pr.ID)
 		// there might be a batch build building multiple PRs, in which case we just use the first in this case
 		break
 	}
@@ -229,9 +227,11 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
-	for _, l := range params.Labels {
-		args = append(args, "--label", l)
+
+	for k, v := range params.Labels {
+		args = append(args, "--label", fmt.Sprintf("%s=%s", k, v))
 	}
+
 	step := syntax.Step{
 		Name:      createTektonCRDsStepName,
 		Comment:   "Pipeline step to create the Tekton CRDs for the actual pipeline run",
@@ -279,7 +279,7 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "PIPELINE_KIND",
-		Value: params.PipelineKind,
+		Value: params.PipelineKind.String(),
 	})
 
 	envVars = append(envVars, corev1.EnvVar{
@@ -341,13 +341,13 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 
 	customEnvVars := buildEnvVars(params.EnvVars)
 	for _, v := range customEnvVars {
+		// only append if not yes explicitly set
 		if kube.GetSliceEnvVar(envVars, v.Name) == nil {
 			envVars = append(envVars, v)
 		}
 	}
 
-	envVars = append(envVars)
-	log.Logger().WithField("env", util.PrettyPrint(envVars)).Tracef("environment variables for: %s", params.PipelineName)
+	log.Logger().WithField("env", util.PrettyPrint(envVars)).Debug("meta pipeline env variables")
 	return envVars
 }
 
@@ -361,26 +361,16 @@ func buildLabels(params CRDCreationParameters) (map[string]string, error) {
 	}
 	labels[tekton.LabelBuild] = params.BuildNumber
 
-	// add any custom labels
-	customLabels, err := util.ExtractKeyValuePairs(params.Labels, "=")
-	if err != nil {
-		return nil, err
-	}
-	return util.MergeMaps(labels, customLabels), nil
+	return util.MergeMaps(labels, params.Labels), nil
 }
 
-func buildEnvVars(customEnvVars []string) []corev1.EnvVar {
+func buildEnvVars(customEnvVars map[string]string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 
-	for _, value := range customEnvVars {
-		parts := strings.Split(value, "=")
-		if len(parts) != 2 {
-			log.Logger().Warnf("unexpected format for custom env var: %s", value)
-		}
-
+	for key, value := range customEnvVars {
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  parts[0],
-			Value: parts[1],
+			Name:  key,
+			Value: value,
 		})
 	}
 

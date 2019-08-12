@@ -263,7 +263,7 @@ func readYamlTemplate(templateFile string, requirements *config.RequirementsConf
 	funcMap := helm.NewFunctionMap()
 	tmpl, err := template.New(name).Option("missingkey=error").Funcs(funcMap).ParseFiles(templateFile)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse Secrets template: %s", templateFile)
+		return nil, errors.Wrapf(err, "failed to parse Ingress template: %s", templateFile)
 	}
 
 	requirementsMap, err := requirements.ToMap()
@@ -278,7 +278,7 @@ func readYamlTemplate(templateFile string, requirements *config.RequirementsConf
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, templateData)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to execute Secrets template: %s", templateFile)
+		return nil, errors.Wrapf(err, "failed to execute Ingress template: %s", templateFile)
 	}
 	data := buf.Bytes()
 	return data, nil

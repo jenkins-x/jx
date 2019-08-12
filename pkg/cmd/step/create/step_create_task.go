@@ -43,6 +43,9 @@ const (
 	kanikoSecretMount = "/kaniko-secret/secret.json"
 	kanikoSecretName  = kube.SecretKaniko
 	kanikoSecretKey   = kube.SecretKaniko
+
+	noApplyOptionName = "no-apply"
+	outputOptionName  = "output"
 )
 
 var (
@@ -346,12 +349,12 @@ func (o *StepCreateTaskOptions) Run() error {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
 	} else {
-		activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr, tekton.BuildPipeline)
+		activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr)
 
 		log.Logger().Debugf(" PipelineActivity for %s created successfully", tektonCRDs.Name())
 
 		log.Logger().Infof("Applying changes ")
-		err := tekton.ApplyPipeline(jxClient, tektonClient, tektonCRDs, ns, o.GitInfo, o.Branch, activityKey)
+		err := tekton.ApplyPipeline(jxClient, tektonClient, tektonCRDs, ns, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}

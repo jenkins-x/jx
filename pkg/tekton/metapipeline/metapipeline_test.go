@@ -1,7 +1,6 @@
 package metapipeline
 
 import (
-	"github.com/jenkins-x/jx/pkg/prow"
 	"path/filepath"
 	"testing"
 
@@ -27,7 +26,7 @@ func TestMetaPipeline(t *testing.T) {
 
 var _ = Describe("Meta pipeline", func() {
 
-	Describe("#CreateMetaPipelineCRDs", func() {
+	Describe("#createMetaPipelineCRDs", func() {
 		var (
 			testParams   CRDCreationParameters
 			actualCRDs   *tekton.CRDWrapper
@@ -37,16 +36,16 @@ var _ = Describe("Meta pipeline", func() {
 
 		BeforeEach(func() {
 			gitInfo, _ := gits.NewGitFake().Info("/acme")
-			pullRef, _ := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815,42:db8e2d275df53477b1c6871f7d7f4281dacf3169")
+			pullRef := NewPullRefWithPullRequest("https://github.com/jenkins-x/jx", "master", "0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815", PullRequestRef{ID: "42", MergeSHA: "db8e2d275df53477b1c6871f7d7f4281dacf3169"})
 
 			testParams = CRDCreationParameters{
 				PipelineName:     "test-pipeline",
-				PipelineKind:     "pullrequest",
+				PipelineKind:     PullRequestPipeline,
 				BranchIdentifier: "master",
-				PullRef:          *pullRef,
+				PullRef:          pullRef,
 				GitInfo:          *gitInfo,
-				Labels:           []string{"someLabel=someValue"},
-				EnvVars:          []string{"SOME_VAR=SOME_VAL", "OTHER_VAR=OTHER_VAL"},
+				Labels:           map[string]string{"someLabel": "someValue"},
+				EnvVars:          map[string]string{"SOME_VAR": "SOME_VAL", "OTHER_VAR": "OTHER_VAL"},
 				BuildNumber:      "1",
 				SourceDir:        "source",
 				ServiceAccount:   "tekton-bot",
@@ -188,9 +187,8 @@ var _ = Describe("Meta pipeline", func() {
 
 		Context("with no SHAs to merge (only baseBranch)", func() {
 			JustBeforeEach(func() {
-				pullRef, err := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815")
-				Expect(err).Should(BeNil())
-				testParams.PullRef = *pullRef
+				pullRef := NewPullRef("https://github.com/jenkins-x/jx", "master", "0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815")
+				testParams.PullRef = pullRef
 				actualCRDs, actualStdout, actualError = createMetaPipeline(testParams)
 			})
 
@@ -203,9 +201,9 @@ var _ = Describe("Meta pipeline", func() {
 
 		Context("with no SHAs to merge (baseBranch & baseSHA)", func() {
 			JustBeforeEach(func() {
-				pullRef, err := prow.ParsePullRefs("master:")
-				Expect(err).Should(BeNil())
-				testParams.PullRef = *pullRef
+				pullRef := NewPullRef("https://github.com/jenkins-x/jx", "master", "")
+
+				testParams.PullRef = pullRef
 				actualCRDs, actualStdout, actualError = createMetaPipeline(testParams)
 			})
 
@@ -217,7 +215,7 @@ var _ = Describe("Meta pipeline", func() {
 		})
 	})
 
-	Describe("#GetExtendingApps", func() {
+	Describe("#getExtendingApps", func() {
 		var (
 			jxClient versioned.Interface
 		)
@@ -228,7 +226,7 @@ var _ = Describe("Meta pipeline", func() {
 
 		Context("with no extending App", func() {
 			It("should return empty app list", func() {
-				apps, err := GetExtendingApps(jxClient, "jx")
+				apps, err := getExtendingApps(jxClient, "jx")
 				Expect(err).Should(BeNil())
 				Expect(apps).Should(HaveLen(0))
 			})
@@ -256,7 +254,7 @@ var _ = Describe("Meta pipeline", func() {
 			})
 
 			It("should return the registered App", func() {
-				apps, err := GetExtendingApps(jxClient, "jx")
+				apps, err := getExtendingApps(jxClient, "jx")
 				Expect(err).Should(BeNil())
 				Expect(apps).Should(HaveLen(1))
 				Expect(apps[0].Name).Should(Equal("acme-app"))
@@ -271,16 +269,15 @@ var _ = Describe("Meta pipeline", func() {
 
 		BeforeEach(func() {
 			gitInfo, _ := gits.ParseGitURL("https://github.com/jenkins-x/jx")
-			pullRef, _ := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815,42:db8e2d275df53477b1c6871f7d7f4281dacf3169")
-
+			pullRef := NewPullRefWithPullRequest("https://github.com/jenkins-x/jx", "master", "0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815", PullRequestRef{ID: "42", MergeSHA: "db8e2d275df53477b1c6871f7d7f4281dacf3169"})
 			testParams = CRDCreationParameters{
 				PipelineName:     "test-pipeline",
-				PipelineKind:     "pullrequest",
+				PipelineKind:     PullRequestPipeline,
 				BranchIdentifier: "master",
-				PullRef:          *pullRef,
+				PullRef:          pullRef,
 				GitInfo:          *gitInfo,
-				Labels:           []string{"someLabel=someValue"},
-				EnvVars:          []string{"SOME_VAR=SOME_VAL", "SOME_VAR=OTHER_VALUE", "SOURCE_URL=http://foo.git"},
+				Labels:           map[string]string{"someLabel": "someValue"},
+				EnvVars:          map[string]string{"SOME_VAR": "OTHER_VALUE", "SOURCE_URL": "http://foo.git"},
 				BuildNumber:      "1",
 				SourceDir:        "source",
 				ServiceAccount:   "tekton-bot",
@@ -300,15 +297,6 @@ var _ = Describe("Meta pipeline", func() {
 			Expect(len(seen)).Should(Equal(len(vars)))
 		})
 
-		It("first custom set env variable wins over other custom env variables with the same key", func() {
-			vars := buildEnvParams(testParams)
-			expected := corev1.EnvVar{
-				Name:  "SOME_VAR",
-				Value: "SOME_VAL",
-			}
-			Expect(vars).Should(ContainElement(expected))
-		})
-
 		It("explicitly set env variables win over custom env variables", func() {
 			vars := buildEnvParams(testParams)
 			expected := corev1.EnvVar{
@@ -324,7 +312,7 @@ func createMetaPipeline(params CRDCreationParameters) (*tekton.CRDWrapper, strin
 	var crds *tekton.CRDWrapper
 	var err error
 	out := log.CaptureOutput(func() {
-		crds, err = CreateMetaPipelineCRDs(params)
+		crds, err = createMetaPipelineCRDs(params)
 	})
 	return crds, out, err
 }
