@@ -50,7 +50,6 @@ import (
 type LogLevel string
 
 const (
-	OptionAdvancedMode     = "advanced-mode"
 	OptionAlias            = "alias"
 	OptionApplication      = "app"
 	OptionBatchMode        = "batch-mode"
@@ -234,18 +233,6 @@ func (o *CommonOptions) AddBaseFlags(cmd *cobra.Command) {
 	}
 	cmd.PersistentFlags().BoolVarP(&o.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
 	cmd.PersistentFlags().BoolVarP(&o.Verbose, OptionVerbose, "", false, "Enables verbose output")
-
-	o.Cmd = cmd
-}
-
-// AddCommonFlags adds the common flags to the given command
-func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
-	o.AddBaseFlags(cmd)
-
-	cmd.PersistentFlags().StringVarP(&o.ConfigFile, "config-file", "", "", "Configuration file used for installation")
-	cmd.PersistentFlags().BoolVarP(&o.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
-	cmd.PersistentFlags().BoolVarP(&o.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
-	cmd.PersistentFlags().BoolVarP(&o.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
 
 	o.Cmd = cmd
 }

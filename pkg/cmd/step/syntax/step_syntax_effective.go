@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -48,7 +50,7 @@ type StepSyntaxEffectiveOptions struct {
 	PodTemplates map[string]*corev1.Pod
 
 	GitInfo         *gits.GitRepository
-	VersionResolver *opts.VersionResolver
+	VersionResolver *versionstream.VersionResolver
 }
 
 var (
@@ -89,12 +91,11 @@ func NewCmdStepSyntaxEffective(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to resources that are created")
 
-	options.AddCommonFlags(cmd)
+	options.addFlags(cmd)
 	return cmd
 }
 
-// AddCommonFlags adds common CLI options
-func (o *StepSyntaxEffectiveOptions) AddCommonFlags(cmd *cobra.Command) {
+func (o *StepSyntaxEffectiveOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.OutDir, "output-dir", "", "", "The directory to write the output to as YAML. Defaults to STDOUT if neither --output-dir nor --output-file is specified.")
 	cmd.Flags().StringVarP(&o.OutputFile, "output-file", "", "", "The file to write the output to as YAML. If unspecified and --output-dir is specified, the filename defaults to 'jenkins-x[-context]-effective.yml'")
 	cmd.Flags().StringVarP(&o.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")

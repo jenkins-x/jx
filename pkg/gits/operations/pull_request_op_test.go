@@ -1,27 +1,48 @@
-package operations
+package operations_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/jenkins-x/jx/pkg/kube"
+
+	"k8s.io/helm/pkg/proto/hapi/chart"
+
+	"github.com/jenkins-x/jx/pkg/helm"
+
+	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
+
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+
+	"github.com/jenkins-x/jx/pkg/tests"
+
+	"github.com/jenkins-x/jx/pkg/util"
+
+	"github.com/jenkins-x/jx/pkg/gits/operations"
+
 	"github.com/acarl005/stripansi"
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestCreatePullRequest(t *testing.T) {
@@ -33,7 +54,7 @@ func TestCreatePullRequest(t *testing.T) {
 
 	commonOpts.SetGit(gits.NewGitFake())
 
-	o := PullRequestOperation{
+	o := operations.PullRequestOperation{
 		CommonOptions: &commonOpts,
 	}
 
@@ -84,7 +105,7 @@ func TestCreatePullRequestWithMatrixUpdatePaths(t *testing.T) {
 	testRepoName := "testrepo"
 
 	commonOpts.SetGit(gits.NewGitFake())
-	o := PullRequestOperation{
+	o := operations.PullRequestOperation{
 		CommonOptions: &commonOpts,
 	}
 
@@ -201,7 +222,7 @@ func TestCreateDependencyUpdatePRDetails(t *testing.T) {
 	_, _, _, commonOpts, _ := getFakeClientsAndNs(t)
 
 	commonOpts.SetGit(gits.NewGitFake())
-	o := PullRequestOperation{
+	o := operations.PullRequestOperation{
 		CommonOptions: &commonOpts,
 	}
 
@@ -250,7 +271,7 @@ func TestCreateDependencyUpdatePRDetails(t *testing.T) {
 	fromVersion := "1.0.0"
 	toVersion := "2.0.0"
 	kind := "fakekind"
-	_, details, _, assets, err := o.CreateDependencyUpdatePRDetails(kind, gitRepo, &gits.GitRepository{}, fromVersion, toVersion, componentName)
+	_, details, _, assets, err := o.CreateDependencyUpdatePRDetails(kind, gitRepo, "", fromVersion, toVersion, componentName)
 
 	assert.Contains(t, details.BranchName, fmt.Sprintf("bump-%s-version", kind))
 	assert.Contains(t, details.Message, fmt.Sprintf("Update [%s](%s):%s from [%s](fakeUrlv1) to [%s](fakeUrlv2)", gitRepo, gitRepo, componentName, fromVersion, toVersion))
@@ -348,7 +369,7 @@ func TestAddDependencyMatrixUpdatePaths(t *testing.T) {
 		},
 	}
 
-	dependencyUpdate, err := addDependencyMatrixUpdatePaths(asset, update)
+	dependencyUpdate, err := operations.AddDependencyMatrixUpdatePaths(asset, update)
 	assert.NoError(t, err)
 	assert.Len(t, dependencyUpdate[0].Paths[0], 2)
 }
@@ -369,4 +390,258 @@ func getFakeClientsAndNs(t *testing.T) (versioned.Interface, tektonclient.Interf
 	assert.NoError(t, err, "There shouldn't be any error getting the fake Kube Client")
 
 	return jxClient, tektonClient, kubeClient, commonOpts, ns
+}
+
+func TestCreatePullRequestBuildersFn(t *testing.T) {
+	fn := operations.CreatePullRequestBuildersFn("1.0.1")
+	dir, err := ioutil.TempDir("", "")
+	defer func() {
+		err := os.RemoveAll(dir)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+	err = util.CopyDir(filepath.Join("testdata", "CreatePullRequestBuildersFn"), dir, true)
+	assert.NoError(t, err)
+	var gitInfo *gits.GitRepository
+	result, err := fn(dir, gitInfo)
+	assert.NoError(t, err)
+	tests.AssertFileContains(t, filepath.Join(dir, "docker", "gcr.io", "jenkinsxio", "builder-cf.yml"), "version: 1.0.1")
+	tests.AssertFileContains(t, filepath.Join(dir, "docker", "gcr.io", "jenkinsxio", "builder-dlang.yml"), "version: 1.0.1")
+	tests.AssertFileContains(t, filepath.Join(dir, "docker", "gcr.io", "jenkinsxio", "builder-base.yml"), "version: 0.0.1")
+	assert.Contains(t, result, "0.0.1")
+	assert.Contains(t, result, "0.0.2")
+	assert.Len(t, result, 2)
+}
+
+func TestCreatePullRequestRegexFn(t *testing.T) {
+	t.Run("capture-groups", func(t *testing.T) {
+
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata", "CreatePullRequestRegexFn"), dir, true)
+		assert.NoError(t, err)
+		fn, err := operations.CreatePullRequestRegexFn("1.0.1", "^version: (.*)$", "builder-dlang.yml")
+		assert.NoError(t, err)
+		var gitInfo *gits.GitRepository
+		result, err := fn(dir, gitInfo)
+		assert.NoError(t, err)
+		tests.AssertFileContains(t, filepath.Join(dir, "builder-dlang.yml"), "version: 1.0.1")
+		assert.Contains(t, result, "0.0.1")
+		assert.Len(t, result, 1)
+	})
+	t.Run("named-capture", func(t *testing.T) {
+
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata", "CreatePullRequestRegexFn"), dir, true)
+		assert.NoError(t, err)
+		fn, err := operations.CreatePullRequestRegexFn("1.0.1", `^version: (?P<version>.*)$`, "builder-dlang.yml")
+		assert.NoError(t, err)
+		var gitInfo *gits.GitRepository
+		result, err := fn(dir, gitInfo)
+		assert.NoError(t, err)
+		tests.AssertFileContains(t, filepath.Join(dir, "builder-dlang.yml"), "version: 1.0.1")
+		assert.Contains(t, result, "0.0.1")
+		assert.Len(t, result, 1)
+	})
+	t.Run("multiple-named-capture", func(t *testing.T) {
+
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata", "CreatePullRequestRegexFn"), dir, true)
+		assert.NoError(t, err)
+		fn, err := operations.CreatePullRequestRegexFn("1.0.1", `(?m)^(\s*)version: (?P<version>.*)$`, "builder-cf.yml")
+		assert.NoError(t, err)
+		var gitInfo *gits.GitRepository
+		result, err := fn(dir, gitInfo)
+		assert.NoError(t, err)
+		tests.AssertFileContains(t, filepath.Join(dir, "builder-cf.yml"), `abc:
+  version: 1.0.1
+def:
+  version: 1.0.1`)
+		assert.Contains(t, result, "0.0.1")
+		assert.Contains(t, result, "0.0.2")
+		assert.Len(t, result, 2)
+	})
+}
+
+func TestCreateChartChangeFilesFn(t *testing.T) {
+	t.Run("from-chart-sources", func(t *testing.T) {
+		pegomock.RegisterMockTestingT(t)
+		helmer := helm_test.NewMockHelmer()
+		helm_test.StubFetchChart("acme/roadrunner", "1.0.1", "", &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "roadrunner",
+				Version: "1.0.1",
+				Sources: []string{
+					"https://fake.git/acme/roadrunner",
+				},
+			},
+		}, helmer)
+		vaultClient := vault_test.NewMockClient()
+		pro := operations.PullRequestOperation{}
+		fn := operations.CreateChartChangeFilesFn("acme/roadrunner", "1.0.1", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata/TestCreateChartChangeFilesFn"), dir, true)
+		assert.NoError(t, err)
+		answer, err := fn(dir, nil)
+		assert.NoError(t, err)
+		assert.Len(t, answer, 1)
+		assert.Contains(t, answer, "1.0.0")
+		tests.AssertFileContains(t, filepath.Join(dir, "charts", "acme", "roadrunner.yml"), "version: 1.0.1")
+		assert.Equal(t, "https://fake.git/acme/roadrunner", pro.SrcGitURL)
+		assert.Equal(t, "1.0.1", pro.Version)
+	})
+	t.Run("from-versions", func(t *testing.T) {
+		pegomock.RegisterMockTestingT(t)
+		helmer := helm_test.NewMockHelmer()
+		helm_test.StubFetchChart("acme/wile", "1.0.1", "", &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "wile",
+				Version: "1.0.1",
+			},
+		}, helmer)
+		vaultClient := vault_test.NewMockClient()
+		pro := operations.PullRequestOperation{}
+		fn := operations.CreateChartChangeFilesFn("acme/wile", "1.0.1", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata/TestCreateChartChangeFilesFn"), dir, true)
+		assert.NoError(t, err)
+		answer, err := fn(dir, nil)
+		assert.NoError(t, err)
+		assert.Len(t, answer, 1)
+		assert.Contains(t, answer, "1.0.0")
+		tests.AssertFileContains(t, filepath.Join(dir, "charts", "acme", "wile.yml"), "version: 1.0.1")
+		assert.Equal(t, "https://fake.git/acme/wile", pro.SrcGitURL)
+		assert.Equal(t, "1.0.1", pro.Version)
+	})
+	t.Run("latest", func(t *testing.T) {
+		pegomock.RegisterMockTestingT(t)
+		helmer := helm_test.NewMockHelmer()
+		pegomock.When(helmer.SearchCharts(pegomock.EqString("acme/wile"), pegomock.EqBool(true))).ThenReturn(pegomock.ReturnValue([]helm.ChartSummary{
+			{
+				Name:         "wile",
+				ChartVersion: "1.0.1",
+				AppVersion:   "1.0.1",
+				Description:  "",
+			},
+			{
+				Name:         "wile",
+				ChartVersion: "1.0.0",
+				AppVersion:   "1.0.0",
+				Description:  "",
+			},
+		}), pegomock.ReturnValue(nil))
+		helm_test.StubFetchChart("acme/wile", "1.0.1", "", &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "wile",
+				Version: "1.0.1",
+			},
+		}, helmer)
+		pegomock.When(helmer.IsRepoMissing("https://acme.com/charts")).ThenReturn(pegomock.ReturnValue(false), pegomock.ReturnValue("acme"), pegomock.ReturnValue(nil))
+		vaultClient := vault_test.NewMockClient()
+		pro := operations.PullRequestOperation{}
+		fn := operations.CreateChartChangeFilesFn("acme/wile", "", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata/TestCreateChartChangeFilesFn"), dir, true)
+		assert.NoError(t, err)
+		answer, err := fn(dir, nil)
+		assert.NoError(t, err)
+		assert.Len(t, answer, 1)
+		assert.Contains(t, answer, "1.0.0")
+		tests.AssertFileContains(t, filepath.Join(dir, "charts", "acme", "wile.yml"), "version: 1.0.1")
+		assert.Equal(t, "https://fake.git/acme/wile", pro.SrcGitURL)
+		assert.Equal(t, "1.0.1", pro.Version)
+	})
+
+}
+
+func TestPullRequestOperation_WrapChangeFilesWithCommitFn(t *testing.T) {
+
+	commonOpts := &opts.CommonOptions{}
+	gitter := gits.NewGitCLI()
+	roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+	}, gitter)
+	assert.NoError(t, err)
+	wileOrg, err := gits.NewFakeRepository("acme", "wile", func(dir string) error {
+		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+	}, gitter)
+	assert.NoError(t, err)
+	gitProvider := gits.NewFakeProvider(roadRunnerOrg, wileOrg)
+	helmer := helm_test.NewMockHelmer()
+
+	testhelpers.ConfigureTestOptionsWithResources(commonOpts,
+		[]runtime.Object{},
+		[]runtime.Object{
+			kube.NewPermanentEnvironment("EnvWhereApplicationIsDeployed"),
+		},
+		gitter,
+		gitProvider,
+		helmer,
+		resources_test.NewMockInstaller(),
+	)
+
+	wrapped := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		return []string{"1.2.2"}, ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("version: 1.2.3"), 0655)
+	}
+	pro := operations.PullRequestOperation{
+		CommonOptions: commonOpts,
+		SrcGitURL:     "https://fake.git/acme/wile.git",
+		Version:       "1.2.3",
+	}
+
+	dir, err := ioutil.TempDir("", "")
+	defer func() {
+		err := os.RemoveAll(dir)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+	err = gitter.Init(dir)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("1.2.2"), 0655)
+	assert.NoError(t, err)
+	err = gitter.Add(dir, "*")
+	assert.NoError(t, err)
+	err = gitter.CommitDir(dir, "Initial commit")
+	assert.NoError(t, err)
+
+	gitInfo, err := gits.ParseGitURL("https://fake.git/acme/roadrunner.git")
+	assert.NoError(t, err)
+
+	fn := pro.WrapChangeFilesWithCommitFn("charts", wrapped)
+	result, err := fn(dir, gitInfo)
+	assert.NoError(t, err)
+	assert.Len(t, result, 0)
+	tests.AssertFileContains(t, filepath.Join(dir, "test.yml"), "1.2.3")
+	msg, err := gitter.GetLatestCommitMessage(dir)
+	assert.NoError(t, err)
+	assert.True(t, strings.HasPrefix(msg, "chore(deps): bump acme/wile from 1.2.2 to 1.2.3"))
 }

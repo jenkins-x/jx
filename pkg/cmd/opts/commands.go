@@ -11,8 +11,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// TODO Refactor to use util.Run or util.RunWithoutRetry?
 // RunCommandFromDir runs a command in the given directory
+// Deprecated use util.Command
 func (o *CommonOptions) RunCommandFromDir(dir, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	if dir != "" {
@@ -29,6 +29,7 @@ func (o *CommonOptions) RunCommandFromDir(dir, name string, args ...string) erro
 }
 
 // RunCommand runs a given command command with arguments
+// Deprecated use util.Command
 func (o *CommonOptions) RunCommand(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
@@ -42,6 +43,7 @@ func (o *CommonOptions) RunCommand(name string, args ...string) error {
 }
 
 // RunCommandVerbose runs a given command with arguments in verbose mode
+// Deprecated use util.Command
 func (o *CommonOptions) RunCommandVerbose(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
@@ -55,6 +57,7 @@ func (o *CommonOptions) RunCommandVerbose(name string, args ...string) error {
 }
 
 // RunCommandVerboseAt runs a given command in a given folder in verbose mode
+// Deprecated use util.Command
 func (o *CommonOptions) RunCommandVerboseAt(dir string, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	if dir != "" {
@@ -71,6 +74,7 @@ func (o *CommonOptions) RunCommandVerboseAt(dir string, name string, args ...str
 }
 
 // RunCommandQuietly runs commands and discard the stdout and stderr
+// Deprecated use util.Command
 func (o *CommonOptions) RunCommandQuietly(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = ioutil.Discard
@@ -80,6 +84,7 @@ func (o *CommonOptions) RunCommandQuietly(name string, args ...string) error {
 }
 
 // RunCommandInteractive run a given command interactively
+// Deprecated use util.Command
 func (o *CommonOptions) RunCommandInteractive(interactive bool, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
@@ -96,6 +101,7 @@ func (o *CommonOptions) RunCommandInteractive(interactive bool, name string, arg
 }
 
 // RunCommandInteractiveInDir run a given command interactively in a given directory
+// Deprecated use util.Command
 func (o *CommonOptions) RunCommandInteractiveInDir(interactive bool, dir string, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
@@ -115,6 +121,7 @@ func (o *CommonOptions) RunCommandInteractiveInDir(interactive bool, dir string,
 }
 
 // GetCommandOutput evaluates the given command and returns the trimmed output
+// Deprecated use util.Command
 func (o *CommonOptions) GetCommandOutput(dir string, name string, args ...string) (string, error) {
 	os.Setenv("PATH", util.PathWithBinary())
 	e := exec.Command(name, args...)

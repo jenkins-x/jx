@@ -71,7 +71,7 @@ import (
 // args used to determine binary plugin to run can be overridden (does not affect compiled in commands).
 func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWriter,
 	err io.Writer, args []string) *cobra.Command {
-	cmds := &cobra.Command{
+	rootCommand := &cobra.Command{
 		Use:              "jx",
 		Short:            "jx is a command line tool for working with Jenkins X",
 		PersistentPreRun: setLoggingLevel,
@@ -81,9 +81,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	features.Init()
 
 	commonOpts := opts.NewCommonOptionsWithTerm(f, in, out, err)
-
-	// commonOpts holds the global flags that will be shared/inherited by all sub-commands created bellow
-	commonOpts.AddCommonFlags(cmds)
+	commonOpts.AddBaseFlags(rootCommand)
 
 	addCommands := add.NewCmdAdd(commonOpts)
 	createCommands := create.NewCmdCreate(commonOpts)
@@ -209,13 +207,13 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	groups.Add(cmds)
+	groups.Add(rootCommand)
 
 	filters := []string{"options"}
 
 	getPluginCommandGroups := func() (templates.PluginCommandGroups, bool) {
 		verifier := &extensions.CommandOverrideVerifier{
-			Root:        cmds,
+			Root:        rootCommand,
 			SeenPlugins: make(map[string]string, 0),
 		}
 		pluginCommandGroups, managedPluginsEnabled, err := commonOpts.GetPluginCommandGroups(verifier)
@@ -224,13 +222,13 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		}
 		return pluginCommandGroups, managedPluginsEnabled
 	}
-	templates.ActsAsRootCommand(cmds, filters, getPluginCommandGroups, groups...)
-	cmds.AddCommand(NewCmdDocs(commonOpts))
-	cmds.AddCommand(NewCmdVersion(commonOpts))
-	cmds.Version = version.GetVersion()
-	cmds.SetVersionTemplate("{{printf .Version}}\n")
-	cmds.AddCommand(NewCmdOptions(out))
-	cmds.AddCommand(NewCmdDiagnose(commonOpts))
+	templates.ActsAsRootCommand(rootCommand, filters, getPluginCommandGroups, groups...)
+	rootCommand.AddCommand(NewCmdDocs(commonOpts))
+	rootCommand.AddCommand(NewCmdVersion(commonOpts))
+	rootCommand.Version = version.GetVersion()
+	rootCommand.SetVersionTemplate("{{printf .Version}}\n")
+	rootCommand.AddCommand(NewCmdOptions(out))
+	rootCommand.AddCommand(NewCmdDiagnose(commonOpts))
 
 	managedPlugins := &managedPluginHandler{
 		CommonOptions: commonOpts,
@@ -245,7 +243,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 
 		// only look for suitable executables if
 		// the specified command does not already exist
-		if _, _, err := cmds.Find(cmdPathPieces); err != nil {
+		if _, _, err := rootCommand.Find(cmdPathPieces); err != nil {
 			if _, managedPluginsEnabled := getPluginCommandGroups(); managedPluginsEnabled {
 				if err := handleEndpointExtensions(managedPlugins, cmdPathPieces); err != nil {
 					log.Logger().Errorf("%v", err)
@@ -261,7 +259,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		}
 	}
 
-	return cmds
+	return rootCommand
 }
 
 func findCommands(subCommand string, commands ...*cobra.Command) []*cobra.Command {

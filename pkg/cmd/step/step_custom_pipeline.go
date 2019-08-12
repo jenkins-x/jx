@@ -66,8 +66,6 @@ func NewCmdStepCustomPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	options.AddCommonFlags(cmd)
-
 	cmd.Flags().StringVarP(&options.JenkinsSelector.CustomJenkinsName, "jenkins-name", "j", "", "The name of the custom Jenkins App if you don't wish to use the default execution engine in Jenkins X")
 
 	cmd.Flags().BoolVarP(&options.MultiBranchProject, "multi-branch-project", "", false, "Use a Multi Branch Project in Jenkins")

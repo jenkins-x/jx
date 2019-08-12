@@ -748,19 +748,19 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 }
 
 func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
-	versions, err := o.Helm().SearchChartVersions(app)
+	charts, err := o.Helm().SearchCharts(app, true)
 	if err != nil {
 		return "", err
 	}
 
 	var maxSemVer *semver.Version
 	maxString := ""
-	for _, version := range versions {
-		sv, err := semver.Parse(version)
+	for _, chart := range charts {
+		sv, err := semver.Parse(chart.ChartVersion)
 		if err != nil {
-			log.Logger().Warnf("Invalid semantic version: %s %s", version, err)
-			if maxString == "" || strings.Compare(version, maxString) > 0 {
-				maxString = version
+			log.Logger().Warnf("Invalid semantic version: %s %s", chart.ChartVersion, err)
+			if maxString == "" || strings.Compare(chart.ChartVersion, maxString) > 0 {
+				maxString = chart.ChartVersion
 			}
 		} else {
 			if maxSemVer == nil || maxSemVer.Compare(sv) > 0 {
@@ -1019,7 +1019,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 
 func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 	answer := ""
-	charts, err := o.Helm().SearchCharts(filter)
+	charts, err := o.Helm().SearchCharts(filter, false)
 	if err != nil {
 		return answer, err
 	}

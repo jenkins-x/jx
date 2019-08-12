@@ -1,8 +1,9 @@
 package pr
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits/operations"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/gits/operations"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -77,7 +78,7 @@ func AddStepCreatePrFlags(cmd *cobra.Command, o *StepCreatePrOptions) {
 }
 
 // ValidateOptions validates the common options for all PR creation steps
-func (o *StepCreatePrOptions) ValidateOptions() error {
+func (o *StepCreatePrOptions) ValidateOptions(allowEmptyVersion bool) error {
 	if o.SrcGitURL == "" {
 		o.SrcGitURL = os.Getenv("REPO_URL")
 		if o.SrcGitURL != "" {
@@ -101,7 +102,7 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 	if o.SrcGitURL == "" {
 		return errors.Errorf("unable to determine source url, no argument provided, env var REPO_URL is empty and working directory is not a git repo")
 	}
-	if o.Version == "" {
+	if !allowEmptyVersion && o.Version == "" {
 		return util.MissingOption("version")
 	}
 	if len(o.GitURLs) == 0 {
@@ -112,7 +113,7 @@ func (o *StepCreatePrOptions) ValidateOptions() error {
 
 // CreatePullRequest will fork (if needed) and pull a git repo, then perform the update, and finally create or update a
 // PR for the change. Any open PR on the repo with the `updatebot` label will be updated.
-func (o *StepCreatePrOptions) CreatePullRequest(kind string, update func(dir string, gitInfo *gits.GitRepository) ([]string, error)) error {
+func (o *StepCreatePrOptions) CreatePullRequest(kind string, update operations.ChangeFilesFn) error {
 	if o.DryRun {
 		log.Logger().Infof("--dry-run specified. Change will be created and committed to local git repo, but not pushed. No pull request will be created or updated. A fork will still be created.")
 	}

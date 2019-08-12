@@ -2,6 +2,9 @@ package boot
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -9,11 +12,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	version2 "github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"path/filepath"
-	"strings"
 )
 
 // StepBootUpgradeOptions contains the command line flags
@@ -85,7 +86,7 @@ func (o *StepBootUpgradeOptions) Run() error {
 	versionsUpdates := false
 	for depIndex := range platformRequirements.Dependencies {
 		dep := platformRequirements.Dependencies[depIndex]
-		glob := filepath.Join(versionsRepoDir, string(version2.KindChart), "*", dep.Name+".yml")
+		glob := filepath.Join(versionsRepoDir, string(versionstream.KindChart), "*", dep.Name+".yml")
 		paths, err := filepath.Glob(glob)
 		if err != nil {
 			return errors.Wrapf(err, "failed to find chart dependency %s in version stream", dep.Name)
@@ -100,7 +101,7 @@ func (o *StepBootUpgradeOptions) Run() error {
 		}
 		pathParts := strings.Split(paths[0], "/")
 		chartName := pathParts[len(pathParts)-2] + "/" + strings.Replace(pathParts[len(pathParts)-1], ".yml", "", -1)
-		newVersion, err := version2.LoadStableVersionNumber(versionsRepoDir, version2.KindChart, chartName)
+		newVersion, err := versionstream.LoadStableVersionNumber(versionsRepoDir, versionstream.KindChart, chartName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load version of chart %s in dir %s", chartName, versionsRepoDir)
 		}

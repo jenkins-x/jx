@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -25,8 +27,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/version"
-
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/ghodss/yaml"
@@ -476,7 +476,7 @@ func IsLocal(chart string) bool {
 func InspectChart(chart string, version string, repo string, username string, password string,
 	helmer Helmer, inspector func(dir string) error) error {
 	isLocal := IsLocal(chart)
-	dirPrefix := fmt.Sprintf("jx-helm-fetch-%s-", chart)
+	dirPrefix := fmt.Sprintf("jx-helm-fetch-%s-", util.ToValidFileSystemName(chart))
 	if isLocal {
 		dirPrefix = "jx-helm-fetch"
 	}
@@ -488,7 +488,11 @@ func InspectChart(chart string, version string, repo string, username string, pa
 			log.Logger().Warnf("Error removing %s %v", dir, err1)
 		}
 	}()
-	inspectPath := filepath.Join(dir, chart)
+	if err != nil {
+		return errors.Wrapf(err, "creating tempdir")
+	}
+	parts := strings.Split(chart, "/")
+	inspectPath := filepath.Join(dir, parts[len(parts)-1])
 	if isLocal {
 		// This is a local path
 		err := util.CopyDir(chart, dir, true)
@@ -539,7 +543,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 			return errors.Errorf("no VersionsDir specified when trying to install a chart")
 		}
 		var err error
-		options.Version, err = version.LoadStableVersionNumber(versionsDir, version.KindChart, chart)
+		options.Version, err = versionstream.LoadStableVersionNumber(versionsDir, versionstream.KindChart, chart)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load stable version in dir %s for chart %s", versionsDir, chart)
 		}
@@ -930,4 +934,17 @@ func UpdateImagesInValuesToNewVersion(data []byte, name string, newVersion strin
 		answer.WriteString("\n")
 	}
 	return []byte(answer.String()), oldVersions
+}
+
+// FindLatestChart uses helmer to find the latest chart for name
+func FindLatestChart(name string, helmer Helmer) (*ChartSummary, error) {
+	info, err := helmer.SearchCharts(name, true)
+	if err != nil {
+		return nil, err
+	}
+	if len(info) == 0 {
+		return nil, fmt.Errorf("no version found for chart %s", name)
+	}
+	log.Logger().Debugf("found %d versions: %#v", len(info), info)
+	return &info[0], nil
 }

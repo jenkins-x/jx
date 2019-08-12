@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"sort"
 	"strconv"
 	"strings"
@@ -89,21 +90,31 @@ func GetServiceURLFromMap(services map[string]*v1.Service, name string) string {
 }
 
 func FindServiceURL(client kubernetes.Interface, namespace string, name string) (string, error) {
+	log.Logger().Debugf("finding service url for %s in namespace %s", name, namespace)
 	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to find service %s in namespace %s", name, namespace)
 	}
 	answer := GetServiceURL(svc)
 	if answer != "" {
+		log.Logger().Debugf("found service url %s", answer)
 		return answer, nil
 	}
 
+	log.Logger().Debugf("couldn't find service url, attempting to look up via ingress")
+
 	// lets try find the service via Ingress
 	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
-	if err == nil {
-		return IngressURL(ing), nil
+	if err != nil {
+		log.Logger().Errorf("error finding ingress for %s in namespace %s - err %s", name, namespace, err)
+		return "", nil
 	}
-	return "", nil
+
+	url := IngressURL(ing)
+	if url == "" {
+		log.Logger().Debugf("unable to find service url via ingress for %s in namespace %s", name, namespace)
+	}
+	return url, nil
 }
 
 // IngressURL returns the URL for the ingres
@@ -115,19 +126,23 @@ func IngressURL(ing *v1beta1.Ingress) string {
 			for _, tls := range ing.Spec.TLS {
 				for _, h := range tls.Hosts {
 					if h != "" {
-						return "https://" + h
+						url := "https://" + h
+						log.Logger().Debugf("found service url %s", url)
+						return url
 					}
 				}
 			}
 			if hostname != "" {
-				return "http://" + hostname
+				url := "http://" + hostname
+				log.Logger().Debugf("found service url %s", url)
+				return url
 			}
 		}
 	}
 	return ""
 }
 
-// IngressHost returns the ost for the ingres
+// IngressHost returns the host for the ingres
 func IngressHost(ing *v1beta1.Ingress) string {
 	if ing != nil {
 		if len(ing.Spec.Rules) > 0 {

@@ -308,30 +308,11 @@ func (mock *MockHelmer) RemoveRequirementsLock() error {
 	return ret0
 }
 
-func (mock *MockHelmer) SearchChartVersions(_param0 string) ([]string, error) {
+func (mock *MockHelmer) SearchCharts(_param0 string, _param1 bool) ([]helm.ChartSummary, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
 	}
-	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("SearchChartVersions", params, []reflect.Type{reflect.TypeOf((*[]string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 []string
-	var ret1 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].([]string)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
-		}
-	}
-	return ret0, ret1
-}
-
-func (mock *MockHelmer) SearchCharts(_param0 string) ([]helm.ChartSummary, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockHelmer().")
-	}
-	params := []pegomock.Param{_param0}
+	params := []pegomock.Param{_param0, _param1}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("SearchCharts", params, []reflect.Type{reflect.TypeOf((*[]helm.ChartSummary)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 []helm.ChartSummary
 	var ret1 error
@@ -986,35 +967,8 @@ func (c *MockHelmer_RemoveRequirementsLock_OngoingVerification) GetCapturedArgum
 func (c *MockHelmer_RemoveRequirementsLock_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockHelmer) SearchChartVersions(_param0 string) *MockHelmer_SearchChartVersions_OngoingVerification {
-	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SearchChartVersions", params, verifier.timeout)
-	return &MockHelmer_SearchChartVersions_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockHelmer_SearchChartVersions_OngoingVerification struct {
-	mock              *MockHelmer
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockHelmer_SearchChartVersions_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
-}
-
-func (c *MockHelmer_SearchChartVersions_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockHelmer) SearchCharts(_param0 string) *MockHelmer_SearchCharts_OngoingVerification {
-	params := []pegomock.Param{_param0}
+func (verifier *VerifierMockHelmer) SearchCharts(_param0 string, _param1 bool) *MockHelmer_SearchCharts_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SearchCharts", params, verifier.timeout)
 	return &MockHelmer_SearchCharts_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1024,17 +978,21 @@ type MockHelmer_SearchCharts_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockHelmer_SearchCharts_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
+func (c *MockHelmer_SearchCharts_OngoingVerification) GetCapturedArguments() (string, bool) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MockHelmer_SearchCharts_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_SearchCharts_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
+		}
+		_param1 = make([]bool, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(bool)
 		}
 	}
 	return

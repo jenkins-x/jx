@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
+
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 
 	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
@@ -250,4 +253,60 @@ func TestReplaceVaultURIWithLocalFile(t *testing.T) {
 	assert2.Equal(t, fmt.Sprintf(`foo:
   bar: %s
 `, secret), string(newValuesYaml))
+}
+
+func TestFindLatestChart(t *testing.T) {
+	pegomock.RegisterMockTestingT(t)
+	helmer := helm_test.NewMockHelmer()
+	pegomock.When(helmer.SearchCharts(pegomock.EqString("acme/roadrunner"), pegomock.EqBool(true))).ThenReturn(pegomock.ReturnValue([]helm.ChartSummary{
+		{
+			Name:         "acme",
+			ChartVersion: "1.0.1",
+			AppVersion:   "1.0.1",
+			Description:  "",
+		},
+		{
+			Name:         "acme",
+			ChartVersion: "1.0.0",
+			AppVersion:   "1.0.0",
+			Description:  "",
+		},
+	}), pegomock.ReturnValue(nil))
+	type args struct {
+		name   string
+		helmer helm.Helmer
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *helm.ChartSummary
+		wantErr bool
+	}{
+		{
+			name: "acme_runner",
+			args: args{
+				name:   "acme/roadrunner",
+				helmer: helmer,
+			},
+			want: &helm.ChartSummary{
+				Name:         "acme",
+				ChartVersion: "1.0.1",
+				AppVersion:   "1.0.1",
+				Description:  "",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := helm.FindLatestChart(tt.args.name, tt.args.helmer)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FindLatestChart() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FindLatestChart() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

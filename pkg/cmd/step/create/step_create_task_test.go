@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
@@ -385,7 +387,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					},
 				},
 				BuildNumber: "1",
-				VersionResolver: &opts.VersionResolver{
+				VersionResolver: &versionstream.VersionResolver{
 					VersionsDir: testVersionsDir,
 				},
 				DefaultImage:      "maven",

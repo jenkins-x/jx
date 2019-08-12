@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -382,6 +384,11 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, ltsBucketFlagName, "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
 	cmd.Flags().StringVarP(&options.Flags.CloudBeesDomain, "cloudbees-domain", "", "", "When setting up a letter/tenant cluster, this creates a tenant cluster on the cloudbees domain which is retrieved via the required URL")
 	cmd.Flags().StringVarP(&options.Flags.CloudBeesAuth, "cloudbees-auth", "", "", "Auth used when setting up a letter/tenant cluster, format: 'username:password'")
+	cmd.Flags().StringVar(&options.ConfigFile, "config-file", "", "Configuration file used for installation")
+	cmd.Flags().BoolVar(&options.NoBrew, opts.OptionNoBrew, false, "Disables brew package manager on MacOS when installing binary dependencies")
+	cmd.Flags().BoolVar(&options.InstallDependencies, opts.OptionInstallDeps, false, "Enables automatic dependencies installation when required")
+	cmd.Flags().BoolVar(&options.SkipAuthSecretsMerge, opts.OptionSkipAuthSecMerge, false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
+
 	bindInstallConfigToFlags(cmd)
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -2969,7 +2976,7 @@ func (options *InstallOptions) logNameServers() {
 
 // LoadVersionFromCloudEnvironmentsDir lets load the jenkins-x-platform version
 func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.ConfigStore) (string, error) {
-	version, err := version2.LoadStableVersionNumber(wrkDir, version2.KindChart, opts.JenkinsXPlatformChart)
+	version, err := versionstream.LoadStableVersionNumber(wrkDir, versionstream.KindChart, opts.JenkinsXPlatformChart)
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", opts.JenkinsXPlatformChart, wrkDir)
 	}

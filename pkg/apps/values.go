@@ -85,7 +85,7 @@ func AddValuesToChart(name string, values []byte, verbose bool) (string, func(),
 		log.Logger().Infof("Generated values.yaml:\n\n%v", util.ColorInfo(string(valuesYaml)))
 	}
 
-	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(name)))
+	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", util.ToValidFileSystemName(name)))
 	cleanup := func() {
 		err = valuesFile.Close()
 		if err != nil {

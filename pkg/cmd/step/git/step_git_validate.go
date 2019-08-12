@@ -1,8 +1,8 @@
 package git
 
 import (
-	"fmt"
 	"os"
+	"os/user"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -59,7 +59,7 @@ func (o *StepGitValidateOptions) Run() error {
 	var err error
 	if userName == "" {
 		// check the OS first
-		userName = os.Getenv("GIT_COMMITTER_NAME")
+		userName = os.Getenv("GIT_AUTHOR_NAME")
 		if userName == "" {
 			if !o.BatchMode {
 				userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
@@ -69,7 +69,13 @@ func (o *StepGitValidateOptions) Run() error {
 			}
 		}
 		if userName == "" {
-			return fmt.Errorf("no Git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
+			user, err := user.Current()
+			if err == nil && user != nil {
+				userName = user.Username
+			}
+		}
+		if userName == "" {
+			userName = "jenkins-x-bot"
 		}
 		err = o.Git().SetUsername("", userName)
 		if err != nil {
@@ -78,7 +84,7 @@ func (o *StepGitValidateOptions) Run() error {
 	}
 	if userEmail == "" {
 		// check the OS first
-		userEmail = os.Getenv("GIT_COMMITTER_EMAIL")
+		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
 		if userEmail == "" {
 			if !o.BatchMode {
 				userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
@@ -88,7 +94,7 @@ func (o *StepGitValidateOptions) Run() error {
 			}
 		}
 		if userEmail == "" {
-			return fmt.Errorf("no Git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
+			userEmail = "jenkins-x@googlegroups.com"
 		}
 		err = o.Git().SetEmail("", userEmail)
 		if err != nil {
