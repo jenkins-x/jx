@@ -1,7 +1,6 @@
 package metapipeline
 
 import (
-	"github.com/jenkins-x/jx/pkg/prow"
 	"path/filepath"
 	"testing"
 
@@ -36,16 +35,16 @@ var _ = Describe("Meta pipeline", func() {
 
 		BeforeEach(func() {
 			gitInfo, _ := gits.NewGitFake().Info("/acme")
-			pullRef, _ := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815,42:db8e2d275df53477b1c6871f7d7f4281dacf3169")
+			pullRef := NewPullRefWithPullRequest("https://github.com/jenkins-x/jx", "master", "0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815", PullRequestRef{ID: "42", MergeSHA: "db8e2d275df53477b1c6871f7d7f4281dacf3169"})
 
 			testParams = CRDCreationParameters{
 				PipelineName:     "test-pipeline",
-				PipelineKind:     "pullrequest",
+				PipelineKind:     PullRequestPipeline,
 				BranchIdentifier: "master",
-				PullRef:          *pullRef,
+				PullRef:          pullRef,
 				GitInfo:          *gitInfo,
-				Labels:           []string{"someLabel=someValue"},
-				EnvVars:          []string{"SOME_VAR=SOME_VAL"},
+				Labels:           map[string]string{"someLabel": "someValue"},
+				EnvVars:          map[string]string{"SOME_VAR": "SOME_VAL"},
 				BuildNumber:      "1",
 				SourceDir:        "source",
 				ServiceAccount:   "tekton-bot",
@@ -176,9 +175,8 @@ var _ = Describe("Meta pipeline", func() {
 
 		Context("with no SHAs to merge (only baseBranch)", func() {
 			JustBeforeEach(func() {
-				pullRef, err := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815")
-				Expect(err).Should(BeNil())
-				testParams.PullRef = *pullRef
+				pullRef := NewPullRef("https://github.com/jenkins-x/jx", "master", "0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815")
+				testParams.PullRef = pullRef
 				actualCRDs, actualStdout, actualError = createMetaPipeline(testParams)
 			})
 
@@ -191,9 +189,9 @@ var _ = Describe("Meta pipeline", func() {
 
 		Context("with no SHAs to merge (baseBranch & baseSHA)", func() {
 			JustBeforeEach(func() {
-				pullRef, err := prow.ParsePullRefs("master:")
-				Expect(err).Should(BeNil())
-				testParams.PullRef = *pullRef
+				pullRef := NewPullRef("https://github.com/jenkins-x/jx", "master", "")
+
+				testParams.PullRef = pullRef
 				actualCRDs, actualStdout, actualError = createMetaPipeline(testParams)
 			})
 

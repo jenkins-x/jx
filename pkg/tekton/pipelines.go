@@ -43,7 +43,7 @@ func (s PipelineType) String() string {
 }
 
 // GeneratePipelineActivity generates a initial PipelineActivity CRD so UI/get act can get an earlier notification that the jobs have been scheduled
-func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, pr *prow.PullRefs, pipelineType PipelineType) *kube.PromoteStepActivityKey {
+func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, pr *prow.PullRefs) *kube.PromoteStepActivityKey {
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
@@ -331,7 +331,7 @@ func PipelineResourceName(organisation string, name string, branch string, conte
 // ApplyPipeline applies the tasks and pipeline to the cluster
 // and creates and applies a PipelineResource for their source repo and a pipelineRun
 // to execute them.
-func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Interface, crds *CRDWrapper, ns string, gitInfo *gits.GitRepository, branch string, activityKey *kube.PromoteStepActivityKey) error {
+func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Interface, crds *CRDWrapper, ns string, activityKey *kube.PromoteStepActivityKey) error {
 	info := util.ColorInfo
 
 	var activityOwnerReference *metav1.OwnerReference
@@ -356,8 +356,8 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 		}
 		if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
-			gitURL := gitInfo.HttpCloneURL()
-			log.Logger().Infof("upserted PipelineResource %s for the git repository %s and branch %s", info(resource.Name), info(gitURL), info(branch))
+			gitURL := activityKey.GitInfo.HttpCloneURL()
+			log.Logger().Infof("upserted PipelineResource %s for the git repository %s", info(resource.Name), info(gitURL))
 		} else {
 			log.Logger().Infof("upserted PipelineResource %s", info(resource.Name))
 		}

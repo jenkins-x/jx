@@ -1,18 +1,17 @@
 package start
 
 import (
-	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
+	"github.com/pkg/errors"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
-	errors2 "github.com/pkg/errors"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -202,37 +201,59 @@ func (o *StartPipelineOptions) createMetaPipeline(jobname string) error {
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return errors2.Wrap(err, "failed to create JX client")
+		return errors.Wrap(err, "failed to create JX client")
 	}
 
 	sr, err := kube.FindSourceRepository(jxClient, ns, owner, repo)
 	if err != nil {
-		return errors2.Wrap(err, "cannot determine git source URL")
+		return errors.Wrap(err, "cannot determine git source URL")
 	}
 
 	sourceURL, err := kube.GetRepositoryGitURL(sr)
 	if err != nil {
-		return errors2.Wrapf(err, "cannot generate the git URL from SourceRepository %s", sr.Name)
+		return errors.Wrapf(err, "cannot generate the git URL from SourceRepository %s", sr.Name)
 	}
 	if sourceURL == "" {
 		return fmt.Errorf("no git URL returned from SourceRepository %s", sr.Name)
 	}
 
-	po := create.StepCreatePipelineOptions{
-		SourceURL:    sourceURL,
-		Job:          jobname,
-		PullRefs:     pullRefs,
-		Context:      o.Context,
-		CustomLabels: o.CustomLabels,
-		CustomEnvs:   o.CustomEnvs,
-	}
-	po.CommonOptions = o.CommonOptions
-	po.ServiceAccount = o.ServiceAccount
-
-	err = po.Run()
+	log.Logger().Info("creating meta pipeline client")
+	client, err := metapipeline.NewMetaPipelineClient()
 	if err != nil {
-		return errors2.Wrapf(err, "failed to create Jenkins X Pipeline for git URL %s pullRefs: %s", sourceURL, pullRefs)
+		return errors.Wrap(err, "unable to create meta pipeline client")
 	}
+
+	client.SetServiceAccount(o.ServiceAccount)
+
+	prowPullRefs, err := prow.ParsePullRefs(pullRefs)
+
+	pullRef := o.prowToMetaPipelinePullRef(sourceURL, prowPullRefs)
+	pipelineKind := o.determinePipelineKind(prowPullRefs)
+	envVarMap, err := util.ExtractKeyValuePairs(o.CustomEnvs, "=")
+	if err != nil {
+		return errors.Wrap(err, "unable to parse env variables")
+	}
+
+	labelMap, err := util.ExtractKeyValuePairs(o.CustomLabels, "=")
+	if err != nil {
+		return errors.Wrap(err, "unable to parse label variables")
+	}
+
+	pipelineActivity, tektonCRDs, err := client.Create(pullRef, pipelineKind, o.Context, envVarMap, labelMap)
+	if err != nil {
+		return errors.Wrap(err, "unable to create Tekton CRDs")
+	}
+
+	err = client.Apply(pipelineActivity, tektonCRDs)
+	if err != nil {
+		return errors.Wrap(err, "unable to apply Tekton CRDs")
+	}
+
+	err = client.Close()
+	if err != nil {
+		log.Logger().Errorf("unable to close meta pipeline client: %s", err.Error())
+	}
+
 	return nil
 }
 
@@ -311,11 +332,11 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	} else {
 		provider, _, err := o.CreateGitProviderForURLWithoutKind(sourceURL)
 		if err != nil {
-			return errors2.Wrapf(err, "creating git provider for %s", sourceURL)
+			return errors.Wrapf(err, "creating git provider for %s", sourceURL)
 		}
 		gitBranch, err := provider.GetBranch(org, repo, branch)
 		if err != nil {
-			return errors2.Wrapf(err, "getting branch %s on %s/%s", branch, org, repo)
+			return errors.Wrapf(err, "getting branch %s on %s/%s", branch, org, repo)
 		}
 
 		if gitBranch != nil && gitBranch.Commit != nil {
@@ -341,11 +362,11 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 
 	provider, _, err := o.CreateGitProviderForURLWithoutKind(sourceURL)
 	if err != nil {
-		return errors2.Wrapf(err, "creating git provider for %s", sourceURL)
+		return errors.Wrapf(err, "creating git provider for %s", sourceURL)
 	}
 	gitBranch, err := provider.GetBranch(org, repo, branch)
 	if err != nil {
-		return errors2.Wrapf(err, "getting branch %s on %s/%s", branch, org, repo)
+		return errors.Wrapf(err, "getting branch %s on %s/%s", branch, org, repo)
 	}
 
 	if gitBranch != nil && gitBranch.Commit != nil {
@@ -400,4 +421,31 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 		}
 		time.Sleep(time.Second)
 	}
+}
+
+func (o *StartPipelineOptions) prowToMetaPipelinePullRef(sourceURL string, prowPullRef *prow.PullRefs) metapipeline.PullRef {
+	var pullRef metapipeline.PullRef
+	if len(prowPullRef.ToMerge) > 0 {
+		var prs []metapipeline.PullRequestRef
+		for prID, SHA := range prowPullRef.ToMerge {
+			prs = append(prs, metapipeline.PullRequestRef{ID: prID, MergeSHA: SHA})
+		}
+		pullRef = metapipeline.NewPullRefWithPullRequest(sourceURL, prowPullRef.BaseBranch, prowPullRef.BaseSha, prs...)
+	} else {
+		pullRef = metapipeline.NewPullRef(sourceURL, prowPullRef.BaseBranch, prowPullRef.BaseSha)
+	}
+	return pullRef
+}
+
+func (o *StartPipelineOptions) determinePipelineKind(pullRef *prow.PullRefs) metapipeline.PipelineKind {
+	var kind metapipeline.PipelineKind
+
+	prCount := len(pullRef.ToMerge)
+	if prCount > 0 {
+		kind = metapipeline.PullRequestPipeline
+	} else {
+		kind = metapipeline.ReleasePipeline
+	}
+	log.Logger().Debugf("pipeline kind for pull ref '%s' : '%s'", pullRef.String(), kind)
+	return kind
 }

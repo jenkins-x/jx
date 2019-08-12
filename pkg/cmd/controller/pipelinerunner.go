@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
 	"os"
 	"os/signal"
 	"strconv"
@@ -62,6 +63,8 @@ type PipelineRunnerOptions struct {
 	UseMetaPipeline      bool
 	MetaPipelineImage    string
 	SemanticRelease      bool
+
+	metaPipelineClient *metapipeline.ClientFactory
 }
 
 // PipelineRunRequest the request to trigger a pipeline run
@@ -128,11 +131,9 @@ func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Comma
 
 // Run will implement this command
 func (o *PipelineRunnerOptions) Run() error {
-	if !o.NoGitCredentialsInit {
-		err := o.InitGitConfigAndUser()
-		if err != nil {
-			return err
-		}
+	err := o.configure()
+	if err != nil {
+		return errors.Wrap(err, "unable to configure pipelinerunner")
 	}
 
 	var wg sync.WaitGroup
@@ -141,6 +142,51 @@ func (o *PipelineRunnerOptions) Run() error {
 	o.startWorkers(ctx, &wg, cancel)
 	o.setupSignalChannel(cancel)
 	wg.Wait()
+	return nil
+}
+
+func (o *PipelineRunnerOptions) configure() error {
+	err := o.setLogLevel()
+	if err != nil {
+		return errors.Wrap(err, "unable to set log level")
+	}
+
+	logger.Infof("meta pipeline enabled: %t", o.UseMetaPipeline)
+	if o.UseMetaPipeline {
+		logger.Info("creating meta pipeline client")
+		client, err := metapipeline.NewMetaPipelineClient()
+		if err != nil {
+			return errors.Wrap(err, "unable to create meta pipeline client")
+		}
+
+		client.SetServiceAccount(o.ServiceAccount)
+		client.SetDefaultImage(o.MetaPipelineImage)
+
+		o.metaPipelineClient = client
+	} else {
+		if !o.NoGitCredentialsInit {
+			err := o.InitGitConfigAndUser()
+			if err != nil {
+				return err
+			}
+
+			err = o.stepGitCredentials()
+			if err != nil {
+				logger.Warn(err.Error())
+			}
+		}
+	}
+	return nil
+}
+
+func (o *PipelineRunnerOptions) setLogLevel() error {
+	level := os.Getenv("JX_LOG_LEVEL")
+	if level != "" {
+		err := log.SetLevel(level)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -158,7 +204,7 @@ func (o *PipelineRunnerOptions) startWorkers(ctx context.Context, wg *sync.WaitG
 		}
 
 		go func() {
-			logger.Infof("Starting HTTP Server on %s port %d", o.BindAddress, o.Port)
+			logger.Infof("starting HTTP Server on %s port %d", o.BindAddress, o.Port)
 			if err := srv.ListenAndServe(); err != nil {
 				cancel()
 				return
@@ -168,9 +214,12 @@ func (o *PipelineRunnerOptions) startWorkers(ctx context.Context, wg *sync.WaitG
 		for {
 			select {
 			case <-ctx.Done():
-				logger.Info("Shutting down HTTP server")
+				logger.Info("shutting down HTTP server")
 				ctx, cancel := context.WithTimeout(ctx, shutdownTimeout*time.Second)
 				_ = srv.Shutdown(ctx)
+				if o.metaPipelineClient != nil {
+					_ = o.metaPipelineClient.Close()
+				}
 				cancel()
 				return
 			}
@@ -201,12 +250,6 @@ func (o *PipelineRunnerOptions) pipeline(w http.ResponseWriter, r *http.Request)
 	case http.MethodHead:
 		logger.Info("HEAD Todo...")
 	case http.MethodPost:
-		requestDump, err := httputil.DumpRequest(r, true)
-		if err != nil {
-			logger.Warn("Unable to log POST request")
-		}
-		logger.WithFields(logrus.Fields{"request": string(requestDump)}).Info("POST request")
-
 		o.handlePostRequest(r, w)
 	default:
 		logger.Errorf("unsupported method %s for %s", r.Method, o.Path)
@@ -248,17 +291,12 @@ func (o *PipelineRunnerOptions) parseStartPipelineRequestParameters(r *http.Requ
 	if err != nil {
 		return request, errors.Wrapf(err, fmt.Sprintf("failed to unmarshal the JSON request body: %s", err.Error()))
 	}
-	logger.Debugf("got payload %s", util.PrettyPrint(request))
+	logger.WithField("payload", util.PrettyPrint(request)).Debug("received PipelineRunRequest payload")
 	return request, nil
 }
 
 // startPipeline handles an incoming request to start a pipeline.
 func (o *PipelineRunnerOptions) startPipeline(pipelineRun PipelineRunRequest) (PipelineRunResponse, error) {
-	err := o.stepGitCredentials()
-	if err != nil {
-		logger.Warn(err.Error())
-	}
-
 	response := PipelineRunResponse{}
 	var revision string
 	var prNumber string
@@ -303,16 +341,12 @@ func (o *PipelineRunnerOptions) startPipeline(pipelineRun PipelineRunRequest) (P
 
 	results := PipelineRunResponse{}
 	if o.UseMetaPipeline {
-		pipelineCreateOption, err := o.buildStepCreatePipelineOption(pipelineRun, prNumber, sourceURL, revision, branch, envs)
+		crds, err := o.triggerMetaPipeline(pipelineRun, prNumber, sourceURL, revision, branch, envs)
 		if err != nil {
-			return response, errors.Wrap(err, "error creating options for creating meta pipeline")
+			return response, err
 		}
 
-		err = pipelineCreateOption.Run()
-		if err != nil {
-			return response, errors.Wrap(err, "error triggering the pipeline run")
-		}
-		results.Resources = pipelineCreateOption.Results.ObjectReferences()
+		results.Resources = crds.ObjectReferences()
 	} else {
 		pipelineCreateOption := o.buildStepCreateTaskOption(prowJobSpec, prNumber, sourceURL, revision, branch, pipelineRun, envs)
 		err = pipelineCreateOption.Run()
@@ -358,7 +392,7 @@ func (o *PipelineRunnerOptions) buildStepCreateTaskOption(prowJobSpec prowapi.Pr
 	return createTaskOption
 }
 
-func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(pipelineRun PipelineRunRequest, prNumber string, sourceURL string, revision string, branch string, envs map[string]string) (*create.StepCreatePipelineOptions, error) {
+func (o *PipelineRunnerOptions) triggerMetaPipeline(pipelineRun PipelineRunRequest, prNumber string, sourceURL string, revision string, branch string, envs map[string]string) (*tekton.CRDWrapper, error) {
 	prowJobSpec := pipelineRun.ProwJobSpec
 	pullRefs := o.getPullRefs(prowJobSpec)
 
@@ -367,27 +401,21 @@ func (o *PipelineRunnerOptions) buildStepCreatePipelineOption(pipelineRun Pipeli
 		return nil, errors.Errorf("unable to find prow job name in pipeline request: %s", util.PrettyPrint(pipelineRun))
 	}
 
-	createPipelineOption := &create.StepCreatePipelineOptions{}
-	c := *o.CommonOptions
-	createPipelineOption.CommonOptions = &c
-	createPipelineOption.SourceURL = sourceURL
-	createPipelineOption.PullRefs = pullRefs.String()
-	createPipelineOption.Context = prowJobSpec.Context
-	createPipelineOption.Job = job
-
-	createPipelineOption.ServiceAccount = o.ServiceAccount
-	createPipelineOption.DefaultImage = o.MetaPipelineImage
-
-	// turn map into string array with = separator to match type of custom labels which are CLI flags
-	for key, value := range pipelineRun.Labels {
-		createPipelineOption.CustomLabels = append(createPipelineOption.CustomLabels, fmt.Sprintf("%s=%s", key, value))
-	}
-	// turn map into string array with = separator to match type of custom env vars which are CLI flags
-	for key, value := range envs {
-		createPipelineOption.CustomEnvs = append(createPipelineOption.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
+	pullRef := o.prowToMetaPipelinePullRef(sourceURL, &pullRefs)
+	pipelineKind := o.determinePipelineKind(pullRefs)
+	pipelineActivity, tektonCRDs, err := o.metaPipelineClient.Create(pullRef, pipelineKind, prowJobSpec.Context, envs, pipelineRun.Labels)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create Tekton CRDs")
 	}
 
-	return createPipelineOption, nil
+	logger.WithField("crds", tektonCRDs.String()).Tracef("generated crds for %s", pipelineActivity.Name)
+
+	err = o.metaPipelineClient.Apply(pipelineActivity, tektonCRDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to apply Tekton CRDs")
+	}
+
+	return &tektonCRDs, nil
 }
 
 func (o *PipelineRunnerOptions) marshalPayload(payload interface{}) ([]byte, error) {
@@ -408,18 +436,16 @@ func (o *PipelineRunnerOptions) returnStatusBadRequest(err error, message string
 }
 
 func (o *PipelineRunnerOptions) stepGitCredentials() error {
-	if !o.NoGitCredentialsInit {
-		copy := *o.CommonOptions
-		copy.BatchMode = true
-		gsc := &git.StepGitCredentialsOptions{
-			StepOptions: opts.StepOptions{
-				CommonOptions: &copy,
-			},
-		}
-		err := gsc.Run()
-		if err != nil {
-			return errors.Wrapf(err, "failed to run: jx step git credentials")
-		}
+	copy := *o.CommonOptions
+	copy.BatchMode = true
+	gsc := &git.StepGitCredentialsOptions{
+		StepOptions: opts.StepOptions{
+			CommonOptions: &copy,
+		},
+	}
+	err := gsc.Run()
+	if err != nil {
+		return errors.Wrapf(err, "failed to run: jx step git credentials")
 	}
 	return nil
 }
@@ -506,4 +532,31 @@ func (o *PipelineRunnerOptions) getClientsAndNamespace() (jxclient.Interface, st
 	}
 
 	return jxClient, ns, nil
+}
+
+func (o *PipelineRunnerOptions) prowToMetaPipelinePullRef(sourceURL string, prowPullRef *prow.PullRefs) metapipeline.PullRef {
+	var pullRef metapipeline.PullRef
+	if len(prowPullRef.ToMerge) > 0 {
+		var prs []metapipeline.PullRequestRef
+		for prID, SHA := range prowPullRef.ToMerge {
+			prs = append(prs, metapipeline.PullRequestRef{ID: prID, MergeSHA: SHA})
+		}
+		pullRef = metapipeline.NewPullRefWithPullRequest(sourceURL, prowPullRef.BaseBranch, prowPullRef.BaseSha, prs...)
+	} else {
+		pullRef = metapipeline.NewPullRef(sourceURL, prowPullRef.BaseBranch, prowPullRef.BaseSha)
+	}
+	return pullRef
+}
+
+func (o *PipelineRunnerOptions) determinePipelineKind(pullRef prow.PullRefs) metapipeline.PipelineKind {
+	var kind metapipeline.PipelineKind
+
+	prCount := len(pullRef.ToMerge)
+	if prCount > 0 {
+		kind = metapipeline.PullRequestPipeline
+	} else {
+		kind = metapipeline.ReleasePipeline
+	}
+	log.Logger().Debugf("pipeline kind for pull ref '%s' : '%s'", pullRef.String(), kind)
+	return kind
 }
