@@ -220,6 +220,11 @@ func (o *BootOptions) Run() error {
 	}
 
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	if requirements.VersionStream.URL == "" && requirements.VersionStream.Ref == "" {
+		requirements.VersionStream.URL = o.VersionStreamURL
+		requirements.VersionStream.Ref = o.VersionStreamRef
+	}
+
 	if err != nil {
 		return err
 	}
