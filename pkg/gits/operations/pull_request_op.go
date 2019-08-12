@@ -45,6 +45,7 @@ type PullRequestOperation struct {
 	BranchName string
 	Version    string
 	DryRun     bool
+	SkipCommit bool
 }
 
 // ChangeFilesFn is the function called to create the pull request
@@ -82,7 +83,7 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update ChangeFiles
 		filter := &gits.PullRequestFilter{
 			Labels: labels,
 		}
-		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, false, commitMessage, true, o.DryRun, o.Git(), provider, labels)
+		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, !o.SkipCommit, commitMessage, true, o.DryRun, o.Git(), provider, labels)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
 		}

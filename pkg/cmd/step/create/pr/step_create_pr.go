@@ -27,6 +27,7 @@ type StepCreatePrOptions struct {
 	Component  string
 	Version    string
 	DryRun     bool
+	SkipCommit bool
 }
 
 // NewCmdStepCreatePr Steps a command object for the "step" command
@@ -136,5 +137,6 @@ func (o *StepCreatePrOptions) createPullRequestOperation() operations.PullReques
 		Version:       o.Version,
 		Component:     o.Component,
 		DryRun:        o.DryRun,
+		SkipCommit:    o.SkipCommit,
 	}
 }

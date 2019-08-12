@@ -175,7 +175,8 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreateChartChangeFilesFn(o.Name, o.Version, o.Kind, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err)))
 	}
 
-	o.SrcGitURL = "" // there is no src url for the overall PR
+	o.SrcGitURL = ""    // there is no src url for the overall PR
+	o.SkipCommit = true // As we've done all the commits already
 	return o.CreatePullRequest("versionstream", func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 		if versionstream.VersionKind(o.Kind) == versionstream.KindChart {
 			_, err := o.HelmInitDependency(dir, o.DefaultReleaseCharts())
