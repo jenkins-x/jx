@@ -462,7 +462,7 @@ func assertTektonCRDs(t *testing.T, testCase testCase, crds *tekton.CRDWrapper, 
 	if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineStructure(t, caseDir), crds.Structure()); d != "" {
 		t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 	}
-	pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, &prow.PullRefs{}, tekton.BuildPipeline)
+	pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, &prow.PullRefs{})
 	expectedActivityKey := &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     fmt.Sprintf("%s-%s-%s-1", testCase.organization, testCase.repoName, testCase.branch),
