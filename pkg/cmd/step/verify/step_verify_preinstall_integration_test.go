@@ -3,13 +3,14 @@
 package verify_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
-	"github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
@@ -69,6 +70,18 @@ func TestStepVerifyPreInstallNoKanikoLazyCreate(t *testing.T) {
 	// we default to lazy create if not using terraform
 	err = options.Run()
 	assert.NoErrorf(t, err, "the command should not have failed as we should have lazily created the deploy namespace")
+}
+
+func TestStepVerifyPreInstallNoTLS(t *testing.T) {
+	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "no_tls"))
+
+	_, origNamespace, err := options.KubeClientAndDevNamespace()
+	assert.NoError(t, err)
+	defer resetNamespace(t, origNamespace)
+
+	// we default to lazy create if not using terraform
+	err = options.Run()
+	assert.Error(t, err, "the command should have failed as we are running in batch mode with no tls")
 }
 
 func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
