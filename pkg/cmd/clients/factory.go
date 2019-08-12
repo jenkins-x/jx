@@ -1,15 +1,11 @@
 package clients
 
 import (
-	"flag"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
-
-	"github.com/jenkins-x/jx/pkg/builds"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -36,14 +32,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	build "github.com/knative/build/pkg/client/clientset/versioned"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
@@ -51,16 +45,16 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/jenkins-x/jx/pkg/jxfactory"
 )
 
 type factory struct {
 	Batch bool
 
-	kubeConfig      kube.Kuber
-	impersonateUser string
-	bearerToken     string
-	secretLocation  secrets.SecretLocation
-	offline         bool
+	secretLocation secrets.SecretLocation
+	offline        bool
+	jxFactory      jxfactory.Factory
 }
 
 var _ Factory = (*factory)(nil)
@@ -70,7 +64,7 @@ var _ Factory = (*factory)(nil)
 // if optionalClientConfig is not nil, then this factory will make use of it.
 func NewFactory() Factory {
 	f := &factory{}
-	f.kubeConfig = kube.NewKubeConfig()
+	f.jxFactory = jxfactory.NewFactory()
 	return f
 }
 
@@ -85,14 +79,14 @@ func (f *factory) SetOffline(offline bool) {
 // ImpersonateUser returns a new factory impersonating the given user
 func (f *factory) ImpersonateUser(user string) Factory {
 	copy := *f
-	copy.impersonateUser = user
+	copy.jxFactory = copy.jxFactory.ImpersonateUser(user)
 	return &copy
 }
 
 // WithBearerToken returns a new factory with bearer token
 func (f *factory) WithBearerToken(token string) Factory {
 	copy := *f
-	copy.bearerToken = token
+	copy.jxFactory = copy.jxFactory.WithBearerToken(token)
 	return &copy
 }
 
@@ -416,7 +410,6 @@ func (f *factory) ResetSecretsLocation() {
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
-	log.Logger().Debugf("creating system vault for namespace %s", namespace)
 	name, err := f.getVaultName(namespace)
 	if err != nil {
 		return nil, err
@@ -446,7 +439,7 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 	}
 
 	if name == "" {
-		name, err = kubevault.SystemVaultName(f.kubeConfig)
+		name, err = kubevault.SystemVaultName(f.jxFactory.KubeConfig())
 		log.Logger().Debugf("Vault name generated: %s", name)
 		if err != nil || name == "" {
 			return name, fmt.Errorf("could not find the system vault name in namespace %q", namespace)
@@ -498,21 +491,7 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
-	config, err := f.CreateKubeConfig()
-	if err != nil {
-		return nil, "", err
-	}
-
-	kubeConfig, _, err := f.kubeConfig.LoadConfig()
-	if err != nil {
-		return nil, "", err
-	}
-	ns := kube.CurrentNamespace(kubeConfig)
-	client, err := versioned.NewForConfig(config)
-	if err != nil {
-		return nil, ns, err
-	}
-	return client, ns, err
+	return f.jxFactory.CreateJXClient()
 }
 
 func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
@@ -520,7 +499,7 @@ func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	kubeConfig, _, err := f.jxFactory.KubeConfig().LoadConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -537,7 +516,7 @@ func (f *factory) CreateKnativeServeClient() (kserve.Interface, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	kubeConfig, _, err := f.jxFactory.KubeConfig().LoadConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -550,20 +529,7 @@ func (f *factory) CreateKnativeServeClient() (kserve.Interface, string, error) {
 }
 
 func (f *factory) CreateTektonClient() (tektonclient.Interface, string, error) {
-	config, err := f.CreateKubeConfig()
-	if err != nil {
-		return nil, "", err
-	}
-	kubeConfig, _, err := f.kubeConfig.LoadConfig()
-	if err != nil {
-		return nil, "", err
-	}
-	ns := kube.CurrentNamespace(kubeConfig)
-	client, err := tektonclient.NewForConfig(config)
-	if err != nil {
-		return nil, ns, err
-	}
-	return client, ns, err
+	return f.jxFactory.CreateTektonClient()
 }
 
 func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
@@ -571,7 +537,7 @@ func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	kubeConfig, _, err := f.jxFactory.KubeConfig().LoadConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -609,10 +575,10 @@ func (f *factory) CreateKubeClient() (kubernetes.Interface, string, error) {
 		return nil, "", err
 	}
 	if client == nil {
-		return nil, "", fmt.Errorf("Failed to create Kubernetes Client")
+		return nil, "", fmt.Errorf("failed to create Kubernetes Client")
 	}
 	ns := ""
-	config, _, err := f.kubeConfig.LoadConfig()
+	config, _, err := f.jxFactory.KubeConfig().LoadConfig()
 	if err != nil {
 		return client, ns, err
 	}
@@ -629,81 +595,11 @@ func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc
 	return gitInfo.CreateProvider(f.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, in, out, errOut)
 }
 
-var kubeConfigCache *string
-
-func createKubeConfig(offline bool) *string {
-	if offline {
+func (f *factory) CreateKubeConfig() (*rest.Config, error) {
+	if f.offline {
 		panic("not supposed to be making a network connection")
 	}
-	var kubeconfig *string
-	if kubeConfigCache != nil {
-		return kubeConfigCache
-	}
-	if home := util.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	kubeConfigCache = kubeconfig
-	return kubeconfig
-}
-
-func (f *factory) CreateKubeConfig() (*rest.Config, error) {
-	masterURL := ""
-	kubeConfigEnv := os.Getenv("KUBECONFIG")
-	if kubeConfigEnv != "" {
-		pathList := filepath.SplitList(kubeConfigEnv)
-		return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-			&clientcmd.ClientConfigLoadingRules{Precedence: pathList},
-			&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterURL}}).ClientConfig()
-	}
-	kubeconfig := createKubeConfig(f.offline)
-	var config *rest.Config
-	var err error
-	if kubeconfig != nil {
-		exists, err := util.FileExists(*kubeconfig)
-		if err == nil && exists {
-			// use the current context in kubeconfig
-			config, err = clientcmd.BuildConfigFromFlags(masterURL, *kubeconfig)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	if config == nil {
-		config, err = rest.InClusterConfig()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if config != nil && f.bearerToken != "" {
-		config.BearerToken = f.bearerToken
-		return config, nil
-	}
-
-	user := f.getImpersonateUser()
-	if config != nil && user != "" && config.Impersonate.UserName == "" {
-		config.Impersonate.UserName = user
-	}
-
-	// for testing purposes one can enable tracing of Kube REST API calls
-	trace := os.Getenv("TRACE_KUBE_API")
-	if trace == "1" || trace == "on" {
-		config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
-			return &Tracer{rt}
-		}
-	}
-	return config, nil
-}
-
-func (f *factory) getImpersonateUser() string {
-	user := f.impersonateUser
-	if user == "" {
-		// this is really only used for testing really
-		user = os.Getenv("JX_IMPERSONATE_USER")
-	}
-	return user
+	return f.jxFactory.CreateKubeConfig()
 }
 
 func (f *factory) CreateTable(out io.Writer) table.Table {
