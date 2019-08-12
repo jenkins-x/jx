@@ -2,9 +2,10 @@ package boot
 
 import (
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
@@ -102,7 +103,7 @@ func (o *BootOptions) Run() error {
 	if err != nil {
 		log.Logger().Warn(fmt.Sprintf("there was a problem obtaining the boot config repository git configuration, falling back to defaults"))
 		gitURL = config.DefaultBootRepository
-		gitRef = "master"
+		gitRef = config.DefaultVersionsRef
 	}
 
 	if o.GitURL != "" {
@@ -115,7 +116,7 @@ func (o *BootOptions) Run() error {
 		gitRef = o.GitRef
 	}
 
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.GitURL == config.DefaultBootRepository {
+	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.GitURL == "" {
 		gitURL = config.DefaultCloudBeesBootRepository
 	}
 	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.VersionStreamURL == config.DefaultVersionsURL {
@@ -141,19 +142,19 @@ func (o *BootOptions) Run() error {
 		repo := gitInfo.Name
 		cloneDir := filepath.Join(o.Dir, repo)
 
-		if o.GitURL == config.DefaultBootRepository && o.GitRef == "master" {
+		if o.GitURL == "" && o.GitRef == "" {
 			// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
 			resolver, err := o.CreateVersionResolver(o.VersionStreamURL, o.VersionStreamRef)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create version resolver")
 			}
-			o.GitRef, err = resolver.ResolveGitVersion(gitURL)
+			gitRef, err = resolver.ResolveGitVersion(gitURL)
 			if err != nil {
 				return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
 			}
 			if o.GitRef == "" {
 				log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
-				o.GitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
+				gitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
 				if err != nil {
 					return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
 				}
