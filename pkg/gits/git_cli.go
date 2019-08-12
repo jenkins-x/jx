@@ -844,13 +844,13 @@ func (g *GitCLI) Version() (string, error) {
 
 // Username return the username from the git configuration
 func (g *GitCLI) Username(dir string) (string, error) {
-	return g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.name")
+	return g.gitCmdWithOutput(dir, "config", "--get", "user.name")
 }
 
 // SetUsername sets the username in the git configuration
 func (g *GitCLI) SetUsername(dir string, username string) error {
 	// Will return status 1 silently if the user is not set.
-	_, err := g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.name")
+	_, err := g.gitCmdWithOutput(dir, "config", "--get", "user.name")
 	if err != nil {
 		return g.gitCmd(dir, "config", "--global", "--add", "user.name", username)
 	}
@@ -859,13 +859,13 @@ func (g *GitCLI) SetUsername(dir string, username string) error {
 
 // Email returns the email from the git configuration
 func (g *GitCLI) Email(dir string) (string, error) {
-	return g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.email")
+	return g.gitCmdWithOutput(dir, "config", "--get", "user.email")
 }
 
 // SetEmail sets the given email in the git configuration
 func (g *GitCLI) SetEmail(dir string, email string) error {
 	// Will return status 1 silently if the email is not set.
-	_, err := g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.email")
+	_, err := g.gitCmdWithOutput(dir, "config", "--get", "user.email")
 	if err != nil {
 		return g.gitCmd(dir, "config", "--global", "--add", "user.email", email)
 	}
