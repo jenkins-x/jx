@@ -1,11 +1,15 @@
 package get
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/acarl005/stripansi"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/logs"
+	"io"
 	"io/ioutil"
+	"k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,6 +25,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeMocks "k8s.io/client-go/kubernetes/fake"
 )
+
+type BuildLogsTestWriter struct {
+	StreamLinesLogged []string
+	SingleLinesLogged []string
+}
 
 func TestGetTektonLogsForRunningBuild(t *testing.T) {
 	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
@@ -39,9 +48,22 @@ func TestGetTektonLogsForRunningBuild(t *testing.T) {
 
 	ns := "jx"
 
+	writer := &BuildLogsTestWriter{
+		StreamLinesLogged: make([]string, 0),
+		SingleLinesLogged: make([]string, 0),
+	}
+
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
+		},
+		TektonLogger: &logs.TektonLogger{
+			KubeClient:        kubeClient,
+			JXClient:          jxClient,
+			TektonClient:      tektonClient,
+			Namespace:         ns,
+			LogWriter:         writer,
+			LogsRetrieverFunc: LogsProvider,
 		},
 	}
 
@@ -79,9 +101,22 @@ func TestGetTektonLogsForRunningBuildWithPendingPod(t *testing.T) {
 
 	ns := "jx"
 
+	writer := &BuildLogsTestWriter{
+		StreamLinesLogged: make([]string, 0),
+		SingleLinesLogged: make([]string, 0),
+	}
+
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
+		},
+		TektonLogger: &logs.TektonLogger{
+			KubeClient:        kubeClient,
+			JXClient:          jxClient,
+			TektonClient:      tektonClient,
+			Namespace:         ns,
+			LogWriter:         writer,
+			LogsRetrieverFunc: LogsProvider,
 		},
 	}
 
@@ -107,9 +142,22 @@ func TestGetTektonLogsForRunningBuildWithLegacyRepoLabel(t *testing.T) {
 
 	ns := "jx"
 
+	writer := &BuildLogsTestWriter{
+		StreamLinesLogged: make([]string, 0),
+		SingleLinesLogged: make([]string, 0),
+	}
+
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
+		},
+		TektonLogger: &logs.TektonLogger{
+			KubeClient:        kubeClient,
+			JXClient:          jxClient,
+			TektonClient:      tektonClient,
+			Namespace:         ns,
+			LogWriter:         writer,
+			LogsRetrieverFunc: LogsProvider,
 		},
 	}
 
@@ -151,9 +199,22 @@ func TestGetTektonLogsForRunningBuildWithWaitTime(t *testing.T) {
 
 	ns := "jx"
 
+	writer := &BuildLogsTestWriter{
+		StreamLinesLogged: make([]string, 0),
+		SingleLinesLogged: make([]string, 0),
+	}
+
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
+		},
+		TektonLogger: &logs.TektonLogger{
+			KubeClient:        kubeClient,
+			JXClient:          jxClient,
+			TektonClient:      tektonClient,
+			Namespace:         ns,
+			LogWriter:         writer,
+			LogsRetrieverFunc: LogsProvider,
 		},
 	}
 
@@ -200,9 +261,22 @@ func TestGetTektonLogsForStoredLogs(t *testing.T) {
 
 	ns := "jx"
 
+	writer := &BuildLogsTestWriter{
+		StreamLinesLogged: make([]string, 0),
+		SingleLinesLogged: make([]string, 0),
+	}
+
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
+		},
+		TektonLogger: &logs.TektonLogger{
+			KubeClient:        kubeClient,
+			JXClient:          jxClient,
+			TektonClient:      tektonClient,
+			Namespace:         ns,
+			LogWriter:         writer,
+			LogsRetrieverFunc: LogsProvider,
 		},
 	}
 
@@ -238,11 +312,24 @@ func TestWithMetapipeline(t *testing.T) {
 
 	ns := "jx"
 
+	writer := &BuildLogsTestWriter{
+		StreamLinesLogged: make([]string, 0),
+		SingleLinesLogged: make([]string, 0),
+	}
+
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &opts.CommonOptions{
 				BatchMode: true,
 			},
+		},
+		TektonLogger: &logs.TektonLogger{
+			KubeClient:        kubeClient,
+			JXClient:          jxClient,
+			TektonClient:      tektonClient,
+			Namespace:         ns,
+			LogWriter:         writer,
+			LogsRetrieverFunc: LogsProvider,
 		},
 	}
 
@@ -279,9 +366,22 @@ func TestGetTektonLogsForRunningBuildWithMultipleStages(t *testing.T) {
 
 	ns := "jx"
 
+	writer := &BuildLogsTestWriter{
+		StreamLinesLogged: make([]string, 0),
+		SingleLinesLogged: make([]string, 0),
+	}
+
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
+		},
+		TektonLogger: &logs.TektonLogger{
+			KubeClient:        kubeClient,
+			JXClient:          jxClient,
+			TektonClient:      tektonClient,
+			Namespace:         ns,
+			LogWriter:         writer,
+			LogsRetrieverFunc: LogsProvider,
 		},
 	}
 
@@ -304,4 +404,36 @@ func TestGetTektonLogsForRunningBuildWithMultipleStages(t *testing.T) {
 			assert.Contains(t, output, fmt.Sprintf("Showing logs for build abayer/js-test-repo/master #1 stage %s and container %s", pod.Labels["jenkins.io/task-stage-name"], c.Name))
 		}
 	}
+}
+
+func LogsProvider(pod *v1.Pod, container *v1.Container) (io.Reader, func(), error) {
+	return bytes.NewReader([]byte("Pod logs...")), func() {
+		//nothing to clean
+	}, nil
+}
+
+func (w *BuildLogsTestWriter) WriteLog(logLine logs.LogLine) error {
+	log.Logger().Info(logLine.Line)
+	w.SingleLinesLogged = append(w.SingleLinesLogged, logLine.Line)
+	return nil
+}
+
+func (w *BuildLogsTestWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
+	for {
+		select {
+		case l, ok := <-lch:
+			if !ok {
+				return nil
+			}
+			w.StreamLinesLogged = append(w.StreamLinesLogged, l.Line)
+			log.Logger().Info(l.Line)
+		case e := <-ech:
+			fmt.Println(e)
+			continue
+		}
+	}
+}
+
+func (w BuildLogsTestWriter) BytesLimit() int {
+	return 0
 }
