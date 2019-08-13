@@ -59,9 +59,11 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &uninstall.UninstallOptions{
-		CommonOptions: &opts.CommonOptions{},
-		Namespace:     "ns",
-		Context:       "correct-context-to-delete",
+		CommonOptions: &opts.CommonOptions{
+			BatchMode: true,
+		},
+		Namespace: "ns",
+		Context:   "correct-context-to-delete",
 	}
 	o.SetKube(kubeMock)
 	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
@@ -129,6 +131,8 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 	donec := make(chan struct{})
 	go func() {
 		defer close(donec)
+		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?")
+		console.SendLine("Y")
 		console.ExpectString("Enter the current context name to confirm uninstallation of the Jenkins X platform from the ns namespace:")
 		console.SendLine("target-context")
 		console.ExpectEOF()
@@ -174,6 +178,8 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	//noinspection GoUnhandledErrorResult
 	go func() {
 		defer close(donec)
+		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?")
+		console.SendLine("Y")
 		console.ExpectString("Enter the current context name to confirm uninstallation of the Jenkins X platform from the ns namespace:")
 		console.SendLine("correct-context-to-delete")
 		console.ExpectEOF()
