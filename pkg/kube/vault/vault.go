@@ -20,9 +20,8 @@ import (
 )
 
 const (
-	BankVaultsOperatorImage = "banzaicloud/vault-operator"
-	BankVaultsImage         = "banzaicloud/bank-vaults"
-	VaultImage              = "vault"
+	BankVaultsImage = "banzaicloud/bank-vaults"
+	VaultImage      = "vault"
 
 	gcpServiceAccountEnv  = "GOOGLE_APPLICATION_CREDENTIALS"
 	gcpServiceAccountPath = "/etc/gcp/service-account.json"
