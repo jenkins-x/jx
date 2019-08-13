@@ -1,7 +1,10 @@
 package logs
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -31,12 +34,24 @@ import (
 	kubeMocks "k8s.io/client-go/kubernetes/fake"
 )
 
-type TestWriter struct{}
+type TestWriter struct {
+	StreamLinesLogged []string
+	SingleLinesLogged []string
+}
 
 func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 	jxClient, tektonClient, _, _, ns := getFakeClientsAndNs(t)
-
-	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{}, "")
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "")
 
 	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
 	assert.Empty(t, names, "There shouldn't be any returned build names")
@@ -45,6 +60,17 @@ func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 
 func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	jxClient, tektonClient, _, _, ns := getFakeClientsAndNs(t)
+
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
 
 	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
@@ -114,7 +140,7 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{}, "fakecontext")
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "fakecontext")
 
 	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
 	assert.Equal(t, "fakeowner/fakerepo/fakebranch #1 fakecontext", names[0], "There should be a match build in the returned names")
@@ -125,6 +151,16 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 
 func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.T) {
 	jxClient, tektonClient, _, _, ns := getFakeClientsAndNs(t)
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
 
 	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
@@ -196,7 +232,7 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 	})
 	assert.NoError(t, err)
 
-	names, paNames, err := GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, []string{}, "fakecontext")
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "fakecontext")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 0, len(names))
@@ -205,7 +241,17 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 
 func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 	jxClient, tektonClient, kubeClient, _, ns := getFakeClientsAndNs(t)
-
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		KubeClient:   kubeClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      "PA1",
@@ -224,7 +270,7 @@ func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 		},
 	}
 
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, jxClient, nil)
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -238,6 +284,18 @@ func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
 	structures := tekton_helpers_test.AssertLoadPipelineStructures(t, testCaseDir)
 	jxClient := jxfake.NewSimpleClientset(structures)
 
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		KubeClient:   kubeClient,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      "PA1",
@@ -256,7 +314,7 @@ func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
 		},
 	}
 
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, jxClient, nil)
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -268,6 +326,18 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
 	kubeClient := kubeMocks.NewSimpleClientset(podsList)
 
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		KubeClient:   kubeClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      "PA1",
@@ -286,7 +356,7 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 		},
 	}
 
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, jxClient, nil)
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -302,6 +372,18 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 	structures := tekton_helpers_test.AssertLoadPipelineStructures(t, testCaseDir)
 	jxClient := jxfake.NewSimpleClientset(structures)
 
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		KubeClient:   kubeClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      "PA1",
@@ -320,26 +402,28 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 		},
 	}
 
-	writer := TestWriter{}
-	r, fakeStdout, _ := os.Pipe()
-	log.SetOutput(fakeStdout)
+	bytesF, err := ioutil.ReadFile("/Users/daniel-gozalo/go/src/github.com/jenkins-x/jx/pkg/logs/test_data/multiple_stages/pipelinerun.yml")
 
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, jxClient, writer)
+	reader := bufio.NewReader(bytes.NewReader(bytesF))
+	for {
+		line, _, err := reader.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("EOF")
+				break
+			}
+		}
+		fmt.Println(string(line))
+	}
 
-	fakeStdout.Close()
-	outBytes, _ := ioutil.ReadAll(r)
-	r.Close()
-
-	aORb := regexp.MustCompile("Pod logs...")
-	n := aORb.FindAllStringIndex(string(outBytes), -1)
-	fmt.Println(len(n))
+	err = tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
 	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(containers1) + len(containers2)
 
 	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(n))
+	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
 }
 
 func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing.T) {
@@ -353,6 +437,18 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 	structures := tekton_helpers_test.AssertLoadPipelineStructures(t, testCaseDir)
 	jxClient := jxfake.NewSimpleClientset(structures)
 
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		KubeClient:   kubeClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      "PA1",
@@ -371,34 +467,28 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 		},
 	}
 
-	writer := TestWriter{}
-	r, fakeStdout, _ := os.Pipe()
-	log.SetOutput(fakeStdout)
-
-	err := GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", kubeClient, tektonClient, jxClient, writer)
-
-	fakeStdout.Close()
-	outBytes, _ := ioutil.ReadAll(r)
-	r.Close()
-
-	aORb := regexp.MustCompile("Pod logs...")
-	n := aORb.FindAllStringIndex(string(outBytes), -1)
-	fmt.Println(len(n))
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
 	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(containers1) + len(containers2)
 
 	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(n))
+	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
 }
 
 func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 	_, _, _, opts, _ := getFakeClientsAndNs(t)
 	opts.SkipAuthSecretsMerge = true
-	writer := TestWriter{}
 	r, fakeStdout, _ := os.Pipe()
 	log.SetOutput(fakeStdout)
+
+	tl := TektonLogger{
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+	}
 
 	exampleLogLine := "This is an example log line"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -407,7 +497,7 @@ func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 		fmt.Fprintf(w, exampleLogLine)
 	}))
 
-	err := StreamPipelinePersistentLogs(writer, server.URL, &opts)
+	err := tl.StreamPipelinePersistentLogs(server.URL, &opts)
 	assert.NoError(t, err)
 
 	fakeStdout.Close()
@@ -420,11 +510,17 @@ func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 	_, _, _, opts, _ := getFakeClientsAndNs(t)
 	opts.SkipAuthSecretsMerge = true
-	writer := TestWriter{}
+	tl := TektonLogger{
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+	}
 	r, fakeStdout, _ := os.Pipe()
 	log.SetOutput(fakeStdout)
 
-	err := StreamPipelinePersistentLogs(writer, "s3://nonSupportedBucket", &opts)
+	err := tl.StreamPipelinePersistentLogs("s3://nonSupportedBucket", &opts)
+
 	assert.NoError(t, err)
 
 	fakeStdout.Close()
@@ -445,6 +541,18 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 	structures := tekton_helpers_test.AssertLoadSinglePipelineStructure(t, testCaseDir)
 	jxClient := jxfake.NewSimpleClientset(structures)
 
+	tl := TektonLogger{
+		KubeClient:   kubeClient,
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      "abayer-js-test-repo-master-1",
@@ -464,11 +572,10 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 		},
 	}
 
-	writer := TestWriter{}
 	r, fakeStdout, _ := os.Pipe()
 	log.SetOutput(fakeStdout)
 
-	err := GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1", kubeClient, tektonClient, jxClient, writer)
+	err := tl.GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1")
 
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)
@@ -483,7 +590,7 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 	containersNumber := len(containers1) + len(containers2)
 
 	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(n))
+	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
 }
 
 // Helper method, not supposed to be a test by itself
@@ -504,12 +611,34 @@ func getFakeClientsAndNs(t *testing.T) (versioned.Interface, tektonclient.Interf
 	return jxClient, tektonClient, kubeClient, commonOpts, ns
 }
 
-func (w TestWriter) WriteLog(line string) error {
-	log.Logger().Info(line)
+func (w *TestWriter) WriteLog(logLine LogLine) error {
+	log.Logger().Info(logLine.Line)
+	w.SingleLinesLogged = append(w.SingleLinesLogged, logLine.Line)
 	return nil
 }
 
-func (w TestWriter) StreamLog(ns string, pod *corev1.Pod, container *corev1.Container) error {
-	log.Logger().Info("Pod logs...")
-	return nil
+func (w *TestWriter) StreamLog(lch <-chan LogLine, ech <-chan error) error {
+	for {
+		select {
+		case l, ok := <-lch:
+			if !ok {
+				return nil
+			}
+			w.StreamLinesLogged = append(w.StreamLinesLogged, l.Line)
+			log.Logger().Info(l.Line)
+		case e := <-ech:
+			fmt.Println(e)
+			continue
+		}
+	}
+}
+
+func (w TestWriter) BytesLimit() int {
+	return 0
+}
+
+func LogsProvider(pod *corev1.Pod, container *corev1.Container) (io.Reader, func(), error) {
+	return bytes.NewReader([]byte("Pod logs...")), func() {
+		//nothing to clean
+	}, nil
 }

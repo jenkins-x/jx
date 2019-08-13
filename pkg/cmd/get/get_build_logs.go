@@ -45,6 +45,7 @@ type GetBuildLogsOptions struct {
 	JenkinsSelector         opts.JenkinsSelectorOptions
 	CurrentFolder           bool
 	WaitForPipelineDuration time.Duration
+	TektonLogger            *logs.TektonLogger
 }
 
 // CLILogWriter is an implementation of logs.LogWriter that will show logs in the standard output
@@ -263,6 +264,17 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 
 	var err error
 	if tektonEnabled {
+		if o.TektonLogger == nil {
+			o.TektonLogger = &logs.TektonLogger{
+				KubeClient:   kubeClient,
+				TektonClient: tektonClient,
+				JXClient:     jxClient,
+				Namespace:    ns,
+				LogWriter: &CLILogWriter{
+					CommonOptions: o.CommonOptions,
+				},
+			}
+		}
 		var waitableCondition bool
 		f := func() error {
 			waitableCondition, err = o.getTektonLogs(kubeClient, tektonClient, jxClient, ns)
@@ -388,7 +400,8 @@ func (o *GetBuildLogsOptions) getLogForKnative(kubeClient kubernetes.Interface, 
 
 func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) (bool, error) {
 	var defaultName string
-	names, paMap, err := logs.GetTektonPipelinesWithActivePipelineActivity(jxClient, tektonClient, ns, o.BuildFilter.LabelSelectorsForActivity(), o.BuildFilter.Context)
+
+	names, paMap, err := o.TektonLogger.GetTektonPipelinesWithActivePipelineActivity(o.BuildFilter.LabelSelectorsForActivity(), o.BuildFilter.Context)
 	if err != nil {
 		return true, err
 	}
@@ -421,34 +434,48 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 		return len(filteredNames) == 0, err
 	}
 
-	logWriter := CLILogWriter{
-		o.CommonOptions,
-	}
-
 	pa, exists := paMap[name]
 	if !exists {
 		return true, errors.New("there are no build logs for the supplied filters")
 	}
 
 	if pa.Spec.BuildLogsURL != "" {
-		_ = logWriter.WriteLog(fmt.Sprintf("Obtaining stored build logs for %s", util.ColorInfo(name)))
-		return false, logs.StreamPipelinePersistentLogs(logWriter, pa.Spec.BuildLogsURL, o.CommonOptions)
+		return false, o.TektonLogger.StreamPipelinePersistentLogs(pa.Spec.BuildLogsURL, o.CommonOptions)
 	}
 
-	_ = logWriter.WriteLog(fmt.Sprintf("Build logs for %s", util.ColorInfo(name)))
+	_ = o.TektonLogger.LogWriter.WriteLog(logs.LogLine{
+		Line: fmt.Sprintf("Build logs for %s", util.ColorInfo(name)),
+	})
 	name = strings.TrimSuffix(name, " ")
-	return false, logs.GetRunningBuildLogs(pa, name, kubeClient, tektonClient, jxClient, logWriter)
+	return false, o.TektonLogger.GetRunningBuildLogs(pa, name)
 }
 
 // StreamLog implementation of LogWriter.StreamLog for CLILogWriter, this implementation will tail logs for the provided pod /container through the defined logger
-func (o CLILogWriter) StreamLog(ns string, pod *corev1.Pod, container *corev1.Container) error {
-	return o.TailLogs(ns, pod.Name, container.Name)
+func (o *CLILogWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
+	for {
+		select {
+		case l, ok := <-lch:
+			if !ok {
+				return nil
+			}
+			fmt.Println(l.Line)
+		case err := <-ech:
+			return err
+		}
+	}
 }
 
 // WriteLog implementation of LogWriter.WriteLog for CLILogWriter, this implementation will write the provided log line through the defined logger
-func (o CLILogWriter) WriteLog(line string) error {
-	log.Logger().Info(line)
+func (o *CLILogWriter) WriteLog(logLine logs.LogLine) error {
+	log.Logger().Info(logLine.Line)
 	return nil
+}
+
+// BytesLimit defines the limit of bytes to be used to fetch the logs from the kube API
+// defaulted to 0 for this implementation
+func (o *CLILogWriter) BytesLimit() int {
+	//We are not limiting bytes with this writer
+	return 0
 }
 
 func checkForStagePod(kubeClient kubernetes.Interface, ns string, pr *tektonv1alpha1.PipelineRun, pri *tekton.PipelineRunInfo, stage *tekton.StageInfo) error {

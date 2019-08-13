@@ -3,6 +3,9 @@ package controller
 import (
 	"fmt"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/git"
+	"github.com/jenkins-x/jx/pkg/logs"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -12,9 +15,9 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
-	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/gits"
+
+	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
@@ -22,7 +25,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -51,6 +54,48 @@ type ControllerBuildOptions struct {
 
 	// private fields added for easier testing
 	gitHubProvider gits.GitProvider
+}
+
+// LongTermStorageLogWriter is an implementation of logs.LogWriter that saves the obtained log lines
+// and sends them to a Collector when the channel is closed
+type LongTermStorageLogWriter struct {
+	data       []byte
+	kubeClient kubernetes.Interface
+	logMasker  *kube.LogMasker
+}
+
+// WriteLog will receive a logs.LogLine value and append its bytes to the LongTermStorageLogWriter stored bytes
+func (w *LongTermStorageLogWriter) WriteLog(logLine logs.LogLine) error {
+	w.data = append(w.data, logLine.Line...)
+	return nil
+}
+
+// StreamLog will receive a logs channel and an errors channel which the logs producer will send
+// it will mask the lines marked as ShouldMask then it will append the line's bytes to the already stored ones
+func (w *LongTermStorageLogWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
+	for {
+		select {
+		case l, ok := <-lch:
+			if !ok {
+				return nil
+			}
+			if w.logMasker != nil && l.ShouldMask {
+				l.Line = w.logMasker.MaskLog(l.Line)
+			}
+			line := []byte(l.Line)
+			line = append(line, '\n')
+			w.data = append(w.data, line...)
+		case err := <-ech:
+			return err
+		}
+	}
+}
+
+// BytesLimit defines the limit of bytes to be used to fetch the logs from the kube API
+// defaulted to 0 for this implementation
+func (w *LongTermStorageLogWriter) BytesLimit() int {
+	//We are not limiting bytes with this writer
+	return 0
 }
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
@@ -939,17 +984,50 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		return "", errors.Wrapf(err, "could not create Collector for pod %s in namespace %s with settings %#v", pod.Name, ns, settings)
 	}
 
-	data, err := builds.GetBuildLogsForPod(podInterface, pod)
+	owner := activity.RepositoryOwner()
+	repository := activity.RepositoryName()
+	branch := activity.BranchName()
+	buildNumber := activity.Spec.Build
+	if buildNumber == "" {
+		buildNumber = "1"
+	}
+
+	pathDir := filepath.Join("jenkins-x", "logs", owner, repository, branch)
+	fileName := filepath.Join(pathDir, buildNumber+".log")
+
+	var clientErrs []error
+	kubeClient, err := o.KubeClient()
+	clientErrs = append(clientErrs, err)
+	tektonClient, _, err := o.TektonClient()
+	clientErrs = append(clientErrs, err)
+	jx, _, err := o.JXClient()
+	clientErrs = append(clientErrs, err)
+
+	err = util.CombineErrors(clientErrs...)
 	if err != nil {
-		// probably due to not being available yet
-		return "", errors.Wrapf(err, "failed to get build log for pod %s in namespace %s", pod.Name, ns)
+		return "", errors.Wrap(err, "there was a problem obtaining one of the clients")
 	}
 
-	if logMasker != nil {
-		data = logMasker.MaskLogData(data)
+	var logWriter logs.LogWriter
+	w := LongTermStorageLogWriter{
+		data:       []byte{},
+		kubeClient: kubeClient,
+		logMasker:  logMasker,
+	}
+	logWriter = &w
+
+	tektonLogger := logs.TektonLogger{
+		JXClient:     jx,
+		KubeClient:   kubeClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter:    logWriter,
 	}
 
-	log.Logger().Debugf("got build log for pod: %s PipelineActivity: %s with bytes: %d", pod.Name, activity.Name, len(data))
+	err = tektonLogger.GetRunningBuildLogs(activity, buildName)
+	if err != nil {
+		return "", errors.Wrapf(err, "there was a problem getting logs for build %s", buildName)
+	}
 
 	if initGitCredentials {
 		gc := &git.StepGitCredentialsOptions{}
@@ -963,22 +1041,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		}
 	}
 
-	owner := activity.RepositoryOwner()
-	repository := activity.RepositoryName()
-	branch := activity.BranchName()
-	buildNumber := activity.Spec.Build
-	if buildNumber == "" {
-		buildNumber = "1"
-	}
-
-	pathDir := filepath.Join("jenkins-x", "logs", owner, repository, branch)
-	fileName := filepath.Join(pathDir, buildNumber+".log")
-
-	url, err := coll.CollectData(data, fileName)
-	if err != nil {
-		return url, errors.Wrapf(err, "failed to collect build log for pod %s in namespace %s", pod.Name, ns)
-	}
-	return url, nil
+	return coll.CollectData(w.data, fileName)
 }
 
 // ensurePipelineActivityHasLabels older versions of controller build did not add labels properly
