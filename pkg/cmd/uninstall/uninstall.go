@@ -2,6 +2,7 @@ package uninstall
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -31,7 +32,7 @@ type UninstallOptions struct {
 
 var (
 	uninstall_long = templates.LongDesc(`
-		Uninstalls the Jenkins X platform from a Kubernetes cluster`)
+		Uninstalls the Jenkins X platform from a Kubernetes cluster. This will remove all Jenkins X components, secrets, config and namespaces including any environment related namespaces`)
 	uninstall_example = templates.Examples(`
 		# Uninstall the Jenkins X platform
 		jx uninstall`)
@@ -60,6 +61,7 @@ func NewCmdUninstall(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *UninstallOptions) Run() error {
+
 	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
@@ -73,16 +75,32 @@ func (o *UninstallOptions) Run() error {
 	if namespace == "" {
 		namespace = kube.CurrentNamespace(config)
 	}
+
 	var targetContext string
+
 	if !o.Force {
+		if !o.BatchMode {
+			envNamespaces := o.getAllNamespaces(namespace, jxClient)
+			help := "All Jenkins X components will be removed and the following namespaces will be deleted:"
+			for _, envNamespace := range envNamespaces {
+				help += "\n " + envNamespace
+			}
+
+			uninstall := util.Confirm("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?", false,
+				help, o.In, o.Out, o.Err)
+			if !uninstall {
+				return nil
+			}
+		}
 		if o.BatchMode || o.Context != "" {
 			targetContext = o.Context
 		} else {
+
 			targetContext, err = util.PickValue(fmt.Sprintf("Enter the current context name to confirm "+
 				"uninstallation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
 				"", true,
 				"To prevent accidental uninstallation from the wrong cluster, you must enter the current "+
-					"kubernetes context. This can be found with `kubectl config current-context`",
+					"kubernetes context. This can be found with `jx ctx` or `kubectl config current-context`",
 				o.In, o.Out, o.Err)
 			if err != nil {
 				return err
@@ -99,10 +117,12 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
 	envMap, envNames, err := kube.GetEnvironments(jxClient, namespace)
 	if err != nil {
 		log.Logger().Warnf("Failed to find Environments. Probably not installed yet?. Error: %s", err)
 	}
+
 	if !o.KeepEnvironments {
 		for _, env := range envNames {
 			release := namespace + "-" + env
@@ -147,6 +167,31 @@ func (o *UninstallOptions) Run() error {
 	}
 	log.Logger().Infof("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
 	return nil
+}
+
+func (o *UninstallOptions) getAllNamespaces(namespace string, jxClient versioned.Interface) []string {
+	envNamespaces := []string{namespace}
+
+	if jxClient != nil {
+		envMap, envNames, err := kube.GetEnvironments(jxClient, namespace)
+		if err != nil {
+			log.Logger().Warnf("Failed to find Environments. Error: %s", err)
+			return envNamespaces
+		}
+
+		for _, env := range envNames {
+			envResource := envMap[env]
+			envNamespace := namespace + "-" + env
+			if envResource != nil {
+				envNamespace = envResource.Spec.Namespace
+			}
+			if envNamespace != "" && envNamespace != namespace {
+				envNamespaces = append(envNamespaces, envNamespace)
+			}
+		}
+	}
+
+	return envNamespaces
 }
 
 func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string, envMap map[string]*v1.Environment) error {
