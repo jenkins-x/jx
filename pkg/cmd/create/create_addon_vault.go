@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/config"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -92,23 +90,7 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 	}
 	log.Logger().Infof("Installing %s...", util.ColorInfo(releaseName))
 
-	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
-	if err != nil {
-		return errors.Wrap(err, "creating the docker image version resolver")
-	}
-	repository, err := resolver.ResolveDockerImage(vault.BankVaultsOperatorImage)
-	parts := strings.Split(repository, ":")
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid docker image: %s", repository)
-	}
-
-	values := []string{
-		"image.repository=" + parts[0],
-		"image.tag=" + parts[1],
-	}
-
-	setValues := strings.Split(o.SetValues, ",")
-	values = append(values, setValues...)
+	values := strings.Split(o.SetValues, ",")
 	helmOptions := helm.InstallChartOptions{
 		Chart:       kube.ChartVaultOperator,
 		ReleaseName: releaseName,

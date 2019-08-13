@@ -213,9 +213,8 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 
 func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
 	images := map[string]string{
-		kubevault.BankVaultsImage:         "",
-		kubevault.BankVaultsOperatorImage: "",
-		kubevault.VaultImage:              "",
+		kubevault.BankVaultsImage: "",
+		kubevault.VaultImage:      "",
 	}
 
 	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
