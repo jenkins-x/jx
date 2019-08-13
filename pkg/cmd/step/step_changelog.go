@@ -873,46 +873,28 @@ func CollapseDependencyUpdates(dependencyUpdates []v1.DependencyUpdate) []v1.Dep
 	collapsed := make([]v1.DependencyUpdate, 0)
 
 	if len(dependencyUpdates) > 0 {
-		start := dependencyUpdates[0]
-
-		end := v1.DependencyUpdate{}
-		for _, u := range dependencyUpdates {
-			if start.Owner != u.Owner || start.Repo != u.Repo || start.Component != u.Component {
+		start := 0
+		for i := 1; i <= len(dependencyUpdates); i++ {
+			if i == len(dependencyUpdates) || dependencyUpdates[i-1].Owner != dependencyUpdates[i].Owner || dependencyUpdates[i-1].Repo != dependencyUpdates[i].Repo || dependencyUpdates[i-1].Component != dependencyUpdates[i].Component {
+				end := i - 1
 				collapsed = append(collapsed, v1.DependencyUpdate{
 					DependencyUpdateDetails: v1.DependencyUpdateDetails{
-						Owner:              start.Owner,
-						Repo:               start.Repo,
-						Component:          start.Component,
-						URL:                start.URL,
-						Host:               start.Host,
-						FromVersion:        start.FromVersion,
-						FromReleaseHTMLURL: start.FromReleaseHTMLURL,
-						FromReleaseName:    start.FromReleaseName,
-						ToVersion:          end.ToVersion,
-						ToReleaseName:      end.ToReleaseName,
-						ToReleaseHTMLURL:   end.ToReleaseHTMLURL,
+						Owner:              dependencyUpdates[start].Owner,
+						Repo:               dependencyUpdates[start].Repo,
+						Component:          dependencyUpdates[start].Component,
+						URL:                dependencyUpdates[start].URL,
+						Host:               dependencyUpdates[start].Host,
+						FromVersion:        dependencyUpdates[start].FromVersion,
+						FromReleaseHTMLURL: dependencyUpdates[start].FromReleaseHTMLURL,
+						FromReleaseName:    dependencyUpdates[start].FromReleaseName,
+						ToVersion:          dependencyUpdates[end].ToVersion,
+						ToReleaseName:      dependencyUpdates[end].ToReleaseName,
+						ToReleaseHTMLURL:   dependencyUpdates[end].ToReleaseHTMLURL,
 					},
 				})
-				start = u
-			} else {
-				end = u
+				start = i
 			}
 		}
-		collapsed = append(collapsed, v1.DependencyUpdate{
-			DependencyUpdateDetails: v1.DependencyUpdateDetails{
-				Owner:              start.Owner,
-				Repo:               start.Repo,
-				Component:          start.Component,
-				URL:                start.URL,
-				Host:               start.Host,
-				FromVersion:        start.FromVersion,
-				FromReleaseHTMLURL: start.FromReleaseHTMLURL,
-				FromReleaseName:    start.FromReleaseName,
-				ToVersion:          end.ToVersion,
-				ToReleaseName:      end.ToReleaseName,
-				ToReleaseHTMLURL:   end.ToReleaseHTMLURL,
-			},
-		})
 	}
 	return collapsed
 }

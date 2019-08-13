@@ -27,6 +27,14 @@ func TestCollapseDependencyUpdates(t *testing.T) {
 			},
 			want: "test_data/changelog/platform.golden.yaml",
 		},
+		{
+			// This one was a real regression seen in environment controller
+			name: "environment-controller",
+			args: args{
+				data: "test_data/changelog2/platform.yaml",
+			},
+			want: "test_data/changelog2/platform.golden.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
