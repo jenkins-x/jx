@@ -141,7 +141,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 
 	tf := terraformFileWriter{}
 	tf.write(path, "created_by", username)
-	tf.write(path, "created_timestamp", time.Now().Format("20060102150405"))
+	tf.write(path, "created_timestamp", time.Now().Format("Mon-Jan-2-2006-15:04:05"))
 	tf.write(path, "cluster_name", g.ClusterName())
 	tf.write(path, "organisation", g.Organisation)
 	tf.write(path, "cloud_provider", g.provider)
