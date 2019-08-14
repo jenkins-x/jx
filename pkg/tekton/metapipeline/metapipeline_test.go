@@ -17,6 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestMetaPipeline(t *testing.T) {
@@ -45,7 +46,7 @@ var _ = Describe("Meta pipeline", func() {
 				PullRef:          *pullRef,
 				GitInfo:          *gitInfo,
 				Labels:           []string{"someLabel=someValue"},
-				EnvVars:          []string{"SOME_VAR=SOME_VAL"},
+				EnvVars:          []string{"SOME_VAR=SOME_VAL", "OTHER_VAR=OTHER_VAL"},
 				BuildNumber:      "1",
 				SourceDir:        "source",
 				ServiceAccount:   "tekton-bot",
@@ -86,9 +87,19 @@ var _ = Describe("Meta pipeline", func() {
 				Expect(mergePullRefStep.Args).Should(Equal([]string{"jx step git merge --verbose --baseBranch master --baseSHA 0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815 --sha db8e2d275df53477b1c6871f7d7f4281dacf3169"}))
 			})
 
+			It("should pass custom env variables to step syntax effective to be applied to effective project config", func() {
+				step := actualCRDs.Tasks()[0].Spec.Steps[2]
+				Expect(step.Args[0]).Should(ContainSubstring("--env SOME_VAR=SOME_VAL --env OTHER_VAR=OTHER_VAL"))
+			})
+
 			It("should have correct step create task args", func() {
 				step := actualCRDs.Tasks()[0].Spec.Steps[3]
-				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --kind pullrequest --pr-number 42 --service-account tekton-bot --source source --branch master --build-number 1 --label someLabel=someValue --env SOME_VAR=SOME_VAL"}))
+				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --kind pullrequest --pr-number 42 --service-account tekton-bot --source source --branch master --build-number 1 --label someLabel=someValue"}))
+			})
+
+			It("should pass labels to step create task to be applied to generated CRDs", func() {
+				step := actualCRDs.Tasks()[0].Spec.Steps[3]
+				Expect(step.Args[0]).Should(ContainSubstring("--label someLabel=someValue"))
 			})
 		})
 
@@ -249,6 +260,61 @@ var _ = Describe("Meta pipeline", func() {
 				Expect(apps).Should(HaveLen(1))
 				Expect(apps[0].Name).Should(Equal("acme-app"))
 			})
+		})
+	})
+
+	Describe("#buildEnvParams", func() {
+		var (
+			testParams CRDCreationParameters
+		)
+
+		BeforeEach(func() {
+			gitInfo, _ := gits.ParseGitURL("https://github.com/jenkins-x/jx")
+			pullRef, _ := prow.ParsePullRefs("master:0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815,42:db8e2d275df53477b1c6871f7d7f4281dacf3169")
+
+			testParams = CRDCreationParameters{
+				PipelineName:     "test-pipeline",
+				PipelineKind:     "pullrequest",
+				BranchIdentifier: "master",
+				PullRef:          *pullRef,
+				GitInfo:          *gitInfo,
+				Labels:           []string{"someLabel=someValue"},
+				EnvVars:          []string{"SOME_VAR=SOME_VAL", "SOME_VAR=OTHER_VALUE", "SOURCE_URL=http://foo.git"},
+				BuildNumber:      "1",
+				SourceDir:        "source",
+				ServiceAccount:   "tekton-bot",
+				VersionsDir:      filepath.Join("test_data", "stable_versions"),
+			}
+		})
+
+		It("env vars don't contain duplicates", func() {
+			vars := buildEnvParams(testParams)
+			var seen []string
+
+			for _, envVar := range vars {
+				Expect(seen).ShouldNot(ContainElement(envVar.Name))
+				seen = append(seen, envVar.Name)
+			}
+
+			Expect(len(seen)).Should(Equal(len(vars)))
+		})
+
+		It("first custom set env variable wins over other custom env variables with the same key", func() {
+			vars := buildEnvParams(testParams)
+			expected := corev1.EnvVar{
+				Name:  "SOME_VAR",
+				Value: "SOME_VAL",
+			}
+			Expect(vars).Should(ContainElement(expected))
+		})
+
+		It("explicitly set env variables win over custom env variables", func() {
+			vars := buildEnvParams(testParams)
+			expected := corev1.EnvVar{
+				Name:  "SOURCE_URL",
+				Value: "https://github.com/jenkins-x/jx",
+			}
+			Expect(vars).Should(ContainElement(expected))
 		})
 	})
 })
