@@ -21,27 +21,20 @@ func TestStepGitMerge(t *testing.T) {
 
 var _ = Describe("step git merge", func() {
 	var (
-		masterSha        string
-		branchBSha       string
-		branchCSha       string
-		repoDir          string
-		err              error
-		testStdoutReader *os.File
-		testStdoutWriter *os.File
-		origStdout       *os.File
+		masterSha  string
+		branchBSha string
+		branchCSha string
+		repoDir    string
+		err        error
+		testReader *os.File
+		testWriter *os.File
 	)
 
-	BeforeSuite(func() {
-		// comment out to see logging output
-		log.SetOutput(ioutil.Discard)
-		_ = log.SetLevel("info")
-	})
-
 	BeforeEach(func() {
-		By("capturing stdout")
-		testStdoutReader, testStdoutWriter, _ = os.Pipe()
-		origStdout = os.Stdout
-		os.Stdout = testStdoutWriter
+		By("capturing log output")
+		testReader, testWriter, _ = os.Pipe()
+		log.SetOutput(testWriter)
+		_ = log.SetLevel("info")
 	})
 
 	BeforeEach(func() {
@@ -73,10 +66,8 @@ var _ = Describe("step git merge", func() {
 	})
 
 	AfterEach(func() {
-		By("closing and resetting stdout")
-		_ = testStdoutWriter.Close()
-		os.Stdout = origStdout
-		_ = os.RemoveAll(repoDir)
+		By("closing test stdout")
+		_ = testWriter.Close()
 	})
 
 	AfterEach(func() {
@@ -165,14 +156,16 @@ var _ = Describe("step git merge", func() {
 			err := options.Run()
 			Expect(err).NotTo(HaveOccurred())
 
-			stdout, err := readStdOut(testStdoutReader, testStdoutWriter)
+			out, err := read(testReader, testWriter)
 			Expect(err).NotTo(HaveOccurred())
 
-			logLines := strings.Split(stdout, "\n")
+			logLines := strings.Split(out, "\n")
 			logLines = deleteEmpty(logLines)
 			Expect(len(logLines)).Should(Equal(4))
-			Expect(strings.TrimSpace(logLines[0])).Should(Equal("MERGED SHA SUBJECT"))
-			Expect(strings.TrimSpace(logLines[1])).Should(MatchRegexp(".* Merge commit '.*'"))
+			indices := []int{1, 2, 3}
+			for _, i := range indices {
+				Expect(strings.TrimSpace(logLines[i])).Should(MatchRegexp("Merged SHA .* with commit message .* into base branch master"))
+			}
 		})
 	})
 
@@ -198,7 +191,7 @@ var _ = Describe("step git merge", func() {
 	})
 })
 
-func readStdOut(r *os.File, w *os.File) (string, error) {
+func read(r *os.File, w *os.File) (string, error) {
 	err := w.Close()
 	if err != nil {
 		return "", err
