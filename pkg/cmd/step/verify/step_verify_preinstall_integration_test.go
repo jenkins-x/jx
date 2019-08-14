@@ -61,6 +61,19 @@ func TestStepVerifyPreInstallNoKanikoNoLazyCreate(t *testing.T) {
 }
 
 func TestStepVerifyPreInstallNoKanikoLazyCreate(t *testing.T) {
+	origJxHome := os.Getenv("JX_HOME")
+
+	tmpJxHome, err := ioutil.TempDir("", "jx-test-TestStepVerifyPreInstallNoKanikoLazyCreate")
+	assert.NoError(t, err)
+
+	err = os.Setenv("JX_HOME", tmpJxHome)
+	assert.NoError(t, err)
+
+	defer func() {
+		_ = os.RemoveAll(tmpJxHome)
+		err = os.Setenv("JX_HOME", origJxHome)
+	}()
+
 	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "no_kaniko_or_terraform"))
 
 	_, origNamespace, err := options.KubeClientAndDevNamespace()
