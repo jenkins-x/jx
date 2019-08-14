@@ -1,7 +1,6 @@
 package git
 
 import (
-	"github.com/jenkins-x/jx/pkg/table"
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -129,10 +128,11 @@ func (o *StepGitMergeOptions) Run() error {
 	}
 
 	if o.Verbose {
-		err = o.writeCommitTable()
+		commits, err := o.getMergedCommits()
 		if err != nil {
 			return errors.Wrap(err, "unable to write merge result")
 		}
+		o.logCommits(commits, o.BaseBranch)
 	}
 
 	return nil
@@ -156,17 +156,17 @@ func (o *StepGitMergeOptions) setGitConfig() error {
 	return nil
 }
 
-func (o *StepGitMergeOptions) writeCommitTable() error {
+func (o *StepGitMergeOptions) getMergedCommits() ([]gits.GitCommit, error) {
 	commits, err := o.Git().GetCommits(o.Dir, o.BaseSHA, "HEAD")
 	if err != nil {
-		return errors.Wrap(err, "unable to retrieve commits")
+		return nil, errors.Wrap(err, "unable to retrieve commits")
 	}
 
-	commitTable := table.CreateTable(os.Stdout)
-	commitTable.AddRow("MERGED SHA", "SUBJECT")
+	return commits, nil
+}
+
+func (o *StepGitMergeOptions) logCommits(commits []gits.GitCommit, base string) {
 	for _, commit := range commits {
-		commitTable.AddRow(commit.ShortSha(), commit.Subject())
+		log.Logger().Infof("Merged SHA %s with commit message '%s' into base branch %s", commit.SHA, commit.Subject(), base)
 	}
-	commitTable.Render()
-	return nil
 }
