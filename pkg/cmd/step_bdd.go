@@ -797,7 +797,12 @@ func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {
 				CommonOptions: &opts.CommonOptions{},
 			},
 		}
-		labelOptions.Args = []string{cluster.Name}
+		if cluster.Terraform {
+			labelOptions.Args = []string{fmt.Sprintf("%s-dev", cluster.Name)}
+		} else {
+			labelOptions.Args = []string{cluster.Name}
+		}
+
 		return labelOptions.Run()
 	}
 	log.Logger().Warningf("Automated cluster cleanup is not supported for cluster %s", cluster.Name)
