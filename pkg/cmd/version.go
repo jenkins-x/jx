@@ -49,11 +49,20 @@ func NewCmdVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&options.NoVersionCheck, "no-version-check", "n", false, "Disable checking of version upgrade checks")
 	cmd.Flags().BoolVarP(&options.NoVerify, "no-verify", "", false, "Disable verification of package versions")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The namespace to use to look for currently installed platform version")
 	return cmd
 }
 
 func (o *VersionOptions) Run() error {
-	packages, table := o.GetPackageVersions(o.Namespace, o.HelmTLS)
+	ns := o.Namespace
+	if ns == "" {
+		var err error
+		_, ns, err = o.JXClientAndDevNamespace()
+		if err != nil {
+			return err
+		}
+	}
+	packages, table := o.GetPackageVersions(ns, o.HelmTLS)
 
 	// os version
 	osVersion, err := o.GetOsVersion()
