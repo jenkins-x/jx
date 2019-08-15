@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cmd/controller/pipeline"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -35,6 +36,11 @@ import (
 )
 
 const (
+	// healthPath is the URL path for the HTTP endpoint that returns health status.
+	healthPath = "/health"
+	// readyPath URL path for the HTTP endpoint that returns ready status.
+	readyPath = "/ready"
+
 	environmentControllerService       = "environment-controller"
 	environmentControllerHmacSecret    = "environment-controller-hmac"
 	environmentControllerHmacSecretKey = "hmac"
@@ -297,7 +303,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 		return
 	}
 
-	results := &PipelineRunResponse{
+	results := &pipeline.PipelineRunResponse{
 		Resources: pr.Results.ObjectReferences(),
 	}
 	err = o.marshalPayload(w, r, results)

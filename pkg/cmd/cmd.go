@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
+	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/cloudbees"
@@ -71,6 +72,8 @@ import (
 // args used to determine binary plugin to run can be overridden (does not affect compiled in commands).
 func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWriter,
 	err io.Writer, args []string) *cobra.Command {
+
+	configureViper()
 	rootCommand := &cobra.Command{
 		Use:              "jx",
 		Short:            "jx is a command line tool for working with Jenkins X",
@@ -258,8 +261,12 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 
 		}
 	}
-
 	return rootCommand
+}
+
+func configureViper() {
+	replacer := strings.NewReplacer("-", "_")
+	viper.SetEnvKeyReplacer(replacer)
 }
 
 func findCommands(subCommand string, commands ...*cobra.Command) []*cobra.Command {
