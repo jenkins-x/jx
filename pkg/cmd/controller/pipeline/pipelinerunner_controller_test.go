@@ -1,14 +1,16 @@
-// +build !integration
-
-package controller
+package pipeline
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"net"
 	"net/http"
 	"sync"
 	"testing"
@@ -74,6 +76,10 @@ func TestPipelineRunner(t *testing.T) {
 }
 
 var _ = Describe("Pipeline Runner", func() {
+	BeforeSuite(func() {
+		log.SetOutput(ioutil.Discard)
+	})
+
 	Describe("when running", func() {
 		var (
 			client *http.Client
@@ -84,24 +90,26 @@ var _ = Describe("Pipeline Runner", func() {
 		)
 
 		BeforeEach(func() {
-			log.SetOutput(ioutil.Discard)
 			client = &http.Client{}
 			Expect(err).Should(BeNil())
 
+			jxClient := fake.NewSimpleClientset()
+			Expect(err).Should(BeNil())
+
 			port, _ = getFreePort()
-			pipelineRunner := PipelineRunnerOptions{
-				CommonOptions:        &opts.CommonOptions{},
-				Path:                 "/",
-				BindAddress:          "0.0.0.0",
-				Port:                 port,
-				NoGitCredentialsInit: true,
-				UseMetaPipeline:      true,
+			controller := controller{
+				path:            "/",
+				bindAddress:     "0.0.0.0",
+				port:            port,
+				useMetaPipeline: true,
+				jxClient:        jxClient,
+				ns:              "jx",
 			}
 
 			go func() {
 				var wg sync.WaitGroup
 				ctx, cancel = context.WithCancel(context.Background())
-				pipelineRunner.startWorkers(ctx, &wg, cancel)
+				controller.startWorkers(ctx, &wg, cancel)
 				wg.Wait()
 			}()
 		})
@@ -163,4 +171,68 @@ var _ = Describe("Pipeline Runner", func() {
 			Expect(string(htmlData)).Should(ContainSubstring("unable to find prow job name in pipeline request"))
 		})
 	})
+
+	Describe("#getSourceURL", func() {
+		var (
+			port           int
+			testController controller
+			expectedURL    = "http://github.com/jenkins-x/jx.git"
+		)
+
+		BeforeEach(func() {
+			var jxObjects []runtime.Object
+
+			sourceRepo := &v1.SourceRepository{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "jx",
+					Labels:    map[string]string{"owner": "jenkins-x", "repository": "jx"},
+				},
+
+				Spec: v1.SourceRepositorySpec{
+					Provider: "http://github.com",
+				},
+			}
+
+			jxObjects = append(jxObjects, sourceRepo)
+
+			jxClient := fake.NewSimpleClientset(jxObjects...)
+
+			port, _ = getFreePort()
+			testController = controller{
+				path:        "/",
+				bindAddress: "0.0.0.0",
+				port:        port,
+				jxClient:    jxClient,
+				ns:          "jx",
+			}
+
+		})
+
+		It("retrieves source URL from cluster", func() {
+			url := testController.getSourceURL("jenkins-x", "jx")
+			Expect(url).Should(Equal(expectedURL))
+		})
+
+		It("returns the empty string for an unknown repo", func() {
+			url := testController.getSourceURL("jenkins-x", "foo")
+			Expect(url).Should(BeEmpty())
+		})
+	})
 })
+
+// getFreePort asks the kernel for a free open port that is ready to use.
+func getFreePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		_ = l.Close()
+	}()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}

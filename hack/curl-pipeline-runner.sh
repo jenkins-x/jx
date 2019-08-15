@@ -21,11 +21,11 @@ read -r -d '' JSON << EOJSON
       "repo": "golang-http",
       "repo_link": "https://github.com/jenkins-x-quickstarts/golang-http",
       "base_ref": "master",
-      "base_sha": "3f00363d651280ab2a8ee67f395de1689156d762",
+      "base_sha": "06b5fa6804aa0bd1f4f533010d1b335918a433e2",
       "pulls": [
         {
           "number": 1,
-          "sha": "06b5fa6804aa0bd1f4f533010d1b335918a433e2"
+          "sha": "3f00363d651280ab2a8ee67f395de1689156d762"
         }
       ]
     },

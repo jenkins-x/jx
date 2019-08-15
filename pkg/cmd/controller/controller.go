@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/controller/pipeline"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/spf13/cobra"
 
@@ -46,7 +47,7 @@ func NewCmdController(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdControllerBuild(commonOpts))
 	cmd.AddCommand(NewCmdControllerBuildNumbers(commonOpts))
 	cmd.AddCommand(NewCmdControllerEnvironment(commonOpts))
-	cmd.AddCommand(NewCmdControllerPipelineRunner(commonOpts))
+	cmd.AddCommand(pipeline.NewCmdControllerPipelineRunner(commonOpts))
 	cmd.AddCommand(NewCmdControllerRole(commonOpts))
 	cmd.AddCommand(NewCmdControllerTeam(commonOpts))
 	cmd.AddCommand(NewCmdControllerWorkflow(commonOpts))
