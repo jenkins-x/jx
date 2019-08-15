@@ -211,7 +211,7 @@ type TerraformGKEFlags struct {
 	SkipLogin                   bool
 	ForkOrganisationGitRepo     string
 	SkipTerraformApply          bool
-	SkipJxInstall               bool
+	SkipInstallation            bool
 	NoActiveCluster             bool
 	IgnoreTerraformWarnings     bool
 	JxEnvironment               string
@@ -310,7 +310,7 @@ func (options *TerraformGKEOptions) addFlags(cmd *cobra.Command, addSharedFlags 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "", "", "The name of a single cluster to create - cannot be used in conjunction with --"+optionCluster)
 	cmd.Flags().StringVarP(&options.Flags.CloudProvider, optionCloudProvider, "", "", "The cloud provider (currently gke only) - cannot be used in conjunction with --"+optionCluster)
 	cmd.Flags().BoolVarP(&options.Flags.SkipTerraformApply, "skip-terraform-apply", "", false, "Skip applying the generated Terraform plans")
-	cmd.Flags().BoolVarP(&options.Flags.SkipJxInstall, "skip-jx-install", "", false, "Skip installing Jenkins X into the generated cluster")
+	cmd.Flags().BoolVarP(&options.Flags.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTerraformWarnings, "ignore-terraform-warnings", "", false, "Ignore any warnings about the Terraform plan being potentially destructive")
 	cmd.Flags().StringVarP(&options.Flags.JxEnvironment, "jx-environment", "", "dev", "The cluster name to install jx inside")
 	cmd.Flags().StringVarP(&options.Flags.LocalOrganisationRepository, "local-organisation-repository", "", "", "Rather than cloning from a remote Git server, the local directory to use for the organisational folder")
@@ -572,7 +572,7 @@ func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			log.Logger().Infof("Skipping jx install")
 		} else {
-			if !options.Flags.SkipJxInstall {
+			if !options.Flags.SkipInstallation {
 				err = options.installJx(devCluster, clusterDefinitions)
 				if err != nil {
 					return err
