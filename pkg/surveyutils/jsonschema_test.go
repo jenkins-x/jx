@@ -712,6 +712,28 @@ func TestPassword(t *testing.T) {
 	})
 }
 
+func TestExistingPassword(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
+		values, vaultClient, err := GenerateValuesAsYaml(r, "password.test.schema.json", map[string]interface{}{
+			"passwordValue": map[string]string{
+				"password": "vault:/foo/bar",
+			},
+		}, false, false, false, false, func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for passwordValue")
+			console.SendLine("abc")
+			console.ExpectEOF()
+		}, nil)
+		assert.Equal(r, fmt.Sprintf(`passwordValue: vault:%s:passwordValue
+`, vaultBasePath), values)
+		secrets, err := vaultClient.Read(vaultBasePath)
+		assert.NoError(t, err)
+		assert.Equal(r, "abc", secrets["passwordValue"])
+		assert.NoError(r, err)
+	})
+}
+
 func TestToken(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {

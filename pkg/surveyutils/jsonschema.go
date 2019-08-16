@@ -689,6 +689,9 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	// Custom format support for passwords
 	dereferencedFormat := strings.TrimSuffix(util.DereferenceString(t.Format), "-passthrough")
 	if dereferencedFormat == "password" || dereferencedFormat == "token" {
+		// the default value for a password is just the path, so clear those values
+		defaultValue = ""
+		ask = true
 		if o.VaultClient != nil {
 			// the standard existing logic is not used in this case
 			secret, err := o.VaultClient.Read(vaultPath)
