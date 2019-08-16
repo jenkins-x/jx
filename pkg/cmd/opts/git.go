@@ -84,6 +84,11 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 
 // UpdatePipelineGitCredentialsSecret updates the pipeline git credentials in a kubernetes secret
 func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
+	// hack to skip duplicating the git credentials in a k8s secret when vault is enabled
+	if o.connectToSystemVault() {
+		return "", nil
+	}
+
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err

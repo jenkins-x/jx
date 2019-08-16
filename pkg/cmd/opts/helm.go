@@ -420,7 +420,6 @@ func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
 		var err error
 		o.secretURLClient, err = o.SystemVaultClient(o.devNamespace)
 		if err != nil {
-			log.Logger().Warnf("failed to create system vault in namespace %s due to %s\n", o.devNamespace, err.Error())
 			o.secretURLClient = nil
 		}
 	}

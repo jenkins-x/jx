@@ -998,6 +998,12 @@ func (o *CommonOptions) SystemVaultClient(namespace string) (vault.Client, error
 	return o.systemVaultClient, nil
 }
 
+// connectToSystemVault tries to connect to system vault
+func (o *CommonOptions) connectToSystemVault() bool {
+	_, err := o.SystemVaultClient(o.devNamespace)
+	return err == nil
+}
+
 // VaultClient returns or creates the vault client
 func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client, error) {
 	if o.factory == nil {
