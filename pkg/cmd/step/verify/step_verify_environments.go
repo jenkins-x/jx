@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"sigs.k8s.io/yaml"
 
@@ -96,6 +97,22 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	}
 
 	err = o.storeRequirementsInTeamSettings(requirements)
+	if err != nil {
+		return err
+	}
+	log.Logger().Infof("the git repositories for the environments look good\n")
+	fmt.Println()
+	return nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, privateRepo bool, user *auth.UserAuth, requirements *config.RequirementsConfig, server *auth.AuthServer, createPr bool) error {
+	fromGitURL := os.Getenv(boot.ConfigRepoURLEnvVarName)
+	gitRef := os.Getenv(boot.ConfigBaseRefEnvVarName)
+
+	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigRepoURLEnvVarName, fromGitURL)
+	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigBaseRefEnvVarName, gitRef)
+
+	gitInfo, err := gits.ParseGitURL(fromGitURL)
 	if err != nil {
 		return err
 	}

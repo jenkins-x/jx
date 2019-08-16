@@ -36,7 +36,10 @@ const (
 // TeamSettings returns the team settings
 func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 	_, teamSettings, err := o.DevEnvAndTeamSettings()
-	return teamSettings, err
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return teamSettings, nil
 }
 
 // DevEnvAndTeamSettings returns the Dev Environment and Team settings
