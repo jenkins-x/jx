@@ -689,6 +689,9 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	// Custom format support for passwords
 	dereferencedFormat := strings.TrimSuffix(util.DereferenceString(t.Format), "-passthrough")
 	if dereferencedFormat == "password" || dereferencedFormat == "token" {
+		// the default value for a password is just the path, so clear those values
+		defaultValue = ""
+		ask = true
 		if o.VaultClient != nil {
 			// the standard existing logic is not used in this case
 			secret, err := o.VaultClient.Read(vaultPath)
@@ -699,10 +702,12 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 					}
 					defaultValue = fmt.Sprintf("%v", value)
 					autoAcceptMessage = "Automatically accepted existing value"
+				} else {
+					log.Logger().Warnf("Unable to read path %s from secret storage %v", vaultPath, err)
 				}
 			} else {
 				// If there is an error, just continue
-				log.Logger().Debugf("Error reading %s from vault %v", vaultPath, err)
+				log.Logger().Warnf("Error reading %s from secret storage %v", vaultPath, err)
 			}
 		}
 
