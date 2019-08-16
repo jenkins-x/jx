@@ -117,6 +117,22 @@ func FindServiceURL(client kubernetes.Interface, namespace string, name string) 
 	return url, nil
 }
 
+func FindIngressURL(client kubernetes.Interface, namespace string, name string) (string, error) {
+	log.Logger().Debugf("finding ingress url for %s in namespace %s", name, namespace)
+	// lets try find the service via Ingress
+	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
+	if err != nil {
+		log.Logger().Errorf("error finding ingress for %s in namespace %s - err %s", name, namespace, err)
+		return "", nil
+	}
+
+	url := IngressURL(ing)
+	if url == "" {
+		log.Logger().Debugf("unable to find url via ingress for %s in namespace %s", name, namespace)
+	}
+	return url, nil
+}
+
 // IngressURL returns the URL for the ingres
 func IngressURL(ing *v1beta1.Ingress) string {
 	if ing != nil {

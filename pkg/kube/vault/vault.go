@@ -434,6 +434,14 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 			log.Logger().Warnf("error finding vault service url setting to empty string, err: %s", err)
 			vaultURL = ""
 		}
+		if vaultURL == "" {
+			vaultURL, err = services.FindIngressURL(client, ns, vaultName)
+			if err != nil {
+				log.Logger().Warnf("error finding vault ingress url setting to empty string, err: %s", err)
+				vaultURL = ""
+			}
+		}
+
 		vault := Vault{
 			Name:                   vaultName,
 			Namespace:              ns,
