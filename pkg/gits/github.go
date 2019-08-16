@@ -279,7 +279,7 @@ func toGitHubAsset(asset github.ReleaseAsset) GitReleaseAsset {
 func (p *GitHubProvider) GetRepository(org string, name string) (*GitRepository, error) {
 	repo, _, err := p.Client.Repositories.Get(p.Context, org, name)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get repository %s/%s due to: %s", org, name, err)
+		return nil, fmt.Errorf("failed to get repository %s/%s due to: %s", org, name, err)
 	}
 	return toGitHubRepo(name, org, repo), nil
 }
@@ -296,7 +296,7 @@ func (p *GitHubProvider) CreateRepository(owner string, name string, private boo
 	}
 	repo, _, err := p.Client.Repositories.Create(p.Context, org, repoConfig)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", owner, name, err)
+		return nil, fmt.Errorf("failed to create repository %s/%s due to: %s", owner, name, err)
 	}
 	return toGitHubRepo(name, owner, repo), nil
 }
@@ -308,7 +308,7 @@ func (p *GitHubProvider) DeleteRepository(org string, name string) error {
 	}
 	_, err := p.Client.Repositories.Delete(p.Context, owner, name)
 	if err != nil {
-		return fmt.Errorf("Failed to delete repository %s/%s due to: %s", owner, name, err)
+		return fmt.Errorf("failed to delete repository %s/%s due to: %s", owner, name, err)
 	}
 	return err
 }
