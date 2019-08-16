@@ -1377,7 +1377,7 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 		args      args
 		want      *gits.GitRepository
 		wantFiles map[string][]byte
-		wantErr   bool
+		wantErr   string
 	}{
 		{
 			name: "sameOrg",
@@ -1405,7 +1405,6 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 				Project:          "",
 				Private:          false,
 			},
-			wantErr: false,
 			wantFiles: map[string][]byte{
 				"README": []byte("Hello!"),
 			},
@@ -1436,7 +1435,6 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 				Project:          "",
 				Private:          false,
 			},
-			wantErr: false,
 			wantFiles: map[string][]byte{
 				"README": []byte("Hello!"),
 			},
@@ -1467,7 +1465,6 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 				Project:          "",
 				Private:          false,
 			},
-			wantErr: false,
 			wantFiles: map[string][]byte{
 				"README":       []byte("Hello!"),
 				"CONTRIBUTING": []byte("Welcome!"),
@@ -1498,7 +1495,6 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 				Project:          "",
 				Private:          false,
 			},
-			wantErr: false,
 			wantFiles: map[string][]byte{
 				"README":  []byte("Hello!"),
 				"LICENSE": []byte("TODO"),
@@ -1529,7 +1525,37 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 				Project:          "",
 				Private:          false,
 			},
-			wantErr: false,
+			wantFiles: map[string][]byte{
+				"README":  []byte("Hello!"),
+				"LICENSE": []byte("TODO"),
+			},
+		}, {
+			name: "badFromUrl",
+			args: args{
+				toOrg:         "coyote",
+				toName:        "wile",
+				fromGitURL:    "https://fake.git/other/roadrunner.git",
+				fromCommitish: "origin/other",
+				toBranch:      "another",
+				gitter:        gitter,
+			},
+			want: &gits.GitRepository{
+				Name:             "wile",
+				AllowMergeCommit: false,
+				HTMLURL:          "https://fake.git/coyote/wile",
+				CloneURL:         "",
+				SSHURL:           "",
+				Language:         "",
+				Fork:             false,
+				Stars:            0,
+				URL:              "https://fake.git/coyote/wile.git",
+				Scheme:           "https",
+				Host:             "fake.git",
+				Organisation:     "coyote",
+				Project:          "",
+				Private:          false,
+			},
+			wantErr: "organization 'other' not found",
 			wantFiles: map[string][]byte{
 				"README":  []byte("Hello!"),
 				"LICENSE": []byte("TODO"),
@@ -1550,8 +1576,9 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 			tt.provider = provider
 
 			got, err := gits.DuplicateGitRepoFromCommitsh(tt.args.toOrg, tt.args.toName, tt.args.fromGitURL, tt.args.fromCommitish, tt.args.toBranch, false, tt.provider, tt.args.gitter)
-			if tt.wantErr {
+			if tt.wantErr != "" {
 				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
 				return
 			} else {
 				assert.NoError(t, err)

@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -755,7 +755,7 @@ func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string
 		}
 		fromInfo, err = provider.GetRepository(fromInfo.Organisation, fromInfo.Name)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting repo for %s/%s", fromInfo.Organisation, fromInfo.Name)
+			return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
 		}
 		duplicateInfo, err = provider.CreateRepository(toOrg, toName, private)
 		if err != nil {
