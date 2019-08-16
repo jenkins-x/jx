@@ -113,8 +113,9 @@ func (o *StepBootVaultOptions) Run() error {
 	copyOptions := *o.CommonOptions
 	copyOptions.BatchMode = true
 
-	// even though we may not be using exposecontroller; lets still run the expose logic so we wait for certs to be available
-	noExposeVault = false
+	// setting this to true so that we disable the use of exposecontroller with vault
+	// TODO: do we need to wait for certificates to be available via the secret
+	noExposeVault = true
 
 	cvo := &create.CreateVaultOptions{
 		CreateOptions: create.CreateOptions{
