@@ -2,6 +2,7 @@ package verify
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // StepVerifyEnvironmentsOptions contains the command line flags
@@ -155,6 +157,11 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 		return errors.Wrapf(err, "forking and pulling %s", duplicateInfo.CloneURL)
 	}
 
+	err = modifyPipelineGitEnvVars(dir)
+	if err != nil {
+		return errors.Wrap(err, "failed to modify dev environment config")
+	}
+
 	// Add a remote for the user that references the boot config that they originally used
 	err = o.Git().SetRemoteURL(dir, "jenkins-x", fromGitURL)
 	if err != nil {
@@ -176,6 +183,45 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 	_, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, baseRef, &details, &filter, true, "chore(config): update configuration", true, false, o.Git(), provider, []string{boot.PullRequestLabel})
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", baseRef, details.BranchName)
+	}
+	return nil
+}
+
+func modifyPipelineGitEnvVars(dir string) error {
+	parameterValues, err := helm.LoadParametersValuesFile()
+	if err != nil {
+		return errors.Wrap(err, "failed to load parameters values file")
+	}
+	username := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.username")
+	email := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.email")
+
+	if username != "" && email != "" {
+		fileName := filepath.Join(dir, config.ProjectConfigFileName)
+		projectConf, err := config.LoadProjectConfigFile(fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load project config file %s", fileName)
+		}
+		gitConfig := []corev1.EnvVar{
+			{
+				Name:  "GIT_AUTHOR_NAME",
+				Value: username,
+			},
+			{
+				Name:  "GIT_AUTHOR_EMAIL",
+				Value: email,
+			},
+		}
+		envVars := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
+		if err != nil {
+			return errors.Wrap(err, "failed to get pipeline env vars")
+		}
+		envVars = append(envVars, gitConfig...)
+		projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
+
+		err = projectConf.SaveConfig(fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write to %s", fileName)
+		}
 	}
 	return nil
 }

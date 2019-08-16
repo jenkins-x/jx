@@ -792,6 +792,9 @@ func DuplicateGitRepoFromCommitsh(toOrg string, toName string, fromGitURL string
 			return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
 		}
 		err = gitter.SetRemoteURL(dir, "origin", duplicateInfo.CloneURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to set remote url to %s", duplicateInfo.CloneURL)
+		}
 		err = gitter.Push(dir, duplicatePushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", toBranch))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
