@@ -422,7 +422,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 
 		}
 		if !autoAcceptDefaults {
-			if !o.WorkloadIdentity {
+			if !o.WorkloadIdentity && !o.InCluster() {
 				// connect to the specified cluster if different from the currently connected one
 				log.Logger().Infof("Connecting to cluster %s", util.ColorInfo(requirements.Cluster.ClusterName))
 				err = o.GCloud().ConnectToCluster(requirements.Cluster.ProjectID, requirements.Cluster.Zone, requirements.Cluster.ClusterName)
@@ -430,7 +430,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 					return nil, err
 				}
 			} else {
-				log.Logger().Info("Avoiding cluster reconnection due to Workload Identity")
+				log.Logger().Info("no need to reconnect to cluster")
 			}
 		}
 	} else {
