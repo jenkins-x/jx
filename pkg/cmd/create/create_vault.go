@@ -448,13 +448,15 @@ func AuthServiceAccountName(vaultName string) string {
 // ApplyDefaultRegionIfEmpty TODO : Testing in progress, comment to be removed after testing
 func (o *CreateVaultOptions) ApplyDefaultRegionIfEmpty(enforcedDefault *string) error {
 	if o.DynamoDBRegion == "" || o.KMSRegion == "" || o.S3Region == "" {
-		defaultRegion := *enforcedDefault
+		var defaultRegion string
 		var err error
 		if enforcedDefault == nil {
 			defaultRegion, err = amazon.ResolveRegionWithoutOptions()
 			if err != nil {
 				return errors.Wrap(err, "finding default AWS region")
 			}
+		} else {
+			defaultRegion = *enforcedDefault
 		}
 
 		log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
@@ -467,6 +469,7 @@ func (o *CreateVaultOptions) ApplyDefaultRegionIfEmpty(enforcedDefault *string) 
 		if o.S3Region == "" {
 			o.S3Region = defaultRegion
 		}
+
 	}
 	return nil
 }

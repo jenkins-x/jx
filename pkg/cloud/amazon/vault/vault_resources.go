@@ -63,7 +63,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	template.Resources[awsIamUserKey] = &iamUser
 
 	awsKmsKey := "AWSKMSKey"
-	kmsKey, err := createKmsKey([]string{awsIamUserKey})
+	kmsKey, err := createKmsKey(iamUsername, []string{awsIamUserKey})
 	if err != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
 	}
@@ -83,13 +83,10 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 
 	log.Logger().Debugf("Generated the vault cloudformation template successfully")
 
-	// had issues with json on resource, temporary workaround
 	yamlProcessed := string(yaml)
-	yamlProcessed = strings.Replace(yamlProcessed, "\"BUCKET_LIST_JSON\"", `{ "Fn::Sub" : "${`+awsS3BucketKey+`.Arn}" }`, -1)
-	yamlProcessed = strings.Replace(yamlProcessed, "\"BUCKET_JSON\"", `{ "Fn::Sub" : "${`+awsS3BucketKey+`.Arn}/*" }`, -1)
-	yamlProcessed = strings.Replace(yamlProcessed, "\"KMS_SUB_JSON\"", `{ "Fn::Sub" : "${`+awsKmsKey+`.Arn}" }`, -1)
-	yamlProcessed = strings.Replace(yamlProcessed, "\"DYNAMODB_JSON\"", `{ "Fn::Sub" : "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*" }`, -1)
-	yamlProcessed = strings.Replace(yamlProcessed, "\"KMS_USER_JSON\"", `[{ "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}, { "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/`+iamUsername+`"}]`, -1)
+	yamlProcessed = setProperIntrinsics(yamlProcessed)
+
+	log.Logger().Infof(yamlProcessed)
 
 	// Create dynamic stack name
 	stackName := stackNamePrefix + suffixString
@@ -107,6 +104,21 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	}
 
 	return accessKey, keySecret, kmsID, s3Name, &dynamoDbTableName, nil
+}
+
+/*
+	Currently there was is no way to bypass the intrinsic functions
+	If Fn::Sub (with double colon) is used it is evaluated and removed from the templat output
+	However the evaluation did not seem to work and evaluated ${Name} based values back to "${Name}"
+	As a workaround Fn:Sub is used instead.
+	Reference : https://github.com/awslabs/goformation/issues/62
+
+	Add any more intrinsics here if required.
+*/
+func setProperIntrinsics(yamlTemplate string) string {
+	var yamlProcessed string
+	yamlProcessed = strings.Replace(yamlTemplate, "Fn:Sub", "Fn::Sub", -1)
+	return yamlProcessed
 }
 
 func getKmsID(kmsKey string, stackName string) (*string, error) {
@@ -190,9 +202,13 @@ func createS3Bucket(region string, domain string, suffixString string) (*string,
 	return &bucketName, &bucketConfig
 }
 
-func createKmsKey(depends []string) (*resources.AWSKMSKey, error) {
+func createKmsKey(username string, depends []string) (*resources.AWSKMSKey, error) {
+	type FnSubWrapper struct {
+		FnSub string `json:"Fn:Sub"`
+	}
+
 	type Principal struct {
-		AWS string
+		AWS []FnSubWrapper
 	}
 
 	type PolicyDocument struct {
@@ -215,7 +231,14 @@ func createKmsKey(depends []string) (*resources.AWSKMSKey, error) {
 				Sid:    "Enable IAM User Permissions",
 				Effect: "Allow",
 				Principal: Principal{
-					AWS: "KMS_USER_JSON",
+					AWS: []FnSubWrapper{
+						{
+							FnSub: "arn:aws:iam::${AWS::AccountId}:root",
+						},
+						{
+							FnSub: "arn:aws:iam::${AWS::AccountId}:user/" + username,
+						},
+					},
 				},
 				Action:   "kms:*",
 				Resource: "*",
@@ -241,11 +264,15 @@ func createIamUser(username string) resources.AWSIAMUser {
 }
 
 func createIamUserPolicy(username string, depends []string) resources.AWSIAMPolicy {
+	type FnSubWrapper struct {
+		FnSub string `json:"Fn:Sub"`
+	}
+
 	type PolicyDocument struct {
 		Sid      string
 		Effect   string
 		Action   []string
-		Resource interface{}
+		Resource FnSubWrapper
 	}
 
 	type PolicyRoot struct {
@@ -283,7 +310,9 @@ func createIamUserPolicy(username string, depends []string) resources.AWSIAMPoli
 						"dynamodb:Scan",
 						"dynamodb:DescribeTable",
 					},
-					Resource: "DYNAMODB_JSON",
+					Resource: FnSubWrapper{
+						FnSub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*",
+					},
 				},
 				{
 					Sid:    "S3",
@@ -292,7 +321,9 @@ func createIamUserPolicy(username string, depends []string) resources.AWSIAMPoli
 						"s3:PutObject",
 						"s3:GetObject",
 					},
-					Resource: "BUCKET_JSON",
+					Resource: FnSubWrapper{
+						FnSub: "${" + depends[1] + ".Arn}/*",
+					},
 				},
 				{
 					Sid:    "S3List",
@@ -300,7 +331,9 @@ func createIamUserPolicy(username string, depends []string) resources.AWSIAMPoli
 					Action: []string{
 						"s3:ListBucket",
 					},
-					Resource: "BUCKET_LIST_JSON",
+					Resource: FnSubWrapper{
+						FnSub: "${" + depends[1] + ".Arn}",
+					},
 				},
 				{
 					Sid:    "KMS",
@@ -309,7 +342,9 @@ func createIamUserPolicy(username string, depends []string) resources.AWSIAMPoli
 						"kms:Encrypt",
 						"kms:Decrypt",
 					},
-					Resource: "KMS_SUB_JSON",
+					Resource: FnSubWrapper{
+						FnSub: "${" + depends[2] + ".Arn}",
+					},
 				},
 			},
 		},
