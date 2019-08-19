@@ -65,6 +65,7 @@ func (o *StepVerifyInstallOptions) Run() error {
 	po.StepOptions = o.StepOptions
 	po.Debug = o.Debug
 	po.WaitDuration = o.PodWaitDuration
+	po.ExcludeBuildPods = true
 
 	log.Logger().Info("verifying pods\n")
 	err = po.Run()

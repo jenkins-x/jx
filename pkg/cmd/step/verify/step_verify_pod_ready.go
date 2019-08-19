@@ -36,7 +36,8 @@ var (
 // StepVerifyPodReadyOptions contains the command line flags
 type StepVerifyPodReadyOptions struct {
 	opts.StepOptions
-	Debug bool
+	Debug            bool
+	ExcludeBuildPods bool
 
 	WaitDuration time.Duration
 }
@@ -66,6 +67,7 @@ func NewCmdStepVerifyPodReady(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Debug, "debug", "", false, "Output logs of any failed pod")
 	cmd.Flags().DurationVarP(&options.WaitDuration, "wait-time", "w", time.Second, "The default wait time to wait for the pods to be ready")
 
+	cmd.Flags().BoolVarP(&options.ExcludeBuildPods, "exclude-build", "", false, "Exclude build pods")
 	return cmd
 }
 
@@ -100,7 +102,16 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 func (o *StepVerifyPodReadyOptions) waitForReadyPods(kubeClient kubernetes.Interface, ns string) (table.Table, error) {
 	table := o.CreateTable()
 
-	pods, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{})
+	var listOptions metav1.ListOptions
+	if o.ExcludeBuildPods {
+		listOptions = metav1.ListOptions{
+			LabelSelector: "created-by-prow != true",
+		}
+	} else {
+		listOptions = metav1.ListOptions{}
+	}
+
+	pods, err := kubeClient.CoreV1().Pods(ns).List(listOptions)
 	if err != nil {
 		return table, errors.Wrapf(err, "failed to list the PODs in namespace '%s'", ns)
 	}
