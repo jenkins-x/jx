@@ -86,8 +86,6 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	yamlProcessed := string(yaml)
 	yamlProcessed = setProperIntrinsics(yamlProcessed)
 
-	log.Logger().Infof(yamlProcessed)
-
 	// Create dynamic stack name
 	stackName := stackNamePrefix + suffixString
 
