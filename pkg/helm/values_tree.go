@@ -197,7 +197,14 @@ func GenerateValues(requirements *config.RequirementsConfig, funcMap template.Fu
 		}
 	}
 	data, err := yaml.Marshal(rootValues)
-	return data, params, err
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	text, err := secretURLClient.ReplaceURIs(string(data))
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	return []byte(text), params, err
 }
 
 // NewFunctionMap creates a new function map for values.tmpl.yaml templating
