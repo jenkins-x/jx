@@ -200,10 +200,16 @@ func GenerateValues(requirements *config.RequirementsConfig, funcMap template.Fu
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	text, err := secretURLClient.ReplaceURIs(string(data))
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
+	var text string
+	if secretURLClient != nil {
+		text, err = secretURLClient.ReplaceURIs(string(data))
+		if err != nil {
+			return nil, nil, errors.WithStack(err)
+		}
+	} else {
+		text = string(data)
 	}
+
 	return []byte(text), params, err
 }
 
