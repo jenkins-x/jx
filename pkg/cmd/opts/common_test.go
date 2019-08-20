@@ -2,18 +2,23 @@ package opts
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	clientmocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubemocks "k8s.io/client-go/kubernetes/fake"
+
+	. "github.com/petergtz/pegomock"
 )
 
 const (
@@ -86,7 +91,24 @@ func Test_NotifyProgress(t *testing.T) {
 
 func Test_JXNamespace(t *testing.T) {
 	setupTestCommand()
-	commonOptsUnderTest.SetFactory(clients.NewFactory())
+
+	// mock factory
+	factory := clientmocks.NewMockFactory()
+
+	// namespace fixture
+	namespace := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jx-testing",
+			Namespace: "jx-testing",
+		},
+	}
+
+	// mock Kubernetes interface
+	kubernetesInterface := kubemocks.NewSimpleClientset(namespace)
+	// Override CreateKubeClient to return mock Kubernetes interface
+	When(factory.CreateKubeClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
+
+	commonOptsUnderTest.SetFactory(factory)
 
 	kubeClient, ns, err := commonOptsUnderTest.KubeClientAndNamespace()
 	assert.NoError(t, err, "Failed to create kube client")
@@ -97,10 +119,8 @@ func Test_JXNamespace(t *testing.T) {
 		if err == nil {
 			log.Logger().Warnf("Found namespace %#v", resource)
 		}
+		assert.Equal(t, namespace.Namespace, ns)
 	}
-
-	_, err = commonOptsUnderTest.CreateGitAuthConfigService()
-	assert.NoError(t, err, "Failed to create GitAuthConfigService")
 }
 
 func Test_GetConfiguration(t *testing.T) {
