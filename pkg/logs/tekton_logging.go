@@ -209,7 +209,7 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 						return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", prName, pa.Namespace)
 					}
 					sort.Slice(pods, func(i, j int) bool {
-						return pods[i].CreationTimestamp.Before(&pods[j].CreationTimestamp)
+						return pods[j].CreationTimestamp.Before(&pods[i].CreationTimestamp)
 					})
 
 					for _, pod := range pods {
