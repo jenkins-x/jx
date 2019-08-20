@@ -690,7 +690,7 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	dereferencedFormat := strings.TrimSuffix(util.DereferenceString(t.Format), "-passthrough")
 	if dereferencedFormat == "password" || dereferencedFormat == "token" {
 		// the default value for a password is just the path, so clear those values
-		if _,ok := existingValues[name]; ok {
+		if _, ok := existingValues[name]; ok {
 			defaultValue = ""
 			ask = true
 		}
