@@ -37,7 +37,11 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	nowMinusThirtyOneDays := time.Now().AddDate(0, 0, -31)
 	nowMinusThreeDays := time.Now().AddDate(0, 0, -3)
+	nowMinusTwoDays := time.Now().AddDate(0, 0, -2)
+	nowMinusOneDay := time.Now().AddDate(0, 0, -1)
+
 	_, err = jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "1",
@@ -56,6 +60,64 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "2",
 			Labels: map[string]string{
+				v1.LabelBranch: "PR-1",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Pipeline: "org/project/PR-1",
+			// No completion time, to make sure this doesn't get deleted.
+		},
+	})
+	assert.NoError(t, err)
+
+	_, err = jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "3",
+			Labels: map[string]string{
+				v1.LabelBranch: "PR-1",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Pipeline:           "org/project/PR-1",
+			CompletedTimestamp: &metav1.Time{Time: nowMinusTwoDays},
+		},
+	})
+	assert.NoError(t, err)
+
+	_, err = jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "4",
+			Labels: map[string]string{
+				v1.LabelBranch: "PR-1",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Pipeline:           "org/project/PR-1",
+			CompletedTimestamp: &metav1.Time{Time: nowMinusOneDay},
+		},
+	})
+	assert.NoError(t, err)
+
+	// To handle potential weirdness around ordering, make sure that the oldest PR activity is in a random
+	// spot in the order.
+	_, err = jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "0",
+			Labels: map[string]string{
+				v1.LabelBranch: "PR-1",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Pipeline:           "org/project/PR-1",
+			CompletedTimestamp: &metav1.Time{Time: nowMinusThirtyOneDays},
+		},
+	})
+	assert.NoError(t, err)
+
+	_, err = jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "5",
+			Labels: map[string]string{
 				v1.LabelBranch: "batch",
 			},
 		},
@@ -68,7 +130,7 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 
 	_, err = jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "3",
+			Name: "6",
 			Labels: map[string]string{
 				v1.LabelBranch: "master",
 			},
@@ -86,7 +148,7 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	activities, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
 	assert.NoError(t, err)
 
-	assert.Len(t, activities.Items, 2, "One of the activities should've been garbage collected")
+	assert.Len(t, activities.Items, 4, "Two of the activities should've been garbage collected")
 
 	var verifier []bool
 	for _, v := range activities.Items {
@@ -94,6 +156,6 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 			verifier = append(verifier, true)
 		}
 	}
-	assert.Len(t, verifier, 2, "Both PR and Batch builds should've been verified")
+	assert.Len(t, verifier, 4, "Both PR and Batch builds should've been verified")
 
 }
