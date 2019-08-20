@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // StepVerifyGitOptions contains the command line flags
@@ -49,6 +50,7 @@ func (o *StepVerifyGitOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
 	info := util.ColorInfo
 	for _, secret := range secrets.Items {
 		log.Logger().Infof("verifying git Secret %s\n", info(secret.Name))
@@ -73,6 +75,14 @@ func (o *StepVerifyGitOptions) Run() error {
 			return fmt.Errorf("secret %s does not have a Git password annotation %s", secret.Name, kube.SecretDataPassword)
 		}
 	}
+
+	filteredSecrets := make([]corev1.Secret, 0)
+	for _, secret := range secrets.Items {
+		if value, ok := secret.GetAnnotations()["jenkins.io/test"]; !(ok && value == "true") {
+			filteredSecrets = append(filteredSecrets, secret)
+		}
+	}
+	secrets.Items = filteredSecrets
 
 	config := &auth.AuthConfig{}
 	err = o.GetFactory().AuthMergePipelineSecrets(config, secrets, kube.ValueKindGit, true)
