@@ -1027,9 +1027,62 @@ push_gateway: {}
 sinker: {}
 tide:
   merge_method:
-    jenkins-x-apps/jx-app-test-lifecycle: rebase
+    cloudbees/cb-app-slack: merge
+    cloudbees/jx-tenant-service: merge
+    cloudbees/jxui-backend: merge
+    cloudbees/jxui-frontend: merge
+    cloudbees/jxui-ts-client: merge
+    jenkins-x-apps/jx-app-ambassador: merge
+    jenkins-x-apps/jx-app-anchore: merge
+    jenkins-x-apps/jx-app-athens: merge
+    jenkins-x-apps/jx-app-cert-manager: merge
+    jenkins-x-apps/jx-app-cheese: merge
+    jenkins-x-apps/jx-app-datadog: merge
+    jenkins-x-apps/jx-app-gitea: merge
+    jenkins-x-apps/jx-app-grafana: merge
+    jenkins-x-apps/jx-app-istio: merge
     jenkins-x-apps/jx-app-jacoco: rebase
+    jenkins-x-apps/jx-app-jenkins: merge
+    jenkins-x-apps/jx-app-prometheus: merge
+    jenkins-x-apps/jx-app-sonarqube: merge
+    jenkins-x-apps/jx-app-sso: merge
+    jenkins-x-apps/jx-app-test-lifecycle: rebase
+    jenkins-x-charts/athens-proxy: merge
+    jenkins-x-charts/environment-controller: merge
+    jenkins-x-charts/hey: merge
+    jenkins-x-charts/jenkins-x-minimal: merge
+    jenkins-x-charts/jx-build-templates: merge
+    jenkins-x-charts/knative-build: merge
+    jenkins-x-charts/kubernetes-replicator: merge
+    jenkins-x-charts/nexus: merge
+    jenkins-x-charts/openshift-namespace-rbac-chart: merge
+    jenkins-x-charts/prow: merge
+    jenkins-x-charts/tekton: merge
+    jenkins-x-charts/vault-operator: merge
+    jenkins-x/bucketrepo: merge
+    jenkins-x/dev-env: merge
+    jenkins-x/dev-env-base: merge
+    jenkins-x/environment-tekton-mole-dev: merge
+    jenkins-x/environment-tekton-mole-production: merge
+    jenkins-x/environment-tekton-mole-staging: merge
+    jenkins-x/exposecontroller: merge
+    jenkins-x/ext-java-code-quality: merge
+    jenkins-x/homebrew-jx: merge
+    jenkins-x/jenkins-x-builders: merge
+    jenkins-x/jenkins-x-builders-base: merge
+    jenkins-x/jenkins-x-builders-base-image: merge
+    jenkins-x/jenkins-x-image: merge
+    jenkins-x/jenkins-x-platform: merge
+    jenkins-x/jenkins-x-serverless: merge
+    jenkins-x/jenkins-x-serverless-filerunner: merge
+    jenkins-x/jenkins-x-versions: merge
     jenkins-x/jx: squash
+    jenkins-x/jx-datadog: merge
+    jenkins-x/jx-docs: merge
+    jenkins-x/jx-ts-client: merge
+    jenkins-x/jx-tutorial: merge
+    jenkins-x/sso-operator: merge
+    jenkins-x/updatebot: merge
   context_options:
     from-branch-protection: true
     required-if-present-contexts: null

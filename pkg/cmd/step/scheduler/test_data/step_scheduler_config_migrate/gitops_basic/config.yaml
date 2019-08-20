@@ -92,6 +92,10 @@ tide:
     from-branch-protection: true
     required-if-present-contexts: null
     skip-unknown-contexts: false
+  merge_method:
+    cb-kubecd/jx-scheduler-test-repo: merge
+    cb-kubecd/jx-scheduler-test-group-repo: merge
+    dev-env-org/environment-dev-env-org-dev-env-repo-dev: merge
   queries:
   - labels:
     - approved

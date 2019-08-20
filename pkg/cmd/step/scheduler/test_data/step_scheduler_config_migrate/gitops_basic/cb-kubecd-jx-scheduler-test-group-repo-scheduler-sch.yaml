@@ -54,7 +54,7 @@ spec:
       context: integration
       labels: {}
       maxConcurrency: 0
-      mergeMethod: ""
+      mergeMethod: merge
       name: integration
       optional: false
       policy:

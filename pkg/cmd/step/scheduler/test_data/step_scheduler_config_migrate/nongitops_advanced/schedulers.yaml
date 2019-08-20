@@ -198,7 +198,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -444,7 +444,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -690,7 +690,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -940,7 +940,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -1186,7 +1186,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -1573,7 +1573,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -1819,7 +1819,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -2064,7 +2064,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -2310,7 +2310,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -2556,7 +2556,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -2802,7 +2802,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -3048,7 +3048,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -3294,7 +3294,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -3540,7 +3540,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -4032,7 +4032,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -4278,7 +4278,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -4524,7 +4524,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -4770,7 +4770,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -5260,7 +5260,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -5506,7 +5506,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -5752,7 +5752,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -5998,7 +5998,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -6244,7 +6244,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -6490,7 +6490,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -6736,7 +6736,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -6982,7 +6982,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -7228,7 +7228,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -7474,7 +7474,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -7720,7 +7720,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -7966,7 +7966,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -8212,7 +8212,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -8456,7 +8456,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -8700,7 +8700,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -8944,7 +8944,7 @@ items:
         context: promotion-build
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: promotion-build
         optional: false
         policy:
@@ -9188,7 +9188,7 @@ items:
         context: promotion-build
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: promotion-build
         optional: false
         policy:
@@ -9419,7 +9419,7 @@ items:
         context: promotion-build
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: promotion-build
         optional: false
         policy:
@@ -9650,7 +9650,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -9890,7 +9890,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -10134,7 +10134,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -10378,7 +10378,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -10622,7 +10622,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -10866,7 +10866,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -11110,7 +11110,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -11354,7 +11354,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -11594,7 +11594,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -11838,7 +11838,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -12073,7 +12073,7 @@ items:
         context: static
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: static
         optional: false
         policy:
@@ -12090,7 +12090,7 @@ items:
         context: tiller
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tiller
         optional: false
         policy:
@@ -12107,7 +12107,7 @@ items:
         context: prow
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: prow
         optional: false
         policy:
@@ -12124,7 +12124,7 @@ items:
         context: gitops
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: gitops
         optional: false
         policy:
@@ -12141,7 +12141,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -12158,7 +12158,7 @@ items:
         context: ekstekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: ekstekton
         optional: false
         policy:
@@ -12175,7 +12175,7 @@ items:
         context: eksclassic
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: eksclassic
         optional: false
         policy:
@@ -12192,7 +12192,7 @@ items:
         context: ng
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: ng
         optional: false
         policy:
@@ -12209,7 +12209,7 @@ items:
         context: static-gke-us-east1-b
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: static-gke-us-east1-b
         optional: false
         policy:
@@ -12226,7 +12226,7 @@ items:
         context: helm3
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: helm3
         optional: false
         policy:
@@ -12243,7 +12243,7 @@ items:
         context: terraform
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: terraform
         optional: false
         policy:
@@ -12454,7 +12454,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -12698,7 +12698,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -13425,7 +13425,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -13665,7 +13665,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -13909,7 +13909,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
@@ -14153,7 +14153,7 @@ items:
         context: tekton
         labels: {}
         maxConcurrency: 0
-        mergeMethod: ""
+        mergeMethod: merge
         name: tekton
         optional: false
         policy:
