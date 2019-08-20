@@ -83,33 +83,37 @@ func (o *StepVerifyGitOptions) Run() error {
 	if len(servers) == 0 {
 		return fmt.Errorf("failed to find any Git servers from the Git Secrets. There should be a Secret with label %s=%s", kube.LabelKind, kube.ValueKindGit)
 	}
+	pipeUserValid := false
 	for _, server := range servers {
-		log.Logger().Infof("verifying git server %s at %s\n", info(server.Name), info(server.URL))
+		for _, userAuth := range server.Users {
 
-		pipelineUser := config.PipeLineUsername
-		if pipelineUser == "" {
-			return fmt.Errorf("no PipelineUsername defined for server %s at %s", server.Name, server.URL)
-		}
-		user := server.GetUserAuth(pipelineUser)
-		if user == nil {
-			return fmt.Errorf("no UserAuth found for pipeline user %s defined for server %s at %s", pipelineUser, server.Name, server.URL)
-		}
+			log.Logger().Infof("verifying username %s at git server %s at %s\n", info(userAuth.Username), info(server.Name), info(server.URL))
 
-		provider, err := gits.CreateProvider(server, user, o.Git())
-		if err != nil {
-			return errors.Wrapf(err, "failed to create GitProvider for git server %s", server.URL)
-		}
+			provider, err := gits.CreateProvider(server, userAuth, o.Git())
+			if err != nil {
+				return errors.Wrapf(err, "failed to create GitProvider for %s at git server %s", userAuth.Username, server.URL)
+			}
 
-		orgs, err := provider.ListOrganisations()
-		if err != nil {
-			return errors.Wrapf(err, "failed to list the organisations for git server %s", server.URL)
+			orgs, err := provider.ListOrganisations()
+			if err != nil {
+				return errors.Wrapf(err, "failed to list the organisations for %s at git server %s", userAuth.Username, server.URL)
+			}
+			orgNames := []string{}
+			for _, org := range orgs {
+				orgNames = append(orgNames, org.Login)
+			}
+			sort.Strings(orgNames)
+			log.Logger().Infof("found %d organisations in git server %s: %s\n", len(orgs), info(server.URL), info(strings.Join(orgNames, ", ")))
+			if config.PipeLineServer == server.URL && config.PipeLineUsername == userAuth.Username {
+				pipeUserValid = true
+			}
 		}
-		orgNames := []string{}
-		for _, org := range orgs {
-			orgNames = append(orgNames, org.Login)
-		}
-		sort.Strings(orgNames)
-		log.Logger().Infof("found %d organisations in git server %s: %s\n", len(orgs), info(server.URL), info(strings.Join(orgNames, ", ")))
+	}
+
+	if pipeUserValid {
+		log.Logger().Infof("Validated pipeline user %s on git server %s", util.ColorInfo(config.PipeLineUsername), util.ColorInfo(config.PipeLineServer))
+	} else {
+		return errors.Errorf("pipeline user %s on git server %s not valid", util.ColorError(config.PipeLineUsername), util.ColorError(config.PipeLineServer))
 	}
 
 	log.Logger().Infof("git tokens seem to be setup correctly\n")
