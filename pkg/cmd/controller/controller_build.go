@@ -597,7 +597,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	if !allCompleted && containersTerminated {
 		allCompleted = true
 	}
-	if allCompleted {
+	if allCompleted && (spec.Status == v1.ActivityStatusTypeFailed || spec.Status == v1.ActivityStatusTypeSucceeded) {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
 		} else {
