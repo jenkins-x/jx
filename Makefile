@@ -35,7 +35,6 @@ GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
 GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
-FEATURE_FLAG_TOKEN := $(shell cat /builder/home/feature-flag-token 2> /dev/null)
 CGO_ENABLED = 0
 
 REPORTS_DIR=$(BUILD_TARGET)/reports
@@ -82,12 +81,6 @@ BUILDFLAGS += $(COVERAGE_BUILDFLAGS)
 BUILD_TARGET = $(COVERAGE_BUILD_TARGET)
 MAIN_SRC_FILE = $(COVERED_MAIN_SRC_FILE)
 
-endif
-
-# Build the Jenkins X distribution
-ifdef DISTRO
-BUILDFLAGS += -ldflags "-X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN)"
-RELEASE_ORG_REPO := cloudbees/cloudbees-jenkins-x-distro
 endif
 
 TEST_PACKAGE ?= ./...
