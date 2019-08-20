@@ -1,6 +1,7 @@
 package gc
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -8,12 +9,9 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	tv1alpha1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -115,13 +113,6 @@ func (o *GCActivitiesOptions) Run() error {
 		return err
 	}
 
-	if prowEnabled {
-		err = o.gcPipelineRuns(client, currentNs)
-		if err != nil {
-			return err
-		}
-	}
-
 	// cannot use field selectors like `spec.kind=Preview` on CRDs so list all environments
 	activityInterface := client.JenkinsV1().PipelineActivities(currentNs)
 	activities, err := activityInterface.List(metav1.ListOptions{})
@@ -156,9 +147,22 @@ func (o *GCActivitiesOptions) Run() error {
 	now := time.Now()
 	counters := &buildsCount{}
 
-	// use reverse order so we remove the oldest ones
-	for i := len(activities.Items) - 1; i >= 0; i-- {
-		a := activities.Items[i]
+	var completedActivities []v1.PipelineActivity
+
+	// Filter out running activities
+	for _, a := range activities.Items {
+		if a.Spec.CompletedTimestamp != nil {
+			completedActivities = append(completedActivities, a)
+		}
+	}
+
+	// Sort with newest created activities first
+	sort.Slice(completedActivities, func(i, j int) bool {
+		return !completedActivities[i].Spec.CompletedTimestamp.Before(completedActivities[j].Spec.CompletedTimestamp)
+	})
+
+	//
+	for _, a := range completedActivities {
 		branchName := a.BranchName()
 		isPR, isBatch := o.isPullRequestOrBatchBranch(branchName)
 		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR, isBatch)
@@ -173,7 +177,7 @@ func (o *GCActivitiesOptions) Run() error {
 
 		repoAndBranchName := a.RepositoryOwner() + "/" + a.RepositoryName() + "/" + a.BranchName()
 		c := counters.AddBuild(repoAndBranchName, isPR)
-		if c > revisionHistory {
+		if c > revisionHistory && a.Spec.CompletedTimestamp != nil {
 			err = o.deleteActivity(activityInterface, &a)
 			if err != nil {
 				return err
@@ -201,64 +205,6 @@ func (o *GCActivitiesOptions) Run() error {
 	return nil
 }
 
-func (o *GCActivitiesOptions) gcPipelineRuns(jxClient versioned.Interface, ns string) error {
-	tektonkClient, _, err := o.TektonClient()
-	if err != nil {
-		return err
-	}
-	pipelineRunInterface := tektonkClient.TektonV1alpha1().PipelineRuns(ns)
-	activities, err := pipelineRunInterface.List(metav1.ListOptions{})
-	if err != nil {
-		log.Logger().Warnf("no PipelineRun instances found: %s", err.Error())
-		return nil
-	}
-
-	now := time.Now()
-	counters := &buildsCount{}
-
-	// lets go in reverse order so we delete the oldest first
-	for i := len(activities.Items) - 1; i >= 0; i-- {
-		a := activities.Items[i]
-		var isPR, isBatch bool
-		if a.Labels != nil {
-			isPR, isBatch = o.isPullRequestOrBatchBranch(a.Labels["branch"])
-		}
-		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR, isBatch)
-
-		completionTime := a.Status.CompletionTime
-		if completionTime != nil && completionTime.Add(maxAge).Before(now) {
-			err = o.deletePipelineRun(pipelineRunInterface, &a)
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		labels := a.Labels
-		if labels != nil {
-			owner := labels[v1.LabelOwner]
-			repo := labels[v1.LabelRepository]
-			if repo == "" {
-				repo = labels["repo"]
-			}
-			branch := labels[v1.LabelBranch]
-
-			// TODO another way to uniquely find the git repo + branch?
-			if owner != "" && repo != "" && branch != "" {
-				repoAndBranchName := owner + "/" + repo + "/" + branch
-				c := counters.AddBuild(repoAndBranchName, isPR)
-				if c > revisionHistory {
-					err = o.deletePipelineRun(pipelineRunInterface, &a)
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func (o *GCActivitiesOptions) deleteActivity(activityInterface jv1.PipelineActivityInterface, a *v1.PipelineActivity) error {
 	prefix := ""
 	if o.DryRun {
@@ -269,18 +215,6 @@ func (o *GCActivitiesOptions) deleteActivity(activityInterface jv1.PipelineActiv
 		return nil
 	}
 	return activityInterface.Delete(a.Name, metav1.NewDeleteOptions(0))
-}
-
-func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tv1alpha1.PipelineRunInterface, a *v1alpha1.PipelineRun) error {
-	prefix := ""
-	if o.DryRun {
-		prefix = "not "
-	}
-	log.Logger().Infof("%sdeleting PipelineRun %s", prefix, util.ColorInfo(a.Name))
-	if o.DryRun {
-		return nil
-	}
-	return pipelineRunInterface.Delete(a.Name, metav1.NewDeleteOptions(0))
 }
 
 func (o *GCActivitiesOptions) ageAndHistoryLimits(isPR, isBatch bool) (time.Duration, int) {
