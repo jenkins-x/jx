@@ -347,7 +347,7 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 	}
 
 	envVars = append(envVars)
-	log.Logger().WithField("env", util.PrettyPrint(envVars)).Tracef("environment variables for: %s", params.PipelineName)
+	log.Logger().WithField("env", util.PrettyPrint(envVars)).Warnf("environment variables for: %s", params.PipelineName)
 	return envVars
 }
 
