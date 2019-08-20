@@ -90,6 +90,19 @@ func TestMergerWithParent(t *testing.T) {
 		})
 }
 
+func TestMergerWithMergeMethod(t *testing.T) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testhelpers.BuildAndValidateProwConfig(t, filepath.Join(wd, "test_data", "merger_with_mergemethod"), "config.yaml",
+		"plugins.yaml", []testhelpers.SchedulerFile{
+			{
+				Filenames: []string{"parent.yaml", "repo.yaml"},
+				Org:       "acme",
+				Repo:      "dummy",
+			},
+		})
+}
+
 func TestOnlyWithParent(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)

@@ -2,6 +2,7 @@ package pipelinescheduler
 
 import (
 	"fmt"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -25,7 +26,7 @@ func BuildProwConfig(schedulers []*SchedulerLeaf) (*config.Config, *plugins.Conf
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "building JobConfig for %v", scheduler)
 		}
-		err = buildProwConfig(&configResult.ProwConfig, scheduler.SchedulerSpec)
+		err = buildProwConfig(&configResult.ProwConfig, scheduler.SchedulerSpec, scheduler.Org, scheduler.Repo)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "building ProwConfig for %v", scheduler)
 		}
@@ -203,7 +204,7 @@ func buildExternalPlugin(answer *plugins.ExternalPlugin, plugin *jenkinsv1.Exter
 	return nil
 }
 
-func buildProwConfig(prowConfig *config.ProwConfig, scheduler *jenkinsv1.SchedulerSpec) error {
+func buildProwConfig(prowConfig *config.ProwConfig, scheduler *jenkinsv1.SchedulerSpec, org string, repo string) error {
 	if scheduler.Policy != nil {
 		err := buildGlobalBranchProtection(&prowConfig.BranchProtection, scheduler.Policy)
 		if err != nil {
@@ -211,7 +212,7 @@ func buildProwConfig(prowConfig *config.ProwConfig, scheduler *jenkinsv1.Schedul
 		}
 	}
 	if scheduler.Merger != nil {
-		err := buildMerger(&prowConfig.Tide, scheduler.Merger)
+		err := buildMerger(&prowConfig.Tide, scheduler.Merger, org, repo)
 		if err != nil {
 			return errors.Wrapf(err, "building Merger for %v", scheduler)
 		}
@@ -615,7 +616,7 @@ func buildPeriodics(answer *config.JobConfig, periodics *jenkinsv1.Periodics) er
 	return nil
 }
 
-func buildMerger(answer *config.Tide, merger *jenkinsv1.Merger) error {
+func buildMerger(answer *config.Tide, merger *jenkinsv1.Merger, org string, repo string) error {
 	if merger.SyncPeriod != nil {
 		answer.SyncPeriod = *merger.SyncPeriod
 	}
@@ -636,6 +637,12 @@ func buildMerger(answer *config.Tide, merger *jenkinsv1.Merger) error {
 	}
 	if merger.MaxGoroutines != nil {
 		answer.MaxGoroutines = *merger.MaxGoroutines
+	}
+	if merger.MergeType != nil {
+		if answer.MergeType == nil {
+			answer.MergeType = make(map[string]github.PullRequestMergeType)
+		}
+		answer.MergeType[fmt.Sprintf("%s/%s", org, repo)] = github.PullRequestMergeType(*merger.MergeType)
 	}
 	if merger.ContextPolicy != nil {
 		err := buildContextPolicy(&answer.ContextOptions.TideContextPolicy, merger.ContextPolicy)
