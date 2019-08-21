@@ -992,6 +992,7 @@ func (j *ParsedPipeline) GetPossibleAffinityPolicy(name string) *corev1.Affinity
 								pipeline.GroupName + pipeline.PipelineRunLabelKey: name,
 							},
 						},
+						TopologyKey: "failure-domain.beta.kubernetes.io/zone",
 					},
 				}},
 			},
