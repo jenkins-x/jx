@@ -51,6 +51,19 @@ func TestRepo(t *testing.T) {
 		})
 }
 
+func TestMultipleContexts(t *testing.T) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testhelpers.BuildAndValidateProwConfig(t, filepath.Join(wd, "test_data", "multiple_contexts"), "config.yaml", "",
+		[]testhelpers.SchedulerFile{
+			{
+				Filenames: []string{"repo.yaml"},
+				Org:       "acme",
+				Repo:      "dummy",
+			},
+		})
+}
+
 func TestWithParent(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
