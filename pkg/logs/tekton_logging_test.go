@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path"
 	"regexp"
 	"testing"
@@ -478,10 +477,8 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 }
 
 func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
-	_, _, _, opts, _ := getFakeClientsAndNs(t)
-	opts.SkipAuthSecretsMerge = true
-	r, fakeStdout, _ := os.Pipe()
-	log.SetOutput(fakeStdout)
+	_, _, _, commonOptions, _ := getFakeClientsAndNs(t)
+	commonOptions.SkipAuthSecretsMerge = true
 
 	tl := TektonLogger{
 		LogWriter: &TestWriter{
@@ -494,40 +491,34 @@ func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(200)
-		fmt.Fprintf(w, exampleLogLine)
+		_, err := fmt.Fprintf(w, exampleLogLine)
+		assert.NoError(t, err)
 	}))
 
-	err := tl.StreamPipelinePersistentLogs(server.URL, &opts)
-	assert.NoError(t, err)
+	logOutput := log.CaptureOutput(func() {
+		err := tl.StreamPipelinePersistentLogs(server.URL, &commonOptions)
+		assert.NoError(t, err)
+	})
 
-	fakeStdout.Close()
-	outBytes, _ := ioutil.ReadAll(r)
-	r.Close()
-
-	assert.Contains(t, string(outBytes), "This is an example log line")
+	assert.Contains(t, string(logOutput), "This is an example log line")
 }
 
 func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
-	_, _, _, opts, _ := getFakeClientsAndNs(t)
-	opts.SkipAuthSecretsMerge = true
+	_, _, _, commonOptions, _ := getFakeClientsAndNs(t)
+	commonOptions.SkipAuthSecretsMerge = true
 	tl := TektonLogger{
 		LogWriter: &TestWriter{
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
 	}
-	r, fakeStdout, _ := os.Pipe()
-	log.SetOutput(fakeStdout)
 
-	err := tl.StreamPipelinePersistentLogs("s3://nonSupportedBucket", &opts)
+	logOutput := log.CaptureOutput(func() {
+		err := tl.StreamPipelinePersistentLogs("s3://nonSupportedBucket", &commonOptions)
+		assert.NoError(t, err)
+	})
 
-	assert.NoError(t, err)
-
-	fakeStdout.Close()
-	outBytes, _ := ioutil.ReadAll(r)
-	r.Close()
-
-	assert.Contains(t, string(outBytes), "The provided logsURL scheme is not supported: s3")
+	assert.Contains(t, string(logOutput), "The provided logsURL scheme is not supported: s3")
 }
 
 func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
@@ -572,25 +563,19 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 		},
 	}
 
-	r, fakeStdout, _ := os.Pipe()
-	log.SetOutput(fakeStdout)
-
-	err := tl.GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1")
-
-	fakeStdout.Close()
-	outBytes, _ := ioutil.ReadAll(r)
-	r.Close()
+	logOutput := log.CaptureOutput(func() {
+		err := tl.GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1")
+		assert.NoError(t, err)
+	})
 
 	aORb := regexp.MustCompile("Pod logs...")
-	n := aORb.FindAllStringIndex(string(outBytes), -1)
-	fmt.Println(len(n))
+	n := aORb.FindAllStringIndex(logOutput, -1)
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
 	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(containers1) + len(containers2)
 
-	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	assert.Equal(t, containersNumber, len(n))
 }
 
 // Helper method, not supposed to be a test by itself
