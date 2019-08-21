@@ -1,5 +1,5 @@
 image:
-  repository: jenkinsxio/jx
+  repository: gcr.io/jenkinsxio/jx
   tag: 2.0.399
   pullPolicy: IfNotPresent
 
