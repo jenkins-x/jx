@@ -17,6 +17,7 @@ spec:
           labelSelector:
             matchLabels:
               tekton.dev/pipelineRun: abayer-js-test-repo-really-long-1
+          topologyKey: failure-domain.beta.kubernetes.io/zone
   params:
   - name: version
     value: 0.0.1
