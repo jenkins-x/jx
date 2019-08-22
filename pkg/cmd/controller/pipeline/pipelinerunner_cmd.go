@@ -3,6 +3,7 @@ package pipeline
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
@@ -103,16 +104,22 @@ func (o *PipelineRunnerOptions) Run() error {
 		return err
 	}
 
+	metapipelineClient, err := metapipeline.NewMetaPipelineClient()
+	if err != nil {
+		return err
+	}
+
 	controller := controller{
-		bindAddress:       o.BindAddress,
-		path:              o.Path,
-		port:              o.Port,
-		useMetaPipeline:   useMetaPipeline,
-		metaPipelineImage: viper.GetString(metaPipelineImageOptionName),
-		semanticRelease:   o.SemanticRelease,
-		serviceAccount:    o.ServiceAccount,
-		jxClient:          jxClient,
-		ns:                ns,
+		bindAddress:        o.BindAddress,
+		path:               o.Path,
+		port:               o.Port,
+		useMetaPipeline:    useMetaPipeline,
+		metaPipelineImage:  viper.GetString(metaPipelineImageOptionName),
+		semanticRelease:    o.SemanticRelease,
+		serviceAccount:     o.ServiceAccount,
+		jxClient:           jxClient,
+		ns:                 ns,
+		metaPipelineClient: metapipelineClient,
 	}
 
 	controller.Start()
