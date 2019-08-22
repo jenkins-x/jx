@@ -33,6 +33,8 @@ pipelineConfig:
                 value: "2"
               - name: GOOGLE_APPLICATION_CREDENTIALS
                 value: /builder/home/kaniko-secret.json
+              - name: DISABLE_TEST_CACHING
+                value: "ture"
 
             steps:
               - image: gcr.io/jenkinsxio/builder-jx:0.1.639

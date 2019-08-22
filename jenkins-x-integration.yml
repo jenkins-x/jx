@@ -24,6 +24,8 @@ pipelineConfig:
                 value: "true"
               - name: PARALLEL_BUILDS
                 value: "2"
+              - name: DISABLE_TEST_CACHING
+                value: "ture"
             options:
               containerOptions:
                 resources:
