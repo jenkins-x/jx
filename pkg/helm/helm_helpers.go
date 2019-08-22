@@ -286,8 +286,8 @@ func LoadValuesFile(fileName string) (map[string]interface{}, error) {
 }
 
 // LoadParametersValuesFile loads the parameters values file or creates empty map if the file does not exist
-func LoadParametersValuesFile() (map[string]interface{}, error) {
-	return LoadValuesFile(filepath.Join("env", ParametersYAMLFile))
+func LoadParametersValuesFile(dir string) (map[string]interface{}, error) {
+	return LoadValuesFile(filepath.Join(dir, "env", ParametersYAMLFile))
 }
 
 // LoadTemplatesDir loads the files in the templates dir or creates empty map if none exist

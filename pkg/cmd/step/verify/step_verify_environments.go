@@ -190,7 +190,7 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 }
 
 func modifyPipelineGitEnvVars(dir string) error {
-	parameterValues, err := helm.LoadParametersValuesFile()
+	parameterValues, err := helm.LoadParametersValuesFile(dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load parameters values file")
 	}
