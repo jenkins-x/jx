@@ -275,10 +275,12 @@ func BuildAndValidateProwConfig(t *testing.T, baseDir string, expectedConfigFile
 	cfg, plugs, err := pipelinescheduler.BuildProwConfig(schedulerLeaves)
 	assert.NoError(t, err)
 	if expectedConfigFilename != "" {
-		expected, err := yaml.Marshal(cfg)
+		expected, err := yaml.Marshal(&expectedConfig)
+		assert.NoError(t, err)
+		actual, err := yaml.Marshal(cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, expected)
-		assert.Equal(t, &expectedConfig, cfg)
+		assert.Equal(t, string(expected), string(actual))
 	}
 	if expectedPluginsFilename != "" {
 		expected, err := yaml.Marshal(&expectedPlugins)
