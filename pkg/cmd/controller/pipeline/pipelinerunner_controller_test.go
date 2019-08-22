@@ -1,20 +1,17 @@
 package pipeline
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"net"
 	"net/http"
 	"sync"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -77,7 +74,8 @@ func TestPipelineRunner(t *testing.T) {
 
 var _ = Describe("Pipeline Runner", func() {
 	BeforeSuite(func() {
-		log.SetOutput(ioutil.Discard)
+		//log.SetOutput(ioutil.Discard)
+		log.SetLevel("DEBUG")
 	})
 
 	Describe("when running", func() {
@@ -99,7 +97,7 @@ var _ = Describe("Pipeline Runner", func() {
 			port, _ = getFreePort()
 			controller := controller{
 				path:            "/",
-				bindAddress:     "0.0.0.0",
+				bindAddress:     "127.0.0.1",
 				port:            port,
 				useMetaPipeline: true,
 				jxClient:        jxClient,
@@ -134,7 +132,7 @@ var _ = Describe("Pipeline Runner", func() {
 			Expect(resp.StatusCode).Should(Equal(http.StatusNoContent))
 		})
 
-		It("/ready returns HTTP 204", func() {
+		/*It("/ready returns HTTP 204", func() {
 			resp, err := client.Get(fmt.Sprintf("http://localhost:%d%s", port, readyPath))
 			Expect(err).Should(BeNil())
 			Expect(resp.StatusCode).Should(Equal(http.StatusNoContent))
@@ -169,10 +167,10 @@ var _ = Describe("Pipeline Runner", func() {
 			defer resp.Body.Close()
 			htmlData, err := ioutil.ReadAll(resp.Body)
 			Expect(string(htmlData)).Should(ContainSubstring("unable to find prow job name in pipeline request"))
-		})
+		})*/
 	})
 
-	Describe("#getSourceURL", func() {
+	/*Describe("#getSourceURL", func() {
 		var (
 			port           int
 			testController controller
@@ -200,7 +198,7 @@ var _ = Describe("Pipeline Runner", func() {
 			port, _ = getFreePort()
 			testController = controller{
 				path:        "/",
-				bindAddress: "0.0.0.0",
+				bindAddress: "127.0.0.1",
 				port:        port,
 				jxClient:    jxClient,
 				ns:          "jx",
@@ -217,7 +215,7 @@ var _ = Describe("Pipeline Runner", func() {
 			url := testController.getSourceURL("jenkins-x", "foo")
 			Expect(url).Should(BeEmpty())
 		})
-	})
+	})*/
 })
 
 // getFreePort asks the kernel for a free open port that is ready to use.

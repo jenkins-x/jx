@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 
@@ -97,6 +98,7 @@ func (c *controller) Start() {
 
 func (c *controller) startWorkers(ctx context.Context, wg *sync.WaitGroup, cancel context.CancelFunc) {
 	wg.Add(1)
+	logger.Debugf("about to spawn creating HTTP server mux on %s port %d", c.bindAddress, c.port)
 	go func() {
 		defer wg.Done()
 		mux := http.NewServeMux()
@@ -108,6 +110,7 @@ func (c *controller) startWorkers(ctx context.Context, wg *sync.WaitGroup, cance
 			Handler: mux,
 		}
 
+		logger.Debugf("about to spawn starting HTTP server on %s port %d", c.bindAddress, c.port)
 		go func() {
 			logger.Infof("starting HTTP server on %s port %d", c.bindAddress, c.port)
 			logger.Infof("using meta pipeline mode: %t", c.useMetaPipeline)
@@ -115,6 +118,11 @@ func (c *controller) startWorkers(ctx context.Context, wg *sync.WaitGroup, cance
 				logger.Infof("using custom pipeline image: %s", c.metaPipelineImage)
 			}
 			if err := srv.ListenAndServe(); err != nil {
+				if err == http.ErrServerClosed {
+					logger.Debugf("server closed")
+				} else {
+					logger.Errorf(errors.Wrapf(err, "starting http server on %s port %d", c.bindAddress, c.port).Error())
+				}
 				cancel()
 				return
 			}
@@ -123,7 +131,7 @@ func (c *controller) startWorkers(ctx context.Context, wg *sync.WaitGroup, cance
 		for {
 			select {
 			case <-ctx.Done():
-				logger.Info("shutting down HTTP server")
+				logger.Infof("shutting down HTTP server on %s port %d", c.bindAddress, c.port)
 				ctx, cancel := context.WithTimeout(ctx, shutdownTimeout*time.Second)
 				_ = srv.Shutdown(ctx)
 				cancel()
