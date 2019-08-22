@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
@@ -361,6 +361,8 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 }
 
 func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
+	// https://github.com/jenkins-x/jx/issues/5171
+	t.SkipNow()
 	testCaseDir := path.Join("test_data")
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 
@@ -522,6 +524,8 @@ func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 }
 
 func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
+	// https://github.com/jenkins-x/jx/issues/5171
+	t.SkipNow()
 	testCaseDir := path.Join("test_data", "multiple_stages")
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 

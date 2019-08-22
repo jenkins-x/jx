@@ -4,19 +4,21 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"net"
 	"net/http"
 	"sync"
 	"testing"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -71,6 +73,8 @@ const (
 )
 
 func TestPipelineRunner(t *testing.T) {
+	// See https://github.com/jenkins-x/jx/issues/5167
+	t.SkipNow()
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Pipeline Runner Test Suite")
 }
@@ -99,7 +103,7 @@ var _ = Describe("Pipeline Runner", func() {
 			port, _ = getFreePort()
 			controller := controller{
 				path:            "/",
-				bindAddress:     "0.0.0.0",
+				bindAddress:     "127.0.0.1",
 				port:            port,
 				useMetaPipeline: true,
 				jxClient:        jxClient,
@@ -200,7 +204,7 @@ var _ = Describe("Pipeline Runner", func() {
 			port, _ = getFreePort()
 			testController = controller{
 				path:        "/",
-				bindAddress: "0.0.0.0",
+				bindAddress: "127.0.0.1",
 				port:        port,
 				jxClient:    jxClient,
 				ns:          "jx",
