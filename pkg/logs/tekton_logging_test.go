@@ -428,6 +428,9 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 }
 
 func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing.T) {
+	// https://github.com/jenkins-x/jx/issues/5171
+	t.SkipNow()
+
 	testCaseDir := path.Join("test_data", "legacy_pipeline_run")
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 
