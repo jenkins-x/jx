@@ -260,7 +260,21 @@ func buildPolicy(answer *config.Policy, policy *jenkinsv1.ProtectionPolicy) erro
 func buildBranchProtectionContextPolicy(answer *config.ContextPolicy,
 	policy *jenkinsv1.BranchProtectionContextPolicy) error {
 	if policy.Contexts != nil {
-		answer.Contexts = policy.Contexts.Items
+		if answer.Contexts == nil {
+			answer.Contexts = make([]string, 0)
+		}
+		for _, i := range policy.Contexts.Items {
+			found := false
+			for _, existing := range answer.Contexts {
+				if existing == i {
+					found = true
+					break
+				}
+			}
+			if !found {
+				answer.Contexts = append(answer.Contexts, i)
+			}
+		}
 	}
 	if policy.Strict != nil {
 		answer.Strict = policy.Strict
@@ -292,10 +306,20 @@ func buildRequiredPullRequestReviews(answer *config.ReviewPolicy, policy *jenkin
 
 func buildRestrictions(answer *config.Restrictions, restrictions *jenkinsv1.Restrictions) error {
 	if restrictions.Users != nil {
-		answer.Users = restrictions.Users.Items
+		if answer.Users == nil {
+			answer.Users = make([]string, 0)
+		}
+		for _, i := range restrictions.Users.Items {
+			answer.Users = append(answer.Users, i)
+		}
 	}
 	if restrictions.Teams != nil {
-		answer.Teams = restrictions.Teams.Items
+		if answer.Teams == nil {
+			answer.Teams = make([]string, 0)
+		}
+		for _, i := range restrictions.Teams.Items {
+			answer.Teams = append(answer.Teams, i)
+		}
 	}
 	return nil
 }
@@ -478,11 +502,6 @@ func buildGlobalBranchProtection(answer *config.BranchProtection,
 
 func buildBranchProtection(answer *config.BranchProtection,
 	protectionPolicy *jenkinsv1.ProtectionPolicy, orgName string, repoName string, branchName string) error {
-	policy := config.Policy{}
-	err := buildPolicy(&policy, protectionPolicy)
-	if err != nil {
-		return errors.Wrapf(err, "building ProtectionPolicy from %v", protectionPolicy)
-	}
 	if orgName != "" {
 		if answer.Orgs == nil {
 			answer.Orgs = make(map[string]config.Org)
@@ -500,23 +519,36 @@ func buildBranchProtection(answer *config.BranchProtection,
 			}
 			repo := answer.Orgs[orgName].Repos[repoName]
 			if branchName != "" {
-
 				if repo.Branches == nil {
 					repo.Branches = make(map[string]config.Branch)
 				}
-				repo.Branches[branchName] = config.Branch{
-					Policy: policy,
+				if _, ok := repo.Branches[branchName]; !ok {
+					repo.Branches[branchName] = config.Branch{}
+				}
+				branch := repo.Branches[branchName]
+				err := buildPolicy(&branch.Policy, protectionPolicy)
+				if err != nil {
+					return errors.Wrapf(err, "building ProtectionPolicy from %v", protectionPolicy)
 				}
 			} else {
-				repo.Policy = policy
+				err := buildPolicy(&repo.Policy, protectionPolicy)
+				if err != nil {
+					return errors.Wrapf(err, "building ProtectionPolicy from %v", protectionPolicy)
+				}
 			}
 			org.Repos[repoName] = repo
 		} else {
-			org.Policy = policy
+			err := buildPolicy(&org.Policy, protectionPolicy)
+			if err != nil {
+				return errors.Wrapf(err, "building ProtectionPolicy from %v", protectionPolicy)
+			}
 		}
 		answer.Orgs[orgName] = org
 	} else {
-		answer.Policy = policy
+		err := buildPolicy(&answer.Policy, protectionPolicy)
+		if err != nil {
+			return errors.Wrapf(err, "building ProtectionPolicy from %v", protectionPolicy)
+		}
 	}
 	return nil
 }
