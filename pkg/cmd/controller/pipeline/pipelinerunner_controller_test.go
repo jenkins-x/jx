@@ -3,22 +3,22 @@ package pipeline
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"net"
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/jenkins-x/jx/pkg/log"
-
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -73,20 +73,19 @@ const (
 )
 
 func TestPipelineRunner(t *testing.T) {
-	// See https://github.com/jenkins-x/jx/issues/5167
-	t.SkipNow()
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Pipeline Runner Test Suite")
 }
 
 var _ = Describe("Pipeline Runner", func() {
 	BeforeSuite(func() {
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(GinkgoWriter)
 	})
 
 	Describe("when running", func() {
 		var (
 			client *http.Client
+			host   string
 			port   int
 			err    error
 			ctx    context.Context
@@ -100,10 +99,11 @@ var _ = Describe("Pipeline Runner", func() {
 			jxClient := fake.NewSimpleClientset()
 			Expect(err).Should(BeNil())
 
+			host = "127.0.0.1"
 			port, _ = getFreePort()
 			controller := controller{
 				path:            "/",
-				bindAddress:     "127.0.0.1",
+				bindAddress:     host,
 				port:            port,
 				useMetaPipeline: true,
 				jxClient:        jxClient,
@@ -116,6 +116,9 @@ var _ = Describe("Pipeline Runner", func() {
 				controller.startWorkers(ctx, &wg, cancel)
 				wg.Wait()
 			}()
+
+			err := waitForOpenPort(host, port, time.Duration(5)*time.Second)
+			Expect(err).Should(BeNil())
 		})
 
 		AfterEach(func() {
@@ -127,7 +130,11 @@ var _ = Describe("Pipeline Runner", func() {
 			Expect(err).Should(BeNil())
 			Expect(resp.StatusCode).Should(Equal(200))
 
-			defer resp.Body.Close()
+			defer func() {
+				err := resp.Body.Close()
+				Expect(err).Should(BeNil())
+			}()
+
 			htmlData, err := ioutil.ReadAll(resp.Body)
 			Expect(string(htmlData)).Should(ContainSubstring("please POST JSON "))
 		})
@@ -150,7 +157,11 @@ var _ = Describe("Pipeline Runner", func() {
 			Expect(err).Should(BeNil())
 			Expect(resp.StatusCode).Should(Equal(http.StatusBadRequest))
 
-			defer resp.Body.Close()
+			defer func() {
+				err := resp.Body.Close()
+				Expect(err).Should(BeNil())
+			}()
+
 			htmlData, err := ioutil.ReadAll(resp.Body)
 			Expect(string(htmlData)).Should(ContainSubstring("could not start pipeline"))
 		})
@@ -160,7 +171,11 @@ var _ = Describe("Pipeline Runner", func() {
 			Expect(err).Should(BeNil())
 			Expect(resp.StatusCode).Should(Equal(http.StatusBadRequest))
 
-			defer resp.Body.Close()
+			defer func() {
+				err := resp.Body.Close()
+				Expect(err).Should(BeNil())
+			}()
+
 			htmlData, err := ioutil.ReadAll(resp.Body)
 			Expect(string(htmlData)).Should(ContainSubstring("no prowJobSpec.refs passed"))
 		})
@@ -170,7 +185,11 @@ var _ = Describe("Pipeline Runner", func() {
 			Expect(err).Should(BeNil())
 			Expect(resp.StatusCode).Should(Equal(http.StatusBadRequest))
 
-			defer resp.Body.Close()
+			defer func() {
+				err := resp.Body.Close()
+				Expect(err).Should(BeNil())
+			}()
+
 			htmlData, err := ioutil.ReadAll(resp.Body)
 			Expect(string(htmlData)).Should(ContainSubstring("unable to find prow job name in pipeline request"))
 		})
@@ -178,7 +197,6 @@ var _ = Describe("Pipeline Runner", func() {
 
 	Describe("#getSourceURL", func() {
 		var (
-			port           int
 			testController controller
 			expectedURL    = "http://github.com/jenkins-x/jx.git"
 		)
@@ -198,16 +216,11 @@ var _ = Describe("Pipeline Runner", func() {
 			}
 
 			jxObjects = append(jxObjects, sourceRepo)
-
 			jxClient := fake.NewSimpleClientset(jxObjects...)
 
-			port, _ = getFreePort()
 			testController = controller{
-				path:        "/",
-				bindAddress: "127.0.0.1",
-				port:        port,
-				jxClient:    jxClient,
-				ns:          "jx",
+				jxClient: jxClient,
+				ns:       "jx",
 			}
 
 		})
@@ -239,4 +252,30 @@ func getFreePort() (int, error) {
 		_ = l.Close()
 	}()
 	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
+func waitForOpenPort(host string, port int, timeOut time.Duration) error {
+	connectChannel := make(chan error, 1)
+	go func() {
+		for {
+			addr := fmt.Sprintf("%s:%d", host, port)
+			conn, err := net.Dial("tcp", addr)
+			if err != nil {
+				continue
+			}
+
+			err = conn.Close()
+			if err != nil {
+				connectChannel <- err
+			}
+			connectChannel <- nil
+		}
+	}()
+
+	select {
+	case err := <-connectChannel:
+		return err
+	case <-time.After(timeOut):
+		return errors.New("timout waiting for open port")
+	}
 }

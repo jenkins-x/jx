@@ -119,7 +119,7 @@ func (c *controller) startWorkers(ctx context.Context, wg *sync.WaitGroup, cance
 				if err == http.ErrServerClosed {
 					logger.Debugf("server closed")
 				} else {
-					logger.Errorf(errors.Wrapf(err, "starting http server on %s port %d", c.bindAddress, c.port).Error())
+					logger.Errorf("unexpected error in HTTP server: %s", err.Error())
 				}
 				cancel()
 				return
