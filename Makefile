@@ -69,7 +69,9 @@ else
 GOTEST += -p 4
 endif
 
-
+ifdef DISABLE_TEST_CACHING
+GOTEST += -count=1
+endif
 
 # support for building a covered jx binary (one with the coverage instrumentation compiled in). The `build-covered`
 # target also builds the covered binary explicitly
@@ -124,10 +126,10 @@ make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
 test: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) -failfast -short ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(COVERFLAGS) -failfast -short ./...
 
 test-cloud-gke: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./pkg/cloud/gke -failfast -short ./pkg/cloud/gke
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./pkg/cloud/gke -failfast -short ./pkg/cloud/gke
 
 test-report: make-reports-dir get-test-deps test ## Create the test report
 	@gocov convert $(COVER_OUT) | gocov report
@@ -142,19 +144,19 @@ test-slow-report: get-test-deps test-slow make-reports-dir
 	@gocov convert $(COVER_OUT) | gocov report
 
 test-slow: make-reports-dir ## Run unit tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 $(COVERFLAGS) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(COVERFLAGS) ./...
 
 test-slow-report-html: make-reports-dir get-test-deps test-slow
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-integration: get-test-deps## Run the integration tests
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration  -short ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration  -short ./...
 
 test-integration1: make-reports-dir
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration $(COVERFLAGS) -short ./... -test.v -run $(TEST)
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration $(COVERFLAGS) -short ./... -test.v -run $(TEST)
 
 test-rich-integration1: make-reports-dir
-	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration $(COVERFLAGS) -short -test.v $(TEST_PACKAGE) -run $(TEST)
+	@CGO_ENABLED=$(CGO_ENABLED) richgo test -tags=integration $(COVERFLAGS) -short -test.v $(TEST_PACKAGE) -run $(TEST)
 
 test-integration-report: make-reports-dir get-test-deps test-integration ## Create the integration tests report
 	@gocov convert $(COVER_OUT) | gocov report
@@ -163,7 +165,7 @@ test-integration-report-html: make-reports-dir get-test-deps test-integration
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-slow-integration: make-reports-dir ## Run the any tests without a build tag as well as those that have the "integration" build tag. This target is run during CI.
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags=integration $(COVERFLAGS) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration $(COVERFLAGS) ./...
 
 test-slow-integration-report: make-reports-dir get-test-deps test-slow-integration
 	@gocov convert $(COVER_OUT) | gocov report
@@ -172,7 +174,7 @@ test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-inte
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-soak: make-reports-dir get-test-deps
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -count=1 -tags soak $(COVERFLAGS) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags soak $(COVERFLAGS) ./...
 
 test1: get-test-deps make-reports-dir ## Runs single test specified by test name, eg 'make test1 TEST=TestFoo'
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) ./... -test.v -run $(TEST)

@@ -37,6 +37,8 @@ pipelineConfig:
                 value: "2"
               - name: GOOGLE_APPLICATION_CREDENTIALS
                 value: /builder/home/kaniko-secret.json
+              - name: DISABLE_TEST_CACHING
+                value: "ture"
             options:
               containerOptions:
                 resources:
