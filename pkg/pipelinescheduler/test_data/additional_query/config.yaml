@@ -1,0 +1,68 @@
+branch-protection:
+  orgs:
+    acme:
+      repos:
+        dummy:
+          required_status_checks:
+            contexts:
+              - integration
+              - bdd
+              - tekton
+              - lint
+deck:
+  spyglass: {}
+gerrit: {}
+owners_dir_blacklist:
+  default: null
+  repos: null
+plank: {}
+postsubmits:
+  acme/dummy:
+    - agent: tekton
+      branches:
+        - master
+      context: ""
+      name: release
+presubmits:
+  acme/dummy:
+    - agent: tekton
+      always_run: true
+      context: integration
+      name: integration
+      rerun_command: /test integration
+      trigger: (?m)^/test( all| integration),?(\s+|$)
+    - agent: tekton
+      always_run: true
+      context: bdd
+      name: bdd
+      rerun_command: /test bdd
+      trigger: (?m)^/test( all| bdd),?(\s+|$)
+    - agent: tekton
+      always_run: true
+      context: tekton
+      name: tekton
+      rerun_command: /test lint
+      trigger: (?m)^/test( all| lint),?(\s+|$)
+    - agent: tekton
+      always_run: true
+      context: lint
+      name: lint
+      rerun_command: /test lint
+      trigger: (?m)^/test( all| lint),?(\s+|$)
+push_gateway: {}
+sinker: {}
+tide:
+  context_options:
+    required-if-present-contexts: null
+  queries:
+    - labels:
+        - approved
+        - lgtm
+      missingLabels:
+        - do-not-merge
+        - do-not-merge/hold
+        - do-not-merge/work-in-progress
+        - needs-ok-to-test
+        - needs-rebase
+      repos:
+        - acme/dummy

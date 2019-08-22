@@ -1,0 +1,111 @@
+plugins:
+  entries:
+    - label
+postsubmits:
+  replace: true
+  entries:
+    - agent: tekton
+      branches:
+        entries:
+          - master
+      name: release
+      context: ""
+presubmits:
+  replace: true
+  entries:
+    - agent: tekton
+      alwaysRun: true
+      context: integration
+      name: integration
+      policy:
+        requiredStatusChecks:
+          contexts:
+            entries:
+              - integration
+      queries:
+        - labels:
+            entries:
+              - approved
+              - lgtm
+          missingLabels:
+            entries:
+              - do-not-merge
+              - do-not-merge/hold
+              - do-not-merge/work-in-progress
+              - needs-ok-to-test
+              - needs-rebase
+      report: true
+      rerunCommand: /test integration
+      trigger: (?m)^/test( all| integration),?(\s+|$)
+    - agent: tekton
+      alwaysRun: true
+      context: bdd
+      name: bdd
+      policy:
+        requiredStatusChecks:
+          contexts:
+            entries:
+              - bdd
+      queries:
+        - labels:
+            entries:
+              - approved
+              - lgtm
+          missingLabels:
+            entries:
+              - do-not-merge
+              - do-not-merge/hold
+              - do-not-merge/work-in-progress
+              - needs-ok-to-test
+              - needs-rebase
+      report: true
+      rerunCommand: /test bdd
+      trigger: (?m)^/test( all| bdd),?(\s+|$)
+    - agent: tekton
+      alwaysRun: true
+      context: tekton
+      name: tekton
+      policy:
+        requiredStatusChecks:
+          contexts:
+            entries:
+              - tekton
+      queries:
+        - labels:
+            entries:
+              - approved
+              - lgtm
+          missingLabels:
+            entries:
+              - do-not-merge
+              - do-not-merge/hold
+              - do-not-merge/work-in-progress
+              - needs-ok-to-test
+              - needs-rebase
+      report: true
+      rerunCommand: /test lint
+      trigger: (?m)^/test( all| lint),?(\s+|$)
+    - agent: tekton
+      alwaysRun: true
+      context: lint
+      name: lint
+      policy:
+        requiredStatusChecks:
+          contexts:
+            entries:
+              - lint
+      queries:
+        - labels:
+            entries:
+              - approved
+              - lgtm
+          missingLabels:
+            entries:
+              - do-not-merge
+              - do-not-merge/hold
+              - do-not-merge/work-in-progress
+              - needs-ok-to-test
+              - needs-rebase
+      report: true
+      rerunCommand: /test lint
+      trigger: (?m)^/test( all| lint),?(\s+|$)
