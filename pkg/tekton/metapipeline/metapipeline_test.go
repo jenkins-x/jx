@@ -89,7 +89,8 @@ var _ = Describe("Meta pipeline", func() {
 
 			It("should pass custom env variables to step syntax effective to be applied to effective project config", func() {
 				step := actualCRDs.Tasks()[0].Spec.Steps[2]
-				Expect(step.Args[0]).Should(ContainSubstring("--env SOME_VAR=SOME_VAL --env OTHER_VAR=OTHER_VAL"))
+				Expect(step.Args[0]).Should(ContainSubstring("--env SOME_VAR=SOME_VAL"))
+				Expect(step.Args[0]).Should(ContainSubstring("--env OTHER_VAR=OTHER_VAL"))
 			})
 
 			It("should have correct step create task args", func() {
