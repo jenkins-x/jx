@@ -52,7 +52,7 @@ func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "")
 
@@ -72,7 +72,7 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
@@ -162,7 +162,7 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
@@ -253,7 +253,7 @@ func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
@@ -296,7 +296,7 @@ func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -338,7 +338,7 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -385,7 +385,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -451,7 +451,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedContainerInTheMiddle(
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -517,7 +517,7 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -614,7 +614,7 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 			StreamLinesLogged: make([]string, 0),
 			SingleLinesLogged: make([]string, 0),
 		},
-		logsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: LogsProvider,
 	}
 
 	pa := &v1.PipelineActivity{
