@@ -236,7 +236,7 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 				name = strings.TrimSuffix(name, ext)
 			}
 			if !util.StringMatchesAny(name, includes, excludes) {
-				break
+				continue
 			} else {
 				pro := operations.PullRequestOperation{
 					CommonOptions: o.CommonOptions,
