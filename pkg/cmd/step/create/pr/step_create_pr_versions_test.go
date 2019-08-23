@@ -127,6 +127,75 @@ func TestCreatePullRequestUpdateVersionFilesFn(t *testing.T) {
 		tests.AssertFileContains(t, filepath.Join(dir, "charts", "acme", "wile.yml"), "version: 1.0.1")
 		tests.AssertFileContains(t, filepath.Join(dir, "charts", "acme", "roadrunner.yml"), "version: 2.0.1")
 	})
+	t.Run("excludes", func(t *testing.T) {
+		pegomock.RegisterMockTestingT(t)
+
+		pegomock.When(helmer.SearchCharts(pegomock.EqString("acme/wile"), pegomock.EqBool(true))).ThenReturn(pegomock.ReturnValue([]helm.ChartSummary{
+			{
+				Name:         "wile",
+				ChartVersion: "1.0.1",
+				AppVersion:   "1.0.1",
+				Description:  "",
+			},
+			{
+				Name:         "wile",
+				ChartVersion: "1.0.0",
+				AppVersion:   "1.0.0",
+				Description:  "",
+			},
+		}), pegomock.ReturnValue(nil))
+		pegomock.When(helmer.SearchCharts(pegomock.EqString("acme/roadrunner"), pegomock.EqBool(true))).ThenReturn(pegomock.ReturnValue([]helm.ChartSummary{
+			{
+				Name:         "roadrunner",
+				ChartVersion: "2.0.1",
+				AppVersion:   "2.0.1",
+				Description:  "",
+			},
+			{
+				Name:         "roadrunner",
+				ChartVersion: "1.0.1",
+				AppVersion:   "1.0.1",
+				Description:  "",
+			},
+		}), pegomock.ReturnValue(nil))
+		helm_test.StubFetchChart("acme/wile", "1.0.1", "", &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "wile",
+				Version: "1.0.1",
+			},
+		}, helmer)
+		helm_test.StubFetchChart("acme/roadrunner", "2.0.1", "", &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "roadrunner",
+				Version: "2.0.1",
+				Sources: []string{
+					"https://fake.git/acme/roadrunner",
+				},
+			},
+		}, helmer)
+		pegomock.When(helmer.IsRepoMissing("https://acme.com/charts")).ThenReturn(pegomock.ReturnValue(false), pegomock.ReturnValue("acme"), pegomock.ReturnValue(nil))
+		fn := o.CreatePullRequestUpdateVersionFilesFn([]string{"*"}, []string{"acme/wile"}, "charts", helmer)
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata/TestCreatePullRequestUpdateVersionFilesFn"), dir, true)
+		assert.NoError(t, err)
+		err = gitter.Init(dir)
+		assert.NoError(t, err)
+		err = gitter.Add(dir, "*")
+		assert.NoError(t, err)
+		err = gitter.CommitDir(dir, "Initial commit")
+		assert.NoError(t, err)
+		gitInfo, err := gits.ParseGitURL("https://fake.git/acme/e")
+		answer, err := fn(dir, gitInfo)
+		assert.NoError(t, err)
+		assert.Len(t, answer, 0)
+		tests.AssertFileContains(t, filepath.Join(dir, "charts", "acme", "wile.yml"), "version: 1.0.0")
+		tests.AssertFileContains(t, filepath.Join(dir, "charts", "acme", "roadrunner.yml"), "version: 2.0.1")
+	})
 	t.Run("specific", func(t *testing.T) {
 		pegomock.RegisterMockTestingT(t)
 
