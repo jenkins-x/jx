@@ -99,7 +99,8 @@ func Test_clone_version_stream_from_tag(t *testing.T) {
 }
 
 func Test_clone_version_stream_from_sha(t *testing.T) {
-	ref := "18825f6e7e0b4ccb1ac39f873b7dce54ca7895cf"
+	// This ref is the HEAD on https://github.com/jenkins-x/jenkins-x-versions/pull/417, which is closed and won't change.
+	ref := "72d36667196e2bfbb52b8220d55ef79747283a5b"
 	dir, err := cloneVersionStream("https://github.com/jenkins-x/jenkins-x-versions.git", ref)
 	defer func() {
 		_ = os.RemoveAll(dir)
