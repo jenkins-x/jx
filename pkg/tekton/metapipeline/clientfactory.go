@@ -266,6 +266,18 @@ func cloneVersionStream(url string, ref string) (string, error) {
 			return "", errors.Wrapf(err, "unable to clone version stream: %s", output)
 		}
 
+		// Fetch PR refs before checking out the ref
+		args = []string{"fetch", "origin", ref}
+		cmd = util.Command{
+			Dir:  dir,
+			Name: "git",
+			Args: args,
+		}
+		output, err = cmd.RunWithoutRetry()
+		if err != nil {
+			return "", errors.Wrapf(err, "unable to fetch pull request refs for version stream: %s", output)
+		}
+
 		args = []string{"checkout", ref}
 		cmd = util.Command{
 			Dir:  dir,
