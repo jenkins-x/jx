@@ -443,9 +443,7 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 		return false, o.TektonLogger.StreamPipelinePersistentLogs(pa.Spec.BuildLogsURL, o.CommonOptions)
 	}
 
-	_ = o.TektonLogger.LogWriter.WriteLog(logs.LogLine{
-		Line: fmt.Sprintf("Build logs for %s", util.ColorInfo(name)),
-	})
+	log.Logger().Infof("Build logs for %s", util.ColorInfo(name))
 	name = strings.TrimSuffix(name, " ")
 	return false, o.TektonLogger.GetRunningBuildLogs(pa, name)
 }
@@ -466,8 +464,8 @@ func (o *CLILogWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) erro
 }
 
 // WriteLog implementation of LogWriter.WriteLog for CLILogWriter, this implementation will write the provided log line through the defined logger
-func (o *CLILogWriter) WriteLog(logLine logs.LogLine) error {
-	log.Logger().Info(logLine.Line)
+func (o *CLILogWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) error {
+	lch <- logLine
 	return nil
 }
 

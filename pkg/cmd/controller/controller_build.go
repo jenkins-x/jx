@@ -65,8 +65,8 @@ type LongTermStorageLogWriter struct {
 }
 
 // WriteLog will receive a logs.LogLine value and append its bytes to the LongTermStorageLogWriter stored bytes
-func (w *LongTermStorageLogWriter) WriteLog(logLine logs.LogLine) error {
-	w.data = append(w.data, logLine.Line...)
+func (w *LongTermStorageLogWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) error {
+	lch <- logLine
 	return nil
 }
 

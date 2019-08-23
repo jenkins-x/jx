@@ -1784,9 +1784,9 @@ items:
           state:
             terminated:
               containerID: docker://d4abd70d8942c22bcd1d9fa1ec8a9440fa65ef4143c15b0286e0589f1dbb2a22
-              exitCode: 1
+              exitCode: 0
               finishedAt: "2019-07-02T12:36:46Z"
-              reason: Error
+              reason: Completed
               startedAt: "2019-07-02T12:35:03Z"
         - containerID: docker://8ef0a0090393a926ac59b0ed792d9e4fa32ed93443a2da251d0f8913688d1c10
           image: gcr.io/jenkinsxio/builder-nodejs:0.1.542
