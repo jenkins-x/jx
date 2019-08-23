@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	kubeclient "k8s.io/client-go/kubernetes"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -238,16 +239,43 @@ func cloneVersionStream(url string, ref string) (string, error) {
 
 	logger.Debugf("cloning version stream url: %s ref: %s into %s", url, ref, dir)
 
-	// Not using GitCLi Clone/ShallowClone atm, since it does not work with tags (HF)
-	args := []string{"clone", "--depth", "1", "--branch", ref, url, "."}
-	cmd := util.Command{
-		Dir:  dir,
-		Name: "git",
-		Args: args,
-	}
-	output, err := cmd.RunWithoutRetry()
-	if err != nil {
-		return "", errors.Wrapf(err, "unable to clone version stream: %s", output)
+	// Not using GitCLi Clone/ShallowClone atm, since it does not work with tags.
+	// Once https://github.com/jenkins-x/jx/issues/5087 is resolved we should switch to that.
+	// As a quick hack is assumes that any ref with a '.' won't be a SHA.
+	if ref == "master" || strings.Contains(ref, ".") {
+		args := []string{"clone", "--depth", "1", "--branch", ref, url, "."}
+		cmd := util.Command{
+			Dir:  dir,
+			Name: "git",
+			Args: args,
+		}
+		output, err := cmd.RunWithoutRetry()
+		if err != nil {
+			return "", errors.Wrapf(err, "unable to clone version stream and checking out branch/tag: %s", output)
+		}
+	} else {
+		// assuming we deal with a SHA
+		args := []string{"clone", url, "."}
+		cmd := util.Command{
+			Dir:  dir,
+			Name: "git",
+			Args: args,
+		}
+		output, err := cmd.RunWithoutRetry()
+		if err != nil {
+			return "", errors.Wrapf(err, "unable to clone version stream: %s", output)
+		}
+
+		args = []string{"checkout", ref}
+		cmd = util.Command{
+			Dir:  dir,
+			Name: "git",
+			Args: args,
+		}
+		output, err = cmd.RunWithoutRetry()
+		if err != nil {
+			return "", errors.Wrapf(err, "unable checkout sha %s for version stream %s: %s", ref, url, output)
+		}
 	}
 
 	return dir, err

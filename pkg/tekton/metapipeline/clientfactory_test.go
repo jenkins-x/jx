@@ -77,7 +77,7 @@ func Test_version_stream_and_url_from_team_setting(t *testing.T) {
 	assert.Equal(t, expectedVersion, ref)
 }
 
-func Test_clone_version_stream_from_ref(t *testing.T) {
+func Test_clone_version_stream_from_tag(t *testing.T) {
 	ref := "v1.0.8"
 	dir, err := cloneVersionStream("https://github.com/jenkins-x/jenkins-x-versions.git", ref)
 	defer func() {
@@ -88,6 +88,27 @@ func Test_clone_version_stream_from_ref(t *testing.T) {
 	assert.DirExists(t, dir)
 
 	args := []string{"describe", "--tags", "--abbrev=0"}
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "git",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	assert.NoError(t, err)
+	assert.Equal(t, ref, output)
+}
+
+func Test_clone_version_stream_from_sha(t *testing.T) {
+	ref := "18825f6e7e0b4ccb1ac39f873b7dce54ca7895cf"
+	dir, err := cloneVersionStream("https://github.com/jenkins-x/jenkins-x-versions.git", ref)
+	defer func() {
+		_ = os.RemoveAll(dir)
+	}()
+
+	assert.NoError(t, err)
+	assert.DirExists(t, dir)
+
+	args := []string{"rev-parse", "HEAD"}
 	cmd := util.Command{
 		Dir:  dir,
 		Name: "git",
