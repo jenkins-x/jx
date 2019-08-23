@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/boot"
+
 	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -711,6 +713,8 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 
 	// work around for helm apply with GitOps using a k8s local Service URL
 	os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
+	os.Setenv(boot.OverrideTLSWarningEnvVarName, "true")
+
 	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", binary, strings.Join(safeArgs, " "))
