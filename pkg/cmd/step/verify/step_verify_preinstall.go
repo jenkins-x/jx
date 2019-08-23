@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/boot"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -503,6 +505,9 @@ func (o *StepVerifyPreInstallOptions) verifyTLS(requirements *config.Requirement
 		if requirements.Webhook != config.WebhookTypeNone {
 			log.Logger().Warnf("TLS is not enabled so your webhooks will be called using HTTP. This means your webhook secret will be sent to your cluster in the clear. We do not recommend you do this.")
 			confirm = true
+		}
+		if os.Getenv(boot.OverrideTLSWarningEnvVarName) == "true" {
+			confirm = false
 		}
 		if confirm {
 			if o.BatchMode {
