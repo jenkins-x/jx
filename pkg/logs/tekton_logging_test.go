@@ -5,11 +5,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"path"
 	"regexp"
+	"strings"
 	"testing"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -34,8 +34,7 @@ import (
 )
 
 type TestWriter struct {
-	StreamLinesLogged []string
-	SingleLinesLogged []string
+	t *testing.T
 }
 
 func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
@@ -45,10 +44,9 @@ func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 		TektonClient: tektonClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "")
 
@@ -65,10 +63,9 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 		TektonClient: tektonClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 
 	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
@@ -155,10 +152,9 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 		TektonClient: tektonClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 
 	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
@@ -246,10 +242,9 @@ func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 		KubeClient:   kubeClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 	pa := &v1.PipelineActivity{
 		ObjectMeta: v12.ObjectMeta{
@@ -289,10 +284,9 @@ func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
 		Namespace:    ns,
 		KubeClient:   kubeClient,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -331,10 +325,9 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 		KubeClient:   kubeClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -361,8 +354,6 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 }
 
 func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
-	// https://github.com/jenkins-x/jx/issues/5171
-	t.SkipNow()
 	testCaseDir := path.Join("test_data")
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 
@@ -379,10 +370,9 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 		KubeClient:   kubeClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -403,34 +393,23 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 		},
 	}
 
-	bytesF, err := ioutil.ReadFile("/Users/daniel-gozalo/go/src/github.com/jenkins-x/jx/pkg/logs/test_data/multiple_stages/pipelinerun.yml")
+	logOutput := log.CaptureOutput(func() {
+		err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+		assert.NoError(t, err)
+	})
 
-	reader := bufio.NewReader(bytes.NewReader(bytesF))
-	for {
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("EOF")
-				break
-			}
-		}
-		fmt.Println(string(line))
+	metaPipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
+	for _, container := range metaPipelineContainers {
+		assertLogForContainer(t, logOutput, container)
 	}
 
-	err = tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
-
-	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
-	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
-	containersNumber := len(containers1) + len(containers2)
-
-	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	buildPipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
+	for _, container := range buildPipelineContainers {
+		assertLogForContainer(t, logOutput, container)
+	}
 }
 
 func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing.T) {
-	// https://github.com/jenkins-x/jx/issues/5171
-	t.SkipNow()
-
 	testCaseDir := path.Join("test_data", "legacy_pipeline_run")
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 
@@ -447,10 +426,9 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 		KubeClient:   kubeClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -471,14 +449,20 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	logOutput := log.CaptureOutput(func() {
+		err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+		assert.NoError(t, err)
+	})
 
-	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
-	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
-	containersNumber := len(containers1) + len(containers2)
+	metaPipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
+	for _, container := range metaPipelineContainers {
+		assertLogForContainer(t, logOutput, container)
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	buildPipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
+	for _, container := range buildPipelineContainers {
+		assertLogForContainer(t, logOutput, container)
+	}
 }
 
 func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
@@ -487,8 +471,7 @@ func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 
 	tl := TektonLogger{
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
 	}
 
@@ -513,8 +496,7 @@ func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 	commonOptions.SkipAuthSecretsMerge = true
 	tl := TektonLogger{
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
 	}
 
@@ -527,8 +509,6 @@ func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 }
 
 func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
-	// https://github.com/jenkins-x/jx/issues/5171
-	t.SkipNow()
 	testCaseDir := path.Join("test_data", "multiple_stages")
 	_, _, _, _, ns := getFakeClientsAndNs(t)
 
@@ -545,10 +525,9 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 		TektonClient: tektonClient,
 		Namespace:    ns,
 		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
+			t: t,
 		},
-		LogsRetrieverFunc: LogsProvider,
+		LogsRetrieverFunc: testLogProvider,
 	}
 
 	pa := &v1.PipelineActivity{
@@ -575,21 +554,22 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	aORb := regexp.MustCompile("Pod logs...")
-	n := aORb.FindAllStringIndex(logOutput, -1)
+	metaPipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
+	for _, container := range metaPipelineContainers {
+		assertLogForContainer(t, logOutput, container)
+	}
 
-	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
-	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
-	containersNumber := len(containers1) + len(containers2)
-
-	assert.Equal(t, containersNumber, len(n))
+	buildPipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
+	for _, container := range buildPipelineContainers {
+		assertLogForContainer(t, logOutput, container)
+	}
 }
 
 // Helper method, not supposed to be a test by itself
 func getFakeClientsAndNs(t *testing.T) (versioned.Interface, tektonclient.Interface, kubernetes.Interface, opts.CommonOptions, string) {
 	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
 	options := &commonOpts
-	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
+	testhelpers.ConfigureTestOptions(options, options.Git(), nil)
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()
 	assert.NoError(t, err, "There shouldn't be any error getting the fake JXClient and DevEnv")
@@ -603,34 +583,35 @@ func getFakeClientsAndNs(t *testing.T) (versioned.Interface, tektonclient.Interf
 	return jxClient, tektonClient, kubeClient, commonOpts, ns
 }
 
-func (w *TestWriter) WriteLog(logLine LogLine) error {
-	log.Logger().Info(logLine.Line)
-	w.SingleLinesLogged = append(w.SingleLinesLogged, logLine.Line)
-	return nil
+func testLogProvider(_ *corev1.Pod, container *corev1.Container) (io.Reader, func(), error) {
+	return bytes.NewReader([]byte(fmt.Sprintf("container logs %s ...", container.Name))), func() {
+		//nothing to clean
+	}, nil
 }
 
-func (w *TestWriter) StreamLog(lch <-chan LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
+func assertLogForContainer(t *testing.T, log string, container corev1.Container) {
+	scanner := bufio.NewScanner(strings.NewReader(log))
+	for scanner.Scan() {
+		matchedLogHeaderLine, err := regexp.Match(fmt.Sprintf("Showing logs for build .* container .*%s", container.Name), []byte(scanner.Text()))
+		assert.NoError(t, err)
+		if matchedLogHeaderLine {
+			scanner.Scan() // advance to next line which is the start of the actual container log
+			matchedContainerLog, err := regexp.Match(fmt.Sprintf("container logs %s ...", container.Name), []byte(scanner.Text()))
+			assert.NoError(t, err)
+			if !matchedContainerLog {
+				assert.Fail(t, fmt.Sprintf("log header for container %s not followed by actual container logs, but rather '%s'", container.Name, log))
 			}
-			w.StreamLinesLogged = append(w.StreamLinesLogged, l.Line)
-			log.Logger().Info(l.Line)
-		case e := <-ech:
-			fmt.Println(e)
-			continue
+			return
 		}
 	}
+	assert.Fail(t, fmt.Sprintf("Unable to find log output for container %s in log %s", container.Name, log))
+}
+
+func (w *TestWriter) WriteLog(logLine LogLine) error {
+	log.Logger().Info(logLine.Line)
+	return nil
 }
 
 func (w TestWriter) BytesLimit() int {
 	return 0
-}
-
-func LogsProvider(pod *corev1.Pod, container *corev1.Container) (io.Reader, func(), error) {
-	return bytes.NewReader([]byte("Pod logs...")), func() {
-		//nothing to clean
-	}, nil
 }

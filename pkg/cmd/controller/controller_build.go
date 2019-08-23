@@ -70,27 +70,6 @@ func (w *LongTermStorageLogWriter) WriteLog(logLine logs.LogLine) error {
 	return nil
 }
 
-// StreamLog will receive a logs channel and an errors channel which the logs producer will send
-// it will mask the lines marked as ShouldMask then it will append the line's bytes to the already stored ones
-func (w *LongTermStorageLogWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
-			}
-			if w.logMasker != nil && l.ShouldMask {
-				l.Line = w.logMasker.MaskLog(l.Line)
-			}
-			line := []byte(l.Line)
-			line = append(line, '\n')
-			w.data = append(w.data, line...)
-		case err := <-ech:
-			return err
-		}
-	}
-}
-
 // BytesLimit defines the limit of bytes to be used to fetch the logs from the kube API
 // defaulted to 0 for this implementation
 func (w *LongTermStorageLogWriter) BytesLimit() int {

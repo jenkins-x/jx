@@ -46,7 +46,6 @@ type TektonLogger struct {
 // it's the implementer's responsibility to route those logs through the corresponding medium
 type LogWriter interface {
 	WriteLog(line LogLine) error
-	StreamLog(lch <-chan LogLine, ech <-chan error) error
 	BytesLimit() int
 }
 
@@ -252,68 +251,50 @@ func (t TektonLogger) getContainerLogsFromPod(pod *corev1.Pod, pa *v1.PipelineAc
 	infoColor.EnableColor()
 	errorColor := color.New(color.FgRed)
 	errorColor.EnableColor()
+
 	containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
-	logsChannel := make(chan LogLine)
-	defer close(logsChannel)
-	errorsChannel := make(chan error)
-	defer close(errorsChannel)
-	go t.LogWriter.StreamLog(logsChannel, errorsChannel)
-	for i, ic := range containers {
+	for i, container := range containers {
 		pod, err := t.waitForContainerToStart(pa.Namespace, pod, i, stageName)
 		err = t.LogWriter.WriteLog(LogLine{
 			Line: fmt.Sprintf("\nShowing logs for build %v stage %s and container %s\n",
-				infoColor.Sprintf(buildName), infoColor.Sprintf(stageName), infoColor.Sprintf(ic.Name)),
+				infoColor.Sprintf(buildName), infoColor.Sprintf(stageName), infoColor.Sprintf(container.Name)),
 		})
 		if err != nil {
-			return errors.Wrapf(err, "there was a problem writing a single line into the logs writer")
+			return errors.Wrapf(err, "error writing header line for container log")
 		}
-		err = t.fetchLogsToChannel(logsChannel, errorsChannel, pa.Namespace, pod, &ic)
+		err = t.writeContainerLogs(pa.Namespace, pod, &container)
 		if err != nil {
-			return errors.Wrap(err, "couldn't fetch logs into the logs channel")
+			return errors.Wrapf(err, "error writing logs for container '%s'", container.Name)
 		}
 		if hasStepFailed(pod, i, t.KubeClient, pa.Namespace) {
 			return t.LogWriter.WriteLog(LogLine{
-				Line: errorColor.Sprintf("\nPipeline failed on stage '%s' : container '%s'. The execution of the pipeline has stopped.", stageName, ic.Name),
+				Line: errorColor.Sprintf("\nPipeline failed on stage '%s' : container '%s'. The execution of the pipeline has stopped.", stageName, container.Name),
 			})
 		}
 	}
 	return nil
 }
 
-func (t TektonLogger) fetchLogsToChannel(logCh chan LogLine, errChan chan error, ns string, pod *corev1.Pod, container *corev1.Container) error {
-
+func (t TektonLogger) writeContainerLogs(ns string, pod *corev1.Pod, container *corev1.Container) error {
 	if t.LogsRetrieverFunc == nil {
 		t.LogsRetrieverFunc = t.retrieveLogsFromPod
 	}
 
 	reader, cleanFN, err := t.LogsRetrieverFunc(pod, container)
 	if err != nil {
-		errChan <- err
 		return err
 	}
 	defer cleanFN()
-	err = writeStreamLines(reader, logCh)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
-func writeStreamLines(reader io.Reader, logCh chan<- LogLine) error {
-	buffReader := bufio.NewReader(reader)
-	if buffReader == nil {
-		return errors.New("there was a problem obtaining a buffered reader")
-	}
-	for {
-		line, _, err := buffReader.ReadLine()
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		err = t.LogWriter.WriteLog(LogLine{Line: scanner.Text(), ShouldMask: true})
 		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return errors.Wrap(err, "failed to read stream")
+			return err
 		}
-		logCh <- LogLine{Line: string(line), ShouldMask: true}
 	}
+
+	return nil
 }
 
 func hasStepFailed(pod *corev1.Pod, stepNumber int, kubeClient kubernetes.Interface, ns string) bool {

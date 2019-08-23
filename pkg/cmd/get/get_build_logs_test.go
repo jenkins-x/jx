@@ -418,22 +418,6 @@ func (w *BuildLogsTestWriter) WriteLog(logLine logs.LogLine) error {
 	return nil
 }
 
-func (w *BuildLogsTestWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
-			}
-			w.StreamLinesLogged = append(w.StreamLinesLogged, l.Line)
-			log.Logger().Info(l.Line)
-		case e := <-ech:
-			fmt.Println(e)
-			continue
-		}
-	}
-}
-
 func (w BuildLogsTestWriter) BytesLimit() int {
 	return 0
 }

@@ -450,21 +450,6 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 	return false, o.TektonLogger.GetRunningBuildLogs(pa, name)
 }
 
-// StreamLog implementation of LogWriter.StreamLog for CLILogWriter, this implementation will tail logs for the provided pod /container through the defined logger
-func (o *CLILogWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
-			}
-			fmt.Println(l.Line)
-		case err := <-ech:
-			return err
-		}
-	}
-}
-
 // WriteLog implementation of LogWriter.WriteLog for CLILogWriter, this implementation will write the provided log line through the defined logger
 func (o *CLILogWriter) WriteLog(logLine logs.LogLine) error {
 	log.Logger().Info(logLine.Line)
