@@ -43,7 +43,7 @@ pipelineConfig:
               containerOptions:
                 resources:
                   limits:
-                    cpu: 3
+                    cpu: 4
                     memory: 8Gi
                   requests:
                     cpu: 1
