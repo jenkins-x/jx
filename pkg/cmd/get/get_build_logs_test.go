@@ -412,9 +412,9 @@ func LogsProvider(pod *v1.Pod, container *v1.Container) (io.Reader, func(), erro
 	}, nil
 }
 
-func (w *BuildLogsTestWriter) WriteLog(logLine logs.LogLine) error {
-	log.Logger().Info(logLine.Line)
+func (w *BuildLogsTestWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) error {
 	w.SingleLinesLogged = append(w.SingleLinesLogged, logLine.Line)
+	lch <- logLine
 	return nil
 }
 

@@ -40,7 +40,7 @@ type TektonLogger struct {
 	KubeClient        kubernetes.Interface
 	LogWriter         LogWriter
 	Namespace         string
-	logsRetrieverFunc retrieverFunc
+	LogsRetrieverFunc retrieverFunc
 	logsChannel       chan LogLine
 	errorsChannel     chan error
 	wg                *sync.WaitGroup
@@ -298,11 +298,11 @@ func (t *TektonLogger) syncStreamLog() {
 
 func (t *TektonLogger) fetchLogsToChannel(ns string, pod *corev1.Pod, container *corev1.Container) error {
 
-	if t.logsRetrieverFunc == nil {
-		t.logsRetrieverFunc = t.retrieveLogsFromPod
+	if t.LogsRetrieverFunc == nil {
+		t.LogsRetrieverFunc = t.retrieveLogsFromPod
 	}
 
-	reader, cleanFN, err := t.logsRetrieverFunc(pod, container)
+	reader, cleanFN, err := t.LogsRetrieverFunc(pod, container)
 	if err != nil {
 		t.errorsChannel <- err
 		return err
