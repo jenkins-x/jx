@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -67,7 +69,7 @@ func NewCmdStepHelmVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *StepHelmVersionOptions) Run() error {
 	version := o.Version
 	if version == "" {
-		version = o.GetBuildNumber()
+		version = builds.GetBuildNumber()
 	}
 	if version == "" {
 		return fmt.Errorf("No version specified and could not detect the build number via $BUILD_NUMBER")

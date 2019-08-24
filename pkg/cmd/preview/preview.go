@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -520,7 +522,7 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	pipeline := o.GetJenkinsJobName()
-	build := o.GetBuildNumber()
+	build := builds.GetBuildNumber()
 
 	if url != "" || o.PullRequestURL != "" {
 		if pipeline != "" && build != "" {

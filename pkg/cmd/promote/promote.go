@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
@@ -805,7 +807,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := o.Pipeline
 	if o.Build == "" {
-		o.Build = o.GetBuildNumber()
+		o.Build = builds.GetBuildNumber()
 	}
 	build := o.Build
 	buildURL := os.Getenv("BUILD_URL")

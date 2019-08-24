@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -171,7 +173,7 @@ func (o *StepStashOptions) Run() error {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
 
-	buildNo := o.GetBuildNumber()
+	buildNo := builds.GetBuildNumber()
 	var projectGitInfo *gits.GitRepository
 	if o.ProjectGitURL != "" {
 		projectGitInfo, err = gits.ParseGitURL(o.ProjectGitURL)

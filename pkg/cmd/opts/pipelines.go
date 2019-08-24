@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -50,7 +52,7 @@ func (o *CommonOptions) GetPipelineName(gitInfo *gits.GitRepository, pipeline st
 		pipeline = o.GetJenkinsJobName()
 	}
 	if build == "" {
-		build = o.GetBuildNumber()
+		build = builds.GetBuildNumber()
 	}
 	if gitInfo != nil && pipeline == "" {
 		// lets default the pipeline name from the Git repo

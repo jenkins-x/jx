@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/boot"
@@ -372,7 +374,7 @@ func (o *StepBDDOptions) gitProviderUrl() string {
 func (o *StepBDDOptions) teamNameSuffix() string {
 	repo := os.Getenv("REPO_NAME")
 	branch := os.Getenv("BRANCH_NAME")
-	buildNumber := o.GetBuildNumber()
+	buildNumber := builds.GetBuildNumber()
 	if buildNumber == "" {
 		buildNumber = "1"
 	}
@@ -553,7 +555,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		log.Logger().Infof("post create command: %s\n", util.ColorInfo(cmd.Command+" "+strings.Join(cmd.Args, " ")))
 	}
 
-	buildNum := o.GetBuildNumber()
+	buildNum := builds.GetBuildNumber()
 	if buildNum == "" {
 		log.Logger().Warnf("No build number could be found from the environment variable $BUILD_NUMBER!")
 	}

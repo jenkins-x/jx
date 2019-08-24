@@ -13,6 +13,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
@@ -198,7 +200,7 @@ func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func (o *StepChangelogOptions) Run() error {
 	// lets enable batch mode if we detect we are inside a pipeline
-	if !o.BatchMode && o.GetBuildNumber() != "" {
+	if !o.BatchMode && builds.GetBuildNumber() != "" {
 		log.Logger().Info("Using batch mode as inside a pipeline")
 		o.BatchMode = true
 	}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -114,7 +116,7 @@ func (o *StepPreExtendOptions) Run() error {
 			appName = gitInfo.Name
 		}
 		pipeline := ""
-		build := o.GetBuildNumber()
+		build := builds.GetBuildNumber()
 		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 		if pipeline != "" && build != "" {
 			name := naming.ToValidName(pipeline + "-" + build)
