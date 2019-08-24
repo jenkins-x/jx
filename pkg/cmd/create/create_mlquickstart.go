@@ -54,7 +54,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-mlquickstart/](https://jenkins-x.io/developing/create-mlquickstart/)
 
-` + opts.SeeAlsoText("jx create project"))
+` + helper.SeeAlsoText("jx create project"))
 
 	createMLQuickstartExample = templates.Examples(`
 		Create a new machine learning project from a sample/starter (found in https://github.com/machine-learning-quickstarts)

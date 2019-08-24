@@ -5,6 +5,8 @@ import (
 	"os/user"
 	"reflect"
 
+	"github.com/jenkins-x/jx/pkg/environments"
+
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/users"
@@ -129,7 +131,7 @@ func (o *CommonOptions) DefaultModifyDevEnvironment(callback func(env *v1.Enviro
 	if env == nil {
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
-	return o.ModifyDevEnvironmentWithNs(jxClient, ns, callback)
+	return environments.ModifyDevEnvironmentWithNs(jxClient, ns, callback)
 }
 
 // defaultModifyEnvironment default implementation of modifying an environment

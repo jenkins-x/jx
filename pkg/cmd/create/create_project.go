@@ -2,9 +2,10 @@ package create
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
-	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -34,7 +35,7 @@ var (
 	createProjectLong = templates.LongDesc(`
 		Create a new Project by importing code, using a Quickstart or custom wizard for Spring or Camel.
 
-` + opts.SeeAlsoText("jx create quickstart", "jx create spring", "jx create camel", "jx create jhipster", "jx import"))
+` + helper.SeeAlsoText("jx create quickstart", "jx create spring", "jx create camel", "jx create jhipster", "jx import"))
 
 	createProjectExample = templates.Examples(`
 		# Create a project

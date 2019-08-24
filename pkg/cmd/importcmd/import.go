@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/maven"
+
 	"github.com/cenkalti/backoff"
 	gitignore "github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
@@ -101,7 +103,7 @@ var (
 	    
 		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
 	    
-` + opts.SeeAlsoText("jx create project"))
+` + helper.SeeAlsoText("jx create project"))
 
 	importExample = templates.Examples(`
 		# Import the current folder
@@ -1343,7 +1345,7 @@ func (options *ImportOptions) fixMaven() error {
 		return err
 	}
 	if exists {
-		err = options.InstallMavenIfRequired()
+		err = maven.InstallMavenIfRequired()
 		if err != nil {
 			return err
 		}

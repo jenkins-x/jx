@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/packages"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -126,7 +128,7 @@ func NewCmdCreateClusterAWS(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *CreateClusterAWSOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var deps []string
-	d := opts.BinaryShouldBeInstalled("kops")
+	d := packages.BinaryShouldBeInstalled("kops")
 	if d != "" {
 		deps = append(deps, d)
 	}

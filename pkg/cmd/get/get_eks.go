@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/jenkins-x/jx/pkg/packages"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -69,11 +71,11 @@ func NewCmdGetEks(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *GetEksOptions) Run() error {
 	if len(o.Args) == 0 {
 		var deps []string
-		d := opts.BinaryShouldBeInstalled("eksctl")
+		d := packages.BinaryShouldBeInstalled("eksctl")
 		if d != "" {
 			deps = append(deps, d)
 		}
-		d = opts.BinaryShouldBeInstalled("aws-iam-authenticator")
+		d = packages.BinaryShouldBeInstalled("aws-iam-authenticator")
 		if d != "" {
 			deps = append(deps, d)
 		}

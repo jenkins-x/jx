@@ -2,13 +2,16 @@ package opts
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/spf13/viper"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/spf13/pflag"
@@ -23,7 +26,6 @@ import (
 	"github.com/pkg/errors"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/golang-jenkins"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -39,7 +41,7 @@ import (
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -97,7 +99,7 @@ type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environm
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Prow
+	prow.Prow
 
 	Args                   []string
 	BatchMode              bool
@@ -1128,23 +1130,6 @@ func (o *CommonOptions) SetEnvironmentsDir(dir string) {
 	o.environmentsDir = dir
 }
 
-// SeeAlsoText returns text to describe which other commands to look at which are related to the current command
-func SeeAlsoText(commands ...string) string {
-	if len(commands) == 0 {
-		return ""
-	}
-
-	var sb strings.Builder
-	sb.WriteString("\nSee Also:\n\n")
-
-	for _, command := range commands {
-		u := "https://jenkins-x.io/commands/" + strings.Replace(command, " ", "_", -1)
-		sb.WriteString(fmt.Sprintf("* %s : [%s](%s)\n", command, u, u))
-	}
-	sb.WriteString("\n")
-	return sb.String()
-}
-
 // ComplianceClient returns or creates the compliance client
 func (o *CommonOptions) ComplianceClient() (*client.SonobuoyClient, error) {
 	if o.factory == nil {
@@ -1216,13 +1201,13 @@ func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
 // IsConfigExplicitlySet checks whether the flag or config with the specified name is explicitly set by the user.
 // If so, true is returned, false otherwise.
 func (o *CommonOptions) IsConfigExplicitlySet(configPath, configKey string) bool {
-	if o.IsFlagExplicitlySet(configKey) || o.configExists(configPath, configKey) {
+	if o.IsFlagExplicitlySet(configKey) || configExists(configPath, configKey) {
 		return true
 	}
 	return false
 }
 
-func (o *CommonOptions) configExists(configPath, configKey string) bool {
+func configExists(configPath, configKey string) bool {
 	if configPath != "" {
 		path := append(strings.Split(configPath, "."), configKey)
 		configMap := viper.GetStringMap(path[0])

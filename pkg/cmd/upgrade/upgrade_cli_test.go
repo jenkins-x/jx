@@ -2,13 +2,16 @@ package upgrade
 
 import (
 	"fmt"
+	"testing"
+
+	"github.com/jenkins-x/jx/pkg/brew"
+
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var sampleBrewInfo = `[  
@@ -81,12 +84,7 @@ var sampleBrewInfo = `[
 ]`
 
 func TestLatestJxBrewVersion(t *testing.T) {
-	o := UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
-			CommonOptions: &opts.CommonOptions{},
-		},
-	}
-	version, err := o.LatestJxBrewVersion(sampleBrewInfo)
+	version, err := brew.LatestJxBrewVersion(sampleBrewInfo)
 	assert.NoError(t, err)
 	assert.Equal(t, "2.0.181", version)
 }

@@ -2,8 +2,9 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -25,7 +26,7 @@ var (
 
 		For more documentation about JHipster see: [https://www.jhipster.tech/](https://www.jhipster.tech/)
 
-` + opts.SeeAlsoText("jx create project"))
+` + helper.SeeAlsoText("jx create project"))
 
 	createJHipsterExample = templates.Examples(`
 		# Create a JHipster application and be prompted for the folder name

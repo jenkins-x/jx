@@ -26,7 +26,7 @@ var (
 
 
 
-` + opts.SeeAlsoText("jx create project"))
+` + helper.SeeAlsoText("jx create project"))
 
 	verifyRequirementsExample = templates.Examples(`
 		Verifies all the helm requirements.yaml files have a version number populated from the Version Stream

@@ -68,7 +68,7 @@ type InitHelmConfig struct {
 }
 
 // defaultInitHelmConfig builds the default configuration for init helm
-func (o *CommonOptions) defaultInitHelmConfig() InitHelmConfig {
+func defaultInitHelmConfig() InitHelmConfig {
 	return InitHelmConfig{
 		Namespace:       kube.DefaultNamespace,
 		OnlyHelmClient:  DefaultOnlyHelmClient,
@@ -971,7 +971,7 @@ func (o *CommonOptions) EnsureHelm() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to install Helm")
 	}
-	cfg := o.defaultInitHelmConfig()
+	cfg := defaultInitHelmConfig()
 	cfg.SkipTiller = true
 	cfg.SkipTiller = true
 	err = o.InitHelm(cfg)

@@ -2,12 +2,14 @@ package create_test
 
 import (
 	"errors"
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"fmt"
 
@@ -40,10 +42,10 @@ func TestGetSafeUsername(t *testing.T) {
 	t.Parallel()
 	username := `Your active configuration is: [cloudshell-16392]
 tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
-	assert.Equal(t, opts.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
+	assert.Equal(t, cluster.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
 
 	username = `tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
-	assert.Equal(t, opts.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
+	assert.Equal(t, cluster.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
 }
 
 func TestCheckFlags(t *testing.T) {

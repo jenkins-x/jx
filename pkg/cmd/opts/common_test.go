@@ -149,7 +149,7 @@ func Test_configExists_child(t *testing.T) {
 
 	defer removeTmp(configFile)
 
-	assert.True(t, commonOptsUnderTest.configExists("children", "child"))
+	assert.True(t, configExists("children", "child"))
 }
 
 func Test_configExists_no_path(t *testing.T) {
@@ -160,7 +160,7 @@ func Test_configExists_no_path(t *testing.T) {
 
 	defer removeTmp(configFile)
 
-	assert.True(t, commonOptsUnderTest.configExists("", "snafu"))
+	assert.True(t, configExists("", "snafu"))
 }
 
 func Test_configNotExists(t *testing.T) {
@@ -171,7 +171,7 @@ func Test_configNotExists(t *testing.T) {
 
 	defer removeTmp(configFile)
 
-	assert.False(t, commonOptsUnderTest.configExists("children", "son"))
+	assert.False(t, configExists("children", "son"))
 }
 
 func setupTestConfig(t *testing.T, config string) (string, func(string)) {

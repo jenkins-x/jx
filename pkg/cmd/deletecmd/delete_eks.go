@@ -2,7 +2,9 @@ package deletecmd
 
 import (
 	"errors"
+
 	"github.com/jenkins-x/jx/pkg/cmd/get"
+	"github.com/jenkins-x/jx/pkg/packages"
 
 	"os"
 	"os/exec"
@@ -66,11 +68,11 @@ func (o *deleteEksOptions) Run() error {
 	cluster := o.Args[0]
 
 	var deps []string
-	d := opts.BinaryShouldBeInstalled("eksctl")
+	d := packages.BinaryShouldBeInstalled("eksctl")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = opts.BinaryShouldBeInstalled("aws-iam-authenticator")
+	d = packages.BinaryShouldBeInstalled("aws-iam-authenticator")
 	if d != "" {
 		deps = append(deps, d)
 	}

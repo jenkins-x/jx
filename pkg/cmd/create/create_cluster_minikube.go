@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/packages"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"time"
@@ -107,7 +109,7 @@ func NewCmdCreateClusterMinikube(commonOpts *opts.CommonOptions) *cobra.Command 
 
 func (o *CreateClusterMinikubeOptions) Run() error {
 	var deps []string
-	d := opts.BinaryShouldBeInstalled("minikube")
+	d := packages.BinaryShouldBeInstalled("minikube")
 	if d != "" {
 		deps = append(deps, d)
 	}

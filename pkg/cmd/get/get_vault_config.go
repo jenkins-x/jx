@@ -2,8 +2,11 @@ package get
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"runtime"
+
+	"github.com/jenkins-x/jx/pkg/vault"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -74,7 +77,7 @@ func (o *GetVaultConfigOptions) Run() error {
 	}
 
 	// Install the vault CLI for the user
-	o.InstallVaultCli()
+	vault.InstallVaultCli()
 
 	url, token, err := vaultClient.Config()
 	// Echo the client config out to the command line to be piped into bash

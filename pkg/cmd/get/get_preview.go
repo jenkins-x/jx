@@ -23,7 +23,7 @@ type GetPreviewOptions struct {
 var (
 	getPreviewLong = templates.LongDesc(`
 		Display one or more preview environments.
-` + opts.SeeAlsoText("jx get env"))
+` + helper.SeeAlsoText("jx get env"))
 
 	getPreviewExample = templates.Examples(`
 		# List all preview environments
