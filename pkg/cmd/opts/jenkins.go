@@ -279,11 +279,6 @@ func (o *CommonOptions) GetBranchName(dir string) string {
 	return branch
 }
 
-// GetBuildNumber returns the build number
-func (o *CommonOptions) GetBuildNumber() string {
-	return builds.GetBuildNumber()
-}
-
 // UpdateJenkinsURL updates the Jenkins URL
 func (o *CommonOptions) UpdateJenkinsURL(namespaces []string) error {
 	client, err := o.KubeClient()

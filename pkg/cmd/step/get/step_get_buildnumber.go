@@ -1,6 +1,7 @@
 package get
 
 import (
+	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -53,7 +54,7 @@ func NewCmdStepGetBuildNumber(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepGetBuildNumberOptions) Run() error {
-	text := o.GetBuildNumber()
+	text := builds.GetBuildNumber()
 	log.Logger().Infof("%s", text)
 	return nil
 }

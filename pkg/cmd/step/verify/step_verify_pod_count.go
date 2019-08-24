@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -155,7 +157,7 @@ func (o *StepVerifyPodCountOptions) Run() error {
 
 func (o *StepVerifyPodCountOptions) detectPipelineActivity(jxClient versioned.Interface, namespace string) (*v1.PipelineActivity, error) {
 	pipeline := o.GetJenkinsJobName()
-	build := o.GetBuildNumber()
+	build := builds.GetBuildNumber()
 	if pipeline == "" || build == "" {
 		return nil, errors.New("JOB_NAME or BUILD_NUMBER environment variables not set")
 	}
