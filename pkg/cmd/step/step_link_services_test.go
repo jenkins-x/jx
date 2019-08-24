@@ -1,9 +1,11 @@
 package step_test
 
 import (
+	"testing"
+
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -26,7 +28,7 @@ const (
 func TestServiceLinking(t *testing.T) {
 	t.Parallel()
 	o := step.StepLinkServicesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		FromNamespace: fromNs,

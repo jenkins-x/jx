@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -66,8 +68,8 @@ type StepCreatePullRequestVersionsOptions struct {
 func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePullRequestVersionsOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

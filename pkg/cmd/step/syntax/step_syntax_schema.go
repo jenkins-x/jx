@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -19,7 +21,7 @@ import (
 
 // StepSyntaxSchemaOptions contains the command line flags
 type StepSyntaxSchemaOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Pipeline  bool
 	BuildPack bool
@@ -29,7 +31,7 @@ type StepSyntaxSchemaOptions struct {
 // NewCmdStepSyntaxSchema Steps a command object for the "step" command
 func NewCmdStepSyntaxSchema(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSyntaxSchemaOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

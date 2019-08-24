@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
@@ -31,7 +33,7 @@ const (
 
 // CreateClusterOptions the flags for running create cluster
 type StepTagOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Flags StepTagFlags
 }
@@ -67,7 +69,7 @@ var (
 
 func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepTagOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

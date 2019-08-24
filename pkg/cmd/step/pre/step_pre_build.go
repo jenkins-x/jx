@@ -3,6 +3,8 @@ package pre
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -21,7 +23,7 @@ const (
 
 // StepPreBuildOptions contains the command line flags
 type StepPreBuildOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Image string
 }
@@ -38,7 +40,7 @@ var (
 
 func NewCmdStepPreBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPreBuildOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/get"
@@ -39,7 +41,7 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	stableBranch := "master"
 	r, fakeStdout, _ := os.Pipe()
 	options := &get.StepGetVersionChangeSetOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		VersionsDir:   testDir,
@@ -104,7 +106,7 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	stableBranch := "master"
 	r, fakeStdout, _ := os.Pipe()
 	options := &get.StepGetVersionChangeSetOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		VersionsDir:  testDir,

@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+
 	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -34,7 +36,7 @@ func TestCreateInstallValues(t *testing.T) {
 	require.NoError(t, err, "failed to copy test data into temp dir")
 
 	o := &StepCreateInstallValuesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
@@ -90,7 +92,7 @@ func TestExternalDNSDisabledDomainNotOwned(t *testing.T) {
 		BatchMode: false,
 	}
 	o := StepCreateInstallValuesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &commonOpts,
 		},
 	}
@@ -131,7 +133,7 @@ func TestExternalDNSDisabledNotGKE(t *testing.T) {
 		BatchMode: false,
 	}
 	o := StepCreateInstallValuesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &commonOpts,
 		},
 	}

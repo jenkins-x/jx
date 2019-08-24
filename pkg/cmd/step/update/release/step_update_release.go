@@ -3,13 +3,14 @@ package release
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
 
 //StepUpdateReleaseOptions are the common options for all update steps
 type StepUpdateReleaseOptions struct {
-	opts.StepUpdateOptions
+	step.StepUpdateOptions
 	Owner      string
 	Repository string
 	Version    string
@@ -18,8 +19,8 @@ type StepUpdateReleaseOptions struct {
 // NewCmdStepUpdateRelease Steps a command object for the "step" command
 func NewCmdStepUpdateRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepUpdateReleaseOptions{
-		StepUpdateOptions: opts.StepUpdateOptions{
-			StepOptions: opts.StepOptions{
+		StepUpdateOptions: step.StepUpdateOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

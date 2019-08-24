@@ -1,6 +1,7 @@
 package pr
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/docker"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -34,8 +35,8 @@ type StepCreatePullRequestDockersOptions struct {
 func NewCmdStepCreatePullRequestDocker(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePullRequestDockersOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

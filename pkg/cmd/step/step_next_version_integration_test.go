@@ -3,12 +3,14 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
+
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -46,7 +48,7 @@ func TestSetVersionJavascript(t *testing.T) {
 	assert.NoError(t, err)
 
 	o := step.StepNextVersionOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}
@@ -93,7 +95,7 @@ func TestSetVersionChart(t *testing.T) {
 	assert.NoError(t, err)
 
 	o := step.StepNextVersionOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}

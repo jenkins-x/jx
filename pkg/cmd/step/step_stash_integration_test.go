@@ -3,11 +3,13 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -37,7 +39,7 @@ func TestStepStash(t *testing.T) {
 	testData := "test_data/step_collect/junit.xml"
 
 	o := &step.StepStashOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}

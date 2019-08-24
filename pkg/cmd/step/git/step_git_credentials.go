@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -25,7 +27,7 @@ const (
 
 // StepGitCredentialsOptions contains the command line flags
 type StepGitCredentialsOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	OutputFile string
 }
@@ -48,7 +50,7 @@ var (
 
 func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitCredentialsOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

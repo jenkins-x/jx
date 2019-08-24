@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -51,8 +53,8 @@ func TestCreatePullRequestUpdateVersionFilesFn(t *testing.T) {
 	)
 	o := pr.StepCreatePullRequestVersionsOptions{
 		StepCreatePrOptions: pr.StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

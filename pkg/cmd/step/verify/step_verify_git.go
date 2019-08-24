@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -19,13 +21,13 @@ import (
 
 // StepVerifyGitOptions contains the command line flags
 type StepVerifyGitOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 // NewCmdStepVerifyGit creates the `jx step verify pod` command
 func NewCmdStepVerifyGit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepVerifyGitOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

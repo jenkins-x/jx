@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -37,7 +39,7 @@ var (
 
 // StepSplitMonorepoOptions contains the command line flags
 type StepSplitMonorepoOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Glob          string
 	Organisation  string
@@ -51,7 +53,7 @@ type StepSplitMonorepoOptions struct {
 // NewCmdStepSplitMonorepo Creates a new Command object
 func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSplitMonorepoOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

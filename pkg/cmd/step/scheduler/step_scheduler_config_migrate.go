@@ -3,6 +3,7 @@ package scheduler
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
@@ -12,7 +13,7 @@ import (
 
 // StepSchedulerConfigMigrateOptions contains the command line flags
 type StepSchedulerConfigMigrateOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	Agent                   string
 	ProwConfigFileLocation  string
 	ProwPluginsFileLocation string
@@ -45,7 +46,7 @@ var (
 // NewCmdStepSchedulerConfigMigrate Steps a command object for the "step" command
 func NewCmdStepSchedulerConfigMigrate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSchedulerConfigMigrateOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

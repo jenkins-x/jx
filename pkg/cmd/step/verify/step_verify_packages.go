@@ -3,6 +3,7 @@ package verify
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -31,7 +32,7 @@ var (
 
 // StepVerifyPackagesOptions contains the command line flags
 type StepVerifyPackagesOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Namespace string
 	HelmTLS   bool
@@ -42,7 +43,7 @@ type StepVerifyPackagesOptions struct {
 // NewCmdStepVerifyPackages creates the `jx step verify pod` command
 func NewCmdStepVerifyPackages(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepVerifyPackagesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

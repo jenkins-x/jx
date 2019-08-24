@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
@@ -41,7 +43,7 @@ const (
 
 // StepBDDOptions contains the command line arguments for this command
 type StepBDDOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	InstallOptions create.InstallOptions
 	Flags          StepBDDFlags
@@ -91,7 +93,7 @@ var (
 
 func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepBDDOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 		InstallOptions: create.CreateInstallOptions(commonOpts),
@@ -799,7 +801,7 @@ func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {
 			ProjectID: projectID,
 			Delete:    true,
 			Region:    region,
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: &opts.CommonOptions{},
 			},
 		}

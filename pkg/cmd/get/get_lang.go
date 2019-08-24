@@ -1,18 +1,20 @@
 package get
 
 import (
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // GetLangOptions containers the CLI options
 type GetLangOptions struct {
 	GetOptions
-	StepOptions opts.StepOptions
+	StepOptions step.StepOptions
 
 	Pending bool
 }
@@ -34,7 +36,7 @@ func NewCmdGetLang(commonOpts *opts.CommonOptions) *cobra.Command {
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
 		},
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

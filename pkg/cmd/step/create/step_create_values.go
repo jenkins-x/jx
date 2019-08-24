@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -46,7 +48,7 @@ var (
 
 // StepCreateValuesOptions contains the command line flags
 type StepCreateValuesOptions struct {
-	opts.StepCreateOptions
+	step.StepCreateOptions
 
 	Dir       string
 	Namespace string
@@ -69,8 +71,8 @@ type StepCreateValuesResults struct {
 // NewCmdStepCreateValues Creates a new Command object
 func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateValuesOptions{
-		StepCreateOptions: opts.StepCreateOptions{
-			StepOptions: opts.StepOptions{
+		StepCreateOptions: step.StepCreateOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

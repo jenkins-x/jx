@@ -2,8 +2,10 @@ package git
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -15,7 +17,7 @@ import (
 
 // StepGitEnvsOptions contains the command line flags
 type StepGitEnvsOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	ServiceKind string
 }
@@ -39,7 +41,7 @@ var (
 // NewCmdStepGitEnvs create the 'step git envs' command
 func NewCmdStepGitEnvs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitEnvsOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -3,6 +3,8 @@ package step
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -40,7 +42,7 @@ var (
 
 // StepLinkServicesOptions contains the command line flags
 type StepLinkServicesOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	FromNamespace string
 	ToNamespace   string
 	Includes      []string
@@ -50,7 +52,7 @@ type StepLinkServicesOptions struct {
 // NewCmdStepLinkServices Creates a new Command object
 func NewCmdStepLinkServices(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepLinkServicesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

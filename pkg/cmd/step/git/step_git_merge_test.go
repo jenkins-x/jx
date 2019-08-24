@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits/testhelpers"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -81,7 +83,7 @@ var _ = Describe("step git merge", func() {
 			Expect(currentHeadSha).Should(Equal(masterSha))
 
 			options := StepGitMergeOptions{
-				StepOptions: opts.StepOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{},
 				},
 				SHAs:       []string{branchBSha},
@@ -114,7 +116,7 @@ var _ = Describe("step git merge", func() {
 			Expect(currentHeadSha).Should(Equal(masterSha))
 
 			options := StepGitMergeOptions{
-				StepOptions: opts.StepOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{},
 				},
 				Dir: repoDir,
@@ -145,7 +147,7 @@ var _ = Describe("step git merge", func() {
 			Expect(currentHeadSha).Should(Equal(masterSha))
 
 			options := StepGitMergeOptions{
-				StepOptions: opts.StepOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
 						Verbose: true,
 					},
@@ -172,7 +174,7 @@ var _ = Describe("step git merge", func() {
 	Context("with no options and no PULL_REFS", func() {
 		It("logs warning", func() {
 			options := StepGitMergeOptions{
-				StepOptions: opts.StepOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{},
 				},
 				Dir: repoDir,

@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -32,7 +34,7 @@ const (
 
 // StepHelmOptions contains the command line flags
 type StepHelmOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Dir         string
 	https       bool
@@ -44,7 +46,7 @@ type StepHelmOptions struct {
 // NewCmdStepHelm Steps a command object for the "step" command
 func NewCmdStepHelm(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepHelmOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -137,7 +139,7 @@ func (o *StepHelmOptions) releaseRepository(repoId string) error {
 
 func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string, error) {
 
-	stepOpts := opts.StepOptions{
+	stepOpts := step.StepOptions{
 		CommonOptions: o.CommonOptions,
 	}
 	gitOpts := git.StepGitCredentialsOptions{

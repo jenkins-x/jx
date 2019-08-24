@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -30,7 +32,7 @@ var (
 
 // StepBuildPackApplyOptions contains the command line flags
 type StepBuildPackApplyOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Dir                     string
 	Jenkinsfile             string
@@ -41,7 +43,7 @@ type StepBuildPackApplyOptions struct {
 // NewCmdStepBuildPackApply Creates a new Command object
 func NewCmdStepBuildPackApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBuildPackApplyOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

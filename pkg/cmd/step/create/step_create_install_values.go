@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -43,7 +45,7 @@ var (
 
 // StepCreateInstallValuesOptions contains the command line flags
 type StepCreateInstallValuesOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Dir              string
 	Namespace        string
@@ -65,7 +67,7 @@ type StepCreateInstallValuesResults struct {
 // NewCmdStepCreateInstallValues Creates a new Command object
 func NewCmdStepCreateInstallValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateInstallValuesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

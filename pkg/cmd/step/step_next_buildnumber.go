@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/buildnum"
@@ -23,7 +25,7 @@ const (
 
 // StepNextBuildNumberOptions contains the command line flags
 type StepNextBuildNumberOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Owner      string
 	Repository string
@@ -42,7 +44,7 @@ var (
 
 func NewCmdStepNextBuildNumber(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNextBuildNumberOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

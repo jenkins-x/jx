@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -40,8 +42,8 @@ type StepCreatePullRequestChartsOptions struct {
 func NewCmdStepCreatePullRequestChart(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePullRequestChartsOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

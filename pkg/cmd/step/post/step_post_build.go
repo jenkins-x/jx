@@ -3,6 +3,8 @@ package post
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -30,7 +32,7 @@ const (
 
 // StepPostBuildOptions contains the command line flags
 type StepPostBuildOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	FullImageName string
 	OutputFile    string
 }
@@ -58,7 +60,7 @@ podAnnotations:
 
 func NewCmdStepPostBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPostBuildOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

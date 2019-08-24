@@ -2,6 +2,7 @@ package pr
 
 import (
 	"github.com/jenkins-x/jx/pkg/brew"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/pkg/errors"
 
@@ -32,8 +33,8 @@ type StepCreatePullRequestBrewOptions struct {
 func NewCmdStepCreatePullRequestBrew(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePullRequestBrewOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

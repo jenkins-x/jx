@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"sort"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -19,7 +21,7 @@ import (
 
 // StepCredentialOptions contains the command line arguments for this command
 type StepCredentialOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Namespace string
 	Secret    string
@@ -59,7 +61,7 @@ var (
 // NewCmdStepCredential creates the command
 func NewCmdStepCredential(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepCredentialOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

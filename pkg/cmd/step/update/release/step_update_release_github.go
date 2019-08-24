@@ -1,10 +1,12 @@
 package release
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"os"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/pkg/errors"
-	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -42,8 +44,8 @@ type StepUpdateReleaseStatusState struct {
 func NewCmdStepUpdateReleaseGitHub(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepUpdateReleaseGitHubOptions{
 		StepUpdateReleaseOptions: StepUpdateReleaseOptions{
-			StepUpdateOptions: opts.StepUpdateOptions{
-				StepOptions: opts.StepOptions{
+			StepUpdateOptions: step.StepUpdateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

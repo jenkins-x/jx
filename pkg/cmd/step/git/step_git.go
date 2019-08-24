@@ -2,6 +2,7 @@ package git
 
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -11,13 +12,13 @@ import (
 
 // StepGitOptions contains the command line flags
 type StepGitOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 // NewCmdStepGit Steps a command object for the "step" command
 func NewCmdStepGit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepGitOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

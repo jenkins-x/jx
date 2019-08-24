@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/semrel"
 
 	"github.com/pkg/errors"
@@ -43,7 +45,7 @@ type StepNextVersionOptions struct {
 	UseGitTagOnly   bool
 	NewVersion      string
 	SemanticRelease bool
-	opts.StepOptions
+	step.StepOptions
 }
 
 type Project struct {
@@ -73,7 +75,7 @@ var (
 
 func NewCmdStepNextVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNextVersionOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

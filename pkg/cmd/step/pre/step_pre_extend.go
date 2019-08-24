@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
@@ -27,7 +29,7 @@ import (
 
 // StepPreBuildOptions contains the command line flags
 type StepPreExtendOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 var (
@@ -44,7 +46,7 @@ const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
 func NewCmdStepPreExtend(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPreExtendOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

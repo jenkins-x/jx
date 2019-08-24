@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -35,7 +37,7 @@ func NewCmdStepVerifyEnvironments(commonOpts *opts.CommonOptions) *cobra.Command
 
 	options := &StepVerifyEnvironmentsOptions{
 		StepVerifyOptions: StepVerifyOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

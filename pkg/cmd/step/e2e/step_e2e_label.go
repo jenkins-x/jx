@@ -2,9 +2,11 @@ package e2e
 
 import (
 	"errors"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -12,7 +14,7 @@ import (
 
 // StepE2ELabelOptions contains the command line flags
 type StepE2ELabelOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	ProjectID string
 	Region    string
 	Keep      bool
@@ -37,7 +39,7 @@ var (
 // NewCmdStepE2ELabel creates the CLI command
 func NewCmdStepE2ELabel(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepE2ELabelOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

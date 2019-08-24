@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/promote"
 	"github.com/jenkins-x/jx/pkg/cmd/step/pr"
@@ -615,7 +617,7 @@ func (o *PreviewOptions) Run() error {
 			PR:         o.PullRequestName,
 		},
 		StepPROptions: pr.StepPROptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: o.CommonOptions,
 			},
 		},

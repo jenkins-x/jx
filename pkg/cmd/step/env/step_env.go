@@ -3,18 +3,19 @@ package env
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/spf13/cobra"
 )
 
 // StepEnvOptions contains the command line flags
 type StepEnvOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 // NewCmdStepEnv Steps a command object for the "step" command
 func NewCmdStepEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepEnvOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

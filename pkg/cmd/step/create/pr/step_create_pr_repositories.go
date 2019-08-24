@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -38,8 +40,8 @@ type StepCreatePullRequestRepositoriesOptions struct {
 func NewCmdStepCreatePullRequestRepositories(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePullRequestRepositoriesOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

@@ -2,6 +2,7 @@ package nexus
 
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/spf13/cobra"
 
 	"fmt"
@@ -22,13 +23,13 @@ const (
 
 // StepNexusOptions contains the command line flags
 type StepNexusOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 // NewCmdStepNexus Steps a command object for the "step" command
 func NewCmdStepNexus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepNexusOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

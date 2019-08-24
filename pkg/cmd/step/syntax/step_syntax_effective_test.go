@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -589,7 +591,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 					VersionsDir: testVersionsDir,
 				},
 				SourceName: "source",
-				StepOptions: opts.StepOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
 						ServiceAccount: "tekton-bot",
 					},

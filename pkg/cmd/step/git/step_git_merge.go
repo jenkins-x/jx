@@ -3,6 +3,8 @@ package git
 import (
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -43,7 +45,7 @@ master:ef08a6cd194c2687d4bc12df6bb8a86f53c348ba,2739:5b351f4eae3c4afbb90dd7787f8
 
 // StepGitMergeOptions contains the command line flags
 type StepGitMergeOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	SHAs       []string
 	Remote     string
@@ -55,7 +57,7 @@ type StepGitMergeOptions struct {
 // NewCmdStepGitMerge create the 'step git envs' command
 func NewCmdStepGitMerge(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitMergeOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

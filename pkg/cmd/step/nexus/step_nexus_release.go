@@ -3,6 +3,8 @@ package nexus
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -33,7 +35,7 @@ var (
 func NewCmdStepNexusRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNexusReleaseOptions{
 		StepNexusOptions: StepNexusOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

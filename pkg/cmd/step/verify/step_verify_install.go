@@ -3,6 +3,8 @@ package verify
 import (
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -28,7 +30,7 @@ func NewCmdStepVerifyInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := &StepVerifyInstallOptions{
 		StepVerifyOptions: StepVerifyOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},
