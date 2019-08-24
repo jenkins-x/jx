@@ -2,8 +2,9 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -26,7 +27,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
-` + opts.SeeAlsoText("jx create project"))
+` + helper.SeeAlsoText("jx create project"))
 
 	createSpringExample = templates.Examples(`
 		# Create a Spring Boot application where you use the terminal to pick the values

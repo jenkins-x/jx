@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	randomdata "github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/packages"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
@@ -143,7 +145,7 @@ func NewCmdCreateClusterAKS(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *CreateClusterAKSOptions) Run() error {
 
 	var deps []string
-	d := opts.BinaryShouldBeInstalled("az")
+	d := packages.BinaryShouldBeInstalled("az")
 	if d != "" {
 		deps = append(deps, d)
 	}

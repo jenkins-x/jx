@@ -1,40 +1,49 @@
 package opts
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"text/template"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/versionstream"
-	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/jx/pkg/cloud/openshift"
+
+	"github.com/jenkins-x/jx/pkg/virtualmachines/hyperkit"
+
+	"github.com/jenkins-x/jx/pkg/virtualmachines/kvm"
+
+	"github.com/jenkins-x/jx/pkg/virtualmachines/kvm2"
+
+	"github.com/jenkins-x/jx/pkg/virtualmachines/virtualbox"
+
+	"github.com/jenkins-x/jx/pkg/brew"
+
+	"github.com/jenkins-x/jx/pkg/ksync"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+
+	"github.com/jenkins-x/jx/pkg/cloud/iks"
 
 	randomdata "github.com/Pallinder/go-randomdata"
-	filemutex "github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/maven"
 	"github.com/jenkins-x/jx/pkg/packages"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pborman/uuid"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,16 +86,6 @@ const (
 	DefaultCloudEnvironmentsURL = "https://github.com/jenkins-x/cloud-environments"
 )
 
-// Prow keeps install information for prow chart
-type Prow struct {
-	Version     string
-	Chart       string
-	SetValues   string
-	ReleaseName string
-	HMACToken   string
-	OAUTHToken  string
-}
-
 // DoInstallMissingDependencies install missing dependencies from the given list
 func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 	// install package managers first
@@ -105,13 +104,13 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 		case "az":
 			err = o.InstallAzureCli()
 		case "kubectl":
-			err = o.InstallKubectl(false)
+			err = packages.InstallKubectl(false)
 		case "gcloud":
 			err = o.InstallGcloud()
 		case "helm":
 			err = o.InstallHelm()
 		case "ibmcloud":
-			err = o.InstallIBMCloud(false)
+			err = iks.InstallIBMCloud(false)
 		case "glooctl":
 			err = o.InstallGlooctl()
 		case "tiller":
@@ -119,23 +118,23 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 		case "helm3":
 			err = o.InstallHelm3()
 		case "hyperkit":
-			err = o.InstallHyperkit()
+			err = hyperkit.InstallHyperkit()
 		case "kops":
-			err = o.InstallKops()
+			err = amazon.InstallKops()
 		case "kvm":
-			err = o.InstallKvm()
+			err = kvm.InstallKvm()
 		case "kvm2":
-			err = o.InstallKvm2()
+			err = kvm2.InstallKvm2()
 		case "ksync":
-			_, err = o.InstallKSync()
+			_, err = ksync.InstallKSync()
 		case "minikube":
 			err = o.InstallMinikube()
 		case "minishift":
 			err = o.InstallMinishift()
 		case "oc":
-			err = o.InstallOc()
+			err = openshift.InstallOc()
 		case "virtualbox":
-			err = o.InstallVirtualBox()
+			err = virtualbox.InstallVirtualBox()
 		case "xhyve":
 			err = o.InstallXhyve()
 		case "hyperv":
@@ -145,11 +144,11 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 		case "oci":
 			err = o.InstallOciCli()
 		case "aws":
-			err = o.InstallAws()
+			// Not yet implemented
 		case "eksctl":
-			err = o.InstallEksCtl(false)
+			err = amazon.InstallEksCtl(false)
 		case "aws-iam-authenticator":
-			err = o.InstallAwsIamAuthenticator(false)
+			err = amazon.InstallAwsIamAuthenticator(false)
 		case "kustomize":
 			err = o.InstallKustomize()
 		default:
@@ -162,19 +161,6 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 	return nil
 }
 
-// BinaryShouldBeInstalled appends the binary to the deps array if it cannot be found on the $PATH
-func BinaryShouldBeInstalled(d string) string {
-	_, shouldInstall, err := ShouldInstallBinary(d)
-	if err != nil {
-		log.Logger().Warnf("Error detecting if binary should be installed: %s", err.Error())
-		return ""
-	}
-	if shouldInstall {
-		return d
-	}
-	return ""
-}
-
 // InstallBrew installs brew
 func (o *CommonOptions) InstallBrew() error {
 	if runtime.GOOS != "darwin" {
@@ -185,228 +171,17 @@ func (o *CommonOptions) InstallBrew() error {
 	return o.RunCommand("sh", "-c", "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
 }
 
-// ShouldInstallBinary checks if the given binary should be installed
-func ShouldInstallBinary(name string) (fileName string, download bool, err error) {
-	fileName = packages.BinaryWithExtension(name)
-	download = false
-	pgmPath, err := exec.LookPath(fileName)
-	if err == nil {
-		log.Logger().Debugf("%s is already available on your PATH at %s", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
-		return
-	}
-
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return
-	}
-
-	// lets see if its been installed but just is not on the PATH
-	exists, err := util.FileExists(filepath.Join(binDir, fileName))
-	if err != nil {
-		return
-	}
-	if exists {
-		log.Logger().Debugf("Please add %s to your PATH", util.ColorInfo(binDir))
-		return
-	}
-	download = true
-	return
-}
-
-// UninstallBinary uninstalls given binary
-func (o *CommonOptions) UninstallBinary(binDir string, name string) error {
-	fileName := name
-	if runtime.GOOS == "windows" {
-		fileName += ".exe"
-	}
-	// try to remove the binary from all paths
-	var err error
-	for {
-		path, err := exec.LookPath(fileName)
-		if err == nil {
-			err := os.Remove(path)
-			if err != nil {
-				return err
-			}
-		} else {
-			break
-		}
-	}
-	path := filepath.Join(binDir, fileName)
-	exists, err := util.FileExists(path)
-	if err != nil {
-		return nil
-	}
-	if exists {
-		return os.Remove(path)
-	}
-	return nil
-}
-
-// InstallOrUpdateBinaryOptions options for install or update binary
-type InstallOrUpdateBinaryOptions struct {
-	Binary                       string
-	GitHubOrganization           string
-	DownloadUrlTemplate          string
-	DownloadUrlTemplateLowerCase bool
-	Version                      string
-	SkipPathScan                 bool
-	VersionExtractor             packages.VersionExtractor
-	Archived                     bool
-	ArchiveDirectory             string
-}
-
-// InstallOrUpdateBinary installs or updates a binary
-func (o *CommonOptions) InstallOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
-	isInstalled, err := packages.IsBinaryWithProperVersionInstalled(options.Binary, options.Version, options.VersionExtractor)
-	if err != nil {
-		return err
-	}
-	if isInstalled {
-		return nil
-	}
-
-	downloadUrlTemplate := options.DownloadUrlTemplate
-	if !options.Archived {
-		downloadUrlTemplate = packages.BinaryWithExtension(downloadUrlTemplate)
-	}
-	urlTemplate, err := template.New(options.Binary).Parse(downloadUrlTemplate)
-	if err != nil {
-		return err
-	}
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	fileName := options.Binary
-	if !options.SkipPathScan {
-		installFilename, flag, err := ShouldInstallBinary(options.Binary)
-		fileName = installFilename
-		if err != nil || !flag {
-			return err
-		}
-	}
-
-	if options.Version == "" {
-		configDir, err := util.ConfigDir()
-		if err != nil {
-			return err
-		}
-		versionFile := filepath.Join(configDir, "jenkins-x-versions", "packages", options.Binary+".yml")
-		ver, err := versionstream.LoadStableVersionFile(versionFile)
-		if err != nil {
-			return err
-		}
-		if ver.Version != "" {
-			options.Version = ver.Version
-		}
-	}
-
-	if options.Version == "" {
-		options.Version, err = util.GetLatestVersionStringFromGitHub(options.GitHubOrganization, options.Binary)
-		if err != nil {
-			return err
-		}
-	}
-	extension := "tar.gz"
-	if runtime.GOOS == "windows" {
-		extension = "zip"
-	}
-	clientUrlBuffer := bytes.NewBufferString("")
-	variables := map[string]string{"version": options.Version, "os": runtime.GOOS, "osTitle": strings.Title(runtime.GOOS), "arch": runtime.GOARCH, "extension": extension}
-	urlTemplate.Execute(clientUrlBuffer, variables)
-	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath
-	if options.Archived {
-		tarFile = tarFile + "." + extension
-	}
-	downloadUrl := clientUrlBuffer.String()
-	if options.DownloadUrlTemplateLowerCase {
-		downloadUrl = strings.ToLower(downloadUrl)
-	}
-	err = packages.DownloadFile(downloadUrl, tarFile)
-	if err != nil {
-		return err
-	}
-	fileNameInArchive := fileName
-	if options.ArchiveDirectory != "" {
-		fileNameInArchive = filepath.Join(options.ArchiveDirectory, fileName)
-	}
-	if options.Archived {
-		if extension == "zip" {
-			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
-			err = os.MkdirAll(zipDir, util.DefaultWritePermissions)
-			if err != nil {
-				return err
-			}
-			err = util.Unzip(tarFile, zipDir)
-			if err != nil {
-				return err
-			}
-
-			f := filepath.Join(zipDir, fileNameInArchive)
-			exists, err := util.FileExists(f)
-			if err != nil {
-				return err
-			}
-			if !exists {
-				return fmt.Errorf("Could not find file %s inside the downloaded file!", f)
-			}
-			err = os.Rename(f, fullPath)
-			if err != nil {
-				return err
-			}
-			err = os.RemoveAll(zipDir)
-		} else {
-			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileNameInArchive})
-		}
-		if err != nil {
-			return err
-		}
-		err = os.Remove(tarFile)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = packages.RememberInstalledPackage(options.Binary, options.Version)
-	if err != nil {
-		return err
-	}
-
-	return os.Chmod(fullPath, 0755)
-}
-
 // InstallBrewIfRequired installs brew if required
 func (o *CommonOptions) InstallBrewIfRequired() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
 		return nil
 	}
 
-	_, flag, err := ShouldInstallBinary("brew")
+	_, flag, err := packages.ShouldInstallBinary("brew")
 	if err != nil || !flag {
 		return err
 	}
 	return o.InstallBrew()
-}
-
-// InstallKubectl installs kubectl
-func (o *CommonOptions) InstallKubectl(skipPathScan bool) error {
-	return o.InstallKubectlWithVersion(packages.KubectlVersion, skipPathScan)
-}
-
-// InstallKubectlWithVersion install a specific version of kubectl
-func (o *CommonOptions) InstallKubectlWithVersion(version string, skipPathScan bool) error {
-	return o.InstallOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary:                       "kubectl",
-		GitHubOrganization:           "",
-		DownloadUrlTemplate:          "https://storage.googleapis.com/kubernetes-release/release/v{{.version}}/bin/{{.osTitle}}/{{.arch}}/kubectl",
-		DownloadUrlTemplateLowerCase: true,
-		Version:                      version,
-		SkipPathScan:                 skipPathScan,
-		VersionExtractor:             nil,
-		Archived:                     false,
-	})
 }
 
 // InstallGlooctl Installs glooctl tool
@@ -418,7 +193,7 @@ func (o *CommonOptions) InstallGlooctl() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := ShouldInstallBinary("glooctl")
+	fileName, flag, err := packages.ShouldInstallBinary("glooctl")
 	if err != nil || !flag {
 		return err
 	}
@@ -455,7 +230,7 @@ func (o *CommonOptions) InstallKustomize() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := ShouldInstallBinary("kustomize")
+	fileName, flag, err := packages.ShouldInstallBinary("kustomize")
 	if err != nil || !flag {
 		return err
 	}
@@ -477,143 +252,6 @@ func (o *CommonOptions) InstallKustomize() error {
 		return err
 	}
 	return os.Chmod(fullPath, 0755)
-}
-
-// InstallOc installs oc cli
-func (o *CommonOptions) InstallOc() error {
-	// need to fix the version we download as not able to work out the oc sha in the URL yet
-	sha := "191fece"
-	latestVersion := "3.9.0"
-
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	binary := "oc"
-	fileName, flag, err := ShouldInstallBinary(binary)
-	if err != nil || !flag {
-		return err
-	}
-
-	var arch string
-	clientURL := fmt.Sprintf("https://github.com/openshift/origin/releases/download/v%s/openshift-origin-client-tools-v%s-%s", latestVersion, latestVersion, sha)
-
-	extension := ".zip"
-	switch runtime.GOOS {
-	case "windows":
-		clientURL += "-windows.zip"
-	case "darwin":
-		clientURL += "-mac.zip"
-	default:
-		switch runtime.GOARCH {
-		case "amd64":
-			arch = "64bit"
-		case "386":
-			arch = "32bit"
-		}
-		extension = ".tar.gz"
-		clientURL += fmt.Sprintf("-%s-%s.tar.gz", runtime.GOOS, arch)
-	}
-
-	fullPath := filepath.Join(binDir, fileName)
-	tarFile := filepath.Join(binDir, "oc.tgz")
-	if extension == ".zip" {
-		tarFile = filepath.Join(binDir, "oc.zip")
-	}
-	err = packages.DownloadFile(clientURL, tarFile)
-	if err != nil {
-		return err
-	}
-
-	if extension == ".zip" {
-		zipDir := filepath.Join(binDir, "oc-tmp-"+uuid.NewUUID().String())
-		err = os.MkdirAll(zipDir, util.DefaultWritePermissions)
-		if err != nil {
-			return err
-		}
-		err = util.Unzip(tarFile, zipDir)
-		if err != nil {
-			return err
-		}
-		f := filepath.Join(zipDir, fileName)
-		exists, err := util.FileExists(f)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return fmt.Errorf("Could not find file %s inside the downloaded oc.zip!", f)
-		}
-		err = os.Rename(f, fullPath)
-		if err != nil {
-			return err
-		}
-		err = os.RemoveAll(zipDir)
-	} else {
-		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
-	}
-	if err != nil {
-		return err
-	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
-}
-
-// InstallHyperkit installs hyperkit
-func (o *CommonOptions) InstallHyperkit() error {
-	/*
-		info, err := o.getCommandOutput("", "docker-machine-driver-hyperkit")
-		if strings.Contains(info, "Docker") {
-			o.Printf("docker-machine-driver-hyperkit is already installed\n")
-			return nil
-		}
-		o.Printf("Result: %s and %v\n", info, err)
-		err = o.runCommand("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
-		if err != nil {
-			return err
-		}
-
-		err = o.runCommand("chmod", "+x", "docker-machine-driver-hyperkit")
-		if err != nil {
-			return err
-		}
-
-		log.Logger().Warn("Installing hyperkit does require sudo to perform some actions, for more details see https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#hyperkit-driver")
-
-		err = o.runCommand("sudo", "mv", "docker-machine-driver-hyperkit", "/usr/local/bin/")
-		if err != nil {
-			return err
-		}
-
-		err = o.runCommand("sudo", "chown", "root:wheel", "/usr/local/bin/docker-machine-driver-hyperkit")
-		if err != nil {
-			return err
-		}
-
-		return o.runCommand("sudo", "chmod", "u+s", "/usr/local/bin/docker-machine-driver-hyperkit")
-	*/
-	return nil
-}
-
-// InstallKvm installs kvm
-func (o *CommonOptions) InstallKvm() error {
-	log.Logger().Warnf("We cannot yet automate the installation of KVM - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads")
-	return nil
-}
-
-// InstallKvm2 install kvm2
-func (o *CommonOptions) InstallKvm2() error {
-	log.Logger().Warnf("We cannot yet automate the installation of KVM with KVM2 driver - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads " +
-		"and https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#kvm2-driver")
-	return nil
-}
-
-// InstallVirtualBox installs virtual box
-func (o *CommonOptions) InstallVirtualBox() error {
-	log.Logger().Warnf("We cannot yet automate the installation of VirtualBox - can you install this manually please?\nPlease see: https://www.virtualbox.org/wiki/Downloads")
-	return nil
 }
 
 // InstallXhyve installs xhyve
@@ -684,43 +322,6 @@ func (o *CommonOptions) Installhyperv() error {
 	return nil
 }
 
-// InstallVaultCli installs vault cli
-func (o *CommonOptions) InstallVaultCli() error {
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	binary := "vault"
-	fileName, flag, err := ShouldInstallBinary(binary)
-	if err != nil || !flag {
-		return err
-	}
-	latestVersion, err := util.GetLatestFullTagFromGithub("hashicorp", "vault")
-	if err != nil {
-		return err
-	}
-	// Strip the v off the beginning of the version number
-	latestVersion = strings.Replace(latestVersion, "v", "", 1)
-
-	clientURL := fmt.Sprintf("https://releases.hashicorp.com/vault/%s/vault_%s_%s_%s.zip", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + ".zip"
-	err = packages.DownloadFile(clientURL, tarFile)
-	if err != nil {
-		return err
-	}
-	err = util.UnzipSpecificFiles(tarFile, binDir, fileName)
-	if err != nil {
-		return err
-	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
-	}
-	err = os.Chmod(fullPath, 0755)
-	return err
-}
-
 // InstallHelm install helm cli
 func (o *CommonOptions) InstallHelm() error {
 	binary := "helm"
@@ -738,7 +339,7 @@ func (o *CommonOptions) InstallHelm() error {
 		return err
 	}
 
-	fileName, flag, err := ShouldInstallBinary(binary)
+	fileName, flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -821,7 +422,7 @@ func (o *CommonOptions) InstallHelm3() error {
 		return err
 	}
 	binary := "helm3"
-	fileName, flag, err := ShouldInstallBinary(binary)
+	fileName, flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -894,93 +495,6 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 	return err
 }
 
-// InstallMavenIfRequired installs maven if not available
-func (o *CommonOptions) InstallMavenIfRequired() error {
-	homeDir, err := util.ConfigDir()
-	if err != nil {
-		return err
-	}
-	m, err := filemutex.New(homeDir + "/jx.lock")
-	if err != nil {
-		panic(err)
-	}
-	m.Lock()
-
-	cmd := util.Command{
-		Name: "mvn",
-		Args: []string{"-v"},
-	}
-	_, err = cmd.RunWithoutRetry()
-	if err == nil {
-		m.Unlock()
-		return nil
-	}
-	// lets assume maven is not installed so lets download it
-	clientURL := fmt.Sprintf("http://central.maven.org/maven2/org/apache/maven/apache-maven/%s/apache-maven-%s-bin.zip", maven.MavenVersion, maven.MavenVersion)
-
-	log.Logger().Infof("Apache Maven is not installed so lets download: %s", util.ColorInfo(clientURL))
-
-	mvnDir := filepath.Join(homeDir, "maven")
-	mvnTmpDir := filepath.Join(homeDir, "maven-tmp")
-	zipFile := filepath.Join(homeDir, "mvn.zip")
-
-	err = os.MkdirAll(mvnDir, util.DefaultWritePermissions)
-	if err != nil {
-		m.Unlock()
-		return err
-	}
-
-	log.Logger().Info("\ndownloadFile")
-	err = packages.DownloadFile(clientURL, zipFile)
-	if err != nil {
-		m.Unlock()
-		return err
-	}
-
-	log.Logger().Info("\nutil.Unzip")
-	err = util.Unzip(zipFile, mvnTmpDir)
-	if err != nil {
-		m.Unlock()
-		return err
-	}
-
-	// lets find a directory inside the unzipped folder
-	log.Logger().Info("\nReadDir")
-	files, err := ioutil.ReadDir(mvnTmpDir)
-	if err != nil {
-		m.Unlock()
-		return err
-	}
-	for _, f := range files {
-		name := f.Name()
-		if f.IsDir() && strings.HasPrefix(name, "apache-maven") {
-			os.RemoveAll(mvnDir)
-
-			err = os.Rename(filepath.Join(mvnTmpDir, name), mvnDir)
-			if err != nil {
-				m.Unlock()
-				return err
-			}
-			log.Logger().Infof("Apache Maven is installed at: %s", util.ColorInfo(mvnDir))
-			m.Unlock()
-			err = os.Remove(zipFile)
-			if err != nil {
-				m.Unlock()
-				return err
-			}
-			err = os.RemoveAll(mvnTmpDir)
-			if err != nil {
-				m.Unlock()
-				return err
-			}
-			m.Unlock()
-			return nil
-		}
-	}
-	m.Unlock()
-	return fmt.Errorf("Could not find an apache-maven folder inside the unzipped maven distro at %s", mvnTmpDir)
-}
-
 // InstallTerraform installs terraform
 func (o *CommonOptions) InstallTerraform() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
@@ -992,7 +506,7 @@ func (o *CommonOptions) InstallTerraform() error {
 		return err
 	}
 	binary := "terraform"
-	fileName, flag, err := ShouldInstallBinary(binary)
+	fileName, flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1049,7 +563,7 @@ func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
 			return semver.Version{}, err
 		}
 
-		v, err := o.LatestJxBrewVersion(brewInfo)
+		v, err := brew.LatestJxBrewVersion(brewInfo)
 		if err != nil {
 			return semver.Version{}, err
 		}
@@ -1058,102 +572,6 @@ func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
 	}
 	log.Logger().Debugf("Locating latest JX version from GitHub")
 	return util.GetLatestVersionFromGitHub("jenkins-x", "jx")
-}
-
-func (o *CommonOptions) LatestJxBrewVersion(jsonInfo string) (string, error) {
-	var brewInfo []brewInfo
-	err := json.Unmarshal([]byte(jsonInfo), &brewInfo)
-	if err != nil {
-		return "", err
-	}
-	return brewInfo[0].Versions.Stable, nil
-}
-
-// BrewInfo contains some of the `brew info` data.
-type brewInfo struct {
-	Name     string
-	Outdated bool
-	Versions struct {
-		Stable string
-	}
-}
-
-// InstallKops installs kops
-func (o *CommonOptions) InstallKops() error {
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	binary := "kops"
-	fileName, flag, err := ShouldInstallBinary(binary)
-	if err != nil || !flag {
-		return err
-	}
-	latestVersion, err := util.GetLatestVersionStringFromGitHub("kubernetes", "kops")
-	if err != nil {
-		return err
-	}
-	clientURL := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/%s/kops-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
-	tmpFile := fullPath + ".tmp"
-	err = packages.DownloadFile(clientURL, tmpFile)
-	if err != nil {
-		return err
-	}
-	err = util.RenameFile(tmpFile, fullPath)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
-}
-
-// InstallKSync install ksync
-func (o *CommonOptions) InstallKSync() (string, error) {
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return "", err
-	}
-	binary := "ksync"
-	fileName, flag, err := ShouldInstallBinary(binary)
-	if err != nil || !flag {
-		// Exec `ksync` to find the version
-		ksyncCmd := util.Command{
-			Name: fileName,
-			Args: []string{
-				"version",
-			},
-		}
-		// Explicitly ignore any errors from ksync version, as we just need the output!
-		res, _ := ksyncCmd.RunWithoutRetry()
-		lines := strings.Split(res, "\n")
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "Git Tag:") {
-				return strings.TrimSpace(strings.TrimPrefix(line, "Git Tag:")), nil
-			}
-		}
-
-		return "", fmt.Errorf("unable to find version of ksync")
-	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("vapor-ware", "ksync")
-	if err != nil {
-		return "", err
-	}
-	clientURL := fmt.Sprintf("https://github.com/vapor-ware/ksync/releases/download/%s/ksync_%s_%s", latestVersion, runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
-		clientURL += ".exe"
-	}
-	fullPath := filepath.Join(binDir, fileName)
-	tmpFile := fullPath + ".tmp"
-	err = packages.DownloadFile(clientURL, tmpFile)
-	if err != nil {
-		return "", err
-	}
-	err = util.RenameFile(tmpFile, fullPath)
-	if err != nil {
-		return "", err
-	}
-	return latestVersion.String(), os.Chmod(fullPath, 0755)
 }
 
 // InstallJx installs jx cli
@@ -1178,7 +596,7 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 	binary := "jx"
 	fileName := binary
 	if !upgrade {
-		f, flag, err := ShouldInstallBinary(binary)
+		f, flag, err := packages.ShouldInstallBinary(binary)
 		if err != nil || !flag {
 			return err
 		}
@@ -1277,7 +695,7 @@ func (o *CommonOptions) InstallMinikube() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := ShouldInstallBinary("minikube")
+	fileName, flag, err := packages.ShouldInstallBinary("minikube")
 	if err != nil || !flag {
 		return err
 	}
@@ -1313,7 +731,7 @@ func (o *CommonOptions) InstallMinishift() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := ShouldInstallBinary(binary)
+	fileName, flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1373,47 +791,6 @@ func (o *CommonOptions) InstallOciCli() error {
 	return os.Remove(filePath)
 }
 
-// InstallAws installs aws
-func (o *CommonOptions) InstallAws() error {
-	// TODO
-	return nil
-}
-
-// InstallEksCtl installs eks cli
-func (o *CommonOptions) InstallEksCtl(skipPathScan bool) error {
-	return o.InstallEksCtlWithVersion("", skipPathScan)
-}
-
-// InstallEksCtlWithVersion install a specific version of eks cli
-func (o *CommonOptions) InstallEksCtlWithVersion(version string, skipPathScan bool) error {
-	return o.InstallOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary:              "eksctl",
-		GitHubOrganization:  "weaveworks",
-		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.osTitle}}_{{.arch}}.{{.extension}}",
-		Version:             version,
-		SkipPathScan:        skipPathScan,
-		VersionExtractor:    nil,
-		Archived:            true,
-	})
-}
-
-// InstallAwsIamAuthenticator install iam authenticator for AWS
-func (o *CommonOptions) InstallAwsIamAuthenticator(skipPathScan bool) error {
-	return o.InstallAwsIamAuthenticatorWithVersion(packages.IamAuthenticatorAwsVersion, skipPathScan)
-}
-
-// InstallAwsIamAuthenticatorWithVersion install a specific version of iam authenticator for AWS
-func (o *CommonOptions) InstallAwsIamAuthenticatorWithVersion(version string, skipPathScan bool) error {
-	return o.InstallOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary:              "aws-iam-authenticator",
-		GitHubOrganization:  "",
-		DownloadUrlTemplate: "https://amazon-eks.s3-us-west-2.amazonaws.com/{{.version}}/2019-03-27/bin/{{.os}}/{{.arch}}/aws-iam-authenticator",
-		Version:             version,
-		SkipPathScan:        skipPathScan,
-		VersionExtractor:    nil,
-	})
-}
-
 // GetCloudProvider returns the cloud provider
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
@@ -1445,13 +822,13 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 
 // GetClusterDependencies returns the dependencies for a cloud provider
 func (o *CommonOptions) GetClusterDependencies(depsToInstall []string) []string {
-	deps := o.FilterInstalledDependencies(depsToInstall)
-	d := BinaryShouldBeInstalled("kubectl")
+	deps := packages.FilterInstalledDependencies(depsToInstall)
+	d := packages.BinaryShouldBeInstalled("kubectl")
 	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
 
-	d = BinaryShouldBeInstalled("helm")
+	d = packages.BinaryShouldBeInstalled("helm")
 	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
@@ -1459,25 +836,13 @@ func (o *CommonOptions) GetClusterDependencies(depsToInstall []string) []string 
 	// Platform specific deps
 	if runtime.GOOS == "darwin" {
 		if !o.NoBrew {
-			d = BinaryShouldBeInstalled("brew")
+			d = packages.BinaryShouldBeInstalled("brew")
 			if d != "" && util.StringArrayIndex(deps, d) < 0 {
 				deps = append(deps, d)
 			}
 		}
 	}
 	return deps
-}
-
-// FilterInstalledDependencies filters installed dependencies
-func (o *CommonOptions) FilterInstalledDependencies(deps []string) []string {
-	depsToInstall := []string{}
-	for _, d := range deps {
-		binary := BinaryShouldBeInstalled(d)
-		if binary != "" {
-			depsToInstall = append(depsToInstall, binary)
-		}
-	}
-	return depsToInstall
 }
 
 // InstallMissingDependencies installs missing dependencies
@@ -1513,36 +878,27 @@ func (o *CommonOptions) InstallRequirements(cloudProvider string, extraDependenc
 	var deps []string
 	switch cloudProvider {
 	case cloud.IKS:
-		deps = o.AddRequiredBinary("ibmcloud", deps)
+		deps = packages.AddRequiredBinary("ibmcloud", deps)
 	case cloud.AWS:
-		deps = o.AddRequiredBinary("kops", deps)
+		deps = packages.AddRequiredBinary("kops", deps)
 	case cloud.EKS:
-		deps = o.AddRequiredBinary("eksctl", deps)
-		deps = o.AddRequiredBinary("aws-iam-authenticator", deps)
+		deps = packages.AddRequiredBinary("eksctl", deps)
+		deps = packages.AddRequiredBinary("aws-iam-authenticator", deps)
 	case cloud.AKS:
-		deps = o.AddRequiredBinary("az", deps)
+		deps = packages.AddRequiredBinary("az", deps)
 	case cloud.GKE:
-		deps = o.AddRequiredBinary("gcloud", deps)
+		deps = packages.AddRequiredBinary("gcloud", deps)
 	case cloud.OKE:
-		deps = o.AddRequiredBinary("oci", deps)
+		deps = packages.AddRequiredBinary("oci", deps)
 	case cloud.MINIKUBE:
-		deps = o.AddRequiredBinary("minikube", deps)
+		deps = packages.AddRequiredBinary("minikube", deps)
 	}
 
 	for _, dep := range extraDependencies {
-		deps = o.AddRequiredBinary(dep, deps)
+		deps = packages.AddRequiredBinary(dep, deps)
 	}
 
 	return o.InstallMissingDependencies(deps)
-}
-
-// AddRequiredBinary add the required binary
-func (o *CommonOptions) AddRequiredBinary(binName string, deps []string) []string {
-	d := BinaryShouldBeInstalled(binName)
-	if d != "" && util.StringArrayIndex(deps, d) < 0 {
-		deps = append(deps, d)
-	}
-	return deps
 }
 
 // CreateClusterAdmin creates a cluster admin
@@ -1610,7 +966,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username, _ := o.GetCommandOutput("", "gcloud", "config", "get-value", "core/account")
 
 	if username != "" {
-		return GetSafeUsername(username), nil
+		return cluster.GetSafeUsername(username), nil
 	}
 
 	config, _, err := o.Kube().LoadConfig()
@@ -1631,31 +987,6 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username = context.AuthInfo
 
 	return username, nil
-}
-
-// GetSafeUsername returns username by checking the active configuration
-func GetSafeUsername(username string) string {
-	if strings.Contains(username, "Your active configuration is") {
-		return strings.Split(username, "\n")[1]
-	}
-	return username
-}
-
-// AddDummyApplication creates the dummy prow jenkins app
-func (o *CommonOptions) AddDummyApplication(client kubernetes.Interface, devNamespace string, settings *jenkinsv1.TeamSettings) error {
-
-	var err error
-	log.Logger().Infof("Setting up prow config into namespace %s", util.ColorInfo(devNamespace))
-
-	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
-	_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
-	if err != nil {
-		err = prow.AddApplication(client, []string{"jenkins-x/dummy"}, devNamespace, "base", settings)
-		if err != nil {
-			return errors.Wrap(err, "adding dummy application")
-		}
-	}
-	return nil
 }
 
 // InstallProw installs prow
@@ -1717,7 +1048,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	}
 
 	if !isGitOps {
-		err = o.AddDummyApplication(client, devNamespace, settings)
+		err = prow.AddDummyApplication(client, devNamespace, settings)
 		if err != nil {
 			return errors.Wrap(err, "adding dummy application")
 		}
@@ -1961,34 +1292,4 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 	}
 
 	return nil
-}
-
-func (o *CommonOptions) InstallIBMCloud(skipPathScan bool) error {
-	return o.InstallIBMCloudWithVersion(packages.IBMCloudVersion, skipPathScan)
-}
-
-// InstallIBMCloudWithVersion  installs a specific version of IBM cloud CLI
-func (o *CommonOptions) InstallIBMCloudWithVersion(version string, skipPathScan bool) error {
-	if runtime.GOOS == "darwin" {
-		return o.InstallOrUpdateBinary(InstallOrUpdateBinaryOptions{
-			Binary:              "ibmcloud",
-			GitHubOrganization:  "",
-			DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_macos.tgz",
-			Version:             version,
-			SkipPathScan:        skipPathScan,
-			VersionExtractor:    nil,
-			Archived:            true,
-			ArchiveDirectory:    "IBM_Cloud_CLI",
-		})
-	}
-	return o.InstallOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary:              "ibmcloud",
-		GitHubOrganization:  "",
-		DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_{{.os}}_{{.arch}}.{{.extension}}",
-		Version:             version,
-		SkipPathScan:        skipPathScan,
-		VersionExtractor:    nil,
-		Archived:            true,
-		ArchiveDirectory:    "IBM_Cloud_CLI",
-	})
 }

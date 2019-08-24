@@ -34,7 +34,7 @@ type StepUnstashOptions struct {
 var (
 	stepUnstashLong = templates.LongDesc(`
 		This pipeline step unstashes the files in storage to a local file or the console
-` + StorageSupportDescription + opts.SeeAlsoText("jx step stash", "jx edit storage"))
+` + StorageSupportDescription + helper.SeeAlsoText("jx step stash", "jx edit storage"))
 
 	stepUnstashExample = templates.Examples(`
 		# unstash a file to the reports directory

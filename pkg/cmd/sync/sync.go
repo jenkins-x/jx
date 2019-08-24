@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/ksync"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -106,7 +108,7 @@ func (o *SyncOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	version, err := o.InstallKSync()
+	version, err := ksync.InstallKSync()
 	if err != nil {
 		return err
 	}

@@ -70,7 +70,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	createCredential := true
 	if credentials == "" {
 		// lets try find the credentials from the secrets
-		credentials = FindGitCredentials(gitProvider, secrets)
+		credentials = kube.FindGitCredentials(gitProvider, secrets)
 		if credentials != "" {
 			createCredential = false
 		}

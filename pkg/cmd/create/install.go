@@ -10,6 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/packages"
+
+	"github.com/jenkins-x/jx/pkg/prow"
+
 	"github.com/jenkins-x/jx/pkg/platform"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -1872,7 +1876,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 				return errors.Wrap(err, "reading the team settings")
 			}
 
-			options.AddDummyApplication(client, devNamespace, settings)
+			prow.AddDummyApplication(client, devNamespace, settings)
 			if err != nil {
 				return errors.Wrap(err, "adding dummy application")
 			}
@@ -1927,7 +1931,7 @@ func (options *InstallOptions) installHelmBinaries() error {
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
 		}
-		_, install, err := opts.ShouldInstallBinary("tiller")
+		_, install, err := packages.ShouldInstallBinary("tiller")
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling existing tiller binary:",
@@ -1939,13 +1943,13 @@ func (options *InstallOptions) installHelmBinaries() error {
 				return errors.New("Existing tiller must be uninstalled first in order to use the jx in tiller less mode")
 			}
 			// Uninstall helm and tiller first to avoid using some older version
-			err = options.UninstallBinary(binDir, "tiller")
+			err = packages.UninstallBinary(binDir, "tiller")
 			if err != nil {
 				return errors.Wrap(err, "uninstalling existing tiller binary")
 			}
 		}
 
-		_, install, err = opts.ShouldInstallBinary(helmBinary)
+		_, install, err = packages.ShouldInstallBinary(helmBinary)
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling existing helm binary:",
@@ -1957,7 +1961,7 @@ func (options *InstallOptions) installHelmBinaries() error {
 				return errors.New("Existing helm must be uninstalled first in order to use the jx in tiller less mode")
 			}
 			// Uninstall helm and tiller first to avoid using some older version
-			err = options.UninstallBinary(binDir, helmBinary)
+			err = packages.UninstallBinary(binDir, helmBinary)
 			if err != nil {
 				return errors.Wrap(err, "uninstalling existing helm binary")
 			}

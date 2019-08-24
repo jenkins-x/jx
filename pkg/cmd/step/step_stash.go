@@ -55,7 +55,7 @@ When using Cloud Storage we use URLs like 's3://nameOfBucket' on AWS, 'gs://anot
 var (
 	stepStashLong = templates.LongDesc(`
 		This pipeline step stashes the specified files from the build into some stable storage location.
-` + StorageSupportDescription + opts.SeeAlsoText("jx step unstash", "jx edit storage"))
+` + StorageSupportDescription + helper.SeeAlsoText("jx step unstash", "jx edit storage"))
 
 	stepStashExample = templates.Examples(`
 		# lets collect some files to the team's default storage location (which if not configured uses the current git repository's gh-pages branch)

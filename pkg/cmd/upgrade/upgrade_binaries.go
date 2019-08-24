@@ -1,9 +1,13 @@
 package upgrade
 
 import (
+	"io/ioutil"
+
+	"github.com/jenkins-x/jx/pkg/packages"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -60,17 +64,17 @@ func (o *UpgradeBinariesOptions) Run() error {
 
 	for _, binary := range binaries {
 		if binary.Name() == "eksctl" {
-			err = o.InstallEksCtl(true)
+			err = amazon.InstallEksCtl(true)
 			if err != nil {
 				return err
 			}
 		} else if binary.Name() == "aws-iam-authenticator" {
-			err = o.InstallAwsIamAuthenticator(true)
+			err = amazon.InstallAwsIamAuthenticator(true)
 			if err != nil {
 				return err
 			}
 		} else if binary.Name() == "kubectl" {
-			err = o.InstallKubectl(true)
+			err = packages.InstallKubectl(true)
 			if err != nil {
 				return err
 			}

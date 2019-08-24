@@ -1,9 +1,12 @@
 package controller
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"io/ioutil"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/environments"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
@@ -303,7 +306,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				env.Spec.TeamSettings.BuildPackURL = adminTeamSettings.BuildPackURL
 				return nil
 			}
-			err = oc.ModifyDevEnvironmentWithNs(jxClient, teamNs, callback)
+			err = environments.ModifyDevEnvironmentWithNs(jxClient, teamNs, callback)
 			if err != nil {
 				log.Logger().Errorf("Failed to update team settings in namespace %s: %s", teamNs, err)
 			}

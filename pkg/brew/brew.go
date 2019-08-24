@@ -1,13 +1,15 @@
 package brew
 
 import (
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/pkg/errors"
 )
@@ -70,4 +72,22 @@ func UpdateVersionAndSha(dir string, newVersion string, newSha string) ([]string
 	}
 	sort.Strings(shaAnswer)
 	return versionAnswer, shaAnswer, nil
+}
+
+// BrewInfo contains some of the `brew info` data.
+type brewInfo struct {
+	Name     string
+	Outdated bool
+	Versions struct {
+		Stable string
+	}
+}
+
+func LatestJxBrewVersion(jsonInfo string) (string, error) {
+	var brewInfo []brewInfo
+	err := json.Unmarshal([]byte(jsonInfo), &brewInfo)
+	if err != nil {
+		return "", err
+	}
+	return brewInfo[0].Versions.Stable, nil
 }

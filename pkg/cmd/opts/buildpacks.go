@@ -6,11 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/buildpacks"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/jx/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -231,7 +232,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 		generateJenkinsPath = defaultJenkinsfile
 	}
 
-	err = CopyBuildPack(dir, lpack)
+	err = buildpacks.CopyBuildPack(dir, lpack)
 	if err != nil {
 		log.Logger().Warnf("Failed to apply the build pack in %s due to %s", dir, err)
 	}
@@ -355,21 +356,6 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 		}
 	}
 	return draftPack, nil
-}
-
-// CopyBuildPack copies the build pack from the source dir to the destination dir
-func CopyBuildPack(dest, src string) error {
-	// first do some validation that we are copying from a valid pack directory
-	p, err := pack.FromDir(src)
-	if err != nil {
-		return fmt.Errorf("could not load %s: %s", src, err)
-	}
-
-	// lets remove any files we think should be zapped
-	for _, file := range []string{jenkinsfile.PipelineConfigFileName, jenkinsfile.PipelineTemplateFileName} {
-		delete(p.Files, file)
-	}
-	return p.SaveDir(dest)
 }
 
 // DiscoverBuildPack discovers the build pack given the build pack configuration

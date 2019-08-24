@@ -55,3 +55,11 @@ func SimplifiedClusterName(complexClusterName string) string {
 	split := strings.Split(complexClusterName, "_")
 	return split[len(split)-1]
 }
+
+// GetSafeUsername returns username by checking the active configuration
+func GetSafeUsername(username string) string {
+	if strings.Contains(username, "Your active configuration is") {
+		return strings.Split(username, "\n")[1]
+	}
+	return username
+}

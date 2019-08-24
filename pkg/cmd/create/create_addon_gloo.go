@@ -2,8 +2,10 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/edit"
+	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -93,7 +95,7 @@ func (o *CreateAddonGlooOptions) Run() error {
 	}
 
 	// lets ensure glooctl is installed
-	_, shouldInstall, err := opts.ShouldInstallBinary("glooctl")
+	_, shouldInstall, err := packages.ShouldInstallBinary("glooctl")
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if we need to install glooctl")
 	}

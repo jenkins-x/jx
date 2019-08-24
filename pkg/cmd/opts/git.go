@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -380,24 +379,6 @@ func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, 
 	}
 	server, user := authConfig.GetPipelineAuth()
 	return server, user, nil
-}
-
-// FindGitCredentials finds the credential name from the pipeline git Secrets
-func FindGitCredentials(gitProvider gits.GitProvider, secrets *corev1.SecretList) string {
-	if secrets == nil {
-		return ""
-	}
-	u := gitProvider.ServerURL()
-	for _, secret := range secrets.Items {
-		annotations := secret.Annotations
-		if annotations != nil {
-			gitUrl := annotations[kube.AnnotationURL]
-			if u == gitUrl {
-				return secret.Name
-			}
-		}
-	}
-	return ""
 }
 
 // DisableFeatures iterates over all the repositories in org (except those that match excludes) and disables issue

@@ -16,7 +16,7 @@ var (
 		Verifies the versions of the required command line packages
 
 
-` + opts.SeeAlsoText("jx create project"))
+` + helper.SeeAlsoText("jx create project"))
 
 	verifyPackagesExample = templates.Examples(`
 		Verifies the versions of the required command line packages

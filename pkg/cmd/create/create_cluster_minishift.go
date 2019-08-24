@@ -7,8 +7,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/packages"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -89,11 +91,11 @@ func NewCmdCreateClusterMinishift(commonOpts *opts.CommonOptions) *cobra.Command
 
 func (o *CreateClusterMinishiftOptions) Run() error {
 	var deps []string
-	d := opts.BinaryShouldBeInstalled("minishift")
+	d := packages.BinaryShouldBeInstalled("minishift")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = opts.BinaryShouldBeInstalled("oc")
+	d = packages.BinaryShouldBeInstalled("oc")
 	if d != "" {
 		deps = append(deps, d)
 	}

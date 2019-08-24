@@ -1,4 +1,4 @@
-package opts_test
+package amazon_test
 
 import (
 	"io/ioutil"
@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +21,7 @@ func TestInstallEksctl(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "common_install_test")
 	err = os.Setenv("JX_HOME", tempDir)
 	assert.NoError(t, err)
-	err = (&opts.CommonOptions{}).InstallEksCtl(false)
+	err = amazon.InstallEksCtl(false)
 	assert.NoError(t, err)
 	eksctl := filepath.Join(os.Getenv("JX_HOME"), "/bin/eksctl")
 	if runtime.GOOS == "windows" {

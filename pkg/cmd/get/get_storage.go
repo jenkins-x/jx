@@ -1,9 +1,10 @@
 package get
 
 import (
+	"sort"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/step"
-	"sort"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -21,7 +22,7 @@ type GetStorageOptions struct {
 var (
 	getStorageLong = templates.LongDesc(`
 		Display the storage configuration for different classifications.
-` + step.StorageSupportDescription + opts.SeeAlsoText("jx step stash", "jx edit storage"))
+` + step.StorageSupportDescription + helper.SeeAlsoText("jx step stash", "jx edit storage"))
 
 	getStorageExample = templates.Examples(`
 		# List the storage configurations for different classifications for the current team

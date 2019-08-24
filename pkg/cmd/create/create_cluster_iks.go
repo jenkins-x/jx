@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/packages"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	ibmcloud "github.com/IBM-Cloud/bluemix-go"
@@ -154,7 +156,7 @@ func NewCmdCreateClusterIKS(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *CreateClusterIKSOptions) Run() error {
 
 	var deps []string
-	d := opts.BinaryShouldBeInstalled("ibmcloud")
+	d := packages.BinaryShouldBeInstalled("ibmcloud")
 	if d != "" {
 		deps = append(deps, d)
 	}

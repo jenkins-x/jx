@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/packages"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -106,11 +108,11 @@ func NewCmdCreateClusterEKS(commonOpts *opts.CommonOptions) *cobra.Command {
 // Runs the command logic (including installing required binaries, parsing options and aggregating eksctl command)
 func (o *CreateClusterEKSOptions) Run() error {
 	var deps []string
-	d := opts.BinaryShouldBeInstalled("eksctl")
+	d := packages.BinaryShouldBeInstalled("eksctl")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = opts.BinaryShouldBeInstalled("aws-iam-authenticator")
+	d = packages.BinaryShouldBeInstalled("aws-iam-authenticator")
 
 	if d != "" {
 		deps = append(deps, d)
