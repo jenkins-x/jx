@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"github.com/jenkins-x/jx/pkg/platform"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	"sigs.k8s.io/yaml"
 
@@ -78,7 +79,7 @@ func NewCmdUpgradePlatform(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to.")
-	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", opts.JenkinsXPlatformRelease, "The release name.")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", platform.JenkinsXPlatformRelease, "The release name.")
 	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade.")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to.")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading, separated by comma, e.g. key1=val1,key2=val2.")
@@ -459,14 +460,14 @@ func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
 func (o *UpgradePlatformOptions) upgradePlatformViaGitOps(devEnv *v1.Environment, targetVersion string, versionsDir string, configStore configio.ConfigStore) error {
 	uopts := &UpgradeAppsOptions{}
 	uopts.CommonOptions = o.CommonOptions
-	uopts.ReleaseName = opts.JenkinsXPlatformRelease
+	uopts.ReleaseName = platform.JenkinsXPlatformRelease
 	uopts.GitOps = true
 	uopts.Version = targetVersion
 	uopts.Repo = kube.DefaultChartMuseumURL
 	uopts.HelmUpdate = true
 
 	//opts.Chart = JenkinsXPlatformChartName
-	uopts.Args = []string{opts.JenkinsXPlatformChartName}
+	uopts.Args = []string{platform.JenkinsXPlatformChartName}
 
 	return uopts.Run()
 }

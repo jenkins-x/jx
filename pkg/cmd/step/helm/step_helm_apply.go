@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/platform"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/google/uuid"
@@ -158,7 +160,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	if releaseName == "" {
 		if devNs == ns {
-			releaseName = opts.JenkinsXPlatformRelease
+			releaseName = platform.JenkinsXPlatformRelease
 		} else {
 			releaseName = ns
 
