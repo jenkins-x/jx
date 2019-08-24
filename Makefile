@@ -113,7 +113,7 @@ build: $(GO_DEPENDENCIES) ## Build jx binary for current OS
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/$(NAME) $(MAIN_SRC_FILE)
 
 build-all: $(GO_DEPENDENCIES) build make-reports-dir ## Build all files - runtime, all tests etc.
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -run=nope -tags=integration $(COVERFLAGS) -failfast -short ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -run=nope -tags=integration -failfast -short ./...
 
 .PHONY: build-covered
 build-covered: $(GO_DEPENDENCIES) ## Build jx binary for current OS with coverage instrumentation to build/$(NAME).covered
