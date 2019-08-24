@@ -3,13 +3,15 @@
 package create_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step/create"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -68,7 +70,7 @@ func TestCreateJenkinsConfig(t *testing.T) {
 	}
 
 	o := &create.StepCreateJenkinsConfigOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,

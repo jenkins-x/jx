@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -21,7 +23,7 @@ func TestStepSplitMonorepo(t *testing.T) {
 	assert.NoError(t, err)
 
 	options := &step.StepSplitMonorepoOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Organisation: "dummy",
@@ -53,7 +55,7 @@ func TestStepSplitMonorepoGetLastGitCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	options := &step.StepSplitMonorepoOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Organisation: "dummy",

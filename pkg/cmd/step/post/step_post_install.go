@@ -3,6 +3,8 @@ package post
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -23,7 +25,7 @@ import (
 
 // StepPostInstallOptions contains the command line flags
 type StepPostInstallOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	EnvJobCredentials string
 
@@ -51,7 +53,7 @@ var (
 // NewCmdStepPostInstall creates the command object
 func NewCmdStepPostInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPostInstallOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -32,7 +34,7 @@ var (
 
 // StepSyntaxValidatePipelineOptions contains the command line flags
 type StepSyntaxValidatePipelineOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Context string
 	Dir     string
@@ -41,7 +43,7 @@ type StepSyntaxValidatePipelineOptions struct {
 // NewCmdStepSyntaxValidatePipeline Creates a new Command object
 func NewCmdStepSyntaxValidatePipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSyntaxValidatePipelineOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

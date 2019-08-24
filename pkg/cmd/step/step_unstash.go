@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -22,7 +24,7 @@ import (
 
 // StepUnstashOptions contains the command line flags
 type StepUnstashOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	URL     string
 	OutDir  string
@@ -46,7 +48,7 @@ var (
 // NewCmdStepUnstash creates the CLI command
 func NewCmdStepUnstash(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepUnstashOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

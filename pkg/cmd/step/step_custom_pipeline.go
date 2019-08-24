@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -22,7 +24,7 @@ import (
 
 // StepCustomPipelineOptions contains the command line arguments for this command
 type StepCustomPipelineOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	MultiBranchProject bool
 	Dir                string
@@ -46,7 +48,7 @@ var (
 // NewCmdStepCustomPipeline creates the new command
 func NewCmdStepCustomPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepCustomPipelineOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 		JenkinsSelector: opts.JenkinsSelectorOptions{

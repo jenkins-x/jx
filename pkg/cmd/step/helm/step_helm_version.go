@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -37,7 +39,7 @@ var (
 func NewCmdStepHelmVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmVersionOptions{
 		StepHelmOptions: StepHelmOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

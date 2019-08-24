@@ -3,14 +3,15 @@ package create
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
 	"github.com/spf13/cobra"
 )
 
 // NewCmdStepCreate Steps a command object for the "step" command
 func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &opts.StepCreateOptions{
-		StepOptions: opts.StepOptions{
+	options := &step.StepCreateOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -36,7 +37,7 @@ func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 
 //StepCreateCommand is the options for NewCmdStepCreate
 type StepCreateCommand struct {
-	opts.StepCreateOptions
+	step.StepCreateOptions
 }
 
 // Run implements this command

@@ -3,18 +3,19 @@ package e2e
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/spf13/cobra"
 )
 
 // StepE2EOptions contains the command line flags
 type StepE2EOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 // NewCmdStepE2E Steps a command object for the "e2e" command
 func NewCmdStepE2E(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepE2EOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

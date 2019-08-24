@@ -3,14 +3,16 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/evanphx/json-patch"
+
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	k8sv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -32,7 +34,7 @@ var (
 
 // StepModifyConfigMapOptions are the options for the step patch-config command
 type StepModifyConfigMapOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	ConfigMapName      string
 	JSONPatch          string
 	FirstLevelProperty string
@@ -43,7 +45,7 @@ type StepModifyConfigMapOptions struct {
 // NewCmdStepPatchConfigMap executes the patch-config step, which applies JSONPatches to ConfigMaps
 func NewCmdStepPatchConfigMap(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepModifyConfigMapOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

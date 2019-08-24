@@ -3,6 +3,8 @@ package pr
 import (
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/gits/operations"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -17,7 +19,7 @@ import (
 
 //StepCreatePrOptions are the common options for all PR creation steps
 type StepCreatePrOptions struct {
-	opts.StepCreateOptions
+	step.StepCreateOptions
 	Results    *gits.PullRequestInfo
 	BranchName string
 	GitURLs    []string
@@ -33,8 +35,8 @@ type StepCreatePrOptions struct {
 // NewCmdStepCreatePr Steps a command object for the "step" command
 func NewCmdStepCreatePr(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePrOptions{
-		StepCreateOptions: opts.StepCreateOptions{
-			StepOptions: opts.StepOptions{
+		StepCreateOptions: step.StepCreateOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

@@ -3,18 +3,19 @@ package buildpack
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/spf13/cobra"
 )
 
 // StepBuildPackOptions contains the command line flags
 type StepBuildPackOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 // NewCmdStepBuildPack Steps a command object for the "step" command
 func NewCmdStepBuildPack(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBuildPackOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

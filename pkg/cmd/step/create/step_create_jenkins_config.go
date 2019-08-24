@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -30,7 +32,7 @@ var (
 
 // StepCreateJenkinsConfigOptions contains the command line flags
 type StepCreateJenkinsConfigOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Output string
 }
@@ -38,7 +40,7 @@ type StepCreateJenkinsConfigOptions struct {
 // NewCmdStepCreateJenkinsConfig Creates a new Command object
 func NewCmdStepCreateJenkinsConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateJenkinsConfigOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

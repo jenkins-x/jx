@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"os"
 	"os/exec"
 
@@ -35,7 +37,7 @@ var (
 
 // StepVerifyPodReadyOptions contains the command line flags
 type StepVerifyPodReadyOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	Debug            bool
 	ExcludeBuildPods bool
 
@@ -46,7 +48,7 @@ type StepVerifyPodReadyOptions struct {
 func NewCmdStepVerifyPodReady(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := StepVerifyPodReadyOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

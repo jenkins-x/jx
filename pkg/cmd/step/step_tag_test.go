@@ -1,10 +1,12 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
 
 	"io/ioutil"
 	"os"
@@ -37,7 +39,7 @@ func TestStepTagCharts(t *testing.T) {
 	valuesFile := filepath.Join(chartsDir, "values.yaml")
 
 	o := step.StepTagOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}

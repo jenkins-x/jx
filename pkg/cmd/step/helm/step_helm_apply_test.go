@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/ghodss/yaml"
@@ -52,7 +53,7 @@ func TestApplyAppsTemplateOverrides(t *testing.T) {
 	sto := helm_cmd.StepHelmApplyOptions{
 		StepHelmOptions: helm_cmd.StepHelmOptions{
 			Dir: absoluteRepoPath,
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: testOptions.CommonOptions,
 			},
 		},

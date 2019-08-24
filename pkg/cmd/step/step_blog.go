@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	releases2 "github.com/jenkins-x/jx/pkg/gits/releases"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -47,7 +49,7 @@ var (
 
 // StepBlogOptions contains the command line flags
 type StepBlogOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	FromDate                    string
 	ToDate                      string
@@ -80,7 +82,7 @@ type StepBlogState struct {
 // NewCmdStepBlog Creates a new Command object
 func NewCmdStepBlog(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBlogOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

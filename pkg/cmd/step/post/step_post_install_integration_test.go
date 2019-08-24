@@ -3,10 +3,12 @@
 package post_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step/post"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"os"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step/post"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -44,7 +46,7 @@ func TestStepPostInstall(t *testing.T) {
 	staging := kube.NewPermanentEnvironmentWithGit("staging", stagingGitURL)
 
 	o := post.StepPostInstallOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,

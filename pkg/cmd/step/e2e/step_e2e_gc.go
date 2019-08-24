@@ -2,6 +2,11 @@ package e2e
 
 import (
 	"errors"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
@@ -9,18 +14,15 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/get"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // StepE2EGCOptions contains the command line flags
 type StepE2EGCOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	ProjectID string
 	Region    string
 	Duration  int
@@ -41,7 +43,7 @@ var (
 // NewCmdStepE2EGC creates the CLI command
 func NewCmdStepE2EGC(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepE2EGCOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

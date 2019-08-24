@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
@@ -47,7 +49,7 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := &StepVerifyPreInstallOptions{
 		StepVerifyOptions: StepVerifyOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

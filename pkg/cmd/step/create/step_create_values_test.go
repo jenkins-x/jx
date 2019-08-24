@@ -9,7 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Netflix/go-expect"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -91,8 +93,8 @@ func TestCreateValuesFileWithVault(t *testing.T) {
 		assert.NoError(t, err)
 
 		o := StepCreateValuesOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: &commonOpts,
 				},
 			},

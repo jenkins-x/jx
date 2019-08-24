@@ -1,8 +1,10 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"testing"
+
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +13,7 @@ import (
 func TestMakefile(t *testing.T) {
 	t.Parallel()
 	o := step.StepNextVersionOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/make",
@@ -28,7 +30,7 @@ func TestMakefile(t *testing.T) {
 func TestPomXML(t *testing.T) {
 	t.Parallel()
 	o := step.StepNextVersionOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/java",
@@ -45,7 +47,7 @@ func TestPomXML(t *testing.T) {
 func TestChart(t *testing.T) {
 	t.Parallel()
 	o := step.StepNextVersionOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/helm",

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -26,7 +28,7 @@ const (
 
 // StepWaitForArtifactOptions contains the command line flags
 type StepWaitForArtifactOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	ArtifactURL string
 	RepoURL     string
@@ -60,7 +62,7 @@ var (
 
 func NewCmdStepWaitForArtifact(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepWaitForArtifactOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

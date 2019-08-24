@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 
@@ -55,7 +57,7 @@ var (
 func NewCmdStepEnvApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepEnvApplyOptions{
 		StepEnvOptions: StepEnvOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -199,7 +201,7 @@ func (o *StepEnvApplyOptions) Run() error {
 
 	stepHelmBuild := &helm_cmd.StepHelmBuildOptions{
 		StepHelmOptions: helm_cmd.StepHelmOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: o.CommonOptions,
 			},
 			Dir: dir,

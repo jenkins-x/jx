@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/step/buildpack"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
@@ -56,7 +58,7 @@ func TestStepBuildPackApply(t *testing.T) {
 	require.NoError(t, err)
 
 	o := &buildpack.StepBuildPackApplyOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/config"
 
@@ -115,7 +117,7 @@ func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 		BatchMode: false,
 	}
 	o := &create.StepCreateInstallValuesOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: &commonOpts,
 		},
 	}

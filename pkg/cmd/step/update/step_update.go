@@ -3,14 +3,15 @@ package update
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step/update/release"
 	"github.com/spf13/cobra"
 )
 
 // NewCmdStepUpdate Steps a command object for the "step" command
 func NewCmdStepUpdate(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &opts.StepUpdateOptions{
-		StepOptions: opts.StepOptions{
+	options := &step.StepUpdateOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -32,7 +33,7 @@ func NewCmdStepUpdate(commonOpts *opts.CommonOptions) *cobra.Command {
 
 //StepUpdateCommand is the options for NewCmdStepUpdate
 type StepUpdateCommand struct {
-	opts.StepUpdateOptions
+	step.StepUpdateOptions
 }
 
 // Run implements this command

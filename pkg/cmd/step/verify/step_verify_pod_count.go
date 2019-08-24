@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
@@ -23,7 +25,7 @@ const appLabel = "app"
 
 // StepVerifyPodCountOptions contains the command line flags
 type StepVerifyPodCountOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	After    int32
 	Pods     int32
@@ -43,7 +45,7 @@ var (
 // NewCmdStepVerifyPodCount performs deployment verification
 func NewCmdStepVerifyPodCount(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepVerifyPodCountOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

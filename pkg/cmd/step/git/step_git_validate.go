@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/user"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -14,7 +16,7 @@ import (
 
 // StepGitValidateOptions contains the command line flags
 type StepGitValidateOptions struct {
-	opts.StepOptions
+	step.StepOptions
 }
 
 var (
@@ -32,7 +34,7 @@ var (
 // NewCmdStepGitValidate creates a command to validate gitconfig
 func NewCmdStepGitValidate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitValidateOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

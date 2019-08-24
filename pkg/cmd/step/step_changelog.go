@@ -13,6 +13,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -41,7 +43,7 @@ import (
 
 // StepChangelogOptions contains the command line flags
 type StepChangelogOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	PreviousRevision    string
 	PreviousDate        string
@@ -150,7 +152,7 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 
 func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepChangelogOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -3,6 +3,8 @@ package helm
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -40,7 +42,7 @@ var (
 func NewCmdStepHelmInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmInstallOptions{
 		StepHelmOptions: StepHelmOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},

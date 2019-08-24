@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/gits/operations"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -45,8 +47,8 @@ type StepCreatetPullRequestGoOptions struct {
 func NewCmdStepCreatetPullRequestGo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatetPullRequestGoOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

@@ -3,10 +3,6 @@ package logs
 import (
 	"bufio"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/step"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -15,11 +11,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/tekton"
 
 	"github.com/fatih/color"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -472,7 +474,7 @@ func downloadLogFile(logsURL string, o *opts.CommonOptions) ([]byte, error) {
 	f, _ := ioutil.TempFile("", uuid.New().String())
 	defer util.DeleteFile(f.Name())
 	unstashStep := step.StepUnstashOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step2.StepOptions{
 			CommonOptions: o,
 		},
 		URL:    logsURL,

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -29,7 +31,7 @@ import (
 
 // StepSyntaxEffectiveOptions contains the command line flags
 type StepSyntaxEffectiveOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Pack              string
 	BuildPackURL      string
@@ -71,7 +73,7 @@ var (
 // NewCmdStepSyntaxEffective Creates a new Command object
 func NewCmdStepSyntaxEffective(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSyntaxEffectiveOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

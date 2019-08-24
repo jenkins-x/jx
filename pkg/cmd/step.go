@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/config"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/step/buildpack"
@@ -28,7 +29,7 @@ import (
 
 // NewCmdStep Steps a command object for the "step" command
 func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &opts.StepOptions{
+	options := &step2.StepOptions{
 		CommonOptions: commonOpts,
 	}
 

@@ -2,18 +2,20 @@ package report
 
 import (
 	"encoding/xml"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/reportingtools"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
 var (
@@ -32,7 +34,7 @@ var (
 
 // StepReportOptions contains the command line flags and other helper objects
 type StepReportOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	reportingtools.XUnitClient
 	MergeReports     bool
 	ReportsDir       string
@@ -80,7 +82,7 @@ type Failure struct {
 // NewCmdStepReport Creates a new Command object
 func NewCmdStepReport(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepReportOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

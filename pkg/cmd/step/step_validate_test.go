@@ -1,9 +1,11 @@
 package step_test
 
 import (
+	"testing"
+
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -14,10 +16,10 @@ import (
 
 func TestStepValidate(t *testing.T) {
 	t.Parallel()
-	AssertValidateWorks(t, &step.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}})
-	AssertValidateWorks(t, &step.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "0.0.1"})
+	AssertValidateWorks(t, &step.StepValidateOptions{StepOptions: step2.StepOptions{CommonOptions: &opts.CommonOptions{}}})
+	AssertValidateWorks(t, &step.StepValidateOptions{StepOptions: step2.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "0.0.1"})
 
-	AssertValidateFails(t, &step.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "100.0.1"})
+	AssertValidateFails(t, &step.StepValidateOptions{StepOptions: step2.StepOptions{CommonOptions: &opts.CommonOptions{}}, MinimumJxVersion: "100.0.1"})
 
 	// lets check the test data has a valid addon
 	projectDir := "test_data/project_with_kubeless"
@@ -25,7 +27,7 @@ func TestStepValidate(t *testing.T) {
 	assert.Nil(t, err, "Failed to load project config %s", fileName)
 	assert.NotEmpty(t, cfg.Addons, "Failed to find addons in project config %s", fileName)
 
-	AssertValidateFails(t, &step.StepValidateOptions{StepOptions: opts.StepOptions{CommonOptions: &opts.CommonOptions{}}, Dir: projectDir})
+	AssertValidateFails(t, &step.StepValidateOptions{StepOptions: step2.StepOptions{CommonOptions: &opts.CommonOptions{}}, Dir: projectDir})
 }
 
 func AssertValidateWorks(t *testing.T, options *step.StepValidateOptions) {

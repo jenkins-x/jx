@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -21,7 +23,7 @@ const (
 
 // StepGetVersionChangeSetOptions contains the command line flags
 type StepGetVersionChangeSetOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	VersionsDir        string
 	VersionsRepository string
 	VersionsGitRef     string
@@ -49,7 +51,7 @@ var (
 // NewCmdStepGetVersionChangeSet create the 'step git envs' command
 func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGetVersionChangeSetOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

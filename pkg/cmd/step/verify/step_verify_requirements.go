@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -40,7 +42,7 @@ var (
 
 // StepVerifyRequirementsOptions contains the command line flags
 type StepVerifyRequirementsOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Dir string
 }
@@ -48,7 +50,7 @@ type StepVerifyRequirementsOptions struct {
 // NewCmdStepVerifyRequirements creates the `jx step verify pod` command
 func NewCmdStepVerifyRequirements(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepVerifyRequirementsOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

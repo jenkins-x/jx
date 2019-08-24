@@ -1,17 +1,19 @@
 package config
 
 import (
-	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	"k8s.io/api/core/v1"
-	k8sv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	k8sv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestStepModifyConfigMapRootLevel(t *testing.T) {
@@ -39,7 +41,7 @@ func TestStepModifyConfigMapRootLevel(t *testing.T) {
 	assert.NoError(t, err, "the test config map should be created")
 
 	o := &StepModifyConfigMapOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: options,
 		},
 
@@ -83,7 +85,7 @@ func TestStepModifyConfigMapFirstLevelPropertySet(t *testing.T) {
 	assert.NoError(t, err, "the test config map should be created")
 
 	o := &StepModifyConfigMapOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: options,
 		},
 

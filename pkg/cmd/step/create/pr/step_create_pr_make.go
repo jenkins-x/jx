@@ -3,6 +3,8 @@ package pr
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/gits/operations"
 
 	"github.com/pkg/errors"
@@ -39,8 +41,8 @@ type StepCreatePullRequestMakeOptions struct {
 func NewCmdStepCreatePullRequestMake(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePullRequestMakeOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
-			StepCreateOptions: opts.StepCreateOptions{
-				StepOptions: opts.StepOptions{
+			StepCreateOptions: step.StepCreateOptions{
+				StepOptions: step.StepOptions{
 					CommonOptions: commonOpts,
 				},
 			},

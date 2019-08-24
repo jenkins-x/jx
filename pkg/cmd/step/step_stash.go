@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
@@ -26,7 +28,7 @@ import (
 
 // StepStashOptions contains the command line flags
 type StepStashOptions struct {
-	opts.StepOptions
+	step.StepOptions
 	Pattern         []string
 	Dir             string
 	ToPath          string
@@ -78,7 +80,7 @@ var (
 // NewCmdStepStash creates the CLI command
 func NewCmdStepStash(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepStashOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

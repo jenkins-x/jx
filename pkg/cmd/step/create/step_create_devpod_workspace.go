@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/packages"
 
@@ -33,7 +35,7 @@ var (
 
 // StepCreateDevPodWorkpaceOptions contains the command line flags
 type StepCreateDevPodWorkpaceOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	Dir            string
 	VSCodeSettings string
@@ -51,7 +53,7 @@ type StepCreateDevPodWorkpaceResults struct {
 // NewCmdStepCreateDevPodWorkpace Creates a new Command object
 func NewCmdStepCreateDevPodWorkpace(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateDevPodWorkpaceOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

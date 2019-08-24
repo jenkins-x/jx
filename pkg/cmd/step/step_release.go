@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/promote"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
@@ -22,7 +24,7 @@ import (
 
 // StepReleaseOptions contains the CLI arguments
 type StepReleaseOptions struct {
-	opts.StepOptions
+	step.StepOptions
 
 	DockerRegistry string
 	Organisation   string
@@ -49,7 +51,7 @@ const (
 // NewCmdStep Steps a command object for the "step" command
 func NewCmdStepRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepReleaseOptions{
-		StepOptions: opts.StepOptions{
+		StepOptions: step.StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}

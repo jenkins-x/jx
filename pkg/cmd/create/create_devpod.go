@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+
 	"github.com/jenkins-x/jx/pkg/cmd/rsh"
 	"github.com/jenkins-x/jx/pkg/cmd/sync"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -105,7 +107,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 			CommonOptions: commonOpts,
 		},
 		GitCredentials: git.StepGitCredentialsOptions{
-			StepOptions: opts.StepOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},
