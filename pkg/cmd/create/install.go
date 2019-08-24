@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/platform"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -737,12 +739,12 @@ func (options *InstallOptions) Run() error {
 
 	if options.Flags.GitOpsMode {
 		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, kube.DefaultChartMuseumURL,
-			opts.JenkinsXPlatformChartName, ns, version, valuesFiles, secretsFiles)
+			platform.JenkinsXPlatformChartName, ns, version, valuesFiles, secretsFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing the Jenkins X platform in GitOps mode")
 		}
 	} else {
-		err := options.installPlatform(providerEnvDir, opts.JenkinsXPlatformChart, opts.JenkinsXPlatformRelease,
+		err := options.installPlatform(providerEnvDir, platform.JenkinsXPlatformChart, platform.JenkinsXPlatformRelease,
 			ns, version, valuesFiles, secretsFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing the Jenkins X platform")
@@ -1019,7 +1021,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
 
 	platformDep := &helm.Dependency{
-		Name:       opts.JenkinsXPlatformChartName,
+		Name:       platform.JenkinsXPlatformChartName,
 		Version:    version,
 		Repository: kube.DefaultChartMuseumURL,
 	}
@@ -1049,7 +1051,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		return errors.Wrapf(err, "failed to save file %s", chartFile)
 	}
 
-	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, opts.JenkinsXPlatformChartName, nil)
+	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, platform.JenkinsXPlatformChartName, nil)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretsFiles, ", "))
 	}
@@ -1096,7 +1098,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		util.CombineMapTrees(extraValues, currentValues)
 	}
 
-	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, opts.JenkinsXPlatformChartName, extraValues)
+	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, platform.JenkinsXPlatformChartName, extraValues)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(valuesFiles, ", "))
 	}
@@ -2978,9 +2980,9 @@ func (options *InstallOptions) logNameServers() {
 
 // LoadVersionFromCloudEnvironmentsDir lets load the jenkins-x-platform version
 func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.ConfigStore) (string, error) {
-	version, err := versionstream.LoadStableVersionNumber(wrkDir, versionstream.KindChart, opts.JenkinsXPlatformChart)
+	version, err := versionstream.LoadStableVersionNumber(wrkDir, versionstream.KindChart, platform.JenkinsXPlatformChart)
 	if err != nil {
-		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", opts.JenkinsXPlatformChart, wrkDir)
+		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", platform.JenkinsXPlatformChart, wrkDir)
 	}
 	return version, nil
 }

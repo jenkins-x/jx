@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/platform"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -169,7 +171,7 @@ func (o *StepEnvApplyOptions) Run() error {
 		}
 
 		if o.ReleaseName == "" {
-			o.ReleaseName = opts.JenkinsXPlatformRelease
+			o.ReleaseName = platform.JenkinsXPlatformRelease
 		}
 	} else {
 		// ensure there's a development namespace setup

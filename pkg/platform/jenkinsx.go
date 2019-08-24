@@ -1,4 +1,4 @@
-package opts
+package platform
 
 const (
 	// JenkinsXPlatformChartName default chart name for Jenkins X platform

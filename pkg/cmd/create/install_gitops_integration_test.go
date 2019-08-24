@@ -4,13 +4,15 @@ package create_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/platform"
 
 	"github.com/spf13/cobra"
 
@@ -173,7 +175,7 @@ func TestInstallGitOps(t *testing.T) {
 	dep0 := req.Dependencies[0]
 	require.NotNil(t, dep0, "first dependency in file %s", reqFile)
 	assert.Equal(t, kube.DefaultChartMuseumURL, dep0.Repository, "requirement.dependency[0].Repository")
-	assert.Equal(t, opts.JenkinsXPlatformChartName, dep0.Name, "requirement.dependency[0].Name")
+	assert.Equal(t, platform.JenkinsXPlatformChartName, dep0.Name, "requirement.dependency[0].Name")
 	assert.NotEmpty(t, dep0.Version, "requirement.dependency[0].Version")
 
 	values, err := chartutil.ReadValuesFile(valuesFile)
