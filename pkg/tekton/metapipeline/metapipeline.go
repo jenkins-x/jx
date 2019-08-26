@@ -268,11 +268,6 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 
 	envVars = append(envVars, corev1.EnvVar{
-		Name:  "JX_LOG_FORMAT",
-		Value: "json",
-	})
-
-	envVars = append(envVars, corev1.EnvVar{
 		Name:  "BUILD_NUMBER",
 		Value: params.BuildNumber,
 	})
