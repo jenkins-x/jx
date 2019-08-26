@@ -1,11 +1,10 @@
 package logs
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/acarl005/stripansi"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -406,21 +405,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 		},
 	}
 
-	bytesF, err := ioutil.ReadFile("/Users/daniel-gozalo/go/src/github.com/jenkins-x/jx/pkg/logs/test_data/multiple_stages/pipelinerun.yml")
-
-	reader := bufio.NewReader(bytes.NewReader(bytesF))
-	for {
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("EOF")
-				break
-			}
-		}
-		fmt.Println(string(line))
-	}
-
-	err = tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
 	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
@@ -472,21 +457,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedContainerInTheMiddle(
 		},
 	}
 
-	bytesF, err := ioutil.ReadFile("/Users/daniel-gozalo/go/src/github.com/jenkins-x/jx/pkg/logs/test_data/multiple_stages/pipelinerun.yml")
-
-	reader := bufio.NewReader(bytes.NewReader(bytesF))
-	for {
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("EOF")
-				break
-			}
-		}
-		fmt.Println(string(line))
-	}
-
-	err = tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 
 	stepsExecutedBeforeFailure := 4
 	appExtensionSteps := 7
@@ -546,6 +517,9 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 
 	assert.NoError(t, err)
 	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.Regexp(t, "Showing logs for build (?s).* stage app-extension and container (?s).*$",
+		stripansi.Strip(firstLine), "'app-extension' is a meta pipeline step and should be the first stage logged")
 }
 
 func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
@@ -644,6 +618,9 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 	containersNumber := (len(containers1) + len(containers2)) * LogsHeadersMultiplier
 
 	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.Regexp(t, "Showing logs for build (?s).* stage build and container (?s).*$",
+		stripansi.Strip(firstLine), "'build' should be the first stage logged")
 }
 
 // Helper method, not supposed to be a test by itself
