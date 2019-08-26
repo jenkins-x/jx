@@ -1421,10 +1421,10 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	return nil
 }
 
-func (o *ImportOptions) allDraftPacks() ([]string, error) {
+func (options *ImportOptions) allDraftPacks() ([]string, error) {
 	// lets make sure we have the latest draft packs
 	initOpts := initcmd.InitOptions{
-		CommonOptions: o.CommonOptions,
+		CommonOptions: options.CommonOptions,
 	}
 	log.Logger().Info("Getting latest packs ...")
 	dir, _, err := initOpts.InitBuildPacks(nil)
