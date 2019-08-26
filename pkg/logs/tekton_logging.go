@@ -173,6 +173,11 @@ func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tekton
 			return nil, err
 		}
 	}
+
+	sort.Slice(tektonPRs.Items, func(i, j int) bool {
+		return tektonPRs.Items[i].CreationTimestamp.Before(&tektonPRs.Items[j].CreationTimestamp)
+	})
+
 	var names []string
 	for _, pr := range tektonPRs.Items {
 		buildNumber := pr.Labels[tekton.LabelBuild]
@@ -214,8 +219,9 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 					if err != nil {
 						return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", prName, pa.Namespace)
 					}
+
 					sort.Slice(pods, func(i, j int) bool {
-						return pods[j].CreationTimestamp.Before(&pods[i].CreationTimestamp)
+						return pods[i].CreationTimestamp.Before(&pods[j].CreationTimestamp)
 					})
 
 					for _, pod := range pods {
