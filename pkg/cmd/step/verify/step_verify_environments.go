@@ -2,10 +2,11 @@ package verify
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
@@ -277,7 +278,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		if o.InCDPipeline() {
+		if o.InCDPipeline() && o.InCluster() {
 			// Fail if there are local changes
 			diff, err := o.Git().Diff(o.Dir)
 			if err != nil {
