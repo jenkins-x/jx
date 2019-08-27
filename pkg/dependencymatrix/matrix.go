@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -196,6 +197,11 @@ func UpdateDependencyMatrix(dir string, update *v1.DependencyUpdate) error {
 				Host:       update.Host,
 			},
 			Sources: paths,
+		})
+	}
+	for _, d := range dependencyMatrix.Dependencies {
+		sort.Slice(d.Sources, func(i, j int) bool {
+			return d.Sources[i].Path.String() < d.Sources[j].Path.String()
 		})
 	}
 	data, err = yaml.Marshal(dependencyMatrix)
