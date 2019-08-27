@@ -301,7 +301,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 			ApiToken:                 userAuth.Password,
 			Owner:                    gitInfo.Organisation,
 			RepoName:                 gitInfo.Name,
-			Private:                  privateRepo,
+			Public:                   !privateRepo,
 			IgnoreExistingRepository: true,
 		}
 

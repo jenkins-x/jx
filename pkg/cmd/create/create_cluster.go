@@ -42,7 +42,7 @@ const (
     * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
     * eks (Amazon Web Services Elastic Container Service for Kubernetes - https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
-    # icp (IBM Cloud Private) - https://www.ibm.com/cloud/private
+    # icp (IBM Cloud Public) - https://www.ibm.com/cloud/private
     * iks (IBM Cloud Kubernetes Service - https://console.bluemix.net/docs/containers)
     * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     * kubernetes for custom installations of Kubernetes

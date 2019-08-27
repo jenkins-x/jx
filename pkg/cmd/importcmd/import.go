@@ -1415,7 +1415,7 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	if options.GitRepositoryOptions.ServerURL == "" {
 		options.GitRepositoryOptions.ServerURL = settings.GitServer
 	}
-	options.GitRepositoryOptions.Private = settings.GitPrivate || options.GitRepositoryOptions.Private
+	options.GitRepositoryOptions.Public = settings.GitPublic || options.GitRepositoryOptions.Public
 	options.PipelineServer = settings.GitServer
 	options.PipelineUserName = settings.PipelineUsername
 	return nil

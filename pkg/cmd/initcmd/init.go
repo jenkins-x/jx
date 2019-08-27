@@ -348,8 +348,8 @@ func (o *InitOptions) configureForICP() {
 	icpDefaultNS := "jx"
 
 	log.Logger().Info("")
-	log.Logger().Info(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
-	log.Logger().Info("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
+	log.Logger().Info(util.ColorInfo("IBM Cloud Public installation of Jenkins X"))
+	log.Logger().Info("Configuring Jenkins X options for IBM Cloud Public: ensure your Kubernetes context is already " +
 		"configured to point to the cluster jx will be installed into.")
 	log.Logger().Info("")
 
@@ -362,13 +362,13 @@ func (o *InitOptions) configureForICP() {
 		"- name: k8s.gcr.io/* \n" +
 		"- name: <your ICP cluster name>:8500/* ")
 
-	log.Logger().Info(util.ColorInfo("IBM Cloud Private defaults"))
-	log.Logger().Info("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
+	log.Logger().Info(util.ColorInfo("IBM Cloud Public defaults"))
+	log.Logger().Info("By default, with IBM Cloud Public the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
 		"where Jenkins X resources will be installed into is \"" + icpDefaultNS + "\".")
 	log.Logger().Info("")
 
-	log.Logger().Info(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
-	log.Logger().Info("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
+	log.Logger().Info(util.ColorInfo("Using the IBM Cloud Public Docker registry"))
+	log.Logger().Info("To use the IBM Cloud Public Docker registry, when environments (namespaces) are created, " +
 		"create a Docker registry secret and patch the default service account in the created namespace to use the secret, adding it as an ImagePullSecret. " +
 		"This is required so that pods in the created namespace can pull images from the registry.")
 	log.Logger().Info("")
@@ -390,7 +390,7 @@ func (o *InitOptions) configureForICP() {
 		}
 
 		prompt := &survey.Input{
-			Message: "Provide the external IP Jenkins X should use: typically your IBM Cloud Private proxy node IP address",
+			Message: "Provide the external IP Jenkins X should use: typically your IBM Cloud Public proxy node IP address",
 			Default: "", // Would be useful to set this as the public IP automatically
 			Help:    "",
 		}
@@ -399,7 +399,7 @@ func (o *InitOptions) configureForICP() {
 		o.Flags.ExternalIP = ICPExternalIP
 
 		prompt = &survey.Input{
-			Message: "Provide the domain Jenkins X should be available at: typically your IBM Cloud Private proxy node IP address but with a domain added to the end",
+			Message: "Provide the domain Jenkins X should be available at: typically your IBM Cloud Public proxy node IP address but with a domain added to the end",
 			Default: ICPExternalIP + ".nip.io",
 			Help:    "",
 		}

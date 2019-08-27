@@ -420,9 +420,9 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	if privatearr != nil && len(privatearr) > 0 && err == nil && !o.Flags.CreatePrivateVLAN && o.Flags.PrivateVLAN == "" {
 		if len(privatearr) > 1 {
 			prompts := &survey.Select{
-				Message:  "Private VLAN for workers:",
+				Message:  "Public VLAN for workers:",
 				Options:  privatearr,
-				Help:     "Private VLAN to use for kubernetes nodes.",
+				Help:     "Public VLAN to use for kubernetes nodes.",
 				PageSize: 10,
 				Default:  "",
 			}
@@ -437,9 +437,9 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		privateVLAN = o.Flags.PrivateVLAN
 	}
 	if privateVLAN == "" {
-		log.Logger().Info("Creating Private VLAN.")
+		log.Logger().Info("Creating Public VLAN.")
 	} else {
-		log.Logger().Infof("Chosen Private VLAN is %s", util.ColorInfo(privateVLAN))
+		log.Logger().Infof("Chosen Public VLAN is %s", util.ColorInfo(privateVLAN))
 	}
 
 	publicarr, err := iks.GetPublicVLANs(*zone, *region, vLANs)
@@ -464,7 +464,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	}
 	if publicVLAN == "" {
 		if o.Flags.PrivateOnly {
-			log.Logger().Info("Private only -> No Public VLAN")
+			log.Logger().Info("Public only -> No Public VLAN")
 		} else {
 			log.Logger().Info("Creating Public VLAN.")
 		}
