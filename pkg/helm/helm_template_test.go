@@ -169,3 +169,33 @@ func TestSplitObjectsInFiles(t *testing.T) {
 		})
 	}
 }
+
+func TestEmptyChart(t *testing.T) {
+	t.Parallel()
+	dataDir := filepath.Join("test_data", "empty_chart")
+	emptyChartDir, err := ioutil.TempDir("", "test_empty_chart")
+	assert.NoError(t, err, "should create a temp dir for tests")
+	err = util.CopyDir(dataDir, emptyChartDir, true)
+	assert.NoError(t, err, "should copy the test data into a temporary folder")
+	defer os.RemoveAll(emptyChartDir)
+
+	h := &HelmTemplate{}
+	empty := h.isEmptyChart(emptyChartDir)
+	assert.True(t, empty, "chart should be empty")
+
+	templatesPath := filepath.Join(emptyChartDir, TemplatesDirName)
+	err = os.Mkdir(templatesPath, 0755)
+	assert.NoError(t, err, "should create templates folder")
+	empty = h.isEmptyChart(emptyChartDir)
+	assert.True(t, empty, "chart should be empty")
+
+	dataDir = filepath.Join("test_data", "test_chart")
+	chartDir, err := ioutil.TempDir("", "test_empty_chart")
+	assert.NoError(t, err, "should create a temp dir for tests")
+	err = util.CopyDir(dataDir, chartDir, true)
+	assert.NoError(t, err, "should copy the test data into a temporary folder")
+	defer os.RemoveAll(chartDir)
+
+	empty = h.isEmptyChart(chartDir)
+	assert.False(t, empty, "chart is not empty")
+}
