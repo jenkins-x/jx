@@ -561,6 +561,12 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	if err != nil {
 		return errors.Wrap(err, "Getting jx client")
 	}
+
+	if o.NoMergePullRequest {
+		log.Logger().Infof("Skipping `waitForGitOpsPullRequest` due to --no-merge on promotion")
+		return nil
+	}
+
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	if pullRequestInfo != nil {
 		promoteKey := o.CreatePromoteKey(env)
