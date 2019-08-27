@@ -65,7 +65,7 @@ type StableVersion struct {
 	UpperLimit string `json:"upperLimit,omitempty"`
 	// GitURL the URL to the source code
 	GitURL string `json:"gitUrl,omitempty"`
-	// GitURL the URL to the source code
+	// Component is the component inside the git URL
 	Component string `json:"component,omitempty"`
 	// URL the URL for the documentation
 	URL string `json:"url,omitempty"`

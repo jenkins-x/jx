@@ -510,6 +510,9 @@ func CreateChartChangeFilesFn(name string, version string, kind string, pro *Pul
 				return nil, errors.Wrapf(err, "loading stable version")
 			}
 			pro.SrcGitURL = sv.GitURL
+			if sv.Component != "" {
+				pro.Component = sv.Component
+			}
 		}
 		if pro.SrcGitURL == "" {
 			err := helm.InspectChart(name, version, "", "", "", helmer, func(dir string) error {
