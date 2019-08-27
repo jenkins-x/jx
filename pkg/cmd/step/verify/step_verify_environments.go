@@ -258,7 +258,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 
 	// TODO
 	gitKind := gits.KindGitHub
-	privateRepo := requirements.Cluster.EnvironmentGitPrivate
+	publicRepo := requirements.Cluster.EnvironmentGitPublic
 	prefix := ""
 
 	gitServerURL := gitInfo.HostURL()
@@ -283,7 +283,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
 		if requirements.GitOps {
 			createPr := os.Getenv("JX_INTERPRET_PIPELINE") == "true"
-			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, privateRepo, userAuth, requirements, server, createPr)
+			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, !publicRepo, userAuth, requirements, server, createPr)
 			if err != nil {
 				return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
 			}
@@ -296,7 +296,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 			ApiToken:                 userAuth.Password,
 			Owner:                    gitInfo.Organisation,
 			RepoName:                 gitInfo.Name,
-			Private:                  privateRepo,
+			Public:                   publicRepo,
 			IgnoreExistingRepository: true,
 		}
 

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -46,8 +47,8 @@ const (
 	RequirementZone = "JX_REQUIREMENT_ZONE"
 	// RequirementEnvGitOwner the default git owner for environment repositories if none is specified explicitly
 	RequirementEnvGitOwner = "JX_REQUIREMENT_ENV_GIT_OWNER"
-	// RequirementEnvGitPrivate sets the visibility of the environment repositories as private (subscription required for GitHub Organisations)
-	RequirementEnvGitPrivate = "JX_REQUIREMENT_ENV_GIT_PRIVATE"
+	// RequirementEnvGitPublic sets the visibility of the environment repositories as private (subscription required for GitHub Organisations)
+	RequirementEnvGitPublic = "JX_REQUIREMENT_ENV_GIT_PUBLIC"
 	// RequirementExternalDNSServiceAccountName the service account name for external dns
 	RequirementExternalDNSServiceAccountName = "JX_REQUIREMENT_EXTERNALDNS_SA_NAME"
 	// RequirementVaultName the name for vault
@@ -205,8 +206,8 @@ type StorageConfig struct {
 type ClusterConfig struct {
 	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
-	// EnvironmentGitPrivate will request jx boot create private git repos for the environments
-	EnvironmentGitPrivate bool `json:"environmentGitPrivate,omitempty"`
+	// EnvironmentGitPublic determines whether jx boot create public or private git repos for the environments
+	EnvironmentGitPublic bool `json:"environmentGitPublic,omitempty"`
 	// Provider the kubernetes provider (e.g. gke)
 	Provider string `json:"provider,omitempty"`
 	// Namespace the namespace to install the dev environment
@@ -247,6 +248,45 @@ type VaultConfig struct {
 	Key            string `json:"key,omitempty"`
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	RecreateBucket bool   `json:"recreateBucket,omitempty"`
+}
+
+// UnmarshalJSON method handles the rename of EnvironmentGitPrivate to EnvironmentGitPublic.
+func (t *ClusterConfig) UnmarshalJSON(data []byte) error {
+	// need a type alias to go into infinite loop
+	type Alias ClusterConfig
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(t),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	var raw map[string]json.RawMessage
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
+
+	_, gitPublicSet := raw["environmentGitPublic"]
+	private, gitPrivateSet := raw["environmentGitPrivate"]
+
+	if gitPrivateSet && gitPublicSet {
+		return errors.New("found settings for EnvironmentGitPublic as well as EnvironmentGitPrivate in ClusterConfig, only EnvironmentGitPublic should be used")
+	}
+
+	if gitPrivateSet {
+		log.Logger().Warn("EnvironmentGitPrivate specified in ClusterConfig. EnvironmentGitPrivate is deprecated use EnvironmentGitPublic instead.")
+		privateString := string(private)
+		if privateString == "true" {
+			t.EnvironmentGitPublic = false
+		} else {
+			t.EnvironmentGitPublic = true
+		}
+	}
+	return nil
 }
 
 // VersionStreamConfig contains version stream config
