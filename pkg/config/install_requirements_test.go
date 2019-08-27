@@ -1,13 +1,20 @@
 package config_test
 
 import (
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	testDataDir = path.Join("test_data")
 )
 
 func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
@@ -102,4 +109,43 @@ func TestRequirementsConfigIngressAutoDNS(t *testing.T) {
 
 	requirements.Ingress.Domain = ""
 	assert.Equal(t, false, requirements.Ingress.IsAutoDNSDomain(), "requirements.Ingress.IsAutoDNSDomain() for domain %s", requirements.Ingress.Domain)
+}
+
+func Test_env_repository_visibility(t *testing.T) {
+	t.Parallel()
+
+	var gitPublicTests = []struct {
+		yamlFile          string
+		expectedGitPublic bool
+	}{
+		{"git_public_nil_git_private_true.yaml", false},
+		{"git_public_nil_git_private_false.yaml", true},
+		{"git_public_false_git_private_nil.yaml", false},
+		{"git_public_true_git_private_nil.yaml", true},
+	}
+
+	for _, testCase := range gitPublicTests {
+		t.Run(testCase.yamlFile, func(t *testing.T) {
+			content, err := ioutil.ReadFile(path.Join(testDataDir, testCase.yamlFile))
+			assert.NoError(t, err)
+
+			config := config.NewRequirementsConfig()
+
+			_ = log.CaptureOutput(func() {
+				err = yaml.Unmarshal(content, config)
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.expectedGitPublic, config.Cluster.EnvironmentGitPublic, "unexpected value for repository visibility")
+			})
+		})
+	}
+}
+
+func Test_EnvironmentGitPublic_and_EnvironmentGitPrivate_specified_together_return_error(t *testing.T) {
+	content, err := ioutil.ReadFile(path.Join(testDataDir, "git_public_true_git_private_true.yaml"))
+	assert.NoError(t, err)
+
+	config := config.NewRequirementsConfig()
+	err = yaml.Unmarshal(content, config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "only EnvironmentGitPublic should be used")
 }

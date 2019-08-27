@@ -16,7 +16,7 @@ type CreateRepoData struct {
 	Organisation string
 	RepoName     string
 	FullName     string
-	PrivateRepo  bool
+	Public       bool
 	User         *auth.UserAuth
 	GitProvider  GitProvider
 	GitServer    *auth.AuthServer
@@ -29,7 +29,7 @@ type GitRepositoryOptions struct {
 	ApiToken                 string
 	Owner                    string
 	RepoName                 string
-	Private                  bool
+	Public                   bool
 	IgnoreExistingRepository bool
 }
 
@@ -40,7 +40,7 @@ func (d *CreateRepoData) GetRepository() (*GitRepository, error) {
 
 // CreateRepository creates the repository - failing if it already exists
 func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
-	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)
+	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, !d.Public)
 }
 
 func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
@@ -175,7 +175,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 		Organisation: owner,
 		RepoName:     repoName,
 		FullName:     fullName,
-		PrivateRepo:  repoOptions.Private,
+		Public:       repoOptions.Public,
 		User:         userAuth,
 		GitProvider:  provider,
 		GitServer:    server,
