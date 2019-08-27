@@ -224,6 +224,9 @@ func modifyPipelineGitEnvVars(dir string) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to write to %s", fileName)
 		}
+
+		os.Setenv("GIT_AUTHOR_NAME", username)
+		os.Setenv("GIT_AUTHOR_EMAIL", email)
 	}
 	return nil
 }
