@@ -1,0 +1,5 @@
+description: Test Chart
+maintainers:
+- name: Team
+name: test_chart
+version: "1"

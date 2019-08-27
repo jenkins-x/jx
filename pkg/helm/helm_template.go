@@ -251,6 +251,11 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
+	// Skip applyting the empty charts
+	if h.isEmptyChart(chartDir) {
+		return nil
+	}
+
 	metadata, versionText, err := h.getChart(chartDir, version)
 	if err != nil {
 		return err
@@ -330,6 +335,11 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueFiles)
 	if err != nil {
 		return err
+	}
+
+	// Skip applyting the empty charts
+	if h.isEmptyChart(chartDir) {
+		return nil
 	}
 
 	metadata, versionText, err := h.getChart(chartDir, version)
@@ -1049,6 +1059,16 @@ func (h *HelmTemplate) getChart(chartDir string, version string) (*chart.Metadat
 		version = metadata.GetVersion()
 	}
 	return metadata, version, err
+}
+
+// isEmptyChart checks if a chart is empty
+func (h *HelmTemplate) isEmptyChart(chartDir string) bool {
+	templates := filepath.Join(chartDir, TemplatesDirName)
+	empty, err := util.IsEmpty(templates)
+	if err != nil {
+		return true
+	}
+	return empty
 }
 
 func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool, force bool) error {
