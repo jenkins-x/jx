@@ -2422,7 +2422,7 @@ definitions:
         type: string
       forkBranchPatterns:
         type: string
-      gitPrivate:
+      gitPublic:
         type: boolean
       gitServer:
         type: string

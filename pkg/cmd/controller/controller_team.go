@@ -239,7 +239,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		provider := ""
 		if adminTeamSettings != nil {
 			provider = adminTeamSettings.KubeProvider
-			io.GitRepositoryOptions.Private = adminTeamSettings.GitPrivate
+			io.GitRepositoryOptions.Public = adminTeamSettings.GitPublic
 			io.GitRepositoryOptions.ServerURL = adminTeamSettings.GitServer
 			io.GitRepositoryOptions.Username = adminTeamSettings.PipelineUsername
 		}
