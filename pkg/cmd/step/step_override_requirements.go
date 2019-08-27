@@ -69,12 +69,12 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	if "" != os.Getenv(config.RequirementEnvGitOwner) {
 		requirements.Cluster.EnvironmentGitOwner = os.Getenv(config.RequirementEnvGitOwner)
 	}
-	if "" != os.Getenv(config.RequirementEnvGitPrivate) {
-		privateEnvRepo := os.Getenv(config.RequirementEnvGitPrivate)
-		if privateEnvRepo == "true" {
-			requirements.Cluster.EnvironmentGitPrivate = true
+	publicEnvRepo, found := os.LookupEnv(config.RequirementEnvGitPublic)
+	if found {
+		if publicEnvRepo == "true" {
+			requirements.Cluster.EnvironmentGitPublic = true
 		} else {
-			requirements.Cluster.EnvironmentGitPrivate = false
+			requirements.Cluster.EnvironmentGitPublic = false
 		}
 	}
 	if "" != os.Getenv(config.RequirementExternalDNSServiceAccountName) {

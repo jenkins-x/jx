@@ -264,7 +264,7 @@ func AddGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitR
 		"Kind of Git server. If not specified, kind of server will be autodetected from Git provider URL. Possible values: bitbucketcloud, bitbucketserver, gitea, gitlab, github, fakegit")
 	cmd.Flags().StringVarP(&repositoryOptions.Username, "git-username", "", "", "The Git username to use for creating new Git repositories")
 	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The Git API token to use for creating new Git repositories")
-	cmd.Flags().BoolVarP(&repositoryOptions.Private, "git-private", "", false, "Create new Git repositories as private")
+	cmd.Flags().BoolVarP(&repositoryOptions.Public, "git-public", "", false, "Create new Git repositories as public")
 }
 
 // GitServerKind returns the kind of the git server
