@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
-	"github.com/jenkins-x/jx/pkg/logs"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/git"
+	"github.com/jenkins-x/jx/pkg/logs"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -285,7 +286,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 						return err
 					}
 					if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
-						log.Logger().Debugf("updating PipelineActivity %s", a.Name)
+						log.Logger().Debugf("updating PipelineActivity %s from handleStandalonePod()", a.Name)
 						_, err := activities.PatchUpdate(a)
 						if err != nil {
 							log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s", a.Name, err.Error())
@@ -337,37 +338,40 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 					log.Logger().Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s", prName, err)
 					return
 				}
-				if pri != nil {
-					log.Logger().Debugf("Found pipeline run %s", pri.Name)
+				if pri == nil {
+					log.Logger().Warnf("No PipelineRunInfo created for PipelineRun %s: %s", prName, err)
+					return
+				}
 
-					activities := jxClient.JenkinsV1().PipelineActivities(ns)
-					key := o.createPromoteStepActivityKeyFromRun(pri)
-					if key != nil {
-						name := ""
-						err := util.Retry(time.Second*20, func() error {
-							a, created, err := key.GetOrCreate(jxClient, ns)
+				log.Logger().Debugf("Found pipeline run %s", pri.Name)
+
+				activities := jxClient.JenkinsV1().PipelineActivities(ns)
+				key := o.createPromoteStepActivityKeyFromRun(pri)
+				if key != nil {
+					name := ""
+					err := util.Retry(time.Second*20, func() error {
+						a, created, err := key.GetOrCreate(jxClient, ns)
+						if err != nil {
+							operation := "update"
+							if created {
+								operation = "create"
+							}
+							log.Logger().Warnf("Failed to %s PipelineActivities for build %s: %s", operation, pri.Name, err)
+							return err
+						}
+						if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
+							log.Logger().Debugf("updating PipelineActivity %s from updatePipelineActivityForRun()", a.Name)
+							_, err := activities.PatchUpdate(a)
 							if err != nil {
-								operation := "update"
-								if created {
-									operation = "create"
-								}
-								log.Logger().Warnf("Failed to %s PipelineActivities for build %s: %s", operation, pri.Name, err)
+								log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s", a.Name, err.Error())
+								name = a.Name
 								return err
 							}
-							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
-								log.Logger().Debugf("updating PipelineActivity %s", a.Name)
-								_, err := activities.PatchUpdate(a)
-								if err != nil {
-									log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s", a.Name, err.Error())
-									name = a.Name
-									return err
-								}
-							}
-							return nil
-						})
-						if err != nil {
-							log.Logger().Warnf("Failed to update PipelineActivities%s: %s", name, err)
 						}
+						return nil
+					})
+					if err != nil {
+						log.Logger().Warnf("Failed to update PipelineActivities%s: %s", name, err)
 					}
 				}
 			} else {
@@ -408,10 +412,6 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 	if err != nil {
 		return err
 	}
-	if !gitInfo.IsGitHub() {
-		// this is GH only for now
-		return nil
-	}
 	if activity.Spec.Author != "" {
 		// info already set, save some GH requests
 		return nil
@@ -422,7 +422,7 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		return err
 	}
 
-	// get a github API client
+	// get a git API client
 	provider, err := o.getGithubProvider(secrets, gitInfo)
 	if err != nil {
 		return err
@@ -709,9 +709,6 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 	}
 
-	// TODO this is a tactical approach until we move all the reporting of tekton pipelines into tekton outputs
-	o.reportStatus(kubeClient, ns, activity, pri, pod)
-
 	if allStagesCompleted {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
@@ -778,6 +775,9 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 			log.Logger().Warnf("Error completing build information: %s", err)
 		}
 	}
+
+	// TODO this is a tactical approach until we move all the reporting of tekton pipelines into tekton outputs
+	o.reportStatus(kubeClient, ns, activity, pri, pod)
 
 	// lets compare YAML in case we modify arrays in place on a copy (such as the steps) and don't detect we changed things
 	newYaml := toYamlString(activity)
