@@ -420,6 +420,7 @@ func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
 		var err error
 		o.secretURLClient, err = o.SystemVaultClient(o.devNamespace)
 		if err != nil {
+			log.Logger().Debugf("Failed to create the secrets URL client for system vault in namespace %s due to %s. Falling back to locall file system.\n", o.devNamespace, err.Error())
 			o.secretURLClient = nil
 		}
 	}
