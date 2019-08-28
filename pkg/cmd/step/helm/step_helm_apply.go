@@ -385,6 +385,10 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 				depChartName := writeTemplateParts[len(writeTemplateParts)-3]
 				templateName := writeTemplateParts[len(writeTemplateParts)-1]
 				depChartDir := filepath.Join(depChartsDir, depChartName)
+				if _, err := os.Stat(depChartDir); os.IsNotExist(err) {
+					// If there is no charts/<depChartName> dir it means that it's not a dependency of this chart
+					continue
+				}
 				// If the chart directory does not exist explode the tgz
 				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
 					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
