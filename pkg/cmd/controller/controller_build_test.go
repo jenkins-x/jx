@@ -117,7 +117,6 @@ func TestUpdateForStage(t *testing.T) {
 	assert.NotNil(t, act.Spec.Steps[0].Stage, "First step on activity is not a stage")
 
 	stage := act.Spec.Steps[0].Stage
-
 	assert.Equal(t, len(containers), len(stage.Steps), "%d containers found in pod, but %d steps found in stage", len(containers), len(stage.Steps))
 
 	for i, c := range containers {
@@ -127,6 +126,11 @@ func TestUpdateForStage(t *testing.T) {
 		if title != step.Name {
 			// Using t.Errorf instead of an assert here because we want to see all the misordered names, not just the first one.
 			t.Errorf("For step %d, expected step with name %s, but found %s", i, title, step.Name)
+		}
+
+		if i > 0 {
+			previousStep := stage.Steps[i-1]
+			assert.Equal(t, previousStep.CompletedTimestamp, step.StartedTimestamp, "step %s has start time %s but should have start time %s", step.Name, previousStep.CompletedTimestamp, step.StartedTimestamp)
 		}
 	}
 }
@@ -179,7 +183,7 @@ func TestUpdateForStagePreTekton051(t *testing.T) {
 
 	for i, c := range containers {
 		step := stage.Steps[i]
-		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
+		name := strings.Replace(c.Name, "-", " ", -1)
 		title := strings.Title(name)
 		if title != step.Name {
 			// Using t.Errorf instead of an assert here because we want to see all the misordered names, not just the first one.
