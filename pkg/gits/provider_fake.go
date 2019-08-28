@@ -41,6 +41,7 @@ const (
 )
 
 var (
+	// PullRequestOpen is the state a pull request is in when it is open
 	PullRequestOpen = "open"
 )
 
@@ -865,6 +866,7 @@ func NewFakeRepository(owner string, repoName string, addFiles func(dir string) 
 		},
 		PullRequests: map[int]*FakePullRequest{},
 		Commits:      []*FakeCommit{},
+		Releases:     make(map[string]*GitRelease),
 	}
 	if addFiles != nil && gitter != nil {
 		dir, err := ioutil.TempDir("", "")
@@ -982,6 +984,9 @@ func (f *FakeProvider) GetLatestRelease(org string, name string) (*GitRelease, e
 	releases, err := f.ListReleases(org, name)
 	if err != nil {
 		return nil, errors.WithStack(err)
+	}
+	if len(releases) == 0 {
+		return nil, errors.Errorf("%s/%s has no releases", org, name)
 	}
 	return releases[len(releases)-1], nil
 }

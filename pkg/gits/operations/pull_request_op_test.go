@@ -413,6 +413,97 @@ func TestCreatePullRequestBuildersFn(t *testing.T) {
 	assert.Len(t, result, 2)
 }
 
+func TestCreatePullRequestGitReleasesFn(t *testing.T) {
+	t.Run("found", func(t *testing.T) {
+		pegomock.RegisterMockTestingT(t)
+		commonOpts := &opts.CommonOptions{}
+		gitter := gits.NewGitCLI()
+		roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+			return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+		}, gitter)
+		assert.NoError(t, err)
+		gitProvider := gits.NewFakeProvider(roadRunnerOrg)
+		roadRunnerOrg.Releases["v1.2.3"] = &gits.GitRelease{
+			Name: "1.2.3",
+		}
+		helmer := helm_test.NewMockHelmer()
+
+		testhelpers.ConfigureTestOptionsWithResources(commonOpts,
+			[]runtime.Object{},
+			[]runtime.Object{
+				kube.NewPermanentEnvironment("EnvWhereApplicationIsDeployed"),
+			},
+			gitter,
+			gitProvider,
+			helmer,
+			resources_test.NewMockInstaller(),
+		)
+
+		pro := operations.PullRequestOperation{
+			CommonOptions: commonOpts,
+			SrcGitURL:     "",
+			Version:       "",
+		}
+
+		fn := pro.CreatePullRequestGitReleasesFn("fake.git/acme/roadrunner")
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata", "CreatePullRequestGitReleasesFn"), dir, true)
+		assert.NoError(t, err)
+		oldVersions, err := fn(dir, nil)
+		assert.NoError(t, err)
+		assert.Len(t, oldVersions, 1)
+		assert.Equal(t, "1.2.2", oldVersions[0])
+		tests.AssertFileContains(t, filepath.Join(dir, "git", "fake.git", "acme", "roadrunner.yml"), "version: 1.2.3")
+	})
+	t.Run("not-found", func(t *testing.T) {
+		pegomock.RegisterMockTestingT(t)
+		commonOpts := &opts.CommonOptions{}
+		gitter := gits.NewGitCLI()
+		roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+			return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+		}, gitter)
+		assert.NoError(t, err)
+		gitProvider := gits.NewFakeProvider(roadRunnerOrg)
+		helmer := helm_test.NewMockHelmer()
+
+		testhelpers.ConfigureTestOptionsWithResources(commonOpts,
+			[]runtime.Object{},
+			[]runtime.Object{
+				kube.NewPermanentEnvironment("EnvWhereApplicationIsDeployed"),
+			},
+			gitter,
+			gitProvider,
+			helmer,
+			resources_test.NewMockInstaller(),
+		)
+
+		pro := operations.PullRequestOperation{
+			CommonOptions: commonOpts,
+			SrcGitURL:     "",
+			Version:       "",
+		}
+
+		fn := pro.CreatePullRequestGitReleasesFn("fake.git/acme/roadrunner")
+		dir, err := ioutil.TempDir("", "")
+		defer func() {
+			err := os.RemoveAll(dir)
+			assert.NoError(t, err)
+		}()
+		assert.NoError(t, err)
+		err = util.CopyDir(filepath.Join("testdata", "CreatePullRequestGitReleasesFn"), dir, true)
+		assert.NoError(t, err)
+		oldVersions, err := fn(dir, nil)
+		assert.Error(t, err)
+		assert.Len(t, oldVersions, 0)
+		tests.AssertFileContains(t, filepath.Join(dir, "git", "fake.git", "acme", "roadrunner.yml"), "version: 1.2.2")
+	})
+}
+
 func TestCreatePullRequestRegexFn(t *testing.T) {
 	t.Run("capture-groups", func(t *testing.T) {
 

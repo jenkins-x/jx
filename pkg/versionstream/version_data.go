@@ -378,3 +378,16 @@ func (p *RepositoryPrefixes) URLsForPrefix(prefix string) []string {
 	}
 	return p.prefixToURLs[prefix]
 }
+
+// NameFromPath converts a path into a name for use with stable versions
+func NameFromPath(basepath string, path string) (string, error) {
+	name, err := filepath.Rel(basepath, path)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to extract base path from %s", path)
+	}
+	ext := filepath.Ext(name)
+	if ext != "" {
+		name = strings.TrimSuffix(name, ext)
+	}
+	return name, nil
+}

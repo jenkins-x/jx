@@ -71,7 +71,7 @@ func (o *StepCreatePrOptions) Run() error {
 
 //AddStepCreatePrFlags adds the common flags for all PR creation steps to the cmd and stores them in o
 func AddStepCreatePrFlags(cmd *cobra.Command, o *StepCreatePrOptions) {
-	cmd.Flags().StringArrayVarP(&o.GitURLs, "repo", "r", []string{}, "Git repo update")
+	cmd.Flags().StringArrayVarP(&o.GitURLs, "repo", "r", []string{}, "Git repo to update")
 	cmd.Flags().StringVarP(&o.BranchName, "branch", "", "master", "Branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&o.Base, "base", "", "master", "The branch to create the pull request into")
 	cmd.Flags().StringVarP(&o.SrcGitURL, "src-repo", "", "", "The git repo which caused this change; if this is a dependency update this will cause commit messages to be generated which can be parsed by jx step changelog. By default this will be read from the environment variable REPO_URL")
