@@ -468,6 +468,41 @@ func CreatePullRequestBuildersFn(version string) ChangeFilesFn {
 	}
 }
 
+// CreatePullRequestGitReleasesFn creates the ChangeFilesFn that will update the git/ directory in the versions repo, using the git provider release api
+func (o *PullRequestOperation) CreatePullRequestGitReleasesFn(name string) ChangeFilesFn {
+	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		u := fmt.Sprintf("https://%s.git", name)
+		provider, gitInfo, err := o.CreateGitProviderForURLWithoutKind(u)
+		if err != nil {
+			return nil, errors.Wrapf(err, "creating git provider for %s", u)
+		}
+		release, err := provider.GetLatestRelease(gitInfo.Organisation, gitInfo.Name)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find latest version for %s", u)
+		}
+
+		version := strings.TrimPrefix(release.Name, "v")
+		log.Logger().Infof("found latest version %s for git repo %s", util.ColorInfo(version), util.ColorInfo(u))
+		o.Version = version
+		if o.SrcGitURL == "" {
+			sv, err := versionstream.LoadStableVersion(dir, versionstream.VersionKind(versionstream.KindGit), name)
+			if err != nil {
+				return nil, errors.Wrapf(err, "loading stable version")
+			}
+			o.SrcGitURL = sv.GitURL
+			if sv.Component != "" {
+				o.Component = sv.Component
+			}
+		}
+		oldVersions, err := versionstream.UpdateStableVersion(dir, string(versionstream.KindGit), name, version)
+		if err != nil {
+			return nil, errors.Wrapf(err, "updating version %s to %s", u, version)
+		}
+		return oldVersions, nil
+
+	}
+}
+
 // CreateChartChangeFilesFn creates the ChangeFilesFn for updating the chart with name to version. If the version is
 // empty it will fetch the latest version using helmer, using the vaultClient to get the repo creds or prompting using
 // in, out and outErr

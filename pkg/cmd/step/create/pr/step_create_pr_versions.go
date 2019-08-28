@@ -1,7 +1,6 @@
 package pr
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -57,7 +56,7 @@ var (
 type StepCreatePullRequestVersionsOptions struct {
 	StepCreatePrOptions
 
-	Kind               string
+	Kinds              []string
 	Name               string
 	Includes           []string
 	Excludes           []string
@@ -89,7 +88,7 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.C
 			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of versionstream. Possible values: "+strings.Join(versionstream.KindStrings, ", "))
+	cmd.Flags().StringArrayVarP(&options.Kinds, "kind", "k", []string{"charts", "git"}, "The kinds of versionstream. Possible values: "+strings.Join(versionstream.KindStrings, ", ")+".")
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the versionstream to update. e.g. the name of the chart like 'jenkins-x/prow'")
 	cmd.Flags().StringArrayVarP(&options.Includes, "filter", "f", nil, "The name patterns to include - such as '*' for all names")
 	cmd.Flags().StringArrayVarP(&options.Excludes, "excludes", "x", nil, "The name patterns to exclude")
@@ -104,17 +103,19 @@ func (o *StepCreatePullRequestVersionsOptions) ValidateVersionsOptions() error {
 		// Default in the versions repo
 		o.GitURLs = []string{config.DefaultVersionsURL}
 	}
-	if o.Kind == "" {
+	if len(o.Kinds) == 0 {
 		return util.MissingOption("kind")
 	}
-	if util.StringArrayIndex(versionstream.KindStrings, o.Kind) < 0 {
-		return util.InvalidOption("kind", o.Kind, versionstream.KindStrings)
+	for _, kind := range o.Kinds {
+		if util.StringArrayIndex(versionstream.KindStrings, kind) < 0 {
+			return util.InvalidOption("kind", kind, versionstream.KindStrings)
+		}
 	}
 
-	// TODO really updating the images should be a different command
-	if o.UpdateTektonImages && o.Name == "" && len(o.Includes) == 0 && o.Kind == "charts" {
-		o.Kind = ""
-	} else if len(o.Includes) == 0 {
+	if o.UpdateTektonImages && o.Name == "" && len(o.Includes) == 0 && util.StringArraysEqual(o.Kinds, []string{"charts", "git"}) {
+		// Allow for just running jx step create pr versions --images
+		o.Kinds = make([]string, 0)
+	} else if len(o.Includes) == 0 && !o.UpdateTektonImages {
 		if o.Name == "" && !o.UpdateTektonImages {
 			return util.MissingOption("name")
 		}
@@ -161,11 +162,8 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", fn))
 	}
 	if len(o.Includes) > 0 {
-		switch versionstream.VersionKind(o.Kind) {
-		case versionstream.KindChart:
-			modifyFns = append(modifyFns, o.CreatePullRequestUpdateVersionFilesFn(o.Includes, o.Excludes, o.Kind, o.Helm()))
-		default:
-			return fmt.Errorf("we do not yet support finding the latest version of kind %s", o.Kind)
+		for _, kind := range o.Kinds {
+			modifyFns = append(modifyFns, o.CreatePullRequestUpdateVersionFilesFn(o.Includes, o.Excludes, kind, o.Helm()))
 		}
 	} else {
 		pro := operations.PullRequestOperation{
@@ -180,22 +178,30 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 		if err != nil {
 			vaultClient = nil
 		}
-		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreateChartChangeFilesFn(o.Name, o.Version, o.Kind, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err)))
+		for _, kind := range o.Kinds {
+			switch kind {
+			case string(versionstream.KindChart):
+				modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreateChartChangeFilesFn(o.Name, o.Version, kind, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err)))
+			}
+
+		}
 	}
 
 	o.SrcGitURL = ""    // there is no src url for the overall PR
 	o.SkipCommit = true // As we've done all the commits already
 	return o.CreatePullRequest("versionstream", func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-		if versionstream.VersionKind(o.Kind) == versionstream.KindChart {
-			_, err := o.HelmInitDependency(dir, o.DefaultReleaseCharts())
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to ensure the helm repositories were setup")
+		for _, kind := range o.Kinds {
+			if versionstream.VersionKind(kind) == versionstream.KindChart {
+				_, err := o.HelmInitDependency(dir, o.DefaultReleaseCharts())
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to ensure the helm repositories were setup")
+				}
+				log.Logger().Info("updating helm repositories to find the latest chart versions...\n")
+				err = o.Helm().UpdateRepo()
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to update helm repos")
+				}
 			}
-		}
-		log.Logger().Info("updating helm repositories to find the latest chart versions...\n")
-		err := o.Helm().UpdateRepo()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to update helm repos")
 		}
 		for _, fn := range modifyFns {
 			// in a versions PR there is no overall "old version" - it's done commit by commit
@@ -234,14 +240,16 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 		if err != nil {
 			return nil, errors.Wrapf(err, "bad glob pattern %s", glob)
 		}
+		glob = filepath.Join(kindDir, "*", "*", "*.yml")
+		morePaths, err := filepath.Glob(glob)
+		if err != nil {
+			return nil, errors.Wrapf(err, "bad glob pattern %s", glob)
+		}
+		paths = append(paths, morePaths...)
 		for _, path := range paths {
-			name, err := filepath.Rel(kindDir, path)
+			name, err := versionstream.NameFromPath(kindDir, path)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to extract base path from %s", path)
-			}
-			ext := filepath.Ext(name)
-			if ext != "" {
-				name = strings.TrimSuffix(name, ext)
+				return nil, errors.WithStack(err)
 			}
 			if !util.StringMatchesAny(name, includes, excludes) {
 				continue
@@ -253,15 +261,22 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 					BranchName:    o.BranchName,
 					DryRun:        o.DryRun,
 				}
-				vaultClient, err := o.SystemVaultClient("")
-				if err != nil {
-					vaultClient = nil
+				var cff operations.ChangeFilesFn
+				switch kindStr {
+				case string(versionstream.KindChart):
+
+					vaultClient, err := o.SystemVaultClient("")
+					if err != nil {
+						vaultClient = nil
+					}
+					cff = pro.WrapChangeFilesWithCommitFn(kindStr, operations.CreateChartChangeFilesFn(name, "", kindStr, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err))
+				case string(versionstream.KindGit):
+					cff = pro.WrapChangeFilesWithCommitFn(kindStr, pro.CreatePullRequestGitReleasesFn(name))
 				}
-				cff := pro.WrapChangeFilesWithCommitFn(kindStr, operations.CreateChartChangeFilesFn(name, "", kindStr, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err))
 				a, err := cff(dir, gitInfo)
 				if err != nil {
-					if isFailedToFindLatestChart(err) {
-						log.Logger().Warnf("Failed to find latest chart for %s", util.ColorInfo(name))
+					if isFailedToFindLatest(err) {
+						log.Logger().Warnf("Failed to find latest for %s", util.ColorInfo(name))
 					} else {
 						return nil, errors.WithStack(err)
 					}
@@ -273,9 +288,9 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 	}
 }
 
-func isFailedToFindLatestChart(err error) bool {
+func isFailedToFindLatest(err error) bool {
 	if err == nil {
 		return false
 	}
-	return strings.Contains(err.Error(), "failed to find latest chart version for ")
+	return strings.Contains(err.Error(), "failed to find latest version for ")
 }
