@@ -244,6 +244,7 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 			if ext != "" {
 				name = strings.TrimSuffix(name, ext)
 			}
+			log.Logger().Warnf("name: %s, includes: %s, excludes: %s", name, strings.Join(includes, ","), strings.Join(excludes, ","))
 			if !util.StringMatchesAny(name, includes, excludes) {
 				continue
 			} else {
