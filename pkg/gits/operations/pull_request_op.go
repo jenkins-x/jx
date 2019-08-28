@@ -476,6 +476,7 @@ func CreateChartChangeFilesFn(name string, version string, kind string, pro *Pul
 	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 		if version == "" && kind == string(versionstream.KindChart) {
 			parts := strings.Split(name, "/")
+			searchName := name
 			if len(parts) == 2 {
 				prefixes, err := versionstream.GetRepositoryPrefixes(dir)
 				if err != nil {
@@ -494,9 +495,9 @@ func CreateChartChangeFilesFn(name string, version string, kind string, pro *Pul
 						return nil, errors.Wrapf(err, "adding repository %s with url %s", prefix, urls[0])
 					}
 				}
-				name = fmt.Sprintf("%s/%s", prefix, parts[1])
+				searchName = fmt.Sprintf("%s/%s", prefix, parts[1])
 			}
-			c, err := helm.FindLatestChart(name, helmer)
+			c, err := helm.FindLatestChart(searchName, helmer)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to find latest chart version for %s", name)
 			}
