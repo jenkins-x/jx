@@ -198,6 +198,12 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 		return errors.Wrap(err, "creating vault")
 	}
 
+	// wait for vault service to become ready before finishing the provisioning
+	err = services.WaitForService(kubeClient, vaultName, o.Namespace, 1*time.Minute)
+	if err != nil {
+		return errors.Wrap(err, "waiting for vault service")
+	}
+
 	if o.NoExposeVault {
 		log.Logger().Infof("not exposing vault %s exposed", vaultName)
 		return nil
@@ -375,10 +381,6 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
-	}
-	err = services.WaitForService(client, vaultService, o.Namespace, 1*time.Minute)
-	if err != nil {
-		return errors.Wrap(err, "waiting for vault service")
 	}
 	svc, err := client.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
 	if err != nil {
