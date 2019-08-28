@@ -127,9 +127,14 @@ func TestUpdateForStage(t *testing.T) {
 			// Using t.Errorf instead of an assert here because we want to see all the misordered names, not just the first one.
 			t.Errorf("For step %d, expected step with name %s, but found %s", i, title, step.Name)
 		}
-
+		desc := createStepDescription(c.Name, pod)
+		if desc != step.Description {
+			// Using t.Errorf instead of an assert here because we want to see all the wrong descriptions, not just the first one.
+			t.Errorf("For step %d, expected step with description %s, but found %s", i, desc, step.Description)
+		}
 		if i > 0 {
 			previousStep := stage.Steps[i-1]
+			assert.False(t, step.StartedTimestamp.IsZero(), "step %s has a nil start time", step.Name)
 			assert.Equal(t, previousStep.CompletedTimestamp, step.StartedTimestamp, "step %s has start time %s but should have start time %s", step.Name, previousStep.CompletedTimestamp, step.StartedTimestamp)
 		}
 	}
