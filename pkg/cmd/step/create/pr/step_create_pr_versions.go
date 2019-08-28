@@ -235,6 +235,7 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 			return nil, errors.Wrapf(err, "bad glob pattern %s", glob)
 		}
 		for _, path := range paths {
+			log.Logger().Warnf("Trying path %s", util.ColorInfo(path))
 			name, err := filepath.Rel(kindDir, path)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to extract base path from %s", path)
@@ -246,6 +247,7 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 			if !util.StringMatchesAny(name, includes, excludes) {
 				continue
 			} else {
+				log.Logger().Warn("PRO now")
 				pro := operations.PullRequestOperation{
 					CommonOptions: o.CommonOptions,
 					GitURLs:       o.GitURLs,
@@ -259,10 +261,12 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 				}
 				cff := pro.WrapChangeFilesWithCommitFn(kindStr, operations.CreateChartChangeFilesFn(name, "", kindStr, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err))
 				a, err := cff(dir, gitInfo)
+				log.Logger().Warnf("A is %s", a)
 				if err != nil {
 					if isFailedToFindLatestChart(err) {
 						log.Logger().Warnf("Failed to find latest chart for %s", util.ColorInfo(name))
 					} else {
+						log.Logger().Warnf("Error: %s", err)
 						return nil, errors.WithStack(err)
 					}
 				}
