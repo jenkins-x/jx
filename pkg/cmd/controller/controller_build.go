@@ -789,29 +789,37 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 	containersTerminated := false
 
 	if si.Pod != nil {
+		var stageSteps []v1.CoreActivityStep
 		pod := si.Pod
 		_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
 		containersTerminated = len(containerStatuses) > 0
-		for _, c := range containerStatuses {
-			name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
-			name = strings.Replace(strings.TrimPrefix(c.Name, "step-"), "-", " ", -1)
-			title := strings.Title(name)
+		for i, c := range containerStatuses {
+			title := getStepTitle(c.Name)
 			step, _ := kube.GetOrCreateStepInStage(stage, title)
 			running := c.State.Running
 			terminated := c.State.Terminated
 
 			var startedAt metav1.Time
 			var finishedAt metav1.Time
+			if startedAt.IsZero() {
+				if len(stageSteps) > 0 {
+					previousStep := stageSteps[i-1]
+					if previousStep.CompletedTimestamp != nil {
+						startedAt = *previousStep.CompletedTimestamp
+					}
+				} else {
+					if running != nil {
+						startedAt = running.StartedAt
+					} else if terminated != nil {
+						startedAt = terminated.StartedAt
+					}
+				}
+			}
 			if terminated != nil {
-				startedAt = terminated.StartedAt
 				finishedAt = terminated.FinishedAt
-
 				if !finishedAt.IsZero() {
 					step.CompletedTimestamp = &finishedAt
 				}
-			}
-			if startedAt.IsZero() && running != nil {
-				startedAt = running.StartedAt
 			}
 
 			if !startedAt.IsZero() {
@@ -833,7 +841,9 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 				}
 				containersTerminated = false
 			}
+			stageSteps = append(stageSteps, step)
 		}
+		stage.Steps = stageSteps
 	}
 
 	for _, nested := range si.Parallel {
@@ -965,6 +975,13 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 			}
 		}
 	}
+}
+
+// getStepTitle translates the step container's name into the title for the step used in PipelineActivity
+func getStepTitle(containerName string) string {
+	name := strings.Replace(strings.TrimPrefix(containerName, "build-step-"), "-", " ", -1)
+	name = strings.Replace(strings.TrimPrefix(containerName, "step-"), "-", " ", -1)
+	return strings.Title(name)
 }
 
 // toYamlString returns the YAML string or error when marshalling the given resource
