@@ -261,48 +261,52 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			existingPr = existingPrs[0]
 		} else if len(existingPrs) == 1 {
 			existingPr = existingPrs[0]
-			// We can only update an existing PR if the owner of that PR is this user!
 		}
 	}
 	remoteBranch := prDetails.BranchName
-	if existingPr != nil && util.DereferenceString(existingPr.HeadOwner) == username && existingPr.HeadRef != nil && existingPr.Number != nil {
-		remote := "origin"
-		if forkRepo != nil && forkRepo.Fork {
-			remote = "upstream"
-		}
-		changeBranch, err := gitter.Branch(dir)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		localBranchUUID, err := uuid.NewV4()
-		if err != nil {
-			return nil, errors.Wrapf(err, "creating UUID for local branch")
-		}
-		// We use this "dummy" local branch to pull into to avoid having to work with FETCH_HEAD as our local
-		// representation of the remote branch. This is an oddity of the pull/%d/head remote.
-		localBranch := localBranchUUID.String()
-		remoteBranch = *existingPr.HeadRef
-		fetchRefSpec := fmt.Sprintf("pull/%d/head:%s", *existingPr.Number, localBranch)
-		err = gitter.FetchBranch(dir, remote, fetchRefSpec)
-		if err != nil {
-			return nil, errors.Wrapf(err, "fetching %s for merge", fetchRefSpec)
-		}
+	if existingPr != nil {
+		if util.DereferenceString(existingPr.HeadOwner) == username && existingPr.HeadRef != nil && existingPr.Number != nil {
+			remote := "origin"
+			if forkRepo != nil && forkRepo.Fork {
+				remote = "upstream"
+			}
+			changeBranch, err := gitter.Branch(dir)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			localBranchUUID, err := uuid.NewV4()
+			if err != nil {
+				return nil, errors.Wrapf(err, "creating UUID for local branch")
+			}
+			// We use this "dummy" local branch to pull into to avoid having to work with FETCH_HEAD as our local
+			// representation of the remote branch. This is an oddity of the pull/%d/head remote.
+			localBranch := localBranchUUID.String()
+			remoteBranch = *existingPr.HeadRef
+			fetchRefSpec := fmt.Sprintf("pull/%d/head:%s", *existingPr.Number, localBranch)
+			err = gitter.FetchBranch(dir, remote, fetchRefSpec)
+			if err != nil {
+				return nil, errors.Wrapf(err, "fetching %s for merge", fetchRefSpec)
+			}
 
-		err = gitter.CreateBranchFrom(dir, prDetails.BranchName, localBranch)
-		if err != nil {
-			return nil, errors.Wrapf(err, "creating branch %s from %s", prDetails.BranchName, fetchRefSpec)
-		}
-		err = gitter.Checkout(dir, prDetails.BranchName)
-		if err != nil {
-			return nil, errors.Wrapf(err, "checking out branch %s", prDetails.BranchName)
-		}
-		err = gitter.MergeTheirs(dir, changeBranch)
-		if err != nil {
-			return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, fetchRefSpec)
-		}
-		err = gitter.RebaseTheirs(dir, fmt.Sprintf(localBranch), "", true)
-		if err != nil {
-			return nil, errors.WithStack(err)
+			err = gitter.CreateBranchFrom(dir, prDetails.BranchName, localBranch)
+			if err != nil {
+				return nil, errors.Wrapf(err, "creating branch %s from %s", prDetails.BranchName, fetchRefSpec)
+			}
+			err = gitter.Checkout(dir, prDetails.BranchName)
+			if err != nil {
+				return nil, errors.Wrapf(err, "checking out branch %s", prDetails.BranchName)
+			}
+			err = gitter.MergeTheirs(dir, changeBranch)
+			if err != nil {
+				return nil, errors.Wrapf(err, "merging %s into %s", changeBranch, fetchRefSpec)
+			}
+			err = gitter.RebaseTheirs(dir, fmt.Sprintf(localBranch), "", true)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+		} else {
+			// We can only update an existing PR if the owner of that PR is this user, so we clear the existingPr
+			existingPr = nil
 		}
 	}
 	if dryRun {

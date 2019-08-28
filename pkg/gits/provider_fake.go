@@ -40,6 +40,10 @@ const (
 	CommitStatusFailure              = "failure"
 )
 
+var (
+	PullRequestOpen = "open"
+)
+
 type FakeCommit struct {
 	Commit *GitCommit
 	Status CommitStatus
@@ -228,6 +232,17 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 
 	repo.issueCount += 1
 	number := repo.issueCount
+	labels := make([]*Label, 0)
+	for _, l := range data.Labels {
+		labels = append(labels, &Label{
+			ID:          nil,
+			URL:         nil,
+			Name:        &l,
+			Color:       nil,
+			Description: nil,
+			Default:     nil,
+		})
+	}
 	pr := &GitPullRequest{
 		URL: fmt.Sprintf("https://fake.git/%s/%s/pulls/%d", org, repoName, number),
 		Author: &GitUser{
@@ -243,13 +258,14 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 		Mergeable:      nil,
 		Merged:         nil,
 		HeadRef:        &data.Head,
-		State:          nil,
+		State:          &PullRequestOpen,
 		StatusesURL:    nil,
 		IssueURL:       nil,
 		DiffURL:        nil,
 		MergeCommitSHA: nil,
 		ClosedAt:       nil,
 		MergedAt:       nil,
+		Labels:         labels,
 		LastCommitSha:  "",
 		Title:          data.Title,
 		Body:           data.Body,
@@ -334,7 +350,21 @@ func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepository, number 
 }
 
 func (f *FakeProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
-	return nil, nil
+	answer := make([]*GitPullRequest, 0)
+	repos, ok := f.Repositories[owner]
+	if !ok {
+		return nil, fmt.Errorf("no repositories found for '%s'", owner)
+	}
+	for _, r := range repos {
+		if r.GitRepo.Name == repo {
+			for _, pr := range r.PullRequests {
+				if util.DereferenceString(pr.PullRequest.State) == PullRequestOpen {
+					answer = append(answer, pr.PullRequest)
+				}
+			}
+		}
+	}
+	return answer, nil
 }
 
 func (f *FakeProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
@@ -922,6 +952,28 @@ func (f *FakeProvider) ListCommits(owner, name string, opt *ListCommitsArguments
 
 // AddLabelsToIssue adds labels to an issue
 func (f *FakeProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
+	repos, ok := f.Repositories[owner]
+	if !ok {
+		return fmt.Errorf("no repositories found for '%s'", owner)
+	}
+	for _, r := range repos {
+
+		if r.GitRepo.Name == repo {
+			for _, pr := range r.PullRequests {
+				if util.DereferenceInt(pr.PullRequest.Number) == number {
+					ls := make([]*Label, 0)
+					for _, l := range labels {
+						ls = append(ls, &Label{
+							Name: &l,
+						})
+					}
+					pr.PullRequest.Labels = ls
+					break
+				}
+			}
+			break
+		}
+	}
 	return nil
 }
 
