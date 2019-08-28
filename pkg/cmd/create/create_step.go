@@ -35,7 +35,7 @@ var (
 		jx create step -sh "echo hello world"
 
 		# Creates a step on the command line: adding a pre step to the pullRequest promote lifecycle
-		jx create step -p pullrequest -l promote -m pre "echo before promote"
+		jx create step -p pullrequest -l promote -m pre -c "echo before promote"
 	`)
 )
 
