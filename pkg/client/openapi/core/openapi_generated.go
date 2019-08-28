@@ -6215,6 +6215,13 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Format:      "",
 						},
 					},
+					"profile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Profile is the profile in use (see jx profile)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

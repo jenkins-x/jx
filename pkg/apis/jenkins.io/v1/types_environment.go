@@ -228,6 +228,9 @@ type TeamSettings struct {
 
 	// ProwConfig is the way we manage prow configurations
 	ProwConfig ProwConfigType `json:"prowConfig,omitempty" protobuf:"bytes,29,opt,name=prowConfig"`
+
+	// Profile is the profile in use (see jx profile)
+	Profile string `json:"profile,omitempty" protobuf:"bytes,30,opt,name=profile"`
 }
 
 // StorageLocation

@@ -499,22 +499,34 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 
 func (o *StepVerifyPreInstallOptions) verifyTLS(requirements *config.RequirementsConfig) error {
 	if !requirements.Ingress.TLS.Enabled {
+		profile := config.LoadActiveInstallProfile()
+		// silently ignore errors as they most likely because team settings aren't available
+		teamSettings, err := o.TeamSettings()
+		if err == nil {
+			// then team settings are available
+			if teamSettings.Profile != "" {
+				profile = teamSettings.Profile
+			}
+		}
+
+		url := "https://jenkins-x.io/architecture/tls"
+		if profile == config.CloudBeesProfile {
+			url = "https://go.cloudbees.com/docs/cloudbees-jenkins-x-distribution/tls/"
+		}
 		confirm := false
 		if requirements.SecretStorage == config.SecretStorageTypeVault {
-			log.Logger().Warnf("Vault is enabled and TLS is not enabled. This means your secrets will be sent to and from your cluster in the clear. We do not recommend you do this.")
+			log.Logger().Warnf("Vault is enabled and TLS is not enabled. This means your secrets will be sent to and from your cluster in the clear. See %s for more information", url)
 			confirm = true
 		}
 		if requirements.Webhook != config.WebhookTypeNone {
-			log.Logger().Warnf("TLS is not enabled so your webhooks will be called using HTTP. This means your webhook secret will be sent to your cluster in the clear. We do not recommend you do this.")
+			log.Logger().Warnf("TLS is not enabled so your webhooks will be called using HTTP. This means your webhook secret will be sent to your cluster in the clear. See %s for more information", url)
 			confirm = true
 		}
 		if os.Getenv(boot.OverrideTLSWarningEnvVarName) == "true" {
 			confirm = false
 		}
-		if confirm {
-			if o.BatchMode {
-				return errors.Errorf("cannot continue because TLS is not enabled.")
-			}
+		if confirm && !o.BatchMode {
+
 			message := fmt.Sprintf("Do you wish to continue?")
 			help := fmt.Sprintf("Jenkins X needs TLS enabled to send secrets securely. We strongly recommend enabling TLS.")
 			value := util.Confirm(message, false, help, o.In, o.Out, o.Err)

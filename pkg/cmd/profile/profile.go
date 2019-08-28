@@ -2,14 +2,15 @@ package profile
 
 import (
 	"errors"
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"path/filepath"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -41,7 +42,7 @@ func NewCmdProfile(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:     "profile TYPE",
+		Use:     "profile <type>",
 		Short:   "Set your jx profile",
 		Long:    profileLong,
 		Example: profileExample,

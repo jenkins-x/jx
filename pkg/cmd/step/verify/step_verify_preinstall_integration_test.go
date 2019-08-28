@@ -96,7 +96,7 @@ func TestStepVerifyPreInstallNoTLS(t *testing.T) {
 
 	// we default to lazy create if not using terraform
 	err = options.Run()
-	assert.Error(t, err, "the command should have failed as we are running in batch mode with no tls")
+	assert.NoError(t, err)
 }
 
 func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
