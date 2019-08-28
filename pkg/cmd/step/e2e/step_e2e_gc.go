@@ -166,7 +166,7 @@ func (o *StepE2EGCOptions) ShouldDeleteDueToNewerRun(cluster *gke.Cluster, clust
 					for _, existingCluster := range clusters {
 						// Check for same PR & Cluster type
 						if existingClusterType, ok := existingCluster.ResourceLabels["cluster"]; ok {
-							if strings.Contains(existingCluster.Name, branchLabel) && strings.Contains(existingClusterType, clusterType) {
+							if strings.Contains(existingCluster.Name, branchLabel) && existingClusterType == clusterType {
 								existingBuildNumber, err := o.GetBuildNumberFromCluster(&existingCluster)
 								if err == nil {
 									// Delete the older build
