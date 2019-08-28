@@ -2443,6 +2443,9 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.batch.v1.Job'
         type: array
+      profile:
+        description: Profile is the profile in use (see jx profile)
+        type: string
       promotionEngine:
         type: string
       prowConfig:
