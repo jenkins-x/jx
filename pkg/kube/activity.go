@@ -570,8 +570,9 @@ func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineAct
 	return step, step.Stage, true
 }
 
-// GetOrCreateStepInStage gets or creates the step for the given name in the given stage
-func GetOrCreateStepInStage(stage *v1.StageActivityStep, stepName string) (v1.CoreActivityStep, bool) {
+// GetStepValueFromStage gets the value for the step for the given name in the given stage, if it already exists. If
+// it doesn't exist, it will create a new step for that name instead.
+func GetStepValueFromStage(stage *v1.StageActivityStep, stepName string) (v1.CoreActivityStep, bool) {
 	for i := range stage.Steps {
 		step := &stage.Steps[i]
 		if step != nil && step.Name == stepName {
@@ -582,7 +583,6 @@ func GetOrCreateStepInStage(stage *v1.StageActivityStep, stepName string) (v1.Co
 	step := v1.CoreActivityStep{
 		Name: stepName,
 	}
-	stage.Steps = append(stage.Steps, step)
 	return step, true
 }
 
