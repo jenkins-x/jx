@@ -1,10 +1,15 @@
 package update
 
 import (
+	"fmt"
+	"io/ioutil"
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -127,6 +132,8 @@ func (o *UpdateWebhooksOptions) Run() error {
 		return errors.Wrapf(err, "failed to find any SourceRepositories in namespace %s", ns)
 	}
 
+	envMap, _, err := kube.GetEnvironments(jxClient, ns)
+
 	for _, sr := range srList.Items {
 		if o.matchesRepository(&sr) {
 			err = o.ensureWebHookCreated(&sr, webhookURL, isProwEnabled, hmacToken)
@@ -135,6 +142,17 @@ func (o *UpdateWebhooksOptions) Run() error {
 					log.Logger().Warnf(err.Error())
 				} else {
 					return err
+				}
+			}
+			if !isProwEnabled {
+				isEnv := kube.IsEnvironmentRepository(envMap, &sr)
+				err = o.ensureJenkinsJobExists(&sr, isEnv)
+				if err != nil {
+					if o.WarnOnFail {
+						log.Logger().Warnf(err.Error())
+					} else {
+						return err
+					}
 				}
 			}
 		}
@@ -167,6 +185,41 @@ func (o *UpdateWebhooksOptions) ensureWebHookCreated(repository *v1.SourceReposi
 		return errors.Wrapf(err, "failed to update webhooks for Owner: %s and Repository: %s in git server: %s", owner, repo, gitServerURL)
 	}
 	return nil
+}
+
+func (o *UpdateWebhooksOptions) ensureJenkinsJobExists(repository *v1.SourceRepository, isEnvironment bool) error {
+	authConfigSvc := auth.NewMemoryAuthConfigService()
+	gitURL, err := kube.GetRepositoryGitURL(repository)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find GitURL for repository %s", repository.Name)
+	}
+	if gitURL == "" {
+		return fmt.Errorf("no GitURL for repository %s", repository.Name)
+	}
+
+	envDir, err := ioutil.TempDir("", "jx-boot-jenkins-repo-")
+	if err != nil {
+		return errors.Wrapf(err, "failed to create a temporary directory for repository %s", repository.Name)
+	}
+
+	err = o.Git().Clone(gitURL, envDir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to clone %s to %s for repository %s", gitURL, envDir, repository.Name)
+	}
+
+	spec := repository.Spec
+	gitServerURL := spec.Provider
+	gitKind, err := o.GitServerHostURLKind(gitServerURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find Git Server kind for host %s", gitServerURL)
+	}
+	gitProvider, err := o.GitProviderForGitServerURL(gitServerURL, gitKind)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find Git provider for host %s and kind %s", gitServerURL, gitKind)
+	}
+
+	log.Logger().Infof("ensuring we have a Jenkins job for git URL %s isEnvironment: %v", gitURL, isEnvironment)
+	return o.ImportProject(gitURL, envDir, jenkinsfile.Name, "", "", false, gitProvider, authConfigSvc, isEnvironment, true)
 }
 
 // GetOrgOrUserFromOptions returns the Org if set,
