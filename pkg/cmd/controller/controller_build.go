@@ -793,27 +793,16 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 		pod := si.Pod
 		_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
 		containersTerminated = len(containerStatuses) > 0
-		for i, c := range containerStatuses {
-			title := getStepTitle(c.Name)
-			step, _ := kube.GetOrCreateStepInStage(stage, title)
-			running := c.State.Running
-			terminated := c.State.Terminated
+		for i, container := range containerStatuses {
+			title := getStepTitle(container.Name)
+			step, _ := kube.GetStepValueFromStage(stage, title)
+			running := container.State.Running
+			terminated := container.State.Terminated
 
 			var startedAt metav1.Time
 			var finishedAt metav1.Time
 			if startedAt.IsZero() {
-				if len(stageSteps) > 0 {
-					previousStep := stageSteps[i-1]
-					if previousStep.CompletedTimestamp != nil {
-						startedAt = *previousStep.CompletedTimestamp
-					}
-				} else {
-					if running != nil {
-						startedAt = running.StartedAt
-					} else if terminated != nil {
-						startedAt = terminated.StartedAt
-					}
-				}
+				startedAt = determineStepStartTime(i, running, terminated, stageSteps)
 			}
 			if terminated != nil {
 				finishedAt = terminated.FinishedAt
@@ -825,7 +814,7 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 			if !startedAt.IsZero() {
 				step.StartedTimestamp = &startedAt
 			}
-			step.Description = createStepDescription(c.Name, pod)
+			step.Description = createStepDescription(container.Name, pod)
 
 			if terminated != nil {
 				if terminated.ExitCode == 0 {
@@ -975,6 +964,27 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 			}
 		}
 	}
+}
+
+// determineStepStartTime checks to see if there's a step before this one. If so, it returns the time at which that step
+// finished. Otherwise, it checks to see if the current step is running or finished and returns the appropriate start time.
+// This is to work around the fact that Tekton steps all have the same start time, since all containers in the pod start
+// at once, even though the actual command doesn't get run until the previous step finishes.
+func determineStepStartTime(index int, running *corev1.ContainerStateRunning, terminated *corev1.ContainerStateTerminated, stageSteps []v1.CoreActivityStep) metav1.Time {
+	var startedAt metav1.Time
+	if len(stageSteps) > 0 {
+		previousStep := stageSteps[index-1]
+		if previousStep.CompletedTimestamp != nil {
+			startedAt = *previousStep.CompletedTimestamp
+		}
+	} else {
+		if running != nil {
+			startedAt = running.StartedAt
+		} else if terminated != nil {
+			startedAt = terminated.StartedAt
+		}
+	}
+	return startedAt
 }
 
 // getStepTitle translates the step container's name into the title for the step used in PipelineActivity
