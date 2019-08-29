@@ -1,3 +1,4 @@
+buildPack: none
 pipelineConfig:
   env:
     - name: FRUIT

@@ -388,6 +388,11 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 		if projectConfig.BuildPack == "" || projectConfig.BuildPack == "none" {
 			for _, override := range pipelines.Overrides {
 				if override.MatchesPipeline(kind) {
+					// If no step/steps, other overrides, or stage is specified, just remove the whole pipeline.
+					// TODO: This is probably pointless functionality.
+					if override.Step == nil && len(override.Steps) == 0 && !override.HasNonStepOverrides() && override.Stage == "" {
+						return nil, nil
+					}
 					parsed = syntax.ApplyStepOverridesToPipeline(parsed, override)
 				}
 			}

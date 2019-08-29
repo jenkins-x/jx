@@ -1884,7 +1884,7 @@ func (p *PipelineOverride) AsStepsSlice() []*Step {
 
 // MatchesPipeline returns true if the pipeline name is specified in the override or no pipeline is specified at all in the override
 func (p *PipelineOverride) MatchesPipeline(name string) bool {
-	if p.Pipeline == "" || p.Pipeline == name {
+	if p.Pipeline == "" || strings.EqualFold(p.Pipeline, name) {
 		return true
 	}
 	return false
