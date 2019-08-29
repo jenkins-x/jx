@@ -169,13 +169,13 @@ func (o *BootOptions) Run() error {
 			}
 			gitRef, err = resolver.ResolveGitVersion(gitURL)
 			if err != nil {
-				return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+				return errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s", gitURL))
 			}
-			if o.GitRef == "" {
+			if gitRef == "" {
 				log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
 				gitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
 				if err != nil {
-					return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+					return errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s", config.DefaultBootRepository))
 				}
 			}
 
