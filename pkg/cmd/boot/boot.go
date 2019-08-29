@@ -40,6 +40,8 @@ var (
 	bootLong = templates.LongDesc(`
 		Boots up Jenkins X in a Kubernetes cluster using GitOps and a Jenkins X Pipeline
 
+		For more documentation see: [https://jenkins-x.io/getting-started/boot/](https://jenkins-x.io/getting-started/boot/)
+
 `)
 
 	bootExample = templates.Examples(`
