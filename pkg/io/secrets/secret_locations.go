@@ -22,7 +22,7 @@ const (
 	VaultLocationKind SecretsLocationKind = "vault"
 	// KubeLocationKind inidcates that secrets location is in Kuberntes
 	KubeLocationKind SecretsLocationKind = "kube"
-	// KubeLocationKind indicates that secrets location needs to be dynamically determine
+	// AutoLocationKind indicates that secrets location needs to be dynamically determine
 	AutoLocationKind SecretsLocationKind = "auto"
 )
 
