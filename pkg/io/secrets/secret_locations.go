@@ -3,7 +3,7 @@ package secrets
 import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -17,11 +17,13 @@ type SecretsLocationKind string
 
 const (
 	// FileSystemLocationKind indicates that secrets location is the file system
-	FileSystemLocationKind SecretsLocationKind = "fileSystem"
+	FileSystemLocationKind SecretsLocationKind = "local"
 	// VaultLocationKind indicates that secrets location is vault
 	VaultLocationKind SecretsLocationKind = "vault"
 	// KubeLocationKind inidcates that secrets location is in Kuberntes
 	KubeLocationKind SecretsLocationKind = "kube"
+	// KubeLocationKind indicates that secrets location needs to be dynamically determine
+	AutoLocationKind SecretsLocationKind = "auto"
 )
 
 // SecretLocation interfaces to identify where is the secrets location
@@ -85,4 +87,18 @@ func getInstallConfigMapData(kubeClient kubernetes.Interface, namespace string) 
 		return nil, errors.Wrapf(err, "getting configmap %s", kube.ConfigMapNameJXInstallConfig)
 	}
 	return configMap, nil
+}
+
+// ToSecretsLocation converts a string to a SecretsLocationKind
+func ToSecretsLocation(location string) SecretsLocationKind {
+	switch location {
+	case "local":
+		return FileSystemLocationKind
+	case "vault":
+		return VaultLocationKind
+	case "kube":
+		return KubeLocationKind
+	default:
+		return AutoLocationKind
+	}
 }

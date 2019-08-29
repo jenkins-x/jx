@@ -250,13 +250,14 @@ func (o *StepHelmApplyOptions) Run() error {
 		}()
 	}
 
-	secretURLClient, err := o.GetSecretURLClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create a Secret RL client")
-	}
 	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return err
+	}
+
+	secretURLClient, err := o.GetSecretURLClient(secrets.ToSecretsLocation(string(requirements.SecretStorage)))
+	if err != nil {
+		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
 
 	DefaultEnvironments(requirements, devGitInfo)
