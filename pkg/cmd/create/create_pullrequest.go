@@ -104,6 +104,11 @@ func (o *CreatePullRequestOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for directory %s", o.Dir)
 	}
+	// Rebuild the gitInfo so that we get all the info we need
+	gitInfo, err = provider.GetRepository(gitInfo.Organisation, gitInfo.Name)
+	if err != nil {
+		return errors.Wrapf(err, "getting repository for %s/%s", gitInfo.Organisation, gitInfo.Name)
+	}
 	var forkInfo *gits.GitRepository
 	if o.Fork && provider.CurrentUsername() != gitInfo.Organisation {
 		forkInfo, err = provider.GetRepository(provider.CurrentUsername(), gitInfo.Name)
