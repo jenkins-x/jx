@@ -3,11 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -93,7 +94,7 @@ func FindServiceURL(client kubernetes.Interface, namespace string, name string) 
 	log.Logger().Debugf("finding service url for %s in namespace %s", name, namespace)
 	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to find service %s in namespace %s", name, namespace)
+		return "", errors.Wrapf(err, "findding the service %s in namespace %s", name, namespace)
 	}
 	answer := GetServiceURL(svc)
 	if answer != "" {
@@ -106,8 +107,8 @@ func FindServiceURL(client kubernetes.Interface, namespace string, name string) 
 	// lets try find the service via Ingress
 	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
-		log.Logger().Errorf("error finding ingress for %s in namespace %s - err %s", name, namespace, err)
-		return "", nil
+		log.Logger().Debugf("unable to finding ingress for %s in namespace %s - err %s", name, namespace, err)
+		return "", errors.Wrapf(err, "getting ingress for service %q in namespace %s", name, namespace)
 	}
 
 	url := IngressURL(ing)
