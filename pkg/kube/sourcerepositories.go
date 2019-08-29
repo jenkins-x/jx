@@ -163,3 +163,22 @@ func CreateSourceRepository(client versioned.Interface, namespace string, name, 
 
 	return nil
 }
+
+// IsEnvironmentRepository returns true if the given repository is an environment repository
+func IsEnvironmentRepository(environments map[string]*v1.Environment, repository *v1.SourceRepository) bool {
+	gitURL, err := GetRepositoryGitURL(repository)
+	if err != nil {
+		return false
+	}
+	u2 := gitURL + ".git"
+
+	for _, env := range environments {
+		if env.Spec.Kind != v1.EnvironmentKindTypePermanent {
+			continue
+		}
+		if env.Spec.Source.URL == gitURL || env.Spec.Source.URL == u2 {
+			return true
+		}
+	}
+	return false
+}
