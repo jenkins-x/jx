@@ -131,6 +131,25 @@ func (o *BootOptions) Run() error {
 		return util.MissingOption("git-url")
 	}
 
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	if requirements.VersionStream.URL == "" && requirements.VersionStream.Ref == "" {
+		requirements.VersionStream.URL = o.VersionStreamURL
+		requirements.VersionStream.Ref = o.VersionStreamRef
+	}
+
+	// If we still don't have a complete version stream ref then we better set to a default
+	if requirements.VersionStream.URL == "" || requirements.VersionStream.Ref == "" {
+		log.Logger().Warnf("Incomplete version stream reference %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
+		if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
+			o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
+			o.VersionStreamURL = config.DefaultVersionsURL
+		} else {
+			o.VersionStreamRef = config.DefaultVersionsRef
+			o.VersionStreamURL = config.DefaultVersionsURL
+		}
+		log.Logger().Infof("Setting version stream reference to default %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	}
+
 	if !exists {
 		log.Logger().Infof("No Jenkins X pipeline file %s found. You are not running this command from inside a Jenkins X Boot git clone", info(pipelineFile))
 
@@ -144,7 +163,7 @@ func (o *BootOptions) Run() error {
 
 		if o.GitURL == "" && o.GitRef == "" {
 			// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
-			resolver, err := o.CreateVersionResolver(o.VersionStreamURL, o.VersionStreamRef)
+			resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create version resolver")
 			}
@@ -219,15 +238,6 @@ func (o *BootOptions) Run() error {
 		}
 	}
 
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
-	if requirements.VersionStream.URL == "" && requirements.VersionStream.Ref == "" {
-		requirements.VersionStream.URL = o.VersionStreamURL
-		requirements.VersionStream.Ref = o.VersionStreamRef
-	}
-
-	if err != nil {
-		return err
-	}
 	exists, err = util.FileExists(requirementsFile)
 	if err != nil {
 		return err
