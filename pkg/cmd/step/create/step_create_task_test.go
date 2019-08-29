@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -42,14 +43,15 @@ import (
 )
 
 type testCase struct {
-	name           string
-	language       string
-	repoName       string
-	organization   string
-	branch         string
-	kind           string
-	expectingError bool
-	useKaniko      bool
+	name                  string
+	language              string
+	repoName              string
+	organization          string
+	branch                string
+	kind                  string
+	generateError         error
+	effectiveProjectError error
+	useKaniko             bool
 }
 
 func TestGenerateTektonCRDs(t *testing.T) {
@@ -104,13 +106,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:           "no_pipeline_config",
-			language:       "none",
-			repoName:       "anything",
-			organization:   "anything",
-			branch:         "anything",
-			kind:           "release",
-			expectingError: true,
+			name:                  "no_pipeline_config",
+			language:              "none",
+			repoName:              "anything",
+			organization:          "anything",
+			branch:                "anything",
+			kind:                  "release",
+			effectiveProjectError: errors.New("effective pipeline creation failed: failed to find PipelineConfig in file test_data/step_create_task/no_pipeline_config/jenkins-x.yml"),
 		},
 		{
 			name:         "per_step_container_build_pack",
@@ -228,13 +230,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:           "remove-pipeline",
-			language:       "none",
-			repoName:       "anything",
-			organization:   "anything",
-			branch:         "anything",
-			kind:           "pullRequest",
-			expectingError: true,
+			name:                  "remove-pipeline",
+			language:              "none",
+			repoName:              "anything",
+			organization:          "anything",
+			branch:                "anything",
+			kind:                  "pullrequest",
+			effectiveProjectError: errors.New("no pipeline defined for kind pullrequest"),
 		},
 		{
 			name:         "remove-stage-from-jenkins-x-yml",
@@ -245,13 +247,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:           "remove-pipeline-from-jenkins-x-yml",
-			language:       "none",
-			repoName:       "anything",
-			organization:   "anything",
-			branch:         "anything",
-			kind:           "pullRequest",
-			expectingError: true,
+			name:                  "remove-pipeline-from-jenkins-x-yml",
+			language:              "none",
+			repoName:              "anything",
+			organization:          "anything",
+			branch:                "anything",
+			kind:                  "pullrequest",
+			effectiveProjectError: errors.New("no pipeline defined for kind pullrequest"),
 		},
 		{
 			name:         "replace-stage-steps",
@@ -335,6 +337,15 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "really-long",
 			kind:         "release",
 		},
+		{
+			name:                  "no_pipeline_for_kind",
+			language:              "none",
+			repoName:              "js-test-repo",
+			organization:          "abayer",
+			branch:                "really-long",
+			kind:                  "release",
+			effectiveProjectError: fmt.Errorf("%s", "no pipeline defined for kind release"),
+		},
 	}
 
 	k8sObjects := []runtime.Object{
@@ -408,33 +419,43 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			assert.NoError(t, err)
 
 			effectiveProjectConfig, err := createTask.createEffectiveProjectConfig(packsDir, projectConfig, projectConfigFile, resolver, ns)
-			if err != nil && strings.Contains(err.Error(), "validation failed for Pipeline") {
-				t.Fatalf("Validation failure for effective pipeline: %s", err)
-			}
-			if effectiveProjectConfig != nil {
-				err = createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
-				assert.NoError(t, err)
-			}
-
-			resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, nil, "")
-			pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, tektonClient, ns)
-			crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
-			if tt.expectingError {
+			if tt.effectiveProjectError != nil {
 				if err == nil {
-					t.Fatalf("Expected an error generating CRDs")
+					t.Fatalf("Expected an error %s generating effective project config, did not see it", tt.effectiveProjectError)
 				}
+				assert.Equal(t, tt.effectiveProjectError.Error(), err.Error(), "Expected error %s but received error %s", tt.effectiveProjectError, err)
+			} else if err != nil {
+				if strings.Contains(err.Error(), "validation failed for Pipeline") {
+					t.Fatalf("Validation failure for effective pipeline: %s", err)
+				}
+				t.Fatalf("Unexpected error generating effective pipeline: %s", err)
 			} else {
-				if err != nil {
-					t.Fatalf("Error generating CRDs: %s", err)
-				}
-
-				// to update the golden files 'make test1-pkg PKG=./pkg/cmd/step/create TEST=TestGenerateTektonCRDs UPDATE_GOLDEN=1' - use with care!
-				if os.Getenv("UPDATE_GOLDEN") != "" {
-					err = crds.WriteToDisk(caseDir, nil)
+				if effectiveProjectConfig != nil {
+					err = createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
 					assert.NoError(t, err)
 				}
 
-				assertTektonCRDs(t, tt, crds, caseDir, createTask)
+				resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, nil, "")
+				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline, tektonClient, ns)
+				crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
+				if tt.generateError != nil {
+					if err == nil {
+						t.Fatalf("Expected an error %s generating CRDs, did not see it", tt.generateError)
+					}
+					assert.Equal(t, tt.generateError, err, "Expected error %s but received error %s", tt.generateError, err)
+				} else {
+					if err != nil {
+						t.Fatalf("Unexpected error generating CRDs: %s", err)
+					}
+
+					// to update the golden files 'make test1-pkg PKG=./pkg/cmd/step/create TEST=TestGenerateTektonCRDs UPDATE_GOLDEN=1' - use with care!
+					if os.Getenv("UPDATE_GOLDEN") != "" {
+						err = crds.WriteToDisk(caseDir, nil)
+						assert.NoError(t, err)
+					}
+
+					assertTektonCRDs(t, tt, crds, caseDir, createTask)
+				}
 			}
 		})
 	}
