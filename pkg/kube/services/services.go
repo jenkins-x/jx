@@ -94,7 +94,7 @@ func FindServiceURL(client kubernetes.Interface, namespace string, name string) 
 	log.Logger().Debugf("finding service url for %s in namespace %s", name, namespace)
 	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrapf(err, "findding the service %s in namespace %s", name, namespace)
+		return "", errors.Wrapf(err, "finding the service %s in namespace %s", name, namespace)
 	}
 	answer := GetServiceURL(svc)
 	if answer != "" {
