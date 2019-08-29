@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -24,7 +24,7 @@ const (
 	maxRetries = 2
 
 	// healthReadyTimeout define the maximum duration to wait for vault to become initialized and unsealed
-	healthhRetyTimeout = 2 * time.Minute
+	healthhRetyTimeout = 5 * time.Minute
 
 	// healthInitialRetryDelay define the initial delay before starting the retries
 	healthInitialRetryDelay = 10 * time.Second
@@ -39,7 +39,7 @@ const (
 	kvEngineInitialRetyDelay = 1 * time.Second
 
 	// kvEngineRetryTimeout define the maximum duration to wait for KV engine to be properly configured
-	kvEngineRetryTimeout = 1 * time.Minute
+	kvEngineRetryTimeout = 3 * time.Minute
 )
 
 // OptionsInterface is an interface to allow passing around of a CommonOptions object without dependencies on the whole of the cmd package
