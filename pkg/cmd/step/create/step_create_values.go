@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -181,7 +182,7 @@ func (o *StepCreateValuesOptions) CreateValuesFile() error {
 	if err != nil {
 		return errors.Wrapf(err, "getting team name")
 	}
-	secretURLClient, err := o.GetSecretURLClient()
+	secretURLClient, err := o.GetSecretURLClient(secrets.ToSecretsLocation(o.SecretsScheme))
 	if err != nil {
 		return err
 	}

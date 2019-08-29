@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/secreturl"
@@ -407,31 +408,49 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 			return err
 		}
 	}
-	secretURLClient, err := o.GetSecretURLClient()
+	secretURLClient, err := o.GetSecretURLClient(secrets.AutoLocationKind)
 	if err != nil {
 		return errors.Wrap(err, "failed to create a Secret RL client")
 	}
 	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, secretURLClient)
 }
 
-// GetSecretURLClient create a new secret URL client
-func (o *CommonOptions) GetSecretURLClient() (secreturl.Client, error) {
-	if o.secretURLClient == nil {
-		var err error
+// GetSecretURLClient create a new secret URL client base on a given secrets location. If the location is auto,
+// it will try to determine dynamically if is vault or local file system
+func (o *CommonOptions) GetSecretURLClient(location secrets.SecretsLocationKind) (secreturl.Client, error) {
+	if o.secretURLClient != nil {
+		return o.secretURLClient, nil
+	}
+	var err error
+	switch location {
+	case secrets.VaultLocationKind:
 		o.secretURLClient, err = o.SystemVaultClient(o.devNamespace)
 		if err != nil {
-			log.Logger().Debugf("Failed to create the secrets URL client for system vault in namespace %s due to %s. Falling back to locall file system.\n", o.devNamespace, err.Error())
-			o.secretURLClient = nil
+			return o.secretURLClient, errors.Wrapf(err, "creating system vault URL client")
 		}
-	}
-	if o.secretURLClient == nil {
+	case secrets.FileSystemLocationKind:
 		dir, err := util.LocalFileSystemSecretsDir()
 		if err != nil {
-			return o.secretURLClient, err
+			return o.secretURLClient, errors.Wrapf(err, "getting the file system secrets directory")
 		}
 		o.secretURLClient = localvault.NewFileSystemClient(dir)
+	case secrets.AutoLocationKind:
+		location := o.detectSecretsLocation()
+		o.secretURLClient, err = o.GetSecretURLClient(location)
+	default:
+		return nil, fmt.Errorf("secrets location %q is not supported", location)
 	}
-	return o.secretURLClient, nil
+
+	return o.secretURLClient, err
+}
+
+// detectSecretsLocation detects dynamically the secrets location by trying to create a vault client
+func (o *CommonOptions) detectSecretsLocation() secrets.SecretsLocationKind {
+	_, err := o.SystemVaultClient(o.devNamespace)
+	if err == nil {
+		return secrets.VaultLocationKind
+	}
+	return secrets.FileSystemLocationKind
 }
 
 // SetSecretURLClient sets the Secret URL Client

@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 
@@ -90,15 +91,14 @@ func (o *StepHelmBuildOptions) Run() error {
 	}
 
 	if o.Boot {
-
-		secretURLClient, err := o.GetSecretURLClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create a Secret RL client")
-		}
-
 		requirements, requirementsFileName, err := config.LoadRequirementsConfig(dir)
 		if err != nil {
 			return err
+		}
+
+		secretURLClient, err := o.GetSecretURLClient(secrets.ToSecretsLocation(string(requirements.SecretStorage)))
+		if err != nil {
+			return errors.Wrap(err, "creating a Secret URL client")
 		}
 
 		devGitInfo, err := o.FindGitInfo(dir)
