@@ -45,3 +45,8 @@ type VaultAuthConfigSaver struct {
 	vaultClient vault.Client
 	secretName  string
 }
+
+// MemoryAuthConfigSaver uses memory
+type MemoryAuthConfigSaver struct {
+	config AuthConfig
+}
