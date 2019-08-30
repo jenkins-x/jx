@@ -37,6 +37,8 @@ func NewCmdStepVerify(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepVerifyPod(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyPreInstall(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyRequirements(commonOpts))
+	cmd.AddCommand(NewCmdStepVerifyURL(commonOpts))
+
 	return cmd
 }
 
