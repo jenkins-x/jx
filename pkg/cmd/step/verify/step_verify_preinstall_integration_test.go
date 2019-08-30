@@ -99,8 +99,38 @@ func TestStepVerifyPreInstallNoTLS(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
+func TestStepVerifyPreInstallRequirements(t *testing.T) {
+	tests := map[string]bool{
+		"lighthouse_gitlab": true,
+		"prow_github":       true,
+		"prow_gitlab":       false,
+	}
 
+	for dir, actual := range tests {
+		testDir := filepath.Join("test_data", "preinstall", dir)
+		assert.DirExists(t, testDir)
+		options := createTestStepVerifyPreInstallOptions(testDir)
+		options.Namespace = "jx"
+
+		_, origNamespace, err := options.KubeClientAndDevNamespace()
+		assert.NoError(t, err)
+		defer resetNamespace(t, origNamespace)
+
+		requirements, requirementsFileName, err := config.LoadRequirementsConfig(testDir)
+		assert.NoError(t, err, "for test %s", dir)
+
+		err = options.ValidateRequirements(requirements, requirementsFileName)
+		if actual {
+			assert.NoError(t, err, "for test %s", dir)
+			t.Logf("correctly validated test %s", dir)
+		} else {
+			assert.Error(t, err, "for test %s", dir)
+			t.Logf("correctly failed to validate test %s with error: %v", dir, err)
+		}
+	}
+}
+
+func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "set_cluster_req_via_envvar"))
 
 	kc, origNamespace, err := options.KubeClientAndDevNamespace()
@@ -143,6 +173,7 @@ func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 	assert.Equal(t, false, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
 
 }
+
 func createTestStepVerifyPreInstallOptions(dir string) *verify.StepVerifyPreInstallOptions {
 	options := &verify.StepVerifyPreInstallOptions{
 		DisableVerifyHelm:    true,
