@@ -6,13 +6,17 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
-// BootOptions options for the command
+// BootUpgradeOptions options for the command
 type BootUpgradeOptions struct {
 	*opts.CommonOptions
 	Dir string
@@ -30,7 +34,7 @@ var (
 `)
 )
 
-// NewCmdBoot creates the command
+// NewCmdBootUpgrade creates the command
 func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &BootUpgradeOptions{
 		CommonOptions: commonOpts,
@@ -52,6 +56,7 @@ func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
+// Run runs this command
 func (o *BootUpgradeOptions) Run() error {
 	reqsVersionStream, err := o.requirementsVersionStream(o.Dir)
 	if err != nil {
@@ -76,6 +81,10 @@ func (o *BootUpgradeOptions) Run() error {
 		return err
 	}
 
+	err = o.updateBootConfig(o.Dir, reqsVersionStream.URL, reqsVersionStream.Ref, config.DefaultCloudBeesBootRepository)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -143,3 +152,78 @@ func (o *BootUpgradeOptions) updateVersionStreamRef(dir string, upgradeRef strin
 	return nil
 }
 
+func (o *BootUpgradeOptions) updateBootConfig(dir string, versionStreamURL string, versionStreamRef string, bootConfigURL string) error {
+	currentSha, _, _ := o.bootConfigRef(o.Dir, versionStreamURL, versionStreamRef, bootConfigURL)
+	upgradeSha, upgradeVersion, _ := o.bootConfigRef(o.Dir, versionStreamURL, "master", bootConfigURL)
+
+	// check if boot config upgrade available
+	if upgradeSha == currentSha {
+		log.Logger().Infof("No boot config upgrade available")
+		os.Exit(1)
+	} else {
+		log.Logger().Infof("boot config upgrade available!!!!")
+	}
+
+	configCloneDir, err := o.cloneBootConfig(bootConfigURL, upgradeVersion)
+	if err != nil {
+		return errors.Wrapf(err, "failed to clone boot config repo %s", bootConfigURL)
+	}
+
+	err = o.cherryPickCommits(o.Dir, configCloneDir, currentSha, upgradeSha, "upgrade_branch")
+	if err != nil {
+		return errors.Wrap(err, "failed to cherry pick upgrade commits")
+	}
+	return nil
+}
+
+func (o *BootUpgradeOptions) bootConfigRef(dir string, versionStreamURL string, versionStreamRef string, configURL string) (string, string, error) {
+	resolver, err := o.CreateVersionResolver(versionStreamURL, versionStreamRef)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "failed to create version resolver %s", configURL)
+	}
+	configVersion, err := resolver.ResolveGitVersion(configURL)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "failed to resolve config url %s", configURL)
+	}
+	currentCmtSha, err := o.Git().GetCommitPointedToByTag(dir, fmt.Sprintf("v%s", configVersion))
+	if err != nil {
+		return "", "", errors.Wrapf(err, "failed to get commit pointed to by %s", currentCmtSha)
+	}
+	return currentCmtSha, configVersion, nil
+}
+
+func (o *BootUpgradeOptions) cloneBootConfig(configURL string, configRef string) (string, error) {
+	cloneDir, err := ioutil.TempDir("", "")
+	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create directory: %s", cloneDir)
+	}
+
+	err = o.Git().Clone(configURL, cloneDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to clone git URL %s to directory %s", configURL, cloneDir)
+	}
+	return cloneDir, nil
+}
+
+func (o *BootUpgradeOptions) cherryPickCommits(dir, cloneDir, fromSha, toSha, branch string) error {
+	cmts := make([]gits.GitCommit, 0)
+	cmts, err := o.Git().GetCommits(cloneDir, fromSha, toSha)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get commits from %s", cloneDir)
+	}
+
+	for i := len(cmts) - 1; i >= 0; i-- {
+		commitSha := cmts[i].SHA
+		log.Logger().Infof("commit sha %s", commitSha)
+
+		err := o.Git().CherryPickTheirs(dir, commitSha)
+		if err != nil {
+			msg := fmt.Sprintf("commit %s is a merge but no -m option was given.", commitSha)
+			if !strings.Contains(err.Error(), msg) {
+				return errors.Wrapf(err, "cherry-picking %s", commitSha)
+			}
+		}
+	}
+	return nil
+}

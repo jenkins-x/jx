@@ -629,7 +629,7 @@ func (g *GitFake) CherryPick(dir string, commit string) error {
 	return nil
 }
 
-// CherryPick does a git cherry-pick of commit
+// CherryPickTheirs does a git cherry-pick of commit
 func (g *GitFake) CherryPickTheirs(dir string, commit string) error {
 	return nil
 }
