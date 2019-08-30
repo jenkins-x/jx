@@ -26,9 +26,10 @@ import (
 type BootOptions struct {
 	*opts.CommonOptions
 
-	Dir    string
-	GitURL string
-	GitRef string
+	Dir       string
+	GitURL    string
+	GitRef    string
+	StartStep string
 
 	// The bootstrap URL for the version stream. Once we have a jx-requirements.yaml files, we read that
 	VersionStreamURL string
@@ -46,12 +47,12 @@ var (
 		# create a kubernetes cluster via Terraform or via jx
 		jx create cluster gke --skip-installation
 
-		# lets get the GitOps repository source code
-		git clone https://github.com/jenkins-x/jenkins-x-boot-config.git my-jx-config
-		cd my-jx-config
-
 		# now lets boot up Jenkins X installing/upgrading whatever is needed
 		jx boot 
+
+		# if we have already booted and just want to apply some environment changes without 
+        # re-applying ingress and so forth we can start at the environment step:
+		jx boot --start-step install-env
 `)
 )
 
@@ -78,6 +79,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.GitRef, "git-ref", "", "", "override the Git ref for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-url as well")
 	cmd.Flags().StringVarP(&options.VersionStreamURL, "versions-repo", "", config.DefaultVersionsURL, "the bootstrap URL for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	cmd.Flags().StringVarP(&options.VersionStreamRef, "versions-ref", "", config.DefaultVersionsRef, "the bootstrap ref for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
+	cmd.Flags().StringVarP(&options.StartStep, "start-step", "s", "", "the step in the pipeline to start from")
 	return cmd
 }
 
@@ -259,6 +261,7 @@ func (o *BootOptions) Run() error {
 	so.CloneDir = o.Dir
 	so.InterpretMode = true
 	so.NoReleasePrepare = true
+	so.StartStep = o.StartStep
 	so.AdditionalEnvVars = map[string]string{
 		"JX_NO_TILLER":    "true",
 		"REPO_URL":        gitURL,

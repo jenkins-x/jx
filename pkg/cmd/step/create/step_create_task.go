@@ -85,6 +85,7 @@ type StepCreateTaskOptions struct {
 	NoApply           *bool
 	DryRun            bool
 	InterpretMode     bool
+	StartStep         string
 	Trigger           string
 	TargetPath        string
 	SourceName        string
@@ -166,6 +167,7 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().BoolVarP(&createTaskNoApply, noApplyOptionName, "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file, without side effects")
 	cmd.Flags().BoolVarP(&options.InterpretMode, "interpret", "", false, "Enable interpret mode. Rather than spinning up Tekton CRDs to create a Pod just invoke the commands in the current shell directly. Useful for bootstrapping installations of Jenkins X and tekton using a pipeline before you have installed Tekton.")
+	cmd.Flags().StringVarP(&options.StartStep, "start-step", "", "", "When in interpret mode this specifies the step to start at")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().BoolVarP(&options.EffectivePipeline, "effective-pipeline", "", false, "Just view the effective pipeline definition that would be created")
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
@@ -1322,19 +1324,39 @@ func (o *StepCreateTaskOptions) getClientsAndNamespace() (tektonclient.Interface
 }
 
 func (o *StepCreateTaskOptions) interpretPipeline(ns string, projectConfig *config.ProjectConfig, crds *tekton.CRDWrapper) error {
+	steps := []corev1.Container{}
 	for _, task := range crds.Tasks() {
-		steps := task.Spec.Steps
-		for _, step := range steps {
-			err := o.interpretStep(ns, task, &step)
-			if err != nil {
-				return err
+		steps = append(steps, task.Spec.Steps...)
+	}
+
+	if o.StartStep != "" {
+		found := false
+		for i, step := range steps {
+			if step.Name == o.StartStep {
+				found = true
+				steps = steps[i:]
+				break
 			}
+		}
+		if !found {
+			names := []string{}
+			for _, step := range steps {
+				names = append(names, step.Name)
+			}
+			return util.InvalidOption("start-step", o.StartStep, names)
+		}
+	}
+
+	for _, step := range steps {
+		err := o.interpretStep(ns, &step)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (o *StepCreateTaskOptions) interpretStep(ns string, task *pipelineapi.Task, step *corev1.Container) error {
+func (o *StepCreateTaskOptions) interpretStep(ns string, step *corev1.Container) error {
 	command := step.Command
 	if len(command) == 0 {
 		return nil
