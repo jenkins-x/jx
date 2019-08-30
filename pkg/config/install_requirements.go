@@ -425,23 +425,27 @@ func (c *RequirementsConfig) IsLazyCreateSecrets(flag string) (bool, error) {
 
 // addDefaults lets ensure any missing values have good defaults
 func (c *RequirementsConfig) addDefaults() {
-	if c.Webhook == WebhookTypeNone {
-		c.Webhook = WebhookTypeProw
-	}
 	if c.Cluster.Namespace == "" {
 		c.Cluster.Namespace = "jx"
 	}
-	if c.Cluster.GitKind == "" {
-		c.Cluster.GitKind = "github"
-	}
 	if c.Cluster.GitServer == "" {
 		c.Cluster.GitServer = "https://github.com"
+	}
+	if c.Cluster.GitKind == "" {
+		c.Cluster.GitKind = "github"
 	}
 	if c.Cluster.GitName == "" {
 		c.Cluster.GitName = c.Cluster.GitKind
 	}
 	if c.Ingress.NamespaceSubDomain == "" {
 		c.Ingress.NamespaceSubDomain = "-" + c.Cluster.Namespace + "."
+	}
+	if c.Webhook == WebhookTypeNone {
+		if c.Cluster.GitServer == "https://github.com" || c.Cluster.GitServer == "https://github.com/" {
+			c.Webhook = WebhookTypeProw
+		} else {
+			c.Webhook = WebhookTypeLighthouse
+		}
 	}
 }
 
