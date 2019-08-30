@@ -496,6 +496,11 @@ func (g *GitCLI) AddCommit(dir string, msg string) error {
 	return g.gitCmd(dir, "commit", "-a", "-m", msg, "--allow-empty")
 }
 
+// AddCommitFile perform an add and commit selected files from the repository at the given directory with the given messages
+func (g *GitCLI) AddCommitFile(dir string, msg string, file string) error {
+	return g.gitCmd(dir, "commit", "-m", msg, "--", file)
+}
+
 func (g *GitCLI) gitCmd(dir string, args ...string) error {
 	cmd := util.Command{
 		Dir:  dir,
@@ -822,6 +827,15 @@ func (g *GitCLI) GetCommitPointedToByLatestTag(dir string) (string, string, erro
 	return commitSHA, tagName, err
 }
 
+// GetCommitPointedToByTag return the SHA of the commit pointed to by the given git tag
+func (g *GitCLI) GetCommitPointedToByTag(dir string, tag string) (string, error) {
+	commitSHA, err := g.gitCmdWithOutput(dir, "rev-list", "-n", "1", tag)
+	if err != nil {
+		return "", errors.Wrapf(err, "running for git rev-list -n 1 %s", tag)
+	}
+	return commitSHA, err
+}
+
 // GetLatestCommitMessage returns the latest git commit message
 func (g *GitCLI) GetLatestCommitMessage(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "log", "-1", "--pretty=%B")
@@ -1104,4 +1118,9 @@ func (g *GitCLI) PushMirror(dir string, url string) error {
 // CherryPick does a git cherry-pick of commit
 func (g *GitCLI) CherryPick(dir string, commitish string) error {
 	return g.gitCmd(dir, "cherry-pick", commitish)
+}
+
+// CherryPickTheirs does a git cherry-pick of commit
+func (g *GitCLI) CherryPickTheirs(dir string, commitish string) error {
+	return g.gitCmd(dir, "cherry-pick", commitish, "--strategy=recursive", "-X", "theirs")
 }

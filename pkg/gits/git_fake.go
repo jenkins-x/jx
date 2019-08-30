@@ -426,6 +426,11 @@ func (g *GitFake) AddCommit(dir string, msg string) error {
 	return g.CommitIfChanges(dir, msg)
 }
 
+// AddCommitFile add a file to a  commit
+func (g *GitFake) AddCommitFile(dir string, msg string, file string) error {
+	return g.CommitIfChanges(dir, msg)
+}
+
 // HasChanges returns true if has changes in git
 func (g *GitFake) HasChanges(dir string) (bool, error) {
 	return g.Changes, nil
@@ -447,6 +452,15 @@ func (g *GitFake) GetCommitPointedToByLatestTag(dir string) (string, string, err
 		return "", "", errors.New("no current commit found")
 	}
 	return g.Commits[len-1].SHA, "", nil
+}
+
+// GetCommitPointedToByTag return the SHA of the commit pointed to by the given git tag
+func (g *GitFake) GetCommitPointedToByTag(dir string, tag string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("No commit found")
+	}
+	return g.Commits[len-1].SHA, nil
 }
 
 // GetLatestCommitMessage returns the last commit message
@@ -612,5 +626,10 @@ func (g *GitFake) GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitComm
 
 // CherryPick does a git cherry-pick of commit
 func (g *GitFake) CherryPick(dir string, commit string) error {
+	return nil
+}
+
+// CherryPick does a git cherry-pick of commit
+func (g *GitFake) CherryPickTheirs(dir string, commit string) error {
 	return nil
 }
