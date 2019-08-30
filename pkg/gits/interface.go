@@ -243,6 +243,7 @@ type Gitter interface {
 	Reset(dir string, commitish string, hard bool) error
 	RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error
 	CherryPick(dir string, commitish string) error
+	CherryPickTheirs(dir string, commitish string) error
 
 	StashPush(dir string) error
 	StashPop(dir string) error
@@ -255,6 +256,7 @@ type Gitter interface {
 	CommitIfChanges(dir string, message string) error
 	CommitDir(dir string, message string) error
 	AddCommit(dir string, msg string) error
+	AddCommitFile(dir string, msg string, file string) error
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)
 	ListChangedFilesFromBranch(dir string, branch string) (string, error)
@@ -263,6 +265,7 @@ type Gitter interface {
 	GetLatestCommitMessage(dir string) (string, error)
 	GetCommitPointedToByPreviousTag(dir string) (string, string, error)
 	GetCommitPointedToByLatestTag(dir string) (string, string, error)
+	GetCommitPointedToByTag(dir string, tag string) (string, error)
 	FetchTags(dir string) error
 	Tags(dir string) ([]string, error)
 	FilterTags(dir string, filter string) ([]string, error)
