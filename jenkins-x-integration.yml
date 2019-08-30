@@ -29,10 +29,10 @@ pipelineConfig:
                 resources:
                   limits:
                     cpu: 8
-                    memory: 8Gi
+                    memory: 16Gi
                   requests:
                     cpu: 4
-                    memory: 4Gi
+                    memory: 8Gi
             steps:
               - name: init-jx
                 image: gcr.io/jenkinsxio/builder-jx:0.1.639
