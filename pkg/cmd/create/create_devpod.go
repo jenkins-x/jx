@@ -423,7 +423,7 @@ func (o *CreateDevPodOptions) Run() error {
 			// disable input for replacing the version stream git repo
 			batch := o.BatchMode
 			o.BatchMode = true
-			resolver, err := o.CreateVersionResolver("", "")
+			resolver, err := o.GetVersionResolver()
 			if err != nil {
 				return err
 			}

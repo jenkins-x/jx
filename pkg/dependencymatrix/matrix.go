@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -118,6 +119,27 @@ type DependencyDetails struct {
 // KeyEquals validates that the key (Host, Owner, Repo and Component) are all the same
 func (d *DependencyDetails) KeyEquals(o v1.DependencyUpdateDetails) bool {
 	return d.Host == o.Host && d.Owner == o.Owner && d.Repo == o.Repo && d.Component == o.Component
+}
+
+// LoadDependencyMatrix loads the dependency matrix file from the given project directory
+func LoadDependencyMatrix(dir string) (*DependencyMatrix, error) {
+	dependencyMatrix := &DependencyMatrix{}
+	path := filepath.Join(dir, DependencyMatrixDirName, "matrix.yaml")
+	exists, err := util.FileExists(path)
+	if err != nil {
+		return dependencyMatrix, errors.Wrapf(err, "checking %s exists", path)
+	}
+	if exists {
+		data, err := ioutil.ReadFile(path)
+		if err != nil {
+			return dependencyMatrix, errors.Wrapf(err, "reading %s", path)
+		}
+		err = yaml.Unmarshal(data, &dependencyMatrix)
+		if err != nil {
+			return dependencyMatrix, errors.Wrapf(err, "unmarshaling %s", path)
+		}
+	}
+	return dependencyMatrix, nil
 }
 
 // UpdateDependencyMatrix updates the dependency matrix in dir/dependency-matrix using update

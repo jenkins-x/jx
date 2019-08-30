@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -73,16 +75,24 @@ func (o *VersionOptions) Run() error {
 	}
 
 	table.Render()
-
-	if !o.NoVersionCheck {
-		return o.upgradeCliIfNeeded()
-	}
 	if o.NoVerify {
 		return nil
 	}
-	versionResolver, err := o.CreateVersionResolver("", "")
+
+	log.Logger().Info("\n\nverifying packages")
+	versionResolver, err := o.GetVersionResolver()
 	if err != nil {
 		return err
+	}
+
+	if !o.NoVersionCheck {
+		err = o.upgradeCliIfNeeded(versionResolver)
+		if err != nil {
+			return err
+		}
+		// lets not verify the jx version as the current executing binary
+		// may have just been upgraded anyway and we've already warned the user if its old
+		delete(packages, "jx")
 	}
 
 	// lets remove any non-package name before verifying
@@ -91,28 +101,32 @@ func (o *VersionOptions) Run() error {
 	return versionResolver.VerifyPackages(packages)
 }
 
-func (o *VersionOptions) upgradeCliIfNeeded() error {
+func (o *VersionOptions) upgradeCliIfNeeded(resolver *versionstream.VersionResolver) error {
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
 		return errors.Wrap(err, "getting current jx version")
 	}
-	newVersion, err := o.GetLatestJXVersion()
+	newVersion, err := o.GetLatestJXVersion(resolver)
 	if err != nil {
 		return errors.Wrap(err, "getting latest jx version")
 	}
 	if currentVersion.LT(newVersion) {
 		app := util.ColorInfo("jx")
-		log.Logger().Warnf("\nA new %s version is available: %s", app, util.ColorInfo(newVersion.String()))
+		log.Logger().Info("\n")
+		log.Logger().Warnf("A different %s version %s is available in the version stream. We highly recommend you upgrade to it.", app, util.ColorInfo(newVersion.String()))
 		if o.BatchMode {
 			log.Logger().Warnf("To upgrade to this new version use: %s", util.ColorInfo("jx upgrade cli"))
 		} else {
-			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
+			log.Logger().Info("\n")
+			message := fmt.Sprintf("Would you like to upgrade to the %s version?", app)
 			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
 				options := &upgrade.UpgradeCLIOptions{
 					CreateOptions: create.CreateOptions{
 						CommonOptions: o.CommonOptions,
 					},
 				}
+				options.Version = newVersion.String()
+				options.NoBrew = true
 				return options.Run()
 			}
 		}
