@@ -683,6 +683,7 @@ func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.Require
 	return nil
 }
 
+// ValidateRequirements validate the requirements; e.g. the webhook and git provider
 func (o *StepVerifyPreInstallOptions) ValidateRequirements(requirements *config.RequirementsConfig, fileName string) error {
 	if requirements.Webhook == config.WebhookTypeProw {
 		kind := requirements.Cluster.GitKind
