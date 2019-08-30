@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/boot"
 
@@ -84,6 +85,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	requirements, err = o.gatherRequirements(requirements, requirementsFileName)
+	if err != nil {
+		return err
+	}
+
+	err = o.ValidateRequirements(requirements, requirementsFileName)
 	if err != nil {
 		return err
 	}
@@ -672,6 +678,17 @@ func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.Require
 		err := requirements.SaveConfig(requirementsFileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
+		}
+	}
+	return nil
+}
+
+func (o *StepVerifyPreInstallOptions) ValidateRequirements(requirements *config.RequirementsConfig, fileName string) error {
+	if requirements.Webhook == config.WebhookTypeProw {
+		kind := requirements.Cluster.GitKind
+		server := requirements.Cluster.GitServer
+		if (kind != "" && kind != "github") || (server != "" && !gits.IsGitHubServerURL(server)) {
+			return fmt.Errorf("invalid requirements in file %s cannot use prow as a webhook for git kind: %s server: %s. Please try using lighthouse instead", fileName, kind, server)
 		}
 	}
 	return nil
