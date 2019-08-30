@@ -31,6 +31,7 @@ var (
 	`)
 )
 
+// StepVerifyURLOptions options for step verify url command
 type StepVerifyURLOptions struct {
 	step.StepOptions
 
