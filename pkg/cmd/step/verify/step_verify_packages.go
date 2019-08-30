@@ -1,12 +1,19 @@
 package verify
 
 import (
+	"fmt"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -93,7 +100,15 @@ func (o *StepVerifyPackagesOptions) Run() error {
 		return errors.Wrapf(err, "failed to create version resolver")
 	}
 
+	// lets verify jx separately
+	delete(packages, "jx")
+
 	err = resolver.VerifyPackages(verifyMap)
+	if err != nil {
+		return err
+	}
+
+	err = o.verifyJXVersion(resolver)
 	if err != nil {
 		return err
 	}
@@ -101,5 +116,51 @@ func (o *StepVerifyPackagesOptions) Run() error {
 	log.Logger().Infof("the CLI packages seem to be setup correctly\n")
 	table.Render()
 
+	return nil
+}
+
+func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver *versionstream.VersionResolver) error {
+	currentVersion, err := version.GetSemverVersion()
+	if err != nil {
+		return errors.Wrap(err, "getting current jx version")
+	}
+	newVersion, err := o.GetLatestJXVersion(resolver)
+	if err != nil {
+		return errors.Wrap(err, "getting latest jx version")
+	}
+	info := util.ColorInfo
+	versionText := newVersion.String()
+
+	if currentVersion.EQ(newVersion) {
+		log.Logger().Infof("already using version %s of %s", info(versionText), info("jx"))
+		return nil
+	}
+
+	log.Logger().Info("\n")
+	log.Logger().Warnf("A different %s version %s is available in the version stream. We highly recommend you upgrade to it.", info("jx"), info(versionText))
+	if o.BatchMode {
+		log.Logger().Warnf("To upgrade to this new version use: %s then re-run %s", info("jx upgrade cli"), info("jx boot"))
+	} else {
+		log.Logger().Info("\n")
+		message := fmt.Sprintf("Would you like to upgrade to the %s version?", info("jx"))
+		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
+			options := &upgrade.UpgradeCLIOptions{
+				CreateOptions: create.CreateOptions{
+					CommonOptions: o.CommonOptions,
+				},
+			}
+			options.Version = versionText
+			options.NoBrew = true
+			err = options.Run()
+			if err != nil {
+				return err
+			}
+			log.Logger().Info("\n")
+			log.Logger().Warnf("the version of %s has been updated to %s. Please re-run: %s", info("jx"), info(versionText), info("jx boot"))
+			log.Logger().Info("\n")
+
+			return fmt.Errorf("the version of jx has been updated. Please re-run: jx boot")
+		}
+	}
 	return nil
 }
