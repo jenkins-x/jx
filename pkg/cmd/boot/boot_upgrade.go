@@ -76,22 +76,31 @@ func (o *BootUpgradeOptions) Run() error {
 		return err
 	}
 
-	err = o.updateVersionStreamRef(o.Dir, upgradeVersionSha)
+	bootConfigURL := determineBootConfigURL(reqsVersionStream.URL)
+	err = o.updateBootConfig(o.Dir, reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL)
 	if err != nil {
 		return err
 	}
 
-	err = o.updateBootConfig(o.Dir, reqsVersionStream.URL, reqsVersionStream.Ref, config.DefaultCloudBeesBootRepository)
+	err = o.updateVersionStreamRef(o.Dir, upgradeVersionSha)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
+func determineBootConfigURL(versionStreamURL string) string {
+	bootConfigURL := config.DefaultBootRepository
+	if versionStreamURL == config.DefaultCloudBeesVersionsURL {
+		bootConfigURL = config.DefaultCloudBeesBootRepository
+	}
+	return bootConfigURL
+}
+
 func (o *BootUpgradeOptions) requirementsVersionStream(dir string) (*config.VersionStreamConfig, error) {
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(dir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load requirements confif %s", requirementsFile)
+		return nil, fmt.Errorf("failed to load requirements config %s", requirementsFile)
 	}
 	exists, err := util.FileExists(requirementsFile)
 	if err != nil {
@@ -153,13 +162,24 @@ func (o *BootUpgradeOptions) updateVersionStreamRef(dir string, upgradeRef strin
 }
 
 func (o *BootUpgradeOptions) updateBootConfig(dir string, versionStreamURL string, versionStreamRef string, bootConfigURL string) error {
-	currentSha, _, _ := o.bootConfigRef(o.Dir, versionStreamURL, versionStreamRef, bootConfigURL)
-	upgradeSha, upgradeVersion, _ := o.bootConfigRef(o.Dir, versionStreamURL, "master", bootConfigURL)
+	err := o.Git().FetchBranch(o.Dir, bootConfigURL, "master")
+	if err != nil {
+		return fmt.Errorf("failed to fetch %s", bootConfigURL)
+	}
+
+	currentSha, _, err := o.bootConfigRef(o.Dir, versionStreamURL, versionStreamRef, bootConfigURL)
+	if err != nil {
+		return fmt.Errorf("failed to get boot config ref for version stream: %s", versionStreamRef)
+	}
+	upgradeSha, upgradeVersion, err := o.bootConfigRef(o.Dir, versionStreamURL, "master", bootConfigURL)
+	if err != nil {
+		return fmt.Errorf("failed to get boot config ref for version stream: master")
+	}
 
 	// check if boot config upgrade available
 	if upgradeSha == currentSha {
 		log.Logger().Infof("No boot config upgrade available")
-		os.Exit(1)
+		return nil
 	} else {
 		log.Logger().Infof("boot config upgrade available!!!!")
 	}
@@ -185,11 +205,11 @@ func (o *BootUpgradeOptions) bootConfigRef(dir string, versionStreamURL string, 
 	if err != nil {
 		return "", "", errors.Wrapf(err, "failed to resolve config url %s", configURL)
 	}
-	currentCmtSha, err := o.Git().GetCommitPointedToByTag(dir, fmt.Sprintf("v%s", configVersion))
+	cmtSha, err := o.Git().GetCommitPointedToByTag(dir, fmt.Sprintf("v%s", configVersion))
 	if err != nil {
-		return "", "", errors.Wrapf(err, "failed to get commit pointed to by %s", currentCmtSha)
+		return "", "", errors.Wrapf(err, "failed to get commit pointed to by %s", cmtSha)
 	}
-	return currentCmtSha, configVersion, nil
+	return cmtSha, configVersion, nil
 }
 
 func (o *BootUpgradeOptions) cloneBootConfig(configURL string, configRef string) (string, error) {
