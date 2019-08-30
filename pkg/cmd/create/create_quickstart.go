@@ -16,7 +16,6 @@ import (
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
@@ -104,59 +103,11 @@ func NewCmdCreateQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
-
-	var locations []v1.QuickStartLocation
-	if !o.IgnoreTeam {
-		jxClient, ns, err := o.JXClientAndDevNamespace()
-		if err != nil {
-			return err
-		}
-
-		locations, err = kube.GetQuickstartLocations(jxClient, ns)
-		if err != nil {
-			return err
-		}
-	}
-
-	// lets add any extra github organisations if they are not already configured
-	for _, org := range o.GitHubOrganisations {
-		found := false
-		for _, loc := range locations {
-			if loc.GitURL == gits.GitHubURL && loc.Owner == org {
-				found = true
-				break
-			}
-		}
-		if !found {
-			locations = append(locations, v1.QuickStartLocation{
-				GitURL:   gits.GitHubURL,
-				GitKind:  gits.KindGitHub,
-				Owner:    org,
-				Includes: []string{"*"},
-				Excludes: []string{"WIP-*"},
-			})
-		}
-	}
-
-	gitMap := map[string]map[string]v1.QuickStartLocation{}
-	for _, loc := range locations {
-		m := gitMap[loc.GitURL]
-		if m == nil {
-			m = map[string]v1.QuickStartLocation{}
-			gitMap[loc.GitURL] = m
-		}
-		m[loc.Owner] = loc
-	}
-
-	model, err := o.LoadQuickstartsFromMap(config, gitMap)
+	model, err := o.LoadQuickstartsModel(o.GitHubOrganisations, o.IgnoreTeam)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
+
 	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return err

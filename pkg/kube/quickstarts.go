@@ -31,10 +31,6 @@ func GetQuickstartLocations(jxClient versioned.Interface, ns string) ([]v1.Quick
 	if env == nil {
 		return answer, fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
-
 	answer = env.Spec.TeamSettings.QuickstartLocations
-	if len(answer) == 0 {
-		answer = DefaultQuickstartLocations
-	}
 	return answer, nil
 }
