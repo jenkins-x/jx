@@ -472,6 +472,13 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 	requirements.Cluster.ClusterName = strings.TrimSpace(strings.ToLower(requirements.Cluster.ClusterName))
 	requirements.Cluster.EnvironmentGitOwner = strings.TrimSpace(strings.ToLower(requirements.Cluster.EnvironmentGitOwner))
 
+	// lets fix up any missing or incorrect git kinds for public git servers
+	if gits.IsGitHubServerURL(requirements.Cluster.GitServer) {
+		requirements.Cluster.GitKind = "github"
+	} else if gits.IsGitLabServerURL(requirements.Cluster.GitServer) {
+		requirements.Cluster.GitKind = "gitlab"
+	}
+
 	requirements.SaveConfig(requirementsFileName)
 
 	if requirements.Cluster.EnvironmentGitPrivate {
