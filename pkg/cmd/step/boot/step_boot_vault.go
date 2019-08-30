@@ -94,11 +94,7 @@ func (o *StepBootVaultOptions) Run() error {
 	}
 
 	if requirements.Cluster.VaultName == "" {
-		systemVaultName, err := kubevault.SystemVaultName(o.Kube())
-		if err != nil {
-			return errors.Wrap(err, "building the system vault name from cluster name")
-		}
-		requirements.Cluster.VaultName = systemVaultName
+		requirements.Cluster.VaultName = kubevault.SystemVaultNameForCluster(requirements.Cluster.ClusterName)
 	}
 
 	noExposeVault, err := o.verifyVaultIngress(requirements, kubeClient, ns, requirements.Cluster.VaultName)

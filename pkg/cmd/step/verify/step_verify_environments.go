@@ -278,16 +278,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		if o.InCDPipeline() && o.InCluster() {
-			// Fail if there are local changes
-			diff, err := o.Git().Diff(o.Dir)
-			if err != nil {
-				return errors.Wrapf(err, "running git diff")
-			}
-			if diff != "" {
-				return errors.Errorf("There are local changes to the dev env:\n\n%s", diff)
-			}
-		} else {
+		if !o.InCDPipeline() && !o.InCluster() {
 			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, privateRepo, userAuth, requirements, server)
 			if err != nil {
 				return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
