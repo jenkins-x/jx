@@ -11,6 +11,7 @@ import (
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/secreturl"
@@ -41,7 +42,7 @@ import (
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -101,9 +102,11 @@ type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environm
 type CommonOptions struct {
 	prow.Prow
 
+	AdvancedMode           bool
 	Args                   []string
 	BatchMode              bool
 	Cmd                    *cobra.Command
+	ConfigFile             string
 	Domain                 string
 	Err                    io.Writer
 	ExternalJenkinsBaseURL string
@@ -111,6 +114,7 @@ type CommonOptions struct {
 	InstallDependencies    bool
 	ModifyDevEnvironmentFn ModifyDevEnvironmentFn
 	ModifyEnvironmentFn    ModifyEnvironmentFn
+	NameServers            []string
 	NoBrew                 bool
 	RemoteCluster          bool
 	Out                    terminal.FileWriter
@@ -139,15 +143,13 @@ type CommonOptions struct {
 	kuber                  kube.Kuber
 	modifyDevEnvironmentFn ModifyDevEnvironmentFn
 	modifyEnvironmentFn    ModifyEnvironmentFn
-	NameServers            []string
 	resourcesInstaller     resources.Installer
 	systemVaultClient      vault.Client
 	tektonClient           tektonclient.Interface
 	vaultClient            vault.Client
 	secretURLClient        secreturl.Client
 	vaultOperatorClient    vaultoperatorclient.Interface
-	AdvancedMode           bool
-	ConfigFile             string
+	versionResolver        *versionstream.VersionResolver
 }
 
 type ServerFlags struct {

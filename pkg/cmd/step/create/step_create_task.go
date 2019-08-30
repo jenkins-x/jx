@@ -238,7 +238,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.VersionResolver == nil {
-		o.VersionResolver, err = o.CreateVersionResolver("", "")
+		o.VersionResolver, err = o.GetVersionResolver()
 		if err != nil {
 			return errors.Wrap(err, "Unable to create version resolver")
 		}

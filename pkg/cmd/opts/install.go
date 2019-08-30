@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud/openshift"
+	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 
 	"github.com/jenkins-x/jx/pkg/virtualmachines/hyperkit"
 
@@ -534,7 +535,24 @@ func (o *CommonOptions) InstallTerraform() error {
 }
 
 // GetLatestJXVersion returns latest jx version
-func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
+func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolver) (semver.Version, error) {
+	dir := resolver.VersionsDir
+	matrix, err := dependencymatrix.LoadDependencyMatrix(dir)
+	if err != nil {
+		return semver.Version{}, errors.Wrapf(err, "failed to load dependency matrix from version stream at %s", dir)
+	}
+	for _, dep := range matrix.Dependencies {
+		if dep.Host == "github.com" && dep.Owner == "jenkins-x" && dep.Repo == "jx" {
+			v := dep.Version
+			if v == "" {
+				return semver.Version{}, fmt.Errorf("no version specified in the dependency matrix for version stream at %s", dir)
+			}
+			log.Logger().Debugf("found version %s of jx from the version stream", v)
+			return semver.Make(v)
+		}
+	}
+	log.Logger().Warnf("could not find the version of jx in the dependency matrix of the version stream at %s", dir)
+
 	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
 		err := o.InstallRequirements(cloud.GKE)
 		if err != nil {

@@ -144,7 +144,7 @@ func (o *StepSyntaxEffectiveOptions) Run() error {
 		o.DefaultImage = syntax.DefaultContainerImage
 	}
 	if o.VersionResolver == nil {
-		o.VersionResolver, err = o.CreateVersionResolver("", "")
+		o.VersionResolver, err = o.GetVersionResolver()
 		if err != nil {
 			return err
 		}

@@ -22,6 +22,20 @@ func (o *CommonOptions) CreateVersionResolver(repo string, gitRef string) (*vers
 	}, nil
 }
 
+// GetVersionResolver gets a VersionResolver, lazy creating one if required so we can reuse it later
+func (o *CommonOptions) GetVersionResolver() (*versionstream.VersionResolver, error) {
+	var err error
+	if o.versionResolver == nil {
+		o.versionResolver, err = o.CreateVersionResolver("", "")
+	}
+	return o.versionResolver, err
+}
+
+// SetVersionResolver gets a VersionResolver, lazy creating one if required
+func (o *CommonOptions) SetVersionResolver(resolver *versionstream.VersionResolver) {
+	o.versionResolver = resolver
+}
+
 // GetPackageVersions returns the package versions and a table if they need to be rendered
 func (o *CommonOptions) GetPackageVersions(ns string, helmTLS bool) (map[string]string, table.Table) {
 	info := util.ColorInfo
