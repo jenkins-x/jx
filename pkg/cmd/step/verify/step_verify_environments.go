@@ -278,7 +278,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		if !o.InCDPipeline() && !o.InCluster() {
+		if !o.InCluster() {
 			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, privateRepo, userAuth, requirements, server)
 			if err != nil {
 				return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
