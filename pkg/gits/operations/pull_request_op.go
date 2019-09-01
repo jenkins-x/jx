@@ -460,9 +460,20 @@ func CreatePullRequestRegexFn(version string, regex string, files ...string) (Ch
 // CreatePullRequestBuildersFn creates the ChangeFilesFn that will update the gcr.io/jenkinsxio/builder-*.yml images
 func CreatePullRequestBuildersFn(version string) ChangeFilesFn {
 	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-		answer, err := versionstream.UpdateStableVersionFiles(filepath.Join(dir, string(versionstream.KindDocker), "gcr.io", "jenkinsxio", "builder-*.yml"), version, "builder-base.yml")
+		answer, err := versionstream.UpdateStableVersionFiles(filepath.Join(dir, string(versionstream.KindDocker), "gcr.io", "jenkinsxio", "builder-*.yml"), version, "builder-base.yml", "builder-machine-learning.yml", "builder-machine-learning-gpu.yml")
 		if err != nil {
 			return nil, errors.Wrap(err, "modifying the builder-*.yml image versions")
+		}
+		return answer, nil
+	}
+}
+
+// CreatePullRequestMLBuildersFn creates the ChangeFilesFn that will update the gcr.io/jenkinsxio/builder-machine-learning*.yml images
+func CreatePullRequestMLBuildersFn(version string) ChangeFilesFn {
+	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		answer, err := versionstream.UpdateStableVersionFiles(filepath.Join(dir, string(versionstream.KindDocker), "gcr.io", "jenkinsxio", "builder-machine-learning*.yml"), version)
+		if err != nil {
+			return nil, errors.Wrap(err, "modifying the builder-machine-learning*.yml image versions")
 		}
 		return answer, nil
 	}

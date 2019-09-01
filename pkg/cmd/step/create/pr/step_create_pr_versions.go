@@ -160,6 +160,24 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			return errors.WithStack(err)
 		}
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", fn))
+
+		// Machine learning builders have to be handled separately
+		mlBuilderImageVersion, err := findLatestMLBuilderImageVersion()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		log.Logger().Infof("the latest machine learning builder image version is %s\n", util.ColorInfo(mlBuilderImageVersion))
+		mlPro := operations.PullRequestOperation{
+			CommonOptions: o.CommonOptions,
+			GitURLs:       o.GitURLs,
+			SrcGitURL:     "https://github.com/jenkins-x/jenkins-x-builders-ml.git",
+			Base:          o.Base,
+			BranchName:    o.BranchName,
+			Version:       mlBuilderImageVersion,
+			DryRun:        o.DryRun,
+		}
+		modifyFns = append(modifyFns, mlPro.WrapChangeFilesWithCommitFn("versions", operations.CreatePullRequestMLBuildersFn(mlBuilderImageVersion)))
 	}
 	if len(o.Includes) > 0 {
 		for _, kind := range o.Kinds {
@@ -215,10 +233,18 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 }
 
 func findLatestBuilderImageVersion() (string, error) {
+	return findLatestImageVersion("gcr.io/jenkinsxio/builder-maven")
+}
+
+func findLatestMLBuilderImageVersion() (string, error) {
+	return findLatestImageVersion("gcr.io/jenkinsxio/builder-machine-learning")
+}
+
+func findLatestImageVersion(image string) (string, error) {
 	cmd := util.Command{
 		Name: "gcloud",
 		Args: []string{
-			"container", "images", "list-tags", "gcr.io/jenkinsxio/builder-maven", "--format", "json",
+			"container", "images", "list-tags", image, "--format", "json",
 		},
 	}
 	output, err := cmd.RunWithoutRetry()
