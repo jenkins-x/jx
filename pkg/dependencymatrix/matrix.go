@@ -242,6 +242,7 @@ func GenerateMarkdownDependencyMatrix(path string, matrix DependencyMatrix) erro
 		for k, v := range mismatchedVersionsMap {
 			mismatchedVersions = append(mismatchedVersions, fmt.Sprintf("**%s**: %s", k, strings.Join(v, ";")))
 		}
+		sort.Strings(mismatchedVersions)
 		componentStr := ""
 		if d.Component != "" {
 			componentStr = fmt.Sprintf(":%s", d.Component)
