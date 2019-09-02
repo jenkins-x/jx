@@ -91,7 +91,7 @@ func NewQuickstartModel() *QuickstartModel {
 	}
 }
 
-// SortedKeys returns the sorted names of the quickstarts
+// SortedNames returns the sorted names of the quickstarts
 func (model *QuickstartModel) SortedNames() []string {
 	names := []string{}
 	for name := range model.Quickstarts {
