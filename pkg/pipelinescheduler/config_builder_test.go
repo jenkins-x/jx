@@ -64,6 +64,19 @@ func TestWithParent(t *testing.T) {
 		})
 }
 
+func TestNoPostSubmitsWithParent(t *testing.T) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testhelpers.BuildAndValidateProwConfig(t, filepath.Join(wd, "test_data", "no_postsubmits_with_parent"), "config.yaml",
+		"plugins.yaml", []testhelpers.SchedulerFile{
+			{
+				Filenames: []string{"parent.yaml", "repo.yaml"},
+				Org:       "acme",
+				Repo:      "dummy",
+			},
+		})
+}
+
 func TestPolicyWithParent(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
