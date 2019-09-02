@@ -353,7 +353,7 @@ func (o *StepCreateTaskOptions) Run() error {
 			return errors.Wrapf(err, "Failed to output Tekton CRDs")
 		}
 	} else {
-		activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, pr)
+		activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, o.Context, pr)
 
 		log.Logger().Debugf(" PipelineActivity for %s created successfully", tektonCRDs.Name())
 

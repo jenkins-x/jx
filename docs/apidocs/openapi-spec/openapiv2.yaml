@@ -1334,6 +1334,8 @@ definitions:
         type: string
       completedTimestamp:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+      context:
+        type: string
       gitBranch:
         type: string
       gitOwner:

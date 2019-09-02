@@ -453,6 +453,7 @@ func TestCreatePipelineDetails(t *testing.T) {
 	expectedBranch := "master"
 	expectedPipeline := expectedGitOwner + "/" + expectedGitRepo + "/" + expectedBranch
 	expectedBuild := "3"
+	expectedContext := "release"
 
 	pipelines := []*v1.PipelineActivity{
 		{
@@ -472,6 +473,7 @@ func TestCreatePipelineDetails(t *testing.T) {
 				GitOwner:      expectedGitOwner,
 				GitRepository: expectedGitRepo,
 				Build:         expectedBuild,
+				Context:       expectedContext,
 			},
 		},
 	}
@@ -484,6 +486,9 @@ func TestCreatePipelineDetails(t *testing.T) {
 			assert.Equal(t, expectedBranch, d1.BranchName, "%s BranchName", name)
 			assert.Equal(t, expectedPipeline, d1.Pipeline, "%s Pipeline", name)
 			assert.Equal(t, expectedBuild, d1.Build, "%s Build", name)
+			if pipeline.Spec.Context != "" {
+				assert.Equal(t, expectedContext, d1.Context, "%s Context", name)
+			}
 		}
 	}
 }

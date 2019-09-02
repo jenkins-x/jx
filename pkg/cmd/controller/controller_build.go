@@ -398,6 +398,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 			LastCommitMessage: buildInfo.LastCommitMessage,
 			LastCommitURL:     buildInfo.LastCommitURL,
 			GitInfo:           buildInfo.GitInfo,
+			Context:           buildInfo.Context,
 		},
 	}
 }
@@ -501,6 +502,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKeyFromRun(pri *tekton
 			LastCommitMessage: pri.LastCommitMessage,
 			LastCommitURL:     pri.LastCommitURL,
 			GitInfo:           pri.GitInfo,
+			Context:           pri.Context,
 		},
 	}
 }

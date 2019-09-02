@@ -33,6 +33,7 @@ type PipelineActivityKey struct {
 	LastCommitURL     string
 	GitInfo           *gits.GitRepository
 	PullRefs          map[string]string
+	Context           string
 }
 
 func (k *PipelineActivityKey) IsValid() bool {
@@ -63,6 +64,7 @@ type PipelineDetails struct {
 	BranchName    string
 	Pipeline      string
 	Build         string
+	Context       string
 }
 
 // PipelineID is an identifier for a Pipeline.
@@ -106,6 +108,7 @@ func CreatePipelineDetails(activity *v1.PipelineActivity) *PipelineDetails {
 	repoName := spec.GitRepository
 	buildNumber := spec.Build
 	branchName := ""
+	context := spec.Context
 	pipeline := spec.Pipeline
 	if pipeline != "" {
 		paths := strings.Split(pipeline, "/")
@@ -131,6 +134,7 @@ func CreatePipelineDetails(activity *v1.PipelineActivity) *PipelineDetails {
 		BranchName:    branchName,
 		Pipeline:      pipeline,
 		Build:         buildNumber,
+		Context:       context,
 	}
 }
 
@@ -482,6 +486,9 @@ func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
 	}
 	if k.Version != "" && spec.Version == "" {
 		spec.Version = k.Version
+	}
+	if k.Context != "" && spec.Context == "" {
+		spec.Context = k.Context
 	}
 	gi := k.GitInfo
 	if gi != nil {

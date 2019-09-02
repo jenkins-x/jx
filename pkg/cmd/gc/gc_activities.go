@@ -175,8 +175,8 @@ func (o *GCActivitiesOptions) Run() error {
 			continue
 		}
 
-		repoAndBranchName := a.RepositoryOwner() + "/" + a.RepositoryName() + "/" + a.BranchName()
-		c := counters.AddBuild(repoAndBranchName, isPR)
+		repoBranchAndContext := a.RepositoryOwner() + "/" + a.RepositoryName() + "/" + a.BranchName() + "/" + a.Spec.Context
+		c := counters.AddBuild(repoBranchAndContext, isPR)
 		if c > revisionHistory && a.Spec.CompletedTimestamp != nil {
 			err = o.deleteActivity(activityInterface, &a)
 			if err != nil {
