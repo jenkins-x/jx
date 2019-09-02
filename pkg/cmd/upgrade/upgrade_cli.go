@@ -16,7 +16,9 @@ import (
 
 var (
 	upgradeCLILong = templates.LongDesc(`
-		Upgrades the Jenkins X command line tools if there is a new version available in the version stream
+		Upgrades the Jenkins X command line tools if there is a different version stored in the version stream.
+
+		The exact version used for the version stream is stored in the Team Settings on the 'dev' Environment CRD.
 
 		For more information on Version Streams see: [https://jenkins-x.io/architecture/version-stream/](https://jenkins-x.io/architecture/version-stream/)
 `)

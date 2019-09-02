@@ -132,7 +132,7 @@ func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver *versionstream.Vers
 	versionText := newVersion.String()
 
 	if currentVersion.EQ(newVersion) {
-		log.Logger().Infof("already using version %s of %s", info(versionText), info("jx"))
+		log.Logger().Infof("using version %s of %s", info(versionText), info("jx"))
 		return nil
 	}
 

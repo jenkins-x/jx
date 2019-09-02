@@ -113,7 +113,7 @@ func (o *VersionOptions) upgradeCliIfNeeded(resolver *versionstream.VersionResol
 	if currentVersion.LT(newVersion) {
 		app := util.ColorInfo("jx")
 		log.Logger().Info("\n")
-		log.Logger().Warnf("A different %s version %s is available in the version stream. We highly recommend you upgrade to it.", app, util.ColorInfo(newVersion.String()))
+		log.Logger().Warnf("%s version %s is available in the version stream. We highly recommend you upgrade to it.", app, util.ColorInfo(newVersion.String()))
 		if o.BatchMode {
 			log.Logger().Warnf("To upgrade to this new version use: %s", util.ColorInfo("jx upgrade cli"))
 		} else {
