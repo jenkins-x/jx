@@ -48,14 +48,20 @@ func NewCmdStepVerifyInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().BoolVarP(&options.Debug, "debug", "", false, "Output logs of any failed pod")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the install requirements file")
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults  to cluster.namespace in jx-requirements.yaml or $DEPLOY_NAMESPACE")
 	cmd.Flags().DurationVarP(&options.PodWaitDuration, "pod-wait-time", "w", time.Second, "The default wait time to wait for the pods to be ready")
 	return cmd
 }
 
 // Run implements this command
 func (o *StepVerifyInstallOptions) Run() error {
-	ns, err := o.GetDeployNamespace(o.Namespace)
+
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return err
+	}
+
+	ns, err := o.GetDeployNamespace(o.Namespace, requirements)
 	if err != nil {
 		return err
 	}
@@ -82,10 +88,6 @@ func (o *StepVerifyInstallOptions) Run() error {
 		return err
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
-	if err != nil {
-		return err
-	}
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
