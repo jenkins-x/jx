@@ -21,16 +21,16 @@ const (
 )
 
 // GitQuickstart returns a github based quickstart
-func GitQuickstart(provider gits.GitProvider, owner string, repo string, language string, framework string, tags ...string) *Quickstart {
-	u := provider.BranchArchiveURL(owner, repo, "master")
+func GitQuickstart(provider gits.GitProvider, owner string, repo string, version string, downloadURL string, language string, framework string, tags ...string) *Quickstart {
 	return &Quickstart{
 		ID:             owner + "/" + repo,
 		Owner:          owner,
 		Name:           repo,
+		Version:        version,
 		Language:       language,
 		Framework:      framework,
 		Tags:           tags,
-		DownloadZipURL: u,
+		DownloadZipURL: downloadURL,
 		GitProvider:    provider,
 	}
 }
@@ -40,7 +40,33 @@ func toGitHubQuickstart(provider gits.GitProvider, owner string, repo *gits.GitR
 	// TODO find this from GitHub???
 	framework := ""
 	tags := []string{}
-	return GitQuickstart(provider, owner, repo.Name, language, framework, tags...)
+
+	branch := "master"
+	repoName := repo.Name
+	gitCommits, err := provider.ListCommits(owner, repoName, &gits.ListCommitsArguments{
+		SHA:     branch,
+		Page:    1,
+		PerPage: 1,
+	})
+	version := ""
+	u := ""
+	if err != nil {
+		log.Logger().Warnf("failed to load commits on branch %s for repo %s/%s due to: %s", branch, owner, repoName, err.Error())
+	} else if len(gitCommits) > 0 {
+		commit := gitCommits[0]
+		sha := commit.ShortSha()
+		version = QuickStartVersion(sha)
+		u = provider.BranchArchiveURL(owner, repoName, sha)
+	}
+	if u == "" {
+		u = provider.BranchArchiveURL(owner, repoName, "master")
+	}
+	return GitQuickstart(provider, owner, repoName, version, u, language, framework, tags...)
+}
+
+// QuickStartVersion creates a quickstart version string
+func QuickStartVersion(sha string) string {
+	return "1.0.0+" + sha
 }
 
 // LoadGithubQuickstarts Loads quickstarts from github
@@ -63,6 +89,16 @@ func NewQuickstartModel() *QuickstartModel {
 	return &QuickstartModel{
 		Quickstarts: map[string]*Quickstart{},
 	}
+}
+
+// SortedKeys returns the sorted names of the quickstarts
+func (model *QuickstartModel) SortedNames() []string {
+	names := []string{}
+	for name := range model.Quickstarts {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // Add adds the given quickstart to this mode. Returns true if it was added
@@ -144,7 +180,8 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 // Filter filters all the available quickstarts with the filter and return the matches
 func (model *QuickstartModel) Filter(filter *QuickstartFilter) []*Quickstart {
 	answer := []*Quickstart{}
-	for _, q := range model.Quickstarts {
+	for _, name := range model.SortedNames() {
+		q := model.Quickstarts[name]
 		if filter.Matches(q) {
 			// If the filter matches a quickstart name exactly, return only that quickstart
 			if q.Name == filter.Text {

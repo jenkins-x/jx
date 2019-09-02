@@ -8,6 +8,7 @@ type Quickstart struct {
 	ID             string
 	Owner          string
 	Name           string
+	Version        string
 	Language       string
 	Framework      string
 	Tags           []string

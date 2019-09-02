@@ -61,6 +61,7 @@ func (model *QuickstartModel) convertToQuickStart(from *versionstream.QuickStart
 	to.ID = s(to.ID, from.ID)
 	to.Owner = s(to.Owner, from.Owner)
 	to.Name = s(to.Name, from.Name)
+	to.Version = s(to.Version, from.Version)
 	to.DownloadZipURL = s(to.DownloadZipURL, from.DownloadZipURL)
 	to.Framework = s(to.Framework, from.Framework)
 	to.Language = s(to.Language, from.Language)

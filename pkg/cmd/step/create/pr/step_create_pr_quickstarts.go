@@ -7,7 +7,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits/operations"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -84,46 +87,101 @@ func (o *StepCreatePullRequestQuickStartsOptions) ValidateQuickStartsOptions() e
 
 // Run implements this command
 func (o *StepCreatePullRequestQuickStartsOptions) Run() error {
-	if err := o.ValidateQuickStartsOptions(); err != nil {
-		return errors.WithStack(err)
-	}
-
 	authConfig := auth.NewMemoryAuthConfigService()
 	model, err := o.LoadQuickStartsFromLocations([]v1.QuickStartLocation{o.Location}, authConfig.Config())
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
 
-	err = o.CreatePullRequest("quickStarts",
-		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+	found := model.Quickstarts
+	if len(found) == 0 {
+		log.Logger().Warnf("did not find any quickstarts for the location %#v", o.Location)
+		return nil
+	}
+
+	for _, q := range model.Quickstarts {
+		o.SrcGitURL = o.SourceGitURL(q)
+		break
+	}
+
+	if err := o.ValidateQuickStartsOptions(); err != nil {
+		return errors.WithStack(err)
+	}
+
+	type Change struct {
+		Pro        operations.PullRequestOperation
+		QuickStart quickstarts.Quickstart
+		ChangeFn   func(from *quickstarts.Quickstart, dir string, gitInfo *gits.GitRepository) ([]string, error)
+	}
+
+	modifyFns := []Change{}
+	for _, name := range model.SortedNames() {
+		q := model.Quickstarts[name]
+		if q == nil {
+			continue
+		}
+		version := q.Version
+		o.SrcGitURL = o.SourceGitURL(q)
+
+		pro := operations.PullRequestOperation{
+			CommonOptions: o.CommonOptions,
+			GitURLs:       o.GitURLs,
+			SrcGitURL:     o.SrcGitURL,
+			Base:          o.Base,
+			BranchName:    o.BranchName,
+			Version:       version,
+			DryRun:        o.DryRun,
+		}
+
+		callback := func(from *quickstarts.Quickstart, dir string, gitInfo *gits.GitRepository) ([]string, error) {
 			quickstarts, err := versionstream.GetQuickStarts(dir)
 			if err != nil {
 				return nil, errors.Wrapf(err, "loading quickstarts from version stream in dir %s", dir)
 			}
-
 			if quickstarts.DefaultOwner == "" {
 				quickstarts.DefaultOwner = o.Location.Owner
 			}
-			err = o.combineQuickStartsFoundFromGit(quickstarts, model)
-			if err != nil {
-				return nil, err
-			}
+			o.upsertQuickStart(from, quickstarts)
 			err = versionstream.SaveQuickStarts(dir, quickstarts)
 			if err != nil {
 				return nil, errors.Wrapf(err, "saving quickstarts to the version stream in dir %s", dir)
 			}
 			return nil, nil
+		}
+
+		modifyFns = append(modifyFns, Change{
+			QuickStart: *q,
+			ChangeFn:   callback,
+			Pro:        pro,
 		})
-	if err != nil {
-		return errors.WithStack(err)
 	}
-	return nil
+
+	o.SrcGitURL = ""    // there is no src url for the overall PR
+	o.SkipCommit = true // As we've done all the commits already
+	return o.CreatePullRequest("versionstream", func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		for _, fn := range modifyFns {
+			changeFn := fn.Pro.WrapChangeFilesWithCommitFn("quickstart", func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+				return fn.ChangeFn(&fn.QuickStart, dir, gitInfo)
+			})
+			_, err := changeFn(dir, gitInfo)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
+		return nil, nil
+	})
 }
 
-func (o *StepCreatePullRequestQuickStartsOptions) combineQuickStartsFoundFromGit(qs *versionstream.QuickStarts, model *quickstarts.QuickstartModel) error {
+func (o *StepCreatePullRequestQuickStartsOptions) upsertQuickStart(from *quickstarts.Quickstart, qs *versionstream.QuickStarts) {
 	upsert := func(from *quickstarts.Quickstart, to *versionstream.QuickStart) {
 		if to.Name == "" {
 			to.Name = from.Name
+		}
+		if from.Version != "" {
+			to.Version = from.Version
+		}
+		if from.DownloadZipURL != "" {
+			to.DownloadZipURL = from.DownloadZipURL
 		}
 		if from.Language != "" {
 			to.Language = from.Language
@@ -135,23 +193,30 @@ func (o *StepCreatePullRequestQuickStartsOptions) combineQuickStartsFoundFromGit
 			to.Tags = from.Tags
 		}
 	}
-
-	for _, from := range model.Quickstarts {
-		found := false
-		for _, to := range qs.QuickStarts {
-			if from.Name == to.Name {
-				if from.Owner == to.Owner || (from.Owner == qs.DefaultOwner && to.Owner == "") {
-					upsert(from, to)
-					found = true
-				}
-
+	found := false
+	for _, to := range qs.QuickStarts {
+		if from.Name == to.Name {
+			if from.Owner == to.Owner || (from.Owner == qs.DefaultOwner && to.Owner == "") {
+				upsert(from, to)
+				found = true
 			}
-		}
-		if !found {
-			to := &versionstream.QuickStart{}
-			upsert(from, to)
-			qs.QuickStarts = append(qs.QuickStarts, to)
+
 		}
 	}
-	return nil
+	if !found {
+		to := &versionstream.QuickStart{}
+		upsert(from, to)
+		qs.QuickStarts = append(qs.QuickStarts, to)
+
+		// lets sort the quickstarts in name order
+		qs.Sort()
+	}
+}
+
+func (o *StepCreatePullRequestQuickStartsOptions) SourceGitURL(qs *quickstarts.Quickstart) string {
+	owner := qs.Owner
+	if owner == "" {
+		owner = o.Location.Owner
+	}
+	return util.UrlJoin(o.Location.GitURL, owner, qs.Name) + ".git"
 }
