@@ -96,8 +96,8 @@ func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Dry run mode. If enabled just list the resources that would be removed")
 	cmd.Flags().IntVarP(&options.ReleaseHistoryLimit, "release-history-limit", "l", 5, "Maximum number of PipelineActivities and PipelineRuns to keep around per repository release")
 	cmd.Flags().IntVarP(&options.PullRequestHistoryLimit, "pr-history-limit", "", 2, "Minimum number of PipelineActivities and PipelineRuns to keep around per repository Pull Request")
-	cmd.Flags().DurationVarP(&options.ReleaseAgeLimit, "pull-request-age", "p", time.Hour*48, "Maximum age to keep PipelineActivities and PipelineRun's for Pull Requests")
-	cmd.Flags().DurationVarP(&options.PullRequestAgeLimit, "release-age", "r", time.Hour*24*30, "Maximum age to keep PipelineActivities and PipelineRun's for Releases")
+	cmd.Flags().DurationVarP(&options.PullRequestAgeLimit, "pull-request-age", "p", time.Hour*48, "Maximum age to keep PipelineActivities and PipelineRun's for Pull Requests")
+	cmd.Flags().DurationVarP(&options.ReleaseAgeLimit, "release-age", "r", time.Hour*24*30, "Maximum age to keep PipelineActivities and PipelineRun's for Releases")
 	return cmd
 }
 
