@@ -734,7 +734,7 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 				data[vaultKey] = value
 				_, err = o.VaultClient.Write(vaultPath, data)
 				if err != nil {
-					return errors.Wrapf(err, "failed to write to vaultPath %s with data %#v", vaultPath, data)
+					return errors.Wrapf(err, "failed to write to vaultPath %s", vaultPath)
 				}
 			} else {
 				log.Logger().Warnf("Need to store a secret for %s but no secret store configured", name)
