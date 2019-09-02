@@ -316,7 +316,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 			sr, err := kube.GetOrCreateSourceRepository(jxClient, devNs, gitInfo.Name, gitInfo.Organisation, gitInfo.HostURLWithoutUser())
 			log.Logger().Debugf("have SourceRepository: %s\n", sr.Name)
 
-			err = o.GenerateProwConfig(devNs, devEnv, sr)
+			err = o.GenerateProwConfig(devNs, devEnv)
 			if err != nil {
 				return err
 			}

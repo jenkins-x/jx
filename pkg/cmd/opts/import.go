@@ -209,7 +209,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 }
 
 // GenerateProwConfig regenerates the Prow configurations after we have created a SourceRepository
-func (o *CommonOptions) GenerateProwConfig(currentNamespace string, devEnv *v1.Environment, sr *v1.SourceRepository) error {
+func (o *CommonOptions) GenerateProwConfig(currentNamespace string, devEnv *v1.Environment) error {
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -222,13 +222,13 @@ func (o *CommonOptions) GenerateProwConfig(currentNamespace string, devEnv *v1.E
 	defaultSchedulerName := devEnv.Spec.TeamSettings.DefaultScheduler.Name
 	config, plugins, err := pipelinescheduler.GenerateProw(false, true, jxClient, currentNamespace, defaultSchedulerName, devEnv, nil)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update the Prow 'config' and 'plugins' ConfigMaps after adding the new SourceRepository %s", sr.Name)
+		return errors.Wrapf(err, "failed to update the Prow 'config' and 'plugins' ConfigMaps when regenerating prow config from source repositories")
 	}
 	err = pipelinescheduler.ApplyDirectly(kubeClient, currentNamespace, config, plugins)
 	if err != nil {
 		return errors.Wrapf(err, "applying Prow config in namespace %s", currentNamespace)
 	}
-	log.Logger().Infof("regenerated Prow configuration with the extra SourceRepository: %s\n", util.ColorInfo(sr.Name))
+	log.Logger().Infof("regenerated Prow configuration")
 	return nil
 }
 
