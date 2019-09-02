@@ -43,7 +43,7 @@ func (s PipelineType) String() string {
 }
 
 // GeneratePipelineActivity generates a initial PipelineActivity CRD so UI/get act can get an earlier notification that the jobs have been scheduled
-func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, pr *prow.PullRefs) *kube.PromoteStepActivityKey {
+func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, context string, pr *prow.PullRefs) *kube.PromoteStepActivityKey {
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
@@ -54,6 +54,7 @@ func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.G
 			Pipeline: pipeline,
 			Build:    buildNumber,
 			GitInfo:  gitInfo,
+			Context:  context,
 		},
 	}
 

@@ -3533,6 +3533,12 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BatchPipelineActivity"),
 						},
 					},
+					"context": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},

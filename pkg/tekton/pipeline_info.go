@@ -474,7 +474,7 @@ func (pri *PipelineRunInfo) MatchesPipeline(activity *v1.PipelineActivity) bool 
 	if d == nil {
 		return false
 	}
-	return d.GitOwner == pri.Organisation && d.GitRepository == pri.Repository && d.Build == pri.Build && strings.ToLower(d.BranchName) == strings.ToLower(pri.Branch)
+	return d.GitOwner == pri.Organisation && d.GitRepository == pri.Repository && d.Build == pri.Build && strings.ToLower(d.BranchName) == strings.ToLower(pri.Branch) && d.Context == pri.Context
 }
 
 // Status returns the build status

@@ -278,7 +278,7 @@ func (b *BuildPodInfo) MatchesPipeline(activity *v1.PipelineActivity) bool {
 	if d == nil {
 		return false
 	}
-	return d.GitOwner == b.Organisation && d.GitRepository == b.Repository && d.Build == b.Build && strings.ToLower(d.BranchName) == strings.ToLower(b.Branch)
+	return d.GitOwner == b.Organisation && d.GitRepository == b.Repository && d.Build == b.Build && strings.ToLower(d.BranchName) == strings.ToLower(b.Branch) && d.Context == b.Context
 }
 
 // Status returns the build status
