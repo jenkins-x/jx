@@ -16,7 +16,7 @@ const (
 // InstallGenAPIDocs installs the gen-apidocs tool from the kubernetes-incubator/reference-docs repository.
 func InstallGenAPIDocs(version string, gopath string) error {
 	util.AppLogger().Infof("installing %s in version %s via 'go get'", genAPIDocsBin, version)
-	err := util.GoGet(genAPIDocsBin, version, gopath, true, false)
+	err := util.GoGet(genAPIDocsBin, version, gopath, true, false, true)
 	if err != nil {
 		return err
 	}

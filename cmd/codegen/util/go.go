@@ -66,7 +66,7 @@ func EnsureGoPath() error {
 }
 
 // GoGet runs go get to install the specified binary.
-func GoGet(path string, version string, gopath string, goModules bool, sourceOnly bool) error {
+func GoGet(path string, version string, gopath string, goModules bool, sourceOnly bool, update bool) error {
 	modulesMode := "off"
 	if goModules {
 		modulesMode = "on"
@@ -83,7 +83,9 @@ func GoGet(path string, version string, gopath string, goModules bool, sourceOnl
 	}
 	args := []string{
 		"get",
-		"-u",
+	}
+	if update {
+		args = append(args, "-u")
 	}
 	if sourceOnly || !goModules {
 		args = append(args, "-d")
