@@ -135,24 +135,9 @@ func (o *BootOptions) Run() error {
 		return util.MissingOption("git-url")
 	}
 
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
-	if requirements.VersionStream.URL == "" && requirements.VersionStream.Ref == "" {
-		requirements.VersionStream.URL = o.VersionStreamURL
-		requirements.VersionStream.Ref = o.VersionStreamRef
-	}
-
-	// If we still don't have a complete version stream ref then we better set to a default
-	if requirements.VersionStream.URL == "" || requirements.VersionStream.Ref == "" {
-		log.Logger().Warnf("Incomplete version stream reference %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
-		if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
-			o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
-			o.VersionStreamURL = config.DefaultVersionsURL
-		} else {
-			o.VersionStreamRef = config.DefaultVersionsRef
-			o.VersionStreamURL = config.DefaultVersionsURL
-		}
-		log.Logger().Infof("Setting version stream reference to default %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
-	}
+	requirements, requirementsFile, _ := config.LoadRequirementsConfig(o.Dir)
+	// lets report errors parsing this file after the check we are outside of a git clone
+	o.defaultVersionStream(requirements)
 
 	if !exists {
 		log.Logger().Infof("No Jenkins X pipeline file %s found. You are not running this command from inside a Jenkins X Boot git clone", info(pipelineFile))
@@ -242,6 +227,12 @@ func (o *BootOptions) Run() error {
 		}
 	}
 
+	requirements, requirementsFile, err = config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return errors.Wrap(err, "failed to load jx-requirements.yml file")
+	}
+	o.defaultVersionStream(requirements)
+
 	exists, err = util.FileExists(requirementsFile)
 	if err != nil {
 		return err
@@ -296,6 +287,25 @@ func (o *BootOptions) Run() error {
 		return no.Run()
 	}
 	return nil
+}
+
+func (o *BootOptions) defaultVersionStream(requirements *config.RequirementsConfig) {
+	if requirements.VersionStream.URL == "" && requirements.VersionStream.Ref == "" {
+		requirements.VersionStream.URL = o.VersionStreamURL
+		requirements.VersionStream.Ref = o.VersionStreamRef
+	}
+	// If we still don't have a complete version stream ref then we better set to a default
+	if requirements.VersionStream.URL == "" || requirements.VersionStream.Ref == "" {
+		log.Logger().Warnf("Incomplete version stream reference %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
+		if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
+			o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
+			o.VersionStreamURL = config.DefaultVersionsURL
+		} else {
+			o.VersionStreamRef = config.DefaultVersionsRef
+			o.VersionStreamURL = config.DefaultVersionsURL
+		}
+		log.Logger().Infof("Setting version stream reference to default %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	}
 }
 
 func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig, requirementsFile string) error {
