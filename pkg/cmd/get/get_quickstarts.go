@@ -80,14 +80,14 @@ func (o *GetQuickstartsOptions) Run() error {
 	if o.ShortFormat {
 		table.AddRow("NAME")
 	} else {
-		table.AddRow("NAME", "OWNER", "LANGUAGE", "URL")
+		table.AddRow("NAME", "OWNER", "VERSION", "LANGUAGE", "URL")
 	}
 
 	for _, qs := range filteredQuickstarts {
 		if o.ShortFormat {
 			table.AddRow(qs.Name)
 		} else {
-			table.AddRow(qs.Name, qs.Owner, qs.Language, qs.DownloadZipURL)
+			table.AddRow(qs.Name, qs.Owner, qs.Version, qs.Language, qs.DownloadZipURL)
 		}
 	}
 	table.Render()

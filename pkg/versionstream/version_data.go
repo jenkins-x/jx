@@ -2,6 +2,7 @@ package versionstream
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -396,13 +397,14 @@ type RepositoryURLs struct {
 
 // QuickStart the configuration of a quickstart in the version stream
 type QuickStart struct {
-	ID             string   `json:"id"`
-	Owner          string   `json:"owner"`
-	Name           string   `json:"name"`
-	Language       string   `json:"language"`
-	Framework      string   `json:"framework"`
-	Tags           []string `json:"tags"`
-	DownloadZipURL string   `json:"downloadZipURL"`
+	ID             string   `json:"id,omitempty"`
+	Owner          string   `json:"owner,omitempty"`
+	Name           string   `json:"name,omitempty"`
+	Version        string   `json:"version,omitempty"`
+	Language       string   `json:"language,omitempty"`
+	Framework      string   `json:"framework,omitempty"`
+	Tags           []string `json:"tags,omitempty"`
+	DownloadZipURL string   `json:"downloadZipURL,omitempty"`
 }
 
 // QuickStarts the configuration of a the quickstarts in the version stream
@@ -416,6 +418,34 @@ func (qs *QuickStarts) DefaultMissingValues() {
 	for _, q := range qs.QuickStarts {
 		q.defaultMissingValues(qs)
 	}
+}
+
+// Sort sorts the quickstarts into name order
+func (qs *QuickStarts) Sort() {
+	sort.Sort(quickStartOrder(qs.QuickStarts))
+}
+
+type quickStartOrder []*QuickStart
+
+// Len returns the length of the order
+func (a quickStartOrder) Len() int { return len(a) }
+
+// Swap swaps 2 items in the slice
+func (a quickStartOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+// Less returns trtue if an itetm is less than the order
+func (a quickStartOrder) Less(i, j int) bool {
+	r1 := a[i]
+	r2 := a[j]
+
+	n1 := r1.Name
+	n2 := r2.Name
+	if n1 != n2 {
+		return n1 < n2
+	}
+	o1 := r1.Owner
+	o2 := r2.Owner
+	return o1 < o2
 }
 
 func (q *QuickStart) defaultMissingValues(qs *QuickStarts) {
