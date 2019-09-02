@@ -24,7 +24,7 @@ const (
 	maxRetries = 2
 
 	// healthReadyTimeout define the maximum duration to wait for vault to become initialized and unsealed
-	healthhRetyTimeout = 5 * time.Minute
+	healthhRetyTimeout = 10 * time.Minute
 
 	// healthInitialRetryDelay define the initial delay before starting the retries
 	healthInitialRetryDelay = 10 * time.Second
@@ -102,7 +102,8 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vault client")
 	}
-	log.Logger().Debugf("connecting to vault on %s", vaultClient.Address())
+	log.Logger().Debugf("Connecting to vault on %s", vaultClient.Address())
+
 	// Wait for vault to be ready
 	err = waitForVault(vaultClient, healthInitialRetryDelay, healthhRetyTimeout)
 	if err != nil {
@@ -154,6 +155,7 @@ func waitForVault(vaultClient *api.Client, initialDelay, timeout time.Duration) 
 		if err == nil && hr != nil && hr.Initialized && !hr.Sealed {
 			return nil
 		}
+		log.Logger().Info("Waiting for vault to be initialized and unsealed...")
 		if err != nil {
 			return errors.Wrap(err, "reading vault health")
 		}
@@ -167,6 +169,7 @@ func waitForVault(vaultClient *api.Client, initialDelay, timeout time.Duration) 
 func waitForKVEngine(vaultClient *api.Client, initialDelay, timeout time.Duration) error {
 	return util.RetryWithInitialDelaySlower(initialDelay, timeout, func() error {
 		if _, err := vaultClient.Logical().Read(kvEngineConfigPath); err != nil {
+			log.Logger().Info("Waiting for KV engine to be configured...")
 			return errors.Wrap(err, "checking KV engine config")
 		}
 		return nil
