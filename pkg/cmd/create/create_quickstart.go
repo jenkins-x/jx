@@ -103,7 +103,7 @@ func NewCmdCreateQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
-	model, err := o.LoadQuickstartsModel(o.GitHubOrganisations, o.IgnoreTeam)
+	model, err := o.LoadQuickStartsModel(o.GitHubOrganisations, o.IgnoreTeam)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
@@ -276,7 +276,7 @@ func findFirstDirectory(dir string) (string, error) {
 	return "", fmt.Errorf("no child directory found in %s", dir)
 }
 
-// LoadQuickstartsFromMap Load all quickstarts
+// loadQuickstartsFromMap Load all quickstarts
 func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
 

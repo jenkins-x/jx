@@ -69,19 +69,27 @@ func NewCmdGetQuickstarts(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetQuickstartsOptions) Run() error {
-	model, err := o.LoadQuickstartsModel(o.GitHubOrganisations, o.IgnoreTeam)
+	model, err := o.LoadQuickStartsModel(o.GitHubOrganisations, o.IgnoreTeam)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
 
 	//output list of available quickstarts and exit
 	filteredQuickstarts := model.Filter(&o.Filter)
+	table := o.CreateTable()
+	if o.ShortFormat {
+		table.AddRow("NAME")
+	} else {
+		table.AddRow("NAME", "OWNER", "LANGUAGE", "URL")
+	}
+
 	for _, qs := range filteredQuickstarts {
 		if o.ShortFormat {
-			fmt.Fprintf(o.Out, "%s\n", qs.Name)
+			table.AddRow(qs.Name)
 		} else {
-			fmt.Fprintf(o.Out, "%s/%s/%s\n", qs.GitProvider.ServerURL(), qs.Owner, qs.Name)
+			table.AddRow(qs.Name, qs.Owner, qs.Language, qs.DownloadZipURL)
 		}
 	}
+	table.Render()
 	return nil
 }

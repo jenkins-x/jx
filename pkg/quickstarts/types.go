@@ -1,6 +1,8 @@
 package quickstarts
 
-import "github.com/jenkins-x/jx/pkg/gits"
+import (
+	"github.com/jenkins-x/jx/pkg/gits"
+)
 
 type Quickstart struct {
 	ID             string

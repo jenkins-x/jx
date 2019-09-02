@@ -332,7 +332,7 @@ func (o *CreateMLQuickstartOptions) getMLProjectSet(q *quickstarts.Quickstart) (
 	return ps, err
 }
 
-// LoadQuickstartsFromMap Load all quickstarts
+// loadQuickstartsFromMap Load all quickstarts
 func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
 

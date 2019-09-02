@@ -7,7 +7,10 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -163,4 +166,24 @@ func (model *QuickstartModel) Languages() []string {
 		}
 	}
 	return util.SortedMapKeys(m)
+}
+
+func (model *QuickstartModel) LoadQuickStarts(quickstarts *versionstream.QuickStarts) error {
+	for _, from := range quickstarts.QuickStarts {
+		id := from.ID
+		if id == "" {
+			log.Logger().Warnf("no ID available for quickstart in version stream %#v", from)
+			continue
+		}
+		to := model.Quickstarts[id]
+		if to == nil {
+			to = &Quickstart{}
+		}
+		err := model.convertToQuickStart(from, to)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert quickstart from the version stream %s", id)
+		}
+		model.Quickstarts[id] = to
+	}
+	return nil
 }
