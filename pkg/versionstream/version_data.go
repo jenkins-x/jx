@@ -345,6 +345,42 @@ func GetRepositoryPrefixes(dir string) (*RepositoryPrefixes, error) {
 	return answer, nil
 }
 
+// GetQuickStarts loads the quickstarts from the version stream
+func GetQuickStarts(dir string) (*QuickStarts, error) {
+	answer := &QuickStarts{}
+	fileName := filepath.Join(dir, "quickstarts.yml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to find file %s", fileName)
+	}
+	if !exists {
+		return answer, nil
+	}
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to load file %s", fileName)
+	}
+	err = yaml.Unmarshal(data, &answer)
+	if err != nil {
+		return answer, errors.Wrapf(err, "failed to unmarshal YAML in file %s", fileName)
+	}
+	return answer, nil
+}
+
+// SaveQuickStarts saves the modified quickstarts in the version stream dir
+func SaveQuickStarts(dir string, qs *QuickStarts) error {
+	data, err := yaml.Marshal(qs)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal quickstarts to YAML")
+	}
+	fileName := filepath.Join(dir, "quickstarts.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save file %s", fileName)
+	}
+	return nil
+}
+
 // RepositoryPrefixes maps repository prefixes to URLs
 type RepositoryPrefixes struct {
 	Repositories []RepositoryURLs    `json:"repositories"`
@@ -356,6 +392,45 @@ type RepositoryPrefixes struct {
 type RepositoryURLs struct {
 	Prefix string   `json:"prefix"`
 	URLs   []string `json:"urls"`
+}
+
+// QuickStart the configuration of a quickstart in the version stream
+type QuickStart struct {
+	ID             string   `json:"id"`
+	Owner          string   `json:"owner"`
+	Name           string   `json:"name"`
+	Language       string   `json:"language"`
+	Framework      string   `json:"framework"`
+	Tags           []string `json:"tags"`
+	DownloadZipURL string   `json:"downloadZipURL"`
+}
+
+// QuickStarts the configuration of a the quickstarts in the version stream
+type QuickStarts struct {
+	QuickStarts  []*QuickStart `json:"quickstarts"`
+	DefaultOwner string        `json:"defaultOwner"`
+}
+
+// DefaultMissingValues defaults any missing values such as ID which is a combination of owner and name
+func (qs *QuickStarts) DefaultMissingValues() {
+	for _, q := range qs.QuickStarts {
+		q.defaultMissingValues(qs)
+	}
+}
+
+func (q *QuickStart) defaultMissingValues(qs *QuickStarts) {
+	if qs.DefaultOwner == "" {
+		qs.DefaultOwner = "jenkins-x-quickstarts"
+	}
+	if q.Owner == "" {
+		q.Owner = qs.DefaultOwner
+	}
+	if q.ID == "" {
+		q.ID = fmt.Sprintf("%s/%s", q.Owner, q.Name)
+	}
+	if q.DownloadZipURL == "" {
+		q.DownloadZipURL = fmt.Sprintf("https://codeload.github.com/%s/%s/zip/master", q.Owner, q.Name)
+	}
 }
 
 // PrefixForURL returns the repository prefix for the given URL

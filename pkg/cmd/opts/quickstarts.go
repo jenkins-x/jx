@@ -10,21 +10,43 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
+	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/pkg/errors"
 )
 
-// LoadQuickstartsFromMap Load all quickstarts
-func (o *CommonOptions) LoadQuickstartsModel(gitHubOrganisations []string, ignoreTeam bool) (*quickstarts.QuickstartModel, error) {
+// LoadQuickStartsModel Load all quickstarts
+func (o *CommonOptions) LoadQuickStartsModel(gitHubOrganisations []string, ignoreTeam bool) (*quickstarts.QuickstartModel, error) {
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
-	config := authConfigSvc.Config()
-
-	locations, err := o.LoadQuickStarts(gitHubOrganisations, ignoreTeam)
+	resolver, err := o.GetVersionResolver()
 	if err != nil {
 		return nil, err
 	}
 
+	config := authConfigSvc.Config()
+
+	locations, err := o.loadQuickStartLocations(gitHubOrganisations, ignoreTeam)
+	if err != nil {
+		return nil, err
+	}
+
+	model, err := o.LoadQuickStartsFromLocations(locations, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load quickstarts: %s", err)
+	}
+	quickstarts, err := versionstream.GetQuickStarts(resolver.VersionsDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading quickstarts from version stream in dir %s", resolver.VersionsDir)
+	}
+	quickstarts.DefaultMissingValues()
+	model.LoadQuickStarts(quickstarts)
+	return model, nil
+}
+
+// LoadQuickStartsFromLocations Load all quickstarts from the given locatiotns
+func (o *CommonOptions) LoadQuickStartsFromLocations(locations []v1.QuickStartLocation, config *auth.AuthConfig) (*quickstarts.QuickstartModel, error) {
 	gitMap := map[string]map[string]v1.QuickStartLocation{}
 	for _, loc := range locations {
 		m := gitMap[loc.GitURL]
@@ -34,16 +56,30 @@ func (o *CommonOptions) LoadQuickstartsModel(gitHubOrganisations []string, ignor
 		}
 		m[loc.Owner] = loc
 	}
+	model := quickstarts.NewQuickstartModel()
 
-	model, err := o.LoadQuickstartsFromMap(config, gitMap)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load quickstarts: %s", err)
+	for gitURL, m := range gitMap {
+		for _, location := range m {
+			kind := location.GitKind
+			if kind == "" {
+				kind = gits.KindGitHub
+			}
+			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
+			if err != nil {
+				return model, err
+			}
+			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s ", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
+			if err != nil {
+				log.Logger().Debugf("Quickstart load error: %s", err.Error())
+			}
+		}
 	}
 	return model, nil
 }
 
-// LoadQuickStarts loads the quickstarts
-func (o *CommonOptions) LoadQuickStarts(gitHubOrganisations []string, ignoreTeam bool) ([]v1.QuickStartLocation, error) {
+// loadQuickStartLocations loads the quickstarts
+func (o *CommonOptions) loadQuickStartLocations(gitHubOrganisations []string, ignoreTeam bool) ([]v1.QuickStartLocation, error) {
 	var locations []v1.QuickStartLocation
 	if !ignoreTeam {
 		jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -76,28 +112,4 @@ func (o *CommonOptions) LoadQuickStarts(gitHubOrganisations []string, ignoreTeam
 		}
 	}
 	return locations, nil
-}
-
-// LoadQuickstartsFromMap Load all quickstarts
-func (o *CommonOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
-	model := quickstarts.NewQuickstartModel()
-
-	for gitURL, m := range gitMap {
-		for _, location := range m {
-			kind := location.GitKind
-			if kind == "" {
-				kind = gits.KindGitHub
-			}
-			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
-			if err != nil {
-				return model, err
-			}
-			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s ", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
-			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
-			if err != nil {
-				log.Logger().Debugf("Quickstart load error: %s", err.Error())
-			}
-		}
-	}
-	return model, nil
 }

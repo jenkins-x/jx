@@ -63,8 +63,8 @@ type StepCreatePullRequestVersionsOptions struct {
 	UpdateTektonImages bool
 }
 
-// NewCmdStepCreateVersionPullRequest Creates a new Command object
-func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
+// NewCmdStepCreatePullRequestVersion Creates a new Command object
+func NewCmdStepCreatePullRequestVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatePullRequestVersionsOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
 			StepCreateOptions: step.StepCreateOptions{

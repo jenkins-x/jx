@@ -43,8 +43,8 @@ type StepCreatetPullRequestGoOptions struct {
 	BuildCommand string
 }
 
-// NewCmdStepCreatetPullRequestGo Creates a new Command object
-func NewCmdStepCreatetPullRequestGo(commonOpts *opts.CommonOptions) *cobra.Command {
+// NewCmdStepCreatePullRequestGo Creates a new Command object
+func NewCmdStepCreatePullRequestGo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreatetPullRequestGoOptions{
 		StepCreatePrOptions: StepCreatePrOptions{
 			StepCreateOptions: step.StepCreateOptions{
