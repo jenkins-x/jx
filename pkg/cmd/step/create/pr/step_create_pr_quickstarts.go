@@ -100,7 +100,7 @@ func (o *StepCreatePullRequestQuickStartsOptions) Run() error {
 	}
 
 	for _, q := range model.Quickstarts {
-		o.SrcGitURL = o.SourceGitURL(q)
+		o.SrcGitURL = o.sourceGitURL(q)
 		break
 	}
 
@@ -121,7 +121,7 @@ func (o *StepCreatePullRequestQuickStartsOptions) Run() error {
 			continue
 		}
 		version := q.Version
-		o.SrcGitURL = o.SourceGitURL(q)
+		o.SrcGitURL = o.sourceGitURL(q)
 
 		pro := operations.PullRequestOperation{
 			CommonOptions: o.CommonOptions,
@@ -213,7 +213,7 @@ func (o *StepCreatePullRequestQuickStartsOptions) upsertQuickStart(from *quickst
 	}
 }
 
-func (o *StepCreatePullRequestQuickStartsOptions) SourceGitURL(qs *quickstarts.Quickstart) string {
+func (o *StepCreatePullRequestQuickStartsOptions) sourceGitURL(qs *quickstarts.Quickstart) string {
 	owner := qs.Owner
 	if owner == "" {
 		owner = o.Location.Owner

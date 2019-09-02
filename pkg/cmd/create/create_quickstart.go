@@ -14,12 +14,10 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -274,30 +272,6 @@ func findFirstDirectory(dir string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no child directory found in %s", dir)
-}
-
-// loadQuickstartsFromMap Load all quickstarts
-func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
-	model := quickstarts.NewQuickstartModel()
-
-	for gitURL, m := range gitMap {
-		for _, location := range m {
-			kind := location.GitKind
-			if kind == "" {
-				kind = gits.KindGitHub
-			}
-			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
-			if err != nil {
-				return model, err
-			}
-			log.Logger().Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s ", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
-			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
-			if err != nil {
-				log.Logger().Debugf("Quickstart load error: %s", err.Error())
-			}
-		}
-	}
-	return model, nil
 }
 
 func isMLProjectSet(q *quickstarts.Quickstart) bool {
