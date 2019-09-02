@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	v1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -257,7 +259,9 @@ func (o *BootOptions) Run() error {
 	so.InterpretMode = true
 	so.NoReleasePrepare = true
 	so.StartStep = o.StartStep
+
 	so.AdditionalEnvVars = map[string]string{
+		"JX_NO_TILLER":    "true",
 		"REPO_URL":        gitURL,
 		"BASE_CONFIG_REF": gitRef,
 	}
@@ -270,6 +274,25 @@ func (o *BootOptions) Run() error {
 		so.AdditionalEnvVars["JX_HELM_VERBOSE"] = o.HelmLogLevel
 	}
 
+	// Set the namespace in the pipeline
+	so.CommonOptions.SetDevNamespace(requirements.Cluster.Namespace)
+	// lets ensure the namespace is set in the jenkins-x.yml file
+	envVars := make([]v1.EnvVar, 0)
+	for _, e := range projectConfig.PipelineConfig.Pipelines.Release.Pipeline.Environment {
+		if e.Name == "DEPLOY_NAMESPACE" {
+			envVars = append(envVars, v1.EnvVar{
+				Name:  "DEPLOY_NAMESPACE",
+				Value: requirements.Cluster.Namespace,
+			})
+		} else {
+			envVars = append(envVars, e)
+		}
+	}
+	projectConfig.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
+	err = projectConfig.SaveConfig(pipelineFile)
+	if err != nil {
+		return errors.Wrapf(err, "setting namespace in jenkins-x.yml")
+	}
 	so.VersionResolver, err = o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
 	if err != nil {
 		return errors.Wrapf(err, "there was a problem creating a version resolver from versions stream repository %s and ref %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
@@ -278,24 +301,17 @@ func (o *BootOptions) Run() error {
 	if o.BatchMode {
 		so.AdditionalEnvVars["JX_BATCH_MODE"] = "true"
 	}
-	ns := FindBootNamespace(projectConfig, requirements)
-	if ns != "" {
-		so.CommonOptions.SetDevNamespace(ns)
-	}
 	err = so.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to interpret pipeline file %s", pipelineFile)
 	}
 
-	// if we can find the deploy namespace lets switch kubernetes context to it so the user can use `jx` commands immediately
-	if ns != "" {
-		no := &namespace.NamespaceOptions{}
-		no.CommonOptions = o.CommonOptions
-		no.Args = []string{ns}
-		log.Logger().Infof("switching to the namespace %s so that you can use %s commands on the installation", info(ns), info("jx"))
-		return no.Run()
-	}
-	return nil
+	// lets switch kubernetes context to it so the user can use `jx` commands immediately
+	no := &namespace.NamespaceOptions{}
+	no.CommonOptions = o.CommonOptions
+	no.Args = []string{requirements.Cluster.Namespace}
+	log.Logger().Infof("switching to the namespace %s so that you can use %s commands on the installation", info(requirements.Cluster.Namespace), info("jx"))
+	return no.Run()
 }
 
 func (o *BootOptions) defaultVersionStream(requirements *config.RequirementsConfig) {
@@ -327,29 +343,10 @@ func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig
 			return config.MissingRequirement("project", requirementsFile)
 		}
 	}
-	return nil
-}
-
-// FindBootNamespace finds the namespace to boot Jenkins X into based on the pipeline and requirements
-func FindBootNamespace(projectConfig *config.ProjectConfig, requirementsConfig *config.RequirementsConfig) string {
-	// TODO should we add the deploy namepace to jx-requirements.yml?
-	if projectConfig != nil {
-		pipelineConfig := projectConfig.PipelineConfig
-		if pipelineConfig != nil {
-			release := pipelineConfig.Pipelines.Release
-			if release != nil {
-				pipeline := release.Pipeline
-				if pipeline != nil {
-					for _, env := range pipeline.Environment {
-						if env.Name == "DEPLOY_NAMESPACE" && env.Value != "" {
-							return env.Value
-						}
-					}
-				}
-			}
-		}
+	if requirements.Cluster.Namespace == "" {
+		return config.MissingRequirement("namespace", requirementsFile)
 	}
-	return ""
+	return nil
 }
 
 func (o *BootOptions) verifyClusterConnection() error {
