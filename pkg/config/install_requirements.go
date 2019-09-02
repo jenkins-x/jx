@@ -444,7 +444,8 @@ func (c *RequirementsConfig) addDefaults() {
 		if c.Cluster.GitServer == "https://github.com" || c.Cluster.GitServer == "https://github.com/" {
 			c.Webhook = WebhookTypeProw
 		} else {
-			c.Webhook = WebhookTypeLighthouse
+			// TODO when lighthouse is GA lets default to it
+			// c.Webhook = WebhookTypeLighthouse
 		}
 	}
 }
