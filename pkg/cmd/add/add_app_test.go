@@ -571,7 +571,7 @@ func TestStashValues(t *testing.T) {
 func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
 		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
 		defer func() {
 			err := testOptions.Cleanup()
