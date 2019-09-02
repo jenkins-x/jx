@@ -977,7 +977,7 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 			}
 		}
 
-		err = options.GenerateProwConfig(currentNamespace, devEnv, sr)
+		err = options.GenerateProwConfig(currentNamespace, devEnv)
 		if err != nil {
 			return err
 		}

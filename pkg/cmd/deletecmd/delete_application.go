@@ -205,7 +205,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 						return deletedApplications, errors.Wrapf(err, "unable to determine org for %s.  Please use --org to specify the app to delete", util.ColorInfo(applicationName))
 					}
 
-					// we only found a single sourceporistory resource, proceed
+					// we only found a single sourcerepository resource, proceed
 					org = srObjects[0].Spec.Org
 					if org != "" {
 						o.Args[i] = fmt.Sprintf("%s/%s", org, applicationName)
@@ -223,16 +223,29 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 		org := path[0]
 		applicationName := path[1]
 
-		err = prow.DeleteApplication(kubeClient, []string{repo}, ns)
+		devEnv, settings, err := o.DevEnvAndTeamSettings()
 		if err != nil {
-			log.Logger().Warnf("Unable to delete application %s from prow: %s", repo, err.Error())
+			return nil, err
 		}
+
 		deletedApplications = append(deletedApplications, applicationName)
 
 		srName := naming.ToValidName(org + "-" + applicationName)
-		err := repoService.Delete(srName, nil)
+		err = repoService.Delete(srName, nil)
 		if err != nil {
 			log.Logger().Warnf("Unable to find application metadata for %s to remove", applicationName)
+		}
+
+		if settings.IsSchedulerMode() {
+			err = o.GenerateProwConfig(ns, devEnv)
+			if err != nil {
+				return nil, errors.Wrapf(err, "generating prow config")
+			}
+		} else {
+			err = prow.DeleteApplication(kubeClient, []string{repo}, ns)
+			if err != nil {
+				log.Logger().Warnf("Unable to delete application %s from prow: %s", repo, err.Error())
+			}
 		}
 
 		err = o.deletePipelineActivitiesForSourceRepository(jxClient, ns, srName)
