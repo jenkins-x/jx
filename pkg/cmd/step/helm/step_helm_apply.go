@@ -138,7 +138,12 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
-	ns, err := o.GetDeployNamespace(o.Namespace)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return err
+	}
+
+	ns, err := o.GetDeployNamespace(o.Namespace, requirements)
 	if err != nil {
 		return err
 	}
@@ -248,11 +253,6 @@ func (o *StepHelmApplyOptions) Run() error {
 				}
 			}
 		}()
-	}
-
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
-	if err != nil {
-		return err
 	}
 
 	secretURLClient, err := o.GetSecretURLClient(secrets.ToSecretsLocation(string(requirements.SecretStorage)))

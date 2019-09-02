@@ -70,7 +70,7 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Debug, "debug", "", false, "Output logs of any failed pod")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the install requirements file")
 	cmd.Flags().StringVarP(&options.LazyCreateFlag, "lazy-create", "", "", fmt.Sprintf("Specify true/false as to whether to lazily create missing resources. If not specified it is enabled if Terraform is not specified in the %s file", config.RequirementsConfigFileName))
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to cluster.namespace in jx-requirements.yaml or $DEPLOY_NAMESPACE")
 	cmd.Flags().BoolVarP(&options.WorkloadIdentity, "workload-identity", "", false, "Enable this if using GKE Workload Identity to avoid reconnecting to the Cluster.")
 
 	return cmd
@@ -100,7 +100,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	// lets find the namespace to use
-	ns, err := o.GetDeployNamespace(o.Namespace)
+	ns, err := o.GetDeployNamespace(o.Namespace, requirements)
 	if err != nil {
 		return err
 	}

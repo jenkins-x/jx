@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/config"
+
 	"github.com/jenkins-x/jx/pkg/platform"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -102,7 +104,13 @@ func (o *StepEnvApplyOptions) Run() error {
 		}
 	}
 
-	ns, err := o.GetDeployNamespace(o.Namespace)
+	// lets default to the install requirements setting
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return err
+	}
+
+	ns, err := o.GetDeployNamespace(o.Namespace, requirements)
 	if err != nil {
 		return err
 	}
