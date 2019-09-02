@@ -348,6 +348,12 @@ func (g *GitCLI) Checkout(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", branch)
 }
 
+// CheckoutCommitFiles checks out the given files to a commit
+func (g *GitCLI) CheckoutCommitFiles(dir string, commit string, files []string) error {
+	fileString := strings.Trim(fmt.Sprintf("%v", files), "[]")
+	return g.gitCmd(dir, "checkout", commit, "--", fileString)
+}
+
 // Checkout checks out the given branch
 func (g *GitCLI) CheckoutOrphan(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", "--orphan", branch)
@@ -496,9 +502,10 @@ func (g *GitCLI) AddCommit(dir string, msg string) error {
 	return g.gitCmd(dir, "commit", "-a", "-m", msg, "--allow-empty")
 }
 
-// AddCommitFile perform an add and commit selected files from the repository at the given directory with the given messages
-func (g *GitCLI) AddCommitFile(dir string, msg string, file string) error {
-	return g.gitCmd(dir, "commit", "-m", msg, "--", file)
+// AddCommitFiles perform an add and commit selected files from the repository at the given directory with the given messages
+func (g *GitCLI) AddCommitFiles(dir string, msg string, files []string) error {
+	fileString := strings.Trim(fmt.Sprintf("%v", files), "[]")
+	return g.gitCmd(dir, "commit", "-m", msg, "--", fileString)
 }
 
 func (g *GitCLI) gitCmd(dir string, args ...string) error {

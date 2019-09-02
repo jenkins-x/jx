@@ -233,6 +233,7 @@ type Gitter interface {
 	CreateBranch(dir string, branch string) error
 	CheckoutRemoteBranch(dir string, branch string) error
 	Checkout(dir string, branch string) error
+	CheckoutCommitFiles(dir string, commit string, files []string) error
 	CheckoutOrphan(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
 	FetchBranch(dir string, repo string, refspec ...string) error
@@ -256,7 +257,7 @@ type Gitter interface {
 	CommitIfChanges(dir string, message string) error
 	CommitDir(dir string, message string) error
 	AddCommit(dir string, msg string) error
-	AddCommitFile(dir string, msg string, file string) error
+	AddCommitFiles(dir string, msg string, files []string) error
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)
 	ListChangedFilesFromBranch(dir string, branch string) (string, error)
