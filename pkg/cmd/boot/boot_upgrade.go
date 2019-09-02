@@ -58,34 +58,37 @@ func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run runs this command
 func (o *BootUpgradeOptions) Run() error {
-	reqsVersionStream, err := o.requirementsVersionStream(o.Dir)
+	reqsVersionStream, err := o.requirementsVersionStream()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get requirements version stream")
 	}
 
 	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, "master")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get check for available update")
 	}
 	if upgradeVersionSha == "" {
 		return nil
 	}
 
-	err = o.checkoutNewBranch(o.Dir, "upgrade_branch")
+	err = o.checkoutNewBranch("upgrade_branch")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to checkout upgrade_branch")
 	}
 
 	bootConfigURL := determineBootConfigURL(reqsVersionStream.URL)
-	err = o.updateBootConfig(o.Dir, reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL)
+	err = o.updateBootConfig(reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL, upgradeVersionSha)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to update boot configuration")
 	}
 
-	err = o.updateVersionStreamRef(o.Dir, upgradeVersionSha)
+	err = o.updateVersionStreamRef(upgradeVersionSha)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to update version stream ref")
 	}
+
+	//TODO: raise PR
+	//TODO: delete upgrade_branch
 	return nil
 }
 
@@ -97,8 +100,8 @@ func determineBootConfigURL(versionStreamURL string) string {
 	return bootConfigURL
 }
 
-func (o *BootUpgradeOptions) requirementsVersionStream(dir string) (*config.VersionStreamConfig, error) {
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(dir)
+func (o *BootUpgradeOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load requirements config %s", requirementsFile)
 	}
@@ -124,74 +127,82 @@ func (o *BootUpgradeOptions) upgradeAvailable(versionStreamURL string, versionSt
 	}
 
 	if versionStreamRef == upgradeVersionSha {
-		log.Logger().Infof("No versions stream upgrade available")
+		log.Logger().Infof("No upgrade available")
 		return "", nil
 	}
-	log.Logger().Infof("versions stream upgrade available!!!!")
+	log.Logger().Infof("upgrade available!!!!")
 	return upgradeVersionSha, nil
 }
 
-func (o *BootUpgradeOptions) checkoutNewBranch(dir string, branch string) error {
-	err := o.Git().CreateBranch(dir, branch)
+func (o *BootUpgradeOptions) checkoutNewBranch(branch string) error {
+	err := o.Git().CreateBranch(o.Dir, branch)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create branch %s", branch)
 	}
-	err = o.Git().Checkout(dir, branch)
+	err = o.Git().Checkout(o.Dir, branch)
 	if err != nil {
 		return errors.Wrapf(err, "failed to checkout branch %s", branch)
 	}
 	return nil
 }
 
-func (o *BootUpgradeOptions) updateVersionStreamRef(dir string, upgradeRef string) error {
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(dir)
+func (o *BootUpgradeOptions) updateVersionStreamRef(upgradeRef string) error {
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements file %s", requirementsFile)
 	}
 
-	requirements.VersionStream.Ref = upgradeRef
-	err = requirements.SaveConfig(requirementsFile)
-	if err != nil {
-		return errors.Wrapf(err, "failed to write version stream to %s", requirementsFile)
-	}
-	err = o.Git().AddCommitFile(o.Dir, "feat: upgrade version stream", requirementsFile)
-	if err != nil {
-		return errors.Wrapf(err, "failed to commit requirements file %s", requirementsFile)
+	if requirements.VersionStream.Ref != upgradeRef {
+		log.Logger().Infof("Upgrading version stream ref to %s", upgradeRef)
+		requirements.VersionStream.Ref = upgradeRef
+		err = requirements.SaveConfig(requirementsFile)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write version stream to %s", requirementsFile)
+		}
+		err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade version stream", []string{requirementsFile})
+		if err != nil {
+			return errors.Wrapf(err, "failed to commit requirements file %s", requirementsFile)
+		}
 	}
 	return nil
 }
 
-func (o *BootUpgradeOptions) updateBootConfig(dir string, versionStreamURL string, versionStreamRef string, bootConfigURL string) error {
-	err := o.Git().FetchBranch(o.Dir, bootConfigURL, "master")
+func (o *BootUpgradeOptions) updateBootConfig(versionStreamURL string, versionStreamRef string, bootConfigURL string, upgradeVersionSha string) error {
+	configCloneDir, err := o.cloneBootConfig(bootConfigURL)
 	if err != nil {
-		return fmt.Errorf("failed to fetch %s", bootConfigURL)
+		return errors.Wrapf(err, "failed to clone boot config repo %s", bootConfigURL)
 	}
+	defer func() {
+		err := os.RemoveAll(configCloneDir)
+		if err != nil {
+			log.Logger().Infof("Error removing tmpDir: %v", err)
+		}
+	}()
 
-	currentSha, _, err := o.bootConfigRef(o.Dir, versionStreamURL, versionStreamRef, bootConfigURL)
+	currentSha, currentVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, versionStreamRef, bootConfigURL)
 	if err != nil {
 		return fmt.Errorf("failed to get boot config ref for version stream: %s", versionStreamRef)
 	}
-	upgradeSha, upgradeVersion, err := o.bootConfigRef(o.Dir, versionStreamURL, "master", bootConfigURL)
+	upgradeSha, upgradeVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, upgradeVersionSha, bootConfigURL)
 	if err != nil {
-		return fmt.Errorf("failed to get boot config ref for version stream: master")
+		return fmt.Errorf("failed to get boot config ref for version stream ref: %s", upgradeVersionSha)
 	}
 
 	// check if boot config upgrade available
 	if upgradeSha == currentSha {
 		log.Logger().Infof("No boot config upgrade available")
 		return nil
-	} else {
-		log.Logger().Infof("boot config upgrade available!!!!")
 	}
+	log.Logger().Infof("boot config upgrade available!!!!")
+	log.Logger().Infof("Upgrading from v%s to v%s", currentVersion, upgradeVersion)
 
-	configCloneDir, err := o.cloneBootConfig(bootConfigURL, upgradeVersion)
-	if err != nil {
-		return errors.Wrapf(err, "failed to clone boot config repo %s", bootConfigURL)
-	}
-
-	err = o.cherryPickCommits(o.Dir, configCloneDir, currentSha, upgradeSha, "upgrade_branch")
+	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha, "upgrade_branch")
 	if err != nil {
 		return errors.Wrap(err, "failed to cherry pick upgrade commits")
+	}
+	err = o.excludeFiles(currentSha)
+	if err != nil {
+		return errors.Wrap(err, "failed to exclude files from commit")
 	}
 	return nil
 }
@@ -212,38 +223,54 @@ func (o *BootUpgradeOptions) bootConfigRef(dir string, versionStreamURL string, 
 	return cmtSha, configVersion, nil
 }
 
-func (o *BootUpgradeOptions) cloneBootConfig(configURL string, configRef string) (string, error) {
+func (o *BootUpgradeOptions) cloneBootConfig(configURL string) (string, error) {
 	cloneDir, err := ioutil.TempDir("", "")
 	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create directory: %s", cloneDir)
 	}
 
-	err = o.Git().Clone(configURL, cloneDir)
+	err = o.Git().CloneBare(cloneDir, configURL)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone git URL %s to directory %s", configURL, cloneDir)
 	}
 	return cloneDir, nil
 }
 
-func (o *BootUpgradeOptions) cherryPickCommits(dir, cloneDir, fromSha, toSha, branch string) error {
+func (o *BootUpgradeOptions) cherryPickCommits(cloneDir, fromSha, toSha, branch string) error {
 	cmts := make([]gits.GitCommit, 0)
 	cmts, err := o.Git().GetCommits(cloneDir, fromSha, toSha)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get commits from %s", cloneDir)
 	}
 
+	log.Logger().Infof("cherry picking commits in the range %s..%s", fromSha, toSha)
 	for i := len(cmts) - 1; i >= 0; i-- {
 		commitSha := cmts[i].SHA
-		log.Logger().Infof("commit sha %s", commitSha)
+		commitMsg := cmts[i].Subject()
 
-		err := o.Git().CherryPickTheirs(dir, commitSha)
+		err := o.Git().CherryPickTheirs(o.Dir, commitSha)
 		if err != nil {
 			msg := fmt.Sprintf("commit %s is a merge but no -m option was given.", commitSha)
 			if !strings.Contains(err.Error(), msg) {
 				return errors.Wrapf(err, "cherry-picking %s", commitSha)
 			}
+		} else {
+			log.Logger().Infof("%s - %s", commitSha, commitMsg)
 		}
+	}
+	return nil
+}
+
+func (o *BootUpgradeOptions) excludeFiles(commit string) error {
+	excludedFiles := []string{"OWNERS"}
+	err := o.Git().CheckoutCommitFiles(o.Dir, commit, excludedFiles)
+	if err != nil {
+		return errors.Wrap(err, "failed to checkout files")
+	}
+	err = o.Git().AddCommitFiles(o.Dir, "chore: exclude files from upgrade", excludedFiles)
+	if err != nil {
+		return errors.Wrapf(err, "failed to commit excluded files %v", excludedFiles)
 	}
 	return nil
 }

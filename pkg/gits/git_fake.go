@@ -321,6 +321,11 @@ func (g *GitFake) Checkout(dir string, branch string) error {
 	return nil
 }
 
+// CheckoutCommitFiles checks out the given files
+func (g *GitFake) CheckoutCommitFiles(dir string, commit string, files []string) error {
+	return nil
+}
+
 // CheckoutOrphan checkout the orphan
 func (g *GitFake) CheckoutOrphan(dir string, branch string) error {
 	g.CurrentBranch = branch
@@ -426,8 +431,8 @@ func (g *GitFake) AddCommit(dir string, msg string) error {
 	return g.CommitIfChanges(dir, msg)
 }
 
-// AddCommitFile add a file to a  commit
-func (g *GitFake) AddCommitFile(dir string, msg string, file string) error {
+// AddCommitFiles add a file to a  commit
+func (g *GitFake) AddCommitFiles(dir string, msg string, files []string) error {
 	return g.CommitIfChanges(dir, msg)
 }
 
