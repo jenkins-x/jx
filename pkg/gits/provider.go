@@ -309,10 +309,21 @@ func ProviderAccessTokenURL(kind string, url string, username string) string {
 	}
 }
 
+// PickOwner allows to select a potential owner of a repository
+func PickOwner(orgLister OrganisationLister, userName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+	msg := "Who should be the owner of the repository?"
+	return pickOwner(orgLister, userName, msg, in, out, errOut)
+}
+
 // PickOrganisation picks an organisations login if there is one available
 func PickOrganisation(orgLister OrganisationLister, userName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+	msg := "Which organisation do you want to use?"
+	return pickOwner(orgLister, userName, msg, in, out, errOut)
+}
+
+func pickOwner(orgLister OrganisationLister, userName string, message string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
 	prompt := &survey.Select{
-		Message: "Which organisation do you want to use?",
+		Message: message,
 		Options: GetOrganizations(orgLister, userName),
 		Default: userName,
 	}
