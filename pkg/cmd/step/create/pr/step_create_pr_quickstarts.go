@@ -25,7 +25,7 @@ import (
 
 var (
 	createPullRequestQuickStartsLong = templates.LongDesc(`
-		Creates a Pull Request on a 'jx boot' git repository to mirror all the SourceRepository CRDs into the quickStarts Chart
+		Creates a Pull Request a version stream to include all the quickstarts found in a github organisation
 `)
 
 	createPullRequestQuickStartsExample = templates.Examples(`
