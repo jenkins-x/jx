@@ -87,7 +87,7 @@ func GetIngressConfig(c kubernetes.Interface, ns string) (IngressConfig, error) 
 
 	tls, exists := data[TLS]
 
-	if exists {
+	if exists && tls != "" {
 		ic.TLS, err = strconv.ParseBool(tls)
 		if err != nil {
 			return ic, fmt.Errorf("failed to parse TLS string %s to bool from %s: %v", tls, IngressConfigConfigmap, err)
