@@ -150,7 +150,7 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 	}
 
 	// Duplicate the repo
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitsh(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", privateRepo, provider, o.Git())
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", privateRepo, provider, o.Git())
 	if err != nil {
 		return errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, environmentsOrg, gitRepoName)
 	}
@@ -217,9 +217,6 @@ func modifyPipelineGitEnvVars(dir string) error {
 			},
 		}
 		envVars := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
-		if err != nil {
-			return errors.Wrap(err, "failed to get pipeline env vars")
-		}
 		envVars = append(envVars, gitConfig...)
 		projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
 
@@ -228,8 +225,14 @@ func modifyPipelineGitEnvVars(dir string) error {
 			return errors.Wrapf(err, "failed to write to %s", fileName)
 		}
 
-		os.Setenv("GIT_AUTHOR_NAME", username)
-		os.Setenv("GIT_AUTHOR_EMAIL", email)
+		err = os.Setenv("GIT_AUTHOR_NAME", username)
+		if err != nil {
+			return errors.Wrap(err, "failed to set GIT_AUTHOR_NAME env variable")
+		}
+		err = os.Setenv("GIT_AUTHOR_EMAIL", email)
+		if err != nil {
+			return errors.Wrap(err, "failed to set GIT_AUTHOR_EMAIL env variable")
+		}
 	}
 	return nil
 }

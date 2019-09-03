@@ -224,7 +224,7 @@ func GetOwner(batchMode bool, provider GitProvider, gitUsername string, in termi
 	if batchMode {
 		owner = gitUsername
 	} else {
-		org, err := PickOrganisation(provider, gitUsername, in, out, errOut)
+		org, err := PickOwner(provider, gitUsername, in, out, errOut)
 		if err != nil {
 			return "", err
 		}
