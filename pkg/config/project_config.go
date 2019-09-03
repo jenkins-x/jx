@@ -159,11 +159,11 @@ func (c *ProjectConfig) GetPipeline(kind string) (*syntax.ParsedPipeline, error)
 			parsed = c.PipelineConfig.Pipelines.Feature.Pipeline
 		}
 	default:
-		return nil, fmt.Errorf("unknown pipeline kind %s", kind)
+		return nil, errors.Errorf("unknown pipeline kind %s", kind)
 	}
 
 	if parsed == nil {
-		return nil, fmt.Errorf("no pipeline defined for kind %s", kind)
+		return nil, errors.Errorf("no pipeline defined for kind %s", kind)
 	}
 	return parsed, nil
 }

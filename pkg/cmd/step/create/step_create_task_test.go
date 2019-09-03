@@ -344,7 +344,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization:          "abayer",
 			branch:                "really-long",
 			kind:                  "release",
-			effectiveProjectError: fmt.Errorf("%s", "no pipeline defined for kind release"),
+			effectiveProjectError: errors.New("no pipeline defined for kind release"),
 		},
 	}
 
