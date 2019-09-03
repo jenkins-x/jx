@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/controller/pipeline"
@@ -79,6 +80,8 @@ var (
 			# run the environment controller
 			jx controller environment
 		`)
+
+	pipelineLock sync.Mutex
 )
 
 // NewCmdControllerEnvironment creates the command
@@ -291,20 +294,22 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 	pr.Branch = branch
 	pr.Revision = revision
 	pr.RemoteCluster = true
+	pr.DisableConcurrent = true
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range o.Labels {
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
 
+	pipelineLock.Lock()
 	log.Logger().Infof("triggering pipeline for repo %s branch %s revision %s", sourceURL, branch, revision)
 
 	err = pr.Run()
+	pipelineLock.Unlock()
 	if err != nil {
 		o.returnError(err, err.Error(), w, r)
 		return
 	}
-
 	results := &pipeline.PipelineRunResponse{
 		Resources: pr.Results.ObjectReferences(),
 	}
