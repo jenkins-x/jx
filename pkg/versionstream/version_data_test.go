@@ -75,6 +75,9 @@ func TestExactPackageVersionRange(t *testing.T) {
 	AssertPackageVersion(t, resolver, "kubectl", "1.10.1", false)
 	AssertPackageVersion(t, resolver, "kubectl", "2.0.0", false)
 	AssertPackageVersion(t, resolver, "kubectl", "2.0.1", false)
+
+	AssertPackageVersion(t, resolver, "git", "2.1.1 (Apple Git-117)", false)
+	AssertPackageVersion(t, resolver, "git", "2.20.1 (Apple Git-117)", true)
 }
 
 func AssertPackageVersion(t *testing.T, resolver *versionstream.VersionResolver, name string, version string, expectedValid bool) {
