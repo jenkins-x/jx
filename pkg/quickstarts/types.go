@@ -13,6 +13,8 @@ type Quickstart struct {
 	Framework      string
 	Tags           []string
 	DownloadZipURL string
+	GitServer      string
+	GitKind        string
 	GitProvider    gits.GitProvider
 }
 
