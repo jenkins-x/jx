@@ -131,19 +131,6 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 		return nil, fmt.Errorf("Could not find chosen quickstart for %s", answer)
 	}
 	name := filter.ProjectName
-	if !batchMode {
-		if name == "" {
-			name = q.Name
-			var err error
-			name, err = util.PickValue("Project name", name, true, "", in, out, errOut)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	if name == "" {
-		return nil, fmt.Errorf("No project name")
-	}
 	form := &QuickstartForm{
 		Quickstart: q,
 		Name:       name,
