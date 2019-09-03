@@ -177,17 +177,20 @@ func (o *CreateQuickstartOptions) Run() error {
 		if details.RepoName != "" {
 			repoName = details.RepoName
 		}
-		o.Filter.ProjectName = details.RepoName
+		o.Filter.ProjectName = repoName
+		if repoName == "" {
+			return fmt.Errorf("No project name")
+		}
+		q.Name = repoName
 	} else {
-		q.Name = o.ImportOptions.GitRepositoryOptions.RepoName
+		q.Name = o.Filter.ProjectName
 		if q.Name == "" {
-			return util.MissingOption("")
+			q.Name = repoName
+		}
+		if q.Name == "" {
+			return util.MissingOption("project-name")
 		}
 	}
-	if repoName == "" {
-		return fmt.Errorf("No project name")
-	}
-	q.Name = repoName
 
 	// Prevent accidental attempts to use ML Project Sets in create quickstart
 	if isMLProjectSet(q.Quickstart) {
