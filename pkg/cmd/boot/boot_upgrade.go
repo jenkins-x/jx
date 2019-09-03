@@ -2,6 +2,7 @@ package boot
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -87,7 +88,11 @@ func (o *BootUpgradeOptions) Run() error {
 		return errors.Wrap(err, "failed to update version stream ref")
 	}
 
-	//TODO: raise PR
+	err = o.raisePR()
+	if err != nil {
+		return errors.Wrap(err, "failed to raise pr")
+	}
+
 	//TODO: delete upgrade_branch
 	return nil
 }
@@ -271,6 +276,51 @@ func (o *BootUpgradeOptions) excludeFiles(commit string) error {
 	err = o.Git().AddCommitFiles(o.Dir, "chore: exclude files from upgrade", excludedFiles)
 	if err != nil {
 		return errors.Wrapf(err, "failed to commit excluded files %v", excludedFiles)
+	}
+	return nil
+}
+
+func (o *BootUpgradeOptions) raisePR() error {
+	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
+	if !o.GetFactory().IsInCluster() {
+		authConfigSvc, err = o.CreateGitAuthConfigService()
+	}
+	if err != nil {
+		return errors.Wrap(err, "failed to create pipeline user git auth config service")
+	}
+	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
+
+	gitInfo, err := o.Git().Info(o.Dir)
+	if err != nil {
+		return errors.Wrap(err, "failed to get git info")
+	}
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return errors.Wrap(err, "failed to get git kind")
+	}
+	provider, err := gitInfo.CreateProviderForUser(server, userAuth, gitKind, o.Git())
+	if err != nil {
+		return errors.Wrap(err, "failed to create provider for user")
+	}
+	upstreamInfo, err := provider.GetRepository(gitInfo.Organisation, gitInfo.Name)
+	if err != nil {
+		return errors.Wrapf(err, "getting repository %s/%s", gitInfo.Organisation, gitInfo.Name)
+	}
+
+	details := gits.PullRequestDetails{
+		BranchName: fmt.Sprintf("upgrade_branch"),
+		Title:      "feat(config): upgrade configuration",
+		Message:    "Upgrade configuration",
+	}
+
+	filter := gits.PullRequestFilter{
+		Labels: []string{
+			boot.PullRequestLabel,
+		},
+	}
+	_, err = gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider, []string{boot.PullRequestLabel})
+	if err != nil {
+		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
 	}
 	return nil
 }
