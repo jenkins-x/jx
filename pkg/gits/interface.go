@@ -279,6 +279,7 @@ type Gitter interface {
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
 	DeleteRemoteBranch(dir string, remoteName string, branch string) error
+	DeleteLocalBranch(dir string, branch string) error
 
 	SetUpstreamTo(dir string, branch string) error
 }

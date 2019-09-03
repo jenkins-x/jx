@@ -221,14 +221,19 @@ func (g *GitCLI) Pull(dir string) error {
 	return g.gitCmd(dir, "pull")
 }
 
-// PullRemoteBranches pulls the remote Git tags from the given given directory
+// PullRemoteBranches pulls the remote Git tags from the given directory
 func (g *GitCLI) PullRemoteBranches(dir string) error {
 	return g.gitCmd(dir, "pull", "--all")
 }
 
-// DeleteRemoteBranch deletes the remote branch in the given given directory
+// DeleteRemoteBranch deletes the remote branch in the given directory
 func (g *GitCLI) DeleteRemoteBranch(dir string, remoteName string, branch string) error {
 	return g.gitCmd(dir, "push", remoteName, "--delete", branch)
+}
+
+// DeleteLocalBranch deletes the local branch in the given directory
+func (g *GitCLI) DeleteLocalBranch(dir string, branch string) error {
+	return g.gitCmd(dir, "--delete", branch)
 }
 
 // CloneOrPull clones  the given git URL or pull if it already exists
