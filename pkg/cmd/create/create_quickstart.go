@@ -216,12 +216,15 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, err
 	}
-	userAuth := q.GitProvider.UserAuth()
-	token := userAuth.ApiToken
-	username := userAuth.Username
-	if token != "" && username != "" {
-		log.Logger().Debugf("Downloading Quickstart source zip from %s with basic auth for user: %s", u, username)
-		req.SetBasicAuth(username, token)
+	gitProvider := q.GitProvider
+	if gitProvider != nil {
+		userAuth := gitProvider.UserAuth()
+		token := userAuth.ApiToken
+		username := userAuth.Username
+		if token != "" && username != "" {
+			log.Logger().Debugf("Downloading Quickstart source zip from %s with basic auth for user: %s", u, username)
+			req.SetBasicAuth(username, token)
+		}
 	}
 	res, err := client.Do(req)
 	if err != nil {
