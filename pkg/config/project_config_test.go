@@ -93,12 +93,12 @@ func TestGetPipeline(t *testing.T) {
 	assert.NotNil(t, releasePipeline)
 
 	pullRequestPipeline, err := testProjectConfigMaven.GetPipeline(jenkinsfile.PipelineKindPullRequest)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, err.Error(), "no pipeline defined for kind pullrequest")
 	assert.Nil(t, pullRequestPipeline)
 
 	featurePipeline, err := testProjectConfigMaven.GetPipeline(jenkinsfile.PipelineKindFeature)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, err.Error(), "no pipeline defined for kind feature")
 	assert.Nil(t, featurePipeline)
 }
