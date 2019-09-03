@@ -2,7 +2,7 @@ package gke
 
 import "fmt"
 
-// BucketName creates a Bucket name for a given service name and cluster name
+// BucketName creates a Bucket name for a given service name
 func BucketName(serviceName string) string {
 	return generateName(serviceName, "bucket")
 }
