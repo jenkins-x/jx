@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -1017,7 +1018,7 @@ func (b *BitbucketServerProvider) Kind() string {
 
 // Exposed by Jenkins plugin; this one is for https://wiki.jenkins.io/display/JENKINS/BitBucket+Plugin
 func (b *BitbucketServerProvider) JenkinsWebHookPath(gitURL string, secret string) string {
-	return "/bitbucket-scmsource-hook/notify"
+	return "/bitbucket-scmsource-hook/notify?server_url=" + url.QueryEscape(b.Server.URL)
 }
 
 func (b *BitbucketServerProvider) Label() string {
