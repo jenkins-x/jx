@@ -133,6 +133,10 @@ func verifyError(name string, err error) error {
 func convertToVersion(text string) string {
 	answer := strings.TrimSpace(text)
 	answer = strings.TrimPrefix(answer, "v")
+	words := strings.Fields(answer)
+	if len(words) > 1 {
+		answer = words[0]
+	}
 	return answer
 }
 
