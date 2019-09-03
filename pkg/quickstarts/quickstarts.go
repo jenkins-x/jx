@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/versionstream"
 )
 
 func (q *Quickstart) SurveyName() string {
@@ -41,30 +40,18 @@ func (f *QuickstartFilter) Matches(q *Quickstart) bool {
 	return true
 }
 
-func (model *QuickstartModel) convertToQuickStart(from *versionstream.QuickStart, to *Quickstart) error {
-	s := func(text string, override string) string {
-		if override != "" {
-			return override
-		}
-		return text
+// GetGitServer returns the git server to use
+func (q *Quickstart) GetGitServer() string {
+	if q.GitServer == "" {
+		q.GitServer = "https://github.com"
 	}
-	ss := func(texts []string, overrides []string) []string {
-		answer := append([]string{}, texts...)
-		for _, o := range overrides {
-			if util.StringArrayIndex(answer, o) < 0 {
-				answer = append(answer, o)
-			}
-		}
-		return answer
-	}
+	return q.GitServer
+}
 
-	to.ID = s(to.ID, from.ID)
-	to.Owner = s(to.Owner, from.Owner)
-	to.Name = s(to.Name, from.Name)
-	to.Version = s(to.Version, from.Version)
-	to.DownloadZipURL = s(to.DownloadZipURL, from.DownloadZipURL)
-	to.Framework = s(to.Framework, from.Framework)
-	to.Language = s(to.Language, from.Language)
-	to.Tags = ss(to.Tags, from.Tags)
-	return nil
+// GetGitKind returns the kind of git provider to use
+func (q *Quickstart) GetGitKind() string {
+	if q.GitKind == "" {
+		q.GitKind = "github"
+	}
+	return q.GitKind
 }
