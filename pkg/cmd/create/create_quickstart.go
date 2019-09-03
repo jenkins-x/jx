@@ -153,18 +153,6 @@ func (o *CreateQuickstartOptions) Run() error {
 		m[loc.Owner] = loc
 	}
 
-	var details *gits.CreateRepoData
-	o.GitRepositoryOptions.Owner = o.ImportOptions.Organisation
-	o.GitRepositoryOptions.RepoName = o.ImportOptions.Repository
-	if !o.BatchMode {
-		details, err = o.GetGitRepositoryDetails()
-		if err != nil {
-			return err
-		}
-
-		o.Filter.ProjectName = details.RepoName
-	}
-
 	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
@@ -176,6 +164,30 @@ func (o *CreateQuickstartOptions) Run() error {
 	if q == nil {
 		return fmt.Errorf("no quickstart chosen")
 	}
+
+	var details *gits.CreateRepoData
+	o.GitRepositoryOptions.Owner = o.ImportOptions.Organisation
+	o.GitRepositoryOptions.RepoName = o.ImportOptions.Repository
+	repoName := o.GitRepositoryOptions.RepoName
+	if !o.BatchMode {
+		details, err = o.GetGitRepositoryDetails()
+		if err != nil {
+			return err
+		}
+		if details.RepoName != "" {
+			repoName = details.RepoName
+		}
+		o.Filter.ProjectName = details.RepoName
+	} else {
+		q.Name = o.ImportOptions.GitRepositoryOptions.RepoName
+		if q.Name == "" {
+			return util.MissingOption("")
+		}
+	}
+	if repoName == "" {
+		return fmt.Errorf("No project name")
+	}
+	q.Name = repoName
 
 	// Prevent accidental attempts to use ML Project Sets in create quickstart
 	if isMLProjectSet(q.Quickstart) {
