@@ -391,6 +391,9 @@ func (options *ImportOptions) Run() error {
 		if !options.DryRun {
 			err = options.CreateNewRemoteRepository()
 			if err != nil {
+				if !options.DisableDraft {
+					log.Logger().Warn("Remote repository creation failed. In order to retry consider adding '--no-draft' option.")
+				}
 				return err
 			}
 		}
