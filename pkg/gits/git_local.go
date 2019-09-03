@@ -68,6 +68,11 @@ func (g *GitLocal) DeleteRemoteBranch(dir string, remoteName string, branch stri
 	return g.GitFake.DeleteRemoteBranch(dir, remoteName, branch)
 }
 
+// DeleteLocalBranch deletes a remote branch
+func (g *GitLocal) DeleteLocalBranch(dir string, branch string) error {
+	return g.GitFake.DeleteLocalBranch(dir, branch)
+}
+
 // CloneOrPull clones  the given git URL or pull if it already exists
 // Faked out
 func (g *GitLocal) CloneOrPull(url string, dir string) error {
@@ -113,6 +118,11 @@ func (g *GitLocal) RemoteBranches(dir string) ([]string, error) {
 // Checkout checks out the given branch
 func (g *GitLocal) Checkout(dir string, branch string) error {
 	return g.GitCLI.Checkout(dir, branch)
+}
+
+// CheckoutCommitFiles checks out the given files
+func (g *GitLocal) CheckoutCommitFiles(dir string, commit string, files []string) error {
+	return g.GitCLI.CheckoutCommitFiles(dir, commit, files)
 }
 
 // CheckoutOrphan checks out the given branch as an orphan
@@ -204,6 +214,11 @@ func (g *GitLocal) CreateAuthenticatedURL(cloneURL string, userAuth *auth.UserAu
 	return g.GitCLI.CreateAuthenticatedURL(cloneURL, userAuth)
 }
 
+// AddCommitFiles add files to a commit
+func (g *GitLocal) AddCommitFiles(dir string, msg string, files []string) error {
+	return g.GitCLI.AddCommitFiles(dir, msg, files)
+}
+
 // RepoName formats the repository names based on the organization
 func (g *GitLocal) RepoName(org, repoName string) string {
 	return g.GitCLI.RepoName(org, repoName)
@@ -291,6 +306,11 @@ func (g *GitLocal) GetRevisionBeforeDateText(dir string, dateText string) (strin
 // GetCommitPointedToByLatestTag return the SHA of the current git tag from the repository at the given directory
 func (g *GitLocal) GetCommitPointedToByLatestTag(dir string) (string, string, error) {
 	return g.GitCLI.GetCommitPointedToByLatestTag(dir)
+}
+
+// GetCommitPointedToByTag return the SHA of the commit pointed to by the given git tag
+func (g *GitLocal) GetCommitPointedToByTag(dir string, tag string) (string, error) {
+	return g.GitCLI.GetCommitPointedToByTag(dir, tag)
 }
 
 // GetLatestCommitMessage returns the latest git commit message
@@ -477,4 +497,9 @@ func (g *GitLocal) GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCom
 // CherryPick does a git cherry-pick of commit
 func (g *GitLocal) CherryPick(dir string, commit string) error {
 	return g.GitCLI.CherryPick(dir, commit)
+}
+
+// CherryPickTheirs does a git cherry-pick of commit
+func (g *GitLocal) CherryPickTheirs(dir string, commit string) error {
+	return g.GitCLI.CherryPickTheirs(dir, commit)
 }

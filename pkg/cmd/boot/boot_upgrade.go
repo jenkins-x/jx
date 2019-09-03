@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -72,7 +73,7 @@ func (o *BootUpgradeOptions) Run() error {
 		return nil
 	}
 
-	err = o.checkoutNewBranch("upgrade_branch")
+	localBranch, err := o.checkoutNewBranch()
 	if err != nil {
 		return errors.Wrap(err, "failed to checkout upgrade_branch")
 	}
@@ -93,7 +94,10 @@ func (o *BootUpgradeOptions) Run() error {
 		return errors.Wrap(err, "failed to raise pr")
 	}
 
-	//TODO: delete upgrade_branch
+	err = o.deleteLocalBranch(localBranch)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete local branch %s", localBranch)
+	}
 	return nil
 }
 
@@ -108,11 +112,11 @@ func determineBootConfigURL(versionStreamURL string) string {
 func (o *BootUpgradeOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load requirements config %s", requirementsFile)
+		return nil, errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
 	}
 	exists, err := util.FileExists(requirementsFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if file %s exists", requirementsFile)
+		return nil, errors.Wrapf(err, "failed to check if file %s exists", requirementsFile)
 	}
 	if !exists {
 		return nil, fmt.Errorf("no requirements file %s ensure you are running this command inside a GitOps clone", requirementsFile)
@@ -139,16 +143,21 @@ func (o *BootUpgradeOptions) upgradeAvailable(versionStreamURL string, versionSt
 	return upgradeVersionSha, nil
 }
 
-func (o *BootUpgradeOptions) checkoutNewBranch(branch string) error {
-	err := o.Git().CreateBranch(o.Dir, branch)
+func (o *BootUpgradeOptions) checkoutNewBranch() (string, error) {
+	localBranchUUID, err := uuid.NewV4()
 	if err != nil {
-		return errors.Wrapf(err, "failed to create branch %s", branch)
+		return "", errors.Wrapf(err, "creating UUID for local branch")
 	}
-	err = o.Git().Checkout(o.Dir, branch)
+	localBranch := localBranchUUID.String()
+	err = o.Git().CreateBranch(o.Dir, localBranch)
 	if err != nil {
-		return errors.Wrapf(err, "failed to checkout branch %s", branch)
+		return "", errors.Wrapf(err, "failed to create local branch %s", localBranch)
 	}
-	return nil
+	err = o.Git().Checkout(o.Dir, localBranch)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to checkout local branch %s", localBranch)
+	}
+	return localBranch, nil
 }
 
 func (o *BootUpgradeOptions) updateVersionStreamRef(upgradeRef string) error {
@@ -186,11 +195,11 @@ func (o *BootUpgradeOptions) updateBootConfig(versionStreamURL string, versionSt
 
 	currentSha, currentVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, versionStreamRef, bootConfigURL)
 	if err != nil {
-		return fmt.Errorf("failed to get boot config ref for version stream: %s", versionStreamRef)
+		return errors.Wrapf(err, "failed to get boot config ref for version stream: %s", versionStreamRef)
 	}
 	upgradeSha, upgradeVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, upgradeVersionSha, bootConfigURL)
 	if err != nil {
-		return fmt.Errorf("failed to get boot config ref for version stream ref: %s", upgradeVersionSha)
+		return errors.Wrapf(err, "failed to get boot config ref for version stream ref: %s", upgradeVersionSha)
 	}
 
 	// check if boot config upgrade available
@@ -308,7 +317,7 @@ func (o *BootUpgradeOptions) raisePR() error {
 	}
 
 	details := gits.PullRequestDetails{
-		BranchName: fmt.Sprintf("upgrade_branch"),
+		BranchName: fmt.Sprintf("jx_boot_upgrade_branch"),
 		Title:      "feat(config): upgrade configuration",
 		Message:    "Upgrade configuration",
 	}
@@ -321,6 +330,18 @@ func (o *BootUpgradeOptions) raisePR() error {
 	_, err = gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider, []string{boot.PullRequestLabel})
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
+	}
+	return nil
+}
+
+func (o *BootUpgradeOptions) deleteLocalBranch(branch string) error {
+	err := o.Git().Checkout(o.Dir, "master")
+	if err != nil {
+		return errors.Wrapf(err, "failed to checkout master branch")
+	}
+	err = o.Git().DeleteLocalBranch(o.Dir, branch)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete local branch %s", branch)
 	}
 	return nil
 }

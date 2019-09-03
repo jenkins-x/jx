@@ -245,6 +245,11 @@ func (g *GitFake) DeleteRemoteBranch(dir string, remoteName string, branch strin
 	return nil
 }
 
+// DeleteLocalBranch deletes a remote branch
+func (g *GitFake) DeleteLocalBranch(dir string, branch string) error {
+	return nil
+}
+
 // DiscoverRemoteGitURL discover the remote git URL
 func (g *GitFake) DiscoverRemoteGitURL(gitConf string) (string, error) {
 	origin, err := g.findRemote("origin")
@@ -431,7 +436,7 @@ func (g *GitFake) AddCommit(dir string, msg string) error {
 	return g.CommitIfChanges(dir, msg)
 }
 
-// AddCommitFiles add a file to a  commit
+// AddCommitFiles add files to a commit
 func (g *GitFake) AddCommitFiles(dir string, msg string, files []string) error {
 	return g.CommitIfChanges(dir, msg)
 }
@@ -463,7 +468,7 @@ func (g *GitFake) GetCommitPointedToByLatestTag(dir string) (string, string, err
 func (g *GitFake) GetCommitPointedToByTag(dir string, tag string) (string, error) {
 	len := len(g.Commits)
 	if len < 1 {
-		return "", errors.New("No commit found")
+		return "", errors.New("no commit found")
 	}
 	return g.Commits[len-1].SHA, nil
 }
