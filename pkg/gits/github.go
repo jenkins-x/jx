@@ -290,16 +290,20 @@ func (p *GitHubProvider) CreateRepository(owner string, name string, private boo
 		Name:    github.String(name),
 		Private: github.Bool(private),
 	}
+
+	visibility := "public"
+	if private {
+		visibility = "private"
+	}
+
 	org := owner
 	if org == p.Username {
+		log.Logger().Debugf("repository owner for %s is the authenticated user %s, setting org to the empty string '%s'", name, p.Username, org)
 		org = ""
 	}
+	log.Logger().Debugf("creating %s repository %s with org '%s'", visibility, name, org)
 	repo, _, err := p.Client.Repositories.Create(p.Context, org, repoConfig)
 	if err != nil {
-		visibility := "public"
-		if private {
-			visibility = "private"
-		}
 		msg := fmt.Sprintf("failed to create %s repository %s/%s due to: %s", visibility, owner, name, err)
 		if strings.Contains(err.Error(), "Visibility can't be private") {
 			msg = msg + "\ntip: free GitHub organization accounts do not allow private repositories"
