@@ -194,7 +194,8 @@ type ClusterConfig struct {
 	ProjectID string `json:"project,omitempty"`
 	// ClusterName the logical name of the cluster
 	ClusterName string `json:"clusterName,omitempty"`
-	// VaultName the name of the vault if using vault for secretts
+	// VaultName the name of the vault if using vault for secrets
+	// Deprecated
 	VaultName string `json:"vaultName,omitempty"`
 	// Region the cloud region being used
 	Region string `json:"region,omitempty"`
@@ -255,6 +256,14 @@ func (t *ClusterConfig) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type VaultConfig struct {
+	// Name the name of the vault if using vault for secretts
+	Name           string `json:"name,omitempty"`
+	Bucket         string `json:"bucket,omitempty"`
+	Keyring        string `json:"keyring,omitempty"`
+	ServiceAccount string `json:"ServiceAccount,omitempty"`
+}
+
 // VersionStreamConfig contains version stream config
 type VersionStreamConfig struct {
 	// URL of the version stream to use
@@ -306,6 +315,8 @@ type RequirementsConfig struct {
 	VersionStream VersionStreamConfig `json:"versionStream"`
 	// autoUpdate contains auto update config
 	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
+	// Vault the configuration for vault
+	Vault VaultConfig `json:"vault,omitempty"`
 }
 
 // NewRequirementsConfig creates a default configuration file
@@ -406,6 +417,7 @@ func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
 		return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
 	config.addDefaults()
+	config.handleDeprecation()
 	return config, nil
 }
 
@@ -417,6 +429,7 @@ func (c *RequirementsConfig) IsEmpty() bool {
 
 // SaveConfig saves the configuration file to the given project directory
 func (c *RequirementsConfig) SaveConfig(fileName string) error {
+	c.handleDeprecation()
 	data, err := yaml.Marshal(c)
 	if err != nil {
 		return err
@@ -532,6 +545,14 @@ func (c *RequirementsConfig) addDefaults() {
 			// TODO when lighthouse is GA lets default to it
 			// c.Webhook = WebhookTypeLighthouse
 		}
+	}
+}
+
+func (c *RequirementsConfig) handleDeprecation() {
+	if c.Vault.Name != "" {
+		c.Cluster.VaultName = c.Vault.Name
+	} else {
+		c.Vault.Name = c.Cluster.VaultName
 	}
 }
 

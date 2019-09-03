@@ -38,12 +38,15 @@ type KmsConfig struct {
 // If they are generic enough and needed elsewhere, we can move them up one level to more generic GCP methods.
 
 // CreateKmsConfig creates a KMS config for the GKE Vault
-func CreateKmsConfig(gcloud gke.GClouder, vaultName, clusterName, projectId string) (*KmsConfig, error) {
+func CreateKmsConfig(gcloud gke.GClouder, vaultName, clusterName, keyringName string, projectID string) (*KmsConfig, error) {
+	if keyringName == "" {
+		keyringName = gke.KeyringName(vaultName)
+	}
 	config := &KmsConfig{
-		Keyring:  gke.KeyringName(vaultName),
+		Keyring:  keyringName,
 		Key:      gke.KeyName(vaultName),
 		Location: gke.KmsLocation,
-		project:  projectId,
+		project:  projectID,
 	}
 
 	err := gcloud.CreateKmsKeyring(config.Keyring, config.project)
@@ -70,8 +73,10 @@ func CreateVaultGCPServiceAccount(gcloud gke.GClouder, kubeClient kubernetes.Int
 }
 
 // CreateBucket Creates a bucket in GKE to store the backend (encrypted) data for vault
-func CreateBucket(gcloud gke.GClouder, vaultName, clusterName, projectID, zone string, recreate bool, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
-	bucketName := gke.BucketName(vaultName)
+func CreateBucket(gcloud gke.GClouder, vaultName, bucketName string, projectID, zone string, recreate bool, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+	if bucketName == "" {
+		bucketName = gke.BucketName(vaultName)
+	}
 	exists, err := gcloud.BucketExists(projectID, bucketName)
 	if err != nil {
 		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")

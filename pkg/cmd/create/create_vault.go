@@ -66,6 +66,9 @@ type CreateVaultOptions struct {
 	SecretsPathPrefix   string
 	RecreateVaultBucket bool
 	NoExposeVault       bool
+	BucketName          string
+	KeyringName         string
+	ServiceAccountName  string
 
 	IngressConfig kube.IngressConfig
 }
@@ -108,6 +111,9 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
 	cmd.Flags().BoolVarP(&options.RecreateVaultBucket, "recreate", "", true, "If the bucket already exists delete it so its created empty for the vault")
 	cmd.Flags().BoolVarP(&options.NoExposeVault, "no-expose", "", false, "If enabled disable the exposing of the vault")
+	cmd.Flags().StringVarP(&options.BucketName, "bucket-name", "", "", "Specify the bucket name. If empty then the bucket name will be based on the vault name")
+	cmd.Flags().StringVarP(&options.BucketName, "keyring-name", "", "", "Specify the KMS Keyring name. If empty then tehe keyring name will be based on the vault name")
+	cmd.Flags().StringVarP(&options.BucketName, "service-account-name", "", "", "Specify Service Account name used. If empty then the service account name will be based on the vault name")
 
 	return cmd
 }
@@ -188,13 +194,13 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 		return err
 	}
 	log.Logger().Debugf("cluster short name for vault naming: %s", util.ColorInfo(clusterName))
-	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.Namespace, clusterName)
+	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.ServiceAccountName, o.Namespace, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
 	log.Logger().Debugf("Created service account %s for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
 	if kubeProvider == cloud.GKE {
-		err = o.createVaultGKE(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
+		err = o.createVaultGKE(vaultOperatorClient, vaultName, o.BucketName, o.KeyringName, kubeClient, clusterName, vaultAuthServiceAccount)
 	}
 	if kubeProvider == cloud.AWS || kubeProvider == cloud.EKS {
 		err = o.createVaultAWS(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
@@ -242,7 +248,7 @@ func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
 	return images, nil
 }
 
-func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
+func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, bucketName string, keyringName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
 	err := o.GCloud().Login("", true)
 	if err != nil {
 		return errors.Wrap(err, "login into GCP")
@@ -301,13 +307,13 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	log.Logger().Debugf("%s service account created", util.ColorInfo(gcpServiceAccountSecretName))
 
 	log.Logger().Debugf("Setting up GCP KMS configuration")
-	kmsConfig, err := gkevault.CreateKmsConfig(o.GCloud(), vaultName, clusterName, o.GKEProjectID)
+	kmsConfig, err := gkevault.CreateKmsConfig(o.GCloud(), vaultName, clusterName, keyringName, o.GKEProjectID)
 	if err != nil {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
 	log.Logger().Debugf("KMS Key %s created in keying %s", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
-	vaultBucket, err := gkevault.CreateBucket(o.GCloud(), vaultName, clusterName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.In, o.Out, o.Err)
+	vaultBucket, err := gkevault.CreateBucket(o.GCloud(), vaultName, bucketName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
@@ -433,8 +439,11 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 }
 
 // CreateAuthServiceAccount creates a Serivce Account for the Auth service for vault
-func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace, clusterName string) (string, error) {
-	serviceAccountName := AuthServiceAccountName(vaultName)
+func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, serviceAccountName string, namespace, clusterName string) (string, error) {
+	if serviceAccountName == "" {
+		serviceAccountName = AuthServiceAccountName(vaultName)
+	}
+
 	_, err := serviceaccount.CreateServiceAccount(client, namespace, serviceAccountName)
 	if err != nil {
 		return "", errors.Wrap(err, "creating vault auth service account")

@@ -93,11 +93,11 @@ func (o *StepBootVaultOptions) Run() error {
 		return errors.Wrapf(err, "failed to create kubernetes client")
 	}
 
-	if requirements.Cluster.VaultName == "" {
-		requirements.Cluster.VaultName = kubevault.SystemVaultNameForCluster(requirements.Cluster.ClusterName)
+	if requirements.Vault.Name == "" {
+		requirements.Vault.Name = kubevault.SystemVaultNameForCluster(requirements.Cluster.ClusterName)
 	}
 
-	noExposeVault, err := o.verifyVaultIngress(requirements, kubeClient, ns, requirements.Cluster.VaultName)
+	noExposeVault, err := o.verifyVaultIngress(requirements, kubeClient, ns, requirements.Vault.Name)
 	if err != nil {
 		return err
 	}
@@ -123,6 +123,9 @@ func (o *StepBootVaultOptions) Run() error {
 		RecreateVaultBucket: true,
 		IngressConfig:       ic,
 		NoExposeVault:       noExposeVault,
+		BucketName:          requirements.Vault.Bucket,
+		KeyringName:         requirements.Vault.Keyring,
+		ServiceAccountName:  requirements.Vault.ServiceAccount,
 		// TODO - load from a local yaml file if available?
 		// AWSConfig:           o.AWSConfig,
 	}
@@ -179,7 +182,7 @@ func (o *StepBootVaultOptions) Run() error {
 	// lets store the system vault name
 	_, err = kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
 		func(configMap *corev1.ConfigMap) error {
-			configMap.Data[kube.SystemVaultName] = requirements.Cluster.VaultName
+			configMap.Data[kube.SystemVaultName] = requirements.Vault.Name
 			configMap.Data[secrets.SecretsLocationKey] = string(secrets.VaultLocationKind)
 			return nil
 		}, nil)
@@ -189,17 +192,17 @@ func (o *StepBootVaultOptions) Run() error {
 
 	log.Logger().Infof("finding vault in namespace %s", ns)
 
-	if kubevault.FindVault(vaultOperatorClient, requirements.Cluster.VaultName, ns) {
+	if kubevault.FindVault(vaultOperatorClient, requirements.Vault.Name, ns) {
 		log.Logger().Infof("System vault named %s in namespace %s already exists",
-			util.ColorInfo(requirements.Cluster.VaultName), util.ColorInfo(ns))
+			util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
 	} else {
 		log.Logger().Info("Creating new system vault")
-		err = cvo.CreateVault(vaultOperatorClient, requirements.Cluster.VaultName, provider)
+		err = cvo.CreateVault(vaultOperatorClient, requirements.Vault.Name, provider)
 		if err != nil {
 			return err
 		}
 		log.Logger().Infof("System vault created named %s in namespace %s.",
-			util.ColorInfo(requirements.Cluster.VaultName), util.ColorInfo(ns))
+			util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
 	}
 	return nil
 }
