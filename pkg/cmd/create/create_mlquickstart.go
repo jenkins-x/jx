@@ -313,12 +313,15 @@ func (o *CreateMLQuickstartOptions) getMLProjectSet(q *quickstarts.Quickstart) (
 		log.Logger().Debugf("Projectset not found because %+#v", err)
 		return nil, err
 	}
-	userAuth := q.GitProvider.UserAuth()
-	token := userAuth.ApiToken
-	username := userAuth.Username
-	if token != "" && username != "" {
-		log.Logger().Debugf("Downloading projectset from %s with basic auth for user: %s", u, username)
-		req.SetBasicAuth(username, token)
+	gitProvider := q.GitProvider
+	if gitProvider != nil {
+		userAuth := gitProvider.UserAuth()
+		token := userAuth.ApiToken
+		username := userAuth.Username
+		if token != "" && username != "" {
+			log.Logger().Debugf("Downloading project zip from %s with basic auth for user: %s", u, username)
+			req.SetBasicAuth(username, token)
+		}
 	}
 	res, err := client.Do(req)
 	if err != nil {
