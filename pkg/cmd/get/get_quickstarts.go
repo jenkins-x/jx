@@ -63,6 +63,7 @@ func NewCmdGetQuickstarts(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
 	cmd.Flags().BoolVarP(&options.Filter.AllowML, "machine-learning", "", false, "Allow machine-learning quickstarts in results")
 	cmd.Flags().BoolVarP(&options.ShortFormat, "short", "s", false, "return minimal details")
+	cmd.Flags().BoolVarP(&options.IgnoreTeam, "ignore-team", "", false, "ignores the quickstarts added to the Team Settings")
 
 	return cmd
 }
