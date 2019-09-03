@@ -285,6 +285,11 @@ func (suite *BitbucketServerProviderTestSuite) TestMergePullRequest() {
 	suite.Require().Nil(err)
 }
 
+func (suite *BitbucketServerProviderTestSuite) TestJenkinsWebHookPath() {
+	p := suite.provider.JenkinsWebHookPath("notUsed", "notUsed")
+	suite.Require().Equal("/bitbucket-scmsource-hook/notify?server_url=http%3A%2F%2Fauth.example.com", p)
+}
+
 func (suite *BitbucketServerProviderTestSuite) TestCreateWebHook() {
 
 	data := &gits.GitWebHookArguments{
