@@ -1,12 +1,16 @@
 package create
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
@@ -67,6 +71,8 @@ var (
 
 			`)
 
+	lastPipelineRun = time.Now()
+
 	createTaskOutDir  string
 	createTaskNoApply bool
 )
@@ -85,6 +91,7 @@ type StepCreateTaskOptions struct {
 	NoApply           *bool
 	DryRun            bool
 	InterpretMode     bool
+	DisableConcurrent bool
 	StartStep         string
 	Trigger           string
 	TargetPath        string
@@ -357,6 +364,9 @@ func (o *StepCreateTaskOptions) Run() error {
 
 		log.Logger().Debugf(" PipelineActivity for %s created successfully", tektonCRDs.Name())
 
+		if o.DisableConcurrent {
+			o.waitForPreviousPipeline(tektonClient, ns, 10*time.Minute)
+		}
 		log.Logger().Infof("Applying changes ")
 		err := tekton.ApplyPipeline(jxClient, tektonClient, tektonCRDs, ns, activityKey)
 		if err != nil {
@@ -367,6 +377,88 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Logger().Debugf(" for %s", tektonCRDs.PipelineRun().Name)
 	}
 	return nil
+}
+
+func (o *StepCreateTaskOptions) waitForPreviousPipeline(tektonClient tektonclient.Interface, ns string, defaultWait time.Duration) {
+	fallbackWait := true
+	labelSelector := fmt.Sprintf("owner=%s,repository=%s,branch=%s", o.GitInfo.Organisation, o.GitInfo.Name, o.Branch)
+	if o.Context != "" {
+		labelSelector += fmt.Sprintf(",context=%s", o.Context)
+	}
+
+restartWatch:
+	prs, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		log.Logger().Errorf("Can't list PipelineRuns %s: %s", labelSelector, err)
+	} else {
+		pendingPipelineRuns := make(map[string]bool)
+		for _, pr := range prs.Items {
+			if !(pr.IsDone() || pr.IsCancelled()) {
+				pendingPipelineRuns[pr.Name] = true
+			}
+		}
+		if len(pendingPipelineRuns) > 0 {
+			log.Logger().Infof("Waiting for pending PipelineRuns %v to finish or be deleted", reflect.ValueOf(pendingPipelineRuns).MapKeys())
+			pipelineWatch, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Watch(metav1.ListOptions{
+				LabelSelector:   labelSelector,
+				ResourceVersion: prs.ResourceVersion,
+			})
+			if err != nil {
+				log.Logger().Errorf("Can't watch PipelineRun %s (ResourceVersion %s): %s", labelSelector, prs.ResourceVersion, err)
+			} else {
+				for {
+					update := <-pipelineWatch.ResultChan()
+					if o.Verbose {
+						bytes, err := json.MarshalIndent(update, "", "\t")
+						log.Logger().Debugf("PipelineRun watch update: %s %s", bytes, err)
+					}
+					switch update.Type {
+					case watch.Deleted:
+						pr := update.Object.(*pipelineapi.PipelineRun)
+						if pendingPipelineRuns[pr.Name] {
+							log.Logger().Infof("PipelineRun %s is deleted", pr.Name)
+							delete(pendingPipelineRuns, pr.Name)
+						}
+					case watch.Modified:
+						pr := update.Object.(*pipelineapi.PipelineRun)
+						if pendingPipelineRuns[pr.Name] && (pr.IsDone() || pr.IsCancelled()) {
+							log.Logger().Infof("PipelineRun %s is finished", pr.Name)
+							delete(pendingPipelineRuns, pr.Name)
+						}
+					case watch.Added:
+						pr := update.Object.(*pipelineapi.PipelineRun)
+						if !(pr.IsDone() || pr.IsCancelled()) {
+							log.Logger().Infof("PipelineRun %s is added", pr.Name)
+							pendingPipelineRuns[pr.Name] = true
+						}
+					default:
+						log.Logger().Errorf("Unknown PipelineRun watch update. Restarting watch.")
+						pipelineWatch.Stop()
+						goto restartWatch
+					}
+					if len(pendingPipelineRuns) == 0 {
+						pipelineWatch.Stop()
+						fallbackWait = false
+						break
+					}
+				}
+			}
+		} else {
+			fallbackWait = false
+		}
+	}
+
+	// When failing to wait for a pipeline wait for defaultWait.
+	if fallbackWait {
+		sleepDuration := defaultWait - time.Now().Sub(lastPipelineRun)
+		if sleepDuration > 0 {
+			log.Logger().Errorf("Can't access previous PipelineRun. Waiting %v to ensure it finishes", sleepDuration)
+			time.Sleep(sleepDuration)
+		}
+		lastPipelineRun = time.Now()
+	}
 }
 
 func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonClient tektonclient.Interface, jxClient jxclient.Interface, kubeClient kubeclient.Interface, ns string, pipelineName string) (*config.ProjectConfig, error) {
