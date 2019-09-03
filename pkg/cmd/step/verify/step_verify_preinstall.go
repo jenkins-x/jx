@@ -157,6 +157,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	po := &StepVerifyPackagesOptions{}
 	po.CommonOptions = o.CommonOptions
+	po.Packages = []string{"kubectl", "git", "helm"}
 	err = po.Run()
 	if err != nil {
 		return err

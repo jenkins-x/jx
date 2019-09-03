@@ -2,6 +2,7 @@ package verify
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -107,13 +108,14 @@ func (o *StepVerifyPackagesOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
 	err = o.verifyJXVersion(resolver)
 	if err != nil {
 		return err
 	}
 
-	log.Logger().Infof("the CLI packages seem to be setup correctly\n")
+	log.Logger().Infof("the CLI packages seem to be setup correctly %s\n", util.ColorInfo(strings.Join(o.Packages, ", ")))
+	log.Logger().Infof("\n")
+
 	table.Render()
 
 	return nil
