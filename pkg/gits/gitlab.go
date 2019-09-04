@@ -834,7 +834,8 @@ func (g *GitlabProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 
 // AddLabelsToIssue adds labels to issues or pullrequests
 func (g *GitlabProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
-	return fmt.Errorf("Getting content not supported on gitlab yet")
+	log.Logger().Warnf("Adding labels not supported on gitlab yet for repo %s/%s issue %d labels %v", owner, repo, number, labels)
+	return nil
 }
 
 // GetLatestRelease fetches the latest release from the git provider for org and name

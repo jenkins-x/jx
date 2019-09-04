@@ -359,7 +359,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		}
 		log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	}
-	if labels != nil {
+	if len(labels) > 0 {
 		number := *pr.Number
 		var err error
 		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, labels)
