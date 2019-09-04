@@ -1,0 +1,69 @@
+buildPack: none
+pipelineConfig:
+  pipelines:
+    release:
+      pipeline:
+        agent:
+          image: docker.io/rawlingsj80/builder-go:wip71
+        environment:
+          - name: DEPLOY_NAMESPACE
+            value: jx
+        stages:
+          - name: release
+            steps:
+              - name: verify-preintall
+                dir: /workspace/source/env
+                command: jx
+                args: ['step','verify','preinstall']
+              - name: cert-manager-crds
+                dir: /workspace/source
+                command: kubectl
+                args: ['apply', '--wait', '--validate=true', '-f', 'https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml']
+                env:
+                  - name: DEPLOY_NAMESPACE
+                    value: cert-manager
+              - name: jx-crds
+                command: jx
+                args: ['upgrade','crd']
+              - name: kube-system
+                dir: /workspace/source/systems/jxing
+                command: jx
+                args: ['step','helm','apply', '--remote', '--name', 'jxing']
+                env:
+                  - name: DEPLOY_NAMESPACE
+                    value: kube-system
+              - name: cert-manager
+                dir: /workspace/source/systems/cm
+                command: jx
+                args: ['step','helm','apply', '--remote', '--name', 'jx']
+                env:
+                  - name: DEPLOY_NAMESPACE
+                    value: cert-manager
+              - name: helm-cluster-values
+                dir: /workspace/source/env
+                command: jx
+                args: ['step','create','install', 'values', '-b']
+              - name: helm-populate-params
+                dir: /workspace/source/env
+                command: jx
+                args: ['step', 'create', 'values', '--name', 'parameters']
+              - name: helm-build
+                dir: /workspace/source/env
+                command: jx
+                args: ['step','helm','apply', '--remote', '--name', 'jenkins-x']
+              - name: verify-install
+                dir: /workspace/source/env
+                command: jx
+                args: ['step','verify','install']
+    pullRequest:
+      pipeline:
+        agent:
+          image: docker.io/rawlingsj80/builder-go:wip70
+        stages:
+          - name: release
+            steps:
+              - name: helm-build
+                dir: /workspace/source/env
+                command: make
+                args: ['build']
+

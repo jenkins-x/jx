@@ -87,7 +87,7 @@ func NewCmdStepCreateInstallValues(commonOpts *opts.CommonOptions) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the values.yaml file")
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to install into. Defaults to cluster.namespace in jx-requirements.yaml or $DEPLOY_NAMESPACE if not")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to install into. Defaults to $DEPLOY_NAMESPACE if not")
 
 	cmd.Flags().StringVarP(&options.IngressNamespace, "ingress-namespace", "", opts.DefaultIngressNamesapce, "The namespace for the Ingress controller")
 	cmd.Flags().StringVarP(&options.IngressService, "ingress-service", "", opts.DefaultIngressServiceName, "The name of the Ingress controller Service")
@@ -107,15 +107,19 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 		}
 	}
 
+	info := util.ColorInfo
+	ns := o.Namespace
+	if ns == "" {
+		ns = os.Getenv("DEPLOY_NAMESPACE")
+	}
+	if ns != "" {
+		if ns == "" {
+			return fmt.Errorf("no default namespace found")
+		}
+	}
 	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load Jenkins X requirements")
-	}
-
-	info := util.ColorInfo
-	ns, err := o.GetDeployNamespace(o.Namespace, requirements)
-	if err != nil {
-		return errors.Wrapf(err, "getting deploy namespace")
 	}
 
 	o.LazyCreate, err = requirements.IsLazyCreateSecrets(o.LazyCreateFlag)

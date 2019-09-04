@@ -64,24 +64,23 @@ func NewCmdStepBootVault(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", fmt.Sprintf("the directory to look for the requirements file: %s", config.RequirementsConfigFileName))
-	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults  to cluster.namespace in jx-requirements.yaml or DEPLOY_NAMESPACE")
+	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
 
 	return cmd
 }
 
 // Run runs the command
 func (o *StepBootVaultOptions) Run() error {
+	ns, err := o.GetDeployNamespace(o.Namespace)
+	if err != nil {
+		return err
+	}
+	o.SetDevNamespace(ns)
 
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return err
 	}
-
-	ns, err := o.GetDeployNamespace(o.Namespace, requirements)
-	if err != nil {
-		return err
-	}
-	o.SetDevNamespace(ns)
 
 	info := util.ColorInfo
 	if requirements.SecretStorage != config.SecretStorageTypeVault {

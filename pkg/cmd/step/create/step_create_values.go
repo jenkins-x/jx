@@ -93,7 +93,7 @@ func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the <kind>.schema.json and write the <kind>.yaml, defaults to the current directory")
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace Jenkins X is installed into. If not specified it defaults to cluster.namespace in jx-requirements.yaml or $DEPLOY_NAMESPACE or else defaults to the current kubernetes namespace")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace Jenkins X is installed into. If not specified it defaults to $DEPLOY_NAMESPACE or else defaults to the current kubernetes namespace")
 	cmd.Flags().StringVarP(&options.Schema, "schema", "", "", "the path to the schema file, overrides --dir and --name")
 	cmd.Flags().StringVarP(&options.Name, "name", "", "values", "the kind of the file to create (and, by default, the schema name)")
 	cmd.Flags().StringVarP(&options.BasePath, "secret-base-path", "", "", fmt.Sprintf("the secret path used to store secrets in vault / file system. Typically a unique name per cluster+team. If none is specified we will default it to the cluster name from the %s file in the current or a parent directory.", config.RequirementsConfigFileName))
@@ -104,12 +104,7 @@ func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepCreateValuesOptions) Run() error {
-	// lets default to the install requirements setting
-	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
-	if err != nil {
-		return err
-	}
-	ns, err := o.GetDeployNamespace(o.Namespace, requirements)
+	ns, err := o.GetDeployNamespace(o.Namespace)
 	if err != nil {
 		return err
 	}
@@ -121,7 +116,11 @@ func (o *StepCreateValuesOptions) Run() error {
 			return err
 		}
 	}
-
+	// lets default to the install requirements setting
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return err
+	}
 	exists, err := util.FileExists(fileName)
 	if err != nil {
 		return err

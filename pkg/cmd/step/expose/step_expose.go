@@ -87,7 +87,7 @@ func NewCmdStepExpose(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&o.IngressTemplate, "template", "t", "", "the go template to generate the Ingress YAML for each service")
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", "the directory to look for the install requirements file")
-	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to  cluster.namespace in jx-requirements.yaml or $DEPLOY_NAMESPACE")
+	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
 	cmd.Flags().StringVarP(&o.LabelSelector, "selector", "s", "", "the optional label selector to only process a subset of the Service resources")
 	return cmd
 }
@@ -98,7 +98,7 @@ func (o *StepExposeOptions) Run() error {
 	if o.IngressTemplate == "" {
 		o.IngressTemplate = filepath.Join(o.Dir, ingressTemplateFileName)
 	}
-	ns, err := o.GetDeployNamespace(o.Namespace, nil)
+	ns, err := o.GetDeployNamespace(o.Namespace)
 	if err != nil {
 		return err
 	}

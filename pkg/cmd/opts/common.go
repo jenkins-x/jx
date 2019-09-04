@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/config"
-
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -343,21 +341,19 @@ func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, strin
 // GetDeployNamespace returns the namespace option from the command line option if defined otherwise we try
 // the $DEPLOY_NAMESPACE environment variable. If none of those are found lets use the current
 // kubernetes namespace value
-func (o *CommonOptions) GetDeployNamespace(namespaceOption string, requirements *config.RequirementsConfig) (string, error) {
+func (o *CommonOptions) GetDeployNamespace(namespaceOption string) (string, error) {
 	ns := namespaceOption
-	if ns == "" && requirements != nil {
-		ns = requirements.Cluster.Namespace
-	}
 	if ns == "" {
 		ns = os.Getenv("DEPLOY_NAMESPACE")
 	}
+
 	if ns == "" {
 		var err error
 		_, ns, err = o.KubeClientAndNamespace()
 		if err != nil {
 			return ns, err
 		}
-		log.Logger().Infof("No --namespace option specified, no requirements.cluster.namespace set in `jx-requirements.yaml` or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
+		log.Logger().Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
 	}
 	return ns, nil
 }
