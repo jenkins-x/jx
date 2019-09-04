@@ -1,17 +1,19 @@
 package gc
 
 import (
+	"testing"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"testing"
 )
 
 func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
@@ -27,9 +29,12 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 		ReleaseAgeLimit:         time.Hour * 48,
 		ReleaseHistoryLimit:     5,
 		PullRequestHistoryLimit: 2,
+		PipelineRunAgeLimit:     time.Hour * 2,
 	}
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()
+	assert.NoError(t, err)
+	tektonClient, ns, err := options.TektonClient()
 	assert.NoError(t, err)
 	err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
 		env.Spec.TeamSettings.PromotionEngine = jenkinsv1.PromotionEngineProw
@@ -41,6 +46,8 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	nowMinusThreeDays := time.Now().AddDate(0, 0, -3)
 	nowMinusTwoDays := time.Now().AddDate(0, 0, -2)
 	nowMinusOneDay := time.Now().AddDate(0, 0, -1)
+	nowMinusOneHour := time.Now().Add(-1 * time.Hour)
+	nowMinusThreeHours := time.Now().Add(-3 * time.Hour)
 
 	_, err = jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
 		ObjectMeta: metav1.ObjectMeta{
@@ -142,6 +149,25 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&tektonv1alpha1.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "run1",
+		},
+		Status: tektonv1alpha1.PipelineRunStatus{
+			CompletionTime: &metav1.Time{Time: nowMinusThreeHours},
+		},
+	})
+	assert.NoError(t, err)
+	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&tektonv1alpha1.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "run2",
+		},
+		Status: tektonv1alpha1.PipelineRunStatus{
+			CompletionTime: &metav1.Time{Time: nowMinusOneHour},
+		},
+	})
+	assert.NoError(t, err)
+
 	err = o.Run()
 	assert.NoError(t, err)
 
@@ -158,4 +184,12 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	}
 	assert.Len(t, verifier, 4, "Both PR and Batch builds should've been verified")
 
+	runs, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
+	assert.NoError(t, err)
+
+	assert.Len(t, runs.Items, 1, "One PipelineRun should've been garbage collected")
+
+	remainingRun := runs.Items[0]
+	assert.NotNil(t, remainingRun.Status.CompletionTime)
+	assert.Equal(t, nowMinusOneHour, remainingRun.Status.CompletionTime.Time, "Expected completion time for remaining PipelineRun of %s, but is %s", nowMinusOneHour, remainingRun.Status.CompletionTime.Time)
 }
