@@ -26,13 +26,15 @@ func TestReportFromSingleFile(t *testing.T) {
 	assert.NoError(t, err, "there shouldn't be any problem creating a temp dir")
 
 	reportName := uuid.New().String() + ".html"
-	o := StepReportOptions{
-		XUnitClient:      mock,
-		ReportsDir:       filepath.Join("test_data", "single_report"),
-		TargetReport:     "import_applications.junit.xml",
-		OutputDir:        dirName,
-		OutputReportName: reportName,
-		DeleteReportFn:   func(reportName string) (err error) { return },
+	o := StepReportJUnitOptions{
+		XUnitClient:    mock,
+		ReportsDir:     filepath.Join("test_data", "junit", "single_report"),
+		TargetReport:   "import_applications.junit.xml",
+		DeleteReportFn: func(reportName string) (err error) { return },
+		StepReportOptions: StepReportOptions{
+			OutputDir:        dirName,
+			OutputReportName: reportName,
+		},
 	}
 
 	err = o.Run()
@@ -60,13 +62,15 @@ func TestReportWithMultipleFiles(t *testing.T) {
 	assert.NoError(t, err, "there shouldn't be any problem creating a temp dir")
 
 	reportName := uuid.New().String() + ".html"
-	o := StepReportOptions{
-		XUnitClient:      mock,
-		ReportsDir:       filepath.Join("test_data", "multiple_reports"),
-		MergeReports:     true,
-		OutputDir:        dirName,
-		OutputReportName: reportName,
-		DeleteReportFn:   func(reportName string) (err error) { return },
+	o := StepReportJUnitOptions{
+		XUnitClient:    mock,
+		ReportsDir:     filepath.Join("test_data", "junit", "multiple_reports"),
+		MergeReports:   true,
+		DeleteReportFn: func(reportName string) (err error) { return },
+		StepReportOptions: StepReportOptions{
+			OutputDir:        dirName,
+			OutputReportName: reportName,
+		},
 	}
 
 	err = o.Run()
@@ -100,7 +104,7 @@ func TestReportWithMultipleFiles(t *testing.T) {
 func TestUnableToEnsureXUnitViewer(t *testing.T) {
 	mock := reportingtools_test.NewMockXUnitClient(pegomock.WithT(t))
 
-	o := StepReportOptions{
+	o := StepReportJUnitOptions{
 		XUnitClient: mock,
 	}
 
@@ -116,9 +120,9 @@ func TestUnableToEnsureXUnitViewer(t *testing.T) {
 
 func TestErrorNoMatchingFilesFound(t *testing.T) {
 	mock := reportingtools_test.NewMockXUnitClient(pegomock.WithT(t))
-	o := StepReportOptions{
+	o := StepReportJUnitOptions{
 		XUnitClient: mock,
-		ReportsDir:  filepath.Join("test_data", "empty_dir"),
+		ReportsDir:  filepath.Join("test_data", "junit", "empty_dir"),
 	}
 
 	output := log2.CaptureOutput(func() {
@@ -126,7 +130,7 @@ func TestErrorNoMatchingFilesFound(t *testing.T) {
 		assert.NoError(t, err, "the result of the step failing should never be an error, we want to avoid the step from failing a pipeline")
 	})
 
-	assert.Equal(t, "ERROR: there was a problem obtaining the matching report files: no report files to parse in test_data/empty_dir, skipping\n", stripansi.Strip(output))
+	assert.Equal(t, "ERROR: there was a problem obtaining the matching report files: no report files to parse in test_data/junit/empty_dir, skipping\n", stripansi.Strip(output))
 }
 
 func AnyCommonOptions() *opts.CommonOptions {
