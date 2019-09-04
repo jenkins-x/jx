@@ -215,6 +215,59 @@ var _ = Describe("Git CLI", func() {
 		})
 	})
 
+	Describe("#GetCommitPointedToByTag", func() {
+		Context("when there is no commit", func() {
+			Specify("an error is returned", func() {
+				sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.1")
+				Expect(err).ShouldNot(BeNil())
+				Expect(sha).Should(BeEmpty())
+			})
+		})
+
+		Context("when there is no tags", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "first commit")
+			})
+			Specify("an error is returned", func() {
+				sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.1")
+				Expect(err).ShouldNot(BeNil())
+				Expect(sha).Should(BeEmpty())
+			})
+		})
+
+		Context("when there are commits", func() {
+			var (
+				tag2CommitSHA string
+			)
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "first commit")
+				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "second commit")
+				testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
+
+				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "third commit")
+				testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+				testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
+			})
+
+			Specify("the sha of the specified tag is returned", func() {
+				sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.2")
+				Expect(err).Should(BeNil())
+				Expect(sha).Should(Equal(tag2CommitSHA))
+			})
+		})
+	})
+
 	Describe("Get version tags", func() {
 		var (
 			tag2SHA       string
@@ -447,6 +500,86 @@ var _ = Describe("Git CLI", func() {
 				Expect(err).Should(BeNil())
 				Expect(sha).Should(Equal(tag2CommitSHA))
 				Expect(tag).Should(Equal("v0.0.2"))
+			})
+		})
+	})
+
+	Describe("#DeleteLocalBranch", func() {
+		Context("when there is no branch", func() {
+			Specify("no error is returned", func() {
+				err := git.DeleteLocalBranch(repoDir, "b")
+				Expect(err).ShouldNot(BeNil())
+			})
+		})
+
+		Context("when there is a branch", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "commit a")
+
+				testhelpers.Branch(Fail, repoDir, "b")
+				testhelpers.Checkout(Fail, repoDir, "master")
+			})
+
+			Specify("the branch is deleted", func() {
+				err := git.DeleteLocalBranch(repoDir, "b")
+				Expect(err).Should(BeNil())
+			})
+		})
+	})
+
+	Describe("#CheckoutCommitFiles", func() {
+		var (
+			commitSha string
+		)
+
+		Context("when there is no file to checkout", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.Add(Fail, repoDir)
+				commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
+			})
+			Specify("an error is returned", func() {
+				err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"b.txt"})
+				Expect(err).ShouldNot(BeNil())
+			})
+		})
+
+		Context("when there is single file to checkout", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.Add(Fail, repoDir)
+				commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
+
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "ab")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "commit b")
+			})
+
+			Specify("the file is checked out", func() {
+				err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"a.txt"})
+				Expect(err).Should(BeNil())
+			})
+		})
+
+		Context("when there are multiple files to checkout", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+				testhelpers.Add(Fail, repoDir)
+				commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
+
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "new a")
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "new b")
+				testhelpers.Add(Fail, repoDir)
+				testhelpers.Commit(Fail, repoDir, "commit b")
+			})
+
+			Specify("the file is checked out", func() {
+				err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"a.txt", "b.txt"})
+				Expect(err).Should(BeNil())
 			})
 		})
 	})

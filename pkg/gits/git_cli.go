@@ -233,7 +233,7 @@ func (g *GitCLI) DeleteRemoteBranch(dir string, remoteName string, branch string
 
 // DeleteLocalBranch deletes the local branch in the given directory
 func (g *GitCLI) DeleteLocalBranch(dir string, branch string) error {
-	return g.gitCmd(dir, "--delete", branch)
+	return g.gitCmd(dir, "branch", "--delete", branch)
 }
 
 // CloneOrPull clones  the given git URL or pull if it already exists
@@ -355,8 +355,11 @@ func (g *GitCLI) Checkout(dir string, branch string) error {
 
 // CheckoutCommitFiles checks out the given files to a commit
 func (g *GitCLI) CheckoutCommitFiles(dir string, commit string, files []string) error {
-	fileString := strings.Trim(fmt.Sprintf("%v", files), "[]")
-	return g.gitCmd(dir, "checkout", commit, "--", fileString)
+	var err error
+	for _, file := range files {
+		err = g.gitCmd(dir, "checkout", commit, "--", file)
+	}
+	return err
 }
 
 // Checkout checks out the given branch
@@ -845,6 +848,9 @@ func (g *GitCLI) GetCommitPointedToByTag(dir string, tag string) (string, error)
 	if err != nil {
 		return "", errors.Wrapf(err, "running for git rev-list -n 1 %s", tag)
 	}
+	/*	if commitSHA == "" {
+		return "", errors.Wrapf(err, "commit pointed to by tag %s could not be found in %s", tag, dir)
+	}*/
 	return commitSHA, err
 }
 
