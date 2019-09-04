@@ -198,7 +198,9 @@ func (b *BitbucketServerProvider) ListOrganisations() ([]GitOrganisation, error)
 		if orgsPage.IsLastPage {
 			break
 		}
-		paginationOptions["start"] = orgsPage.NextPageStart
+		if !b.moveToNextPage(paginationOptions, orgsPage.NextPageStart) {
+			break
+		}
 	}
 
 	return orgsList, nil
@@ -230,7 +232,9 @@ func (b *BitbucketServerProvider) ListRepositories(org string) ([]*GitRepository
 		if reposPage.IsLastPage {
 			break
 		}
-		paginationOptions["start"] = reposPage.NextPageStart
+		if !b.moveToNextPage(paginationOptions, reposPage.NextPageStart) {
+			break
+		}
 	}
 
 	return repos, nil
@@ -598,9 +602,28 @@ func (b *BitbucketServerProvider) ListOpenPullRequests(owner string, repo string
 		if pullRequests.IsLastPage {
 			break
 		}
-		paginationOptions["start"] = pullRequests.NextPageStart
+		if !b.moveToNextPage(paginationOptions, pullRequests.NextPageStart) {
+			break
+		}
 	}
 	return answer, nil
+}
+
+// moveToNextPage returns true if we should move to the next page
+func (b *BitbucketServerProvider) moveToNextPage(paginationOptions map[string]interface{}, nextPage int) bool {
+	lastStartValue := paginationOptions["start"]
+	lastStart, _ := lastStartValue.(int)
+	if lastStart < 0 {
+		lastStart = 0
+	}
+	if nextPage < 0 {
+		return false
+	}
+	if nextPage <= lastStart {
+		return false
+	}
+	paginationOptions["start"] = nextPage
+	return true
 }
 
 func convertBitBucketCommitToGitCommit(bCommit *bitbucket.Commit, repo *GitRepository) *GitCommit {
@@ -646,7 +669,9 @@ func (b *BitbucketServerProvider) GetPullRequestCommits(owner string, repository
 		if commitsPage.IsLastPage {
 			break
 		}
-		paginationOptions["start"] = commitsPage.NextPageStart
+		if !b.moveToNextPage(paginationOptions, commitsPage.NextPageStart) {
+			break
+		}
 	}
 
 	return commits, nil
@@ -861,7 +886,9 @@ func (b *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*Gi
 		if webHooksPage.IsLastPage {
 			break
 		}
-		paginationOptions["start"] = webHooksPage.NextPageStart
+		if !b.moveToNextPage(paginationOptions, webHooksPage.NextPageStart) {
+			break
+		}
 	}
 
 	return webHooks, nil
