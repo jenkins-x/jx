@@ -14,6 +14,7 @@ const (
 	LabelBranch           = "branch"
 	LabelBuild            = "build"
 	LabelLastCommitSha    = "lastCommitSha"
+	LabelContext          = "context"
 )
 
 // +genclient

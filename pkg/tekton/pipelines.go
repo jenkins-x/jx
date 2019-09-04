@@ -393,7 +393,6 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 	}
 
 	crds.structure.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
-	crds.pipelineRun.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
 
 	_, err = ApplyPipelineRun(tektonClient, ns, crds.PipelineRun())
 	if err != nil {

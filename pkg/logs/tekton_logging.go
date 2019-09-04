@@ -76,16 +76,16 @@ func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []str
 		return nil, nil, errors.Wrap(err, "there was a problem getting the PipelineActivities")
 	}
 
+	sort.Slice(paList.Items, func(i, j int) bool {
+		return paList.Items[i].CreationTimestamp.After(paList.Items[j].CreationTimestamp.Time)
+	})
+
 	paMap := make(map[string]*v1.PipelineActivity)
 	for _, pa := range paList.Items {
 		p := pa
 		paMap[createPipelineActivityName(p.Labels, p.Spec.Build)] = &p
 	}
 
-	// This is a temporary solution until we add the "context" label to PipelineActivities
-	if context != "" {
-		labelsFilter = modifyFilterForPipelineRun(labelsFilter, context)
-	}
 	tektonPRs, _ := t.TektonClient.TektonV1alpha1().PipelineRuns(t.Namespace).List(metav1.ListOptions{
 		LabelSelector: labelsFilter,
 	})
@@ -98,21 +98,35 @@ func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []str
 		})
 	}
 
-	sort.Slice(tektonPRs.Items, func(i, j int) bool {
-		return tektonPRs.Items[i].CreationTimestamp.After(tektonPRs.Items[j].CreationTimestamp.Time)
-	})
+	prMap := make(map[string][]*v1alpha12.PipelineRun)
+	for _, pr := range tektonPRs.Items {
+		p := pr
+		prBuildNumber := p.Labels[v1.LabelBuild]
+		if prBuildNumber == "" {
+			prBuildNumber = findLegacyPipelineRunBuildNumber(&p)
+		}
+		paName := createPipelineActivityName(p.Labels, prBuildNumber)
+		if _, exists := prMap[paName]; !exists {
+			prMap[paName] = []*v1alpha12.PipelineRun{}
+		}
+		prMap[paName] = append(prMap[paName], &p)
+	}
 
 	var names []string
-	for _, pr := range tektonPRs.Items {
-		prBuildNumber := pr.Labels[v1.LabelBuild]
-		if prBuildNumber == "" {
-			prBuildNumber = findLegacyPipelineRunBuildNumber(&pr)
-		}
-		paName := createPipelineActivityName(pr.Labels, prBuildNumber)
-		if _, exists := paMap[paName]; exists && tekton.PipelineRunIsNotPending(&pr) {
-			nameWithContext := fmt.Sprintf("%s %s", paName, pr.Labels["context"])
-			replacePipelineActivityNameWithEnrichedName(paMap, paName, nameWithContext)
-			names = append(names, nameWithContext)
+	for _, pa := range paList.Items {
+		paName := createPipelineActivityName(pa.Labels, pa.Spec.Build)
+		if _, exists := prMap[paName]; exists {
+			hasNonPendingPR := false
+			for _, pr := range prMap[paName] {
+				if tekton.PipelineRunIsNotPending(pr) {
+					hasNonPendingPR = true
+				}
+			}
+			if hasNonPendingPR {
+				names = append(names, paName)
+			}
+		} else if pa.Spec.CompletedTimestamp != nil {
+			names = append(names, paName)
 		}
 	}
 
@@ -133,12 +147,14 @@ func createPipelineActivityName(labels map[string]string, buildNumber string) st
 	if repository == "" {
 		repository = labels["repo"]
 	}
-	return strings.ToLower(fmt.Sprintf("%s/%s/%s #%s", labels[v1.LabelOwner], repository, labels[v1.LabelBranch], buildNumber))
-}
+	baseName := strings.ToLower(fmt.Sprintf("%s/%s/%s #%s", labels[v1.LabelOwner], repository, labels[v1.LabelBranch], buildNumber))
 
-func replacePipelineActivityNameWithEnrichedName(paMap map[string]*v1.PipelineActivity, formerName string, newName string) {
-	paMap[newName] = paMap[formerName]
-	delete(paMap, formerName)
+	context := labels[v1.LabelContext]
+	if context != "" {
+		return strings.ToLower(fmt.Sprintf("%s %s", baseName, context))
+	}
+
+	return baseName
 }
 
 func findLegacyPipelineRunBuildNumber(pipelineRun *v1alpha12.PipelineRun) string {

@@ -82,6 +82,7 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 				v1.LabelRepository: "fakerepo",
 				v1.LabelBranch:     "fakebranch",
 				v1.LabelOwner:      "fakeowner",
+				v1.LabelContext:    "fakecontext",
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
