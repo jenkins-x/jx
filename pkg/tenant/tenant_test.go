@@ -101,15 +101,23 @@ func TestVerifyDomainName(t *testing.T) {
 	assert.Equal(t, ValidateDomainName(domain), nil)
 	domain = "wine.cheese.com"
 	assert.Equal(t, ValidateDomainName(domain), nil)
+	domain = "wine.cheese.rocks"
+	assert.Equal(t, ValidateDomainName(domain), nil)
 	domain = "win_e.com"
+	assert.Equal(t, ValidateDomainName(domain), nil)
+	domain = "has.two.dots"
+	assert.Equal(t, ValidateDomainName(domain), nil)
+	domain = "this.has.three.dots"
+	assert.Equal(t, ValidateDomainName(domain), nil)
+	domain = "now.this.has.four.dots"
 	assert.Equal(t, ValidateDomainName(domain), nil)
 
 	domain = "win?e.com"
 	assert.EqualError(t, ValidateDomainName(domain), fmt.Sprintf(invalidErr, domain))
 	domain = "win%e.com"
 	assert.EqualError(t, ValidateDomainName(domain), fmt.Sprintf(invalidErr, domain))
-	domain = "om"
 
+	domain = "om"
 	assert.EqualError(t, ValidateDomainName(domain), fmt.Sprintf(lengthErr, domain))
 	domain = "some.really.long.domain.that.should.be.longer.than.the.maximum.63.characters.com"
 	assert.EqualError(t, ValidateDomainName(domain), fmt.Sprintf(lengthErr, domain))
