@@ -88,7 +88,7 @@ func NewCmdStepReportJUnit(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:     "report",
+		Use:     "junit",
 		Short:   "Creates a HTML report from junit files",
 		Long:    stepReportJUnitLong,
 		Example: stepReportJUnitExample,
