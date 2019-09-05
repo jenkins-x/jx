@@ -1793,7 +1793,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return "", errors.Wrap(err, "committing in git if there are changes")
 			}
 			userAuth := gitProvider.UserAuth()
-			pushGitURL, err := git.CreatePushURL(repo.CloneURL, &userAuth)
+			pushGitURL, err := git.CreateAuthenticatedURL(repo.CloneURL, &userAuth)
 			if err != nil {
 				return "", errors.Wrapf(err, "creating push URL for %q", repo.CloneURL)
 			}

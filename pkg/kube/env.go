@@ -385,7 +385,7 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "creating unique directory for environment repo")
 		}
-		pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
+		pushGitURL, err := git.CreateAuthenticatedURL(repo.CloneURL, details.User)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "creating push URL for environment repo")
 		}
@@ -480,7 +480,7 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "cloning the forked environment %q into %q", forkEnvGitURL, dir)
 			}
-			pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
+			pushGitURL, err := git.CreateAuthenticatedURL(repo.CloneURL, details.User)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "creating the push URL for %q", repo.CloneURL)
 			}

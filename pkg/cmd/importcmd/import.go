@@ -328,7 +328,7 @@ func (options *ImportOptions) Run() error {
 				userAuth := options.GitProvider.UserAuth()
 				options.GitUserAuth = &userAuth
 			}
-			options.RepoURL, err = options.Git().CreatePushURL(options.RepoURL, options.GitUserAuth)
+			options.RepoURL, err = options.Git().CreateAuthenticatedURL(options.RepoURL, options.GitUserAuth)
 			if err != nil {
 				return err
 			}
@@ -639,7 +639,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	options.GitProvider = details.GitProvider
 
 	options.RepoURL = repo.CloneURL
-	pushGitURL, err := options.Git().CreatePushURL(repo.CloneURL, details.User)
+	pushGitURL, err := options.Git().CreateAuthenticatedURL(repo.CloneURL, details.User)
 	if err != nil {
 		return err
 	}

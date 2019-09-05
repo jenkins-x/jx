@@ -515,8 +515,8 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 	return cmd.RunWithoutRetry()
 }
 
-// CreatePushURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
-func (g *GitCLI) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
+// CreateAuthenticatedURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
+func (g *GitCLI) CreateAuthenticatedURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
 	u, err := url.Parse(cloneURL)
 	if err != nil {
 		// already a git/ssh url?
