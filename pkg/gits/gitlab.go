@@ -121,12 +121,18 @@ func GetOwnerNamespaceID(g *gitlab.Client, owner string) (int, error) {
 }
 
 func fromGitlabProject(p *gitlab.Project) *GitRepository {
+	org := ""
+	if p.Namespace != nil {
+		org = p.Namespace.Name
+	}
 	return &GitRepository{
-		Name:     p.Name,
-		HTMLURL:  p.WebURL,
-		SSHURL:   p.SSHURLToRepo,
-		CloneURL: p.HTTPURLToRepo,
-		Fork:     p.ForkedFromProject != nil,
+		Organisation: org,
+		Project:      org,
+		Name:         p.Name,
+		HTMLURL:      p.WebURL,
+		SSHURL:       p.SSHURLToRepo,
+		CloneURL:     p.HTTPURLToRepo,
+		Fork:         p.ForkedFromProject != nil,
 	}
 }
 
