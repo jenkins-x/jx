@@ -144,7 +144,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						}
 						createRepo = false
 						userAuth := gitProvider.UserAuth()
-						gitUrl, err = o.Git().CreatePushURL(repo.CloneURL, &userAuth)
+						gitUrl, err = o.Git().CreateAuthenticatedURL(repo.CloneURL, &userAuth)
 						if err != nil {
 							return err
 						}
@@ -195,7 +195,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						log.Logger().Infof("Created Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
 
 						userAuth := gitProvider.UserAuth()
-						gitUrl, err = o.Git().CreatePushURL(repo.CloneURL, &userAuth)
+						gitUrl, err = o.Git().CreateAuthenticatedURL(repo.CloneURL, &userAuth)
 
 						err := o.Git().Init(outPath)
 						if err != nil {

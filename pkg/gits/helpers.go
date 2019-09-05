@@ -236,7 +236,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 	}
 	var existingPr *GitPullRequest
 
-	forkPushURL, err := gitter.CreatePushURL(cloneURL, &userAuth)
+	forkPushURL, err := gitter.CreateAuthenticatedURL(cloneURL, &userAuth)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating push URL for %s", cloneURL)
 	}
@@ -499,14 +499,24 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 		}
 	}
 
-	err = gitter.FetchBranch(dir, originRemote, branchName)
+	userDetails := provider.UserAuth()
+	originFetchURL, err := gitter.CreateAuthenticatedURL(originURL, &userDetails)
+	if err != nil {
+		return "", "", nil, nil, errors.Wrapf(err, "failed to create authenticated fetch URL for %s", originURL)
+	}
+	err = gitter.FetchBranch(dir, originFetchURL, fmt.Sprintf("%s:remotes/%s/%s", branchName, originRemote, branchName))
+
 	if err != nil && !IsCouldntFindRemoteRefError(err, branchName) { // We can safely ignore missing remote branches, as they just don't exist
 		return "", "", nil, nil, errors.Wrapf(err, "fetching %s %s", originRemote, branchName)
 	}
 
 	if upstreamRemote != originRemote || baseRef != branchName {
+		upstreamFetchURL, err := gitter.CreateAuthenticatedURL(upstreamInfo.CloneURL, &userDetails)
+		if err != nil {
+			return "", "", nil, nil, errors.Wrapf(err, "failed to create authenticated fetch URL for %s", upstreamInfo.CloneURL)
+		}
 		// We're going to start our work from baseRef on the upstream
-		err = gitter.FetchBranch(dir, upstreamRemote, baseRef)
+		err = gitter.FetchBranch(dir, upstreamFetchURL, fmt.Sprintf("%s:remotes/%s/%s", baseRef, upstreamRemote, baseRef))
 		if err != nil {
 			return "", "", nil, nil, errors.WithStack(err)
 		}
@@ -596,6 +606,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 			return "", "", nil, nil, errors.Wrapf(err, "unable to pop the stash")
 		}
 	}
+
 	return dir, baseRef, upstreamInfo, forkInfo, nil
 }
 
@@ -791,7 +802,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 			return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
 		}
 		userDetails := provider.UserAuth()
-		duplicatePushURL, err := gitter.CreatePushURL(duplicateInfo.CloneURL, &userDetails)
+		duplicatePushURL, err := gitter.CreateAuthenticatedURL(duplicateInfo.CloneURL, &userDetails)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
 		}

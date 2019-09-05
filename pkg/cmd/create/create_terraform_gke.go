@@ -490,7 +490,7 @@ func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 			if err != nil {
 				return err
 			}
-			pushGitURL, err := options.Git().CreatePushURL(repo.CloneURL, details.User)
+			pushGitURL, err := options.Git().CreateAuthenticatedURL(repo.CloneURL, details.User)
 			if err != nil {
 				return err
 			}
@@ -527,7 +527,7 @@ func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 				}
 
 				// if remote repo does exist & local directory does not exist, clone locally
-				pushGitURL, err := options.Git().CreatePushURL(repo.CloneURL, details.User)
+				pushGitURL, err := options.Git().CreateAuthenticatedURL(repo.CloneURL, details.User)
 				if err != nil {
 					return err
 				}

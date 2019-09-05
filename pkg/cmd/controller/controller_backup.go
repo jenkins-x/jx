@@ -305,7 +305,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 			return "", err
 		}
 
-		pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
+		pushGitURL, err := o.Git().CreateAuthenticatedURL(repo.CloneURL, details.User)
 		if err != nil {
 			return "", err
 		}
@@ -339,7 +339,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 			}
 
 			// if remote repo does exist & local directory does not exist, clone locally
-			pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
+			pushGitURL, err := o.Git().CreateAuthenticatedURL(repo.CloneURL, details.User)
 			if err != nil {
 				return "", err
 			}
