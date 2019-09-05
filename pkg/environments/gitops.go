@@ -55,7 +55,7 @@ type EnvironmentPullRequestOptions struct {
 func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
 	pullRequestDetails *gits.PullRequestDetails, filter *gits.PullRequestFilter, chartName string, autoMerge bool) (*gits.PullRequestInfo, error) {
 	dir := filepath.Join(environmentsDir, env.Name)
-	dir, base, upstreamURL, forkURL, err := gits.ForkAndPullRepo(env.Spec.Source.URL, dir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, "")
+	dir, base, upstreamRepo, forkURL, err := gits.ForkAndPullRepo(env.Spec.Source.URL, dir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, "")
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "pulling environment repo %s into %s", env.Spec.Source.URL,
@@ -70,7 +70,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if autoMerge {
 		labels = append(labels, gits.LabelUpdatebot)
 	}
-	return gits.PushRepoAndCreatePullRequest(dir, upstreamURL, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, false, o.Gitter, o.GitProvider, labels)
+	return gits.PushRepoAndCreatePullRequest(dir, upstreamRepo, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, false, o.Gitter, o.GitProvider, labels)
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function
