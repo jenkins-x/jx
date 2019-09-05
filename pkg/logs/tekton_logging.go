@@ -67,7 +67,7 @@ type LogLine struct {
 }
 
 // GetTektonPipelinesWithActivePipelineActivity returns list of all PipelineActivities with corresponding Tekton PipelineRuns ordered by the PipelineRun creation timestamp and a map to obtain its reference once a name has been selected
-func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []string, context string) ([]string, map[string]*v1.PipelineActivity, error) {
+func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []string) ([]string, map[string]*v1.PipelineActivity, error) {
 	labelsFilter := strings.Join(filters, ",")
 	paList, err := t.JXClient.JenkinsV1().PipelineActivities(t.Namespace).List(metav1.ListOptions{
 		LabelSelector: labelsFilter,
