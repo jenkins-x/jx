@@ -83,7 +83,9 @@ func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []str
 	paMap := make(map[string]*v1.PipelineActivity)
 	for _, pa := range paList.Items {
 		p := pa
-		paMap[createPipelineActivityName(p.Labels, p.Spec.Build)] = &p
+		paName := createPipelineActivityName(p.Labels, p.Spec.Build)
+		log.Logger().Warnf("activity name: %s", paName)
+		paMap[paName] = &p
 	}
 
 	tektonPRs, _ := t.TektonClient.TektonV1alpha1().PipelineRuns(t.Namespace).List(metav1.ListOptions{

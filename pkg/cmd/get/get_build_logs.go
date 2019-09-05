@@ -436,7 +436,7 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 
 	pa, exists := paMap[name]
 	if !exists {
-		return true, errors.New("there are no build logs for the supplied filters")
+		return true, errors.Errorf("there are no build logs for the supplied filters %s", name)
 	}
 
 	if pa.Spec.BuildLogsURL != "" {
