@@ -199,9 +199,9 @@ func (g *GitLocal) AddCommit(dir string, msg string) error {
 	return g.GitCLI.AddCommit(dir, msg)
 }
 
-// CreatePushURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
-func (g *GitLocal) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
-	return g.GitCLI.CreatePushURL(cloneURL, userAuth)
+// CreateAuthenticatedURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
+func (g *GitLocal) CreateAuthenticatedURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
+	return g.GitCLI.CreateAuthenticatedURL(cloneURL, userAuth)
 }
 
 // RepoName formats the repository names based on the organization

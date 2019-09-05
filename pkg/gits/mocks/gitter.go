@@ -260,6 +260,25 @@ func (mock *MockGitter) ConvertToValidBranchName(_param0 string) string {
 	return ret0
 }
 
+func (mock *MockGitter) CreateAuthenticatedURL(_param0 string, _param1 *auth.UserAuth) (string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0, _param1}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateAuthenticatedURL", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitter) CreateBranch(_param0 string, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -288,25 +307,6 @@ func (mock *MockGitter) CreateBranchFrom(_param0 string, _param1 string, _param2
 		}
 	}
 	return ret0
-}
-
-func (mock *MockGitter) CreatePushURL(_param0 string, _param1 *auth.UserAuth) (string, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockGitter().")
-	}
-	params := []pegomock.Param{_param0, _param1}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreatePushURL", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 string
-	var ret1 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(string)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
-		}
-	}
-	return ret0, ret1
 }
 
 func (mock *MockGitter) CreateTag(_param0 string, _param1 string, _param2 string) error {
@@ -1957,6 +1957,37 @@ func (c *MockGitter_ConvertToValidBranchName_OngoingVerification) GetAllCaptured
 	return
 }
 
+func (verifier *VerifierMockGitter) CreateAuthenticatedURL(_param0 string, _param1 *auth.UserAuth) *MockGitter_CreateAuthenticatedURL_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateAuthenticatedURL", params, verifier.timeout)
+	return &MockGitter_CreateAuthenticatedURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_CreateAuthenticatedURL_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_CreateAuthenticatedURL_OngoingVerification) GetCapturedArguments() (string, *auth.UserAuth) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *MockGitter_CreateAuthenticatedURL_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*auth.UserAuth) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]*auth.UserAuth, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(*auth.UserAuth)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierMockGitter) CreateBranch(_param0 string, _param1 string) *MockGitter_CreateBranch_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateBranch", params, verifier.timeout)
@@ -2018,37 +2049,6 @@ func (c *MockGitter_CreateBranchFrom_OngoingVerification) GetAllCapturedArgument
 		_param2 = make([]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockGitter) CreatePushURL(_param0 string, _param1 *auth.UserAuth) *MockGitter_CreatePushURL_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreatePushURL", params, verifier.timeout)
-	return &MockGitter_CreatePushURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockGitter_CreatePushURL_OngoingVerification struct {
-	mock              *MockGitter
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockGitter_CreatePushURL_OngoingVerification) GetCapturedArguments() (string, *auth.UserAuth) {
-	_param0, _param1 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1]
-}
-
-func (c *MockGitter_CreatePushURL_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*auth.UserAuth) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
-		}
-		_param1 = make([]*auth.UserAuth, len(params[1]))
-		for u, param := range params[1] {
-			_param1[u] = param.(*auth.UserAuth)
 		}
 	}
 	return
