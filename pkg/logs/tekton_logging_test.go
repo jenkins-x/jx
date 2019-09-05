@@ -53,7 +53,7 @@ func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 		},
 		LogsRetrieverFunc: LogsProvider,
 	}
-	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "")
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{})
 
 	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
 	assert.Empty(t, names, "There shouldn't be any returned build names")
@@ -143,7 +143,7 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "fakecontext")
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{"context=fakecontext"})
 
 	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
 	assert.Equal(t, "fakeowner/fakerepo/fakebranch #1 fakecontext", names[0], "There should be a match build in the returned names")
@@ -173,10 +173,12 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 				v1.LabelRepository: "fakerepo",
 				v1.LabelBranch:     "fakebranch",
 				v1.LabelOwner:      "fakeowner",
+				v1.LabelContext:    "fakecontext",
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
 			Build:         "1",
+			Context:       "fakecontext",
 			GitBranch:     "fakebranch",
 			GitRepository: "fakerepo",
 			GitOwner:      "fakeowner",
@@ -235,7 +237,7 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 	})
 	assert.NoError(t, err)
 
-	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{}, "fakecontext")
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{"context=fakecontext"})
 	assert.NoError(t, err)
 
 	assert.Equal(t, 0, len(names))

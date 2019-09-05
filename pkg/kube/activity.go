@@ -448,6 +448,9 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 	activity.Labels[v1.LabelRepository] = activity.RepositoryName()
 	activity.Labels[v1.LabelBranch] = activity.BranchName()
+	if activity.Spec.Context != "" {
+		activity.Labels[v1.LabelContext] = activity.Spec.Context
+	}
 	if k.isPRBuild() {
 		for _, v := range k.PullRefs {
 			activity.Labels[v1.LabelLastCommitSha] = v
