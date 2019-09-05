@@ -762,7 +762,7 @@ func (g *GCloud) GetEnabledApis(projectID string) ([]string, error) {
 		Args: args,
 	}
 
-	out, err := cmd.RunWithoutRetry()
+	out, err := cmd.Run()
 	if err != nil {
 		return nil, err
 	}
