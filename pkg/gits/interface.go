@@ -205,7 +205,8 @@ type Gitter interface {
 	Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error
-	CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error)
+	// CreateAuthenticatedURL adds username and password into the specified git URL.
+	CreateAuthenticatedURL(url string, userAuth *auth.UserAuth) (string, error)
 	ForcePushBranch(dir string, localBranch string, remoteBranch string) error
 	CloneOrPull(url string, directory string) error
 	Pull(dir string) error
