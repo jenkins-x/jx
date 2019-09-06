@@ -35,6 +35,27 @@ func AssertLoadPods(t *testing.T, dir string) *corev1.PodList {
 	return &corev1.PodList{}
 }
 
+// AssertLoadSecret reads a file containing a PodList and returns that PodList
+func AssertLoadSecret(t *testing.T, dir string) *corev1.Secret {
+	fileName := filepath.Join(dir, "secret.yml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		t.Fatalf("Error checking if file %s exists: %s", fileName, err)
+	}
+	if exists {
+		secret := &corev1.Secret{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, secret)
+			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
+				return secret
+			}
+
+		}
+	}
+	return &corev1.Secret{}
+}
+
 // AssertLoadSinglePod reads a file containing a Pod and returns that Pod
 func AssertLoadSinglePod(t *testing.T, dir string) *corev1.Pod {
 	fileName := filepath.Join(dir, "pod.yml")
