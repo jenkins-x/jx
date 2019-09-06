@@ -132,6 +132,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	owner := ""
 	repo := ""
 	build := ""
+	pullRefs := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
 		log.Logger().Warnf("Failed to compile regexp because %s", err)
@@ -220,6 +221,9 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 			if v.Name == "SOURCE_URL" && gitURL == "" {
 				gitURL = v.Value
 			}
+			if v.Name == "PULL_REFS" && pullRefs == "" {
+				pullRefs = v.Value
+			}
 		}
 		if branch == "" {
 			for _, v := range container.Env {
@@ -252,6 +256,13 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	buildNumber, err := strconv.Atoi(build)
 	if err != nil {
 		buildNumber = 1
+	}
+
+	if lastCommitSha == "" {
+		idx := strings.LastIndex(pullRefs, ":")
+		if idx > 0 {
+			lastCommitSha = pullRefs[idx+1:]
+		}
 	}
 
 	pri.Build = build
