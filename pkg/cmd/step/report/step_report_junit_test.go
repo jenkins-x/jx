@@ -27,13 +27,13 @@ func TestReportFromSingleFile(t *testing.T) {
 
 	reportName := uuid.New().String() + ".html"
 	o := StepReportJUnitOptions{
-		XUnitClient:    mock,
-		ReportsDir:     filepath.Join("test_data", "junit", "single_report"),
-		TargetReport:   "import_applications.junit.xml",
-		DeleteReportFn: func(reportName string) (err error) { return },
+		XUnitClient:      mock,
+		ReportsDir:       filepath.Join("test_data", "junit", "single_report"),
+		TargetReport:     "import_applications.junit.xml",
+		DeleteReportFn:   func(reportName string) (err error) { return },
+		OutputReportName: reportName,
 		StepReportOptions: StepReportOptions{
-			OutputDir:        dirName,
-			OutputReportName: reportName,
+			OutputDir: dirName,
 		},
 	}
 
@@ -63,13 +63,13 @@ func TestReportWithMultipleFiles(t *testing.T) {
 
 	reportName := uuid.New().String() + ".html"
 	o := StepReportJUnitOptions{
-		XUnitClient:    mock,
-		ReportsDir:     filepath.Join("test_data", "junit", "multiple_reports"),
-		MergeReports:   true,
-		DeleteReportFn: func(reportName string) (err error) { return },
+		XUnitClient:      mock,
+		ReportsDir:       filepath.Join("test_data", "junit", "multiple_reports"),
+		MergeReports:     true,
+		DeleteReportFn:   func(reportName string) (err error) { return },
+		OutputReportName: reportName,
 		StepReportOptions: StepReportOptions{
-			OutputDir:        dirName,
-			OutputReportName: reportName,
+			OutputDir: dirName,
 		},
 	}
 

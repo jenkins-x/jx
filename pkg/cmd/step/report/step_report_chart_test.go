@@ -16,12 +16,10 @@ func TestStepReportChart(t *testing.T) {
 	defer os.Remove(dirName)
 	assert.NoError(t, err, "there shouldn't be any problem creating a temp dir")
 
-	reportName := uuid.New().String() + ".html"
 	o := StepReportChartOptions{
 		ChartsDir: filepath.Join("test_data", "step_report_chart", "jenkins-x-versions/charts"),
 		StepReportOptions: StepReportOptions{
-			OutputDir:        dirName,
-			OutputReportName: reportName,
+			OutputDir: dirName,
 		},
 	}
 	o.CommonOptions = &opts.CommonOptions{}

@@ -168,7 +168,7 @@ func (a *CreateJenkinsfileArguments) Validate() error {
 		return fmt.Errorf("Missing argument: TemplateFile")
 	}
 	if a.OutputFile == "" {
-		return fmt.Errorf("Missing argument: OutputFile")
+		return fmt.Errorf("Missing argument: ReportName")
 	}
 	return nil
 }

@@ -10,8 +10,7 @@ import (
 // StepReportOptions contains the command line flags and other helper objects
 type StepReportOptions struct {
 	step.StepOptions
-	OutputReportName string
-	OutputDir        string
+	OutputDir string
 }
 
 // NewCmdStepReport Creates a new Command object
@@ -40,7 +39,6 @@ func NewCmdStepReport(commonOpts *opts.CommonOptions) *cobra.Command {
 // AddReportFlags adds common report flags
 func (o *StepReportOptions) AddReportFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.OutputDir, "out-dir", "o", "", "The directory to store the resulting reports in")
-	cmd.Flags().StringVarP(&o.OutputReportName, "output-name", "n", "", "The result of parsing the report(s) in HTML format")
 }
 
 // Run implements this command

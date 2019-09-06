@@ -36,11 +36,12 @@ var (
 type StepReportJUnitOptions struct {
 	StepReportOptions
 	reportingtools.XUnitClient
-	MergeReports   bool
-	ReportsDir     string
-	TargetReport   string
-	SuiteName      string
-	DeleteReportFn func(reportName string) error
+	MergeReports     bool
+	ReportsDir       string
+	TargetReport     string
+	SuiteName        string
+	OutputReportName string
+	DeleteReportFn   func(reportName string) error
 }
 
 // TestSuites is the representation of the root of a *.junit.xml xml file
@@ -103,6 +104,7 @@ func NewCmdStepReportJUnit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.StepReportOptions.AddReportFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.ReportsDir, "in-dir", "f", "", "The directory to get the reports from")
+	cmd.Flags().StringVarP(&options.OutputReportName, "output-name", "n", "", "The result of parsing the report(s) in HTML format")
 	cmd.Flags().StringVarP(&options.TargetReport, "target-report", "t", "", "The name of a single report file to parse")
 	cmd.Flags().StringVarP(&options.SuiteName, "suite-name", "s", "", "The name of the tests suite to be shown in the HTML report")
 	cmd.Flags().BoolVarP(&options.MergeReports, "merge", "m", false, "Whether or not to merge the report files in the \"in-folder\" to parse them and show it as a single test run")
