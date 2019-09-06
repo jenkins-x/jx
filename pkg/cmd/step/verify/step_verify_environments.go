@@ -305,10 +305,17 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 }
 
 func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements *config.RequirementsConfig, environment *v1.Environment) (config.HelmValuesConfig, error) {
-	// lets default the ingress requirements
+	envCfg, err := requirements.Environment(environment.GetName())
+	if err != nil || envCfg == nil {
+		return config.HelmValuesConfig{}, errors.Wrapf(err,
+			"looking the configuration of environment %q in the requirements configuration", environment.GetName())
+	}
 	domain := requirements.Ingress.Domain
+	if envCfg.Ingress.Domain != "" {
+		domain = envCfg.Ingress.Domain
+	}
 	useHTTP := "true"
-	tlsAcme := ""
+	tlsAcme := "false"
 	if requirements.Ingress.TLS.Enabled {
 		useHTTP = "false"
 		tlsAcme = "true"

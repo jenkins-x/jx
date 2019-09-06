@@ -117,6 +117,8 @@ type EnvironmentConfig struct {
 	GitServer string `json:"gitServer,omitempty"`
 	// GitKind is the kind of git server (github, bitbucketserver etc)
 	GitKind string `json:"gitKind,omitempty"`
+	// Ingress contains ingress specific requirements
+	Ingress IngressConfig `json:"ingress,omitempty"`
 }
 
 // IngressConfig contains dns specific requirements
@@ -374,6 +376,16 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 		}
 	}
 	return answer
+}
+
+// Environment looks up the environment configuration based on environment name
+func (c *RequirementsConfig) Environment(name string) (*EnvironmentConfig, error) {
+	for _, env := range c.Environments {
+		if env.Key == name {
+			return &env, nil
+		}
+	}
+	return nil, fmt.Errorf("environment %q not found", name)
 }
 
 // ToMap converts this object to a map of maps for use in helm templating
