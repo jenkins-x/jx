@@ -91,21 +91,26 @@ func (o *StepCreatetPullRequestGoOptions) ValidateGoOptions() error {
 
 // Run implements this command
 func (o *StepCreatetPullRequestGoOptions) Run() error {
+	// lets make sure the version starts with a v for go style version tags
+	if !strings.HasPrefix(o.Version, "v") {
+		o.Version = "v" + o.Version
+	}
 	if err := o.ValidateGoOptions(); err != nil {
 		return errors.WithStack(err)
 	}
-	regex := fmt.Sprintf(`^\s*\Q%s\E\s+(?P<version>.+)`, o.Name)
-	fn, err := operations.CreatePullRequestRegexFn(o.Version, regex, "go.mod")
+	regex := fmt.Sprintf(`(?m)^\s*\Q%s\E\s+(?P<version>.+)`, o.Name)
+	regexFn, err := operations.CreatePullRequestRegexFn(o.Version, regex, "go.mod")
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	fn = func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-		answer, err := fn(dir, gitInfo)
+	fn := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		answer, err := regexFn(dir, gitInfo)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		err = o.runGoBuild(dir)
 		if err != nil {
+			log.Logger().Errorf("failed to run build after modifying go.mod")
 			return nil, errors.WithStack(err)
 		}
 		return answer, nil
