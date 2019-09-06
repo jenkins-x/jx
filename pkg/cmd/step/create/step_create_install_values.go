@@ -1,9 +1,7 @@
 package create
 
 import (
-	"encoding/base64"
 	"fmt"
-	"net/http"
 	"net/mail"
 	"net/url"
 	"os"
@@ -315,14 +313,4 @@ func (o *StepCreateInstallValuesOptions) getDomainFromIssuer(domainIssuerURL, pr
 	tenantServiceAuth := fmt.Sprintf("%s:%s", username, password)
 	tCli := tenant.NewTenantClient()
 	return tCli.GetTenantSubDomain(domainIssuerURL, tenantServiceAuth, projectID, o.GCloud())
-}
-
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
-}
-
-func redirectPolicyFunc(req *http.Request, via []*http.Request) error {
-	req.Header.Add("Authorization", "Basic "+basicAuth("username1", "password123"))
-	return nil
 }
