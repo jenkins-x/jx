@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/logs"
 
@@ -54,7 +55,7 @@ type ControllerBuildOptions struct {
 	EnvironmentCache *kube.EnvironmentNamespaceCache
 
 	// private fields added for easier testing
-	gitHubProvider gits.GitProvider
+	gitProviders map[string]gits.GitProvider
 }
 
 // LongTermStorageLogWriter is an implementation of logs.LogWriter that saves the obtained log lines
@@ -418,13 +419,13 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		return nil
 	}
 
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "github")
+	authCfgSvc, err := o.CreatePipelineUserGitAuthConfigService()
 	if err != nil {
 		return err
 	}
 
 	// get a git API client
-	provider, err := o.getGithubProvider(secrets, gitInfo)
+	provider, err := o.getGitProvider(authCfgSvc, gitInfo)
 	if err != nil {
 		return err
 	}
@@ -462,28 +463,33 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 				activity.Spec.LastCommitMessage = gitCommits[0].Message
 			}
 		}
-		log.Logger().Infof("[BuildInfo] PipelineActicity set with author=%s and last message", activity.Spec.Author)
+		log.Logger().Infof("[BuildInfo] PipelineActivity set with author=%s and last message", activity.Spec.Author)
 	}
 	return nil
 }
 
-func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
-	// this internal provider is only used during tests
-	if o.gitHubProvider != nil {
-		return o.gitHubProvider, nil
-	}
-
-	// production code always goes this way
-	server, userAuth, err := o.GetPipelineGitAuth()
-	if err != nil {
-		return nil, err
-	}
-	if server == nil {
-		return nil, fmt.Errorf("no pipeline git auth could be found")
-	}
-	gitProvider, err := gits.CreateProvider(server, userAuth, nil)
-	if err != nil {
-		return nil, err
+func (o *ControllerBuildOptions) getGitProvider(authSvc auth.ConfigService, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+	providerURL := gitInfo.ProviderURL()
+	gitProvider := o.gitProviders[providerURL]
+	if gitProvider == nil {
+		config, err := authSvc.LoadConfig()
+		if err != nil {
+			return nil, err
+		}
+		server := config.GetServer(providerURL)
+		if server == nil {
+			return nil, fmt.Errorf("failed to find secret for git server %s", providerURL)
+		}
+		inPipeline := o.GetFactory().IsInCDPipeline()
+		userAuth := config.CurrentUser(server, inPipeline)
+		if userAuth == nil {
+			return nil, fmt.Errorf("failed to find user/token for git server %s", providerURL)
+		}
+		gitProvider, err = gits.CreateProvider(server, userAuth, nil)
+		if err != nil {
+			return nil, err
+		}
+		o.gitProviders[providerURL] = gitProvider
 	}
 	return gitProvider, nil
 }
