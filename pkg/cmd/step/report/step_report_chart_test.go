@@ -17,7 +17,7 @@ func TestStepReportChart(t *testing.T) {
 	assert.NoError(t, err, "there shouldn't be any problem creating a temp dir")
 
 	o := StepReportChartOptions{
-		ChartsDir: filepath.Join("test_data", "step_report_chart", "jenkins-x-versions/charts"),
+		VersionsDir: filepath.Join("test_data", "step_report_chart", "jenkins-x-versions"),
 		StepReportOptions: StepReportOptions{
 			OutputDir: dirName,
 		},
