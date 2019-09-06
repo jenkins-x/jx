@@ -33,6 +33,7 @@ func NewCmdStepReport(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.AddCommand(NewCmdStepReportChart(commonOpts))
 	cmd.AddCommand(NewCmdStepReportJUnit(commonOpts))
+	cmd.AddCommand(NewCmdStepReportVersion(commonOpts))
 	return cmd
 }
 
