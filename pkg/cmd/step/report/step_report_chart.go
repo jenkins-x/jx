@@ -35,10 +35,32 @@ var (
 `)
 )
 
+var (
+	defaultChartReportName = "chart-images"
+)
+
+// ChartReport the report
+type ChartReport struct {
+	Charts []*ChartData `json:"charts,omitempty"`
+}
+
+// ChartData the image information
+type ChartData struct {
+	Prefix  string   `json:"prefix,omitempty"`
+	Name    string   `json:"name,omitempty"`
+	RepoURL string   `json:"url,omitempty"`
+	Version string   `json:"version,omitempty"`
+	Images  []string `json:"images,omitempty"`
+}
+
 // StepReportChartOptions contains the command line flags and other helper objects
 type StepReportChartOptions struct {
 	StepReportOptions
-	ChartsDir string
+	ChartsDir       string
+	ReportName      string
+	FailOnDuplicate bool
+
+	Report ChartReport
 }
 
 // NewCmdStepReportChart Creates a new Command object
@@ -67,15 +89,12 @@ func NewCmdStepReportChart(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.StepReportOptions.AddReportFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.ChartsDir, "dir", "d", "", "The dir to look for charts. If not specified it defaults to the version stream")
-
+	cmd.Flags().StringVarP(&options.ReportName, "name", "n", defaultChartReportName, "The name of the files to generate")
+	cmd.Flags().BoolVarP(&options.FailOnDuplicate, "fail-on-duplicate", "f", false, "If true lets fail the step if we have any duplicate")
 	return cmd
 }
 
 func (o *StepReportChartOptions) Run() error {
-	/*	if o.OutputDir != "" {
-			o.OutputReportName = filepath.Join(o.OutputDir, o.OutputReportName)
-		}
-	*/
 
 	if o.ChartsDir == "" {
 		resolver, err := o.GetVersionResolver()
@@ -98,6 +117,8 @@ func (o *StepReportChartOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	report := &o.Report
 
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		name := info.Name()
@@ -126,37 +147,66 @@ func (o *StepReportChartOptions) Run() error {
 		chartRepo := prefixInfos[0]
 		log.Logger().Infof("found chart %s/%s in repo %s with version %s", chartPrefix, chartName, chartRepo, version)
 
-		chartInfo := &chartInfo{
-			repoURL:     chartRepo,
-			chartPrefix: chartPrefix,
-			chartName:   chartName,
-			version:     version,
+		chartInfo := &ChartData{
+			RepoURL: chartRepo,
+			Prefix:  chartPrefix,
+			Name:    chartName,
+			Version: version,
 		}
+		report.Charts = append(report.Charts, chartInfo)
 		err = o.processChart(chartInfo)
 		if err != nil {
 			return err
 		}
-		sort.Strings(chartInfo.images)
+		sort.Strings(chartInfo.Images)
 
 		cl := util.ColorInfo
-		log.Logger().Infof("chart %s/%s has images: %s", cl(chartInfo.chartPrefix), cl(chartInfo.chartName), cl(strings.Join(chartInfo.images, ", ")))
+		log.Logger().Infof("chart %s/%s has images: %s", cl(chartInfo.Prefix), cl(chartInfo.Name), cl(strings.Join(chartInfo.Images, ", ")))
 		return nil
 	})
-	return err
+
+	SortChartData(report.Charts)
+	report.CalculateDuplicates()
+
+	if o.OutputDir == "" {
+		o.OutputDir = "."
+	}
+	if o.ReportName == "" {
+		o.ReportName = defaultChartReportName
+	}
+	err = os.MkdirAll(o.OutputDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrap(err, "failed to create directories")
+	}
+
+	data, err := yaml.Marshal(report)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal ChartReport to YAML")
+
+	}
+	yamlFile := filepath.Join(o.OutputDir, o.ReportName+".yml")
+	err = ioutil.WriteFile(yamlFile, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save report file %s", yamlFile)
+	}
+	log.Logger().Infof("generated chart images report at %s", util.ColorInfo(yamlFile))
+
+	markdownFile := filepath.Join(o.OutputDir, o.ReportName+".yml")
+	return report.GenerateMarkdown(markdownFile)
 }
 
-func (o *StepReportChartOptions) processChart(info *chartInfo) error {
-	tmpDir, err := ioutil.TempDir("", "helm-"+info.chartName+"-")
+func (o *StepReportChartOptions) processChart(info *ChartData) error {
+	tmpDir, err := ioutil.TempDir("", "helm-"+info.Name+"-")
 	if err != nil {
 		return errors.Wrapf(err, "failed to create tempo dir")
 	}
 
 	chartDir := filepath.Join(tmpDir, "chart")
-	fullChart := fmt.Sprintf("%s/%s", info.chartPrefix, info.chartName)
-	version := info.version
+	fullChart := fmt.Sprintf("%s/%s", info.Prefix, info.Name)
+	version := info.Version
 
 	// lets fetch the chart
-	err = o.RunCommandVerbose("helm", "fetch", "-d", chartDir, "--version", version, "--untar", "--repo", info.repoURL, info.chartName)
+	err = o.RunCommandVerbose("helm", "fetch", "-d", chartDir, "--version", version, "--untar", "--repo", info.RepoURL, info.Name)
 	if err != nil {
 		return err
 	}
@@ -169,7 +219,7 @@ func (o *StepReportChartOptions) processChart(info *chartInfo) error {
 		return fmt.Errorf("should have fetched the chart %s version %s", fullChart, version)
 	}
 
-	output, err := o.GetCommandOutput(chartDir, "helm", "template", info.chartName)
+	output, err := o.GetCommandOutput(chartDir, "helm", "template", info.Name)
 	if err != nil {
 		return err
 	}
@@ -187,24 +237,24 @@ func (o *StepReportChartOptions) processChart(info *chartInfo) error {
 	return nil
 }
 
-func (o *StepReportChartOptions) processTemplate(info *chartInfo, text string) error {
+func (o *StepReportChartOptions) processTemplate(info *ChartData, text string) error {
 	data := map[string]interface{}{}
 
 	err := yaml.Unmarshal([]byte(text), &data)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse template for chart %s/%s for template: %s", info.chartPrefix, info.chartName, text)
+		return errors.Wrapf(err, "failed to parse template for chart %s/%s for template: %s", info.Prefix, info.Name, text)
 	}
 
 	if util.GetMapValueAsStringViaPath(data, "kind") == "Deployment" {
 		d := v1beta1.Deployment{}
 		err := yaml.Unmarshal([]byte(text), &d)
 		if err != nil {
-			return errors.Wrapf(err, "failed to parse Deployment template for chart %s/%s for template: %s", info.chartPrefix, info.chartName, text)
+			return errors.Wrapf(err, "failed to parse Deployment template for chart %s/%s for template: %s", info.Prefix, info.Name, text)
 		}
 
 		containers := d.Spec.Template.Spec.Containers
 		if len(containers) == 0 {
-			log.Logger().Warnf("Deployment template %s for chart %s/%s has no containers", d.Name, info.chartPrefix, info.chartName)
+			log.Logger().Warnf("Deployment template %s for chart %s/%s has no containers", d.Name, info.Prefix, info.Name)
 			return nil
 		}
 
@@ -228,13 +278,41 @@ func isEmptyTemplate(text string) bool {
 	return true
 }
 
-type chartInfo struct {
-	repoURL, chartPrefix, chartName, version string
-	images                                   []string
+// CalculateDuplicates figures out if there are any duplicate image verisons
+func (r *ChartReport) CalculateDuplicates() {
 }
 
-func (i *chartInfo) addImage(image string) {
-	if util.StringArrayIndex(i.images, image) < 0 {
-		i.images = append(i.images, image)
+// GenerateMarkdown generates the markdown version of the report
+func (r *ChartReport) GenerateMarkdown(s string) error {
+	return fmt.Errorf("TODO")
+}
+
+func (i *ChartData) addImage(image string) {
+	if util.StringArrayIndex(i.Images, image) < 0 {
+		i.Images = append(i.Images, image)
+		sort.Strings(i.Images)
 	}
+}
+
+type chartDataOrder []*ChartData
+
+func (a chartDataOrder) Len() int      { return len(a) }
+func (a chartDataOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a chartDataOrder) Less(i, j int) bool {
+	r1 := a[i]
+	r2 := a[j]
+
+	n1 := r1.Prefix
+	n2 := r2.Prefix
+	if n1 != n2 {
+		return n1 < n2
+	}
+	v1 := r1.Name
+	v2 := r2.Name
+	return v1 < v2
+}
+
+// SortChartData sorts the charts in order
+func SortChartData(items []*ChartData) {
+	sort.Sort(chartDataOrder(items))
 }
