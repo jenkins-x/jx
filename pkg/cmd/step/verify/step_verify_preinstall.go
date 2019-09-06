@@ -346,6 +346,14 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			if "" != os.Getenv(config.RequirementDomainIssuerURL) {
 				requirements.Ingress.DomainIssuerURL = os.Getenv(config.RequirementDomainIssuerURL)
 			}
+			if "" != os.Getenv(config.RequirementIngressTLSProduction) {
+				useProduction := os.Getenv(config.RequirementIngressTLSProduction)
+				if useProduction == "true" {
+					requirements.Ingress.TLS.Production = true
+				} else {
+					requirements.Ingress.TLS.Production = false
+				}
+			}
 			if "" != os.Getenv(config.RequirementKaniko) {
 				kaniko := os.Getenv(config.RequirementKaniko)
 				if kaniko == "true" {

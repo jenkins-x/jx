@@ -56,6 +56,8 @@ const (
 	RequirementKanikoServiceAccountName = "JX_REQUIREMENT_KANIKO_SA_NAME"
 	// RequirementKaniko if kaniko is required
 	RequirementKaniko = "JX_REQUIREMENT_KANIKO"
+	// RequirementIngressTLSProduction use the lets encrypt production server
+	RequirementIngressTLSProduction = "JX_REQUIREMENT_INGRESS_TLS_PRODUCTION"
 )
 
 // SecretStorageType is the type of storage used for secrets
