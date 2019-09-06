@@ -88,7 +88,7 @@ func NewCmdStepReportChart(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.StepReportOptions.AddReportFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.VersionsDir, "dir", "d", "", "The dir of the version stream. If not specified it the version stream is cloned")
-	cmd.Flags().StringVarP(&options.ReportName, "name", "n", defaultChartReportName, "The name of the files to generate")
+	cmd.Flags().StringVarP(&options.ReportName, "name", "n", defaultChartReportName, "The name of the file to generate")
 	cmd.Flags().BoolVarP(&options.FailOnDuplicate, "fail-on-duplicate", "f", false, "If true lets fail the step if we have any duplicate")
 	return cmd
 }
