@@ -51,6 +51,19 @@ update BRIE_VERSION to 1.2.4`, v1.DependencyUpdate{
 			},
 		}, &commonOpts)
 	})
+	t.Run("with-dot", func(t *testing.T) {
+		assertParseDependencyUpdateMessage(t, `chore(dependencies): update https://github.com/pmuir/brie.git from 1.2.3 to 1.2.4
+
+update BRIE_VERSION to 1.2.4`, v1.DependencyUpdate{
+			DependencyUpdateDetails: v1.DependencyUpdateDetails{
+				Owner:       "pmuir",
+				Repo:        "brie",
+				ToVersion:   "1.2.4",
+				FromVersion: "1.2.3",
+				Host:        "github.com",
+			},
+		}, &commonOpts)
+	})
 	t.Run("simple", func(t *testing.T) {
 		assertParseDependencyUpdateMessage(t, `chore(dependencies): update pmuir/brie from 1.2.3 to 1.2.4
 
