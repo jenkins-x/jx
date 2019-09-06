@@ -24,6 +24,41 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		expected *tekton.PipelineRunInfo
 		prName   string
 	}{{
+		name: "pr-yaml",
+		expected: &tekton.PipelineRunInfo{
+			Branch:      "PR-1",
+			Build:       "1",
+			BuildNumber: 1,
+			Context:     "pr-build",
+			GitInfo: &gits.GitRepository{
+				Host:         "github.com",
+				Name:         "bdd-spring-1567745634",
+				Organisation: "cb-kubecd",
+				Project:      "cb-kubecd",
+				Scheme:       "https",
+				URL:          "https://github.com/cb-kubecd/bdd-spring-1567745634.git",
+			},
+			GitURL:        "https://github.com/cb-kubecd/bdd-spring-1567745634.git",
+			LastCommitSHA: "c6bd3e0221a122dca3a00e87cb9188daed2e1d44",
+			Name:          "cb-kubecd-bdd-spring-1567745634-PR-1-1",
+			Organisation:  "cb-kubecd",
+			Pipeline:      "cb-kubecd/bdd-spring-1567745634/PR-1",
+			PipelineRun:   "cb-kubecd-bdd-spring-1567745634-s92nd-1",
+			Repository:    "bdd-spring-1567745634",
+			Stages: []*tekton.StageInfo{{
+				Name:           syntax.DefaultStageNameForBuildPack,
+				CreatedTime:    *parseTime(t, "2019-09-06T05:24:17Z"),
+				FirstStepImage: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/bash:v0.5.1",
+				PodName:        "cb-kubecd-bdd-spring-1567745634-s92nd-1-from-build-pack-x8hsc-pod-f15fe6",
+				Task:           "cb-kubecd-bdd-spring-1567745634-s92nd-from-build-pack-1",
+				TaskRun:        "cb-kubecd-bdd-spring-1567745634-s92nd-1-from-build-pack-x8hsc",
+				Parents:        []string{},
+			}},
+			Type:        tekton.BuildPipeline,
+			CreatedTime: *parseTime(t, "2019-09-06T05:24:17Z"),
+		},
+		prName: "cb-kubecd-bdd-spring-1567745634-s92nd-1",
+	}, {
 		name: "from-build-pack-init-containers",
 		expected: &tekton.PipelineRunInfo{
 			Branch:      "master",
@@ -235,7 +270,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 	}}
 
 	for _, tt := range testCases {
-		if tt.name != "from-yaml" {
+		if tt.name != "from-yaml" && tt.name != "pr-yaml" {
 			continue
 		}
 		t.Run(tt.name, func(t *testing.T) {
