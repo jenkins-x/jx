@@ -112,6 +112,7 @@ func NewCmdStepReportJUnit(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
+// Run generates the report
 func (o *StepReportJUnitOptions) Run() error {
 	if o.XUnitClient == nil {
 		o.XUnitClient = reportingtools.XUnitViewer{}
