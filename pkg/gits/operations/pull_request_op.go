@@ -166,7 +166,9 @@ func (o *PullRequestOperation) updateAndGenerateMessagesAndDependencyMatrix(dir 
 		oldVersionsStr = oldVersionsStr + strings.Join(dedupedNonSemantic, ", ")
 	}
 
-	commitMessage, details, updateDependency, assets, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, destHost, oldVersionsStr, o.Version, o.Component)
+	// remove the v prefix if we are using a v tag
+	version := strings.TrimPrefix(o.Version, "v")
+	commitMessage, details, updateDependency, assets, err := o.CreateDependencyUpdatePRDetails(kind, o.SrcGitURL, destHost, oldVersionsStr, version, o.Component)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
