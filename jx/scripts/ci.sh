@@ -15,7 +15,7 @@ export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 # for BDD tests
 export GIT_PROVIDER_URL="https://github.beescloud.com"
 export GHE_TOKEN="$GHE_CREDS_PSW"
-export GINKGO_ARGS="-v"
+export TESTFLAGS="-v"
 
 export JX_DISABLE_DELETE_APP="true"
 export JX_DISABLE_DELETE_REPO="true"
@@ -54,7 +54,7 @@ git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
 # lets trigger the BDD tests in a new team and git provider
-jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-create-spring
+jx step bdd --test-git-repo=https://github.com/pmuir/bdd-jx.git -b --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-create-spring
 
 # Reset the namespace back to jx after test for any followup steps
 COVER_JX_BINARY=false jx ns jx
