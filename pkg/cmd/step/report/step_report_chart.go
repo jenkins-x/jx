@@ -22,16 +22,8 @@ import (
 )
 
 var (
-	stepReportChartLong    = templates.LongDesc(`This step is used to generate an HTML report from *.junit.xml files created from running BDD tests.`)
+	stepReportChartLong    = templates.LongDesc(`Creates a report of all the images used in the charts in a version stream".`)
 	stepReportChartExample = templates.Examples(`
-	# Collect every *.junit.xml file from --in-dir, merge them, and store them in --out-dir with a file name --output-name and provide an HTML report title
-	jx step report --in-dir /randomdir --out-dir /outdir --merge --output-name resulting_report.html --suite-name This_is_the_report_title
-
-	# Collect every *.junit.xml file without defining --in-dir and use the value of $REPORTS_DIR , merge them, and store them in --out-dir with a file name --output-name
-	jx step report --out-dir /outdir --merge --output-name resulting_report.html
-
-	# Select a single *.junit.xml file and create a report form it
-	jx step report --in-dir /randomdir --out-dir /outdir --target-report test.junit.xml --output-name resulting_report.html
 `)
 )
 
@@ -41,7 +33,8 @@ var (
 
 // ChartReport the report
 type ChartReport struct {
-	Charts []*ChartData `json:"charts,omitempty"`
+	Charts          []*ChartData             `json:"charts,omitempty"`
+	DuplicateImages []*DuplicateImageVersion `json:"duplicateImages,omitempty"`
 }
 
 // ChartData the image information
@@ -53,10 +46,16 @@ type ChartData struct {
 	Images  []string `json:"images,omitempty"`
 }
 
+// DuplicateImageVersion the duplicate images
+type DuplicateImageVersion struct {
+	Image    string
+	Versions map[string]string
+}
+
 // StepReportChartOptions contains the command line flags and other helper objects
 type StepReportChartOptions struct {
 	StepReportOptions
-	ChartsDir       string
+	VersionsDir     string
 	ReportName      string
 	FailOnDuplicate bool
 
@@ -88,23 +87,21 @@ func NewCmdStepReportChart(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options.StepReportOptions.AddReportFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.ChartsDir, "dir", "d", "", "The dir to look for charts. If not specified it defaults to the version stream")
+	cmd.Flags().StringVarP(&options.VersionsDir, "dir", "d", "", "The dir of the version stream. If not specified it the version stream is cloned")
 	cmd.Flags().StringVarP(&options.ReportName, "name", "n", defaultChartReportName, "The name of the files to generate")
 	cmd.Flags().BoolVarP(&options.FailOnDuplicate, "fail-on-duplicate", "f", false, "If true lets fail the step if we have any duplicate")
 	return cmd
 }
 
 func (o *StepReportChartOptions) Run() error {
-
-	if o.ChartsDir == "" {
+	if o.VersionsDir == "" {
 		resolver, err := o.GetVersionResolver()
 		if err != nil {
 			return err
 		}
-		o.ChartsDir = filepath.Join(resolver.VersionsDir, "charts")
+		o.VersionsDir = resolver.VersionsDir
 	}
-
-	dir := o.ChartsDir
+	dir := filepath.Join(o.VersionsDir, "charts")
 	exists, err := util.DirExists(dir)
 	if err != nil {
 		return err
@@ -165,8 +162,13 @@ func (o *StepReportChartOptions) Run() error {
 		return nil
 	})
 
+	imagesDir := filepath.Join(o.VersionsDir, "docker")
+
 	SortChartData(report.Charts)
-	report.CalculateDuplicates()
+	err = report.CalculateDuplicates(imagesDir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to calculate duplicate images")
+	}
 
 	if o.OutputDir == "" {
 		o.OutputDir = "."
@@ -190,9 +192,7 @@ func (o *StepReportChartOptions) Run() error {
 		return errors.Wrapf(err, "failed to save report file %s", yamlFile)
 	}
 	log.Logger().Infof("generated chart images report at %s", util.ColorInfo(yamlFile))
-
-	markdownFile := filepath.Join(o.OutputDir, o.ReportName+".yml")
-	return report.GenerateMarkdown(markdownFile)
+	return nil
 }
 
 func (o *StepReportChartOptions) processChart(info *ChartData) error {
@@ -278,13 +278,83 @@ func isEmptyTemplate(text string) bool {
 	return true
 }
 
-// CalculateDuplicates figures out if there are any duplicate image verisons
-func (r *ChartReport) CalculateDuplicates() {
+// ImageMap used to map images to their versions
+type ImageMap struct {
+	images map[string]map[string]string
 }
 
-// GenerateMarkdown generates the markdown version of the report
-func (r *ChartReport) GenerateMarkdown(s string) error {
-	return fmt.Errorf("TODO")
+// AddImage adds a new image to the map
+func (m *ImageMap) AddImage(name string, version string, from string) {
+	if m.images == nil {
+		m.images = map[string]map[string]string{}
+	}
+
+	versions := m.images[name]
+	if versions == nil {
+		versions = map[string]string{}
+		m.images[name] = versions
+	}
+	versions[version] = from
+}
+
+// DuplicateImages returns the duplicate images
+func (m *ImageMap) DuplicateImages() []*DuplicateImageVersion {
+	answer := []*DuplicateImageVersion{}
+	for name, versions := range m.images {
+		if len(versions) > 1 {
+			answer = append(answer, &DuplicateImageVersion{
+				Image:    name,
+				Versions: versions,
+			})
+		}
+	}
+	return answer
+}
+
+// CalculateDuplicates figures out if there are any duplicate image versions
+func (r *ChartReport) CalculateDuplicates(imagesDir string) error {
+	m := ImageMap{}
+
+	err := filepath.Walk(imagesDir, func(path string, info os.FileInfo, err error) error {
+		name := info.Name()
+		if info.IsDir() || !strings.HasSuffix(name, ".yml") {
+			return nil
+		}
+
+		r, err := filepath.Rel(imagesDir, path)
+		if err != nil {
+			return errors.Wrapf(err, "failed to calculate relative path")
+		}
+		r = strings.TrimSuffix(r, ".yml")
+		v, err := versionstream.LoadStableVersionFile(path)
+		if err != nil {
+			log.Logger().Warnf("failed to parse image version file %s due to %s", path, err.Error())
+			return nil
+		}
+		m.AddImage(r, v.Version, "stream")
+		return nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to walk images dir %s", imagesDir)
+	}
+
+	for _, chart := range r.Charts {
+		for _, image := range chart.Images {
+			image = strings.Trim(image, "docker.io/")
+			idx := strings.Index(image, ":")
+			if idx < 0 {
+				log.Logger().Warnf("image %s does not have a version", image)
+				continue
+			}
+			r := image[0:idx]
+			v := image[idx+1:]
+			m.AddImage(r, v, chart.Prefix+"/"+chart.Name+":"+chart.Version)
+		}
+	}
+
+	// now lets find the duplicates
+	r.DuplicateImages = m.DuplicateImages()
+	return nil
 }
 
 func (i *ChartData) addImage(image string) {
