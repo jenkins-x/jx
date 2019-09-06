@@ -93,6 +93,7 @@ func NewCmdStepReportChart(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
+// Run generates the report
 func (o *StepReportChartOptions) Run() error {
 	if o.VersionsDir == "" {
 		resolver, err := o.GetVersionResolver()
