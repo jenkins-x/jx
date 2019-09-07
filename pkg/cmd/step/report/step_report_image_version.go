@@ -3,13 +3,17 @@ package report
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -42,8 +46,13 @@ type StepReportImageVersionOptions struct {
 	GitURL         string
 	GitBranch      string
 	ServiceAccount string
+	UserName       string
+	Email          string
 	Folder         string
+	Filter         string
 	BackoffLimit   int32
+	NoWait         bool
+	JobWaitTimeout time.Duration
 
 	Report ImageVersionReport
 }
@@ -77,10 +86,15 @@ func NewCmdStepReportImageVersion(commonOpts *opts.CommonOptions) *cobra.Command
 	cmd.Flags().StringVarP(&options.FileName, "name", "n", "", "The name of the file to generate")
 	cmd.Flags().StringVarP(&options.VersionsDir, "dir", "d", "", "The dir of the version stream. If not specified it the version stream is cloned")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the Job")
+	cmd.Flags().StringVarP(&options.UserName, "username", "u", "jenkins-x-bot", "The user if using git storage")
+	cmd.Flags().StringVarP(&options.Email, "email", "e", "jenkins-x@googlegroups.com", "The email if using git storage")
 	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(2), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
 	cmd.Flags().StringVarP(&options.GitURL, "git-url", "", "", "The git URL of the project to store the results")
 	cmd.Flags().StringVarP(&options.GitBranch, "branch", "", "", "The git branch to store the results")
-	cmd.Flags().StringVarP(&options.Folder, "folder", "", "reports/imageVersions", "The folder to put the reports inside")
+	cmd.Flags().StringVarP(&options.Folder, "path", "p", "reports/imageVersions", "The output path in the bucket/git repository to store the reports")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "jenkinsxio", "The text to filter image names")
+	cmd.Flags().BoolVarP(&options.NoWait, "no-wait", "", false, "Should we not wait for the Job to complete?")
+	cmd.Flags().DurationVarP(&options.JobWaitTimeout, "wait-timeout", "", 60*time.Minute, "Amount of time to wait for the Job to complete before failing")
 	return cmd
 }
 
@@ -132,14 +146,23 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 
 	containers := []corev1.Container{}
 	counter := 0
+	images := []string{}
 	for image, versions := range m.Images {
+		images = append(images, image)
 		for version, source := range versions {
-			log.Logger().Infof("processing image %s version %s from %s", image, version, source)
+			if o.Filter == "" || strings.Contains(image, o.Filter) {
+				log.Logger().Infof("processing image %s version %s from %s", image, version, source)
 
-			counter++
-			name := "c" + strconv.Itoa(counter)
-			containers = append(containers, o.createImageVersionContainer(name, image, version, source))
+				counter++
+				name := "c" + strconv.Itoa(counter)
+				containers = append(containers, o.createImageVersionContainer(name, image, version, source))
+			}
 		}
+	}
+	if len(containers) == 0 {
+		sort.Strings(images)
+		log.Logger().Warnf("No container images matched filter %s. Have image names: %s", o.Filter, strings.Join(images, ", "))
+		return fmt.Errorf("no container images matched filter %s. Have image names: %s", o.Filter, strings.Join(images, ", "))
 	}
 
 	name := naming.ToValidName("jx-report-image-version-" + id.String())
@@ -168,56 +191,66 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 	}
 	_, err = kubeClient.BatchV1().Jobs(ns).Create(job)
 	if err != nil {
-		data, err := yaml.Marshal(job)
-		if err == nil {
+		data, err2 := yaml.Marshal(job)
+		if err2 == nil {
 			log.Logger().Warnf("failed to create job %s %s", err.Error(), string(data))
 		}
 		return errors.Wrapf(err, "failed to create job %s", job.Name)
-	} else {
-		log.Logger().Infof("created Job %s", util.ColorInfo(job.Name))
 	}
+	log.Logger().Infof("created Job %s", util.ColorInfo(job.Name))
 
-	// wait for job to complete?
+	if o.NoWait {
+		return nil
+	}
+	log.Logger().Infof("waiting for Job %s to complete", util.ColorInfo(job.Name))
+	err = kube.WaitForJobToFinish(kubeClient, ns, job.Name, o.JobWaitTimeout, true)
+	if err != nil {
+		return errors.Wrapf(err, "failed waiting for Job %s to complete", job.Name)
+	}
 	return nil
 }
 
 func (o *StepReportImageVersionOptions) createImageVersionContainer(name string, image string, version string, source string) corev1.Container {
 	// TODO
 	//fullImage := image + ":" + version
-	fullImage := "gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-5365-3"
+	fullImage := "gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-5365-6"
 
-	path := filepath.Join(o.Folder, image+"-"+version)
-	args := fmt.Sprintf(` --to-path="%s"`, path)
+	file := strings.ReplaceAll(image, "/", "-") + "-" + version + ".yml"
+	args := fmt.Sprintf(` -c reports --to-path="%s"`, o.Folder)
 	if o.GitURL != "" {
 		args += " --git-url " + o.GitURL
 	}
 	if o.GitBranch != "" {
 		args += " --git-branch " + o.GitBranch
 	}
-	commands := "jx step report version -n versions.yml;\njx step stash -c reports -p versions.yml" + args
+	commands := "jx step report version -n " + file + ";\njx step stash -v -c reports -p " + file + args
 
 	envVars := []corev1.EnvVar{}
 	if o.GitURL != "" {
-		commands = "jx step git credentials;\n" + commands
+		commands = "git config --global credential.helper store;\njx step git validate;\njx step git credentials;\n" + commands
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "XDG_CONFIG_HOME",
-			Value: "/workspace/xdg_config",
+			Value: "/root",
+		})
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "JX_BUILD_NUMBER",
+			Value: "1",
 		})
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "GIT_AUTHOR_NAME",
-			Value: "jenkins-x-bot",
+			Value: o.UserName,
 		})
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "GIT_AUTHOR_EMAIL",
-			Value: "jenkins-x@googlegroups.com",
+			Value: o.Email,
 		})
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "GIT_COMMITTER_NAME",
-			Value: "jenkins-x-bot",
+			Value: o.UserName,
 		})
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "GIT_COMMITTER_EMAIL",
-			Value: "jenkins-x@googlegroups.com",
+			Value: o.Email,
 		})
 	}
 	return corev1.Container{
