@@ -173,6 +173,7 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter, br
 		return ghPagesDir, err
 	}
 
+	log.Logger().Infof("shallow cloning %s branch %s", sourceURL, branchName, err)
 	err = gitClient.ShallowClone(ghPagesDir, sourceURL, branchName, "")
 	if err != nil {
 		os.RemoveAll(ghPagesDir)
