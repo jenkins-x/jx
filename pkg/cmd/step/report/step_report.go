@@ -1,9 +1,17 @@
 package report
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +40,7 @@ func NewCmdStepReport(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdStepReportChart(commonOpts))
+	cmd.AddCommand(NewCmdStepReportImageVersion(commonOpts))
 	cmd.AddCommand(NewCmdStepReportJUnit(commonOpts))
 	cmd.AddCommand(NewCmdStepReportVersion(commonOpts))
 	return cmd
@@ -45,4 +54,30 @@ func (o *StepReportOptions) AddReportFlags(cmd *cobra.Command) {
 // Run implements this command
 func (o *StepReportOptions) Run() error {
 	return o.Cmd.Help()
+}
+
+// OutputReport outputs the report to the terminal or a file
+func (o *StepReportOptions) OutputReport(report interface{}, fileName string, outputDir string) error {
+	data, err := yaml.Marshal(report)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal report to YAML")
+	}
+	if fileName == "" {
+		log.Logger().Infof(string(data))
+		return nil
+	}
+	if outputDir == "" {
+		outputDir = "."
+	}
+	err = os.MkdirAll(outputDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrap(err, "failed to create directories")
+	}
+	yamlFile := filepath.Join(outputDir, fileName)
+	err = ioutil.WriteFile(yamlFile, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save report file %s", yamlFile)
+	}
+	log.Logger().Infof("generated report at %s", util.ColorInfo(yamlFile))
+	return nil
 }

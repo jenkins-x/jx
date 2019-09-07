@@ -1,20 +1,13 @@
 package report
 
 import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
 
-	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -89,30 +82,7 @@ func (o *StepReportVersionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
-	data, err := yaml.Marshal(report)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal VersionReport to YAML")
-
-	}
-	if o.FileName == "" {
-		log.Logger().Infof(string(data))
-		return nil
-	}
-	if o.OutputDir == "" {
-		o.OutputDir = "."
-	}
-	err = os.MkdirAll(o.OutputDir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrap(err, "failed to create directories")
-	}
-	yamlFile := filepath.Join(o.OutputDir, o.FileName)
-	err = ioutil.WriteFile(yamlFile, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save report file %s", yamlFile)
-	}
-	log.Logger().Infof("generated version report at %s", util.ColorInfo(yamlFile))
-	return nil
+	return o.OutputReport(report, o.FileName, o.OutputDir)
 }
 
 func (o *StepReportVersionOptions) generateReport() error {
