@@ -174,26 +174,11 @@ func (o *StepReportChartOptions) Run() error {
 	if o.OutputDir == "" {
 		o.OutputDir = "."
 	}
-	if o.ReportName == "" {
-		o.ReportName = defaultChartReportName
+	fileName := o.ReportName
+	if fileName != "" {
+		fileName += ".yml"
 	}
-	err = os.MkdirAll(o.OutputDir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrap(err, "failed to create directories")
-	}
-
-	data, err := yaml.Marshal(report)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal ChartReport to YAML")
-
-	}
-	yamlFile := filepath.Join(o.OutputDir, o.ReportName+".yml")
-	err = ioutil.WriteFile(yamlFile, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save report file %s", yamlFile)
-	}
-	log.Logger().Infof("generated chart images report at %s", util.ColorInfo(yamlFile))
-	return nil
+	return o.OutputReport(report, fileName, o.OutputDir)
 }
 
 func (o *StepReportChartOptions) processChart(info *ChartData) error {
@@ -281,19 +266,19 @@ func isEmptyTemplate(text string) bool {
 
 // ImageMap used to map images to their versions
 type ImageMap struct {
-	images map[string]map[string]string
+	Images map[string]map[string]string
 }
 
 // AddImage adds a new image to the map
 func (m *ImageMap) AddImage(name string, version string, from string) {
-	if m.images == nil {
-		m.images = map[string]map[string]string{}
+	if m.Images == nil {
+		m.Images = map[string]map[string]string{}
 	}
 
-	versions := m.images[name]
+	versions := m.Images[name]
 	if versions == nil {
 		versions = map[string]string{}
-		m.images[name] = versions
+		m.Images[name] = versions
 	}
 	versions[version] = from
 }
@@ -301,7 +286,7 @@ func (m *ImageMap) AddImage(name string, version string, from string) {
 // DuplicateImages returns the duplicate images
 func (m *ImageMap) DuplicateImages() []*DuplicateImageVersion {
 	answer := []*DuplicateImageVersion{}
-	for name, versions := range m.images {
+	for name, versions := range m.Images {
 		if len(versions) > 1 {
 			answer = append(answer, &DuplicateImageVersion{
 				Image:    name,
@@ -312,10 +297,9 @@ func (m *ImageMap) DuplicateImages() []*DuplicateImageVersion {
 	return answer
 }
 
-// CalculateDuplicates figures out if there are any duplicate image versions
-func (r *ChartReport) CalculateDuplicates(imagesDir string) error {
+// LoadImageMap loads the images from the given image stream dir
+func LoadImageMap(imagesDir string) (ImageMap, error) {
 	m := ImageMap{}
-
 	err := filepath.Walk(imagesDir, func(path string, info os.FileInfo, err error) error {
 		name := info.Name()
 		if info.IsDir() || !strings.HasSuffix(name, ".yml") {
@@ -336,7 +320,16 @@ func (r *ChartReport) CalculateDuplicates(imagesDir string) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to walk images dir %s", imagesDir)
+		return m, errors.Wrapf(err, "failed to walk images dir %s", imagesDir)
+	}
+	return m, nil
+}
+
+// CalculateDuplicates figures out if there are any duplicate image versions
+func (r *ChartReport) CalculateDuplicates(imagesDir string) error {
+	m, err := LoadImageMap(imagesDir)
+	if err != nil {
+		return err
 	}
 
 	for _, chart := range r.Charts {
