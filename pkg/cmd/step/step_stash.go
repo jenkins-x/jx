@@ -175,10 +175,14 @@ func (o *StepStashOptions) Run() error {
 
 	buildNo := builds.GetBuildNumber()
 	var projectGitInfo *gits.GitRepository
-	if o.ProjectGitURL != "" {
-		projectGitInfo, err = gits.ParseGitURL(o.ProjectGitURL)
+	gitURL := o.ProjectGitURL
+	if gitURL == "" {
+		gitURL = o.StorageLocation.GitURL
+	}
+	if gitURL != "" {
+		projectGitInfo, err = gits.ParseGitURL(gitURL)
 		if err != nil {
-			return errors.Wrapf(err, "failed to parse the git URL %s", o.ProjectGitURL)
+			return errors.Wrapf(err, "failed to parse the git URL %s", gitURL)
 		}
 	} else {
 		dir := ""
@@ -192,13 +196,18 @@ func (o *StepStashOptions) Run() error {
 
 	projectBranchName := o.ProjectBranch
 	if projectBranchName == "" {
+		projectBranchName = o.StorageLocation.GitBranch
+	}
+	if projectBranchName == "" {
 		projectBranchName = os.Getenv(envVarBranchName)
 	}
 	if projectBranchName == "" {
 		// lets try find the branch name via git
-		projectBranchName, err = o.Git().Branch(o.Dir)
-		if err != nil {
-			return err
+		if gitURL == "" {
+			projectBranchName, err = o.Git().Branch(o.Dir)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if projectBranchName == "" {
