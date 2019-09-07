@@ -215,7 +215,7 @@ func (o *StepReportImageVersionOptions) createImageVersionContainer(name string,
 	//fullImage := image + ":" + version
 	fullImage := "gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-5365-6"
 
-	file := strings.ReplaceAll(image, "/", "-") + "-" + version + ".yml"
+	file := strings.Replace(image, "/", "-", -1) + "-" + version + ".yml"
 	args := fmt.Sprintf(` -c reports --to-path="%s"`, o.Folder)
 	if o.GitURL != "" {
 		args += " --git-url " + o.GitURL
