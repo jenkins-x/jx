@@ -316,7 +316,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 	}
 	useHTTP := "true"
 	tlsAcme := "false"
-	if requirements.Ingress.TLS.Enabled {
+	if envCfg.Ingress.TLS.Enabled {
 		useHTTP = "false"
 		tlsAcme = "true"
 	}
