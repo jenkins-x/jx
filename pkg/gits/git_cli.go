@@ -75,8 +75,57 @@ func (g *GitCLI) Clone(url string, dir string) error {
 }
 
 // Clone clones a single branch of the given git URL into the given directory
-func (g *GitCLI) ShallowCloneBranch(url string, branch string, dir string) error {
-	return g.clone(dir, url, "", true, false, branch, "", "")
+func (g *GitCLI) ShallowCloneBranch(gitURL string, branch string, dir string) error {
+	var err error
+	verbose := true
+	remoteName := "origin"
+	shallow := true
+	err = g.Init(dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to init a new git repository in directory %s", dir)
+	}
+	if verbose {
+		log.Logger().Infof("ran git init in %s", dir)
+	}
+	err = g.AddRemote(dir, "origin", gitURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to add remote %s with url %s in directory %s", remoteName, gitURL, dir)
+	}
+	if verbose {
+		log.Logger().Infof("ran git add remote %s %s in %s", remoteName, gitURL, dir)
+	}
+
+	err = g.fetchBranch(dir, remoteName, false, shallow, verbose, branch)
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", branch, gitURL,
+			dir)
+	}
+	err = g.gitCmd(dir, "checkout", "-t", fmt.Sprintf("%s/%s", remoteName, branch))
+	if err != nil {
+		log.Logger().Warnf("failed to checkout remote tracking branch %s/%s %s in directory %s due to: %s", remoteName,
+			branch, dir, err.Error())
+		if branch != "master" {
+			// git init checks out the master branch by default
+			err = g.CreateBranch(dir, branch)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create branch %s in directory %s", branch, dir)
+			}
+
+			if verbose {
+				log.Logger().Infof("ran git branch %s in directory %s", branch, dir)
+			}
+		}
+		err = g.Reset(dir, fmt.Sprintf("%s/%s", remoteName, branch), true)
+		if err != nil {
+			return errors.Wrapf(err, "failed to reset hard to %s in directory %s", branch, dir)
+		}
+		err = g.gitCmd(dir, "branch", "--set-upstream-to", fmt.Sprintf("%s/%s", remoteName, branch), branch)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set tracking information to %s/%s %s in directory %s", remoteName,
+				branch, branch, dir)
+		}
+	}
+	return nil
 }
 
 // ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
@@ -137,6 +186,7 @@ func (g *GitCLI) clone(dir string, gitURL string, remoteName string, shallow boo
 		if err != nil {
 			return errors.Wrapf(err, "failed to create branch %s in directory %s", localBranch, dir)
 		}
+
 		if verbose {
 			log.Logger().Infof("ran git branch %s in directory %s", localBranch, dir)
 		}

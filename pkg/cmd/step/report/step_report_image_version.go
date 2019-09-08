@@ -213,7 +213,7 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 func (o *StepReportImageVersionOptions) createImageVersionContainer(name string, image string, version string, source string) corev1.Container {
 	// TODO
 	//fullImage := image + ":" + version
-	fullImage := "gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-5365-6"
+	fullImage := "gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-5365-16"
 
 	file := strings.Replace(image, "/", "-", -1) + "-" + version + ".yml"
 	args := fmt.Sprintf(` -c reports --to-path="%s"`, o.Folder)
@@ -223,7 +223,7 @@ func (o *StepReportImageVersionOptions) createImageVersionContainer(name string,
 	if o.GitBranch != "" {
 		args += " --git-branch " + o.GitBranch
 	}
-	commands := "jx step report version -n " + file + ";\njx step stash -v -c reports -p " + file + args
+	commands := "jx step report version -n " + file + ";\njx step stash -c reports -p " + file + args
 
 	envVars := []corev1.EnvVar{}
 	if o.GitURL != "" {

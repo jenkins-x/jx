@@ -106,7 +106,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 		log.Logger().Errorf("%s", err)
 		return urls, err
 	}
-	err = gitClient.Push(ghPagesDir, "origin", false, false, "HEAD")
+	err = gitClient.Push(ghPagesDir, "origin", false, false, c.gitBranch)
 	return urls, err
 }
 
@@ -173,9 +173,11 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter, br
 		return ghPagesDir, err
 	}
 
-	log.Logger().Infof("shallow cloning %s branch %s", sourceURL, branchName, err)
-	err = gitClient.ShallowClone(ghPagesDir, sourceURL, branchName, "")
+	log.Logger().Infof("shallow cloning %s branch %s", sourceURL, branchName)
+	err = gitClient.ShallowCloneBranch(sourceURL, branchName, ghPagesDir)
 	if err != nil {
+		log.Logger().Warnf("failed to shallow clone %s branch %s due to: %s", sourceURL, branchName, err.Error())
+
 		os.RemoveAll(ghPagesDir)
 		ghPagesDir, err = ioutil.TempDir("", "jenkins-x-collect")
 		if err != nil {
