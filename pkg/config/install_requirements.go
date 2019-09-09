@@ -48,6 +48,8 @@ const (
 	RequirementZone = "JX_REQUIREMENT_ZONE"
 	// RequirementEnvGitOwner the default git owner for environment repositories if none is specified explicitly
 	RequirementEnvGitOwner = "JX_REQUIREMENT_ENV_GIT_OWNER"
+	// RequirementEnvGitPrivate sets the visibility of the environment repositories as private (subscription required for GitHub Organisations)
+	RequirementEnvGitPrivate = "JX_REQUIREMENT_ENV_GIT_PRIVATE"
 	// RequirementExternalDNSServiceAccountName the service account name for external dns
 	RequirementExternalDNSServiceAccountName = "JX_REQUIREMENT_EXTERNALDNS_SA_NAME"
 	// RequirementVaultServiceAccountName the service account name for vault

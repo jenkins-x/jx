@@ -334,6 +334,14 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			if "" != os.Getenv(config.RequirementEnvGitOwner) {
 				requirements.Cluster.EnvironmentGitOwner = os.Getenv(config.RequirementEnvGitOwner)
 			}
+			if "" != os.Getenv(config.RequirementEnvGitPrivate) {
+				privateEnvRepo := os.Getenv(config.RequirementEnvGitPrivate)
+				if privateEnvRepo == "true" {
+					requirements.Cluster.EnvironmentGitPrivate = true
+				} else {
+					requirements.Cluster.EnvironmentGitPrivate = false
+				}
+			}
 			if "" != os.Getenv(config.RequirementExternalDNSServiceAccountName) {
 				requirements.Cluster.ExternalDNSSAName = os.Getenv(config.RequirementExternalDNSServiceAccountName)
 			}
