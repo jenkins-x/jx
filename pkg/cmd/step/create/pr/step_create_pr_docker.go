@@ -28,7 +28,7 @@ var (
 type StepCreatePullRequestDockersOptions struct {
 	StepCreatePrOptions
 
-	Name string
+	Names []string
 }
 
 // NewCmdStepCreatePullRequestDocker Creates a new Command object
@@ -57,7 +57,7 @@ func NewCmdStepCreatePullRequestDocker(commonOpts *opts.CommonOptions) *cobra.Co
 		},
 	}
 	AddStepCreatePrFlags(cmd, &options.StepCreatePrOptions)
-	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the property to update")
+	cmd.Flags().StringArrayVarP(&options.Names, "name", "n", make([]string, 0), "The name of the property to update")
 	return cmd
 }
 
@@ -66,7 +66,7 @@ func (o *StepCreatePullRequestDockersOptions) ValidateDockersOptions() error {
 	if err := o.ValidateOptions(false); err != nil {
 		return errors.WithStack(err)
 	}
-	if o.Name == "" {
+	if len(o.Names) == 0 {
 		return util.MissingOption("name")
 	}
 	if o.SrcGitURL == "" {
@@ -83,9 +83,13 @@ func (o *StepCreatePullRequestDockersOptions) Run() error {
 	}
 	err := o.CreatePullRequest("docker",
 		func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-			oldVersions, err := docker.UpdateVersions(dir, o.Version, o.Name)
-			if err != nil {
-				return nil, errors.Wrapf(err, "updating %s to %s", o.Name, o.Version)
+			var oldVersions []string
+			for _, name := range o.Names {
+				oldVersionsforName, err := docker.UpdateVersions(dir, o.Version, name)
+				if err != nil {
+					return nil, errors.Wrapf(err, "updating %s to %s", name, o.Version)
+				}
+				oldVersions = append(oldVersions, oldVersionsforName...)
 			}
 			return oldVersions, nil
 		})
