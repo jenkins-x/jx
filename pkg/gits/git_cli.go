@@ -102,7 +102,7 @@ func (g *GitCLI) ShallowCloneBranch(gitURL string, branch string, dir string) er
 	}
 	err = g.gitCmd(dir, "checkout", "-t", fmt.Sprintf("%s/%s", remoteName, branch))
 	if err != nil {
-		log.Logger().Warnf("failed to checkout remote tracking branch %s/%s %s in directory %s due to: %s", remoteName,
+		log.Logger().Warnf("failed to checkout remote tracking branch %s/%s in directory %s due to: %s", remoteName,
 			branch, dir, err.Error())
 		if branch != "master" {
 			// git init checks out the master branch by default
