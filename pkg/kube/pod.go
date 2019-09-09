@@ -3,10 +3,12 @@ package kube
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -74,6 +76,16 @@ func GetPodCondition(status *v1.PodStatus, conditionType v1.PodConditionType) (i
 		}
 	}
 	return -1, nil
+}
+
+// GetCurrentPod returns the current pod the code is running in or nil if it cannot be deduced
+func GetCurrentPod(kubeClient kubernetes.Interface, ns string) (*v1.Pod, error) {
+	name := os.Getenv("HOSTNAME")
+	if name == "" {
+		return nil, nil
+	}
+	name = naming.ToValidName(name)
+	return kubeClient.CoreV1().Pods(ns).Get(name, meta_v1.GetOptions{})
 }
 
 func waitForPodSelector(client kubernetes.Interface, namespace string, options meta_v1.ListOptions,

@@ -51,7 +51,11 @@ type StepReportImageVersionOptions struct {
 	Folder         string
 	Filter         string
 	BackoffLimit   int32
+	TestImage      string
+	StashImage     string
+	ContainerDir   string
 	NoWait         bool
+	NoDeleteJob    bool
 	JobWaitTimeout time.Duration
 
 	Report ImageVersionReport
@@ -93,7 +97,11 @@ func NewCmdStepReportImageVersion(commonOpts *opts.CommonOptions) *cobra.Command
 	cmd.Flags().StringVarP(&options.GitBranch, "branch", "", "", "The git branch to store the results")
 	cmd.Flags().StringVarP(&options.Folder, "path", "p", "reports/imageVersions", "The output path in the bucket/git repository to store the reports")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "jenkinsxio", "The text to filter image names")
+	cmd.Flags().StringVarP(&options.TestImage, "test-image", "", "", "Override the actual image used in the container jobs so we can test out changes to the jx steps before they make it into the builders")
+	cmd.Flags().StringVarP(&options.StashImage, "stash-image", "", "gcr.io/jenkinsxio/builder-go:latest", "The container image used to stash the results")
+	cmd.Flags().StringVarP(&options.ContainerDir, "container-dir", "", "/workspace/reports", "the report directory of the reports")
 	cmd.Flags().BoolVarP(&options.NoWait, "no-wait", "", false, "Should we not wait for the Job to complete?")
+	cmd.Flags().BoolVarP(&options.NoDeleteJob, "no-delete-job", "", false, "Should we not delete the Job?")
 	cmd.Flags().DurationVarP(&options.JobWaitTimeout, "wait-timeout", "", 60*time.Minute, "Amount of time to wait for the Job to complete before failing")
 	return cmd
 }
@@ -115,13 +123,11 @@ func (o *StepReportImageVersionOptions) Run() error {
 	if !exists {
 		return fmt.Errorf("directory does not exist %s", dir)
 	}
-
-	report := &o.Report
 	err = o.generateReport(dir)
 	if err != nil {
 		return err
 	}
-	return o.OutputReport(report, o.FileName, o.OutputDir)
+	return nil
 }
 
 func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
@@ -144,7 +150,14 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 		return err
 	}
 
-	containers := []corev1.Container{}
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "workspace",
+			MountPath: "/workspace",
+		},
+	}
+	initContainers := []corev1.Container{}
+	containers := []corev1.Container{o.createStashContainer(volumeMounts)}
 	counter := 0
 	images := []string{}
 	for image, versions := range m.Images {
@@ -154,8 +167,8 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 				log.Logger().Infof("processing image %s version %s from %s", image, version, source)
 
 				counter++
-				name := "c" + strconv.Itoa(counter)
-				containers = append(containers, o.createImageVersionContainer(name, image, version, source))
+				name := "ic" + strconv.Itoa(counter)
+				initContainers = append(initContainers, o.createImageVersionContainer(name, image, version, source, volumeMounts))
 			}
 		}
 	}
@@ -174,6 +187,10 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
+			Labels: map[string]string{
+				kube.LabelKind:      "job",
+				"jenkins.io/report": "image-versions",
+			},
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -181,15 +198,32 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 					CreationTimestamp: metav1.Now(),
 				},
 				Spec: corev1.PodSpec{
+					InitContainers:     initContainers,
 					Containers:         containers,
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: o.ServiceAccount,
+					Volumes: []corev1.Volume{
+						{
+							Name: "workspace",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
 				},
 			},
 			BackoffLimit: &o.BackoffLimit,
 		},
 	}
-	_, err = kubeClient.BatchV1().Jobs(ns).Create(job)
+	pod, _ := kube.GetCurrentPod(kubeClient, ns)
+	if pod != nil && pod.Name != "" {
+		job.OwnerReferences = []metav1.OwnerReference{
+			kube.PodOwnerRef(pod),
+		}
+	}
+
+	jobs := kubeClient.BatchV1().Jobs(ns)
+	_, err = jobs.Create(job)
 	if err != nil {
 		data, err2 := yaml.Marshal(job)
 		if err2 == nil {
@@ -207,14 +241,27 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed waiting for Job %s to complete", job.Name)
 	}
+	if o.NoDeleteJob {
+		return nil
+	}
+	if !o.BatchMode {
+		if !util.Confirm(fmt.Sprintf("are you ready to delete the Job %s", job.Name), true,
+			"we should delete the job when it is finished", o.In, o.Out, o.Err) {
+			return nil
+		}
+	}
+	err = jobs.Delete(job.Name, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete Job %s", job.Name)
+	}
 	return nil
 }
 
-func (o *StepReportImageVersionOptions) createImageVersionContainer(name string, image string, version string, source string) corev1.Container {
-	// TODO
-	//fullImage := image + ":" + version
-	fullImage := "gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-5365-16"
-
+func (o *StepReportImageVersionOptions) createImageVersionContainer(name string, image string, version string, source string, volumeMounts []corev1.VolumeMount) corev1.Container {
+	fullImage := image + ":" + version
+	if o.TestImage != "" {
+		fullImage = o.TestImage
+	}
 	file := strings.Replace(image, "/", "-", -1) + "-" + version + ".yml"
 	args := fmt.Sprintf(` -c reports --to-path="%s"`, o.Folder)
 	if o.GitURL != "" {
@@ -223,7 +270,32 @@ func (o *StepReportImageVersionOptions) createImageVersionContainer(name string,
 	if o.GitBranch != "" {
 		args += " --git-branch " + o.GitBranch
 	}
-	commands := "jx step report version -n " + file + ";\njx step stash -c reports -p " + file + args
+	commands := "mkdir -p " + o.ContainerDir + ";\n" +
+		"cd " + o.ContainerDir + ";\n" +
+		"jx step report version -n " + file
+
+	return corev1.Container{
+		Name:         name,
+		Image:        fullImage,
+		Command:      []string{"/bin/sh", "-c"},
+		Args:         []string{commands},
+		VolumeMounts: volumeMounts,
+	}
+}
+
+func (o *StepReportImageVersionOptions) createStashContainer(volumeMounts []corev1.VolumeMount) corev1.Container {
+	fullImage := o.StashImage
+	args := fmt.Sprintf(` -c reports --to-path="%s"`, o.Folder)
+	if o.GitURL != "" {
+		args += " --git-url " + o.GitURL
+	}
+	if o.GitBranch != "" {
+		args += " --git-branch " + o.GitBranch
+	}
+	commands := "cd " + o.ContainerDir + ";\n" +
+		"echo created reports;\n" +
+		"ls -al;\n" +
+		`jx step stash -c reports -p "*.yml"` + args
 
 	envVars := []corev1.EnvVar{}
 	if o.GitURL != "" {
@@ -254,11 +326,12 @@ func (o *StepReportImageVersionOptions) createImageVersionContainer(name string,
 		})
 	}
 	return corev1.Container{
-		Name:    name,
-		Image:   fullImage,
-		Command: []string{"/bin/sh", "-c"},
-		Args:    []string{commands},
-		Env:     envVars,
+		Name:         "stash",
+		Image:        fullImage,
+		Command:      []string{"/bin/sh", "-c"},
+		Args:         []string{commands},
+		Env:          envVars,
+		VolumeMounts: volumeMounts,
 	}
 }
 
