@@ -208,6 +208,8 @@ type ClusterConfig struct {
 	VaultSAName string `json:"vaultSAName,omitempty"`
 	// KanikoSAName the service account name for kaniko
 	KanikoSAName string `json:"kanikoSAName,omitempty"`
+	// HelmMajorVersion contains the major helm version number. Assumes helm 2.x with no tiller if no value specified
+	HelmMajorVersion string `json:"helmMajorVersion,omitempty"`
 }
 
 // VersionStreamConfig contains version stream config

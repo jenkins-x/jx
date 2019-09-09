@@ -148,10 +148,12 @@ func (h *HelmCLI) RemoveRepo(repo string) error {
 // ListRepos list the installed helm repos together with their URL
 func (h *HelmCLI) ListRepos() (map[string]string, error) {
 	output, err := h.runHelmWithOutput("repo", "list")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list repositories")
-	}
 	repos := map[string]string{}
+	if err != nil {
+		// helm3 now returns an error if there are no repos
+		return repos, nil
+		//return nil, errors.Wrap(err, "failed to list repositories")
+	}
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines[1:] {
 		line = strings.TrimSpace(line)
@@ -312,6 +314,10 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	if password != "" {
 		args = append(args, "--password", password)
 	}
+	logLevel := os.Getenv("JX_HELM_VERBOSE")
+	if logLevel != "" {
+		args = append(args, "-v", logLevel)
+	}
 	if h.Debug {
 		log.Logger().Infof("Installing Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
 	}
@@ -451,6 +457,10 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	}
 	if password != "" {
 		args = append(args, "--password", password)
+	}
+	logLevel := os.Getenv("JX_HELM_VERBOSE")
+	if logLevel != "" {
+		args = append(args, "-v", logLevel)
 	}
 	args = append(args, releaseName, chart)
 
