@@ -217,6 +217,7 @@ func GenerateValues(requirements *config.RequirementsConfig, funcMap template.Fu
 func NewFunctionMap() template.FuncMap {
 	funcMap := engine.FuncMap()
 	funcMap["hashPassword"] = util.HashPassword
+	funcMap["removeScheme"] = util.RemoveScheme
 	return funcMap
 }
 

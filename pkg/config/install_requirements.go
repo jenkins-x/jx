@@ -168,8 +168,10 @@ type StorageConfig struct {
 	Logs StorageEntryConfig `json:"logs"`
 	// Tests for storing test results, coverage + code quality reports
 	Reports StorageEntryConfig `json:"reports"`
-	// Repository for storing build logs
+	// Repository for storing repository artifacts
 	Repository StorageEntryConfig `json:"repository"`
+	// Backup for backing up kubernetes resource
+	Backup StorageEntryConfig `json:"backup"`
 }
 
 // ClusterConfig contains cluster specific requirements
@@ -214,12 +216,22 @@ type VersionStreamConfig struct {
 	Ref string `json:"ref"`
 }
 
+// VeleroConfig contains the configuration for velero
+type VeleroConfig struct {
+	// Namespace the namespace to install velero into
+	Namespace string `json:"namespace,omitempty"`
+	// ServiceAccount the cloud service account used to run velero
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+}
+
 // RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
 	// Cluster contains cluster specific requirements
 	Cluster ClusterConfig `json:"cluster"`
 	// Kaniko whether to enable kaniko for building docker images
 	Kaniko bool `json:"kaniko,omitempty"`
+	// Velero the configuration for running velero for backing up the cluster resources
+	Velero VeleroConfig `json:"velero,omitempty"`
 	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
 	// re-run 'jx boot' when changes merge to the master branch
 	GitOps bool `json:"gitops,omitempty"`

@@ -37,4 +37,5 @@ type GClouder interface {
 	UserLabel() string
 	CreateGCPServiceAccount(kubeClient kubernetes.Interface, serviceName, serviceAbbreviation, namespace, clusterName, projectID string, serviceAccountRoles []string, serviceAccountSecretKey string) (string, error)
 	ConnectToCluster(projectID, zone, clusterName string) error
+	ConfigureBucketRoles(projectID string, serviceAccount string, bucketURL string, roles []string) error
 }

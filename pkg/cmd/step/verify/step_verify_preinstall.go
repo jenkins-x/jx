@@ -2,6 +2,7 @@ package verify
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -42,6 +43,7 @@ type StepVerifyPreInstallOptions struct {
 	LazyCreateFlag       string
 	Namespace            string
 	TestKanikoSecretData string
+	TestVeleroSecretData string
 	WorkloadIdentity     bool
 }
 
@@ -203,9 +205,33 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
+	vns := requirements.Velero.Namespace
+	if vns != "" {
+		if requirements.Cluster.Provider == cloud.GKE {
+			log.Logger().Infof("validating the velero secret in namespace %s", info(vns))
+
+			err = o.validateVelero(vns)
+			if err != nil {
+				if o.LazyCreate {
+					log.Logger().Infof("attempting to lazily create the deploy namespace %s", info(vns))
+
+					err = o.lazyCreateVeleroSecret(requirements, vns)
+					if err != nil {
+						return errors.Wrapf(err, "failed to lazily create the kaniko secret in: %s", vns)
+					}
+					// lets rerun the verify step to ensure its all sorted now
+					err = o.validateVelero(vns)
+				}
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	if requirements.Webhook == config.WebhookTypeLighthouse {
 		// we don't need the ConfigMaps for prow yet
-		err = o.verifyProwConfigMaps(kubeClient, ns)
+		err = o.verifyProwConfigMaps(kubeClient, vns)
 		if err != nil {
 			return err
 		}
@@ -291,7 +317,94 @@ func (o *StepVerifyPreInstallOptions) lazyCreateKanikoSecret(requirements *confi
 	if data == "" {
 		return fmt.Errorf("failed to create the kaniko secret data")
 	}
-	return o.createKanikoSecret(ns, data)
+	return o.createSecret(ns, kube.SecretKaniko, kube.SecretKaniko, data)
+}
+
+func (o *StepVerifyPreInstallOptions) lazyCreateVeleroSecret(requirements *config.RequirementsConfig, ns string) error {
+	log.Logger().Debugf("Lazily creating the velero secret")
+	var data string
+	var err error
+	if o.TestVeleroSecretData != "" {
+		data = o.TestVeleroSecretData
+	} else {
+		data, err = o.configureVelero(requirements)
+		if err != nil {
+			return errors.Wrap(err, "failed to create the velero secret data")
+		}
+	}
+	if data == "" {
+		return nil
+	}
+	return o.createSecret(ns, kube.SecretVelero, "cloud", data)
+}
+
+// ConfigureVelero configures the velero SA and secret
+func (o *StepVerifyPreInstallOptions) configureVelero(requirements *config.RequirementsConfig) (string, error) {
+	if requirements.Cluster.Provider != cloud.GKE {
+		log.Logger().Infof("we are assuming your IAM roles are setup so that Velero has cluster-admin\n")
+		return "", nil
+	}
+
+	serviceAccountDir, err := ioutil.TempDir("", "gke")
+	if err != nil {
+		return "", errors.Wrap(err, "creating a temporary folder where the service account will be stored")
+	}
+	defer os.RemoveAll(serviceAccountDir)
+
+	clusterName := requirements.Cluster.ClusterName
+	projectID := requirements.Cluster.ProjectID
+	if projectID == "" || clusterName == "" {
+		if kubeClient, ns, err := o.KubeClientAndDevNamespace(); err == nil {
+			if data, err := kube.ReadInstallValues(kubeClient, ns); err == nil && data != nil {
+				if projectID == "" {
+					projectID = data[kube.ProjectID]
+				}
+				if clusterName == "" {
+					clusterName = data[kube.ClusterName]
+				}
+			}
+		}
+	}
+	if projectID == "" {
+		projectID, err = o.GetGoogleProjectID("")
+		if err != nil {
+			return "", errors.Wrap(err, "getting the GCP project ID")
+		}
+		requirements.Cluster.ProjectID = projectID
+	}
+	if clusterName == "" {
+		clusterName, err = o.GetGKEClusterNameFromContext()
+		if err != nil {
+			return "", errors.Wrap(err, "gettting the GKE cluster name from current context")
+		}
+		requirements.Cluster.ClusterName = clusterName
+	}
+
+	serviceAccountName := requirements.Velero.ServiceAccount
+	if serviceAccountName == "" {
+		serviceAccountName = naming.ToValidNameTruncated(fmt.Sprintf("%s-velero", clusterName), 30)
+		requirements.Velero.ServiceAccount = serviceAccountName
+	}
+	log.Logger().Infof("Configuring Velero service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
+	serviceAccountPath, err := o.GCloud().GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.VeleroServiceAccountRoles)
+	if err != nil {
+		return "", errors.Wrap(err, "creating the service account")
+	}
+
+	bucket := requirements.Storage.Backup.URL
+	if bucket == "" {
+		return "", fmt.Errorf("missing requirements.storage.backup.url")
+	}
+	err = o.GCloud().ConfigureBucketRoles(projectID, serviceAccountName, bucket, gke.VeleroServiceAccountRoles)
+	if err != nil {
+		return "", errors.Wrap(err, "associate the IAM roles to the bucket")
+	}
+
+	serviceAccount, err := ioutil.ReadFile(serviceAccountPath)
+	if err != nil {
+		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
+	}
+	return string(serviceAccount), nil
 }
 
 // VerifyInstallConfig lets ensure we modify the install ConfigMap with the requirements
@@ -520,6 +633,10 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 		return err
 	}
 	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Repository, "repository", "Chart repository")
+	if err != nil {
+		return err
+	}
+	err = o.verifyStorageEntry(requirements, requirementsFileName, &storage.Backup, "backup", "backup storage")
 	if err != nil {
 		return err
 	}
