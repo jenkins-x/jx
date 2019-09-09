@@ -99,7 +99,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, privateRepo bool, user *auth.UserAuth, requirements *config.RequirementsConfig, server *auth.AuthServer) error {
+func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, privateRepo bool, user *auth.UserAuth, requirements *config.RequirementsConfig, server *auth.AuthServer, createPr bool) error {
 	fromGitURL := os.Getenv("REPO_URL")
 	gitRef := os.Getenv("BASE_CONFIG_REF")
 
@@ -171,21 +171,23 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 		return errors.Wrapf(err, "Setting jenkins-x remote to boot config %s", fromGitURL)
 	}
 
-	details := gits.PullRequestDetails{
-		BranchName: fmt.Sprintf("update-boot-config"),
-		Title:      "chore(config): update configuration",
-		Message:    "chore(config): update configuration",
-	}
+	if createPr {
+		details := gits.PullRequestDetails{
+			BranchName: fmt.Sprintf("update-boot-config"),
+			Title:      "chore(config): update configuration",
+			Message:    "chore(config): update configuration",
+		}
 
-	filter := gits.PullRequestFilter{
-		Labels: []string{
-			boot.PullRequestLabel,
-		},
-	}
+		filter := gits.PullRequestFilter{
+			Labels: []string{
+				boot.PullRequestLabel,
+			},
+		}
 
-	_, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, baseRef, &details, &filter, true, "chore(config): update configuration", true, false, o.Git(), provider, []string{boot.PullRequestLabel})
-	if err != nil {
-		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", baseRef, details.BranchName)
+		_, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, baseRef, &details, &filter, true, "chore(config): update configuration", true, false, o.Git(), provider, []string{boot.PullRequestLabel})
+		if err != nil {
+			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", baseRef, details.BranchName)
+		}
 	}
 	return nil
 }
@@ -278,11 +280,9 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		if !o.InCluster() {
-			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, privateRepo, userAuth, requirements, server)
-			if err != nil {
-				return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
-			}
+		err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, privateRepo, userAuth, requirements, server, !o.InCluster())
+		if err != nil {
+			return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
 		}
 	} else {
 		gitRepoOptions := &gits.GitRepositoryOptions{
