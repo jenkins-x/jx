@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/gits/operations"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -49,9 +49,9 @@ var (
 type StepCreatePullRequestRegexOptions struct {
 	StepCreatePrOptions
 
-	Regexp string
-	Files  []string
-	Kind   string
+	Regexps []string
+	Files   []string
+	Kind    string
 }
 
 // NewCmdStepCreatePullRequestRegex Creates a new Command object
@@ -80,7 +80,7 @@ func NewCmdStepCreatePullRequestRegex(commonOpts *opts.CommonOptions) *cobra.Com
 		},
 	}
 	AddStepCreatePrFlags(cmd, &options.StepCreatePrOptions)
-	cmd.Flags().StringVarP(&options.Regexp, "regex", "", "", "The regex to use when doing updates")
+	cmd.Flags().StringArrayVarP(&options.Regexps, "regex", "", make([]string, 0), "The regex to use when doing updates")
 	cmd.Flags().StringArrayVarP(&options.Files, "files", "", make([]string, 0), "A glob describing the files to change")
 	return cmd
 }
@@ -90,12 +90,15 @@ func (o *StepCreatePullRequestRegexOptions) ValidateRegexOptions() error {
 	if err := o.ValidateOptions(false); err != nil {
 		return errors.WithStack(err)
 	}
-	if o.Regexp == "" {
+	if len(o.Regexps) == 0 {
 		return util.MissingOption("regex")
 	}
-	// ensure the regexp is multi-line
-	if !strings.HasPrefix(o.Regexp, "(?m") {
-		o.Regexp = fmt.Sprintf("(?m)%s", o.Regexp)
+
+	for i, regex := range o.Regexps {
+		// ensure the regexp is multi-line
+		if !strings.HasPrefix(regex, "(?m") {
+			o.Regexps[i] = fmt.Sprintf("(?m)%s", regex)
+		}
 	}
 	if o.SrcGitURL == "" {
 		log.Logger().Warnf("srcRepo is not provided so generated PR will not be correctly linked in release notesPR")
@@ -112,11 +115,25 @@ func (o *StepCreatePullRequestRegexOptions) Run() error {
 	if err := o.ValidateRegexOptions(); err != nil {
 		return errors.WithStack(err)
 	}
-	fn, err := operations.CreatePullRequestRegexFn(o.Version, o.Regexp, o.Files...)
-	if err != nil {
-		return errors.WithStack(err)
+	modifyFns := make([]operations.ChangeFilesFn, 0)
+	for _, regex := range o.Regexps {
+		fn, err := operations.CreatePullRequestRegexFn(o.Version, regex, o.Files...)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		modifyFns = append(modifyFns, fn)
 	}
-	err = o.CreatePullRequest(o.Kind, fn)
+	err := o.CreatePullRequest(o.Kind, func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		var oldVersions []string
+		for _, fn := range modifyFns {
+			answer, err := fn(dir, gitInfo)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			oldVersions = append(oldVersions, answer...)
+		}
+		return oldVersions, nil
+	})
 	if err != nil {
 		return errors.WithStack(err)
 	}
