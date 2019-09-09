@@ -33,6 +33,22 @@ var (
 	KanikoServiceAccountRoles = []string{"roles/storage.admin",
 		"roles/storage.objectAdmin",
 		"roles/storage.objectCreator"}
+
+	// VeleroServiceAccountRoles the roles required to run velero with GCS
+	VeleroServiceAccountRoles = []string{
+		/* TODO
+		"roles/compute.disks.get",
+		"roles/compute.disks.create",
+		"roles/compute.disks.createSnapshot",
+		"roles/compute.snapshots.get",
+		"roles/compute.snapshots.create",
+		"roles/compute.snapshots.useReadOnly",
+		"roles/compute.snapshots.delete",
+		"roles/compute.zones.get",
+		*/
+		"roles/storage.admin",
+		"roles/storage.objectAdmin",
+		"roles/storage.objectCreator"}
 )
 
 // GCloud real implementation of the gcloud helper
@@ -536,6 +552,62 @@ func (g *GCloud) GetOrCreateServiceAccount(serviceAccount string, projectID stri
 	}
 
 	return keyPath, nil
+}
+
+// ConfigureBucketRoles gives the given roles to the given service account
+func (g *GCloud) ConfigureBucketRoles(projectID string, serviceAccount string, bucketURL string, roles []string) error {
+	member := fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectID)
+
+	bindings := bucketMemberRoles{}
+	for _, role := range roles {
+		bindings.Bindings = append(bindings.Bindings, memberRole{
+			Members: []string{member},
+			Role:    role,
+		})
+	}
+	file, err := ioutil.TempFile("", "gcp-iam-roles-")
+	if err != nil {
+		return errors.Wrapf(err, "failed to create temp file")
+	}
+	fileName := file.Name()
+
+	data, err := json.Marshal(&bindings)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert bindings %#v to JSON", bindings)
+	}
+	log.Logger().Infof("created json %s", string(data))
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save bindings %#v to JSON file %s", bindings, fileName)
+	}
+	log.Logger().Infof("generated IAM bindings file %s", fileName)
+	args := []string{
+		"-m",
+		"iam",
+		"set",
+		"-a",
+		fileName,
+		bucketURL,
+	}
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+	log.Logger().Infof("running: gsutil %s", strings.Join(args, " "))
+	_, err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type bucketMemberRoles struct {
+	Bindings []memberRole `json:"bindings"`
+}
+
+type memberRole struct {
+	Members []string `json:"members"`
+	Role    string   `json:"role"`
 }
 
 // CreateServiceAccountKey creates a new service account key and downloads into the given file

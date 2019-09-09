@@ -79,6 +79,9 @@ const (
 	// SecretKaniko the name of the secret containing the kaniko service account
 	SecretKaniko = "kaniko-secret"
 
+	// SecretVelero the name of the secret containing the velero service account
+	SecretVelero = "velero-secret"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
