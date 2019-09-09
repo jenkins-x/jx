@@ -26,10 +26,11 @@ import (
 type BootOptions struct {
 	*opts.CommonOptions
 
-	Dir       string
-	GitURL    string
-	GitRef    string
-	StartStep string
+	Dir          string
+	GitURL       string
+	GitRef       string
+	StartStep    string
+	HelmLogLevel string
 
 	// The bootstrap URL for the version stream. Once we have a jx-requirements.yaml files, we read that
 	VersionStreamURL string
@@ -82,6 +83,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.VersionStreamURL, "versions-repo", "", config.DefaultVersionsURL, "the bootstrap URL for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	cmd.Flags().StringVarP(&options.VersionStreamRef, "versions-ref", "", config.DefaultVersionsRef, "the bootstrap ref for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	cmd.Flags().StringVarP(&options.StartStep, "start-step", "s", "", "the step in the pipeline to start from")
+	cmd.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
 	return cmd
 }
 
@@ -256,9 +258,16 @@ func (o *BootOptions) Run() error {
 	so.NoReleasePrepare = true
 	so.StartStep = o.StartStep
 	so.AdditionalEnvVars = map[string]string{
-		"JX_NO_TILLER":    "true",
 		"REPO_URL":        gitURL,
 		"BASE_CONFIG_REF": gitRef,
+	}
+	if requirements.Cluster.HelmMajorVersion == "3" {
+		so.AdditionalEnvVars["JX_HELM3"] = "true"
+	} else {
+		so.AdditionalEnvVars["JX_NO_TILLER"] = "true"
+	}
+	if o.HelmLogLevel != "" {
+		so.AdditionalEnvVars["JX_HELM_VERBOSE"] = o.HelmLogLevel
 	}
 
 	so.VersionResolver, err = o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)

@@ -539,6 +539,16 @@ func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, 
 // Helm returns or creates the helm client
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
+		helm3Flag := os.Getenv("JX_HELM3")
+		if helm3Flag == "true" {
+			o.RemoteCluster = true
+			// let disable loading/modifying team environments as we typically install on empty k8s clusters
+			o.ModifyEnvironmentFn = o.IgnoreModifyEnvironment
+			o.ModifyDevEnvironmentFn = o.IgnoreModifyDevEnvironment
+			helmer := o.NewHelm(false, "helm3", true, false)
+			o.SetHelm(helmer)
+			return helmer
+		}
 		noTillerFlag := os.Getenv("JX_NO_TILLER")
 		if noTillerFlag == "true" || o.RemoteCluster {
 			o.EnableRemoteKubeCluster()

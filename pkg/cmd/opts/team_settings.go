@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"os"
 	"os/user"
 	"reflect"
 
@@ -111,6 +112,14 @@ func (o *CommonOptions) DefaultModifyDevEnvironment(callback func(env *v1.Enviro
 	}
 	if o.RemoteCluster {
 		env := kube.CreateDefaultDevEnvironment(ns)
+		if os.Getenv("JX_HELM3") == "true" {
+			env.Spec.TeamSettings.HelmBinary = "helm3"
+			env.Spec.TeamSettings.HelmTemplate = false
+			env.Spec.TeamSettings.NoTiller = true
+		} else if os.Getenv("JX_NO_TILLER") == "true" {
+			env.Spec.TeamSettings.HelmTemplate = true
+			env.Spec.TeamSettings.NoTiller = true
+		}
 		return callback(env)
 	}
 
