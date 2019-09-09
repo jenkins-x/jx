@@ -41,6 +41,7 @@ type StepCreatetPullRequestGoOptions struct {
 
 	Name         string
 	BuildCommand string
+	FailOnBuild  bool
 }
 
 // NewCmdStepCreatePullRequestGo Creates a new Command object
@@ -71,6 +72,7 @@ func NewCmdStepCreatePullRequestGo(commonOpts *opts.CommonOptions) *cobra.Comman
 	AddStepCreatePrFlags(cmd, &options.StepCreatePrOptions)
 	cmd.Flags().StringVarP(&options.Name, "name", "", "", "The name of the go module dependency to use when doing updates")
 	cmd.Flags().StringVarP(&options.BuildCommand, "build", "", "make build", "The build command to update the 'go.sum' file after the change to the source")
+	cmd.Flags().BoolVarP(&options.FailOnBuild, "fail-on-build", "", false, "Should we fail to create the Pull Request if the build command fails. Its common for incompatible changes to the go code to fail to build so we usually want to go ahead with the Pull Request anyway")
 	return cmd
 }
 
@@ -138,7 +140,10 @@ func (o *StepCreatetPullRequestGoOptions) runGoBuild(dir string) error {
 	}
 	_, err := cmd.RunWithoutRetry()
 	if err != nil {
-		return errors.Wrapf(err, "running %s", cmd.String())
+		if o.FailOnBuild {
+			return errors.Wrapf(err, "running %s", cmd.String())
+		}
+		log.Logger().Warnf("failed to run %s so the Pull Request will probably need some manual work to make it pass the CI tests. Failure: %s", cmd.String(), err.Error())
 	}
 	return nil
 }
