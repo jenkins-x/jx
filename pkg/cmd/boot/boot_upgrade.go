@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -54,12 +55,19 @@ func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the Jenkins X Pipeline and requirements")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the Jenkins X Pipeline and requirements")
 	return cmd
 }
 
 // Run runs this command
 func (o *BootUpgradeOptions) Run() error {
+	if o.Dir == "" {
+		err := o.cloneDevEnv()
+		if err != nil {
+			return errors.Wrap(err, "failed to clone dev environment repo")
+		}
+	}
+
 	reqsVersionStream, err := o.requirementsVersionStream()
 	if err != nil {
 		return errors.Wrap(err, "failed to get requirements version stream")
@@ -210,7 +218,7 @@ func (o *BootUpgradeOptions) updateBootConfig(versionStreamURL string, versionSt
 	log.Logger().Infof("boot config upgrade available!!!!")
 	log.Logger().Infof("Upgrading from v%s to v%s", currentVersion, upgradeVersion)
 
-	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha, "upgrade_branch")
+	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha)
 	if err != nil {
 		return errors.Wrap(err, "failed to cherry pick upgrade commits")
 	}
@@ -251,7 +259,7 @@ func (o *BootUpgradeOptions) cloneBootConfig(configURL string) (string, error) {
 	return cloneDir, nil
 }
 
-func (o *BootUpgradeOptions) cherryPickCommits(cloneDir, fromSha, toSha, branch string) error {
+func (o *BootUpgradeOptions) cherryPickCommits(cloneDir, fromSha, toSha string) error {
 	cmts := make([]gits.GitCommit, 0)
 	cmts, err := o.Git().GetCommits(cloneDir, fromSha, toSha)
 	if err != nil {
@@ -283,34 +291,23 @@ func (o *BootUpgradeOptions) excludeFiles(commit string) error {
 		return errors.Wrap(err, "failed to checkout files")
 	}
 	err = o.Git().AddCommitFiles(o.Dir, "chore: exclude files from upgrade", excludedFiles)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "nothing to commit") {
 		return errors.Wrapf(err, "failed to commit excluded files %v", excludedFiles)
 	}
 	return nil
 }
 
 func (o *BootUpgradeOptions) raisePR() error {
-	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
-	if !o.GetFactory().IsInCluster() {
-		authConfigSvc, err = o.CreateGitAuthConfigService()
-	}
-	if err != nil {
-		return errors.Wrap(err, "failed to create pipeline user git auth config service")
-	}
-	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
-
 	gitInfo, err := o.Git().Info(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to get git info")
 	}
-	gitKind, err := o.GitServerKind(gitInfo)
+
+	provider, err := o.gitProvider(gitInfo)
 	if err != nil {
-		return errors.Wrap(err, "failed to get git kind")
+		return errors.Wrap(err, "failed to get git provider")
 	}
-	provider, err := gitInfo.CreateProviderForUser(server, userAuth, gitKind, o.Git())
-	if err != nil {
-		return errors.Wrap(err, "failed to create provider for user")
-	}
+
 	upstreamInfo, err := provider.GetRepository(gitInfo.Organisation, gitInfo.Name)
 	if err != nil {
 		return errors.Wrapf(err, "getting repository %s/%s", gitInfo.Organisation, gitInfo.Name)
@@ -344,4 +341,47 @@ func (o *BootUpgradeOptions) deleteLocalBranch(branch string) error {
 		return errors.Wrapf(err, "failed to delete local branch %s", branch)
 	}
 	return nil
+}
+
+func (o *BootUpgradeOptions) cloneDevEnv() error {
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get dev environment in namespace %s", devNs)
+	}
+	devEnvURL := devEnv.Spec.Source.URL
+
+	cloneDir, err := ioutil.TempDir("", "")
+	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create directory for dev env clone: %s", cloneDir)
+	}
+	err = o.Git().Clone(devEnvURL, cloneDir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to clone git URL %s to directory %s", devEnvURL, cloneDir)
+	}
+
+	o.Dir = cloneDir
+	return nil
+}
+
+func (o *BootUpgradeOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
+	}
+	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
+
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get git kind")
+	}
+
+	log.Logger().Infof("gitKind %s", gitKind)
+
+	provider, err := gitInfo.CreateProviderForUser(server, userAuth, gitKind, o.Git())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create provider for user")
+	}
+	return provider, nil
 }
