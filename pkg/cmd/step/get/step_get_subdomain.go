@@ -53,7 +53,7 @@ func NewCmdStepGetSubdomain(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:     "get subdomain values",
+		Use:     "subdomain",
 		Short:   "Gets a subdomain from the tenant service",
 		Long:    getSubdomainExampleLong,
 		Example: getSubdomainExample,
