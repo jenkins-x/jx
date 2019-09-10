@@ -3,7 +3,6 @@ package create
 import (
 	"fmt"
 	"net/mail"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/tenant"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -201,15 +199,11 @@ func (o *StepCreateInstallValuesOptions) discoverIngressDomain(requirements *con
 	if err != nil {
 		return errors.Wrap(err, "getting the kubernetes client")
 	}
+
 	if requirements.Ingress.Domain != "" {
 		return nil
 	}
-	if requirements.Ingress.DomainIssuerURL != "" {
-		domain, err = o.getDomainFromIssuer(requirements.Ingress.DomainIssuerURL, requirements.Cluster.ProjectID)
-		if err != nil {
-			return errors.Wrap(err, "issuing domain")
-		}
-	}
+
 	if domain == "" {
 		if o.Provider == "" {
 			o.Provider = requirements.Cluster.Provider
@@ -293,24 +287,4 @@ func (o *StepCreateInstallValuesOptions) waitForIngressControllerHost(kubeClient
 		return false, err
 	}
 	return true, nil
-}
-func (o *StepCreateInstallValuesOptions) getDomainFromIssuer(domainIssuerURL, projectID string) (string, error) {
-
-	_, err := url.ParseRequestURI(domainIssuerURL)
-	if err != nil {
-		return "", errors.Wrapf(err, "parsing Domain Issuer URL %s", domainIssuerURL)
-	}
-	username := os.Getenv(config.RequirementDomainIssuerUsername)
-	password := os.Getenv(config.RequirementDomainIssuerPassword)
-
-	if username == "" {
-		return "", errors.Errorf("no %s environment variable found", config.RequirementDomainIssuerUsername)
-	}
-	if password == "" {
-		return "", errors.Errorf("no %s environment variable found", config.RequirementDomainIssuerPassword)
-	}
-
-	tenantServiceAuth := fmt.Sprintf("%s:%s", username, password)
-	tCli := tenant.NewTenantClient()
-	return tCli.GetTenantSubDomain(domainIssuerURL, tenantServiceAuth, projectID, o.GCloud())
 }
