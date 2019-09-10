@@ -221,11 +221,18 @@ func (o *ControllerBuildOptions) Run() error {
 		}
 	}
 
-	watcher := watcher.NewPodWatcher(kubeClient, ns, metav1.ListOptions{}, handlers)
 	for {
-		err = watcher.Run()
+		watcher := watcher.NewPodWatcher(kubeClient, ns, metav1.ListOptions{}, handlers)
+		ch, err := watcher.CreateChannel("pods")
 		if err != nil {
-			log.Logger().Errorf("disconnected watcher %s", err.Error())
+			log.Logger().Fatalf("cannot create watch channel %s", err.Error())
+		}
+
+		err = ch.Run()
+		if err != nil {
+			log.Logger().Errorf("channel returned watch error %s - about to retry", err.Error())
+		} else {
+			log.Logger().Warnf("channel closed - about to retry")
 		}
 	}
 }
