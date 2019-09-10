@@ -2,23 +2,25 @@ package controller
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"path"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/stretchr/testify/assert"
+	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestDigitSuffix(t *testing.T) {
@@ -194,6 +196,80 @@ func TestUpdateForStagePreTekton051(t *testing.T) {
 			// Using t.Errorf instead of an assert here because we want to see all the misordered names, not just the first one.
 			t.Errorf("For step %d, expected step with name %s, but found %s", i, title, step.Name)
 		}
+	}
+}
+
+func TestOnPipelinePod(t *testing.T) {
+	testCases := []struct {
+		name    string
+		podName string
+	}{{
+		name:    "completed_metapipeline",
+		podName: "meta-cb-kubecd-bdd-spring-15681-1-meta-pipeline-rwb55-pod-e44008",
+	}, {
+		name:    "failed_metapipeline",
+		podName: "meta-cb-kubecd-bdd-spring-15681-1-meta-pipeline-rwb55-pod-e44008",
+	}, {
+		name:    "completed_generated",
+		podName: "cb-kubecd-bdd-spring-1568135191-1-from-build-pack-mrz2r-pod-8d000a",
+	}}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			testCaseDir := path.Join("test_data", "controller_build", tt.name)
+			stateDir := path.Join(testCaseDir, "cluster_state")
+			expectedDir := path.Join(testCaseDir, "expected")
+
+			originalActivity := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, stateDir)
+			structures := tekton_helpers_test.AssertLoadPipelineStructures(t, stateDir)
+
+			tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineRuns(t, stateDir), tekton_helpers_test.AssertLoadPipelines(t, stateDir)}
+			tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
+
+			podList := tekton_helpers_test.AssertLoadPods(t, stateDir)
+
+			o := &ControllerBuildOptions{
+				Namespace:          "jx",
+				InitGitCredentials: false,
+				GitReporting:       false,
+				DryRun:             true,
+				ControllerOptions: ControllerOptions{
+					CommonOptions: &opts.CommonOptions{},
+				},
+			}
+
+			testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+				[]runtime.Object{
+					getGitHubSecret(),
+					podList,
+				},
+				[]runtime.Object{
+					originalActivity,
+					structures,
+				},
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+			kubeClient, err := o.KubeClient()
+			assert.NoError(t, err)
+			jxClient, ns, err := o.JXClient()
+			assert.NoError(t, err)
+
+			inputPod, err := kubeClient.CoreV1().Pods(ns).Get(tt.podName, metav1.GetOptions{})
+			assert.NoError(t, err)
+
+			o.onPipelinePod(inputPod, kubeClient, jxClient, tektonClient, ns)
+
+			foundActivity, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(originalActivity.Name, metav1.GetOptions{})
+			assert.NoError(t, err)
+
+			expectedActivity := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, expectedDir)
+
+			d := cmp.Diff(expectedActivity, foundActivity)
+			assert.Empty(t, d, "Expected PipelineActivitys to be equal, but diff was %s", d)
+		})
 	}
 }
 

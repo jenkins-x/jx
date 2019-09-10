@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"os"
-
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -51,6 +50,8 @@ type ControllerBuildOptions struct {
 	TargetURLTemplate  string
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
+
+	DryRun bool
 
 	// private fields added for easier testing
 	gitHubProvider gits.GitProvider
@@ -641,7 +642,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 		}
 	}
 
-	if spec.Author == "" {
+	if spec.Author == "" && !o.DryRun {
 		err := o.completeBuildSourceInfo(activity)
 		if err != nil {
 			log.Logger().Warnf("Error completing build information: %s", err)
@@ -722,7 +723,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 			// TODO: This will need to be reworked for per-step logs, so leaving alone as part of metapipeline work
 			// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
-			if spec.BuildLogsURL == "" {
+			if spec.BuildLogsURL == "" && !o.DryRun {
 				podInterface := kubeClient.CoreV1().Pods(ns)
 
 				envName := kube.LabelValueDevEnvironment
@@ -763,7 +764,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 	}
 
-	if spec.Author == "" {
+	if spec.Author == "" && !o.DryRun {
 		err := o.completeBuildSourceInfo(activity)
 		if err != nil {
 			log.Logger().Warnf("Error completing build information: %s", err)
