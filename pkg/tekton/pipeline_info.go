@@ -153,7 +153,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		Name:        PipelineResourceName(pr.Labels[LabelOwner], pr.Labels[LabelRepo], pr.Labels[LabelBranch], pr.Labels[LabelContext], pipelineType, nil, "") + "-" + pr.Labels[LabelBuild],
 		PipelineRun: pr.Name,
 		Pipeline:    pr.Spec.PipelineRef.Name,
-		Type:        BuildPipeline,
+		Type:        pipelineType,
 		CreatedTime: pr.CreationTimestamp.Time,
 	}
 
