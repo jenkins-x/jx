@@ -233,7 +233,7 @@ func (g *GitCLI) DeleteRemoteBranch(dir string, remoteName string, branch string
 
 // DeleteLocalBranch deletes the local branch in the given directory
 func (g *GitCLI) DeleteLocalBranch(dir string, branch string) error {
-	return g.gitCmd(dir, "branch", "--delete", branch)
+	return g.gitCmd(dir, "branch", "-D", branch)
 }
 
 // CloneOrPull clones  the given git URL or pull if it already exists
@@ -513,7 +513,7 @@ func (g *GitCLI) AddCommit(dir string, msg string) error {
 // AddCommitFiles perform an add and commit selected files from the repository at the given directory with the given messages
 func (g *GitCLI) AddCommitFiles(dir string, msg string, files []string) error {
 	fileString := strings.Trim(fmt.Sprintf("%v", files), "[]")
-	return g.gitCmd(dir, "commit", "-m", msg, "--", fileString)
+	return g.gitCmd(dir, "commit", "-m", strconv.Quote(msg), "--", fileString)
 }
 
 func (g *GitCLI) gitCmd(dir string, args ...string) error {
