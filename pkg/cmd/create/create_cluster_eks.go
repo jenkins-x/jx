@@ -124,6 +124,11 @@ func (o *CreateClusterEKSOptions) Run() error {
 		os.Exit(-1)
 	}
 
+	// We don't want to pass any args that were introduced by mistake because they are passed to all other commands down the chain
+	if len(o.Args) > 0 {
+		log.Logger().Warn("We detected arguments being passed to the command, these arguments will be ignored and only flags will be considered")
+		o.Args = []string{}
+	}
 	flags := &o.Flags
 
 	zones := flags.Zones
