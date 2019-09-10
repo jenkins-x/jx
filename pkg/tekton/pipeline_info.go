@@ -151,7 +151,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		CreatedTime: pr.CreationTimestamp.Time,
 	}
 
-	if strings.HasPrefix(pr.Name, "metapipeline-") {
+	if strings.HasPrefix(pr.Name, MetaPipeline.String() + "-") {
 		pri.Type = MetaPipeline
 	}
 
