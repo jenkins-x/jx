@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	metaPipelineStageName = "meta-pipeline"
+	// MetaPipelineStageName is the name used for the single stage used within a metapipeline
+	MetaPipelineStageName = "meta-pipeline"
 
 	// mergePullRefsStepName is the meta pipeline step name for merging all pull refs into the workspace
 	mergePullRefsStepName = "merge-pull-refs"
@@ -111,7 +112,7 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 	}
 
 	stage := syntax.Stage{
-		Name:  metaPipelineStageName,
+		Name:  MetaPipelineStageName,
 		Steps: steps,
 		Agent: &syntax.Agent{
 			Image: determineDefaultStepImage(params.DefaultImage),
