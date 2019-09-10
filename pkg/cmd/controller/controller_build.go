@@ -13,8 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/kube/watcher"
 	"github.com/jenkins-x/jx/pkg/logs"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -23,6 +21,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
@@ -38,6 +37,7 @@ import (
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/runtime"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -704,7 +704,8 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 	if allStagesCompleted {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
-		} else if pri.Type == tekton.MetaPipeline {
+		} else if len(spec.Steps) == 1 && spec.Steps[0].Stage.Name == strings.NewReplacer("-", " ").Replace(metapipeline.MetaPipelineStageName) {
+			// If there's one stage, it's passed, and it's the metapipeline, assume we're still running.
 			spec.Status = v1.ActivityStatusTypeRunning
 		} else {
 			spec.Status = v1.ActivityStatusTypeSucceeded
@@ -1375,8 +1376,10 @@ func logJobCompletedState(activity *v1.PipelineActivity, pri *tekton.PipelineRun
 		"pullRequestNumber": prNumber,
 		"duration":          util.DurationString(activity.Spec.StartedTimestamp, activity.Spec.CompletedTimestamp),
 		"stages":            stages,
-		"pipelineRunInfo":   pri.Name,
-		"pipelineRunType":   pri.Type,
+	}
+	if pri != nil {
+		fields["pipelineRunInfo"] = pri.Name
+		fields["pipelineRunType"] = pri.Type.String()
 	}
 	log.Logger().WithFields(fields).Infof("Build %s %s", activity.Name, activity.Spec.Status)
 }
