@@ -461,6 +461,9 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			if "" != os.Getenv(config.RequirementVaultServiceAccountName) {
 				requirements.Cluster.VaultSAName = os.Getenv(config.RequirementVaultServiceAccountName)
 			}
+			if "" != os.Getenv(config.RequirementSecretStorageType) {
+				requirements.SecretStorage = config.SecretStorageType(os.Getenv(config.RequirementSecretStorageType))
+			}
 			if "" != os.Getenv(config.RequirementKanikoServiceAccountName) {
 				requirements.Cluster.KanikoSAName = os.Getenv(config.RequirementKanikoServiceAccountName)
 			}

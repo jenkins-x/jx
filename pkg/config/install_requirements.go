@@ -54,6 +54,8 @@ const (
 	RequirementExternalDNSServiceAccountName = "JX_REQUIREMENT_EXTERNALDNS_SA_NAME"
 	// RequirementVaultServiceAccountName the service account name for vault
 	RequirementVaultServiceAccountName = "JX_REQUIREMENT_VAULT_SA_NAME"
+	// RequirementSecretStorageType the secret storage type
+	RequirementSecretStorageType = "JX_REQUIREMENT_SECRET_STORAGE_TYPE"
 	// RequirementKanikoServiceAccountName the service account name for kaniko
 	RequirementKanikoServiceAccountName = "JX_REQUIREMENT_KANIKO_SA_NAME"
 	// RequirementKaniko if kaniko is required
