@@ -205,8 +205,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
-	vns := requirements.Velero.Namespace
-	if vns != "" {
+	if vns := requirements.Velero.Namespace; vns != "" {
 		if requirements.Cluster.Provider == cloud.GKE {
 			log.Logger().Infof("validating the velero secret in namespace %s", info(vns))
 
@@ -231,7 +230,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	if requirements.Webhook == config.WebhookTypeLighthouse {
 		// we don't need the ConfigMaps for prow yet
-		err = o.verifyProwConfigMaps(kubeClient, vns)
+		err = o.verifyProwConfigMaps(kubeClient, ns)
 		if err != nil {
 			return err
 		}
