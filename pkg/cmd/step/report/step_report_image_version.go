@@ -41,22 +41,25 @@ type ImageVersionReport struct {
 // StepReportImageVersionOptions contains the command line flags and other helper objects
 type StepReportImageVersionOptions struct {
 	StepReportOptions
-	FileName       string
-	VersionsDir    string
-	GitURL         string
-	GitBranch      string
-	ServiceAccount string
-	UserName       string
-	Email          string
-	Folder         string
-	Filter         string
-	BackoffLimit   int32
-	TestImage      string
-	StashImage     string
-	ContainerDir   string
-	NoWait         bool
-	NoDeleteJob    bool
-	JobWaitTimeout time.Duration
+	FileName              string
+	VersionsDir           string
+	GitURL                string
+	GitBranch             string
+	ServiceAccount        string
+	UserName              string
+	Email                 string
+	Folder                string
+	Includes              []string
+	Excludes              []string
+	BackoffLimit          int32
+	ActiveDeadlineSeconds int64
+	TestImage             string
+	StashImage            string
+	ContainerDir          string
+	BatchSize             int
+	NoWait                bool
+	NoDeleteJob           bool
+	JobWaitTimeout        time.Duration
 
 	Report ImageVersionReport
 }
@@ -92,16 +95,19 @@ func NewCmdStepReportImageVersion(commonOpts *opts.CommonOptions) *cobra.Command
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the Job")
 	cmd.Flags().StringVarP(&options.UserName, "username", "u", "jenkins-x-bot", "The user if using git storage")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", "jenkins-x@googlegroups.com", "The email if using git storage")
-	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(2), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
+	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(1), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
+	cmd.Flags().Int64VarP(&options.ActiveDeadlineSeconds, "active-deadline-seconds", "", int64(60*60*4), "The number of seconds before the Job can be terminated")
 	cmd.Flags().StringVarP(&options.GitURL, "git-url", "", "", "The git URL of the project to store the results")
 	cmd.Flags().StringVarP(&options.GitBranch, "branch", "", "", "The git branch to store the results")
 	cmd.Flags().StringVarP(&options.Folder, "path", "p", "reports/imageVersions", "The output path in the bucket/git repository to store the reports")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "jenkinsxio", "The text to filter image names")
+	cmd.Flags().StringArrayVarP(&options.Includes, "filter", "f", []string{"gcr.io/jenkinsxio"}, "The text to filter image names")
+	cmd.Flags().StringArrayVarP(&options.Excludes, "exclude", "x", []string{"machine-learning"}, "The text strings to exclude on the image names")
 	cmd.Flags().StringVarP(&options.TestImage, "test-image", "", "", "Override the actual image used in the container jobs so we can test out changes to the jx steps before they make it into the builders")
 	cmd.Flags().StringVarP(&options.StashImage, "stash-image", "", "gcr.io/jenkinsxio/builder-go:latest", "The container image used to stash the results")
 	cmd.Flags().StringVarP(&options.ContainerDir, "container-dir", "", "/workspace/reports", "the report directory of the reports")
 	cmd.Flags().BoolVarP(&options.NoWait, "no-wait", "", false, "Should we not wait for the Job to complete?")
 	cmd.Flags().BoolVarP(&options.NoDeleteJob, "no-delete-job", "", false, "Should we not delete the Job?")
+	cmd.Flags().IntVarP(&options.BatchSize, "batch-size", "", 10, "Number of images to process per Job")
 	cmd.Flags().DurationVarP(&options.JobWaitTimeout, "wait-timeout", "", 60*time.Minute, "Amount of time to wait for the Job to complete before failing")
 	return cmd
 }
@@ -145,25 +151,38 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 		return err
 	}
 
-	id, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
+	batches := o.batchImages(m.Images, o.BatchSize)
 
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "workspace",
-			MountPath: "/workspace",
-		},
+	if len(batches) == 0 {
+		images := []string{}
+		for k := range m.Images {
+			images = append(images, k)
+		}
+		sort.Strings(images)
+		message := fmt.Sprintf("no container images matched includes %s and excludes %s. Have image names: %s",
+			strings.Join(o.Includes, " "), strings.Join(o.Excludes, " "), strings.Join(images, ", "))
+		log.Logger().Warn(message)
+		return fmt.Errorf(message)
 	}
-	initContainers := []corev1.Container{}
-	containers := []corev1.Container{o.createStashContainer(volumeMounts)}
-	counter := 0
-	images := []string{}
-	for image, versions := range m.Images {
-		images = append(images, image)
-		for version, source := range versions {
-			if o.Filter == "" || strings.Contains(image, o.Filter) {
+	for _, batchImages := range batches {
+		id, err := uuid.NewV4()
+		if err != nil {
+			return err
+		}
+
+		volumeMounts := []corev1.VolumeMount{
+			{
+				Name:      "workspace",
+				MountPath: "/workspace",
+			},
+		}
+		initContainers := []corev1.Container{}
+		containers := []corev1.Container{o.createStashContainer(volumeMounts)}
+		counter := 0
+		images := []string{}
+		for image, versions := range batchImages {
+			images = append(images, image)
+			for version, source := range versions {
 				log.Logger().Infof("processing image %s version %s from %s", image, version, source)
 
 				counter++
@@ -171,90 +190,112 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 				initContainers = append(initContainers, o.createImageVersionContainer(name, image, version, source, volumeMounts))
 			}
 		}
-	}
-	if len(containers) == 0 {
-		sort.Strings(images)
-		log.Logger().Warnf("No container images matched filter %s. Have image names: %s", o.Filter, strings.Join(images, ", "))
-		return fmt.Errorf("no container images matched filter %s. Have image names: %s", o.Filter, strings.Join(images, ", "))
-	}
+		if len(containers) == 0 {
+			break
+		}
 
-	name := naming.ToValidName("jx-report-image-version-" + id.String())
-	job := &batchv1.Job{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Job",
-			APIVersion: "batch/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-			Labels: map[string]string{
-				kube.LabelKind:      "job",
-				"jenkins.io/report": "image-versions",
+		name := naming.ToValidName("jx-report-image-version-" + id.String())
+		job := &batchv1.Job{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Job",
+				APIVersion: "batch/v1",
 			},
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					CreationTimestamp: metav1.Now(),
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: ns,
+				Labels: map[string]string{
+					kube.LabelKind:      "job",
+					"jenkins.io/report": "image-versions",
 				},
-				Spec: corev1.PodSpec{
-					InitContainers:     initContainers,
-					Containers:         containers,
-					RestartPolicy:      corev1.RestartPolicyNever,
-					ServiceAccountName: o.ServiceAccount,
-					Volumes: []corev1.Volume{
-						{
-							Name: "workspace",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+			Spec: batchv1.JobSpec{
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						CreationTimestamp: metav1.Now(),
+					},
+					Spec: corev1.PodSpec{
+						InitContainers:     initContainers,
+						Containers:         containers,
+						RestartPolicy:      corev1.RestartPolicyNever,
+						ServiceAccountName: o.ServiceAccount,
+						Volumes: []corev1.Volume{
+							{
+								Name: "workspace",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
 							},
 						},
+						ActiveDeadlineSeconds: &o.ActiveDeadlineSeconds,
 					},
 				},
+				BackoffLimit:          &o.BackoffLimit,
+				ActiveDeadlineSeconds: &o.ActiveDeadlineSeconds,
 			},
-			BackoffLimit: &o.BackoffLimit,
-		},
-	}
-	pod, _ := kube.GetCurrentPod(kubeClient, ns)
-	if pod != nil && pod.Name != "" {
-		job.OwnerReferences = []metav1.OwnerReference{
-			kube.PodOwnerRef(pod),
 		}
-	}
-
-	jobs := kubeClient.BatchV1().Jobs(ns)
-	_, err = jobs.Create(job)
-	if err != nil {
-		data, err2 := yaml.Marshal(job)
-		if err2 == nil {
-			log.Logger().Warnf("failed to create job %s %s", err.Error(), string(data))
+		pod, _ := kube.GetCurrentPod(kubeClient, ns)
+		if pod != nil && pod.Name != "" {
+			job.OwnerReferences = []metav1.OwnerReference{
+				kube.PodOwnerRef(pod),
+			}
 		}
-		return errors.Wrapf(err, "failed to create job %s", job.Name)
-	}
-	log.Logger().Infof("created Job %s", util.ColorInfo(job.Name))
 
-	if o.NoWait {
-		return nil
-	}
-	log.Logger().Infof("waiting for Job %s to complete", util.ColorInfo(job.Name))
-	err = kube.WaitForJobToFinish(kubeClient, ns, job.Name, o.JobWaitTimeout, true)
-	if err != nil {
-		return errors.Wrapf(err, "failed waiting for Job %s to complete", job.Name)
-	}
-	if o.NoDeleteJob {
-		return nil
-	}
-	if !o.BatchMode {
-		if !util.Confirm(fmt.Sprintf("are you ready to delete the Job %s", job.Name), true,
-			"we should delete the job when it is finished", o.In, o.Out, o.Err) {
+		jobs := kubeClient.BatchV1().Jobs(ns)
+		_, err = jobs.Create(job)
+		if err != nil {
+			data, err2 := yaml.Marshal(job)
+			if err2 == nil {
+				log.Logger().Warnf("failed to create job %s %s", err.Error(), string(data))
+			}
+			return errors.Wrapf(err, "failed to create job %s", job.Name)
+		}
+		log.Logger().Infof("created Job %s", util.ColorInfo(job.Name))
+
+		if o.NoWait {
 			return nil
 		}
-	}
-	err = jobs.Delete(job.Name, nil)
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete Job %s", job.Name)
+		log.Logger().Infof("waiting for Job %s to complete", util.ColorInfo(job.Name))
+		err = kube.WaitForJobToFinish(kubeClient, ns, job.Name, o.JobWaitTimeout, true)
+		if err != nil {
+			return errors.Wrapf(err, "failed waiting for Job %s to complete", job.Name)
+		}
+		if o.NoDeleteJob {
+			return nil
+		}
+		if !o.BatchMode {
+			if !util.Confirm(fmt.Sprintf("are you ready to delete the Job %s", job.Name), true,
+				"we should delete the job when it is finished", o.In, o.Out, o.Err) {
+				return nil
+			}
+		}
+		err = jobs.Delete(job.Name, nil)
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete Job %s", job.Name)
+		}
 	}
 	return nil
+}
+
+// batchImages batches things up so we don't process too many images per Job
+func (o *StepReportImageVersionOptions) batchImages(images map[string]map[string]string, batchSize int) []map[string]map[string]string {
+	var answer []map[string]map[string]string
+	count := 0
+	var lastMap map[string]map[string]string
+	for image, v := range images {
+		if util.StringContainsAny(image, o.Includes, o.Excludes) {
+			if lastMap == nil {
+				lastMap = map[string]map[string]string{}
+				answer = append(answer, lastMap)
+			}
+			lastMap[image] = v
+			count++
+			if batchSize > 0 && count >= batchSize {
+				count = 0
+				lastMap = nil
+			}
+		}
+	}
+	return answer
 }
 
 func (o *StepReportImageVersionOptions) createImageVersionContainer(name string, image string, version string, source string, volumeMounts []corev1.VolumeMount) corev1.Container {

@@ -118,7 +118,25 @@ func StringArrayToLower(values []string) []string {
 	return answer
 }
 
-// StringMatches returns true if the given text matches the includes/excludes lists
+// StringContainsAny returns true if the given text contains the includes/excludes lists
+func StringContainsAny(text string, includes []string, excludes []string) bool {
+	for _, x := range excludes {
+		if strings.Index(text, x) >= 0 {
+			return false
+		}
+	}
+	if len(includes) == 0 {
+		return true
+	}
+	for _, inc := range includes {
+		if strings.Index(text, inc) >= 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// StringMatchesAny returns true if the given text matches the includes/excludes lists
 func StringMatchesAny(text string, includes []string, excludes []string) bool {
 	for _, x := range excludes {
 		if StringMatchesPattern(text, x) {
