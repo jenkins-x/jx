@@ -79,6 +79,7 @@ func NewCmdGet(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdGetBuildPack(commonOpts))
 	cmd.AddCommand(NewCmdGetChat(commonOpts))
 	cmd.AddCommand(NewCmdGetConfig(commonOpts))
+	cmd.AddCommand(NewCmdGetCluster(commonOpts))
 	cmd.AddCommand(NewCmdGetCVE(commonOpts))
 	cmd.AddCommand(NewCmdGetDevPod(commonOpts))
 	cmd.AddCommand(NewCmdGetEks(commonOpts))

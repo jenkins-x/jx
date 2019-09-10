@@ -1145,6 +1145,27 @@ func (g *GCloud) ConnectToCluster(projectID, zone, clusterName string) error {
 	return nil
 }
 
+// ConnectToRegionCluster connects to the specified regional cluster
+func (g *GCloud) ConnectToRegionCluster(projectID, region, clusterName string) error {
+	args := []string{"container",
+		"clusters",
+		"get-credentials",
+		clusterName,
+		"--region",
+		region,
+		"--project", projectID}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return errors.Wrapf(err, "failed to connect to region cluster %s", clusterName)
+	}
+	return nil
+}
+
 // UserLabel returns a string identifying current user that can be used as a label
 func (g *GCloud) UserLabel() string {
 	user, err := osUser.Current()
@@ -1201,4 +1222,23 @@ func (g *GCloud) storeGCPServiceAccountIntoSecret(client kubernetes.Interface, s
 		_, err = secrets.Update(secret)
 	}
 	return secretName, nil
+}
+
+// CurrentProject returns the current GKE project name if it can be detected
+func (g *GCloud) CurrentProject() (string, error) {
+	args := []string{"config",
+		"list",
+		"--format",
+		"value(core.region)",
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	text, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return text, errors.Wrap(err, "failed to detect the current GCP project")
+	}
+	return strings.TrimSpace(text), nil
 }

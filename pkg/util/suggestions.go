@@ -36,6 +36,11 @@ func MissingArgument(name string) error {
 	return fmt.Errorf("Missing argument: %s", ColorInfo(name))
 }
 
+// MissingEnv reports a missing environment variable
+func MissingEnv(name string) error {
+	return fmt.Errorf("Missing environment variable: $%s", ColorInfo(name))
+}
+
 func InvalidOption(name string, value string, values []string) error {
 	suggestions := SuggestionsFor(value, values, DefaultSuggestionsMinimumDistance)
 	if len(suggestions) > 0 {
