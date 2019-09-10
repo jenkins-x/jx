@@ -600,7 +600,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 		}
 
 		// log that the build completed
-		logJobCompletedState(activity)
+		logJobCompletedState(activity, nil)
 
 		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
 		if spec.BuildLogsURL == "" || !strings.Contains(spec.BuildLogsURL, pod.Name) {
@@ -705,18 +705,18 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
 		} else if pri.Type == tekton.MetaPipeline {
-			spec.Status = v1.ActivityStatusTypePending
+			spec.Status = v1.ActivityStatusTypeRunning
 		} else {
 			spec.Status = v1.ActivityStatusTypeSucceeded
 		}
 
-		if pri.Type != tekton.MetaPipeline {
+		if spec.Status != v1.ActivityStatusTypeRunning {
 			if !biggestFinishedAt.IsZero() {
 				spec.CompletedTimestamp = &biggestFinishedAt
 			}
 
 			// log that the build completed
-			logJobCompletedState(activity)
+			logJobCompletedState(activity, pri)
 
 			// TODO: This will need to be reworked for per-step logs, so leaving alone as part of metapipeline work
 			// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
@@ -1323,7 +1323,7 @@ func createStepDescription(containerName string, pod *corev1.Pod) string {
 	return ""
 }
 
-func logJobCompletedState(activity *v1.PipelineActivity) {
+func logJobCompletedState(activity *v1.PipelineActivity, pri *tekton.PipelineRunInfo) {
 	// log that the build completed
 	var gitProviderUrl string
 	if activity.Spec.GitURL != "" {
@@ -1375,6 +1375,8 @@ func logJobCompletedState(activity *v1.PipelineActivity) {
 		"pullRequestNumber": prNumber,
 		"duration":          util.DurationString(activity.Spec.StartedTimestamp, activity.Spec.CompletedTimestamp),
 		"stages":            stages,
+		"pipelineRunInfo":   pri.Name,
+		"pipelineRunType":   pri.Type,
 	}
 	log.Logger().WithFields(fields).Infof("Build %s %s", activity.Name, activity.Spec.Status)
 }
