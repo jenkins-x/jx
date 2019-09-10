@@ -10,13 +10,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
-	"github.com/jenkins-x/jx/pkg/kube/watcher"
-	"github.com/jenkins-x/jx/pkg/logs"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube/watcher"
+	"github.com/jenkins-x/jx/pkg/logs"
 
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -37,7 +37,7 @@ import (
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -711,7 +711,8 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 			spec.Status = v1.ActivityStatusTypeSucceeded
 		}
 
-		if spec.Status != v1.ActivityStatusTypeRunning {
+		// Only complete the job if it's failed, or if it's finished and the PRI we're looking at is _not_ the metapipeline
+		if spec.Status == v1.ActivityStatusTypeFailed || (spec.Status.IsTerminated() && pri.Type != tekton.MetaPipeline) {
 			if !biggestFinishedAt.IsZero() {
 				spec.CompletedTimestamp = &biggestFinishedAt
 			}
