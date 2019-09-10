@@ -143,16 +143,18 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		return nil, errors.New(fmt.Sprintf("PipelineRun %s cannot be found", prName))
 	}
 
+	pipelineType := BuildPipeline
+
+	if strings.HasPrefix(pr.Name, MetaPipeline.String()+"-") {
+		pipelineType = MetaPipeline
+	}
+
 	pri := &PipelineRunInfo{
-		Name:        PipelineResourceName(pr.Labels[LabelOwner], pr.Labels[LabelRepo], pr.Labels[LabelBranch], pr.Labels[LabelContext], BuildPipeline, nil, "") + "-" + pr.Labels[LabelBuild],
+		Name:        PipelineResourceName(pr.Labels[LabelOwner], pr.Labels[LabelRepo], pr.Labels[LabelBranch], pr.Labels[LabelContext], pipelineType, nil, "") + "-" + pr.Labels[LabelBuild],
 		PipelineRun: pr.Name,
 		Pipeline:    pr.Spec.PipelineRef.Name,
 		Type:        BuildPipeline,
 		CreatedTime: pr.CreationTimestamp.Time,
-	}
-
-	if strings.HasPrefix(pr.Name, MetaPipeline.String() + "-") {
-		pri.Type = MetaPipeline
 	}
 
 	var pod *corev1.Pod
