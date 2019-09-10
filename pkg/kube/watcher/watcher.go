@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,63 +33,78 @@ type ListWatch interface {
 	Watch(ns string, listOptions metav1.ListOptions) (watch.Interface, error)
 }
 
-// Run watches the resources until the connection is lost
-func (w *Watcher) Run() error {
-	log.Logger().Infof("watching and listing resources in namespace %s", w.Namespace)
+type WatchChannel struct {
+	handlerFuncs HandlerFuncs
+	watcher      watch.Interface
+	name         string
+}
+
+// CreateChannel lists resources and creates a watch channel for watching events
+func (w *Watcher) CreateChannel(name string) (*WatchChannel, error) {
+	log.Logger().Infof("watching and listing resources: %s in namespace %s", name, w.Namespace)
 
 	watcher, err := w.ListWatch.Watch(w.Namespace, w.ListOptions)
 	if err != nil {
-		log.Logger().Fatalf("failed to watch resources in namespace %s due to %s", w.Namespace, err.Error())
+		return nil, errors.Wrapf(err, "failed to watch resources in namespace %s", w.Namespace)
 	}
 
 	resources, err := w.ListWatch.List(w.Namespace, w.ListOptions)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
-			log.Logger().Fatalf("failed to list resources in namespace %s due to %s", w.Namespace, err.Error())
+			return nil, errors.Wrapf(err, "failed to list resources in namespace %s due", w.Namespace)
 		}
 	}
-
 	for _, resource := range resources {
-		w.onAdd(resource)
+		w.HandlerFuncs.OnAdd(resource)
 	}
+	return &WatchChannel{
+		handlerFuncs: w.HandlerFuncs,
+		watcher:      watcher,
+		name:         name,
+	}, nil
+}
 
+// Stop stop the channel
+func (c *WatchChannel) Stop() {
+	c.watcher.Stop()
+}
+
+// Run watches the resources on the channel until the connection closes or a watch error is generated
+func (c *WatchChannel) Run() error {
 	// TODO we could ensure that watch events are always newer than the first list just in case?
-	ch := watcher.ResultChan()
+	ch := c.watcher.ResultChan()
+	w := c.handlerFuncs
 	for event := range ch {
 		switch event.Type {
 		case watch.Added:
-			w.onAdd(event.Object)
+			w.OnAdd(event.Object)
 		case watch.Modified:
-			w.onModified(event.Object)
+			w.OnModified(event.Object)
 		case watch.Deleted:
-			w.onDeleted(event.Object)
+			w.OnDeleted(event.Object)
 		case watch.Error:
-			log.Logger().Fatalf("watcher is closed in namespace %s", w.Namespace)
-			watcher.Stop()
-			return fmt.Errorf("watch channel disconnected")
+			log.Logger().Errorf("watcher %s got error", c.name)
+			c.watcher.Stop()
+			return fmt.Errorf("WatchChannel error occurred")
 		}
 	}
 	return nil
 }
 
-func (w *Watcher) onAdd(object runtime.Object) {
-	if w.HandlerFuncs.AddFunc != nil {
-		w.HandlerFuncs.AddFunc(object)
+func (h *HandlerFuncs) OnAdd(object runtime.Object) {
+	if h.AddFunc != nil {
+		h.AddFunc(object)
 	}
 }
 
-func (w *Watcher) onModified(object runtime.Object) {
-	if w.HandlerFuncs.ModifyFunc != nil {
-		w.HandlerFuncs.ModifyFunc(object)
+func (h *HandlerFuncs) OnModified(object runtime.Object) {
+	if h.ModifyFunc != nil {
+		h.ModifyFunc(object)
 	}
 }
 
-func (w *Watcher) onDeleted(object runtime.Object) {
-	if w.HandlerFuncs.DeleteFunc != nil {
-		w.HandlerFuncs.DeleteFunc(object)
+func (h *HandlerFuncs) OnDeleted(object runtime.Object) {
+	if h.DeleteFunc != nil {
+		h.DeleteFunc(object)
 	}
-}
-
-func (w *Watcher) onError() {
-	log.Logger().Fatalf("watcher is closed in namespace %s", w.Namespace)
 }
