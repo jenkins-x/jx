@@ -17,7 +17,7 @@ type gcloud struct {
 }
 
 // NewGKEFromEnv create a new client for working with GKE clusters using the given region and project
-func NewGKE(region string, project string) (cluster.Client, error) {
+func NewGKE(project string, region string) (cluster.Client, error) {
 	return &gcloud{
 		region:  region,
 		project: project,
@@ -26,15 +26,15 @@ func NewGKE(region string, project string) (cluster.Client, error) {
 
 // NewGKEFromEnv create a new client for working with GKE clusters using environment variables to define the region/project
 func NewGKEFromEnv() (cluster.Client, error) {
-	region := os.Getenv(cluster.EnvGKERegion)
-	if region == "" {
-		return nil, util.MissingEnv(cluster.EnvGKERegion)
-	}
 	project := os.Getenv(cluster.EnvGKEProject)
 	if project == "" {
 		return nil, util.MissingEnv(cluster.EnvGKEProject)
 	}
-	return NewGKE(region, project)
+	region := os.Getenv(cluster.EnvGKERegion)
+	if region == "" {
+		return nil, util.MissingEnv(cluster.EnvGKERegion)
+	}
+	return NewGKE(project, region)
 }
 
 // List lists the clusters
@@ -47,9 +47,10 @@ func (c *gcloud) List() ([]*cluster.Cluster, error) {
 
 	for _, item := range items {
 		answer = append(answer, &cluster.Cluster{
-			Name:   item.Name,
-			Labels: item.ResourceLabels,
-			Status: item.Status,
+			Name:     item.Name,
+			Labels:   item.ResourceLabels,
+			Status:   item.Status,
+			Location: item.Location,
 		})
 	}
 	return answer, nil
@@ -61,8 +62,8 @@ func (c *gcloud) ListFilter(labels map[string]string) ([]*cluster.Cluster, error
 }
 
 // Connect connects to a cluster
-func (c *gcloud) Connect(name string) error {
-	return c.gcloud.ConnectToRegionCluster(c.project, c.region, name)
+func (c *gcloud) Connect(cluster *cluster.Cluster) error {
+	return c.gcloud.ConnectToRegionCluster(c.project, cluster.Location, cluster.Name)
 }
 
 // String return the string representation
@@ -76,6 +77,8 @@ func (c *gcloud) Get(name string) (*cluster.Cluster, error) {
 }
 
 // LabelCluster labels the given cluster
-func (c *gcloud) LabelCluster(name string, labels map[string]string) error {
-	return fmt.Errorf("TODO")
+func (c *gcloud) LabelCluster(cluster *cluster.Cluster, labelMap map[string]string) error {
+	allLabels := util.MergeMaps(map[string]string{}, cluster.Labels, labelMap)
+	labels := util.MapToKeyValues(allLabels)
+	return c.gcloud.UpdateGkeClusterLabels(cluster.Location, c.project, cluster.Name, labels)
 }

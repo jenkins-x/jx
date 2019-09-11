@@ -60,6 +60,7 @@ type Cluster struct {
 	Name           string            `json:"name,omitempty"`
 	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
 	Status         string            `json:"status,omitempty"`
+	Location       string            `json:"location,omitempty"`
 }
 
 // generateManagedZoneName constructs and returns a managed zone name using the domain value
@@ -714,7 +715,10 @@ func (g *GCloud) LoadGkeCluster(region string, projectID string, clusterName str
 
 // UpdateGkeClusterLabels updates labesl for a gke cluster
 func (g *GCloud) UpdateGkeClusterLabels(region string, projectID string, clusterName string, labels []string) error {
-	args := []string{"container", "clusters", "update", clusterName, "--region=" + region, "--quiet", "--update-labels=" + strings.Join(labels, ",") + ""}
+	args := []string{"container", "clusters", "update", clusterName, "--quiet", "--update-labels=" + strings.Join(labels, ",") + ""}
+	if region != "" {
+		args = append(args, "--region="+region)
+	}
 	if projectID != "" {
 		args = append(args, "--project="+projectID)
 	}
@@ -1229,7 +1233,7 @@ func (g *GCloud) CurrentProject() (string, error) {
 	args := []string{"config",
 		"list",
 		"--format",
-		"value(core.region)",
+		"value(core.project)",
 	}
 
 	cmd := util.Command{

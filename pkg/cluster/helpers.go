@@ -18,20 +18,18 @@ func NewLabelValue() (string, error) {
 
 // LockCluster tries to use the given label and value to lock the cluster.
 // Return nil if there are no clusters available
-func LockCluster(client Client, lockLabel string, labelValue string, filterLabels map[string]string) (*Cluster, error) {
+func LockCluster(client Client, lockLabels map[string]string, filterLabels map[string]string) (*Cluster, error) {
 	clusters, err := client.ListFilter(filterLabels)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, c := range clusters {
-		if c.Labels == nil || c.Labels[lockLabel] == "" {
+		if !HasAnyKey(c.Labels, lockLabels) {
 			// lets try to update label
-			err = client.LabelCluster(c.Name, map[string]string{
-				lockLabel: labelValue,
-			})
+			err = client.LabelCluster(c, lockLabels)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to label cluster %s with label %s = %s", c.Name, lockLabel, labelValue)
+				return nil, errors.Wrapf(err, "failed to label cluster %s with label %#v", c.Name, lockLabels)
 			}
 
 			// now lets requery to verify the label got applied
@@ -39,14 +37,14 @@ func LockCluster(client Client, lockLabel string, labelValue string, filterLabel
 			if err != nil {
 				return nil, err
 			}
-			if copy != nil && copy.Labels != nil && copy.Labels[lockLabel] == labelValue {
+			if copy != nil && LabelsMatch(copy.Labels, lockLabels) {
 				return copy, nil
 			}
 			if copy == nil {
 				log.Logger().Infof("cluster %s no longer exists", c.Name)
 			} else {
-				log.Logger().Infof("could not label cluster %s with %s = %s it has labels %#v so could be labelled by another process",
-					c.Name, lockLabel, labelValue, copy.Labels)
+				log.Logger().Infof("could not label cluster %s with lock labels %#v it has labels %#v so could be labelled by another process",
+					c.Name, lockLabels, copy.Labels)
 			}
 		}
 	}
@@ -91,4 +89,16 @@ func LabelsMatch(labels map[string]string, filter map[string]string) bool {
 		}
 	}
 	return true
+}
+
+// HasAnyKey returns true if the labels map has none of the keys in the filter
+func HasAnyKey(labels map[string]string, filters map[string]string) bool {
+	if labels != nil && filters != nil {
+		for k := range filters {
+			if labels[k] != "" {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -41,7 +41,11 @@ func TestLockCluster(t *testing.T) {
 	value, err := cluster.NewLabelValue()
 	require.NoError(t, err, "failed to call cluster.NewLabelValue()")
 
-	cluster, err := cluster.LockCluster(client, testLockLabel, value, map[string]string{
+	lockLabels := map[string]string{
+		testLockLabel: value,
+		"owner":       "TestLockCluster",
+	}
+	cluster, err := cluster.LockCluster(client, lockLabels, map[string]string{
 		testFilterLabel: "include",
 	})
 	require.NoError(t, err, "failed to call cluster.LockCluster()")
