@@ -35,11 +35,14 @@ const (
 	// kvEngineConfigPath config path for KV secrets engine V2
 	kvEngineConfigPath = "secret/config"
 
+	// kvEngineWriteCheckPath imaginary secret to check when the secrets engine is ready for write
+	kvEngineWriteCheckPath = "secret/data/jx-write-check"
+
 	// kvEngineInitialRetyDelay define the initial delay before checking the kv engine configuration
 	kvEngineInitialRetyDelay = 1 * time.Second
 
 	// kvEngineRetryTimeout define the maximum duration to wait for KV engine to be properly configured
-	kvEngineRetryTimeout = 3 * time.Minute
+	kvEngineRetryTimeout = 5 * time.Minute
 )
 
 // OptionsInterface is an interface to allow passing around of a CommonOptions object without dependencies on the whole of the cmd package
@@ -169,8 +172,18 @@ func waitForVault(vaultClient *api.Client, initialDelay, timeout time.Duration) 
 func waitForKVEngine(vaultClient *api.Client, initialDelay, timeout time.Duration) error {
 	return util.RetryWithInitialDelaySlower(initialDelay, timeout, func() error {
 		if _, err := vaultClient.Logical().Read(kvEngineConfigPath); err != nil {
-			log.Logger().Info("Waiting for KV engine to be configured...")
-			return errors.Wrap(err, "checking KV engine config")
+			log.Logger().Info("Waiting for KV secrets engine to be configured...")
+			return errors.Wrap(err, "checking KV secrets engine config")
+		}
+
+		payload := map[string]interface{}{
+			"data": map[string]string{
+				"test": "write",
+			},
+		}
+		if _, err := vaultClient.Logical().Write(kvEngineWriteCheckPath, payload); err != nil {
+			log.Logger().Info("Waiting for KV secrets engine to be ready for write...")
+			return errors.Wrap(err, "checking KV secrets engine ready for write")
 		}
 		return nil
 	})
