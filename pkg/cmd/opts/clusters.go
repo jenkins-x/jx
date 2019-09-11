@@ -26,6 +26,7 @@ type GKEClusterOptions struct {
 	Region  string
 }
 
+// CreateClient creates a new cluster client from the CLI options
 func (o *ClusterOptions) CreateClient(requireProject bool) (cluster.Client, error) {
 	if o.Fake {
 		clusters := []*cluster.Cluster{
@@ -68,6 +69,7 @@ func (o *ClusterOptions) CreateClient(requireProject bool) (cluster.Client, erro
 	//return nil, fmt.Errorf("could not detect the kind of cluster via the command line options")
 }
 
+// AddClusterFlags adds the cluster CLI arguments
 func (o *ClusterOptions) AddClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.GKE.Project, "gke-project", "", "", "The GKE project name")
 	cmd.Flags().StringVarP(&o.GKE.Region, "gke-region", "", "", "The GKE project name")

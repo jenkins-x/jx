@@ -16,7 +16,7 @@ type gcloud struct {
 	gcloud  gcp.GCloud
 }
 
-// NewGKEFromEnv create a new client for working with GKE clusters using the given region and project
+// NewGKE create a new client for working with GKE clusters using the given region and project
 func NewGKE(project string, region string) (cluster.Client, error) {
 	return &gcloud{
 		region:  region,

@@ -2,9 +2,9 @@ package cluster
 
 const (
 
-	// EnvGKEProject
+	// EnvGKEProject the environment variable for the GKE project
 	EnvGKEProject = "GKE_PROJECT"
 
-	// EnvGKERegion
+	// EnvGKERegion the environment variable for the GKE region
 	EnvGKERegion = "GKE_REGION"
 )
