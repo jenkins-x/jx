@@ -6119,6 +6119,12 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Format: "",
 						},
 					},
+					"pipelineUserEmail": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"dockerRegistryOrg": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
