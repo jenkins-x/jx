@@ -129,6 +129,9 @@ type EnvironmentConfig struct {
 type IngressConfig struct {
 	// DNS is enabled
 	ExternalDNS bool `json:"externalDNS"`
+	// CloudDNSSecretName secret name which contains the service account for external-dns and cert-manager issuer to
+	// access the Cloud DNS service to resolve a DNS challenge
+	CloudDNSSecretName string `json:"cloud_dns_secret_name,omitempty"`
 	// Domain to expose ingress endpoints
 	Domain string `json:"domain"`
 	// NamespaceSubDomain the sub domain expression to expose ingress. Defaults to ".jx."
@@ -148,9 +151,6 @@ type TLSConfig struct {
 	// Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production
 	// server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/
 	Production bool `json:"production"`
-	// CloudDnsSecretName secret name which contains the service account for external-dns and cert-manager issuer to
-	// access the Cloud DNS service to resolve a DNS challenge
-	CloudDnsSecretName string `json:"cloud_dns_secret_name,omitempty"`
 }
 
 // JxInstallProfile contains the jx profile info
