@@ -2439,6 +2439,8 @@ definitions:
         type: boolean
       organisation:
         type: string
+      pipelineUserEmail:
+        type: string
       pipelineUsername:
         type: string
       postPreviewJobs:
