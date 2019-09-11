@@ -1,8 +1,6 @@
 package get
 
 import (
-	"strings"
-
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -69,22 +67,9 @@ func (o *GetClusterOptions) Run() error {
 	table.AddRow("NAME", "LOCATION", "LABELS", "STATUS")
 
 	for _, cluster := range clusters {
-		table.AddRow(cluster.Name, cluster.Location, formatLabels(cluster.Labels), cluster.Status)
+		table.AddRow(cluster.Name, cluster.Location, util.MapToString(cluster.Labels), cluster.Status)
 	}
 
 	table.Render()
 	return nil
-}
-
-func formatLabels(m map[string]string) string {
-	builder := strings.Builder{}
-	for k, v := range m {
-		if builder.Len() > 0 {
-			builder.WriteString(" ")
-		}
-		builder.WriteString(k)
-		builder.WriteString("=")
-		builder.WriteString(v)
-	}
-	return builder.String()
 }

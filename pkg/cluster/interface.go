@@ -22,8 +22,8 @@ type Client interface {
 	// String returns a text representation of the client
 	String() string
 
-	// LabelCluster adds labels to the given cluster
-	LabelCluster(cluster *Cluster, labels map[string]string) error
+	// SetClusterLabels adds labels to the given cluster
+	SetClusterLabels(cluster *Cluster, labels map[string]string) error
 
 	// Get looks up a given cluster by name returning nil if its not found
 	Get(name string) (*Cluster, error)

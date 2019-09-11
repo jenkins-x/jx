@@ -76,9 +76,8 @@ func (c *gcloud) Get(name string) (*cluster.Cluster, error) {
 	return cluster.GetCluster(c, name)
 }
 
-// LabelCluster labels the given cluster
-func (c *gcloud) LabelCluster(cluster *cluster.Cluster, labelMap map[string]string) error {
-	allLabels := util.MergeMaps(map[string]string{}, cluster.Labels, labelMap)
-	labels := util.MapToKeyValues(allLabels)
+// SetClusterLabels labels the given cluster
+func (c *gcloud) SetClusterLabels(cluster *cluster.Cluster, labelMap map[string]string) error {
+	labels := util.MapToKeyValues(labelMap)
 	return c.gcloud.UpdateGkeClusterLabels(cluster.Location, c.project, cluster.Name, labels)
 }

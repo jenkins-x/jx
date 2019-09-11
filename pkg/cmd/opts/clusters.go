@@ -1,6 +1,8 @@
 package opts
 
 import (
+	"sort"
+
 	gcp "github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cluster/fake"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -70,4 +72,28 @@ func (o *ClusterOptions) AddClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.GKE.Project, "gke-project", "", "", "The GKE project name")
 	cmd.Flags().StringVarP(&o.GKE.Region, "gke-region", "", "", "The GKE project name")
 	cmd.Flags().BoolVarP(&o.Fake, "fake", "", false, "Use the fake clusters client")
+}
+
+// GetOrPickClusterName returns the selected cluster name or returns an error
+func (o *CommonOptions) GetOrPickClusterName(client cluster.Client, clusterName string) (string, error) {
+	if clusterName == "" && !o.BatchMode {
+		clusters, err := client.List()
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to list clusters for %s", client.String())
+		}
+		names := []string{}
+		for _, c := range clusters {
+			names = append(names, c.Name)
+		}
+		sort.Strings(names)
+
+		clusterName, err = util.PickName(names, "pick the cluster name", "you need to provide a cluster name to unlock", o.In, o.Out, o.Err)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to pick cluster name")
+		}
+	}
+	if clusterName == "" {
+		return "", util.MissingOption("name")
+	}
+	return clusterName, nil
 }

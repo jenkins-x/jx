@@ -42,7 +42,6 @@ func NewCmdStepClusterLock(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "lock",
 		Short:   "Locks and joins a cluster using a lock label and optional label filters",
-		Aliases: []string{"versions"},
 		Long:    stepClusterLockLong,
 		Example: stepClusterLockExample,
 		Run: func(cmd *cobra.Command, args []string) {
