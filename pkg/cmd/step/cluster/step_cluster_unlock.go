@@ -54,7 +54,7 @@ func NewCmdStepClusterUnlock(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.ClusterOptions.AddClusterFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.LockLabel, "label", "l", "locked", "The label name for the lock")
-	cmd.Flags().StringVarP(&options.TestLabel, "owner-label", "", "test", "The label name for the test")
+	cmd.Flags().StringVarP(&options.TestLabel, "test-label", "", "test", "The label name for the test")
 	cmd.Flags().StringVarP(&options.ClusterName, "name", "n", "", "The name of the cluster to unlock")
 	return cmd
 }

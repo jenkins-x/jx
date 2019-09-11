@@ -15,6 +15,9 @@ import (
 )
 
 var (
+	defaultLockLabel = "locked"
+	defaultTestLabel = "test"
+
 	stepClusterLockLong    = templates.LongDesc(`Locks and joins a cluster using a lock label and optional label filters.`)
 	stepClusterLockExample = templates.Examples(`
 `)
@@ -54,8 +57,8 @@ func NewCmdStepClusterLock(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options.ClusterOptions.AddClusterFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.LockLabel, "label", "l", "locked", "The label name for the lock")
-	cmd.Flags().StringVarP(&options.TestLabel, "owner-label", "", "test", "The label name for the test")
+	cmd.Flags().StringVarP(&options.LockLabel, "label", "l", defaultLockLabel, "The label name for the lock")
+	cmd.Flags().StringVarP(&options.TestLabel, "test-label", "", defaultTestLabel, "The label name for the test")
 	cmd.Flags().StringVarP(&options.TestName, "test", "t", "", "The name of the test to label on the cluster")
 	cmd.Flags().StringArrayVarP(&options.Filters, "filter", "f", nil, "The labels of the form 'key=value' to filter the clusters to choose from")
 	return cmd
@@ -85,6 +88,8 @@ func (o *StepClusterLockOptions) Run() error {
 	if cluster == nil {
 		return fmt.Errorf("could not find a cluster without lock label %#v and filters %#v", lockLabels, filterLabels)
 	}
+
+	log.Logger().Infof("to unlock the cluster again run: %s", util.ColorInfo(o.createUnlockCommand(cluster.Name)))
 
 	return o.verifyClusterConnect(client, cluster)
 }
@@ -123,4 +128,15 @@ func (o *StepClusterLockOptions) currentKubeContext() (string, error) {
 		return "", err
 	}
 	return config.CurrentContext, nil
+}
+
+func (o *StepClusterLockOptions) createUnlockCommand(name string) string {
+	answer := "jx step cluster unlock -n " + name
+	if o.LockLabel != defaultLockLabel {
+		answer += " --label " + o.LockLabel
+	}
+	if o.TestLabel != defaultTestLabel {
+		answer += " --label " + o.TestLabel
+	}
+	return answer
 }
