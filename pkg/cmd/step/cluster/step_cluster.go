@@ -31,7 +31,9 @@ func NewCmdStepCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdStepClusterLabel(commonOpts))
 	cmd.AddCommand(NewCmdStepClusterLock(commonOpts))
+	cmd.AddCommand(NewCmdStepClusterUnlock(commonOpts))
 	return cmd
 }
 

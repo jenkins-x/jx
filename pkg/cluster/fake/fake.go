@@ -47,13 +47,8 @@ func (c *FakeClient) Get(name string) (*cluster.Cluster, error) {
 	return cluster.GetCluster(c, name)
 }
 
-// LabelCluster labels the given cluster
-func (c *FakeClient) LabelCluster(cluster *cluster.Cluster, labels map[string]string) error {
-	if cluster.Labels == nil {
-		cluster.Labels = map[string]string{}
-	}
-	for k, v := range labels {
-		cluster.Labels[k] = v
-	}
+// SetClusterLabels labels the given cluster
+func (c *FakeClient) SetClusterLabels(cluster *cluster.Cluster, labels map[string]string) error {
+	cluster.Labels = labels
 	return nil
 }

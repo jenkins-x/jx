@@ -185,3 +185,17 @@ func MapToKeyValues(values map[string]string) []string {
 	sort.Strings(answer)
 	return answer
 }
+
+// MapToString converts the map to a string
+func MapToString(m map[string]string) string {
+	builder := strings.Builder{}
+	for k, v := range m {
+		if builder.Len() > 0 {
+			builder.WriteString(" ")
+		}
+		builder.WriteString(k)
+		builder.WriteString("=")
+		builder.WriteString(v)
+	}
+	return builder.String()
+}

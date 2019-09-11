@@ -3,6 +3,7 @@ package cluster
 import (
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
@@ -27,7 +28,8 @@ func LockCluster(client Client, lockLabels map[string]string, filterLabels map[s
 	for _, c := range clusters {
 		if !HasAnyKey(c.Labels, lockLabels) {
 			// lets try to update label
-			err = client.LabelCluster(c, lockLabels)
+			allLabels := util.MergeMaps(map[string]string{}, c.Labels, lockLabels)
+			err = client.SetClusterLabels(c, allLabels)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to label cluster %s with label %#v", c.Name, lockLabels)
 			}
@@ -101,4 +103,25 @@ func HasAnyKey(labels map[string]string, filters map[string]string) bool {
 		}
 	}
 	return false
+}
+
+// RemoveLabels removes the set of labels from the cluster
+func RemoveLabels(client Client, cluster *Cluster, removeLabels []string) (map[string]string, error) {
+	if cluster.Labels == nil {
+		return cluster.Labels, nil
+	}
+
+	updated := false
+	for _, label := range removeLabels {
+		if _, ok := cluster.Labels[label]; ok {
+			delete(cluster.Labels, label)
+			updated = true
+		}
+	}
+
+	var err error
+	if updated {
+		err = client.SetClusterLabels(cluster, cluster.Labels)
+	}
+	return cluster.Labels, err
 }
