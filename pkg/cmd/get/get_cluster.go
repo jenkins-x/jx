@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -14,6 +15,7 @@ import (
 type GetClusterOptions struct {
 	GetOptions
 	ClusterOptions opts.ClusterOptions
+	Filters        []string
 }
 
 var (
@@ -50,22 +52,24 @@ func NewCmdGetCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	options.ClusterOptions.AddClusterFlags(cmd)
+	cmd.Flags().StringArrayVarP(&options.Filters, "filter", "f", nil, "The labels of the form 'key=value' to filter the clusters to choose from")
 	return cmd
 }
 
 // Run implements this command
 func (o *GetClusterOptions) Run() error {
-	client, err := o.ClusterOptions.CreateClient()
+	client, err := o.ClusterOptions.CreateClient(false)
 	if err != nil {
 		return err
 	}
-	clusters, err := client.List()
+	filterLabels := util.KeyValuesToMap(o.Filters)
+	clusters, err := client.ListFilter(filterLabels)
 
 	table := o.CreateTable()
-	table.AddRow("NAME", "LABELS", "STATUS")
+	table.AddRow("NAME", "LOCATION", "LABELS", "STATUS")
 
 	for _, cluster := range clusters {
-		table.AddRow(cluster.Name, formatLabels(cluster.Labels), cluster.Status)
+		table.AddRow(cluster.Name, cluster.Location, formatLabels(cluster.Labels), cluster.Status)
 	}
 
 	table.Render()

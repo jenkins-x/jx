@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/step/buildpack"
+	"github.com/jenkins-x/jx/pkg/cmd/step/cluster"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
 	"github.com/jenkins-x/jx/pkg/cmd/step/env"
@@ -51,6 +52,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(e2e.NewCmdStepE2E(commonOpts))
 	cmd.AddCommand(step.NewCmdStepBlog(commonOpts))
 	cmd.AddCommand(step.NewCmdStepChangelog(commonOpts))
+	cmd.AddCommand(cluster.NewCmdStepCluster(commonOpts))
 	cmd.AddCommand(step.NewCmdStepCredential(commonOpts))
 	cmd.AddCommand(create.NewCmdStepCreate(commonOpts))
 	cmd.AddCommand(step.NewCmdStepCustomPipeline(commonOpts))

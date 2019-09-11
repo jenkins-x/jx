@@ -1,10 +1,9 @@
 package fake
 
 import (
-	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/cluster"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // FakeClient a fake implementation of the cluster client
@@ -33,8 +32,8 @@ func (c *FakeClient) ListFilter(labels map[string]string) ([]*cluster.Cluster, e
 }
 
 // Connect connects to a cluster
-func (c *FakeClient) Connect(name string) error {
-	log.Logger().Infof("fake cluster connecting to %s", name)
+func (c *FakeClient) Connect(cluster *cluster.Cluster) error {
+	log.Logger().Infof("fake cluster connecting to cluster: %s", util.ColorInfo(cluster.Name))
 	return nil
 }
 
@@ -49,14 +48,7 @@ func (c *FakeClient) Get(name string) (*cluster.Cluster, error) {
 }
 
 // LabelCluster labels the given cluster
-func (c *FakeClient) LabelCluster(name string, labels map[string]string) error {
-	cluster, err := c.Get(name)
-	if err != nil {
-		return err
-	}
-	if cluster == nil {
-		return fmt.Errorf("No cluster with name %s", name)
-	}
+func (c *FakeClient) LabelCluster(cluster *cluster.Cluster, labels map[string]string) error {
 	if cluster.Labels == nil {
 		cluster.Labels = map[string]string{}
 	}

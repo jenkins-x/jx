@@ -2,6 +2,8 @@ package opts
 
 import (
 	gcp "github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/cluster/fake"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/cluster"
 	"github.com/jenkins-x/jx/pkg/cluster/gke"
@@ -12,7 +14,8 @@ import (
 
 // ClusterOptions used to determine which kind of cluster to query
 type ClusterOptions struct {
-	GKE GKEClusterOptions
+	GKE  GKEClusterOptions
+	Fake bool
 }
 
 // GKEClusterOptions GKE specific configurations
@@ -21,7 +24,21 @@ type GKEClusterOptions struct {
 	Region  string
 }
 
-func (o *ClusterOptions) CreateClient() (cluster.Client, error) {
+func (o *ClusterOptions) CreateClient(requireProject bool) (cluster.Client, error) {
+	if o.Fake {
+		clusters := []*cluster.Cluster{
+			{
+				Name: "cluster1",
+			},
+			{
+				Name: "cluster2",
+			},
+			{
+				Name: "cluster1",
+			},
+		}
+		return fake.NewClient(clusters), nil
+	}
 	if o.GKE.Project != "" || o.GKE.Region != "" {
 		if o.GKE.Project == "" {
 			return nil, util.MissingOption("gke-project")
@@ -37,6 +54,12 @@ func (o *ClusterOptions) CreateClient() (cluster.Client, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to detect if we are using GKE")
 	}
+	if requireProject {
+		if project == "" {
+			log.Logger().Warn("could not detect the current GKE project")
+			return nil, util.MissingOption("gke-project")
+		}
+	}
 	o.GKE.Project = project
 	return gke.NewGKE(project, o.GKE.Region)
 
@@ -46,4 +69,5 @@ func (o *ClusterOptions) CreateClient() (cluster.Client, error) {
 func (o *ClusterOptions) AddClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.GKE.Project, "gke-project", "", "", "The GKE project name")
 	cmd.Flags().StringVarP(&o.GKE.Region, "gke-region", "", "", "The GKE project name")
+	cmd.Flags().BoolVarP(&o.Fake, "fake", "", false, "Use the fake clusters client")
 }

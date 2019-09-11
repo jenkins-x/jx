@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -158,4 +160,28 @@ func ToObjectMap(object interface{}) (map[string]interface{}, error) {
 	}
 	err = yaml.Unmarshal(data, &answer)
 	return answer, err
+}
+
+// KeyValuesToMap converts the set of values of the form "foo=abc" into a map
+func KeyValuesToMap(values []string) map[string]string {
+	answer := map[string]string{}
+	for _, kv := range values {
+		tokens := strings.SplitN(kv, "=", 2)
+		if len(tokens) > 1 {
+			k := tokens[0]
+			v := tokens[1]
+			answer[k] = v
+		}
+	}
+	return answer
+}
+
+// MapToKeyValues converts the the map into a sorted array of key/value pairs
+func MapToKeyValues(values map[string]string) []string {
+	answer := []string{}
+	for k, v := range values {
+		answer = append(answer, fmt.Sprintf("%s=%s", k, v))
+	}
+	sort.Strings(answer)
+	return answer
 }
