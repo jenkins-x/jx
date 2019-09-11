@@ -145,13 +145,13 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 			return errors.Wrap(err, "creating kubernetes client")
 		}
 
-		cloudDnsSecretName := requirements.Ingress.TLS.CloudDnsSecretName
-		if cloudDnsSecretName != "" {
-			cloudDnsSecretName = gke.GcpServiceAccountSecretName(kube.DefaultExternalDNSReleaseName)
-			requirements.Ingress.TLS.CloudDnsSecretName = cloudDnsSecretName
+		cloudDNSSecretName := requirements.Ingress.CloudDNSSecretName
+		if cloudDNSSecretName != "" {
+			cloudDNSSecretName = gke.GcpServiceAccountSecretName(kube.DefaultExternalDNSReleaseName)
+			requirements.Ingress.CloudDNSSecretName = cloudDNSSecretName
 		}
 
-		err = kube.ValidateSecret(kubeClient, cloudDnsSecretName, externaldns.ServiceAccountSecretKey, ns)
+		err = kube.ValidateSecret(kubeClient, cloudDNSSecretName, externaldns.ServiceAccountSecretKey, ns)
 		if err != nil {
 			if o.LazyCreate {
 				log.Logger().Infof("attempting to lazily create the external-dns secret %s\n", info(ns))
@@ -162,7 +162,7 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 					return errors.Wrap(err, "creating the ExternalDNS GCP Service Account")
 				}
 				// lets rerun the verify step to ensure its all sorted now
-				err = kube.ValidateSecret(kubeClient, cloudDnsSecretName, externaldns.ServiceAccountSecretKey, ns)
+				err = kube.ValidateSecret(kubeClient, cloudDNSSecretName, externaldns.ServiceAccountSecretKey, ns)
 			}
 		}
 		if err != nil {
