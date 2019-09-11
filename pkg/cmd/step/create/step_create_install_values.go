@@ -73,7 +73,6 @@ func NewCmdStepCreateInstallValues(commonOpts *opts.CommonOptions) *cobra.Comman
 		Short:   "Creates any missing cluster values into the cluster/values.yaml file ",
 		Long:    createInstallValuesLong,
 		Example: createInstallValuesExample,
-		Aliases: []string{"version pullrequest"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

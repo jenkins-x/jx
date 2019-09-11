@@ -431,59 +431,6 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.RequirementsConfig, requirementsFileName string) (*config.RequirementsConfig, error) {
 	log.Logger().Debug("Gathering Requirements...")
 	if o.BatchMode {
-		isTerraform := os.Getenv(config.RequirementTerraform)
-		if isTerraform == "true" {
-			requirements.Terraform = true
-			if "" != os.Getenv(config.RequirementClusterName) {
-				requirements.Cluster.ClusterName = os.Getenv(config.RequirementClusterName)
-			}
-			if "" != os.Getenv(config.RequirementProject) {
-				requirements.Cluster.ProjectID = os.Getenv(config.RequirementProject)
-			}
-			if "" != os.Getenv(config.RequirementZone) {
-				requirements.Cluster.Zone = os.Getenv(config.RequirementZone)
-			}
-			if "" != os.Getenv(config.RequirementEnvGitOwner) {
-				requirements.Cluster.EnvironmentGitOwner = os.Getenv(config.RequirementEnvGitOwner)
-			}
-			if "" != os.Getenv(config.RequirementEnvGitPrivate) {
-				privateEnvRepo := os.Getenv(config.RequirementEnvGitPrivate)
-				if privateEnvRepo == "true" {
-					requirements.Cluster.EnvironmentGitPrivate = true
-				} else {
-					requirements.Cluster.EnvironmentGitPrivate = false
-				}
-			}
-			if "" != os.Getenv(config.RequirementExternalDNSServiceAccountName) {
-				requirements.Cluster.ExternalDNSSAName = os.Getenv(config.RequirementExternalDNSServiceAccountName)
-			}
-			if "" != os.Getenv(config.RequirementVaultServiceAccountName) {
-				requirements.Cluster.VaultSAName = os.Getenv(config.RequirementVaultServiceAccountName)
-			}
-			if "" != os.Getenv(config.RequirementSecretStorageType) {
-				requirements.SecretStorage = config.SecretStorageType(os.Getenv(config.RequirementSecretStorageType))
-			}
-			if "" != os.Getenv(config.RequirementKanikoServiceAccountName) {
-				requirements.Cluster.KanikoSAName = os.Getenv(config.RequirementKanikoServiceAccountName)
-			}
-			if "" != os.Getenv(config.RequirementDomainIssuerURL) {
-				requirements.Ingress.DomainIssuerURL = os.Getenv(config.RequirementDomainIssuerURL)
-			}
-			if "" != os.Getenv(config.RequirementIngressTLSProduction) {
-				useProduction := os.Getenv(config.RequirementIngressTLSProduction)
-				if useProduction == "true" {
-					requirements.Ingress.TLS.Production = true
-				} else {
-					requirements.Ingress.TLS.Production = false
-				}
-			}
-			if "" != os.Getenv(config.RequirementKaniko) {
-				kaniko := os.Getenv(config.RequirementKaniko)
-				if kaniko == "true" {
-					requirements.Kaniko = true
-				}
-			}
-		}
 		msg := "please specify '%s' in jx-requirements when running  in  batch mode"
 		if requirements.Cluster.Provider == "" {
 			return nil, errors.Errorf(msg, "provider")
