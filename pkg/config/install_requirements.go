@@ -148,6 +148,9 @@ type TLSConfig struct {
 	// Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production
 	// server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/
 	Production bool `json:"production"`
+	// CloudDnsSecretName secret name which contains the service account for external-dns and cert-manager issuer to
+	// access the Cloud DNS service to resolve a DNS challenge
+	CloudDnsSecretName string `json:"cloud_dns_secret_name,omitempty"`
 }
 
 // JxInstallProfile contains the jx profile info

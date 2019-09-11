@@ -76,7 +76,6 @@ func DefaultModifySecret(kubeClient kubernetes.Interface, ns string, name string
 
 // ValidateSecret checks a given secret and key exists in the provided namespace
 func ValidateSecret(kubeClient kubernetes.Interface, secretName, key, ns string) error {
-
 	secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "could not find the Secret %s in the namespace: %s", secretName, ns)
