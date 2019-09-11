@@ -136,6 +136,21 @@ func (mock *MockGClouder) ConnectToCluster(_param0 string, _param1 string, _para
 	return ret0
 }
 
+func (mock *MockGClouder) ConnectToRegionCluster(_param0 string, _param1 string, _param2 string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGClouder().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ConnectToRegionCluster", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGClouder) CreateBucket(_param0 string, _param1 string, _param2 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGClouder().")
@@ -817,6 +832,41 @@ func (c *MockGClouder_ConnectToCluster_OngoingVerification) GetCapturedArguments
 }
 
 func (c *MockGClouder_ConnectToCluster_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGClouder) ConnectToRegionCluster(_param0 string, _param1 string, _param2 string) *MockGClouder_ConnectToRegionCluster_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ConnectToRegionCluster", params, verifier.timeout)
+	return &MockGClouder_ConnectToRegionCluster_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGClouder_ConnectToRegionCluster_OngoingVerification struct {
+	mock              *MockGClouder
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGClouder_ConnectToRegionCluster_OngoingVerification) GetCapturedArguments() (string, string, string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *MockGClouder_ConnectToRegionCluster_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
