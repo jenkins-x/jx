@@ -228,6 +228,14 @@ type VeleroConfig struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 }
 
+// AutoUpdateConfig contains auto update config
+type AutoUpdateConfig struct {
+	// Suspend autoupdate
+	Suspend bool `json:"suspend"`
+	// Schedule cron of auto updates
+	Schedule string `json:"schedule"`
+}
+
 // RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
 	// Cluster contains cluster specific requirements
@@ -253,6 +261,8 @@ type RequirementsConfig struct {
 	Storage StorageConfig `json:"storage"`
 	// VersionStream contains version stream info
 	VersionStream VersionStreamConfig `json:"versionStream"`
+	// autoUpdate contains auto update config
+	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
 }
 
 // NewRequirementsConfig creates a default configuration file
