@@ -82,6 +82,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(config.NewCmdStepPatchConfigMap(commonOpts))
 	cmd.AddCommand(update.NewCmdStepUpdate(commonOpts))
 	cmd.AddCommand(report.NewCmdStepReport(commonOpts))
+	cmd.AddCommand(step.NewCmdStepOverrideRequirements(commonOpts))
 
 	return cmd
 }

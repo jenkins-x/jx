@@ -76,7 +76,7 @@ func NewCmdStepReplicate(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringArrayVarP(&options.ReplicateToNamepace, replicateToNamespaceFlag, "r", nil, "Specify a lilst of namespaces to replicate data into")
+	cmd.Flags().StringArrayVarP(&options.ReplicateToNamepace, replicateToNamespaceFlag, "r", nil, "Specify a list of namespaces to replicate data into")
 	return cmd
 }
 
