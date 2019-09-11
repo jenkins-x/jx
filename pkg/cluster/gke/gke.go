@@ -37,15 +37,16 @@ func NewGKEFromEnv() (cluster.Client, error) {
 	return NewGKE(region, project)
 }
 
-func (c *gcloud) List() ([]cluster.Cluster, error) {
+// List lists the clusters
+func (c *gcloud) List() ([]*cluster.Cluster, error) {
 	items, err := c.gcloud.ListClusters(c.region, c.project)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to list clusters in region %s project %s", c.region, c.project)
 	}
-	var answer []cluster.Cluster
+	var answer []*cluster.Cluster
 
 	for _, item := range items {
-		answer = append(answer, cluster.Cluster{
+		answer = append(answer, &cluster.Cluster{
 			Name:   item.Name,
 			Labels: item.ResourceLabels,
 			Status: item.Status,
@@ -54,10 +55,27 @@ func (c *gcloud) List() ([]cluster.Cluster, error) {
 	return answer, nil
 }
 
+// ListFilter lists the clusters with a filter
+func (c *gcloud) ListFilter(labels map[string]string) ([]*cluster.Cluster, error) {
+	return cluster.ListFilter(c, labels)
+}
+
+// Connect connects to a cluster
 func (c *gcloud) Connect(name string) error {
 	return c.gcloud.ConnectToRegionCluster(c.project, c.region, name)
 }
 
+// String return the string representation
 func (c *gcloud) String() string {
 	return fmt.Sprintf("GKE project: %s region: %s", c.project, c.region)
+}
+
+// Get looks up a cluster by name
+func (c *gcloud) Get(name string) (*cluster.Cluster, error) {
+	return cluster.GetCluster(c, name)
+}
+
+// LabelCluster labels the given cluster
+func (c *gcloud) LabelCluster(name string, labels map[string]string) error {
+	return fmt.Errorf("TODO")
 }
