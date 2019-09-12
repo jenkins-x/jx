@@ -146,7 +146,7 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 		}
 
 		cloudDNSSecretName := requirements.Ingress.CloudDNSSecretName
-		if cloudDNSSecretName != "" {
+		if cloudDNSSecretName == "" {
 			cloudDNSSecretName = gke.GcpServiceAccountSecretName(kube.DefaultExternalDNSReleaseName)
 			requirements.Ingress.CloudDNSSecretName = cloudDNSSecretName
 		}
