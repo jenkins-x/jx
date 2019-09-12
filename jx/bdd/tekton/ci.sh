@@ -6,8 +6,6 @@ echo "verifying Pull Request"
 export GH_USERNAME="jenkins-x-bot-test"
 export GH_OWNER="cb-kubecd"
 
-export GH_CREDS_PSW="$(jx step credential -s jenkins-x-bot-test-github | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
-export JENKINS_CREDS_PSW="$(jx step credential -s  test-jenkins-user | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
 export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 export GINKGO_ARGS="-v"
 
@@ -35,4 +33,4 @@ git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
 echo "running the BDD tests with JX_HOME = $JX_HOME"
-jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git --config jx/bdd/tekton/cluster.yaml --gopath /tmp  --git-provider=github --git-username $GH_USERNAME --git-owner $GH_OWNER --git-api-token $GH_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tekton --tests install --tests test-create-spring --tests test-quickstart-golang-http --tests test-import-golang-http-from-jenkins-x-yml
+jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git --config jx/bdd/tekton/cluster.yaml --gopath /tmp  --git-provider=github --git-username $GH_USERNAME --git-owner $GH_OWNER --git-api-token $GH_ACCESS_TOKEN --default-admin-password $JENKINS_PASSWORD --no-delete-app --no-delete-repo --tekton --tests install --tests test-create-spring --tests test-quickstart-golang-http --tests test-import-golang-http-from-jenkins-x-yml
