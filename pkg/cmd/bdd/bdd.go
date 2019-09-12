@@ -91,7 +91,7 @@ func (o *StartBDDOptions) Run() error {
 	repo := ""
 	trigger := true
 	if sr == nil {
-		err = o.importSourceRepository()
+		err = o.importSourceRepository(gitInfo)
 		if err != nil {
 			return errors.Wrapf(err, "failed to find SourceRepositories for URL  %s", o.SourceGitURL)
 		}
@@ -151,7 +151,7 @@ func (o *StartBDDOptions) findSourceRepository(repositories []v1.SourceRepositor
 	return nil, nil
 }
 
-func (o *StartBDDOptions) importSourceRepository() error {
+func (o *StartBDDOptions) importSourceRepository(gitInfo *gits.GitRepository) error {
 	log.Logger().Infof("importing project %s", util.ColorInfo(o.SourceGitURL))
 
 	io := &importcmd.ImportOptions{
@@ -161,6 +161,9 @@ func (o *StartBDDOptions) importSourceRepository() error {
 		DisableJenkinsfileCheck: true,
 		DisableMaven:            true,
 		DisableWebhooks:         true,
+		Organisation:            gitInfo.Organisation,
+		Repository:              gitInfo.Name,
+		AppName:                 gitInfo.Name,
 	}
 	err := io.Run()
 	if err != nil {
