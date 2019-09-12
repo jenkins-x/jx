@@ -37,6 +37,15 @@ func IsPodCompleted(pod *v1.Pod) bool {
 	return false
 }
 
+// IsPodSucceeded returns true if a pod is succeeded
+func IsPodSucceeded(pod *v1.Pod) bool {
+	phase := pod.Status.Phase
+	if phase == v1.PodSucceeded {
+		return true
+	}
+	return false
+}
+
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
 // IsPodReady retruns true if a pod is ready; false otherwise.
 func IsPodReadyConditionTrue(status v1.PodStatus) bool {

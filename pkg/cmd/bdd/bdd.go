@@ -2,6 +2,7 @@ package bdd
 
 import (
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/cmd/get"
@@ -62,7 +63,7 @@ func NewCmdStartBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.SourceGitURL, "git-url", "u", "https://github.com/jstrachan/bdd-jx.git", "The git URL of the BDD tests pipeline")
+	cmd.Flags().StringVarP(&options.SourceGitURL, "git-url", "u", "https://github.com/jenkins-x/bdd-jx.git", "The git URL of the BDD tests pipeline")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "master", "The git branch to use to run the BDD tests")
 	return cmd
 }
@@ -111,12 +112,19 @@ func (o *StartBDDOptions) Run() error {
 			return errors.Wrapf(err, "failed to find SourceRepositories for URL  %s", o.SourceGitURL)
 		}
 	}
+
+	// let sleep a little bit to give things a head start
+	time.Sleep(time.Second * 3)
+
+	commonOptions := *o.CommonOptions
+	commonOptions.BatchMode = true
 	lo := &get.GetBuildLogsOptions{
 		GetOptions: get.GetOptions{
-			CommonOptions: o.CommonOptions,
+			CommonOptions: &commonOptions,
 		},
-		Tail: true,
-		Wait: true,
+		Tail:           true,
+		Wait:           true,
+		FailIfPodFails: true,
 		BuildFilter: builds.BuildPodInfoFilter{
 			Owner:      owner,
 			Repository: repo,

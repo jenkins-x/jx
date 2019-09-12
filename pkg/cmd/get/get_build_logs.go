@@ -30,8 +30,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,6 +46,7 @@ type GetBuildLogsOptions struct {
 	CurrentFolder           bool
 	WaitForPipelineDuration time.Duration
 	TektonLogger            *logs.TektonLogger
+	FailIfPodFails          bool
 }
 
 // CLILogWriter is an implementation of logs.LogWriter that will show logs in the standard output
@@ -103,6 +104,7 @@ func NewCmdGetBuildLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "Waits for the build to start before failing")
+	cmd.Flags().BoolVarP(&options.FailIfPodFails, "fail-with-pod", "", false, "Return an error if the pod fails")
 	cmd.Flags().DurationVarP(&options.WaitForPipelineDuration, "wait-duration", "d", time.Minute*5, "Timeout period waiting for the given pipeline to be created")
 	cmd.Flags().BoolVarP(&options.BuildFilter.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
 	cmd.Flags().StringVarP(&options.BuildFilter.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
@@ -395,6 +397,18 @@ func (o *GetBuildLogsOptions) getLogForKnative(kubeClient kubernetes.Interface, 
 			return err
 		}
 	}
+	if o.FailIfPodFails {
+		pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to find pod %s", pod.Name)
+		}
+		if kube.IsPodSucceeded(pod) {
+			log.Logger().Infof("pod %s succeeded", pod.Name)
+			return nil
+		}
+		log.Logger().Errorf("pod %s failed", pod.Name)
+		return fmt.Errorf("pod %s failed", pod.Name)
+	}
 	return nil
 }
 
@@ -604,20 +618,20 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 	}
 
 	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(listOptions)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		log.Logger().Warnf("Failed to query PipelineRuns %s", err)
 		return names, defaultName, pipelineMap, err
 	}
 
 	structures, err := jxClient.JenkinsV1().PipelineStructures(ns).List(listOptions)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		log.Logger().Warnf("Failed to query PipelineStructures %s", err)
 		return names, defaultName, pipelineMap, err
 	}
 	// TODO: Remove this eventually - it's only here for structures created before we started applying labels to them in v2.0.216.
 	if len(prList.Items) > len(structures.Items) && len(labelSelectors) != 0 {
 		structures, err = jxClient.JenkinsV1().PipelineStructures(ns).List(metav1.ListOptions{})
-		if err != nil {
+		if err != nil && !apierrors.IsNotFound(err) {
 			log.Logger().Warnf("Failed to query PipelineStructures %s", err)
 			return names, defaultName, pipelineMap, err
 		}
