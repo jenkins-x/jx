@@ -97,6 +97,8 @@ func (o *StepBootVaultOptions) Run() error {
 		requirements.Vault.Name = kubevault.SystemVaultNameForCluster(requirements.Cluster.ClusterName)
 	}
 
+	log.Logger().Debugf("Using vault name '%s'", requirements.Vault.Name)
+
 	noExposeVault, err := o.verifyVaultIngress(requirements, kubeClient, ns, requirements.Vault.Name)
 	if err != nil {
 		return err
@@ -126,6 +128,7 @@ func (o *StepBootVaultOptions) Run() error {
 		BucketName:          requirements.Vault.Bucket,
 		KeyringName:         requirements.Vault.Keyring,
 		ServiceAccountName:  requirements.Vault.ServiceAccount,
+		ClusterName:         requirements.Cluster.ClusterName,
 		// TODO - load from a local yaml file if available?
 		// AWSConfig:           o.AWSConfig,
 	}
