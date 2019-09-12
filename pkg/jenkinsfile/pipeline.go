@@ -930,7 +930,11 @@ func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (
 	}
 
 	// lets generate the pipeline using the build packs
-	container := c.Agent.GetImage()
+	container := ""
+	if c.Agent != nil {
+		container = c.Agent.GetImage()
+
+	}
 	if args.CustomImage != "" {
 		container = args.CustomImage
 	}
