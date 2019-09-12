@@ -160,7 +160,7 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 		return errors.Wrapf(err, "failed to list PipelineRuns in namespace %s", ns)
 	}
 
-	names := []string{}
+	allNames := []string{}
 	m := map[string]*pipelineapi.PipelineRun{}
 	for _, p := range prList.Items {
 		pr := p
@@ -189,16 +189,16 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 
 			name := fmt.Sprintf("%s/%s/%s", owner, repo, branch)
 			if context != "" {
-				name += fmt.Sprintf("%s/%s", name, context)
+				name = fmt.Sprintf("%s-%s", name, context)
 			}
-			names = append(names, name)
+			allNames = append(allNames, name)
 			m[name] = &pr
 		}
 	}
-	sort.Strings(names)
-	filteredNames := util.StringsContaining(names, o.Filter)
-	if len(filteredNames) == 0 {
-		log.Logger().Warnf("no PipelineRuns are still running which match the filter %s from all possible names %s", o.Filter, strings.Join(names, ", "))
+	sort.Strings(allNames)
+	names := util.StringsContaining(allNames, o.Filter)
+	if len(names) == 0 {
+		log.Logger().Warnf("no PipelineRuns are still running which match the filter %s from all possible names %s", o.Filter, strings.Join(allNames, ", "))
 		return nil
 	}
 
