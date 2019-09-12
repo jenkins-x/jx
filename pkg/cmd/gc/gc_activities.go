@@ -7,9 +7,9 @@ import (
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
 	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -32,6 +32,7 @@ type GCActivitiesOptions struct {
 	ReleaseAgeLimit         time.Duration
 	PullRequestAgeLimit     time.Duration
 	PipelineRunAgeLimit     time.Duration
+	MetapipelineAgeLimit    time.Duration
 	jclient                 gojenkins.JenkinsClient
 }
 
@@ -102,6 +103,7 @@ func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().DurationVarP(&options.PullRequestAgeLimit, "pull-request-age", "p", time.Hour*48, "Maximum age to keep PipelineActivities for Pull Requests")
 	cmd.Flags().DurationVarP(&options.ReleaseAgeLimit, "release-age", "r", time.Hour*24*30, "Maximum age to keep PipelineActivities for Releases")
 	cmd.Flags().DurationVarP(&options.PipelineRunAgeLimit, "pipelinerun-age", "", time.Hour*2, "Maximum age to keep completed PipelineRuns for all pipelines")
+	cmd.Flags().DurationVarP(&options.MetapipelineAgeLimit, "metapipeline-age", "", time.Minute*10, "Maximum age to keep completed metapipelines for all pipelines")
 	return cmd
 }
 
@@ -243,8 +245,7 @@ func (o *GCActivitiesOptions) gcPipelineRuns(ns string) error {
 	now := time.Now()
 
 	for _, pr := range runList.Items {
-		completionTime := pr.Status.CompletionTime
-		if completionTime != nil && completionTime.Add(o.PipelineRunAgeLimit).Before(now) {
+		if o.shouldDeletePipelineRun(&pr, now) {
 			err = o.deletePipelineRun(pipelineRunInterface, &pr)
 			if err != nil {
 				return err
@@ -253,6 +254,27 @@ func (o *GCActivitiesOptions) gcPipelineRuns(ns string) error {
 		}
 	}
 	return nil
+}
+
+func (o *GCActivitiesOptions) shouldDeletePipelineRun(pr *tektonv1alpha1.PipelineRun, now time.Time) bool {
+	completionTime := pr.Status.CompletionTime
+	if completionTime != nil {
+		isMetapipeline := false
+		if len(pr.Status.TaskRuns) > 0 {
+			for _, tr := range pr.Status.TaskRuns {
+				if tr.PipelineTaskName == metapipeline.MetaPipelineStageName {
+					isMetapipeline = true
+				}
+			}
+		}
+		if isMetapipeline && completionTime.Add(o.MetapipelineAgeLimit).Before(now) {
+			return true
+		} else if completionTime.Add(o.PipelineRunAgeLimit).Before(now) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tektonclient.PipelineRunInterface, pr *tektonv1alpha1.PipelineRun) error {
