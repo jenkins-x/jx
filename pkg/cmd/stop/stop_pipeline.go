@@ -2,14 +2,21 @@ package stop
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/get"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/get"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -71,6 +78,24 @@ func NewCmdStopPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StopPipelineOptions) Run() error {
+	devEnv, _, err := o.DevEnvAndTeamSettings()
+	if err != nil {
+		return err
+	}
+
+	isProw := devEnv.Spec.IsProwOrLighthouse()
+	if o.JenkinsSelector.IsCustom() {
+		isProw = false
+	}
+
+	if isProw {
+		return o.cancelPipelineRun()
+	}
+	return o.StopJenkinsJob()
+}
+
+func (o *StopPipelineOptions) StopJenkinsJob() error {
+
 	jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.Filter)
 	if err != nil {
 		return err
@@ -124,4 +149,82 @@ func (o *StopPipelineOptions) stopJob(name string, allNames []string) error {
 		}
 	}
 	return jenkinsClient.StopBuild(job, build)
+}
+
+func (o *StopPipelineOptions) cancelPipelineRun() error {
+	tektonClient, ns, err := o.TektonClient()
+	if err != nil {
+		return errors.Wrap(err, "could not create tekton client")
+	}
+	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to list PipelineRuns in namespace %s", ns)
+	}
+
+	names := []string{}
+	m := map[string]*pipelineapi.PipelineRun{}
+	for _, p := range prList.Items {
+		pr := p
+		if !tekton.PipelineRunIsComplete(&pr) {
+			labels := pr.Labels
+			if labels == nil {
+				continue
+			}
+			owner := labels[tekton.LabelOwner]
+			repo := labels[tekton.LabelRepo]
+			branch := labels[tekton.LabelBranch]
+			context := labels[tekton.LabelContext]
+
+			if owner == "" {
+				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelOwner, pr.Name, labels)
+				continue
+			}
+			if repo == "" {
+				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelRepo, pr.Name, labels)
+				continue
+			}
+			if branch == "" {
+				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelBranch, pr.Name, labels)
+				continue
+			}
+
+			name := fmt.Sprintf("%s/%s/%s", owner, repo, branch)
+			if context != "" {
+				name += fmt.Sprintf("%s/%s", name, context)
+			}
+			names = append(names, name)
+			m[name] = &pr
+		}
+	}
+	sort.Strings(names)
+	filteredNames := util.StringsContaining(names, o.Filter)
+	if len(filteredNames) == 0 {
+		log.Logger().Warnf("no PipelineRuns are still running which match the filter %s from all possible names %s", o.Filter, strings.Join(names, ", "))
+		return nil
+	}
+
+	args := o.Args
+	if len(args) == 0 {
+		name, err := util.PickName(names, "Which pipeline do you want to stop: ", "select a pipeline to cancel", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
+
+		if !util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.In, o.Out, o.Err) {
+			return nil
+		}
+		args = []string{name}
+	}
+	for _, a := range args {
+		pr := m[a]
+		if pr == nil {
+			return fmt.Errorf("no PipelineRun found for name %s", a)
+		}
+		err = tekton.CancelPipelineRun(tektonClient, ns, pr)
+		if err != nil {
+			return errors.Wrapf(err, "failed to cancel pipeline %s in namespace %s", pr.Name, ns)
+		}
+		log.Logger().Infof("cancelled PipelineRun %s", util.ColorInfo(pr.Name))
+	}
+	return nil
 }
