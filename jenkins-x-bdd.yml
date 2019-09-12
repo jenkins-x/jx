@@ -32,7 +32,7 @@ pipelineConfig:
               - name: PARALLEL_BUILDS
                 value: "2"
               - name: GOOGLE_APPLICATION_CREDENTIALS
-                value: /builder/home/kaniko-secret.json
+                value: /secrets/kaniko/kaniko-secret.json
             options:
               volumes:
                 - name: kaniko-secret
@@ -40,11 +40,11 @@ pipelineConfig:
                     secretName: kaniko-secret
                     items:
                       - key: kaniko-secret
-                        path: kaniko-secret.json
+                        path: kaniko/kaniko-secret.json
               containerOptions:
                 volumeMounts:
                   - name: kaniko-secret
-                    mountPath: /builder/home
+                    mountPath: /secrets
             steps:
               - name: build-binary
                 image: docker.io/golang:1.11.5
