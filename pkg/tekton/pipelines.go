@@ -439,3 +439,21 @@ func PipelineRunIsNotPending(pr *pipelineapi.PipelineRun) bool {
 	}
 	return false
 }
+
+// PipelineRunIsComplete returns true if the PipelineRun has completed or has running steps.
+func PipelineRunIsComplete(pr *pipelineapi.PipelineRun) bool {
+	if pr.Status.CompletionTime != nil {
+		return true
+	}
+	return false
+}
+
+// CancelPipelineRun cancels a Pipeline
+func CancelPipelineRun(tektonClient tektonclient.Interface, ns string, pr *pipelineapi.PipelineRun) error {
+	pr.Spec.Status = pipelineapi.PipelineRunSpecStatusCancelled
+	_, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Update(pr)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update PipelineRun %s in namespace %s to mark it as cancelled", pr.Name, ns)
+	}
+	return nil
+}
