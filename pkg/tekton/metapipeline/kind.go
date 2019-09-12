@@ -1,5 +1,7 @@
 package metapipeline
 
+import "strings"
+
 const (
 	// ReleasePipeline indicates a release pipeline build.
 	ReleasePipeline PipelineKind = iota
@@ -24,6 +26,20 @@ func (p PipelineKind) String() string {
 	case FeaturePipeline:
 		return "feature"
 	default:
-		return "unknown pipeline type"
+		return "unknown"
+	}
+}
+
+// StringToPipelineKind converts text to a PipelineKind
+func StringToPipelineKind(text string) PipelineKind {
+	switch strings.ToLower(text) {
+	case "release":
+		return ReleasePipeline
+	case "pullrequest":
+		return PullRequestPipeline
+	case "feature":
+		return FeaturePipeline
+	default:
+		return ReleasePipeline
 	}
 }
