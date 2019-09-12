@@ -1,8 +1,6 @@
 CHART_REPO := http://jenkins-x-chartmuseum:8080
 NAME := jx
 OS := $(shell uname)
-CHARTMUSEUM_CREDS_USR := $(shell cat /builder/home/basic-auth-user 2> /dev/null)
-CHARTMUSEUM_CREDS_PSW := $(shell cat /builder/home/basic-auth-pass 2> /dev/null)
 
 setup:
 	helm repo add jenkins-x https://storage.googleapis.com/chartmuseum.jenkins-x.io
@@ -37,5 +35,5 @@ else ifeq ($(OS),Linux)
 endif
 
 	helm package charts/jx
-	curl --fail -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-$(VERSION).tgz" $(CHART_REPO)/api/charts
+	curl --fail -u $(CHARTMUSEUM_USRER):$(CHARTMUSEUM_PASS) --data-binary "@$(NAME)-$(VERSION).tgz" $(CHART_REPO)/api/charts
 	rm -rf ${NAME}*.tgz
