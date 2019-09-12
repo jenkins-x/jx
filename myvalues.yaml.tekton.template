@@ -37,3 +37,13 @@ controllerbuild:
   image:
     repository: gcr.io/jenkinsxio/builder-go
     tag: $VERSION
+
+gcpods:
+  cronjob:
+    enabled: true
+    schedule: "*/2 * * * *"
+  args:
+    - "gc"
+    - "pods"
+    - "--batch-mode"
+    - "--age=1m"
