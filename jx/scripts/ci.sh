@@ -5,15 +5,11 @@ echo "verifying Pull Request"
 export ORG="jenkinsxio"
 export APP_NAME="jx"
 export TEAM="$(echo ${BRANCH_NAME}-$BUILD_ID  | tr '[:upper:]' '[:lower:]')"
-
-export GHE_CREDS_PSW="$(jx step credential -s jx-pipeline-git-github-ghe | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
-export JENKINS_CREDS_PSW="$(jx step credential -s  test-jenkins-user | sed -e 's/PASS//' -e 's/coverage: [0-9\.]*% of statements in [\w\.\/]*//' | tr -d [:space:])"
-
 export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 
 # for BDD tests
 export GIT_PROVIDER_URL="https://github.beescloud.com"
-export GHE_TOKEN="$GHE_CREDS_PSW"
+export GHE_TOKEN="$GH_ACCESS_TOKEN"
 export GINKGO_ARGS="-v"
 
 export JX_DISABLE_DELETE_APP="true"
@@ -53,7 +49,7 @@ git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
 # lets trigger the BDD tests in a new team and git provider
-jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-create-spring
+jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GH_ACCESS_TOKEN --default-admin-password $JENKINS_PASSWORD --no-delete-app --no-delete-repo --tests install --tests test-create-spring
 
 # Reset the namespace back to jx after test for any followup steps
 COVER_JX_BINARY=false jx ns jx
