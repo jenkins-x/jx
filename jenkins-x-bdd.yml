@@ -109,7 +109,7 @@ pipelineConfig:
               - name: GH_ACCESS_TOKEN 
                 valueFrom:
                   secretKeyRef:
-                    name: jenkins-x-bot-test-github
+                    name: jx-pipeline-git-github-ghe
                     key: password
               - name: JENKINS_PASSWORD
                 valueFrom:
