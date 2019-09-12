@@ -1,4 +1,4 @@
-package cmd
+package bdd
 
 import (
 	"fmt"
@@ -26,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/bdd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -172,7 +171,7 @@ func (o *StepBDDOptions) Run() error {
 		return o.runOnCurrentCluster()
 	}
 
-	config, err := bdd.LoadBddClusters(fileName)
+	config, err := LoadBddClusters(fileName)
 	if err != nil {
 		return err
 	}
@@ -551,7 +550,7 @@ func (o *StepBDDOptions) copyReports(testDir string, err error) error {
 	return err
 }
 
-func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
+func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	log.Logger().Infof("has %d post create cluster commands\n", len(cluster.Commands))
 	for _, cmd := range cluster.Commands {
 		log.Logger().Infof("post create command: %s\n", util.ColorInfo(cmd.Command+" "+strings.Join(cmd.Args, " ")))
@@ -791,7 +790,7 @@ func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.Req
 	requirements.Environments[idx] = repo
 }
 
-func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {
+func (o *StepBDDOptions) deleteCluster(cluster *CreateCluster) error {
 	projectID := ""
 	region := ""
 	for _, arg := range cluster.Args {
