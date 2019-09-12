@@ -25,7 +25,17 @@ pipelineConfig:
               - name: GOOGLE_APPLICATION_CREDENTIALS
                 value: /builder/home/kaniko-secret.json
             options:
+              volumes:
+                - name: kaniko-secret
+                  secret:
+                    secretName: kaniko-secret
+                    items:
+                      - key: kaniko-secret
+                        path: kaniko-secret.json
               containerOptions:
+                volumeMounts:
+                  - name: kaniko-secret
+                    mountPath: /builder/home
                 resources:
                   limits:
                     cpu: 4
@@ -33,20 +43,7 @@ pipelineConfig:
                   requests:
                     cpu: 3
                     memory: 3072Mi
-
             steps:
-              - image: gcr.io/jenkinsxio/builder-jx:0.1.639
-                command: jx
-                args:
-                  - step
-                  - credential
-                  - -s
-                  - kaniko-secret
-                  - -k
-                  - kaniko-secret
-                  - -f
-                  - /builder/home/kaniko-secret.json
-
               - name: build-binary
                 image: docker.io/golang:1.11.5
                 command: make
