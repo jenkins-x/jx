@@ -214,6 +214,7 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 	if err != nil {
 		return errors.Wrapf(err, "failed to get PipelineRun names for activity %s in namespace %s", pa.Name, pa.Namespace)
 	}
+	log.Logger().Warnf("pr names: %s", pipelineRunNames)
 	pipelineRunsLogged := make(map[string]bool)
 	foundLogs := false
 
@@ -231,11 +232,12 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 
 				// Repeat until we've seen pods for all stages
 				for len(allStages) > len(stagesSeen) {
+					log.Logger().Warnf("getting pr pods for %s", prName)
 					pods, err := builds.GetPipelineRunPods(t.KubeClient, pa.Namespace, prName)
 					if err != nil {
 						return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", prName, pa.Namespace)
 					}
-
+					log.Logger().Warnf("got %d pr pods", len(pods))
 					sort.Slice(pods, func(i, j int) bool {
 						return pods[i].CreationTimestamp.Before(&pods[j].CreationTimestamp)
 					})
@@ -248,10 +250,12 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 							stagesSeen[stageName] = true
 							pipelineRunsLogged[prName] = true
 							foundLogs = true
+							log.Logger().Warnf("getting container logs for pod %s", pod.Name)
 							err := t.getContainerLogsFromPod(pod, pa, buildName, stageName)
 							if err != nil {
 								return errors.Wrapf(err, "failed to obtain the logs for build %s and stage %s", buildName, stageName)
 							}
+							log.Logger().Warnf("got container logs for pod %s", pod.Name)
 						}
 					}
 					if !foundLogs {
@@ -283,6 +287,7 @@ func (t *TektonLogger) getContainerLogsFromPod(pod *corev1.Pod, pa *v1.PipelineA
 	containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
 	t.initializeLoggingRoutine()
 	for i, ic := range containers {
+		log.Logger().Warnf("waiting for container %s to start", ic.Name)
 		pod, err := t.waitForContainerToStart(pa.Namespace, pod, i, stageName)
 		err = t.LogWriter.WriteLog(LogLine{
 			Line: fmt.Sprintf("\nShowing logs for build %v stage %s and container %s",
@@ -291,10 +296,12 @@ func (t *TektonLogger) getContainerLogsFromPod(pod *corev1.Pod, pa *v1.PipelineA
 		if err != nil {
 			return errors.Wrapf(err, "there was a problem writing a single line into the logs writer")
 		}
+		log.Logger().Warnf("fetching logs to channel for %s", ic.Name)
 		err = t.fetchLogsToChannel(pa.Namespace, pod, &ic)
 		if err != nil {
 			return errors.Wrap(err, "couldn't fetch logs into the logs channel")
 		}
+		log.Logger().Warnf("got those logs")
 		if hasStepFailed(pod, i, t.KubeClient, pa.Namespace) {
 			err = t.LogWriter.WriteLog(LogLine{
 				Line: errorColor.Sprintf("\nPipeline failed on stage '%s' : container '%s'. The execution of the pipeline has stopped.", stageName, ic.Name),
@@ -336,6 +343,7 @@ func (t *TektonLogger) fetchLogsToChannel(ns string, pod *corev1.Pod, container 
 	if err != nil {
 		return err
 	}
+	log.Logger().Warn("finished with streaming logs")
 	return nil
 }
 
@@ -344,6 +352,7 @@ func writeStreamLines(reader io.Reader, logCh chan<- LogLine) error {
 	if buffReader == nil {
 		return errors.New("there was a problem obtaining a buffered reader")
 	}
+	log.Logger().Warn("starting to read from reader")
 	for {
 		line, _, err := buffReader.ReadLine()
 		if err != nil {
@@ -474,6 +483,7 @@ func (t TektonLogger) retrieveLogsFromPod(pod *corev1.Pod, container *corev1.Con
 		Container: container.Name,
 		Follow:    true,
 	}
+	log.Logger().Warnf("retrieving logs from %s", container.Name)
 	bytesLimit := t.LogWriter.BytesLimit()
 	if bytesLimit > 0 {
 		a := int64(bytesLimit)
@@ -485,6 +495,7 @@ func (t TektonLogger) retrieveLogsFromPod(pod *corev1.Pod, container *corev1.Con
 		return nil, nil, errors.Wrapf(err, "there was an error creating the logs stream for pod %s", pod.Name)
 	}
 	reader := bufio.NewReader(stream)
+	log.Logger().Warnf("got reader for logs from pod %s and container %s", pod.Name, container.Name)
 	return reader, func() {
 		if stream != nil {
 			stream.Close()

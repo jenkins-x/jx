@@ -718,6 +718,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 				spec.CompletedTimestamp = &biggestFinishedAt
 			}
 
+			log.Logger().Warnf("POD NAME: %s", pod.Name)
 			// log that the build completed
 			logJobCompletedState(activity, pri)
 
@@ -746,11 +747,12 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 				if err != nil {
 					log.Logger().Warnf("Failed to create LogMasker in namespace %s: %s", ns, err.Error())
 				}
-
+				log.Logger().Warn("entering generate build log url")
 				logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials, masker)
 				if err != nil {
 					log.Logger().Warnf("%s", err)
 				}
+				log.Logger().Warn("past generate build log url")
 				if logURL != "" {
 					spec.BuildLogsURL = logURL
 				}
@@ -1046,11 +1048,12 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		LogWriter:    logWriter,
 	}
 
+	log.Logger().Warn("about to get running build logs")
 	err = tektonLogger.GetRunningBuildLogs(activity, buildName)
 	if err != nil {
 		return "", errors.Wrapf(err, "there was a problem getting logs for build %s", buildName)
 	}
-
+	log.Logger().Warn("past get running build logs")
 	if initGitCredentials {
 		gc := &git.StepGitCredentialsOptions{}
 		copy := *o.CommonOptions
