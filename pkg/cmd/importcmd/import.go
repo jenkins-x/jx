@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/maven"
 
 	"github.com/cenkalti/backoff"
-	gitignore "github.com/denormal/go-gitignore"
+	"github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -32,7 +32,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -57,6 +57,7 @@ type ImportOptions struct {
 	SelectAll               bool
 	DisableDraft            bool
 	DisableJenkinsfileCheck bool
+	DisableWebhooks         bool
 	SelectFilter            string
 	Jenkinsfile             string
 	BranchPattern           string
@@ -919,10 +920,12 @@ func (options *ImportOptions) doImport() error {
 		return err
 	}
 	if isProw {
-		// register the webhook
-		err = options.CreateWebhookProw(gitURL, gitProvider)
-		if err != nil {
-			return err
+		if !options.DisableWebhooks {
+			// register the webhook
+			err = options.CreateWebhookProw(gitURL, gitProvider)
+			if err != nil {
+				return err
+			}
 		}
 		return options.addProwConfig(gitURL, gitProvider.Kind())
 	}
