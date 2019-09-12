@@ -34,7 +34,6 @@ GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
-GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
 CGO_ENABLED = 0
 
 REPORTS_DIR=$(BUILD_TARGET)/reports

@@ -49,14 +49,13 @@ pipelineConfig:
                   secretKeyRef:
                     name: jenkins-x-chartmuseum
                     key: BASIC_AUTH_PASS
+              - name: GITHUB_ACCESS_TOKEN 
+                valueFrom:
+                  secretKeyRef:
+                    name: knative-git-user-pass
+                    key: password
             options:
               volumes:
-                - name: git-token
-                  secret:
-                    secretName: knative-git-user-pass
-                    items:
-                      - key: password
-                        path: git-token
                 - name: kaniko-secret
                   secret:
                     secretName: kaniko-secret
@@ -65,8 +64,6 @@ pipelineConfig:
                         path: kaniko/kaniko-secret.json
               containerOptions:
                 volumeMounts:
-                  - name: git-token
-                    mountPath: /builder/home
                   - name: kaniko-secret
                     mountPath: /secrets
                 resources:
