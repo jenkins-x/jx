@@ -91,11 +91,10 @@ func (o *StopPipelineOptions) Run() error {
 	if isProw {
 		return o.cancelPipelineRun()
 	}
-	return o.StopJenkinsJob()
+	return o.stopJenkinsJob()
 }
 
-func (o *StopPipelineOptions) StopJenkinsJob() error {
-
+func (o *StopPipelineOptions) stopJenkinsJob() error {
 	jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.Filter)
 	if err != nil {
 		return err
