@@ -174,7 +174,7 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 	// TLS uses cert-manager to ask LetsEncrypt for a signed certificate
 	if requirements.Ingress.TLS.Enabled {
 		if requirements.Cluster.Provider != cloud.GKE {
-			log.Logger().Warnf("Note that we have only tested TLS support on Google Container Engine with external-dn so far. This may not work!")
+			log.Logger().Warnf("Note that we have only tested TLS support on Google Container Engine with external-dns so far. This may not work!")
 		}
 
 		if requirements.Ingress.IsAutoDNSDomain() {
