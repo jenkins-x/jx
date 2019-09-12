@@ -27,7 +27,7 @@ type BootUpgradeOptions struct {
 
 var (
 	bootUpgradeLong = templates.LongDesc(`
-		This command creates a pr for upgrading a jx boot gitOps cluster, incorporating changes to boot
+		This command creates a pr for upgrading a jx boot gitOps cluster, incorporating changes to the boot
         config and version stream ref
 `)
 
@@ -43,8 +43,8 @@ func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
-		Use:     "boot upgrade",
-		Aliases: []string{"bu"},
+		Use:     "upgrade",
+		Aliases: []string{"up"},
 		Short:   "Upgrades jx boot config",
 		Long:    bootUpgradeLong,
 		Example: bootUpgradeExample,
@@ -61,6 +61,11 @@ func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run runs this command
 func (o *BootUpgradeOptions) Run() error {
+	err := o.setupGitConfig(o.Dir)
+	if err != nil {
+		return errors.Wrap(err, "failed to setup git config")
+	}
+
 	if o.Dir == "" {
 		err := o.cloneDevEnv()
 		if err != nil {
@@ -86,7 +91,11 @@ func (o *BootUpgradeOptions) Run() error {
 		return errors.Wrap(err, "failed to checkout upgrade_branch")
 	}
 
-	bootConfigURL := determineBootConfigURL(reqsVersionStream.URL)
+	bootConfigURL, err := determineBootConfigURL(reqsVersionStream.URL)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine boot configuration URL")
+	}
+
 	err = o.updateBootConfig(reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL, upgradeVersionSha)
 	if err != nil {
 		return errors.Wrap(err, "failed to update boot configuration")
@@ -109,12 +118,20 @@ func (o *BootUpgradeOptions) Run() error {
 	return nil
 }
 
-func determineBootConfigURL(versionStreamURL string) string {
-	bootConfigURL := config.DefaultBootRepository
+func determineBootConfigURL(versionStreamURL string) (string, error) {
+	var bootConfigURL string
+	if versionStreamURL == config.DefaultVersionsURL {
+		bootConfigURL = config.DefaultBootRepository
+	}
 	if versionStreamURL == config.DefaultCloudBeesVersionsURL {
 		bootConfigURL = config.DefaultCloudBeesBootRepository
 	}
-	return bootConfigURL
+
+	if bootConfigURL == "" {
+		return "", fmt.Errorf("unable to determine default boot config URL")
+	}
+	log.Logger().Infof("using default boot config %s", bootConfigURL)
+	return bootConfigURL, nil
 }
 
 func (o *BootUpgradeOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
@@ -144,10 +161,10 @@ func (o *BootUpgradeOptions) upgradeAvailable(versionStreamURL string, versionSt
 	}
 
 	if versionStreamRef == upgradeVersionSha {
-		log.Logger().Infof("No upgrade available")
+		log.Logger().Infof(util.ColorInfo("No upgrade available"))
 		return "", nil
 	}
-	log.Logger().Infof("upgrade available!!!!")
+	log.Logger().Infof(util.ColorInfo("Upgrade available"))
 	return upgradeVersionSha, nil
 }
 
@@ -212,11 +229,16 @@ func (o *BootUpgradeOptions) updateBootConfig(versionStreamURL string, versionSt
 
 	// check if boot config upgrade available
 	if upgradeSha == currentSha {
-		log.Logger().Infof("No boot config upgrade available")
+		log.Logger().Infof(util.ColorInfo("No boot config upgrade available"))
 		return nil
 	}
-	log.Logger().Infof("boot config upgrade available!!!!")
+	log.Logger().Infof(util.ColorInfo("boot config upgrade available"))
 	log.Logger().Infof("Upgrading from v%s to v%s", currentVersion, upgradeVersion)
+
+	err = o.Git().FetchBranch(o.Dir, bootConfigURL, "master")
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch master of %s", bootConfigURL)
+	}
 
 	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha)
 	if err != nil {
@@ -284,6 +306,26 @@ func (o *BootUpgradeOptions) cherryPickCommits(cloneDir, fromSha, toSha string) 
 	return nil
 }
 
+func (o *BootUpgradeOptions) setupGitConfig(dir string) error {
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get dev environment in namespace %s", devNs)
+	}
+	username := devEnv.Spec.TeamSettings.PipelineUsername
+	email := devEnv.Spec.TeamSettings.PipelineUserEmail
+
+	err = o.Git().SetUsername(dir, username)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set username %s", username)
+	}
+	err = o.Git().SetEmail(dir, email)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set email for %s", email)
+	}
+	return nil
+}
+
 func (o *BootUpgradeOptions) excludeFiles(commit string) error {
 	excludedFiles := []string{"OWNERS"}
 	err := o.Git().CheckoutCommitFiles(o.Dir, commit, excludedFiles)
@@ -314,7 +356,7 @@ func (o *BootUpgradeOptions) raisePR() error {
 	}
 
 	details := gits.PullRequestDetails{
-		BranchName: fmt.Sprintf("jx_boot_upgrade_branch"),
+		BranchName: fmt.Sprintf("jx_boot_upgrade"),
 		Title:      "feat(config): upgrade configuration",
 		Message:    "Upgrade configuration",
 	}
@@ -376,8 +418,6 @@ func (o *BootUpgradeOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitP
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get git kind")
 	}
-
-	log.Logger().Infof("gitKind %s", gitKind)
 
 	provider, err := gitInfo.CreateProviderForUser(server, userAuth, gitKind, o.Git())
 	if err != nil {
