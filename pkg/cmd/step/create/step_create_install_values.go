@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/mail"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -173,18 +172,16 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "unable to enable 'dns' api")
 		}
-	} else {
-		log.Logger().Info("Disabling using external-dns as it currently only works on GKE and not nip.io domains")
-		requirements.Ingress.ExternalDNS = false
 	}
+
 	// TLS uses cert-manager to ask LetsEncrypt for a signed certificate
 	if requirements.Ingress.TLS.Enabled {
 		if requirements.Cluster.Provider != cloud.GKE {
-			return errors.New("TLS is currently only supported on Google Container Engine")
+			log.Logger().Warnf("Note that we have only tested TLS support on Google Container Engine with external-dn so far. This may not work!")
 		}
 
-		if strings.Contains(requirements.Ingress.Domain, "nip.io") {
-			return errors.New("TLS is not supported with nip.io, you will need to use a domain you own")
+		if requirements.Ingress.IsAutoDNSDomain() {
+			return fmt.Errorf("TLS is not supported with automated domains like %s, you will need to use a real domain you own", requirements.Ingress.Domain)
 		}
 		_, err = mail.ParseAddress(requirements.Ingress.TLS.Email)
 		if err != nil {
