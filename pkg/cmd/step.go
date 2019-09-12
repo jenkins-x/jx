@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step/bdd"
 	"github.com/jenkins-x/jx/pkg/cmd/step/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/step/buildpack"
 	"github.com/jenkins-x/jx/pkg/cmd/step/cluster"
@@ -48,7 +49,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd.AddCommand(boot.NewCmdStepBoot(commonOpts))
 	cmd.AddCommand(buildpack.NewCmdStepBuildPack(commonOpts))
-	cmd.AddCommand(NewCmdStepBDD(commonOpts))
+	cmd.AddCommand(bdd.NewCmdStepBDD(commonOpts))
 	cmd.AddCommand(e2e.NewCmdStepE2E(commonOpts))
 	cmd.AddCommand(step.NewCmdStepBlog(commonOpts))
 	cmd.AddCommand(step.NewCmdStepChangelog(commonOpts))
