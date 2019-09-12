@@ -14,8 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/kube/watcher"
 	"github.com/jenkins-x/jx/pkg/logs"
+	"k8s.io/apimachinery/pkg/fields"
 
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -29,15 +29,16 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/cache"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // ControllerBuildOptions are the flags for the commands
@@ -195,47 +196,56 @@ func (o *ControllerBuildOptions) Run() error {
 		return errors.Wrap(err, "failed to label the PipelineActivity resources")
 	}
 
-	var handlers watcher.HandlerFuncs
 	if tektonEnabled {
-		log.Logger().Infof("Watching for tekton Pods in namespace %s", util.ColorInfo(ns))
-		handlers = watcher.HandlerFuncs{
-			AddFunc: func(obj runtime.Object) {
-				o.onPipelinePod(obj, kubeClient, jxClient, tektonClient, ns)
+		pod := &corev1.Pod{}
+		log.Logger().Infof("Watching for Pods in namespace %s", util.ColorInfo(ns))
+		listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
+		kube.SortListWatchByName(listWatch)
+		_, controller := cache.NewInformer(
+			listWatch,
+			pod,
+			time.Minute*10,
+			cache.ResourceEventHandlerFuncs{
+				AddFunc: func(obj interface{}) {
+					o.onPipelinePod(obj, kubeClient, jxClient, tektonClient, ns)
+				},
+				UpdateFunc: func(oldObj, newObj interface{}) {
+					o.onPipelinePod(newObj, kubeClient, jxClient, tektonClient, ns)
+				},
+				DeleteFunc: func(obj interface{}) {
+				},
 			},
-			ModifyFunc: func(obj runtime.Object) {
-				o.onPipelinePod(obj, kubeClient, jxClient, tektonClient, ns)
-			},
-			DeleteFunc: func(obj runtime.Object) {
-			},
-		}
+		)
+
+		stop := make(chan struct{})
+		go controller.Run(stop)
 	} else {
+		pod := &corev1.Pod{}
 		log.Logger().Infof("Watching for Knative build pods in namespace %s", util.ColorInfo(ns))
-		handlers = watcher.HandlerFuncs{
-			AddFunc: func(obj runtime.Object) {
-				o.onPod(obj, kubeClient, jxClient, ns)
+		listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
+		kube.SortListWatchByName(listWatch)
+		_, controller := cache.NewInformer(
+			listWatch,
+			pod,
+			time.Minute*10,
+			cache.ResourceEventHandlerFuncs{
+				AddFunc: func(obj interface{}) {
+					o.onPod(obj, kubeClient, jxClient, ns)
+				},
+				UpdateFunc: func(oldObj, newObj interface{}) {
+					o.onPod(newObj, kubeClient, jxClient, ns)
+				},
+				DeleteFunc: func(obj interface{}) {
+				},
 			},
-			ModifyFunc: func(obj runtime.Object) {
-				o.onPod(obj, kubeClient, jxClient, ns)
-			},
-			DeleteFunc: func(obj runtime.Object) {
-			},
-		}
+		)
+
+		stop := make(chan struct{})
+		go controller.Run(stop)
 	}
 
-	for {
-		watcher := watcher.NewPodWatcher(kubeClient, ns, metav1.ListOptions{}, handlers)
-		ch, err := watcher.CreateChannel("pods")
-		if err != nil {
-			log.Logger().Fatalf("cannot create watch channel %s", err.Error())
-		}
-
-		err = ch.Run()
-		if err != nil {
-			log.Logger().Errorf("channel returned watch error %s - about to retry", err.Error())
-		} else {
-			log.Logger().Warnf("channel closed - about to retry")
-		}
-	}
+	// Wait forever
+	select {}
 }
 
 func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) {
