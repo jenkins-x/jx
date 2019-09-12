@@ -35,10 +35,20 @@ pipelineConfig:
                 value: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms1G -Xmx4G
               - name: PARALLEL_BUILDS
                 value: "2"
-              - name: GOOGLE_APPLICATION_CREDENTIALS
-                value: /secrets/kaniko/kaniko-secret.json
               - name: DISABLE_TEST_CACHING
                 value: "true"
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /secrets/kaniko/kaniko-secret.json
+              - name: CHARTMUSEUM_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: jenkins-x-chartmuseum
+                    key: BASIC_AUTH_USER
+              - name: CHARTMUSEUM_PASS
+                valueFrom:
+                  secretKeyRef:
+                    name: jenkins-x-chartmuseum
+                    key: BASIC_AUTH_PASS
             options:
               volumes:
                 - name: git-token
@@ -47,18 +57,6 @@ pipelineConfig:
                     items:
                       - key: password
                         path: git-token
-                - name: chartmuseum-user
-                  secret:
-                    secretName: jenkins-x-chartmuseum
-                    items:
-                      - key: BASIC_AUTH_USER
-                        path: basic-auth-user
-                - name: chartmuseum-password
-                  secret:
-                    secretName: jenkins-x-chartmuseum
-                    items:
-                      - key: BASIC_AUTH_PASS
-                        path: basic-auth-pass
                 - name: kaniko-secret
                   secret:
                     secretName: kaniko-secret
@@ -68,10 +66,6 @@ pipelineConfig:
               containerOptions:
                 volumeMounts:
                   - name: git-token
-                    mountPath: /builder/home
-                  - name: chartmuseum-user
-                    mountPath: /builder/home
-                  - name: chartmuseum-password
                     mountPath: /builder/home
                   - name: kaniko-secret
                     mountPath: /secrets
