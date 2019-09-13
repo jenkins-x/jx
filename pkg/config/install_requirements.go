@@ -283,8 +283,8 @@ type VeleroConfig struct {
 
 // AutoUpdateConfig contains auto update config
 type AutoUpdateConfig struct {
-	// Suspend autoupdate
-	Suspend bool `json:"suspend"`
+	// Enabled autoupdate
+	Enabled bool `json:"enabled"`
 	// Schedule cron of auto updates
 	Schedule string `json:"schedule"`
 }
@@ -314,7 +314,7 @@ type RequirementsConfig struct {
 	Storage StorageConfig `json:"storage"`
 	// VersionStream contains version stream info
 	VersionStream VersionStreamConfig `json:"versionStream"`
-	// autoUpdate contains auto update config
+	// AutoUpdate contains auto update config
 	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
 	// Vault the configuration for vault
 	Vault VaultConfig `json:"vault,omitempty"`
