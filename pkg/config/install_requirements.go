@@ -210,6 +210,7 @@ type ClusterConfig struct {
 	// ExternalDNSSAName the service account name for external dns
 	ExternalDNSSAName string `json:"externalDNSSAName,omitempty"`
 	// VaultSAName the service account name for vault
+	// Deprecated
 	VaultSAName string `json:"vaultSAName,omitempty"`
 	// KanikoSAName the service account name for kaniko
 	KanikoSAName string `json:"kanikoSAName,omitempty"`
@@ -261,7 +262,7 @@ type VaultConfig struct {
 	Name           string `json:"name,omitempty"`
 	Bucket         string `json:"bucket,omitempty"`
 	Keyring        string `json:"keyring,omitempty"`
-	ServiceAccount string `json:"ServiceAccount,omitempty"`
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 }
 
 // VersionStreamConfig contains version stream config
@@ -553,6 +554,12 @@ func (c *RequirementsConfig) handleDeprecation() {
 		c.Cluster.VaultName = c.Vault.Name
 	} else {
 		c.Vault.Name = c.Cluster.VaultName
+	}
+
+	if c.Vault.ServiceAccount != "" {
+		c.Cluster.VaultSAName = c.Vault.ServiceAccount
+	} else {
+		c.Vault.ServiceAccount = c.Cluster.VaultSAName
 	}
 }
 
