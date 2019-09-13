@@ -248,7 +248,8 @@ func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
 	return images, nil
 }
 
-func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, bucketName string, keyringName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
+func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, bucketName string,
+	keyringName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
 	err := o.GCloud().Login("", true)
 	if err != nil {
 		return errors.Wrap(err, "login into GCP")
@@ -343,13 +344,15 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interface, vaultName string,
 	kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
 
-	if o.AutoCreate == true {
+	if o.AutoCreate {
 		defaultRegion, err := amazon.ResolveRegionWithoutOptions()
 		if err != nil {
 			return errors.Wrap(err, "finding default AWS region")
 		}
 
-		o.ApplyDefaultRegionIfEmpty(&defaultRegion)
+		if err := o.ApplyDefaultRegionIfEmpty(defaultRegion); err != nil {
+			return errors.Wrap(err, "setting the default region")
+		}
 
 		domain := "jenkins-x-domain"
 		username := "vault_" + defaultRegion
@@ -385,7 +388,9 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 			return fmt.Errorf("missing AWS secret access key flag")
 		}
 
-		o.ApplyDefaultRegionIfEmpty(nil)
+		if err := o.ApplyDefaultRegionIfEmpty(""); err != nil {
+			return errors.Wrap(err, "setting the default region")
+		}
 	}
 
 	awsServiceAccountSecretName, err := awsvault.StoreAWSCredentialsIntoSecret(kubeClient, o.AccessKeyID, o.SecretAccessKey, vaultName, o.Namespace)
@@ -456,18 +461,18 @@ func AuthServiceAccountName(vaultName string) string {
 	return fmt.Sprintf("%s-%s", vaultName, "auth-sa")
 }
 
-// ApplyDefaultRegionIfEmpty TODO : Testing in progress, comment to be removed after testing
-func (o *CreateVaultOptions) ApplyDefaultRegionIfEmpty(enforcedDefault *string) error {
+// ApplyDefaultRegionIfEmpty applies the default region to all AWS resources
+func (o *CreateVaultOptions) ApplyDefaultRegionIfEmpty(enforcedDefault string) error {
 	if o.DynamoDBRegion == "" || o.KMSRegion == "" || o.S3Region == "" {
 		var defaultRegion string
 		var err error
-		if enforcedDefault == nil {
+		if enforcedDefault == "" {
 			defaultRegion, err = amazon.ResolveRegionWithoutOptions()
 			if err != nil {
 				return errors.Wrap(err, "finding default AWS region")
 			}
 		} else {
-			defaultRegion = *enforcedDefault
+			defaultRegion = enforcedDefault
 		}
 
 		log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
