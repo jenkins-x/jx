@@ -453,7 +453,7 @@ func (t *TeamSettings) UnmarshalJSON(data []byte) error {
 	}
 
 	if gitPrivateSet {
-		log.Logger().Warn("GitPrivate specified in TeamSettings. GitPrivate is deprecated use GitPublic instead.")
+		log.Logger().Debug("GitPrivate specified in TeamSettings. GitPrivate is deprecated use GitPublic instead.")
 		privateString := string(private)
 		if privateString == "true" {
 			t.GitPublic = false
