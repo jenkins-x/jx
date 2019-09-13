@@ -561,7 +561,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		}
 		log.Logger().Debugf("Helm repository update done.")
 	}
-	cleanup, err := DecorateWithSecrets(&options, secretURLClient)
+	cleanup, err := options.DecorateWithSecrets(secretURLClient)
 	defer cleanup()
 	if err != nil {
 		return errors.WithStack(err)
@@ -596,11 +596,23 @@ type HelmRepoCredential struct {
 
 // DecorateWithSecrets will replace any vault: URIs with the secret from vault. Safe to call with a nil client (
 // no replacement will take place).
-func DecorateWithSecrets(options *InstallChartOptions, secretURLClient secreturl.Client) (func(), error) {
+func (options *InstallChartOptions) DecorateWithSecrets(secretURLClient secreturl.Client) (func(), error) {
+	newValuesFiles, cleanup, err := DecorateWithSecrets(options.ValueFiles, secretURLClient)
+	if err != nil {
+		return cleanup, errors.WithStack(err)
+	}
+	options.ValueFiles = newValuesFiles
+	return cleanup, nil
+}
+
+// DecorateWithSecrets will replace any vault: URIs with the secret from vault. Safe to call with a nil client (
+// no replacement will take place).
+func DecorateWithSecrets(valueFiles []string, secretURLClient secreturl.Client) ([]string, func(), error) {
 	cleanup := func() {
 	}
+	newValuesFiles := make([]string, 0)
 	if secretURLClient != nil {
-		newValuesFiles := make([]string, 0)
+
 		cleanup = func() {
 			for _, f := range newValuesFiles {
 				err := util.DeleteFile(f)
@@ -609,31 +621,30 @@ func DecorateWithSecrets(options *InstallChartOptions, secretURLClient secreturl
 				}
 			}
 		}
-		for _, valueFile := range options.ValueFiles {
+		for _, valueFile := range valueFiles {
 			newValuesFile, err := ioutil.TempFile("", "values.yaml")
 			if err != nil {
-				return cleanup, errors.Wrapf(err, "creating temp file for %s", valueFile)
+				return nil, cleanup, errors.Wrapf(err, "creating temp file for %s", valueFile)
 			}
 			bytes, err := ioutil.ReadFile(valueFile)
 			if err != nil {
-				return cleanup, errors.Wrapf(err, "reading file %s", valueFile)
+				return nil, cleanup, errors.Wrapf(err, "reading file %s", valueFile)
 			}
 			newValues := string(bytes)
 			if secretURLClient != nil {
 				newValues, err = secretURLClient.ReplaceURIs(newValues)
 				if err != nil {
-					return cleanup, errors.Wrapf(err, "replacing vault URIs")
+					return nil, cleanup, errors.Wrapf(err, "replacing vault URIs")
 				}
 			}
 			err = ioutil.WriteFile(newValuesFile.Name(), []byte(newValues), 0600)
 			if err != nil {
-				return cleanup, errors.Wrapf(err, "writing new values file %s", newValuesFile.Name())
+				return nil, cleanup, errors.Wrapf(err, "writing new values file %s", newValuesFile.Name())
 			}
 			newValuesFiles = append(newValuesFiles, newValuesFile.Name())
 		}
-		options.ValueFiles = newValuesFiles
 	}
-	return cleanup, nil
+	return newValuesFiles, cleanup, nil
 }
 
 // LoadParameters loads the 'parameters.yaml' file if it exists in the current directory

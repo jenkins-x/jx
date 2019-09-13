@@ -850,7 +850,7 @@ func (o *CommonOptions) HelmInitDependency(dir string, chartRepos []string) (str
 	return o.Helm().HelmBinary(), nil
 }
 
-// HelmInitDependencyBuild initialises the dependencies an run the build
+// HelmInitDependencyBuild initialises the dependencies and runs the build
 func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos []string, valuesFiles []string) (string, error) {
 	helmBin, err := o.HelmInitDependency(dir, chartRepos)
 	if err != nil {
