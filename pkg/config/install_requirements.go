@@ -53,8 +53,14 @@ const (
 	RequirementEnvGitPublic = "JX_REQUIREMENT_ENV_GIT_PUBLIC"
 	// RequirementExternalDNSServiceAccountName the service account name for external dns
 	RequirementExternalDNSServiceAccountName = "JX_REQUIREMENT_EXTERNALDNS_SA_NAME"
+	// RequirementVaultName the name for vault
+	RequirementVaultName = "JX_REQUIREMENT_VAULT_NAME"
 	// RequirementVaultServiceAccountName the service account name for vault
 	RequirementVaultServiceAccountName = "JX_REQUIREMENT_VAULT_SA_NAME"
+	// RequirementVaultKeyringName the service account name for vault
+	RequirementVaultKeyringName = "JX_REQUIREMENT_VAULT_KEYRING_NAME"
+	// RequirementVaultBucketName the service account name for vault
+	RequirementVaultBucketName = "JX_REQUIREMENT_VAULT_BUCKET_NAME"
 	// RequirementSecretStorageType the secret storage type
 	RequirementSecretStorageType = "JX_REQUIREMENT_SECRET_STORAGE_TYPE"
 	// RequirementKanikoServiceAccountName the service account name for kaniko
