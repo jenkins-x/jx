@@ -57,10 +57,14 @@ const (
 	RequirementVaultName = "JX_REQUIREMENT_VAULT_NAME"
 	// RequirementVaultServiceAccountName the service account name for vault
 	RequirementVaultServiceAccountName = "JX_REQUIREMENT_VAULT_SA_NAME"
-	// RequirementVaultKeyringName the service account name for vault
+	// RequirementVaultKeyringName the keyring name for vault
 	RequirementVaultKeyringName = "JX_REQUIREMENT_VAULT_KEYRING_NAME"
-	// RequirementVaultBucketName the service account name for vault
+	// RequirementVaultKeyName the key name for vault
+	RequirementVaultKeyName = "JX_REQUIREMENT_VAULT_KEY_NAME"
+	// RequirementVaultBucketName the vault name for vault
 	RequirementVaultBucketName = "JX_REQUIREMENT_VAULT_BUCKET_NAME"
+	// RequirementVaultRecreateBucket recreate the bucket that vault uses
+	RequirementVaultRecreateBucket = "JX_REQUIREMENT_VAULT_RECREATE_BUCKET"
 	// RequirementSecretStorageType the secret storage type
 	RequirementSecretStorageType = "JX_REQUIREMENT_SECRET_STORAGE_TYPE"
 	// RequirementKanikoServiceAccountName the service account name for kaniko
@@ -268,7 +272,9 @@ type VaultConfig struct {
 	Name           string `json:"name,omitempty"`
 	Bucket         string `json:"bucket,omitempty"`
 	Keyring        string `json:"keyring,omitempty"`
+	Key            string `json:"key,omitempty"`
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+	RecreateBucket bool   `json:"recreateBucket,omitempty"`
 }
 
 // VersionStreamConfig contains version stream config

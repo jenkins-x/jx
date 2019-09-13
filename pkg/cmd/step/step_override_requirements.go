@@ -90,8 +90,19 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	if "" != os.Getenv(config.RequirementVaultKeyringName) {
 		requirements.Vault.Keyring = os.Getenv(config.RequirementVaultKeyringName)
 	}
+	if "" != os.Getenv(config.RequirementVaultKeyName) {
+		requirements.Vault.Key = os.Getenv(config.RequirementVaultKeyName)
+	}
 	if "" != os.Getenv(config.RequirementVaultBucketName) {
 		requirements.Vault.Bucket = os.Getenv(config.RequirementVaultBucketName)
+	}
+	if "" != os.Getenv(config.RequirementVaultRecreateBucket) {
+		recreate := os.Getenv(config.RequirementVaultRecreateBucket)
+		if recreate == "true" {
+			requirements.Vault.RecreateBucket = true
+		} else {
+			requirements.Vault.RecreateBucket = false
+		}
 	}
 	if "" != os.Getenv(config.RequirementSecretStorageType) {
 		requirements.SecretStorage = config.SecretStorageType(os.Getenv(config.RequirementSecretStorageType))

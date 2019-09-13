@@ -123,13 +123,15 @@ func (o *StepBootVaultOptions) Run() error {
 		},
 
 		Namespace:           ns,
-		RecreateVaultBucket: true,
+		RecreateVaultBucket: requirements.Vault.RecreateBucket,
 		IngressConfig:       ic,
 		NoExposeVault:       noExposeVault,
 		BucketName:          requirements.Vault.Bucket,
 		KeyringName:         requirements.Vault.Keyring,
+		KeyName:             requirements.Vault.Key,
 		ServiceAccountName:  requirements.Vault.ServiceAccount,
 		ClusterName:         requirements.Cluster.ClusterName,
+
 		// TODO - load from a local yaml file if available?
 		// AWSConfig:           o.AWSConfig,
 	}
@@ -196,7 +198,7 @@ func (o *StepBootVaultOptions) Run() error {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
 	}
 
-	log.Logger().Infof("finding vault in namespace %s", ns)
+	log.Logger().Infof("finding vault '%s' in namespace %s", requirements.Vault.Name, ns)
 
 	if kubevault.FindVault(vaultOperatorClient, requirements.Vault.Name, ns) {
 		log.Logger().Infof("System vault named %s in namespace %s already exists",
