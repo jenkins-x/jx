@@ -451,7 +451,7 @@ func (g *GCloud) FindServiceAccount(serviceAccount string, projectID string) boo
 		Name: "gcloud",
 		Args: args,
 	}
-	output, err := cmd.RunWithoutRetry()
+	output, err := cmd.Run()
 	if err != nil {
 		return false
 	}
