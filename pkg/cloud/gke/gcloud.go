@@ -996,6 +996,7 @@ func (g *GCloud) CreateKmsKeyring(keyringName string, projectID string) error {
 	}
 
 	if g.IsKmsKeyringAvailable(keyringName, projectID) {
+		log.Logger().Debugf("keyring '%s' already exists", keyringName)
 		return nil
 	}
 
@@ -1008,6 +1009,8 @@ func (g *GCloud) CreateKmsKeyring(keyringName string, projectID string) error {
 		"--project",
 		projectID,
 	}
+
+	log.Logger().Debugf("creating keyring '%s' project=%s, location=%s", keyringName, projectID, KmsLocation)
 
 	cmd := util.Command{
 		Name: "gcloud",
@@ -1022,6 +1025,7 @@ func (g *GCloud) CreateKmsKeyring(keyringName string, projectID string) error {
 
 // IsKmsKeyringAvailable checks if the KMS keyring is already available
 func (g *GCloud) IsKmsKeyringAvailable(keyringName string, projectID string) bool {
+	log.Logger().Debugf("IsKmsKeyringAvailable keyring=%s, projectId=%s, location=%s", keyringName, projectID, KmsLocation)
 	args := []string{"kms",
 		"keyrings",
 		"describe",
@@ -1046,8 +1050,12 @@ func (g *GCloud) IsKmsKeyringAvailable(keyringName string, projectID string) boo
 // CreateKmsKey creates a new KMS key in the given keyring
 func (g *GCloud) CreateKmsKey(keyName string, keyringName string, projectID string) error {
 	if g.IsKmsKeyAvailable(keyName, keyringName, projectID) {
+		log.Logger().Debugf("key '%s' already exists", keyName)
 		return nil
 	}
+
+	log.Logger().Debugf("creating key '%s' keyring=%s, project=%s, location=%s", keyName, keyringName, projectID, KmsLocation)
+
 	args := []string{"kms",
 		"keys",
 		"create",
@@ -1074,6 +1082,8 @@ func (g *GCloud) CreateKmsKey(keyName string, keyringName string, projectID stri
 
 // IsKmsKeyAvailable checks if the KMS key is already available
 func (g *GCloud) IsKmsKeyAvailable(keyName string, keyringName string, projectID string) bool {
+	log.Logger().Debugf("IsKmsKeyAvailable keyName=%s, keyring=%s, projectId=%s, location=%s", keyName, keyringName, projectID, KmsLocation)
+
 	args := []string{"kms",
 		"keys",
 		"describe",

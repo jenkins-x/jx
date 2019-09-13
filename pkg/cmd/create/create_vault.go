@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
@@ -71,6 +70,7 @@ type CreateVaultOptions struct {
 	NoExposeVault       bool
 	BucketName          string
 	KeyringName         string
+	KeyName             string
 	ServiceAccountName  string
 
 	IngressConfig kube.IngressConfig
@@ -117,6 +117,7 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoExposeVault, "no-expose", "", false, "If enabled disable the exposing of the vault")
 	cmd.Flags().StringVarP(&options.BucketName, "bucket-name", "", "", "Specify the bucket name. If empty then the bucket name will be based on the vault name")
 	cmd.Flags().StringVarP(&options.KeyringName, "keyring-name", "", "", "Specify the KMS Keyring name. If empty then the keyring name will be based on the vault name")
+	cmd.Flags().StringVarP(&options.KeyName, "key-name", "", "", "Specify the KMS Key name. If empty then the key name will be based on the vault & keyring name")
 	cmd.Flags().StringVarP(&options.ServiceAccountName, "service-account-name", "", "", "Specify Service Account name used. If empty then the service account name will be based on the vault name")
 
 	return cmd
@@ -201,21 +202,22 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 			return err
 		}
 	} else {
-		clusterName = naming.ToValidNameTruncated(o.ClusterName, 16)
+		clusterName = o.ClusterName
 	}
 
 	if clusterName == "" {
 		return errors.Wrap(err, "unable to determine the cluster name")
 	}
 
-	log.Logger().Debugf("cluster short name for vault naming: %s", util.ColorInfo(clusterName))
-	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.ServiceAccountName, o.Namespace, clusterName)
+	log.Logger().Debugf("cluster short name for vault naming: '%s'", util.ColorInfo(clusterName))
+
+	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.ServiceAccountName, o.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
-	log.Logger().Debugf("Created service account %s for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
+	log.Logger().Debugf("Created service account '%s' for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
 	if kubeProvider == cloud.GKE {
-		err = o.createVaultGKE(vaultOperatorClient, vaultName, o.BucketName, o.KeyringName, kubeClient, clusterName, vaultAuthServiceAccount)
+		err = o.createVaultGKE(vaultOperatorClient, vaultName, o.BucketName, o.KeyringName, o.KeyName, kubeClient, clusterName, vaultAuthServiceAccount)
 	}
 	if kubeProvider == cloud.AWS || kubeProvider == cloud.EKS {
 		err = o.createVaultAWS(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
@@ -231,7 +233,7 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 	}
 
 	if o.NoExposeVault {
-		log.Logger().Infof("not exposing vault %s exposed", vaultName)
+		log.Logger().Infof("not exposing vault '%s' exposed", vaultName)
 		return nil
 	}
 	log.Logger().Infof("Exposing Vault...")
@@ -239,7 +241,7 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 	if err != nil {
 		return errors.Wrap(err, "exposing vault")
 	}
-	log.Logger().Infof("Vault %s exposed", util.ColorInfo(vaultName))
+	log.Logger().Infof("Vault '%s' exposed", util.ColorInfo(vaultName))
 	return nil
 }
 
@@ -264,7 +266,7 @@ func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
 }
 
 func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, bucketName string,
-	keyringName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
+	keyringName string, keyName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
 	err := o.GCloud().Login("", true)
 	if err != nil {
 		return errors.Wrap(err, "login into GCP")
@@ -320,20 +322,20 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
 	}
-	log.Logger().Debugf("%s service account created", util.ColorInfo(gcpServiceAccountSecretName))
+	log.Logger().Debugf("'%s' service account created", util.ColorInfo(gcpServiceAccountSecretName))
 
 	log.Logger().Debugf("Setting up GCP KMS configuration")
-	kmsConfig, err := gkevault.CreateKmsConfig(o.GCloud(), vaultName, clusterName, keyringName, o.GKEProjectID)
+	kmsConfig, err := gkevault.CreateKmsConfig(o.GCloud(), vaultName, keyringName, keyName, o.GKEProjectID)
 	if err != nil {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
-	log.Logger().Debugf("KMS Key %s created in keying %s", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
+	log.Logger().Debugf("KMS Key '%s' created in keying '%s'", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
 	vaultBucket, err := gkevault.CreateBucket(o.GCloud(), vaultName, bucketName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
-	log.Logger().Infof("GCS bucket %s was created for Vault backend", util.ColorInfo(vaultBucket))
+	log.Logger().Infof("GCS bucket '%s' was created for Vault backend", util.ColorInfo(vaultBucket))
 
 	log.Logger().Infof("Creating Vault...")
 	gcpConfig := &kubevault.GCPConfig{
@@ -352,7 +354,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}
-	log.Logger().Infof("Vault %s created in cluster %s", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
+	log.Logger().Infof("Vault '%s' created in cluster '%s'", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
 	return nil
 }
 
@@ -421,7 +423,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}
-	log.Logger().Infof("Vault %s created in cluster %s", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
+	log.Logger().Infof("Vault '%s' created in cluster '%s'", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
 
 	return nil
 }
@@ -459,7 +461,7 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 }
 
 // CreateAuthServiceAccount creates a Serivce Account for the Auth service for vault
-func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, serviceAccountName string, namespace, clusterName string) (string, error) {
+func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, serviceAccountName string, namespace string) (string, error) {
 	if serviceAccountName == "" {
 		serviceAccountName = AuthServiceAccountName(vaultName)
 	}

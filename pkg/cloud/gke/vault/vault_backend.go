@@ -38,13 +38,13 @@ type KmsConfig struct {
 // If they are generic enough and needed elsewhere, we can move them up one level to more generic GCP methods.
 
 // CreateKmsConfig creates a KMS config for the GKE Vault
-func CreateKmsConfig(gcloud gke.GClouder, vaultName, clusterName, keyringName string, projectID string) (*KmsConfig, error) {
+func CreateKmsConfig(gcloud gke.GClouder, vaultName, keyringName string, keyName string, projectID string) (*KmsConfig, error) {
 	if keyringName == "" {
 		keyringName = gke.KeyringName(vaultName)
 	}
 	config := &KmsConfig{
 		Keyring:  keyringName,
-		Key:      gke.KeyName(vaultName),
+		Key:      keyName,
 		Location: gke.KmsLocation,
 		project:  projectID,
 	}
@@ -54,9 +54,13 @@ func CreateKmsConfig(gcloud gke.GClouder, vaultName, clusterName, keyringName st
 		return nil, errors.Wrapf(err, "creating kms keyring '%s'", config.Keyring)
 	}
 
+	if config.Key == "" {
+		config.Key = gke.KeyName(vaultName)
+	}
+
 	err = gcloud.CreateKmsKey(config.Key, config.Keyring, config.project)
 	if err != nil {
-		return nil, errors.Wrapf(err, "crating the kms key '%s'", config.Key)
+		return nil, errors.Wrapf(err, "creating the kms key '%s'", config.Key)
 	}
 	return config, nil
 }
