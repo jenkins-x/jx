@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -22,7 +23,7 @@ import (
 )
 
 const (
-	kubeHunterImage         = "cosmincojocar/kube-hunter:latest"
+	kubeHunterImage         = "aquasec/kube-hunter"
 	kubeHunterContainerName = "jx-kube-hunter"
 	kubeHunterNamespace     = "jx-kube-hunter"
 	kubeHunterJobName       = "jx-kube-hunter-job"
@@ -152,11 +153,24 @@ func (o *ScanClusterOptions) Run() error {
 func (o *ScanClusterOptions) hunterContainer() *v1.Container {
 	return &v1.Container{
 		Name:            kubeHunterContainerName,
-		Image:           kubeHunterImage,
+		Image:           o.hunterImage(),
 		ImagePullPolicy: v1.PullAlways,
 		Command:         []string{"python", "kube-hunter.py"},
 		Args:            []string{"--pod", "--report=yaml", "--log=none"},
 	}
+}
+
+func (o *ScanClusterOptions) hunterImage() string {
+	defaultImage := kubeHunterImage + ":latest"
+	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
+	if err != nil {
+		return defaultImage
+	}
+	versionedImage, err := resolver.ResolveDockerImage(kubeHunterImage)
+	if err != nil {
+		return defaultImage
+	}
+	return versionedImage
 }
 
 func (o *ScanClusterOptions) createScanJob(name string, namespace string, container *v1.Container) *batchv1.Job {
