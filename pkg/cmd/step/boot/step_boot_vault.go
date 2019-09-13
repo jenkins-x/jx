@@ -121,6 +121,7 @@ func (o *StepBootVaultOptions) Run() error {
 		CreateOptions: create.CreateOptions{
 			CommonOptions: &copyOptions,
 		},
+
 		Namespace:           ns,
 		RecreateVaultBucket: true,
 		IngressConfig:       ic,
@@ -132,6 +133,8 @@ func (o *StepBootVaultOptions) Run() error {
 		// TODO - load from a local yaml file if available?
 		// AWSConfig:           o.AWSConfig,
 	}
+	// first argument is the vault name
+	cvo.Args = []string{requirements.Vault.Name}
 	cvo.SetDevNamespace(ns)
 
 	provider := requirements.Cluster.Provider
