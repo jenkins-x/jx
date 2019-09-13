@@ -117,7 +117,7 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 		}
 	}
 
-	log.Logger().Debug("saving %s", requirementsFileName)
+	log.Logger().Debugf("saving %s", requirementsFileName)
 
 	requirements.SaveConfig(requirementsFileName)
 
