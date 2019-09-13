@@ -205,7 +205,7 @@ func TestReplaceVaultURI(t *testing.T) {
 	pegomock.When(vaultClient.ReplaceURIs(pegomock.EqString(valuesyaml))).ThenReturn(fmt.Sprintf(`foo:
   bar: %s
 `, secret), nil)
-	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
+	cleanup, err := options.DecorateWithSecrets(vaultClient)
 	defer cleanup()
 	assert2.Len(t, options.ValueFiles, 1)
 	newValuesYaml, err := ioutil.ReadFile(options.ValueFiles[0])
@@ -245,7 +245,7 @@ func TestReplaceVaultURIWithLocalFile(t *testing.T) {
 	require.NoError(t, err, "reading vault client on path %s", path)
 	assert2.Equal(t, expected, actual, "vault read at path %s", path)
 
-	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
+	cleanup, err := options.DecorateWithSecrets(vaultClient)
 	defer cleanup()
 	assert2.Len(t, options.ValueFiles, 1)
 	newValuesYaml, err := ioutil.ReadFile(options.ValueFiles[0])

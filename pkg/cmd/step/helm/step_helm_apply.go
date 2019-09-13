@@ -42,7 +42,6 @@ type StepHelmApplyOptions struct {
 	DisableHelmVersion bool
 	Boot               bool
 	Vault              bool
-	UseTempDir         bool
 	NoVault            bool
 	NoMasking          bool
 	ProviderValuesDir  string
@@ -96,7 +95,6 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Boot, "boot", "", false, "In Boot mode we load the Version Stream from the 'jx-requirements.yml' and use that to replace any missing versions in the 'requirements.yaml' file from the Version Stream")
 	cmd.Flags().BoolVarP(&options.NoVault, "no-vault", "", false, "Disables loading secrets from Vault. e.g. if bootstrapping core services like Ingress before we have a Vault")
 	cmd.Flags().BoolVarP(&options.NoMasking, "no-masking", "", false, "The effective 'values.yaml' file is output to the console with parameters masked. Enabling this flag will show the unmasked secrets in the console output")
-	cmd.Flags().BoolVarP(&options.UseTempDir, "use-temp-dir", "", true, "Whether to build and apply the helm chart from a temporary directory - to avoid updating the local values.yaml file from the generated file as part of the apply which could get accidentally checked into git")
 	cmd.Flags().StringVarP(&options.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific override values.tmpl.yaml files a kubernetes provider specific folder")
 
 	return cmd
@@ -181,34 +179,31 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		log.Logger().Warnf("could not find a git repository in the directory %s: %s\n", dir, err.Error())
 	}
-
-	if o.UseTempDir {
-		rootTmpDir, err := ioutil.TempDir("", "jx-helm-apply-")
-		if err != nil {
-			return errors.Wrapf(err, "failed to create a temporary directory to apply the helm chart")
-		}
-		if os.Getenv("JX_NO_DELETE_TMP_DIR") != "true" {
-			defer os.RemoveAll(rootTmpDir)
-		}
-
-		// lets use the same child dir name as the original as helm is quite particular about the name of the directory it runs from
-		_, name := filepath.Split(dir)
-		if name == "" {
-			return fmt.Errorf("could not find the relative name of the directory %s", dir)
-		}
-		tmpDir := filepath.Join(rootTmpDir, name)
-		log.Logger().Infof("Copying the helm source directory %s to a temporary location for building and applying %s\n", info(dir), info(tmpDir))
-
-		err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "failed to helm temporary dir %s", tmpDir)
-		}
-		err = util.CopyDir(dir, tmpDir, true)
-		if err != nil {
-			return errors.Wrapf(err, "failed to copy helm dir %s to temporary dir %s", dir, tmpDir)
-		}
-		dir = tmpDir
+	rootTmpDir, err := ioutil.TempDir("", "jx-helm-apply-")
+	if err != nil {
+		return errors.Wrapf(err, "failed to create a temporary directory to apply the helm chart")
 	}
+	if os.Getenv("JX_NO_DELETE_TMP_DIR") != "true" {
+		defer os.RemoveAll(rootTmpDir)
+	}
+
+	// lets use the same child dir name as the original as helm is quite particular about the name of the directory it runs from
+	_, name := filepath.Split(dir)
+	if name == "" {
+		return fmt.Errorf("could not find the relative name of the directory %s", dir)
+	}
+	tmpDir := filepath.Join(rootTmpDir, name)
+	log.Logger().Infof("Copying the helm source directory %s to a temporary location for building and applying %s\n", info(dir), info(tmpDir))
+
+	err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to helm temporary dir %s", tmpDir)
+	}
+	err = util.CopyDir(dir, tmpDir, true)
+	if err != nil {
+		return errors.Wrapf(err, "failed to copy helm dir %s to temporary dir %s", dir, tmpDir)
+	}
+	dir = tmpDir
 	log.Logger().Infof("Applying helm chart at %s as release name %s to namespace %s", info(dir), info(releaseName), info(ns))
 
 	o.Helm().SetCWD(dir)
@@ -311,6 +306,46 @@ func (o *StepHelmApplyOptions) Run() error {
 	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts(), valueFiles)
 	if err != nil {
 		return err
+	}
+
+	// Now let's unpack all the dependencies and apply the vault URLs
+	dependencies, err := filepath.Glob(filepath.Join(dir, "charts", "*.tgz"))
+	if err != nil {
+		return errors.Wrapf(err, "finding chart dependencies in %s", filepath.Join(dir, "charts"))
+	}
+	for _, src := range dependencies {
+		dest, err := ioutil.TempDir("", "")
+		if err != nil {
+			return errors.Wrapf(err, "creating temp dir")
+		}
+		err = archiver.Unarchive(src, dest)
+		if err != nil {
+			return errors.Wrapf(err, "untarring %s to %s", src, dest)
+		}
+		err = os.Remove(src)
+		if err != nil {
+			return errors.Wrapf(err, "removing %s", src)
+		}
+		filepath.Walk(dest, func(path string, info os.FileInfo, err error) error {
+			if filepath.Base(path) == helm.ValuesFileName {
+
+				newFiles, cleanup, err := helm.DecorateWithSecrets([]string{path}, secretURLClient)
+				defer cleanup()
+				if err != nil {
+					return errors.Wrapf(err, "decorating %s with secrets", path)
+				}
+				err = util.CopyFile(newFiles[0], path)
+				if err != nil {
+					return errors.Wrapf(err, "moving decorated file %s to %s", newFiles[0], path)
+				}
+			}
+			return nil
+		})
+		dirs, err := filepath.Glob(filepath.Join(dest, "*"))
+		if err != nil {
+			return errors.Wrapf(err, "list %s", filepath.Join(dest, "*"))
+		}
+		err = archiver.Archive(dirs, src)
 	}
 
 	err = o.applyAppsTemplateOverrides(chartName)
