@@ -20,7 +20,6 @@ import (
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/knative/pkg/kmp"
 	uuid "github.com/satori/go.uuid"
@@ -485,7 +484,7 @@ func assertTektonCRDs(t *testing.T, testCase testCase, crds *tekton.CRDWrapper, 
 	if d := cmp.Diff(tekton_helpers_test.AssertLoadSinglePipelineStructure(t, caseDir), crds.Structure()); d != "" {
 		t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 	}
-	pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, createTask.Context, &prow.PullRefs{})
+	pa := tekton.GeneratePipelineActivity(createTask.BuildNumber, createTask.Branch, createTask.GitInfo, createTask.Context, &tekton.PullRefs{})
 	expectedActivityKey := &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     fmt.Sprintf("%s-%s-%s-1", testCase.organization, testCase.repoName, testCase.branch),

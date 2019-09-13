@@ -8,7 +8,6 @@ import (
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -43,7 +42,7 @@ func (s PipelineType) String() string {
 }
 
 // GeneratePipelineActivity generates a initial PipelineActivity CRD so UI/get act can get an earlier notification that the jobs have been scheduled
-func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, context string, pr *prow.PullRefs) *kube.PromoteStepActivityKey {
+func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.GitRepository, context string, pr *PullRefs) *kube.PromoteStepActivityKey {
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
