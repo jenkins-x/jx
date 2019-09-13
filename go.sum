@@ -103,8 +103,6 @@ github.com/aws/aws-sdk-go v1.17.10 h1:m8vArG9yPW5YZ27IXcLg1tRkOXZtGrjgzljAo46qWa
 github.com/aws/aws-sdk-go v1.17.10/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1 h1:GDeRTDZbIgIUYKXNCyevPCZBSKpPP4Mi57dHE67VjM4=
 github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1/go.mod h1:HezUyH08DSwwGn3GioVXWZYUhkdvC+oGJ7ya7vBRm7k=
-github.com/awslabs/goformation v1.4.1 h1:jws9kTrcI53Hq2COJAy50uAhgxB5N/Enb9Gmclr/MP4=
-github.com/awslabs/goformation v1.4.1/go.mod h1:HezUyH08DSwwGn3GioVXWZYUhkdvC+oGJ7ya7vBRm7k=
 github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f/go.mod h1:AuiFmCCPBSrqvVMvuqFuk0qogytodnVFVSN5CeJB8Gc=
 github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd h1:68jpTyXEbdY6kHET0g6WacHX+II2jXomOZocpd9reno=
 github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd/go.mod h1:aYnKI0+NwQm7I+L5P3IQNpgBHCDpHSMQyNnHEZ2AMf0=
@@ -569,7 +567,6 @@ github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+v
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
 github.com/petergtz/pegomock v2.2.0+incompatible h1:UjfRYEyjM8X8lNPuZs8FKakZI1pD7FqMRYc6KfLFNJU=
 github.com/petergtz/pegomock v2.2.0+incompatible/go.mod h1:nuBLWZpVyv/fLo56qTwt/AUau7jgouO1h7bEvZCq82o=
-github.com/petergtz/pegomock v2.5.0+incompatible h1:NgwX1/qc+tsl7I45OkDxYZ1mIonYWbOESnpZcd20sR0=
 github.com/pierrec/lz4 v0.0.0-20181005164709-635575b42742/go.mod h1:3/3N9NVKO0jef7pBehbT1qWhCMrIgbYNnFAZCqQ5LRc=
 github.com/pierrec/lz4 v2.0.5+incompatible h1:2xWsjqPFWcplujydGg4WmhC/6fZqK42wMM8aXeqhl0I=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=

@@ -19,11 +19,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/prow"
-
 	"github.com/ghodss/yaml"
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	syntaxstep "github.com/jenkins-x/jx/pkg/cmd/step/syntax"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -1136,14 +1134,14 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string, branc
 }
 
 // parsePullRefs creates a Prow PullRefs struct from the PULL_REFS environment variable, if it id set.
-func (o *StepCreateTaskOptions) parsePullRefs() (*prow.PullRefs, error) {
-	var pr *prow.PullRefs
+func (o *StepCreateTaskOptions) parsePullRefs() (*tekton.PullRefs, error) {
+	var pr *tekton.PullRefs
 	var err error
 
 	for _, envVar := range o.CustomEnvs {
 		parts := strings.Split(envVar, "=")
 		if parts[0] == "PULL_REFS" {
-			pr, err = prow.ParsePullRefs(parts[1])
+			pr, err = tekton.ParsePullRefs(parts[1])
 			if err != nil {
 				return pr, err
 			}
@@ -1154,7 +1152,7 @@ func (o *StepCreateTaskOptions) parsePullRefs() (*prow.PullRefs, error) {
 }
 
 // mergePullRefs merges the pull refs specified into the git repository specified via CloneDir.
-func (o *StepCreateTaskOptions) mergePullRefs(pr *prow.PullRefs, cloneDir string) error {
+func (o *StepCreateTaskOptions) mergePullRefs(pr *tekton.PullRefs, cloneDir string) error {
 	if pr == nil {
 		return nil
 	}

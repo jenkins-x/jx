@@ -2,6 +2,11 @@ package metapipeline
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -10,19 +15,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/jxfactory"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"os"
-	"strings"
-	"time"
 )
 
 const (
@@ -144,7 +144,7 @@ func (c *clientFactory) Create(param PipelineCreateParam) (kube.PromoteStepActiv
 		return kube.PromoteStepActivityKey{}, tekton.CRDWrapper{}, errors.Wrap(err, "failed to generate Tekton CRDs for meta pipeline")
 	}
 
-	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branchIdentifier, gitInfo, param.Context, &prow.PullRefs{})
+	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branchIdentifier, gitInfo, param.Context, &tekton.PullRefs{})
 
 	return *pipelineActivity, *tektonCRDs, nil
 }
