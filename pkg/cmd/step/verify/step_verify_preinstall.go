@@ -531,24 +531,25 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		}
 	}
 
-	if requirements.Cluster.EnvironmentGitOwner == "" {
-		requirements.Cluster.EnvironmentGitOwner, err = util.PickValue(
-			"Git Owner name for environment repositories",
-			"",
-			true,
-			"Jenkins X leverages GitOps to track and control what gets deployed into environments.  This "+
-				"requires a Git repository per environment.  This question is asking for the Git Owner where these"+
-				"repositories will live",
-			o.In, o.Out, o.Err)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting GKE Zone")
-		}
-	}
-
 	requirements.Cluster.Provider = strings.TrimSpace(strings.ToLower(requirements.Cluster.Provider))
 	requirements.Cluster.ProjectID = strings.TrimSpace(requirements.Cluster.ProjectID)
 	requirements.Cluster.Zone = strings.TrimSpace(strings.ToLower(requirements.Cluster.Zone))
 	requirements.Cluster.ClusterName = strings.TrimSpace(strings.ToLower(requirements.Cluster.ClusterName))
+
+	err = o.gatherGitRequirements(requirements)
+	if err != nil {
+		return nil, errors.Wrap(err, "error gathering git requirements")
+	}
+
+	err = requirements.SaveConfig(requirementsFileName)
+	if err != nil {
+		return nil, errors.Wrap(err, "error saving requirements file")
+	}
+
+	return requirements, nil
+}
+
+func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config.RequirementsConfig) error {
 	requirements.Cluster.EnvironmentGitOwner = strings.TrimSpace(strings.ToLower(requirements.Cluster.EnvironmentGitOwner))
 
 	// lets fix up any missing or incorrect git kinds for public git servers
@@ -558,18 +559,48 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		requirements.Cluster.GitKind = "gitlab"
 	}
 
-	err = requirements.SaveConfig(requirementsFileName)
-	if err != nil {
-		return nil, errors.Wrap(err, "error saving requirements file")
+	var err error
+	if requirements.Cluster.EnvironmentGitOwner == "" {
+		requirements.Cluster.EnvironmentGitOwner, err = util.PickValue(
+			"Git Owner name for environment repositories",
+			"",
+			true,
+			"Jenkins X leverages GitOps to track and control what gets deployed into environments.  "+
+				"This requires a Git repository per environment. "+
+				"This question is asking for the Git Owner where these repositories will live.",
+			o.In, o.Out, o.Err)
+		if err != nil {
+			return errors.Wrap(err, "error configuring git owner for env repositories")
+		}
+
+		if requirements.Cluster.EnvironmentGitPublic {
+			log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s jx-requirements.yaml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("false"))
+		} else {
+			err = o.verifyPrivateRepos(requirements)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.RequirementsConfig) error {
+	log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s in jx-requirements.yaml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("true"))
+
+	if o.BatchMode {
+		return nil
 	}
 
-	if requirements.Cluster.EnvironmentGitPublic {
-		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s jx-requirements.yaml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("false"))
-	} else {
-		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s in jx-requirements.yaml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("true"))
+	if requirements.Cluster.GitKind == "github" {
+		message := fmt.Sprintf("If '%s' is an GitHub organisation it needs to have a paid subscription to create private repos. Do you wish to continue?", requirements.Cluster.EnvironmentGitOwner)
+		help := fmt.Sprint("GitHub organisation on a free plan cannot create private repositories. You either need to upgrade, use a GitHub user instead or use public repositories.")
+		confirmed := util.Confirm(message, false, help, o.In, o.Out, o.Err)
+		if !confirmed {
+			return errors.New("cannot continue without completed git requirements")
+		}
 	}
-
-	return requirements, nil
+	return nil
 }
 
 // verifyStorage verifies the associated buckets exist or if enabled lazily create them
