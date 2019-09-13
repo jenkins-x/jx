@@ -80,8 +80,18 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	if "" != os.Getenv(config.RequirementExternalDNSServiceAccountName) {
 		requirements.Cluster.ExternalDNSSAName = os.Getenv(config.RequirementExternalDNSServiceAccountName)
 	}
+
+	if "" != os.Getenv(config.RequirementVaultName) {
+		requirements.Vault.Name = os.Getenv(config.RequirementVaultName)
+	}
 	if "" != os.Getenv(config.RequirementVaultServiceAccountName) {
-		requirements.Cluster.VaultSAName = os.Getenv(config.RequirementVaultServiceAccountName)
+		requirements.Vault.ServiceAccount = os.Getenv(config.RequirementVaultServiceAccountName)
+	}
+	if "" != os.Getenv(config.RequirementVaultKeyringName) {
+		requirements.Vault.Keyring = os.Getenv(config.RequirementVaultKeyringName)
+	}
+	if "" != os.Getenv(config.RequirementVaultBucketName) {
+		requirements.Vault.Bucket = os.Getenv(config.RequirementVaultBucketName)
 	}
 	if "" != os.Getenv(config.RequirementSecretStorageType) {
 		requirements.SecretStorage = config.SecretStorageType(os.Getenv(config.RequirementSecretStorageType))
@@ -106,6 +116,8 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Kaniko = true
 		}
 	}
+
+	log.Logger().Debug("saving %s", requirementsFileName)
 
 	requirements.SaveConfig(requirementsFileName)
 
