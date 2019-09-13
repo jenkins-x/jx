@@ -63,6 +63,7 @@ type CreateVaultOptions struct {
 
 	GKECreateVaultOptions
 	kubevault.AWSConfig
+
 	ClusterName         string
 	Namespace           string
 	SecretsPathPrefix   string
@@ -115,7 +116,7 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.RecreateVaultBucket, "recreate", "", true, "If the bucket already exists delete it so its created empty for the vault")
 	cmd.Flags().BoolVarP(&options.NoExposeVault, "no-expose", "", false, "If enabled disable the exposing of the vault")
 	cmd.Flags().StringVarP(&options.BucketName, "bucket-name", "", "", "Specify the bucket name. If empty then the bucket name will be based on the vault name")
-	cmd.Flags().StringVarP(&options.KeyringName, "keyring-name", "", "", "Specify the KMS Keyring name. If empty then tehe keyring name will be based on the vault name")
+	cmd.Flags().StringVarP(&options.KeyringName, "keyring-name", "", "", "Specify the KMS Keyring name. If empty then the keyring name will be based on the vault name")
 	cmd.Flags().StringVarP(&options.ServiceAccountName, "service-account-name", "", "", "Specify Service Account name used. If empty then the service account name will be based on the vault name")
 
 	return cmd
@@ -123,7 +124,7 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func awsCreateVaultOptions(cmd *cobra.Command, options *kubevault.AWSConfig) {
 	// AWS flags
-	cmd.Flags().BoolVarP(&options.AutoCreate, "aws-auto-create", "", false, "Whether to skip creating resource preresiquites automatically")
+	cmd.Flags().BoolVarP(&options.AutoCreate, "aws-auto-create", "", false, "Whether to skip creating resource prerequisites automatically")
 	cmd.Flags().StringVarP(&options.DynamoDBRegion, "aws-dynamodb-region", "", "", "The region to use for storing values in AWS DynamoDB")
 	cmd.Flags().StringVarP(&options.DynamoDBTable, "aws-dynamodb-table", "", "vault-data", "The table in AWS DynamoDB to use for storing values")
 	cmd.Flags().StringVarP(&options.KMSRegion, "aws-kms-region", "", "", "The region of the AWS KMS key to encrypt values")
