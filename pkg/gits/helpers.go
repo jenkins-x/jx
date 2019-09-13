@@ -304,6 +304,14 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
+			changedFiles, err := gitter.ListChangedFilesFromBranch(dir, localBranch)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to list changed files")
+			}
+			if changedFiles == "" {
+				log.Logger().Info("No file changes since the existing PR. Nothing to push.")
+				return nil, nil
+			}
 		} else {
 			// We can only update an existing PR if the owner of that PR is this user, so we clear the existingPr
 			existingPr = nil
