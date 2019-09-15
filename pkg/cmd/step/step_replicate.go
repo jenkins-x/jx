@@ -3,6 +3,7 @@ package step
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/rollout/rox-go/core/utils"
 	"strings"
@@ -20,6 +21,7 @@ import (
 type ReplicateOptions struct {
 	step.StepOptions
 	ReplicateToNamepace []string
+	CreateNamespace     bool
 }
 
 const (
@@ -77,6 +79,8 @@ func NewCmdStepReplicate(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringArrayVarP(&options.ReplicateToNamepace, replicateToNamespaceFlag, "r", nil, "Specify a list of namespaces to replicate data into")
+	cmd.Flags().BoolVarP(&options.CreateNamespace, "create-namespace", "", false, "Should create any missing namespaces")
+
 	return cmd
 }
 
@@ -103,7 +107,14 @@ func (o *ReplicateOptions) Run() error {
 		}
 		_, err := client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 		if err != nil {
-			return util.InvalidOptionError(replicateToNamespaceFlag, ns, err)
+			if o.CreateNamespace {
+				err = kube.EnsureNamespaceCreated(client, ns, nil, nil)
+				if err != nil {
+					return err
+				}
+			} else {
+				return util.InvalidOptionError(replicateToNamespaceFlag, ns, err)
+			}
 		}
 	}
 	resourceType := o.Args[0]
@@ -120,6 +131,7 @@ func (o *ReplicateOptions) Run() error {
 			return errors.Wrap(err, fmt.Sprintf("unable to update secret %s", resourceName))
 		}
 	}
+
 	if resourceType == configMap {
 		cm, err := client.CoreV1().ConfigMaps(currentNamespace).Get(resourceName, metav1.GetOptions{})
 		if err != nil {
