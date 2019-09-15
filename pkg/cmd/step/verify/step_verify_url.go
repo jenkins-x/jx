@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
@@ -16,9 +17,10 @@ import (
 )
 
 const (
-	optionEndpoint = "endpoint"
-	optionCode     = "code"
-	optionTimeout  = "timeout"
+	optionEndpoint           = "endpoint"
+	optionCode               = "code"
+	optionTimeout            = "timeout"
+	optionInsecureSkipVerify = "insecureSkipVerify"
 )
 
 var (
@@ -35,9 +37,10 @@ var (
 type StepVerifyURLOptions struct {
 	step.StepOptions
 
-	Endpoint string
-	Code     int
-	Timeout  time.Duration
+	Endpoint           string
+	Code               int
+	Timeout            time.Duration
+	InsecureSkipVerify bool
 }
 
 // NewCmdStepVerifyURL creates a new verify url command
@@ -64,7 +67,7 @@ func NewCmdStepVerifyURL(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Endpoint, optionEndpoint, "e", "", "The endpoint on which to wait for expected HTTP code")
 	cmd.Flags().IntVarP(&options.Code, optionCode, "c", http.StatusOK, "The HTTP code which should be returned by the endpoint")
 	cmd.Flags().DurationVarP(&options.Timeout, optionTimeout, "t", 10*time.Minute, "The default timeout for the endpoint to return the expected HTTP code")
-
+	cmd.Flags().BoolVarP(&options.InsecureSkipVerify, optionInsecureSkipVerify, "i", false, "If the URL requires an insucure request")
 	return cmd
 }
 
@@ -87,9 +90,15 @@ func (o *StepVerifyURLOptions) Run() error {
 		return errors.Wrap(err, "checking flags")
 	}
 
+	tr := &http.Transport{}
+	if o.InsecureSkipVerify {
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+	client := &http.Client{Transport: tr}
+
 	log.Logger().Infof("Waiting for %q endpoint to return %d HTTP code", o.Endpoint, o.Code)
 	err := util.Retry(o.Timeout, func() error {
-		resp, err := http.Get(o.Endpoint)
+		resp, err := client.Get(o.Endpoint)
 		if err != nil {
 			return o.logError(err)
 		}
