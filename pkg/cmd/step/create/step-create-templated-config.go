@@ -2,7 +2,9 @@ package create
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"text/template"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -18,7 +20,7 @@ import (
 
 var (
 	createTemplatedConfigLong = templates.LongDesc(`
-		Creates a YAML config file from a Go template file and a jx requirements file
+		Creates a config file from a Go template file and a jx requirements file
 `)
 
 	createTemplatedConfigExample = templates.Examples(`
@@ -27,7 +29,11 @@ var (
 `)
 )
 
-const valuesTemplateName = "values-template"
+const (
+	templateFileOption    = "template-file"
+	requirementsDirOption = "requirements-dir"
+	configFileOption      = "config-file"
+)
 
 // StepCreateTemplatedConfigOptions command line flags
 type StepCreateTemplatedConfigOptions struct {
@@ -59,15 +65,37 @@ func NewCmdStepCreateTemplatedConfig(commonOpts *opts.CommonOptions) *cobra.Comm
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.TemplateFile, "template-file", "t", "", "The template file used to render the config YAML file")
-	cmd.Flags().StringVarP(&options.RequirementsDir, "requirements-dir", "r", ".", "The jx requirements file directory")
-	cmd.Flags().StringVarP(&options.ConfigFile, "config-file", "c", "", "The rendered config YAML file")
+	cmd.Flags().StringVarP(&options.TemplateFile, templateFileOption, "t", "", "The template file used to render the config YAML file")
+	cmd.Flags().StringVarP(&options.RequirementsDir, requirementsDirOption, "r", ".", "The jx requirements file directory")
+	cmd.Flags().StringVarP(&options.ConfigFile, configFileOption, "c", "", "The rendered config YAML file")
 
 	return cmd
 }
 
+func (o *StepCreateTemplatedConfigOptions) checkFlags() error {
+	if o.TemplateFile == "" {
+		return util.MissingArgument(templateFileOption)
+	}
+
+	if exists, err := util.FileExists(o.TemplateFile); err != nil || !exists {
+		return fmt.Errorf("template file %q provided in option %q does not exist", o.TemplateFile, templateFileOption)
+	}
+
+	if o.ConfigFile == "" {
+		return util.MissingArgument(configFileOption)
+	}
+
+	if exists, err := util.FileExists(o.ConfigFile); err == nil && exists {
+		return fmt.Errorf("config file %q provided in option %q already exists", o.ConfigFile, configFileOption)
+	}
+	return nil
+}
+
 // Run implements this command
 func (o *StepCreateTemplatedConfigOptions) Run() error {
+	if err := o.checkFlags(); err != nil {
+		return err
+	}
 	requirements, _, err := config.LoadRequirementsConfig(o.RequirementsDir)
 	if err != nil {
 		return errors.Wrapf(err, "loading requirements file form dir %q", o.RequirementsDir)
@@ -86,7 +114,8 @@ func (o *StepCreateTemplatedConfigOptions) Run() error {
 }
 
 func (o *StepCreateTemplatedConfigOptions) renderTemplate(requirements *config.RequirementsConfig) ([]byte, error) {
-	tmpl, err := template.New(valuesTemplateName).Option("missingkey=error").ParseFiles(o.TemplateFile)
+	templateName := filepath.Base(o.TemplateFile)
+	tmpl, err := template.New(templateName).Option("missingkey=error").ParseFiles(o.TemplateFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing the template file")
 	}
