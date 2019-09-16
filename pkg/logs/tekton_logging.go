@@ -412,10 +412,11 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 	var logBytes []byte
 	switch u.Scheme {
 	case "gs":
-		logBytes, err = gke.DownloadFileFromBucket(logsURL)
+		scanner, err := gke.StreamTransferFileFromBucket(logsURL)
 		if err != nil {
 			return errors.Wrapf(err, "there was a problem obtaining the log file from the configured bucket URL %s", logsURL)
 		}
+		return t.streamPipedLogs(scanner, logsURL)
 	case "http":
 		fallthrough
 	case "https":
@@ -437,6 +438,17 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 	return t.writeBlockingLine(LogLine{
 		Line: string(logBytes),
 	})
+}
+
+func (t *TektonLogger) streamPipedLogs(scanner *bufio.Scanner, logsURL string) error {
+	for scanner.Scan() {
+		if err := t.LogWriter.WriteLog(LogLine{
+			Line: scanner.Text(),
+		}, t.logsChannel); err != nil {
+			return errors.Wrapf(err, "there was a problem streaming the log file from the GKE bucket %s", logsURL)
+		}
+	}
+	return nil
 }
 
 // create the logs and errors channels and the waitgroup for this TektonLogger instance
