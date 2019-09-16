@@ -95,19 +95,16 @@ func (o *UninstallOptions) Run() error {
 		if o.BatchMode || o.Context != "" {
 			targetContext = o.Context
 		} else {
-
-			targetContext, err = util.PickValue(fmt.Sprintf("Enter the current context name to confirm "+
-				"uninstallation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
-				"", true,
-				"To prevent accidental uninstallation from the wrong cluster, you must enter the current "+
-					"kubernetes context. This can be found with `jx ctx` or `kubectl config current-context`",
-				o.In, o.Out, o.Err)
+			msg := fmt.Sprintf("This action will permanently delete Jenkins X from the Kubernetes context %s. "+
+				"Please type in the name of the context to confirm:", util.ColorInfo(currentContext))
+			helpMsg := "To prevent accidental uninstallation from the wrong cluster, you must enter the current Kubernetes context."
+			targetContext, err = util.PickValue(msg, "", true, helpMsg, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 		}
 		if targetContext != currentContext {
-			return fmt.Errorf("The context '%s' must match the current context to uninstall", targetContext)
+			return fmt.Errorf("the context '%s' must match the current context '%s' to uninstall", targetContext, currentContext)
 		}
 	}
 
