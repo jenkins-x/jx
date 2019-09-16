@@ -4,7 +4,7 @@ set -e
 echo "verifying Pull Request"
 
 export GH_USERNAME="jenkins-x-bot-test"
-export GH_OWNER="cb-kubecd"
+export GH_OWNER="jenkins-x-bot-test"
 
 export REPORTS_DIR="${BASE_WORKSPACE}/build/reports"
 export GINKGO_ARGS="-v"
