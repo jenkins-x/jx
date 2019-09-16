@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -380,31 +381,22 @@ func (g *GCloud) DeleteAllObjectsInBucket(bucketName string) error {
 	return nil
 }
 
-// DownloadFileFromBucket downloads the given file from the bucket and returns the read bytes, deleting the temp file
-func DownloadFileFromBucket(fullBucketURL string) ([]byte, error) {
-	f, err := ioutil.TempFile(os.TempDir(), "build-log-*.log")
-	defer os.Remove(f.Name())
-	if err != nil {
-		return nil, errors.Wrapf(err, "there was a problem storing the logs file in the temp dir")
-	}
-	args := []string{"cp", fullBucketURL, f.Name()}
-
-	cmd := util.Command{
-		Name: "gsutil",
-		Args: args,
-	}
-
-	_, err = cmd.RunWithoutRetry()
+// StreamTransferFileFromBucket will perform a stream transfer from the GCS bucket to stdout and return a scanner
+// with the piped result
+func StreamTransferFileFromBucket(fullBucketURL string) (*bufio.Scanner, error) {
+	args := []string{"cp", fullBucketURL, "-"}
+	cmd := exec.Command("gsutil", args...)
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
 	}
-
-	fileContents, err := ioutil.ReadFile(f.Name())
+	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
-
-	return fileContents, nil
+	scanner := bufio.NewScanner(stdout)
+	scanner.Split(bufio.ScanLines)
+	return scanner, err
 }
 
 // DeleteBucket deletes a Google storage bucket
