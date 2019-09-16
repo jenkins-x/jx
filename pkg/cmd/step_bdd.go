@@ -687,7 +687,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if gitKind != "" {
 		args = append(args, "--git-provider-kind ", gitKind)
 	}
-	args = append(args, "--git-public", strconv.FormatBool(o.InstallOptions.GitRepositoryOptions.Public))
+	args = append(args, fmt.Sprintf("--git-public=%s", strconv.FormatBool(o.InstallOptions.GitRepositoryOptions.Public)))
 
 	if o.CommonOptions.InstallDependencies {
 		args = append(args, "--install-dependencies")
