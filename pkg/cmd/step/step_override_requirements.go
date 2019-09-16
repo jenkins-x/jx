@@ -127,6 +127,10 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Kaniko = true
 		}
 	}
+	if "" != os.Getenv(config.RequirementWebhook) {
+		webhookString := os.Getenv(config.RequirementWebhook)
+		requirements.Webhook = config.WebhookType(webhookString)
+	}
 
 	log.Logger().Debugf("saving %s", requirementsFileName)
 
