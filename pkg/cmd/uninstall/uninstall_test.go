@@ -3,6 +3,8 @@ package uninstall_test
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/cmd/uninstall"
+	"github.com/jenkins-x/jx/pkg/log"
+	"io/ioutil"
 	"testing"
 
 	"github.com/Netflix/go-expect"
@@ -20,22 +22,15 @@ import (
 	. "github.com/petergtz/pegomock"
 )
 
-func setupUninstall(contextName string) *kuber_mocks.MockKuber {
-	kubeMock := kuber_mocks.NewMockKuber()
-	fakeKubeConfig := api.NewConfig()
-	fakeKubeConfig.CurrentContext = contextName
-	When(kubeMock.LoadConfig()).ThenReturn(fakeKubeConfig, nil, nil)
-	return kubeMock
-}
+var (
+	originalJxHome string
+	tempJxHome     string
+	kubeMock       *kuber_mocks.MockKuber
+)
 
 func TestUninstallOptions_Run_ContextSpecifiedAsOption_FailsWhenContextNamesDoNotMatch(t *testing.T) {
-	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	kubeMock := setupUninstall("current-context")
+	setup(t, "current-context")
+	defer tearDown(t)
 
 	o := &uninstall.UninstallOptions{
 		CommonOptions: &opts.CommonOptions{},
@@ -45,18 +40,13 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_FailsWhenContextNamesDoNo
 	o.SetKube(kubeMock)
 	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
-	err = o.Run()
-	assert.EqualError(t, err, "The context 'target-context' must match the current context to uninstall")
+	err := o.Run()
+	assert.EqualError(t, err, "the context 'target-context' must match the current context 'current-context' to uninstall")
 }
 
 func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch(t *testing.T) {
-	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	kubeMock := setupUninstall("correct-context-to-delete")
+	setup(t, "correct-context-to-delete")
+	defer tearDown(t)
 
 	o := &uninstall.UninstallOptions{
 		CommonOptions: &opts.CommonOptions{
@@ -69,7 +59,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	// Create fake namespace (that we will uninstall from)
-	err = createNamespace(o, "ns")
+	err := createNamespace(o, "ns")
 
 	// Run the uninstall
 	err = o.Run()
@@ -83,13 +73,8 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 }
 
 func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing.T) {
-	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	kubeMock := setupUninstall("correct-context-to-delete")
+	setup(t, "correct-context-to-delete")
+	defer tearDown(t)
 
 	o := &uninstall.UninstallOptions{
 		CommonOptions: &opts.CommonOptions{},
@@ -100,7 +85,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	// Create fake namespace (that we will uninstall from)
-	err = createNamespace(o, "ns")
+	err := createNamespace(o, "ns")
 
 	// Run the uninstall
 	err = o.Run()
@@ -115,13 +100,9 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 
 func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotMatch(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
-	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	kubeMock := setupUninstall("current-context")
+
+	setup(t, "current-context")
+	defer tearDown(t)
 
 	// mock terminal
 	console := tests.NewTerminal(t, nil)
@@ -133,7 +114,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 		defer close(donec)
 		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?")
 		console.SendLine("Y")
-		console.ExpectString("Enter the current context name to confirm uninstallation of the Jenkins X platform from the ns namespace:")
+		console.ExpectString("This action will permanently delete Jenkins X from the Kubernetes context current-context. Please type in the name of the context to confirm:")
 		console.SendLine("target-context")
 		console.ExpectEOF()
 	}()
@@ -149,25 +130,21 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 
 	o.SetKube(kubeMock)
 
-	err = o.Run()
-	assert.EqualError(t, err, "The context 'target-context' must match the current context to uninstall")
+	err := o.Run()
+	if !assert.EqualError(t, err, "the context 'target-context' must match the current context 'current-context' to uninstall") {
+		// Dump the terminal's screen.
+		t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+	}
 
 	console.Close()
 	<-donec
-
-	// Dump the terminal's screen.
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 }
 
 func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
-	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	kubeMock := setupUninstall("correct-context-to-delete")
+
+	setup(t, "correct-context-to-delete")
+	defer tearDown(t)
 
 	// mock terminal
 	console := tests.NewTerminal(t, nil)
@@ -180,7 +157,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 		defer close(donec)
 		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?")
 		console.SendLine("Y")
-		console.ExpectString("Enter the current context name to confirm uninstallation of the Jenkins X platform from the ns namespace:")
+		console.ExpectString("This action will permanently delete Jenkins X from the Kubernetes context correct-context-to-delete. Please type in the name of the context to confirm:")
 		console.SendLine("correct-context-to-delete")
 		console.ExpectEOF()
 	}()
@@ -199,7 +176,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	o.BatchMode = false // The above line sets batch mode to true. Set it back here :-(
 
 	// Create fake namespace (that we will uninstall from)
-	err = createNamespace(o, "ns")
+	err := createNamespace(o, "ns")
 
 	// Run the uninstall
 	err = o.Run()
@@ -209,13 +186,35 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	client, err := o.KubeClient()
 	assert.NoError(t, err)
 	_, err = client.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
-	assert.Error(t, err)
+	if !assert.Error(t, err) {
+		// Dump the terminal's screen.
+		t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+	}
 
 	console.Close()
 	<-donec
+}
 
-	// Dump the terminal's screen.
-	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+func setup(t *testing.T, context string) {
+	log.SetOutput(ioutil.Discard)
+
+	var err error
+	originalJxHome, tempJxHome, err = testhelpers.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	kubeMock = setupUninstall(context)
+}
+
+func tearDown(t *testing.T) {
+	err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+	assert.NoError(t, err)
+}
+
+func setupUninstall(contextName string) *kuber_mocks.MockKuber {
+	kubeMock := kuber_mocks.NewMockKuber()
+	fakeKubeConfig := api.NewConfig()
+	fakeKubeConfig.CurrentContext = contextName
+	When(kubeMock.LoadConfig()).ThenReturn(fakeKubeConfig, nil, nil)
+	return kubeMock
 }
 
 func createNamespace(o *uninstall.UninstallOptions, ns string) error {
