@@ -39,8 +39,6 @@ const (
 	RequirementDomainIssuerPassword = "JX_REQUIREMENT_DOMAIN_ISSUER_PASSWORD"
 	// RequirementDomainIssuerURL contains the URL to the service used when requesting a domain
 	RequirementDomainIssuerURL = "JX_REQUIREMENT_DOMAIN_ISSUER_URL"
-	// RequirementTerraform if Terraform was used to create the cluster
-	RequirementTerraform = "JX_REQUIREMENT_TERRAFORM"
 	// RequirementClusterName is the cluster name
 	RequirementClusterName = "JX_REQUIREMENT_CLUSTER_NAME"
 	// RequirementProject is the cloudprovider project
@@ -73,6 +71,8 @@ const (
 	RequirementKaniko = "JX_REQUIREMENT_KANIKO"
 	// RequirementIngressTLSProduction use the lets encrypt production server
 	RequirementIngressTLSProduction = "JX_REQUIREMENT_INGRESS_TLS_PRODUCTION"
+	// RequirementWebhook the webhook handler for jx
+	RequirementWebhook = "JX_REQUIREMENT_WEBHOOK"
 )
 
 // SecretStorageType is the type of storage used for secrets
