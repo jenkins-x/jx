@@ -1,12 +1,13 @@
 package step
 
 import (
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // StepOverrideRequirementsOptions contains the command line flags
@@ -132,8 +133,34 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 		requirements.Webhook = config.WebhookType(webhookString)
 	}
 
+	if "" != os.Getenv(config.RequirementStorageLogsEnabled) {
+		storageLogs := config.RequirementStorageLogsEnabled
+		if storageLogs == "true" {
+			requirements.Storage.Logs.Enabled = true
+			if "" != os.Getenv(config.RequirementStorageLogsURL) {
+				requirements.Storage.Logs.URL = os.Getenv(config.RequirementStorageLogsURL)
+			}
+		}
+	}
+	if "" != os.Getenv(config.RequirementStorageReportsEnabled) {
+		storageReports := config.RequirementStorageReportsEnabled
+		if storageReports == "true" {
+			requirements.Storage.Reports.Enabled = true
+			if "" != os.Getenv(config.RequirementStorageReportsURL) {
+				requirements.Storage.Reports.URL = os.Getenv(config.RequirementStorageReportsURL)
+			}
+		}
+	}
+	if "" != os.Getenv(config.RequirementStorageRepositoryEnabled) {
+		storageRepository := config.RequirementStorageRepositoryEnabled
+		if storageRepository == "true" {
+			requirements.Storage.Repository.Enabled = true
+			if "" != os.Getenv(config.RequirementStorageRepositoryURL) {
+				requirements.Storage.Repository.URL = os.Getenv(config.RequirementStorageRepositoryURL)
+			}
+		}
+	}
 	log.Logger().Debugf("saving %s", requirementsFileName)
-
 	requirements.SaveConfig(requirementsFileName)
 
 	return requirements, nil

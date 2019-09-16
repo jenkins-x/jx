@@ -72,6 +72,18 @@ const (
 	RequirementIngressTLSProduction = "JX_REQUIREMENT_INGRESS_TLS_PRODUCTION"
 	// RequirementWebhook the webhook handler for jx
 	RequirementWebhook = "JX_REQUIREMENT_WEBHOOK"
+	// RequirementStorageLogsEnabled if log storage is required
+	RequirementStorageLogsEnabled = "JX_REQUIREMENT_STORAGE_LOGS_ENABLED"
+	// RequirementStorageLogsURL logs storage url
+	RequirementStorageLogsURL = "JX_REQUIREMENT_STORAGE_LOGS_URL"
+	// RequirementStorageReportsEnabled if report storage is required
+	RequirementStorageReportsEnabled = "JX_REQUIREMENT_STORAGE_REPORTS_ENABLED"
+	// RequirementStorageReportsURL report storage url
+	RequirementStorageReportsURL = "JX_REQUIREMENT_STORAGE_REPORTS_URL"
+	// RequirementStorageRepositoryEnabled if repository storage is required
+	RequirementStorageRepositoryEnabled = "JX_REQUIREMENT_STORAGE_REPOSITORY_ENABLED"
+	// RequirementStorageRepositoryURL repository storage url
+	RequirementStorageRepositoryURL = "JX_REQUIREMENT_STORAGE_REPOSITORY_URL"
 )
 
 // SecretStorageType is the type of storage used for secrets
