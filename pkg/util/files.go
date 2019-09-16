@@ -20,6 +20,9 @@ import (
 const (
 	DefaultWritePermissions = 0760
 
+	// DefaultFileWritePermissions default permissions when creating a file
+	DefaultFileWritePermissions = 0644
+
 	MaximumNewDirectoryAttempts = 1000
 )
 

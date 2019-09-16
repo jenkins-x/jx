@@ -32,6 +32,7 @@ func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepCreateInstallValues(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateValues(commonOpts))
 	cmd.AddCommand(pr.NewCmdStepCreatePr(commonOpts))
+	cmd.AddCommand(NewCmdStepCreateTemplatedConfig(commonOpts))
 	return cmd
 }
 
