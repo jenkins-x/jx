@@ -578,7 +578,8 @@ func (o *PreviewOptions) Run() error {
 			// 200 - 299 : successful for most types of applications
 			// 401 : an application requiring authentication
 			// 404 : return code for an application where the domain resolves but the root path is not found
-			if resp.StatusCode < 200 || (resp.StatusCode >= 300 && resp.StatusCode != 401 && resp.StatusCode != 404) {
+			// 403 : forbidden, the client may not use the same credentials later, default return code for sprint-security
+			if resp.StatusCode < 200 || (resp.StatusCode >= 300 && resp.StatusCode != 401 && resp.StatusCode != 403 && resp.StatusCode != 404) {
 				return errors.Errorf("preview application %s not available, error was %d %s", url, resp.StatusCode, resp.Status)
 			}
 			return nil
