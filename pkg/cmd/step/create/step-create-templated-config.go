@@ -25,7 +25,7 @@ var (
 
 	createTemplatedConfigExample = templates.Examples(`
 		# creates a config file from a template file and a jx requirements file
-		jx step create templated config -t mytemplate.tmpl.yml -r jx-requirements.yml -c config.yml
+		jx step create templated config -t config.tmpl.yml -c config.yml
 `)
 )
 
