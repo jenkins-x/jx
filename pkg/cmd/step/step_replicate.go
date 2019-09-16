@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/rollout/rox-go/core/utils"
+	"regexp"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -121,14 +122,39 @@ func (o *ReplicateOptions) Run() error {
 	resourceName := o.Args[1]
 
 	if resourceType == secret {
-		secret, err := client.CoreV1().Secrets(currentNamespace).Get(resourceName, metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to get secret %s", resourceName))
-		}
-		secret.Annotations = setReplicatorAnnotations(secret.Annotations, o.ReplicateToNamepace)
-		_, err = client.CoreV1().Secrets(currentNamespace).Update(secret)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to update secret %s", resourceName))
+		// find all secrets issued by letsencrypt
+		if strings.Contains(resourceName, "*") {
+			secrets, err := client.CoreV1().Secrets(currentNamespace).List(metav1.ListOptions{})
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("unable to list secrets '%s'", resourceName))
+			}
+
+			re := regexp.MustCompile(resourceName)
+
+			for _, secretItem := range secrets.Items {
+				if re.MatchString(secretItem.Name) {
+					secret, err := client.CoreV1().Secrets(currentNamespace).Get(secretItem.Name, metav1.GetOptions{})
+					if err != nil {
+						return errors.Wrap(err, fmt.Sprintf("unable to get secret '%s'", secretItem.Name))
+					}
+
+					secret.Annotations = setReplicatorAnnotations(secret.Annotations, o.ReplicateToNamepace)
+					_, err = client.CoreV1().Secrets(currentNamespace).Update(secret)
+					if err != nil {
+						return errors.Wrap(err, fmt.Sprintf("unable to update secret '%s'", secretItem.Name))
+					}
+				}
+			}
+		} else {
+			secret, err := client.CoreV1().Secrets(currentNamespace).Get(resourceName, metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("unable to get secret '%s'", resourceName))
+			}
+			secret.Annotations = setReplicatorAnnotations(secret.Annotations, o.ReplicateToNamepace)
+			_, err = client.CoreV1().Secrets(currentNamespace).Update(secret)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("unable to update secret '%s'", resourceName))
+			}
 		}
 	}
 
