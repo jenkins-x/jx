@@ -2,6 +2,7 @@ package deletecmd
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/fields"
 	"os/user"
 	"strings"
 	"time"
@@ -248,7 +249,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 			}
 		}
 
-		err = o.deletePipelineActivitiesForSourceRepository(jxClient, ns, srName)
+		err = o.deletePipelineActivitiesForSourceRepository(jxClient, ns, org, applicationName)
 		if err != nil {
 			log.Logger().Warnf("failed to remove PipelineActivities in namespace %s: %s", ns, err.Error())
 		}
@@ -481,16 +482,18 @@ func (o *DeleteApplicationOptions) init() error {
 	return nil
 }
 
-func (o *DeleteApplicationOptions) deletePipelineActivitiesForSourceRepository(jxClient versioned.Interface, ns string, srName string) error {
+func (o *DeleteApplicationOptions) deletePipelineActivitiesForSourceRepository(jxClient versioned.Interface, ns string, gitOwner string, gitRepo string) error {
+	gitOwnerSelector := fields.OneTermEqualSelector("metadata.spec.gitOwner", gitOwner)
+	gitRepoSelector := fields.OneTermEqualSelector("metadata.spec.gitRepository", gitRepo)
+	fieldSelector := fields.AndSelectors(gitOwnerSelector, gitRepoSelector)
 
-	selector := v1.LabelSourceRepository + "=" + srName
 	pipelineInterface := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	paList, err := pipelineInterface.List(metav1.ListOptions{
-		LabelSelector: selector,
+		FieldSelector: fieldSelector.String(),
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to list PipelineActivity resource in namespace %s with selector %s", ns, selector)
+		return errors.Wrapf(err, "failed to list PipelineActivity resource in namespace %s with selector %s", ns, fieldSelector.String())
 	}
 	for _, pa := range paList.Items {
 		err := pipelineInterface.Delete(pa.Name, &metav1.DeleteOptions{})

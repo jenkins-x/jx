@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/fields"
 	"reflect"
 	"strconv"
 	"strings"
@@ -228,7 +229,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	oldSpec := a.Spec
 	oldLabels := a.Labels
 
-	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
+	if a.Labels == nil {
 		err := createSourceRepositoryIfMissing(jxClient, ns, k)
 		if err != nil {
 			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s", err.Error())
@@ -264,11 +265,15 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 	log.Logger().Info("Checking if batch build reconciling is needed")
 	//Create a selector for other runs of this PR with the same last commit SHA
 	labels := currentActivity.Labels
-	selector := fmt.Sprintf("lastCommitSha in (%s), branch in (%s), sourcerepository in (%s)",
-		labels[v1.LabelLastCommitSha], labels[v1.LabelBranch], labels[v1.LabelSourceRepository])
+	selector := fmt.Sprintf("lastCommitSha in (%s), branch in (%s)", labels[v1.LabelLastCommitSha], labels[v1.LabelBranch])
+
+	gitOwnerSelector := fields.OneTermEqualSelector("metadata.spec.gitOwner", currentActivity.Spec.GitOwner)
+	gitRepoSelector := fields.OneTermEqualSelector("metadata.spec.gitRepository", currentActivity.Spec.GitRepository)
+	fieldSelector := fields.AndSelectors(gitOwnerSelector, gitRepoSelector)
 
 	listOptions := metav1.ListOptions{
 		LabelSelector: selector,
+		FieldSelector: fieldSelector.String(),
 	}
 
 	log.Logger().Debugf("looking for PipelineActivities with selector %s", selector)
@@ -306,7 +311,7 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 
 func updateBatchBuildComprisingPRs(activitiesClient typev1.PipelineActivityInterface, currentActivity *v1.PipelineActivity, batchBuild string, previousActivityForPR *v1.PipelineActivity) error {
 	labels := currentActivity.Labels
-	paName := fmt.Sprintf("%s-batch-%s", labels[v1.LabelSourceRepository], batchBuild)
+	paName := fmt.Sprintf("%s-%s-batch-%s", currentActivity.Spec.GitOwner, currentActivity.Spec.GitRepository, batchBuild)
 	log.Logger().Infof("Looking for batch pipeline activity with name %s", paName)
 	batchPipelineActivity, err := activitiesClient.Get(paName, metav1.GetOptions{})
 	if err != nil {
@@ -443,7 +448,6 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 
 	updateActivitySpec(k, &activity.Spec)
 
-	activity.Labels[v1.LabelSourceRepository] = naming.ToValidName(activity.Spec.GitOwner + "-" + activity.RepositoryName())
 	activity.Labels[v1.LabelProvider] = ToProviderName(activity.Spec.GitURL)
 	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 	activity.Labels[v1.LabelRepository] = activity.RepositoryName()

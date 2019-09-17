@@ -7,14 +7,13 @@ import (
 )
 
 const (
-	LabelSourceRepository = "sourcerepository"
-	LabelProvider         = "provider"
-	LabelOwner            = "owner"
-	LabelRepository       = "repository"
-	LabelBranch           = "branch"
-	LabelBuild            = "build"
-	LabelLastCommitSha    = "lastCommitSha"
-	LabelContext          = "context"
+	LabelProvider      = "provider"
+	LabelOwner         = "owner"
+	LabelRepository    = "repository"
+	LabelBranch        = "branch"
+	LabelBuild         = "build"
+	LabelLastCommitSha = "lastCommitSha"
+	LabelContext       = "context"
 )
 
 // +genclient
