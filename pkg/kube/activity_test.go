@@ -377,10 +377,9 @@ func TestBatchReconciliationWithTwoPRBuildExecutions(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: prPAName,
 			Labels: map[string]string{
-				v1.LabelBranch:           "PR-1",
-				v1.LabelLastCommitSha:    "sha1",
-				v1.LabelBuild:            "1",
-				v1.LabelSourceRepository: fmt.Sprintf("%s-%s", expectedOrganisation, expectedName),
+				v1.LabelBranch:        "PR-1",
+				v1.LabelLastCommitSha: "sha1",
+				v1.LabelBuild:         "1",
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
@@ -399,10 +398,9 @@ func TestBatchReconciliationWithTwoPRBuildExecutions(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: batchPAName,
 			Labels: map[string]string{
-				v1.LabelBranch:           "batch",
-				v1.LabelLastCommitSha:    "testSha",
-				v1.LabelBuild:            expectedBatchBuild,
-				v1.LabelSourceRepository: fmt.Sprintf("%s-%s", expectedOrganisation, expectedName),
+				v1.LabelBranch:        "batch",
+				v1.LabelLastCommitSha: "testSha",
+				v1.LabelBuild:         expectedBatchBuild,
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
