@@ -39,6 +39,7 @@ func (o *CommonOptions) EnsureCertManager() error {
 
 			log.Logger().Infof("Ensuring helm repo %q at %q for cert-manager chart is configured", pki.CertManagerChartOwner,
 				pki.CertManagerChartURL)
+			o.SetHelm(o.Helm())
 			err = o.helm.AddRepo(pki.CertManagerChartOwner, pki.CertManagerChartURL, "", "")
 			if err != nil {
 				return errors.Wrapf(err, "adding helm repo %q", pki.CertManagerChartOwner)
