@@ -45,8 +45,6 @@ jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git 
   --no-delete-repo \
   --tekton \
   --tests install \
-  --tests test-verify-pods \
-  --tests test-upgrade-platform \
   --tests test-upgrade-ingress \
   --tests test-create-spring \
   --tests test-quickstart-golang-http \
