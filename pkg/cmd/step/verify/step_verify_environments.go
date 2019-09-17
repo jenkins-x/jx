@@ -155,23 +155,24 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 		return errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, environmentsOrg, gitRepoName)
 	}
 
-	_, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(duplicateInfo.CloneURL, dir, "master", "master", provider, o.Git(), gitRepoName)
-	if err != nil {
-		return errors.Wrapf(err, "forking and pulling %s", duplicateInfo.CloneURL)
-	}
-
-	err = modifyPipelineGitEnvVars(dir)
-	if err != nil {
-		return errors.Wrap(err, "failed to modify dev environment config")
-	}
-
-	// Add a remote for the user that references the boot config that they originally used
-	err = o.Git().SetRemoteURL(dir, "jenkins-x", fromGitURL)
-	if err != nil {
-		return errors.Wrapf(err, "Setting jenkins-x remote to boot config %s", fromGitURL)
-	}
-
 	if createPr {
+
+		_, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(duplicateInfo.CloneURL, dir, "master", "master", provider, o.Git(), gitRepoName)
+		if err != nil {
+			return errors.Wrapf(err, "forking and pulling %s", duplicateInfo.CloneURL)
+		}
+
+		err = modifyPipelineGitEnvVars(dir)
+		if err != nil {
+			return errors.Wrap(err, "failed to modify dev environment config")
+		}
+
+		// Add a remote for the user that references the boot config that they originally used
+		err = o.Git().SetRemoteURL(dir, "jenkins-x", fromGitURL)
+		if err != nil {
+			return errors.Wrapf(err, "Setting jenkins-x remote to boot config %s", fromGitURL)
+		}
+
 		details := gits.PullRequestDetails{
 			BranchName: fmt.Sprintf("update-boot-config"),
 			Title:      "chore(config): update configuration",
