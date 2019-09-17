@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -177,11 +176,11 @@ func (o *StepBDDOptions) Run() error {
 		return err
 	}
 	if len(config.Clusters) == 0 {
-		return fmt.Errorf("no clusters specified in configuration file %s", fileName)
+		return fmt.Errorf("No clusters specified in configuration file %s", fileName)
 	}
 
 	// TODO handle parallel...
-	var errors []error
+	errors := []error{}
 	for _, cluster := range config.Clusters {
 		err := o.createCluster(cluster)
 		if err != nil {
@@ -326,7 +325,6 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		if gitUser != "" {
 			createEnv.GitRepositoryOptions.Username = gitUser
 		}
-		createEnv.GitRepositoryOptions.Public = o.InstallOptions.Public
 		log.Logger().Infof("using environment git owner: %s", util.ColorInfo(gitOwner))
 		log.Logger().Infof("using environment git user: %s", util.ColorInfo(gitUser))
 
@@ -687,8 +685,6 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if gitKind != "" {
 		args = append(args, "--git-provider-kind ", gitKind)
 	}
-	args = append(args, "--git-public", strconv.FormatBool(o.InstallOptions.GitRepositoryOptions.Public))
-
 	if o.CommonOptions.InstallDependencies {
 		args = append(args, "--install-dependencies")
 	}

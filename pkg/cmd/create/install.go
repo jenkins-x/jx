@@ -1484,7 +1484,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		teamSettings.GitServer = pipelineAuthServerURL
 		teamSettings.PipelineUsername = pipelineAuthUsername
 		teamSettings.Organisation = options.Owner
-		teamSettings.GitPublic = options.GitRepositoryOptions.Public
+		teamSettings.GitPrivate = options.GitRepositoryOptions.Private
 		return nil
 	}
 	err = options.ModifyDevEnvironment(editTeamSettingsCallback)
@@ -1562,7 +1562,7 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 		Username:  user.Username,
 		ApiToken:  user.ApiToken,
 		Owner:     org,
-		Public:    options.GitRepositoryOptions.Public,
+		Private:   options.GitRepositoryOptions.Private,
 	}, nil
 }
 
@@ -1793,7 +1793,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return "", errors.Wrap(err, "committing in git if there are changes")
 			}
 			userAuth := gitProvider.UserAuth()
-			pushGitURL, err := git.CreateAuthenticatedURL(repo.CloneURL, &userAuth)
+			pushGitURL, err := git.CreatePushURL(repo.CloneURL, &userAuth)
 			if err != nil {
 				return "", errors.Wrapf(err, "creating push URL for %q", repo.CloneURL)
 			}
@@ -2698,6 +2698,7 @@ func (options *InstallOptions) installAddons() error {
 
 func (options *InstallOptions) createEnvironments(namespace string) error {
 	if !options.Flags.NoDefaultEnvironments {
+		createEnvironments := true
 		if options.Flags.GitOpsMode {
 			options.SetDevNamespace(namespace)
 			options.CreateEnvOptions.CommonOptions = options.CommonOptions
@@ -2706,42 +2707,44 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			options.CreateEnvOptions.ModifyEnvironmentFn = options.ModifyEnvironmentFn
 		}
 
-		log.Logger().Info("Creating default staging and production environments")
-		_, devNamespace, err := options.KubeClientAndDevNamespace()
-		if err != nil {
-			return errors.Wrap(err, "getting team's dev namespace")
-		}
-		gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
-		if err != nil || gitRepoOptions == nil {
-			return errors.Wrap(err, "building the Git repository options for environments")
-		}
-		options.CreateEnvOptions.GitRepositoryOptions = *gitRepoOptions
-		// lets not fail if environments already exist
-		options.CreateEnvOptions.Update = true
+		if createEnvironments {
+			log.Logger().Info("Creating default staging and production environments")
+			_, devNamespace, err := options.KubeClientAndDevNamespace()
+			if err != nil {
+				errors.Wrap(err, "getting team's dev namespace")
+			}
+			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
+			if err != nil || gitRepoOptions == nil {
+				return errors.Wrap(err, "building the Git repository options for environments")
+			}
+			options.CreateEnvOptions.GitRepositoryOptions = *gitRepoOptions
+			// lets not fail if environments already exist
+			options.CreateEnvOptions.Update = true
 
-		options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
-		options.CreateEnvOptions.Prow = options.Flags.Prow
-		if options.BatchMode {
-			options.CreateEnvOptions.BatchMode = options.BatchMode
-		}
-		options.CreateEnvOptions.Options.Name = "staging"
-		options.CreateEnvOptions.Options.Spec.Label = "Staging"
-		options.CreateEnvOptions.Options.Spec.Order = 100
-		options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
-		err = options.CreateEnvOptions.Run()
-		if err != nil {
-			return errors.Wrapf(err, "failed to create staging environment in namespace %s", devNamespace)
-		}
-		options.CreateEnvOptions.Options.Name = "production"
-		options.CreateEnvOptions.Options.Spec.Label = "Production"
-		options.CreateEnvOptions.Options.Spec.Order = 200
-		options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
-		options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
-		options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
+			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+			options.CreateEnvOptions.Prow = options.Flags.Prow
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
+			options.CreateEnvOptions.Options.Name = "staging"
+			options.CreateEnvOptions.Options.Spec.Label = "Staging"
+			options.CreateEnvOptions.Options.Spec.Order = 100
+			options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to create staging environment in namespace %s", devNamespace)
+			}
+			options.CreateEnvOptions.Options.Name = "production"
+			options.CreateEnvOptions.Options.Spec.Label = "Production"
+			options.CreateEnvOptions.Options.Spec.Order = 200
+			options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
+			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
 
-		err = options.CreateEnvOptions.Run()
-		if err != nil {
-			return errors.Wrapf(err, "failed to create the production environment in namespace %s", devNamespace)
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to create the production environment in namespace %s", devNamespace)
+			}
 		}
 	}
 	return nil

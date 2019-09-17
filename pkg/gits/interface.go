@@ -160,7 +160,7 @@ type GitProvider interface {
 	// TODO Refactor to remove bespoke types when we implement another provider
 	AcceptInvitation(int64) (*github.Response, error)
 
-	// ShouldForkForPullRequest returns true if we should create a personal fork of this repository
+	// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 	// before creating a pull request
 	ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool
 
@@ -205,8 +205,7 @@ type Gitter interface {
 	Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error
-	// CreateAuthenticatedURL adds username and password into the specified git URL.
-	CreateAuthenticatedURL(url string, userAuth *auth.UserAuth) (string, error)
+	CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error)
 	ForcePushBranch(dir string, localBranch string, remoteBranch string) error
 	CloneOrPull(url string, directory string) error
 	Pull(dir string) error
