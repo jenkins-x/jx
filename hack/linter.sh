@@ -2,6 +2,11 @@
 
 set -e -o pipefail
 
+if [ $DISABLE_LINTER == "true" ]
+then
+  exit 0
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if ! [ -x "$(command -v golangci-lint)" ]; then
