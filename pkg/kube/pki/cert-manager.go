@@ -104,6 +104,7 @@ func issuer(name string, server string, email string) *certmng.Issuer {
 				},
 			},
 		},
+		Status: certmng.IssuerStatus{},
 	}
 }
 
