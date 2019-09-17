@@ -150,7 +150,7 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 	}
 
 	// Duplicate the repo
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", privateRepo, provider, o.Git())
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitsh(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", privateRepo, provider, o.Git())
 	if err != nil {
 		return errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, environmentsOrg, gitRepoName)
 	}
@@ -217,6 +217,9 @@ func modifyPipelineGitEnvVars(dir string) error {
 			},
 		}
 		envVars := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
+		if err != nil {
+			return errors.Wrap(err, "failed to get pipeline env vars")
+		}
 		envVars = append(envVars, gitConfig...)
 		projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
 
@@ -225,14 +228,8 @@ func modifyPipelineGitEnvVars(dir string) error {
 			return errors.Wrapf(err, "failed to write to %s", fileName)
 		}
 
-		err = os.Setenv("GIT_AUTHOR_NAME", username)
-		if err != nil {
-			return errors.Wrap(err, "failed to set GIT_AUTHOR_NAME env variable")
-		}
-		err = os.Setenv("GIT_AUTHOR_EMAIL", email)
-		if err != nil {
-			return errors.Wrap(err, "failed to set GIT_AUTHOR_EMAIL env variable")
-		}
+		os.Setenv("GIT_AUTHOR_NAME", username)
+		os.Setenv("GIT_AUTHOR_EMAIL", email)
 	}
 	return nil
 }
@@ -260,7 +257,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 
 	// TODO
 	gitKind := gits.KindGitHub
-	publicRepo := requirements.Cluster.EnvironmentGitPublic
+	privateRepo := requirements.Cluster.EnvironmentGitPrivate
 	prefix := ""
 
 	gitServerURL := gitInfo.HostURL()
@@ -285,7 +282,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
 		if requirements.GitOps {
 			createPr := os.Getenv("JX_INTERPRET_PIPELINE") == "true"
-			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, !publicRepo, userAuth, requirements, server, createPr)
+			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, privateRepo, userAuth, requirements, server, createPr)
 			if err != nil {
 				return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
 			}
@@ -298,7 +295,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 			ApiToken:                 userAuth.Password,
 			Owner:                    gitInfo.Organisation,
 			RepoName:                 gitInfo.Name,
-			Public:                   publicRepo,
+			Private:                  privateRepo,
 			IgnoreExistingRepository: true,
 		}
 

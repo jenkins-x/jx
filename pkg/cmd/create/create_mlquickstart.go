@@ -273,7 +273,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 				w.GitRepositoryOptions.Username = details.User.Username
 				w.GitRepositoryOptions.ApiToken = details.User.ApiToken
 				w.GitRepositoryOptions.Owner = details.Organisation
-				w.GitRepositoryOptions.Public = details.Public
+				w.GitRepositoryOptions.Private = details.PrivateRepo
 				w.GitProvider = details.GitProvider
 				w.GitServer = details.GitServer
 			}

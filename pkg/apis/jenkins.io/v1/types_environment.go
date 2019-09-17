@@ -1,9 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
-	"errors"
-	"github.com/jenkins-x/jx/pkg/log"
 	batchv1 "k8s.io/api/batch/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -207,7 +204,7 @@ type TeamSettings struct {
 	PipelineUsername    string               `json:"pipelineUsername,omitempty" protobuf:"bytes,15,opt,name=pipelineUsername" command:"pipelineusername" commandUsage:"User used by pipeline. Is given write permission on new repositories."`
 	PipelineUserEmail   string               `json:"pipelineUserEmail,omitempty" protobuf:"bytes,15,opt,name=pipelineUserEmail" command:"pipelineuseremail" commandUsage:"Users email used by pipeline. Is given write permission on new repositories."`
 	DockerRegistryOrg   string               `json:"dockerRegistryOrg,omitempty" protobuf:"bytes,16,opt,name=dockerRegistryOrg" command:"dockerregistryorg" commandUsage:"Docker registry organisation used for new projects in Jenkins X."`
-	GitPublic           bool                 `json:"gitPublic,omitempty" protobuf:"bytes,17,opt,name=gitPublic" command:"gitpublic" commandUsage:"Are new repositories public by default"`
+	GitPrivate          bool                 `json:"gitPrivate,omitempty" protobuf:"bytes,17,opt,name=gitPrivate" command:"gitprivate" commandUsage:"Are new repositories private by default"`
 	KubeProvider        string               `json:"kubeProvider,omitempty" protobuf:"bytes,18,opt,name=kubeProvider"`
 	AppsRepository      string               `json:"appsRepository,omitempty" protobuf:"bytes,19,opt,name=appsRepository"`
 	BuildPackName       string               `json:"buildPackName,omitempty" protobuf:"bytes,20,opt,name=buildPackName"`
@@ -423,45 +420,6 @@ func (t *TeamSettings) IsSchedulerMode() bool {
 // IsProw returns true if using Prow
 func (t *TeamSettings) IsProw() bool {
 	return t.PromotionEngine == PromotionEngineProw
-}
-
-// UnmarshalJSON method handles the rename of GitPrivate to GitPublic.
-func (t *TeamSettings) UnmarshalJSON(data []byte) error {
-	// need a type alias to go into infinite loop
-	type Alias TeamSettings
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(t),
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-
-	var raw map[string]json.RawMessage
-	err := json.Unmarshal(data, &raw)
-	if err != nil {
-		return err
-	}
-
-	_, gitPublicSet := raw["gitPublic"]
-	private, gitPrivateSet := raw["gitPrivate"]
-
-	if gitPrivateSet && gitPublicSet {
-		return errors.New("found settings for GitPublic as well as GitPrivate in TeamSettings, only GitPublic should be used")
-	}
-
-	if gitPrivateSet {
-		log.Logger().Warn("GitPrivate specified in TeamSettings. GitPrivate is deprecated use GitPublic instead.")
-		privateString := string(private)
-		if privateString == "true" {
-			t.GitPublic = false
-		} else {
-			t.GitPublic = true
-		}
-	}
-	return nil
 }
 
 // IsProwOrLighthouse returns true if either Prow or Lighthouse is being used.

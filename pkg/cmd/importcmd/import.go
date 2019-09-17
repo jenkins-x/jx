@@ -328,7 +328,7 @@ func (options *ImportOptions) Run() error {
 				userAuth := options.GitProvider.UserAuth()
 				options.GitUserAuth = &userAuth
 			}
-			options.RepoURL, err = options.Git().CreateAuthenticatedURL(options.RepoURL, options.GitUserAuth)
+			options.RepoURL, err = options.Git().CreatePushURL(options.RepoURL, options.GitUserAuth)
 			if err != nil {
 				return err
 			}
@@ -391,9 +391,6 @@ func (options *ImportOptions) Run() error {
 		if !options.DryRun {
 			err = options.CreateNewRemoteRepository()
 			if err != nil {
-				if !options.DisableDraft {
-					log.Logger().Warn("Remote repository creation failed. In order to retry consider adding '--no-draft' option.")
-				}
 				return err
 			}
 		}
@@ -639,7 +636,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	options.GitProvider = details.GitProvider
 
 	options.RepoURL = repo.CloneURL
-	pushGitURL, err := options.Git().CreateAuthenticatedURL(repo.CloneURL, details.User)
+	pushGitURL, err := options.Git().CreatePushURL(repo.CloneURL, details.User)
 	if err != nil {
 		return err
 	}
@@ -1418,16 +1415,16 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	if options.GitRepositoryOptions.ServerURL == "" {
 		options.GitRepositoryOptions.ServerURL = settings.GitServer
 	}
-	options.GitRepositoryOptions.Public = settings.GitPublic || options.GitRepositoryOptions.Public
+	options.GitRepositoryOptions.Private = settings.GitPrivate || options.GitRepositoryOptions.Private
 	options.PipelineServer = settings.GitServer
 	options.PipelineUserName = settings.PipelineUsername
 	return nil
 }
 
-func (options *ImportOptions) allDraftPacks() ([]string, error) {
+func (o *ImportOptions) allDraftPacks() ([]string, error) {
 	// lets make sure we have the latest draft packs
 	initOpts := initcmd.InitOptions{
-		CommonOptions: options.CommonOptions,
+		CommonOptions: o.CommonOptions,
 	}
 	log.Logger().Info("Getting latest packs ...")
 	dir, _, err := initOpts.InitBuildPacks(nil)

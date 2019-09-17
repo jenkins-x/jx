@@ -6131,7 +6131,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Format: "",
 						},
 					},
-					"gitPublic": {
+					"gitPrivate": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},
 							Format: "",
