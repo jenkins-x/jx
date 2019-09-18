@@ -100,6 +100,8 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 
+	o.overrideSteps()
+
 	projectConfig, pipelineFile, err := config.LoadProjectConfig(o.Dir)
 	if err != nil {
 		return err
@@ -363,4 +365,22 @@ func (o *BootOptions) verifyClusterConnection() error {
 			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
 	}
 	return nil
+}
+
+func (o *BootOptions) overrideSteps() {
+	if o.StartStep == "" {
+		startStep := os.Getenv("JX_BOOT_START_STEP")
+		if startStep != "" {
+			log.Logger().Debugf("Overriding start-step with env var: '%s'", startStep)
+			o.StartStep = startStep
+		}
+	}
+
+	if o.EndStep == "" {
+		endStep := os.Getenv("JX_BOOT_END_STEP")
+		if endStep != "" {
+			log.Logger().Debugf("Overriding end-step with env var: '%s'", endStep)
+			o.EndStep = endStep
+		}
+	}
 }
