@@ -1504,19 +1504,25 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, step *corev1.Container)
 		suffix = fmt.Sprintf(" with env: %s", util.ColorInfo(fmt.Sprintf("%#v", envMap)))
 	}
 	log.Logger().Infof("\nSTEP: %s command: %s in dir: %s%s\n\n", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(dir), suffix)
-	cmd := util.Command{
-		Name: commandAndArgs[0],
-		Args: commandAndArgs[1:],
-		Dir:  dir,
-		Out:  os.Stdout,
-		Err:  os.Stdout,
-		In:   os.Stdin,
-		Env:  envMap,
+
+	if !o.DryRun {
+		cmd := util.Command{
+			Name: commandAndArgs[0],
+			Args: commandAndArgs[1:],
+			Dir:  dir,
+			Out:  os.Stdout,
+			Err:  os.Stdout,
+			In:   os.Stdin,
+			Env:  envMap,
+		}
+		_, err := cmd.RunWithoutRetry()
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Logger().Infof("%s", envMap)
 	}
-	_, err := cmd.RunWithoutRetry()
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 
