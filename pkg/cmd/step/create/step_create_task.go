@@ -91,6 +91,7 @@ type StepCreateTaskOptions struct {
 	InterpretMode     bool
 	DisableConcurrent bool
 	StartStep         string
+	EndStep           string
 	Trigger           string
 	TargetPath        string
 	SourceName        string
@@ -173,6 +174,7 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file, without side effects")
 	cmd.Flags().BoolVarP(&options.InterpretMode, "interpret", "", false, "Enable interpret mode. Rather than spinning up Tekton CRDs to create a Pod just invoke the commands in the current shell directly. Useful for bootstrapping installations of Jenkins X and tekton using a pipeline before you have installed Tekton.")
 	cmd.Flags().StringVarP(&options.StartStep, "start-step", "", "", "When in interpret mode this specifies the step to start at")
+	cmd.Flags().StringVarP(&options.EndStep, "end-step", "", "", "When in interpret mode this specifies the step to end at")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().BoolVarP(&options.EffectivePipeline, "effective-pipeline", "", false, "Just view the effective pipeline definition that would be created")
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
@@ -1434,6 +1436,24 @@ func (o *StepCreateTaskOptions) interpretPipeline(ns string, projectConfig *conf
 				names = append(names, step.Name)
 			}
 			return util.InvalidOption("start-step", o.StartStep, names)
+		}
+	}
+
+	if o.EndStep != "" {
+		found := false
+		for i, step := range steps {
+			if step.Name == o.EndStep {
+				found = true
+				steps = steps[:i+1]
+				break
+			}
+		}
+		if !found {
+			names := []string{}
+			for _, step := range steps {
+				names = append(names, step.Name)
+			}
+			return util.InvalidOption("end-step", o.EndStep, names)
 		}
 	}
 

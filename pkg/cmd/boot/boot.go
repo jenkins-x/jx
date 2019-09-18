@@ -32,6 +32,7 @@ type BootOptions struct {
 	GitURL       string
 	GitRef       string
 	StartStep    string
+	EndStep      string
 	HelmLogLevel string
 
 	// The bootstrap URL for the version stream. Once we have a jx-requirements.yaml files, we read that
@@ -85,6 +86,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.VersionStreamURL, "versions-repo", "", config.DefaultVersionsURL, "the bootstrap URL for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	cmd.Flags().StringVarP(&options.VersionStreamRef, "versions-ref", "", config.DefaultVersionsRef, "the bootstrap ref for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yaml")
 	cmd.Flags().StringVarP(&options.StartStep, "start-step", "s", "", "the step in the pipeline to start from")
+	cmd.Flags().StringVarP(&options.EndStep, "end-step", "e", "", "the step in the pipeline to end at")
 	cmd.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
 	return cmd
 }
@@ -259,6 +261,7 @@ func (o *BootOptions) Run() error {
 	so.InterpretMode = true
 	so.NoReleasePrepare = true
 	so.StartStep = o.StartStep
+	so.EndStep = o.EndStep
 
 	so.AdditionalEnvVars = map[string]string{
 		"JX_NO_TILLER":    "true",
