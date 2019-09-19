@@ -383,7 +383,9 @@ func TestBatchReconciliationWithTwoPRBuildExecutions(t *testing.T) {
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
-			Build: "1",
+			GitOwner:      expectedOrganisation,
+			GitRepository: expectedName,
+			Build:         "1",
 			BatchPipelineActivity: v1.BatchPipelineActivity{
 				BatchBuildNumber: expectedBatchBuild,
 			},
@@ -404,7 +406,9 @@ func TestBatchReconciliationWithTwoPRBuildExecutions(t *testing.T) {
 			},
 		},
 		Spec: v1.PipelineActivitySpec{
-			Build: expectedBatchBuild,
+			GitOwner:      expectedOrganisation,
+			GitRepository: expectedName,
+			Build:         expectedBatchBuild,
 			BatchPipelineActivity: v1.BatchPipelineActivity{
 				ComprisingPulLRequests: []v1.PullRequestInfo{
 					{PullRequestNumber: "PR-1", LastBuildNumberForCommit: "1"},
