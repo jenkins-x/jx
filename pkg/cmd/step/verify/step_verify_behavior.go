@@ -24,8 +24,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// VerifyBehaviorOptions contains the command line options
-type VerifyBehaviorOptions struct {
+// BehaviorOptions contains the command line options
+type BehaviorOptions struct {
 	*opts.CommonOptions
 
 	SourceGitURL string
@@ -46,7 +46,7 @@ var (
 
 // NewCmdStepVerifyBehavior creates the command
 func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &VerifyBehaviorOptions{
+	options := &BehaviorOptions{
 		CommonOptions: commonOpts,
 	}
 
@@ -69,7 +69,7 @@ func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // Run implements this command
-func (o *VerifyBehaviorOptions) Run() error {
+func (o *BehaviorOptions) Run() error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func (o *VerifyBehaviorOptions) Run() error {
 	return lo.Run()
 }
 
-func (o *VerifyBehaviorOptions) findSourceRepository(repositories []v1.SourceRepository, url string, gitInfo *gits.GitRepository) (*v1.SourceRepository, error) {
+func (o *BehaviorOptions) findSourceRepository(repositories []v1.SourceRepository, url string, gitInfo *gits.GitRepository) (*v1.SourceRepository, error) {
 	for i := range repositories {
 		repo := &repositories[i]
 		u2, _ := kube.GetRepositoryGitURL(repo)
@@ -151,7 +151,7 @@ func (o *VerifyBehaviorOptions) findSourceRepository(repositories []v1.SourceRep
 	return nil, nil
 }
 
-func (o *VerifyBehaviorOptions) importSourceRepository(gitInfo *gits.GitRepository) error {
+func (o *BehaviorOptions) importSourceRepository(gitInfo *gits.GitRepository) error {
 	log.Logger().Infof("importing project %s", util.ColorInfo(o.SourceGitURL))
 
 	io := &importcmd.ImportOptions{
@@ -172,7 +172,7 @@ func (o *VerifyBehaviorOptions) importSourceRepository(gitInfo *gits.GitReposito
 	return nil
 }
 
-func (o *VerifyBehaviorOptions) triggerPipeline(owner string, repo string) error {
+func (o *BehaviorOptions) triggerPipeline(owner string, repo string) error {
 	pipeline := owner + "/" + repo + "/" + o.Branch
 	log.Logger().Infof("triggering pipeline %s", util.ColorInfo(pipeline))
 
