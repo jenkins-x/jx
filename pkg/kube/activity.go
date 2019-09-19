@@ -3,6 +3,8 @@ package kube
 import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"reflect"
 	"strconv"
 	"strings"
@@ -263,21 +265,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 
 func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient typev1.PipelineActivityInterface, currentActivity *v1.PipelineActivity) error {
 	log.Logger().Info("Checking if batch build reconciling is needed")
-	//Create a selector for other runs of this PR with the same last commit SHA
-	labels := currentActivity.Labels
-	selector := fmt.Sprintf("lastCommitSha in (%s), branch in (%s)", labels[v1.LabelLastCommitSha], labels[v1.LabelBranch])
-
-	gitOwnerSelector := fields.OneTermEqualSelector("metadata.spec.gitOwner", currentActivity.Spec.GitOwner)
-	gitRepoSelector := fields.OneTermEqualSelector("metadata.spec.gitRepository", currentActivity.Spec.GitRepository)
-	fieldSelector := fields.AndSelectors(gitOwnerSelector, gitRepoSelector)
-
-	listOptions := metav1.ListOptions{
-		LabelSelector: selector,
-		FieldSelector: fieldSelector.String(),
-	}
-
-	log.Logger().Debugf("looking for PipelineActivities with selector %s", selector)
-	activities, err := activitiesClient.List(listOptions)
+	activities, err := k.findMatchingPipelineActivitiesWithSameCommitSHA(activitiesClient, currentActivity)
 	if err != nil {
 		return errors.Wrap(err, "there was a problem listing all activities to reconcile a batch build")
 	}
@@ -299,7 +287,7 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 			if buildNumber, err := strconv.Atoi(v.Spec.Build); err == nil {
 				//Check if it's the previous build, then we can update the PRs and the batch build
 				if previousBuildNumber == buildNumber {
-					log.Logger().Infof("Found an earlier PipelineActivity for %s and equal lastCommitSha with batch information", labels[v1.LabelBranch])
+					log.Logger().Infof("Found an earlier PipelineActivity for %s and equal lastCommitSha with batch information", currentActivity.Labels[v1.LabelBranch])
 					currentActivity.Spec.BatchPipelineActivity.BatchBuildNumber = v.Spec.BatchPipelineActivity.BatchBuildNumber
 					return updateBatchBuildComprisingPRs(activitiesClient, currentActivity, v.Spec.BatchPipelineActivity.BatchBuildNumber, &v)
 				}
@@ -307,6 +295,26 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 		}
 	}
 	return nil
+}
+
+func (k *PipelineActivityKey) findMatchingPipelineActivitiesWithSameCommitSHA(activitiesClient typev1.PipelineActivityInterface, currentActivity *v1.PipelineActivity) (*v1.PipelineActivityList, error) {
+	//Create a selector for other runs of this PR with the same last commit SHA
+	lastCommitSHARequirement, err := labels.NewRequirement("lastCommitSha", selection.In, []string{currentActivity.Labels[v1.LabelLastCommitSha]})
+	if err != nil {
+		return nil, err
+	}
+
+	branchRequirement, err := labels.NewRequirement("branch", selection.In, []string{currentActivity.Labels[v1.LabelBranch]})
+	if err != nil {
+		return nil, err
+	}
+	labelSelector := labels.NewSelector().Add(*lastCommitSHARequirement).Add(*branchRequirement)
+
+	gitOwnerSelector := fields.OneTermEqualSelector("spec.gitOwner", currentActivity.Spec.GitOwner)
+	gitRepoSelector := fields.OneTermEqualSelector("spec.gitRepository", currentActivity.Spec.GitRepository)
+	fieldSelector := fields.AndSelectors(gitOwnerSelector, gitRepoSelector)
+
+	return ListSelectedPipelineActivities(activitiesClient, labelSelector, fieldSelector)
 }
 
 func updateBatchBuildComprisingPRs(activitiesClient typev1.PipelineActivityInterface, currentActivity *v1.PipelineActivity, batchBuild string, previousActivityForPR *v1.PipelineActivity) error {
@@ -753,6 +761,41 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 		_, err = activities.PatchUpdate(a)
 	}
 	return err
+}
+
+// ListSelectedPipelineActivities retrieves the PipelineActivities instances matching the specified label and field selectors. Selectors can be empty or nil.
+func ListSelectedPipelineActivities(activitiesClient typev1.PipelineActivityInterface, labelSelector labels.Selector, fieldSelector fields.Selector) (*v1.PipelineActivityList, error) {
+	log.Logger().Debugf("looking for PipelineActivities with label selector %v and field selector %v", labelSelector, fieldSelector)
+
+	listOptions := metav1.ListOptions{}
+	if labelSelector != nil {
+		listOptions.LabelSelector = labelSelector.String()
+	}
+
+	// Field selectors cannot directly be applied to the list query for custom CRDs - https://github.com/kubernetes/kubernetes/issues/51046
+	// We just apply the label selectors and apply the field selection client side
+	pipelineActivityList, err := activitiesClient.List(listOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	if fieldSelector == nil {
+		return pipelineActivityList, nil
+	}
+
+	var matchedItems []v1.PipelineActivity
+	for _, pipelineActivity := range pipelineActivityList.Items {
+		fieldMap, err := newFieldMap(pipelineActivity)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to convert struct to map")
+		}
+		if fieldSelector.Matches(fieldMap) {
+			matchedItems = append(matchedItems, pipelineActivity)
+		}
+	}
+
+	pipelineActivityList.Items = matchedItems
+	return pipelineActivityList, nil
 }
 
 func asYaml(activity *v1.PipelineActivity) string {

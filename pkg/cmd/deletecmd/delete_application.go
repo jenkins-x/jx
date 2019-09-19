@@ -483,15 +483,12 @@ func (o *DeleteApplicationOptions) init() error {
 }
 
 func (o *DeleteApplicationOptions) deletePipelineActivitiesForSourceRepository(jxClient versioned.Interface, ns string, gitOwner string, gitRepo string) error {
-	gitOwnerSelector := fields.OneTermEqualSelector("metadata.spec.gitOwner", gitOwner)
-	gitRepoSelector := fields.OneTermEqualSelector("metadata.spec.gitRepository", gitRepo)
+	gitOwnerSelector := fields.OneTermEqualSelector("spec.gitOwner", gitOwner)
+	gitRepoSelector := fields.OneTermEqualSelector("spec.gitRepository", gitRepo)
 	fieldSelector := fields.AndSelectors(gitOwnerSelector, gitRepoSelector)
 
 	pipelineInterface := jxClient.JenkinsV1().PipelineActivities(ns)
-
-	paList, err := pipelineInterface.List(metav1.ListOptions{
-		FieldSelector: fieldSelector.String(),
-	})
+	paList, err := kube.ListSelectedPipelineActivities(pipelineInterface, nil, fieldSelector)
 	if err != nil {
 		return errors.Wrapf(err, "failed to list PipelineActivity resource in namespace %s with selector %s", ns, fieldSelector.String())
 	}
