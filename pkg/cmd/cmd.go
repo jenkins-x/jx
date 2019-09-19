@@ -18,7 +18,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/bdd"
+
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
 	"github.com/spf13/viper"
 
@@ -233,7 +233,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	rootCommand.SetVersionTemplate("{{printf .Version}}\n")
 	rootCommand.AddCommand(NewCmdOptions(out))
 	rootCommand.AddCommand(NewCmdDiagnose(commonOpts))
-	rootCommand.AddCommand(bdd.NewCmdStartBDD(commonOpts))
 
 	managedPlugins := &managedPluginHandler{
 		CommonOptions: commonOpts,
