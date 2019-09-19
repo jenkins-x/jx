@@ -26,6 +26,10 @@ pipelinerunner:
   image:
     repository: gcr.io/jenkinsxio/builder-maven
     tag: $VERSION
+  args:
+  - controller
+  - pipelinerunner
+  - --use-meta-pipeline=false
   env:
     GIT_AUTHOR_NAME: "jenkins-x-bot"
     GIT_AUTHOR_EMAIL: "jenkins-x@googlegroups.com"
