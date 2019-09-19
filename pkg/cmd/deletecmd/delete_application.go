@@ -483,8 +483,8 @@ func (o *DeleteApplicationOptions) init() error {
 }
 
 func (o *DeleteApplicationOptions) deletePipelineActivitiesForSourceRepository(jxClient versioned.Interface, ns string, gitOwner string, gitRepo string) error {
-	gitOwnerSelector := fields.OneTermEqualSelector("metadata.spec.gitOwner", gitOwner)
-	gitRepoSelector := fields.OneTermEqualSelector("metadata.spec.gitRepository", gitRepo)
+	gitOwnerSelector := fields.OneTermEqualSelector("spec.gitOwner", gitOwner)
+	gitRepoSelector := fields.OneTermEqualSelector("spec.gitRepository", gitRepo)
 	fieldSelector := fields.AndSelectors(gitOwnerSelector, gitRepoSelector)
 
 	pipelineInterface := jxClient.JenkinsV1().PipelineActivities(ns)

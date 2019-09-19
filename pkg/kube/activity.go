@@ -267,8 +267,8 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 	labels := currentActivity.Labels
 	selector := fmt.Sprintf("lastCommitSha in (%s), branch in (%s)", labels[v1.LabelLastCommitSha], labels[v1.LabelBranch])
 
-	gitOwnerSelector := fields.OneTermEqualSelector("metadata.spec.gitOwner", currentActivity.Spec.GitOwner)
-	gitRepoSelector := fields.OneTermEqualSelector("metadata.spec.gitRepository", currentActivity.Spec.GitRepository)
+	gitOwnerSelector := fields.OneTermEqualSelector("spec.gitOwner", currentActivity.Spec.GitOwner)
+	gitRepoSelector := fields.OneTermEqualSelector("spec.gitRepository", currentActivity.Spec.GitRepository)
 	fieldSelector := fields.AndSelectors(gitOwnerSelector, gitRepoSelector)
 
 	listOptions := metav1.ListOptions{
