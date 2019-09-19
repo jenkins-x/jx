@@ -1,4 +1,4 @@
-package bdd
+package verify
 
 import (
 	"strings"
@@ -24,8 +24,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// StartBDDOptions contains the command line options
-type StartBDDOptions struct {
+// VerifyBehaviorOptions contains the command line options
+type VerifyBehaviorOptions struct {
 	*opts.CommonOptions
 
 	SourceGitURL string
@@ -33,29 +33,29 @@ type StartBDDOptions struct {
 }
 
 var (
-	startBDDLong = templates.LongDesc(`
-		Starts the BDD tests on the current cluster to verify the current cluster installation.
+	verifyBehaviorLong = templates.LongDesc(`
+		Verifies the cluster behaves correctly by running the BDD tests to verify we can create quickstarts, previews and promote applications.
 
 `)
 
-	startBDDExample = templates.Examples(`
-		# Start the bdd tests on the current cluster
-		jx bdd
+	verifyBehaviorExample = templates.Examples(`
+		# runs the BDD tests on the current cluster to verify it behaves nicely
+		jx step verify behavior
 	`)
 )
 
-// NewCmdStartBDD creates the command
-func NewCmdStartBDD(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &StartBDDOptions{
+// NewCmdStepVerifyBehavior creates the command
+func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
+	options := &VerifyBehaviorOptions{
 		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
-		Use:     "bdd [flags]",
-		Short:   "Starts the BDD tests on the current cluster to verify the current cluster installation",
-		Long:    startBDDLong,
-		Example: startBDDExample,
-		Aliases: []string{"tck"},
+		Use:     "behavior [flags]",
+		Short:   "Verifies the cluster behaves correctly by running the BDD tests to verify we can create quickstarts, previews and promote applications",
+		Long:    verifyBehaviorLong,
+		Example: verifyBehaviorExample,
+		Aliases: []string{"tck", "bdd", "behavior", "behave"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -69,7 +69,7 @@ func NewCmdStartBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // Run implements this command
-func (o *StartBDDOptions) Run() error {
+func (o *VerifyBehaviorOptions) Run() error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func (o *StartBDDOptions) Run() error {
 	return lo.Run()
 }
 
-func (o *StartBDDOptions) findSourceRepository(repositories []v1.SourceRepository, url string, gitInfo *gits.GitRepository) (*v1.SourceRepository, error) {
+func (o *VerifyBehaviorOptions) findSourceRepository(repositories []v1.SourceRepository, url string, gitInfo *gits.GitRepository) (*v1.SourceRepository, error) {
 	for i := range repositories {
 		repo := &repositories[i]
 		u2, _ := kube.GetRepositoryGitURL(repo)
@@ -151,7 +151,7 @@ func (o *StartBDDOptions) findSourceRepository(repositories []v1.SourceRepositor
 	return nil, nil
 }
 
-func (o *StartBDDOptions) importSourceRepository(gitInfo *gits.GitRepository) error {
+func (o *VerifyBehaviorOptions) importSourceRepository(gitInfo *gits.GitRepository) error {
 	log.Logger().Infof("importing project %s", util.ColorInfo(o.SourceGitURL))
 
 	io := &importcmd.ImportOptions{
@@ -172,7 +172,7 @@ func (o *StartBDDOptions) importSourceRepository(gitInfo *gits.GitRepository) er
 	return nil
 }
 
-func (o *StartBDDOptions) triggerPipeline(owner string, repo string) error {
+func (o *VerifyBehaviorOptions) triggerPipeline(owner string, repo string) error {
 	pipeline := owner + "/" + repo + "/" + o.Branch
 	log.Logger().Infof("triggering pipeline %s", util.ColorInfo(pipeline))
 

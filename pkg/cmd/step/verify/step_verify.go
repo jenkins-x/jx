@@ -29,6 +29,7 @@ func NewCmdStepVerify(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdStepVerifyBehavior(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyDependencies(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyEnvironments(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyGit(commonOpts))
