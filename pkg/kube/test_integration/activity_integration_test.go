@@ -1,6 +1,6 @@
 // +build integration
 
-package kube_test
+package test_integration_test
 
 import (
 	"fmt"
@@ -53,8 +53,6 @@ var _ = Describe("PipelineActivity", func() {
 
 			err = createNamespace(kubeClient, testNamespace)
 			Expect(err).Should(BeNil())
-
-			testPipelineActivities = nil
 		})
 
 		BeforeEach(func() {
