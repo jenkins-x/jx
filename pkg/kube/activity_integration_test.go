@@ -53,6 +53,8 @@ var _ = Describe("PipelineActivity", func() {
 
 			err = createNamespace(kubeClient, testNamespace)
 			Expect(err).Should(BeNil())
+
+			testPipelineActivities = nil
 		})
 
 		BeforeEach(func() {
