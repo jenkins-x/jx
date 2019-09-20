@@ -139,13 +139,18 @@ func (c *clientFactory) Create(param PipelineCreateParam) (kube.PromoteStepActiv
 		VersionsDir:      c.versionDir,
 		GitInfo:          *gitInfo,
 	}
-	tektonCRDs, err := createMetaPipelineCRDs(crdCreationParams)
+
+	return c.createActualCRDs(buildNumber, branchIdentifier, param.Context, param.PullRef, crdCreationParams)
+}
+
+func (c *clientFactory) createActualCRDs(buildNumber string, branchIdentifier string, context string, pullRef PullRef, parameters CRDCreationParameters) (kube.PromoteStepActivityKey, tekton.CRDWrapper, error) {
+	tektonCRDs, err := createMetaPipelineCRDs(parameters)
 	if err != nil {
 		return kube.PromoteStepActivityKey{}, tekton.CRDWrapper{}, errors.Wrap(err, "failed to generate Tekton CRDs for meta pipeline")
 	}
 
-	pr, _ := tekton.ParsePullRefs(param.PullRef.String())
-	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branchIdentifier, gitInfo, param.Context, pr)
+	pr, _ := tekton.ParsePullRefs(pullRef.String())
+	pipelineActivity := tekton.GeneratePipelineActivity(buildNumber, branchIdentifier, &parameters.GitInfo, context, pr)
 
 	return *pipelineActivity, *tektonCRDs, nil
 }

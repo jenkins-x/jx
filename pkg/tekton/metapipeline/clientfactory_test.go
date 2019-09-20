@@ -4,11 +4,13 @@ import (
 	jxv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -118,4 +120,36 @@ func Test_clone_version_stream_from_sha(t *testing.T) {
 	output, err := cmd.RunWithoutRetry()
 	assert.NoError(t, err)
 	assert.Equal(t, ref, output)
+}
+
+func Test_verify_pull_refs_on_activity(t *testing.T) {
+	branchIdentifier := "master"
+	buildNumber := "1"
+	gitInfo, _ := gits.NewGitFake().Info("/acme")
+	pullRef := NewPullRefWithPullRequest("https://github.com/jenkins-x/jx", "master", "0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815", PullRequestRef{ID: "42", MergeSHA: "db8e2d275df53477b1c6871f7d7f4281dacf3169"})
+
+	testParams := CRDCreationParameters{
+		PipelineName:     "test-pipeline",
+		PipelineKind:     PullRequestPipeline,
+		BranchIdentifier: branchIdentifier,
+		PullRef:          pullRef,
+		GitInfo:          *gitInfo,
+		Labels:           map[string]string{"someLabel": "someValue"},
+		EnvVars:          map[string]string{"SOME_VAR": "SOME_VAL", "OTHER_VAR": "OTHER_VAL"},
+		BuildNumber:      buildNumber,
+		SourceDir:        "source",
+		ServiceAccount:   "tekton-bot",
+		VersionsDir:      filepath.Join("test_data", "stable_versions"),
+	}
+
+	clientFactory := clientFactory{}
+
+	activityKey, _, err := clientFactory.createActualCRDs(buildNumber, branchIdentifier, "", pullRef, testParams)
+	assert.NoError(t, err)
+	assert.NotNil(t, activityKey)
+	assert.NotNil(t, activityKey.PullRefs)
+
+	for _, prRef := range pullRef.pullRequests {
+		assert.Equal(t, prRef.MergeSHA, activityKey.PullRefs[prRef.ID])
+	}
 }
