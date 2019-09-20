@@ -3539,6 +3539,12 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							Format: "",
 						},
 					},
+					"baseSHA": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
