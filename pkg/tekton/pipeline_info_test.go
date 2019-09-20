@@ -40,6 +40,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			},
 			GitURL:        "https://github.com/cb-kubecd/bdd-spring-1567745634.git",
 			LastCommitSHA: "c6bd3e0221a122dca3a00e87cb9188daed2e1d44",
+			BaseSHA:       "441de50841eb31130c8a59ae0edc00d97f6b7b97",
 			Name:          "cb-kubecd-bdd-spring-1567745634-PR-1-1",
 			Organisation:  "cb-kubecd",
 			Pipeline:      "cb-kubecd/bdd-spring-1567745634/PR-1",

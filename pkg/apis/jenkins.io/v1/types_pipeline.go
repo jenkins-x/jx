@@ -61,6 +61,7 @@ type PipelineActivitySpec struct {
 	Attachments           []Attachment           `json:"attachments,omitempty" protobuf:"bytes,24,opt,name=attachments"`
 	BatchPipelineActivity BatchPipelineActivity  `json:"batchPipelineActivity,omitempty" protobuf:"bytes,25,opt,name=batchPipelineActivity"`
 	Context               string                 `json:"context,omitempty" protobuf:"bytes,26,opt,name=context"`
+	BaseSHA               string                 `json:"baseSHA,omitempty" protobuf:"bytes,27,opt,name=baseSHA"`
 }
 
 // BatchPipelineActivity contains information about a batch build, used by both the batch build and its comprising PRs for linking them together

@@ -33,6 +33,7 @@ type PipelineRunInfo struct {
 	Pipeline          string
 	PipelineRun       string
 	LastCommitSHA     string
+	BaseSHA           string
 	LastCommitMessage string
 	LastCommitURL     string
 	GitURL            string
@@ -264,6 +265,15 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		idx := strings.LastIndex(pullRefs, ":")
 		if idx > 0 {
 			lastCommitSha = pullRefs[idx+1:]
+			if pri.BaseSHA == "" {
+				paths := strings.Split(pullRefs, ":")
+				if len(paths) > 2 {
+					expressions := strings.Split(paths[1], ",")
+					if len(expressions) > 0 {
+						pri.BaseSHA = expressions[0]
+					}
+				}
+			}
 		}
 	}
 
