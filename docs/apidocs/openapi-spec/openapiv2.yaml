@@ -1324,6 +1324,8 @@ definitions:
         type: array
       author:
         type: string
+      baseSHA:
+        type: string
       batchPipelineActivity:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BatchPipelineActivity'
       build:
