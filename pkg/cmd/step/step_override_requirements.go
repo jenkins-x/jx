@@ -134,30 +134,24 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	}
 
 	if "" != os.Getenv(config.RequirementStorageLogsEnabled) {
-		storageLogs := config.RequirementStorageLogsEnabled
-		if storageLogs == "true" {
+		storageLogs := os.Getenv(config.RequirementStorageLogsEnabled)
+		if storageLogs == "true" && "" != os.Getenv(config.RequirementStorageLogsURL) {
 			requirements.Storage.Logs.Enabled = true
-			if "" != os.Getenv(config.RequirementStorageLogsURL) {
-				requirements.Storage.Logs.URL = os.Getenv(config.RequirementStorageLogsURL)
-			}
+			requirements.Storage.Logs.URL = os.Getenv(config.RequirementStorageLogsURL)
 		}
 	}
 	if "" != os.Getenv(config.RequirementStorageReportsEnabled) {
-		storageReports := config.RequirementStorageReportsEnabled
-		if storageReports == "true" {
+		storageReports := os.Getenv(config.RequirementStorageReportsEnabled)
+		if storageReports == "true" && "" != os.Getenv(config.RequirementStorageReportsURL) {
 			requirements.Storage.Reports.Enabled = true
-			if "" != os.Getenv(config.RequirementStorageReportsURL) {
-				requirements.Storage.Reports.URL = os.Getenv(config.RequirementStorageReportsURL)
-			}
+			requirements.Storage.Reports.URL = os.Getenv(config.RequirementStorageReportsURL)
 		}
 	}
 	if "" != os.Getenv(config.RequirementStorageRepositoryEnabled) {
-		storageRepository := config.RequirementStorageRepositoryEnabled
-		if storageRepository == "true" {
+		storageRepository := os.Getenv(config.RequirementStorageRepositoryEnabled)
+		if storageRepository == "true" && "" != os.Getenv(config.RequirementStorageRepositoryURL) {
 			requirements.Storage.Repository.Enabled = true
-			if "" != os.Getenv(config.RequirementStorageRepositoryURL) {
-				requirements.Storage.Repository.URL = os.Getenv(config.RequirementStorageRepositoryURL)
-			}
+			requirements.Storage.Repository.URL = os.Getenv(config.RequirementStorageRepositoryURL)
 		}
 	}
 	log.Logger().Debugf("saving %s", requirementsFileName)
