@@ -1193,6 +1193,11 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		}
 		activity.Spec.LastCommitSHA = sha
 	}
+	baseSHA := activity.Spec.BaseSHA
+	if baseSHA == "" {
+		baseSHA = pri.BaseSHA
+		activity.Spec.BaseSHA = baseSHA
+	}
 	owner := activity.Spec.GitOwner
 	repo := activity.Spec.GitRepository
 	gitURL := activity.Spec.GitURL
