@@ -132,7 +132,13 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 		webhookString := os.Getenv(config.RequirementWebhook)
 		requirements.Webhook = config.WebhookType(webhookString)
 	}
-
+	if "" != os.Getenv(config.RequirementStorageBackupEnabled) {
+		storageBackup := os.Getenv(config.RequirementStorageBackupEnabled)
+		if storageBackup == "true" && "" != os.Getenv(config.RequirementStorageBackupURL) {
+			requirements.Storage.Backup.Enabled = true
+			requirements.Storage.Backup.URL = os.Getenv(config.RequirementStorageBackupURL)
+		}
+	}
 	if "" != os.Getenv(config.RequirementStorageLogsEnabled) {
 		storageLogs := os.Getenv(config.RequirementStorageLogsEnabled)
 		if storageLogs == "true" && "" != os.Getenv(config.RequirementStorageLogsURL) {

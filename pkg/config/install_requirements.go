@@ -73,6 +73,10 @@ const (
 	RequirementIngressTLSProduction = "JX_REQUIREMENT_INGRESS_TLS_PRODUCTION"
 	// RequirementWebhook the webhook handler for jx
 	RequirementWebhook = "JX_REQUIREMENT_WEBHOOK"
+	// RequirementStorageBackupEnabled if backup storage is required
+	RequirementStorageBackupEnabled = "JX_REQUIREMENT_STORAGE_BACKUP_ENABLED"
+	// RequirementStorageBackupURL backup storage url
+	RequirementStorageBackupURL = "JX_REQUIREMENT_STORAGE_BACKUP_URL"
 	// RequirementStorageLogsEnabled if log storage is required
 	RequirementStorageLogsEnabled = "JX_REQUIREMENT_STORAGE_LOGS_ENABLED"
 	// RequirementStorageLogsURL logs storage url
