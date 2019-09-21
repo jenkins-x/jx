@@ -2,6 +2,7 @@ package boot
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -395,10 +396,17 @@ func (o *BootUpgradeOptions) cloneDevEnv() error {
 
 	cloneDir, err := ioutil.TempDir("", "")
 	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
+
+	_, userAuth, err := o.pipelineUserAuth()
+	if err != nil {
+		return errors.Wrap(err, "failed to get pipeline user auth")
+	}
+	cloneURL, err := o.Git().CreateAuthenticatedURL(devEnvURL, userAuth)
+
 	if err != nil {
 		return errors.Wrapf(err, "failed to create directory for dev env clone: %s", cloneDir)
 	}
-	err = o.Git().Clone(devEnvURL, cloneDir)
+	err = o.Git().Clone(cloneURL, cloneDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone git URL %s to directory %s", devEnvURL, cloneDir)
 	}
@@ -407,12 +415,20 @@ func (o *BootUpgradeOptions) cloneDevEnv() error {
 	return nil
 }
 
-func (o *BootUpgradeOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+func (o *BootUpgradeOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAuth, error) {
 	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
+		return nil, nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
 	}
 	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
+	return server, userAuth, nil
+}
+
+func (o *BootUpgradeOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+	server, userAuth, err := o.pipelineUserAuth()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get pipeline user auth")
+	}
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	if err != nil {
