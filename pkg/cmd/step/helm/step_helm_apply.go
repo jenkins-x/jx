@@ -7,9 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/platform"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/platform"
 
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -403,8 +402,12 @@ func DefaultEnvironments(c *config.RequirementsConfig, devGitInfo *gits.GitRepos
 		if env.Owner == "" {
 			env.Owner = defaultOwner
 		}
-		if env.Repository == "" && clusterName != "" {
-			env.Repository = naming.ToValidName("environment-" + clusterName + "-" + env.Key)
+		if env.Repository == "" {
+			if clusterName != "" {
+				env.Repository = naming.ToValidName("environment-" + clusterName + "-" + env.Key)
+			} else {
+				log.Logger().Warnf("there is no 'cluster.clusterName' value set in the 'jx-requirements.yml' file. Please specify the 'repository' for environment: %s", env.Key)
+			}
 		}
 	}
 }
