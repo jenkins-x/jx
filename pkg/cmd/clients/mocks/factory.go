@@ -621,21 +621,6 @@ func (mock *MockFactory) IsInCDPipeline() bool {
 	return ret0
 }
 
-func (mock *MockFactory) IsInCluster() bool {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockFactory().")
-	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("IsInCluster", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
-	var ret0 bool
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(bool)
-		}
-	}
-	return ret0
-}
-
 func (mock *MockFactory) ResetSecretsLocation() {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
@@ -1552,23 +1537,6 @@ func (c *MockFactory_IsInCDPipeline_OngoingVerification) GetCapturedArguments() 
 }
 
 func (c *MockFactory_IsInCDPipeline_OngoingVerification) GetAllCapturedArguments() {
-}
-
-func (verifier *VerifierMockFactory) IsInCluster() *MockFactory_IsInCluster_OngoingVerification {
-	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsInCluster", params, verifier.timeout)
-	return &MockFactory_IsInCluster_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockFactory_IsInCluster_OngoingVerification struct {
-	mock              *MockFactory
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockFactory_IsInCluster_OngoingVerification) GetCapturedArguments() {
-}
-
-func (c *MockFactory_IsInCluster_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockFactory) ResetSecretsLocation() *MockFactory_ResetSecretsLocation_OngoingVerification {

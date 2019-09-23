@@ -1,6 +1,8 @@
 package vault_test
 
 import (
+	"testing"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
 	cmdMocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
@@ -15,8 +17,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"testing"
 
 	"k8s.io/client-go/kubernetes"
 )

@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+
 	"github.com/jenkins-x/jx/pkg/gits/features"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -71,7 +73,7 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(o.factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -332,7 +334,7 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(o.factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
 
 // CreateGitProviderForURLWithoutKind creates a git provider from URL wihtout kind

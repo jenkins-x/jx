@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+
 	jxv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -11,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -139,7 +141,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 	}
 
 	if secrets != nil {
-		err = o.factory.AuthMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || o.factory.IsInCluster())
+		err = o.factory.AuthMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || cluster.IsInCluster())
 		if err != nil {
 			return authConfigSvc, err
 		}

@@ -2,6 +2,7 @@ package get
 
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -70,7 +71,7 @@ func (o *GetVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	vaults, err := vault.GetVaults(client, vaultOperatorClient, o.Namespace)
+	vaults, err := vault.GetVaults(client, vaultOperatorClient, o.Namespace, cluster.IsInCluster())
 	if err != nil {
 		log.Logger().Infof("No vault found.")
 		return nil
