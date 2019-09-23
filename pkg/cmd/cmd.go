@@ -97,7 +97,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	installCommands := []*cobra.Command{
 		profile.NewCmdProfile(commonOpts),
 		boot.NewCmdBoot(commonOpts),
-		boot.NewCmdBootUpgrade(commonOpts),
 		create.NewCmdInstall(commonOpts),
 		uninstall.NewCmdUninstall(commonOpts),
 		upgrade.NewCmdUpgrade(commonOpts),
