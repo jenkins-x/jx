@@ -2,10 +2,13 @@ package clients
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
 	"net/url"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+
+	"github.com/jenkins-x/jx/pkg/builds"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -594,7 +597,7 @@ func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.CreateProvider(f.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, in, out, errOut)
+	return gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, in, out, errOut)
 }
 
 func (f *factory) CreateKubeConfig() (*rest.Config, error) {
@@ -615,15 +618,6 @@ func (f *factory) IsInCDPipeline() bool {
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	buildNumber := builds.GetBuildNumber()
 	return buildNumber != "" || os.Getenv("PIPELINE_KIND") != ""
-}
-
-// function to tell if we are running incluster
-func (f *factory) IsInCluster() bool {
-	_, err := rest.InClusterConfig()
-	if err != nil {
-		return false
-	}
-	return true
 }
 
 // CreateComplianceClient creates a new Sonobuoy compliance client

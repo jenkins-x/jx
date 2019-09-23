@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -1175,7 +1177,7 @@ func (o *CommonOptions) CertManagerClient() (certmngclient.Interface, error) {
 
 // InCluster return true if the command execution takes place in k8s cluster
 func (o *CommonOptions) InCluster() bool {
-	return o.factory.IsInCluster()
+	return cluster.IsInCluster()
 }
 
 // InCDPipeline return true if the command execution takes place in the CD pipeline

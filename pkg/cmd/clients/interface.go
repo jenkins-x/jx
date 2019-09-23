@@ -3,6 +3,7 @@ package clients
 import (
 	"io"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -149,9 +149,6 @@ type Factory interface {
 
 	// For tests only, assert that no actual network connections are being made.
 	SetOffline(offline bool)
-
-	// IsInCluster indicates if the execution takes place within a Kubernetes cluster
-	IsInCluster() bool
 
 	// IsInCDPipeline indicates if the execution takes place within a CD pipeline
 	IsInCDPipeline() bool

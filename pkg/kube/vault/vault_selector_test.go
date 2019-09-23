@@ -15,11 +15,26 @@ func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("", "myVaultNamespace")
+	vault, err := selector.GetVault("", "myVaultNamespace", false)
 
 	assert.Equal(t, "myVault", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
 	assert.Equal(t, "http://foo.bar", vault.URL)
+	assert.Equal(t, "myVault-auth-sa", vault.AuthServiceAccountName)
+	assert.NoError(t, err)
+}
+
+func Test_GetVault_InclusterUsesInternalVaultURL(t *testing.T) {
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
+	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
+
+	selector, err := kubevault.NewVaultSelector(factory.Options)
+
+	vault, err := selector.GetVault("", "myVaultNamespace", true)
+
+	assert.Equal(t, "myVault", vault.Name)
+	assert.Equal(t, "myVaultNamespace", vault.Namespace)
+	assert.Equal(t, "http://myVault:8200", vault.URL)
 	assert.Equal(t, "myVault-auth-sa", vault.AuthServiceAccountName)
 	assert.NoError(t, err)
 }
@@ -30,7 +45,7 @@ func Test_GetVault_ErrorsIfNoVaultsInNamespace(t *testing.T) {
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("", "Nothing Here Jim")
+	vault, err := selector.GetVault("", "Nothing Here Jim", false)
 
 	assert.Nil(t, vault)
 	assert.EqualError(t, err, "no vaults found in namespace 'Nothing Here Jim'")
@@ -42,7 +57,7 @@ func Test_GetVault_ErrorsIfRequestedVaultDoesNotExist(t *testing.T) {
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("NoVaultHere", "myVaultNamespace")
+	vault, err := selector.GetVault("NoVaultHere", "myVaultNamespace", false)
 
 	assert.Nil(t, vault)
 	assert.EqualError(t, err, "vault 'NoVaultHere' not found in namespace 'myVaultNamespace'")
@@ -55,7 +70,7 @@ func Test_GetVault_GetExplicitVaultSucceedsWhenTwoVaultsAreDefined(t *testing.T)
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("vault2", "myVaultNamespace")
+	vault, err := selector.GetVault("vault2", "myVaultNamespace", false)
 
 	assert.Equal(t, "vault2", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
@@ -85,7 +100,7 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 		console.ExpectEOF()
 	}()
 
-	vault, err := selector.GetVault("", "myVaultNamespace")
+	vault, err := selector.GetVault("", "myVaultNamespace", false)
 
 	console.Close()
 	<-donec

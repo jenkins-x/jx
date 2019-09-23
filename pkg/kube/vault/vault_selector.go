@@ -14,7 +14,7 @@ import (
 // Selector is an interface for selecting a vault from the installed ones on the platform
 // It should pick the most logical one, or give the user a way of picking a vault if there are multiple installed
 type Selector interface {
-	GetVault(name string, namespace string) (*Vault, error)
+	GetVault(name string, namespace string, incluster bool) (*Vault, error)
 }
 
 type vaultSelector struct {
@@ -35,6 +35,7 @@ func NewVaultSelector(o OptionsInterface) (Selector, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	v := &vaultSelector{
 		vaultOperatorClient: operator,
 		kubeClient:          kubeclient,
@@ -44,8 +45,8 @@ func NewVaultSelector(o OptionsInterface) (Selector, error) {
 }
 
 // GetVault retrieve the given vault by name
-func (v *vaultSelector) GetVault(name string, namespace string) (*Vault, error) {
-	vaults, err := GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
+func (v *vaultSelector) GetVault(name string, namespace string, incluster bool) (*Vault, error) {
+	vaults, err := GetVaults(v.kubeClient, v.vaultOperatorClient, namespace, incluster)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,8 @@ package cluster
 import (
 	"strings"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -62,4 +64,13 @@ func GetSafeUsername(username string) string {
 		return strings.Split(username, "\n")[1]
 	}
 	return username
+}
+
+// IsInCluster tells if we are running incluster
+func IsInCluster() bool {
+	_, err := rest.InClusterConfig()
+	if err != nil {
+		return false
+	}
+	return true
 }
