@@ -6,6 +6,7 @@ metadata:
     branch: build-pack
     build: "1"
     owner: abayer
+    pipelineType: build
     repository: js-test-repo
   name: abayer-js-test-repo-build-pack-1
   namespace: jx
@@ -27,7 +28,6 @@ spec:
       inputs:
       - name: workspace
         resource: abayer-js-test-repo-build-pack
-    retries: 0
     taskRef:
       name: abayer-js-test-repo-build-pack-from-build-pack-1
 status: {}

@@ -9,6 +9,7 @@ metadata:
     build: "1"
     jenkins.io/task-stage-name: app-extension
     owner: fakeowner
+    pipelineType: build
     repository: fakerepo
     tekton.dev/pipeline: meta-fakeowner-fakerepo-build-1
     tekton.dev/pipelineRun: meta-fakeowner-fakerepo-build-1

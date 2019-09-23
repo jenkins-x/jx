@@ -6,6 +6,7 @@ metadata:
     branch: master
     build: "1"
     owner: abayer
+    pipelineType: build
     repository: golang-qs-test
   name: abayer-golang-qs-test-master-1
 spec:
@@ -22,6 +23,4 @@ spec:
       name: abayer-golang-qs-test-master
   serviceAccount: tekton-bot
   timeout: 240h0m0s
-  trigger:
-    type: manual
 status: {}

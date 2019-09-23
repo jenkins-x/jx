@@ -9,6 +9,7 @@ items:
         build: "1"
         created-by-prow: "true"
         owner: fakeowner
+        pipelineType: meta
         prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
         repository: fakerepo
         tekton.dev/pipeline: meta-fakeowner-fakerepo-build-1
@@ -36,6 +37,15 @@ items:
             name: fakeowner-fakerepo-fakebranch
       serviceAccount: tekton-bot
       timeout: 240h0m0s
+    status:
+      completionTime: "2019-09-10T17:08:23Z"
+      conditions:
+        - lastTransitionTime: "2019-09-10T17:08:23Z"
+          message: All Tasks have completed executing
+          reason: Succeeded
+          status: "True"
+          type: Succeeded
+      startTime: "2019-09-10T17:07:08Z"
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
@@ -45,6 +55,7 @@ items:
         build: "1"
         created-by-prow: "true"
         owner: fakeowner
+        pipelineType: build
         prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
         repository: fakerepo
         tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
@@ -72,3 +83,12 @@ items:
             name: fakeowner-fakerepo-fakebranch
       serviceAccount: tekton-bot
       timeout: 240h0m0s
+    status:
+      completionTime: "2019-09-10T17:08:23Z"
+      conditions:
+        - lastTransitionTime: "2019-09-10T17:08:23Z"
+          message: All Tasks have completed executing
+          reason: Succeeded
+          status: "True"
+          type: Succeeded
+      startTime: "2019-09-10T17:07:08Z"

@@ -303,19 +303,19 @@ func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, crea
 }
 
 // PipelineResourceNameFromGitInfo returns the pipeline resource name for the given git repository, branch and context
-func PipelineResourceNameFromGitInfo(gitInfo *gits.GitRepository, branch string, context string, pipelineType PipelineType, tektonClient tektonclient.Interface, ns string) string {
+func PipelineResourceNameFromGitInfo(gitInfo *gits.GitRepository, branch string, context string, pipelineType string, tektonClient tektonclient.Interface, ns string) string {
 	return PipelineResourceName(gitInfo.Organisation, gitInfo.Name, branch, context, pipelineType, tektonClient, ns)
 }
 
 // PipelineResourceName returns the pipeline resource name for the given git org, repo name, branch and context
-func PipelineResourceName(organisation string, name string, branch string, context string, pipelineType PipelineType, tektonClient tektonclient.Interface, ns string) string {
+func PipelineResourceName(organisation string, name string, branch string, context string, pipelineType string, tektonClient tektonclient.Interface, ns string) string {
 	dirtyName := organisation + "-" + name + "-" + branch
 	if context != "" {
 		dirtyName += "-" + context
 	}
 
-	if pipelineType == MetaPipeline {
-		dirtyName = pipelineType.String() + "-" + dirtyName
+	if pipelineType == MetaPipeline.String() {
+		dirtyName = pipelineType + "-" + dirtyName
 	}
 	resourceName := naming.ToValidNameTruncated(dirtyName, 31)
 

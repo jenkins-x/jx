@@ -55,7 +55,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 				TaskRun:        "cb-kubecd-bdd-spring-1567745634-s92nd-1-from-build-pack-x8hsc",
 				Parents:        []string{},
 			}},
-			Type:        tekton.BuildPipeline,
+			Type:        tekton.BuildPipeline.String(),
 			CreatedTime: *parseTime(t, "2019-09-06T05:24:17Z"),
 		},
 		prName: "cb-kubecd-bdd-spring-1567745634-s92nd-1",
@@ -88,7 +88,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 				TaskRun:        "abayer-jx-demo-qs-master-1-build-vhz8d",
 				Parents:        []string{},
 			}},
-			Type:        tekton.BuildPipeline,
+			Type:        tekton.BuildPipeline.String(),
 			CreatedTime: *parseTime(t, "2019-02-21T17:10:48-05:00"),
 		},
 		prName: "abayer-jx-demo-qs-master-1",
@@ -129,7 +129,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 				TaskRun:        "abayer-js-test-repo-master-1-second-9czt5",
 				Parents:        []string{},
 			}},
-			Type:        tekton.BuildPipeline,
+			Type:        tekton.BuildPipeline.String(),
 			CreatedTime: *parseTime(t, "2019-02-21T17:02:43-05:00"),
 		},
 		prName: "abayer-js-test-repo-master-1",
@@ -174,7 +174,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 					Parents:        []string{"Parent"},
 				}},
 			}},
-			Type:        tekton.BuildPipeline,
+			Type:        tekton.BuildPipeline.String(),
 			CreatedTime: *parseTime(t, "2019-02-21T17:07:36-05:00"),
 		},
 		prName: "abayer-js-test-repo-nested-1",
@@ -215,7 +215,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 				TaskRun:        "abayer-js-test-repo-master-1-second-wglk8",
 				Parents:        []string{},
 			}},
-			Type:        tekton.BuildPipeline,
+			Type:        tekton.BuildPipeline.String(),
 			CreatedTime: *parseTime(t, "2019-03-05T15:06:13-05:00"),
 		},
 		prName: "abayer-js-test-repo-master-1",
@@ -256,7 +256,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 				TaskRun:        "abayer-js-test-repo-master-1-second-wglk8",
 				Parents:        []string{},
 			}},
-			Type:        tekton.BuildPipeline,
+			Type:        tekton.BuildPipeline.String(),
 			CreatedTime: *parseTime(t, "2019-03-05T15:06:13-05:00"),
 		},
 		prName: "abayer-js-test-repo-master-1",
@@ -271,9 +271,6 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 	}}
 
 	for _, tt := range testCases {
-		if tt.name != "from-yaml" && tt.name != "pr-yaml" {
-			continue
-		}
 		t.Run(tt.name, func(t *testing.T) {
 			testCaseDir := path.Join("test_data", "pipeline_info", tt.name)
 
