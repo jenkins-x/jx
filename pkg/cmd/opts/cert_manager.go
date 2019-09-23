@@ -37,6 +37,13 @@ func (o *CommonOptions) EnsureCertManager() error {
 			}
 			log.Logger().Info(output)
 
+			log.Logger().Infof("Ensuring helm repo %q at %q for cert-manager chart is configured", pki.CertManagerChartOwner,
+				pki.CertManagerChartURL)
+			err = o.helm.AddRepo(pki.CertManagerChartOwner, pki.CertManagerChartURL, "", "")
+			if err != nil {
+				return errors.Wrapf(err, "adding helm repo %q", pki.CertManagerChartOwner)
+			}
+
 			log.Logger().Infof("Installing the chart %q in namespace %q...", pki.CertManagerChart, pki.CertManagerNamespace)
 			values := []string{
 				"rbac.create=true",

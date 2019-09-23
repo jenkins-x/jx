@@ -17,10 +17,14 @@ const (
 	CertManagerDeployment = "cert-manager"
 	// CertManagerReleaseName indicates the release name for cert-manager chart
 	CertManagerReleaseName = "cert-manager"
+	// CertManagerChartOwner is the owner of the cert-manager chart repo
+	CertManagerChartOwner = "jetstack"
+	// CertManagerChartURL is the URL for the repo containing the cert-manager chart
+	CertManagerChartURL = "https://charts.jetstack.io"
 	// CertManagerChart name of the cert-manager chart
-	CertManagerChart = "stable/cert-manager"
+	CertManagerChart = "jetstack/cert-manager"
 	// CertManagerCRDsFile files which contains the cert-manager CRDs
-	CertManagerCRDsFile = "https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml"
+	CertManagerCRDsFile = "https://raw.githubusercontent.com/jetstack/cert-manager/v0.9.1/deploy/manifests/00-crds.yaml"
 
 	// CertManagerIssuerProd name of the production issuer
 	CertManagerIssuerProd       = "letsencrypt-prod"
