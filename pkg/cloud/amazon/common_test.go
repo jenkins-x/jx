@@ -110,3 +110,37 @@ func TestReadingRegionFromEnvProfile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "qux", *session.Config.Region)
 }
+
+func TestParseContext(t *testing.T) {
+	t.Parallel()
+	tests := map[string]struct {
+		context string
+		cluster string
+		region  string
+	}{
+		"full cluster name from eksctl": {
+			context: "cluster-name-jx.us-east-1.eksctl.io",
+			cluster: "cluster-name-jx",
+			region:  "us-east-1",
+		},
+		"full cluster name no eksctl": {
+			context: "cluster-name-jx.us-east-1",
+			cluster: "cluster-name-jx",
+			region:  "us-east-1",
+		},
+		"full cluster name other region": {
+			context: "cluster-name-jx.eu-north-4",
+			cluster: "cluster-name-jx",
+			region:  "eu-north-4",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			cluster, region, err := amazon.ParseContext(tc.context)
+			assert.NoErrorf(t, err, "there shouldn't be an error parsing context %s", tc.context)
+			assert.Equal(t, tc.cluster, cluster)
+			assert.Equal(t, tc.region, region)
+		})
+	}
+}

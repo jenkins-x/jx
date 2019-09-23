@@ -2,6 +2,7 @@ package verify
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -419,6 +420,7 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 			modifyMapIfNotBlank(configMap.Data, kube.ProjectID, requirements.Cluster.ProjectID)
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.Cluster.ClusterName)
 			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
+			modifyMapIfNotBlank(configMap.Data, kube.Region, requirements.Cluster.Region)
 			return nil
 		}, nil)
 	if err != nil {
@@ -435,11 +437,18 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		if requirements.Cluster.Provider == "" {
 			return nil, errors.Errorf(msg, "provider")
 		}
-		if requirements.Cluster.ProjectID == "" {
-			return nil, errors.Errorf(msg, "project")
+		if requirements.Cluster.Provider == cloud.EKS || requirements.Cluster.Provider == cloud.AWS {
+			if requirements.Cluster.Region == "" {
+				return nil, errors.Errorf(msg, "region")
+			}
 		}
-		if requirements.Cluster.Zone == "" {
-			return nil, errors.Errorf(msg, "zone")
+		if requirements.Cluster.Provider == cloud.GKE {
+			if requirements.Cluster.ProjectID == "" {
+				return nil, errors.Errorf(msg, "project")
+			}
+			if requirements.Cluster.Zone == "" {
+				return nil, errors.Errorf(msg, "zone")
+			}
 		}
 		if requirements.Cluster.EnvironmentGitOwner == "" {
 			return nil, errors.Errorf(msg, "environmentGitOwner")
@@ -453,6 +462,13 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.In, o.Out, o.Err)
 		if err != nil {
 			return nil, errors.Wrap(err, "selecting Kubernetes provider")
+		}
+	}
+
+	if requirements.Cluster.Provider != cloud.GKE {
+		// lets check we want to try installation as we've only tested on GKE at the moment
+		if !o.showProvideFeedbackMessage() {
+			return requirements, errors.New("finishing execution")
 		}
 	}
 
@@ -522,18 +538,47 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				log.Logger().Info("no need to reconnect to cluster")
 			}
 		}
-	} else {
-		// lets check we want to try installation as we've only tested on GKE at the moment
-		confirmed := util.Confirm("jx boot has only be validated on GKE, we'd love feedback and contributions for other Kubernetes providers",
-			true, "", o.In, o.Out, o.Err)
-		if !confirmed {
-			return nil, nil
+	} else if requirements.Cluster.Provider == cloud.EKS || requirements.Cluster.Provider == cloud.AWS {
+		var currentRegion, currentClusterName string
+		var autoAcceptDefaults bool
+		if requirements.Cluster.Region == "" || requirements.Cluster.ClusterName == "" {
+			kubeConfig, _, err := o.Kube().LoadConfig()
+			if err != nil {
+				return nil, errors.Wrapf(err, "loading kubeconfig")
+			}
+			context := kube.Cluster(kubeConfig)
+			currentClusterName, currentRegion, err = amazon.ParseContext(context)
+			if currentClusterName != "" && currentRegion != "" {
+				log.Logger().Infof("")
+				log.Logger().Infof("Currently connected cluster is %s in region %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentRegion))
+				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
+			} else {
+				log.Logger().Infof("Enter the cluster you want to jx boot")
+			}
+		}
+
+		if requirements.Cluster.Region == "" {
+			if autoAcceptDefaults && currentRegion != "" {
+				requirements.Cluster.Region = currentRegion
+			}
+		}
+		if requirements.Cluster.ClusterName == "" {
+			if autoAcceptDefaults && currentClusterName != "" {
+				requirements.Cluster.ClusterName = currentClusterName
+			} else {
+				requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
+					"The name for your cluster", o.In, o.Out, o.Err)
+				if err != nil {
+					return nil, errors.Wrap(err, "getting cluster name")
+				}
+			}
 		}
 	}
 
 	requirements.Cluster.Provider = strings.TrimSpace(strings.ToLower(requirements.Cluster.Provider))
 	requirements.Cluster.ProjectID = strings.TrimSpace(requirements.Cluster.ProjectID)
 	requirements.Cluster.Zone = strings.TrimSpace(strings.ToLower(requirements.Cluster.Zone))
+	requirements.Cluster.Region = strings.TrimSpace(strings.ToLower(requirements.Cluster.Region))
 	requirements.Cluster.ClusterName = strings.TrimSpace(strings.ToLower(requirements.Cluster.ClusterName))
 
 	err = o.gatherGitRequirements(requirements)
@@ -829,4 +874,14 @@ func modifyMapIfNotBlank(m map[string]string, key string, value string) {
 	} else {
 		log.Logger().Debugf("Cannot update key %s, map is nil", key)
 	}
+}
+
+func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() bool {
+	log.Logger().Info("jx boot has only been validated on GKE, we'd love feedback and contributions for other Kubernetes providers")
+	if !o.BatchMode {
+		return util.Confirm("Continue execution anyway?",
+			true, "", o.In, o.Out, o.Err)
+	}
+	log.Logger().Info("Running in Batch Mode, execution will continue")
+	return true
 }
