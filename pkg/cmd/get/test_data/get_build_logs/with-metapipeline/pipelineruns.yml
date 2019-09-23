@@ -6,11 +6,11 @@ items:
       creationTimestamp: "2019-07-02T12:34:56Z"
       generation: 1
       labels:
-        tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
         branch: fakebranch
         build: "1"
         created-by-prow: "true"
         owner: fakeowner
+        pipelineType: build
         prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
         repo: fakerepo
         tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
@@ -158,12 +158,8 @@ items:
         build: "1"
         created-by-prow: "true"
         owner: fakeowner
+        pipelineType: meta
         prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
-        repo: fakerepo
-        tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
-        branch: fakebranch
-        build: "1"
-        owner: fakeowner
         repo: fakerepo
         tekton.dev/pipeline: meta-fakeowner-fakerepo-build-1
       name: meta-fakeowner-fakerepo-build-1

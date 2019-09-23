@@ -7,6 +7,7 @@ metadata:
     branch: master
     build: "1"
     owner: abayer
+    pipelineType: build
     repository: js-test-repo
     tekton.dev/pipeline: abayer-js-test-repo-master-1
   name: abayer-js-test-repo-master-1

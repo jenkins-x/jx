@@ -22,4 +22,7 @@ const (
 
 	// LabelContext is the label added to Tekton CRDs for the context being built.
 	LabelContext = "context"
+
+	// LabelType is the label added to Tekton CRDs for the type of pipeline.
+	LabelType = "pipelineType"
 )

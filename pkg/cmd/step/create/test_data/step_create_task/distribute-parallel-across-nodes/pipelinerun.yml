@@ -6,18 +6,19 @@ metadata:
     branch: really-long
     build: "1"
     owner: abayer
+    pipelineType: build
     repository: js-test-repo
   name: abayer-js-test-repo-really-long-1
 spec:
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
+      - podAffinityTerm:
           labelSelector:
             matchLabels:
               tekton.dev/pipelineRun: abayer-js-test-repo-really-long-1
           topologyKey: failure-domain.beta.kubernetes.io/zone
+        weight: 100
   params:
   - name: version
     value: 0.0.1
@@ -31,6 +32,4 @@ spec:
       name: abayer-js-test-repo-really-long
   serviceAccount: tekton-bot
   timeout: 240h0m0s
-  trigger:
-    type: manual
 status: {}

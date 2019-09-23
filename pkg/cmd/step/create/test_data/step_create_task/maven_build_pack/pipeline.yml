@@ -6,6 +6,7 @@ metadata:
     branch: master
     build: "1"
     owner: abayer
+    pipelineType: build
     repository: jx-demo-qs
   name: abayer-jx-demo-qs-master-1
   namespace: jx
@@ -27,7 +28,6 @@ spec:
       inputs:
       - name: workspace
         resource: abayer-jx-demo-qs-master
-    retries: 0
     taskRef:
       name: abayer-jx-demo-qs-master-from-build-pack-1
 status: {}

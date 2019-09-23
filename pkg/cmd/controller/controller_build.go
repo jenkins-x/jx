@@ -723,7 +723,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 
 		// Only complete the job if it's failed, or if it's finished and the PRI we're looking at is _not_ the metapipeline
-		if spec.Status == v1.ActivityStatusTypeFailed || (spec.Status.IsTerminated() && pri.Type != tekton.MetaPipeline) {
+		if spec.Status == v1.ActivityStatusTypeFailed || (spec.Status.IsTerminated() && pri.Type != tekton.MetaPipeline.String()) {
 			if !biggestFinishedAt.IsZero() {
 				spec.CompletedTimestamp = &biggestFinishedAt
 			}
@@ -1396,7 +1396,7 @@ func logJobCompletedState(activity *v1.PipelineActivity, pri *tekton.PipelineRun
 	}
 	if pri != nil {
 		fields["pipelineRunInfo"] = pri.Name
-		fields["pipelineRunType"] = pri.Type.String()
+		fields["pipelineRunType"] = pri.Type
 	}
 	log.Logger().WithFields(fields).Infof("Build %s %s", activity.Name, activity.Spec.Status)
 }

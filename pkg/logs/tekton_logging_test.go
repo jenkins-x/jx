@@ -410,9 +410,8 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 
-	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
-	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
-	containersNumber := (len(containers1) + len(containers2)) * LogsHeadersMultiplier
+	buildContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
+	containersNumber := len(buildContainers) * LogsHeadersMultiplier
 
 	assert.NoError(t, err)
 	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
@@ -463,11 +462,64 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedContainerInTheMiddle(
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 
 	stepsExecutedBeforeFailure := 4
-	appExtensionSteps := 7
-	containersNumber := (stepsExecutedBeforeFailure+appExtensionSteps)*LogsHeadersMultiplier + FailureLineAddition
+	containersNumber := stepsExecutedBeforeFailure*LogsHeadersMultiplier + FailureLineAddition
 
 	assert.NoError(t, err)
 	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged), "should stop logging after a step has failed")
+}
+
+func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedMetapipeline(t *testing.T) {
+	// https://github.com/jenkins-x/jx/issues/5171
+	testCaseDir := path.Join("test_data", "metapipeline_failure")
+	_, _, _, _, ns := getFakeClientsAndNs(t)
+
+	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
+	kubeClient := kubeMocks.NewSimpleClientset(podsList)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
+	structures := tekton_helpers_test.AssertLoadPipelineStructures(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(structures)
+
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		KubeClient:   kubeClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
+	pa := &v1.PipelineActivity{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PA1",
+			Namespace: ns,
+			Labels: map[string]string{
+				v1.LabelRepository: "fakerepo",
+				v1.LabelBranch:     "fakebranch",
+				v1.LabelOwner:      "fakeowner",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
+		},
+	}
+
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+
+	stepsExecutedBeforeFailure := 6
+	containersNumber := stepsExecutedBeforeFailure*LogsHeadersMultiplier + FailureLineAddition
+
+	assert.NoError(t, err)
+	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged), "should stop logging after a step has failed")
+	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.Regexp(t, "Showing logs for build (?s).* stage app-extension and container (?s).*$",
+		stripansi.Strip(firstLine), "Metapipeline failed so 'app-extension' should be the first stage logged")
 }
 
 func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing.T) {
@@ -514,15 +566,14 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
 
-	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
-	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
-	containersNumber := (len(containers1) + len(containers2)) * LogsHeadersMultiplier
+	buildContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
+	containersNumber := len(buildContainers) * LogsHeadersMultiplier
 
 	assert.NoError(t, err)
 	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
 	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
-	assert.Regexp(t, "Showing logs for build (?s).* stage app-extension and container (?s).*$",
-		stripansi.Strip(firstLine), "'app-extension' is a meta pipeline step and should be the first stage logged")
+	assert.Regexp(t, "Showing logs for build (?s).* stage from-fakebranch and container (?s).*$",
+		stripansi.Strip(firstLine), "the metapipeline completed successfully so 'from-fakebranch' should be the first stage logged")
 }
 
 func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {

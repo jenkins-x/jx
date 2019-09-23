@@ -356,6 +356,7 @@ func buildLabels(params CRDCreationParameters) (map[string]string, error) {
 		labels[tekton.LabelContext] = params.Context
 	}
 	labels[tekton.LabelBuild] = params.BuildNumber
+	labels[tekton.LabelType] = tekton.MetaPipeline.String()
 
 	return util.MergeMaps(labels, params.Labels), nil
 }

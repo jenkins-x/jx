@@ -26,6 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	v1alpha12 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -167,7 +168,7 @@ func findLegacyPipelineRunBuildNumber(pipelineRun *v1alpha12.PipelineRun) string
 	return buildNumber
 }
 
-func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) ([]string, error) {
+func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) (map[string]*v1alpha12.PipelineRun, error) {
 	filters := []string{
 		fmt.Sprintf("%s=%s", v1.LabelOwner, pa.Spec.GitOwner),
 		fmt.Sprintf("%s=%s", v1.LabelRepository, pa.Spec.GitRepository),
@@ -194,78 +195,97 @@ func getPipelineRunNamesForActivity(pa *v1.PipelineActivity, tektonClient tekton
 		return tektonPRs.Items[i].CreationTimestamp.Before(&tektonPRs.Items[j].CreationTimestamp)
 	})
 
-	var names []string
+	runs := make(map[string]*v1alpha12.PipelineRun)
 	for _, pr := range tektonPRs.Items {
 		buildNumber := pr.Labels[tekton.LabelBuild]
 		if buildNumber == "" {
 			buildNumber = findLegacyPipelineRunBuildNumber(&pr)
 		}
+		pipelineType := pr.Labels[tekton.LabelType]
+		if pipelineType == "" {
+			pipelineType = tekton.BuildPipeline.String()
+		}
 		if buildNumber == pa.Spec.Build {
-			names = append(names, pr.Name)
+			runs[pipelineType] = &pr
 		}
 	}
 
-	return names, nil
+	return runs, nil
 }
 
 // GetRunningBuildLogs obtains the logs of the provided PipelineActivity and streams the running build pods' logs using the provided LogWriter
 func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string) error {
-	pipelineRunNames, err := getPipelineRunNamesForActivity(pa, t.TektonClient)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get PipelineRun names for activity %s in namespace %s", pa.Name, pa.Namespace)
-	}
-	pipelineRunsLogged := make(map[string]bool)
+	loggedAllRunsForActivity := false
 	foundLogs := false
 
-	for len(pipelineRunNames) > len(pipelineRunsLogged) {
-		for _, prName := range pipelineRunNames {
-			_, runSeen := pipelineRunsLogged[prName]
-			if !runSeen {
-				structure, err := t.JXClient.JenkinsV1().PipelineStructures(pa.Namespace).Get(prName, metav1.GetOptions{})
+	for !loggedAllRunsForActivity {
+		runsByType, err := getPipelineRunsForActivity(pa, t.TektonClient)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get PipelineRun names for activity %s in namespace %s", pa.Name, pa.Namespace)
+		}
+
+		var runToLog *v1alpha12.PipelineRun
+		metaPr := runsByType[tekton.MetaPipeline.String()]
+		buildPr := runsByType[tekton.BuildPipeline.String()]
+		var metaStatus *knativeapis.Condition
+		if metaPr != nil {
+			metaStatus = metaPr.Status.GetCondition(knativeapis.ConditionSucceeded)
+		}
+		// If we don't have a build run yet...
+		if buildPr == nil {
+			// If we have a metapipeline and either the metapipeline is still running or failed, include the metapipeline
+			if metaStatus != nil && metaStatus.Status != corev1.ConditionTrue {
+				runToLog = metaPr
+				// If the metapipeline failed, the pipeline as a whole is complete.
+				if metaStatus.Status == corev1.ConditionFalse {
+					loggedAllRunsForActivity = true
+				}
+			}
+		} else {
+			// Log the build pipeline
+			runToLog = buildPr
+			loggedAllRunsForActivity = true
+		}
+		if runToLog != nil {
+			structure, err := t.JXClient.JenkinsV1().PipelineStructures(pa.Namespace).Get(runToLog.Name, metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to get pipeline structure for %s in namespace %s", runToLog.Name, pa.Namespace)
+			}
+
+			allStages := structure.GetAllStagesWithSteps()
+			stagesSeen := make(map[string]bool)
+
+			// Repeat until we've seen pods for all stages
+			for len(allStages) > len(stagesSeen) {
+				pods, err := builds.GetPipelineRunPods(t.KubeClient, pa.Namespace, runToLog.Name)
 				if err != nil {
-					return errors.Wrapf(err, "failed to get pipeline structure for %s in namespace %s", prName, pa.Namespace)
+					return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", runToLog.Name, pa.Namespace)
 				}
 
-				allStages := structure.GetAllStagesWithSteps()
-				stagesSeen := make(map[string]bool)
+				sort.Slice(pods, func(i, j int) bool {
+					return pods[i].CreationTimestamp.Before(&pods[j].CreationTimestamp)
+				})
 
-				// Repeat until we've seen pods for all stages
-				for len(allStages) > len(stagesSeen) {
-					pods, err := builds.GetPipelineRunPods(t.KubeClient, pa.Namespace, prName)
-					if err != nil {
-						return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", prName, pa.Namespace)
-					}
-
-					sort.Slice(pods, func(i, j int) bool {
-						return pods[i].CreationTimestamp.Before(&pods[j].CreationTimestamp)
-					})
-
-					for _, pod := range pods {
-						stageName := pod.Labels["jenkins.io/task-stage-name"]
-						params := builds.CreateBuildPodInfo(pod)
-						if _, seen := stagesSeen[stageName]; !seen && params.Organisation == pa.Spec.GitOwner && params.Repository == pa.Spec.GitRepository &&
-							strings.ToLower(params.Branch) == strings.ToLower(pa.Spec.GitBranch) && params.Build == pa.Spec.Build {
-							stagesSeen[stageName] = true
-							pipelineRunsLogged[prName] = true
-							foundLogs = true
-							err := t.getContainerLogsFromPod(pod, pa, buildName, stageName)
-							if err != nil {
-								return errors.Wrapf(err, "failed to obtain the logs for build %s and stage %s", buildName, stageName)
-							}
+				for _, pod := range pods {
+					stageName := pod.Labels["jenkins.io/task-stage-name"]
+					params := builds.CreateBuildPodInfo(pod)
+					if _, seen := stagesSeen[stageName]; !seen && params.Organisation == pa.Spec.GitOwner && params.Repository == pa.Spec.GitRepository &&
+						strings.ToLower(params.Branch) == strings.ToLower(pa.Spec.GitBranch) && params.Build == pa.Spec.Build {
+						stagesSeen[stageName] = true
+						foundLogs = true
+						err := t.getContainerLogsFromPod(pod, pa, buildName, stageName)
+						if err != nil {
+							return errors.Wrapf(err, "failed to obtain the logs for build %s and stage %s", buildName, stageName)
 						}
 					}
-					if !foundLogs {
-						break
-					}
+				}
+				if !foundLogs {
+					break
 				}
 			}
 		}
 		if !foundLogs {
 			break
-		}
-		pipelineRunNames, err = getPipelineRunNamesForActivity(pa, t.TektonClient)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get PipelineRun names for activity %s in namespace %s", pa.Name, pa.Namespace)
 		}
 	}
 	if !foundLogs {

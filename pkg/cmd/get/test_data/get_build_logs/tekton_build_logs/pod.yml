@@ -9,6 +9,7 @@ metadata:
     build: "1"
     jenkins.io/task-stage-name: from-build-pack
     owner: fakeowner
+    pipelineType: build
     repository: fakerepo
     tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
     tekton.dev/pipelineRun: fakeowner-fakerepo-fakebranch-1

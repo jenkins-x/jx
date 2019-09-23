@@ -6,6 +6,7 @@ metadata:
     branch: master
     build: "1"
     owner: abayer
+    pipelineType: build
     repository: jx-demo-qs
   name: abayer-jx-demo-qs-master-1
 spec:
@@ -22,6 +23,4 @@ spec:
       name: abayer-jx-demo-qs-master
   serviceAccount: tekton-bot
   timeout: 240h0m0s
-  trigger:
-    type: manual
 status: {}

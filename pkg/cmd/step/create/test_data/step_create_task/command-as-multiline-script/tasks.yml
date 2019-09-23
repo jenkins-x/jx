@@ -8,6 +8,7 @@ items:
       build: "1"
       jenkins.io/task-stage-name: build-a-really-long-stage-name-please-but-not-too-long-thanks
       owner: abayer
+      pipelineType: build
       repository: js-test-repo
     name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
     namespace: jx
@@ -20,11 +21,13 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     outputs:
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: ""
         type: git
     steps:
@@ -166,6 +169,7 @@ items:
       build: "1"
       jenkins.io/task-stage-name: second
       owner: abayer
+      pipelineType: build
       repository: js-test-repo
     name: abayer-js-test-repo-really-long-second-1
     namespace: jx
@@ -178,6 +182,7 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     steps:

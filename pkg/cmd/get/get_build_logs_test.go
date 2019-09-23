@@ -345,7 +345,7 @@ func TestWithMetapipeline(t *testing.T) {
 	outBytes, _ := ioutil.ReadAll(r)
 	r.Close()
 	output := stripansi.Strip(string(outBytes))
-	assert.Contains(t, output, "stage app-extension")
+	assert.NotContains(t, output, "stage app-extension")
 	assert.Contains(t, output, "stage from-build-pack")
 }
 

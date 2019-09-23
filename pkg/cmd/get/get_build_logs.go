@@ -18,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/logs"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
@@ -28,7 +27,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -490,36 +488,6 @@ func (o *CLILogWriter) BytesLimit() int {
 	return 0
 }
 
-func checkForStagePod(kubeClient kubernetes.Interface, ns string, pr *tektonv1alpha1.PipelineRun, pri *tekton.PipelineRunInfo, stage *tekton.StageInfo) error {
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: map[string]string{
-		pipeline.GroupName + pipeline.PipelineRunLabelKey: pri.PipelineRun,
-	}})
-	if err != nil {
-		return err
-	}
-	podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
-		LabelSelector: selector.String(),
-	})
-	if err != nil {
-		return err
-	}
-	if err := stage.SetPodsForStageInfo(podList, pri.PipelineRun); err != nil {
-		return err
-	}
-
-	if stage.Pod == nil {
-		// If we haven't found a pod for this stage and the pipeline has failed, log and return nil.
-		if pr.Status.GetCondition(apis.ConditionSucceeded).IsFalse() {
-			log.Logger().Warnf("no pod created for stage %s in build %s due to earlier failure", util.ColorInfo(stage.Name), util.ColorInfo(pri.PipelineRun))
-			return nil
-		}
-		log.Logger().Infof("no pod found yet for stage %s in build %s", util.ColorInfo(stage.Name), util.ColorInfo(pri.PipelineRun))
-		return fmt.Errorf("No pod for stage %s in build %s exists yet", stage.Name, pri.PipelineRun)
-	}
-
-	return nil
-}
-
 func buildNumberFromBaseBuildInfo(info builds.BaseBuildInfo) int {
 	n, err := strconv.Atoi(info.GetBuild())
 	if err != nil {
@@ -558,11 +526,6 @@ func waitForContainerToStart(kubeClient kubernetes.Interface, ns string, pod *co
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
 	log.Logger().Infof("getting the log for pod %s and container %s", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
-	return o.TailLogs(ns, pod.Name, container.Name)
-}
-
-func (o *GetBuildLogsOptions) getStageLog(ns, build, stageName string, pod *corev1.Pod, container corev1.Container) error {
-	log.Logger().Infof("getting the log for build %s stage %s and container %s", util.ColorInfo(build), util.ColorInfo(stageName), util.ColorInfo(container.Name))
 	return o.TailLogs(ns, pod.Name, container.Name)
 }
 

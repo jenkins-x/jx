@@ -6,6 +6,7 @@ metadata:
     branch: master
     build: "1"
     owner: abayer
+    pipelineType: build
     repository: golang-qs-test
   name: abayer-golang-qs-test-master-1
   namespace: jx
@@ -27,7 +28,6 @@ spec:
       inputs:
       - name: workspace
         resource: abayer-golang-qs-test-master
-    retries: 0
     taskRef:
       name: abayer-golang-qs-test-master-from-build-pack-1
 status: {}
