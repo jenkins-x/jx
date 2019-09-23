@@ -1,4 +1,4 @@
-package boot
+package upgrade
 
 import (
 	"fmt"
@@ -20,35 +20,34 @@ import (
 	"strings"
 )
 
-// BootUpgradeOptions options for the command
-type BootUpgradeOptions struct {
+// UpgradeBootOptions options for the command
+type UpgradeBootOptions struct {
 	*opts.CommonOptions
 	Dir string
 }
 
 var (
-	bootUpgradeLong = templates.LongDesc(`
+	upgradeBootLong = templates.LongDesc(`
 		This command creates a pr for upgrading a jx boot gitOps cluster, incorporating changes to the boot
         config and version stream ref
 `)
 
-	bootUpgradeExample = templates.Examples(`
+	upgradeBootExample = templates.Examples(`
 		# create pr for upgrading a jx boot gitOps cluster
-		jx boot upgrade
+		jx upgrade boot
 `)
 )
 
-// NewCmdBootUpgrade creates the command
-func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &BootUpgradeOptions{
+// NewCmdUpgradeBoot creates the command
+func NewCmdUpgradeBoot(commonOpts *opts.CommonOptions) *cobra.Command {
+	options := &UpgradeBootOptions{
 		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
-		Use:     "upgrade",
-		Aliases: []string{"up"},
+		Use:     "boot",
 		Short:   "Upgrades jx boot config",
-		Long:    bootUpgradeLong,
-		Example: bootUpgradeExample,
+		Long:    upgradeBootLong,
+		Example: upgradeBootExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -61,7 +60,7 @@ func NewCmdBootUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // Run runs this command
-func (o *BootUpgradeOptions) Run() error {
+func (o *UpgradeBootOptions) Run() error {
 	err := o.setupGitConfig(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup git config")
@@ -135,7 +134,7 @@ func determineBootConfigURL(versionStreamURL string) (string, error) {
 	return bootConfigURL, nil
 }
 
-func (o *BootUpgradeOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
+func (o *UpgradeBootOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
@@ -151,7 +150,7 @@ func (o *BootUpgradeOptions) requirementsVersionStream() (*config.VersionStreamC
 	return &reqsVersionSteam, nil
 }
 
-func (o *BootUpgradeOptions) upgradeAvailable(versionStreamURL string, versionStreamRef string, upgradeRef string) (string, error) {
+func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionStreamRef string, upgradeRef string) (string, error) {
 	versionsDir, err := o.CloneJXVersionsRepo(versionStreamURL, upgradeRef)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone versions repo %s", versionStreamURL)
@@ -169,7 +168,7 @@ func (o *BootUpgradeOptions) upgradeAvailable(versionStreamURL string, versionSt
 	return upgradeVersionSha, nil
 }
 
-func (o *BootUpgradeOptions) checkoutNewBranch() (string, error) {
+func (o *UpgradeBootOptions) checkoutNewBranch() (string, error) {
 	localBranchUUID, err := uuid.NewV4()
 	if err != nil {
 		return "", errors.Wrapf(err, "creating UUID for local branch")
@@ -186,7 +185,7 @@ func (o *BootUpgradeOptions) checkoutNewBranch() (string, error) {
 	return localBranch, nil
 }
 
-func (o *BootUpgradeOptions) updateVersionStreamRef(upgradeRef string) error {
+func (o *UpgradeBootOptions) updateVersionStreamRef(upgradeRef string) error {
 	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements file %s", requirementsFile)
@@ -207,7 +206,7 @@ func (o *BootUpgradeOptions) updateVersionStreamRef(upgradeRef string) error {
 	return nil
 }
 
-func (o *BootUpgradeOptions) updateBootConfig(versionStreamURL string, versionStreamRef string, bootConfigURL string, upgradeVersionSha string) error {
+func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionStreamRef string, bootConfigURL string, upgradeVersionSha string) error {
 	configCloneDir, err := o.cloneBootConfig(bootConfigURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone boot config repo %s", bootConfigURL)
@@ -252,7 +251,7 @@ func (o *BootUpgradeOptions) updateBootConfig(versionStreamURL string, versionSt
 	return nil
 }
 
-func (o *BootUpgradeOptions) bootConfigRef(dir string, versionStreamURL string, versionStreamRef string, configURL string) (string, string, error) {
+func (o *UpgradeBootOptions) bootConfigRef(dir string, versionStreamURL string, versionStreamRef string, configURL string) (string, string, error) {
 	resolver, err := o.CreateVersionResolver(versionStreamURL, versionStreamRef)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "failed to create version resolver %s", configURL)
@@ -268,7 +267,7 @@ func (o *BootUpgradeOptions) bootConfigRef(dir string, versionStreamURL string, 
 	return cmtSha, configVersion, nil
 }
 
-func (o *BootUpgradeOptions) cloneBootConfig(configURL string) (string, error) {
+func (o *UpgradeBootOptions) cloneBootConfig(configURL string) (string, error) {
 	cloneDir, err := ioutil.TempDir("", "")
 	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
 	if err != nil {
@@ -282,7 +281,7 @@ func (o *BootUpgradeOptions) cloneBootConfig(configURL string) (string, error) {
 	return cloneDir, nil
 }
 
-func (o *BootUpgradeOptions) cherryPickCommits(cloneDir, fromSha, toSha string) error {
+func (o *UpgradeBootOptions) cherryPickCommits(cloneDir, fromSha, toSha string) error {
 	cmts := make([]gits.GitCommit, 0)
 	cmts, err := o.Git().GetCommits(cloneDir, fromSha, toSha)
 	if err != nil {
@@ -307,7 +306,7 @@ func (o *BootUpgradeOptions) cherryPickCommits(cloneDir, fromSha, toSha string) 
 	return nil
 }
 
-func (o *BootUpgradeOptions) setupGitConfig(dir string) error {
+func (o *UpgradeBootOptions) setupGitConfig(dir string) error {
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
 	if err != nil {
@@ -327,7 +326,7 @@ func (o *BootUpgradeOptions) setupGitConfig(dir string) error {
 	return nil
 }
 
-func (o *BootUpgradeOptions) excludeFiles(commit string) error {
+func (o *UpgradeBootOptions) excludeFiles(commit string) error {
 	excludedFiles := []string{"OWNERS"}
 	err := o.Git().CheckoutCommitFiles(o.Dir, commit, excludedFiles)
 	if err != nil {
@@ -340,7 +339,7 @@ func (o *BootUpgradeOptions) excludeFiles(commit string) error {
 	return nil
 }
 
-func (o *BootUpgradeOptions) raisePR() error {
+func (o *UpgradeBootOptions) raisePR() error {
 	gitInfo, err := o.Git().Info(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to get git info")
@@ -374,7 +373,7 @@ func (o *BootUpgradeOptions) raisePR() error {
 	return nil
 }
 
-func (o *BootUpgradeOptions) deleteLocalBranch(branch string) error {
+func (o *UpgradeBootOptions) deleteLocalBranch(branch string) error {
 	err := o.Git().Checkout(o.Dir, "master")
 	if err != nil {
 		return errors.Wrapf(err, "failed to checkout master branch")
@@ -386,7 +385,7 @@ func (o *BootUpgradeOptions) deleteLocalBranch(branch string) error {
 	return nil
 }
 
-func (o *BootUpgradeOptions) cloneDevEnv() error {
+func (o *UpgradeBootOptions) cloneDevEnv() error {
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
 	if err != nil {
@@ -415,7 +414,7 @@ func (o *BootUpgradeOptions) cloneDevEnv() error {
 	return nil
 }
 
-func (o *BootUpgradeOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *UpgradeBootOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAuth, error) {
 	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
@@ -424,7 +423,7 @@ func (o *BootUpgradeOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAut
 	return server, userAuth, nil
 }
 
-func (o *BootUpgradeOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
 	server, userAuth, err := o.pipelineUserAuth()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get pipeline user auth")
