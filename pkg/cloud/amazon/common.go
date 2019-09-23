@@ -4,8 +4,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/pkg/errors"
 	"os"
 	"path"
+	"regexp"
 	"runtime"
 )
 
@@ -59,6 +61,16 @@ func ResolveRegion(profileOption string, regionOption string) (string, error) {
 
 func ResolveRegionWithoutOptions() (string, error) {
 	return ResolveRegion("", "")
+}
+
+// ParseContext parses the EKS cluster context to extract the cluster name and the region
+func ParseContext(context string) (string, string, error) {
+	reg := regexp.MustCompile(`([a-zA-Z][-a-zA-Z0-9]*)\.((us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d)\.*`)
+	result := reg.FindStringSubmatch(context)
+	if len(result) < 3 {
+		return "", "", errors.Errorf("unable to parse %s as <cluster_name>.<region>.*", context)
+	}
+	return result[1], result[2], nil
 }
 
 // UserHomeDir returns the home directory for the user the process is running under.
