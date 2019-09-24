@@ -6,7 +6,7 @@ metadata:
     branch: fix-kaniko-special-casing
     build: "1"
     owner: jenkins-x
-    pipelineType: build
+    jenkins.io/pipelineType: build
     repository: jx
   name: jenkins-x-jx-fix-kaniko-special-9l9zj-1
 spec:

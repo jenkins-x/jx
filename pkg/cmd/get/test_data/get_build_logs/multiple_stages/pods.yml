@@ -11,7 +11,7 @@ items:
       build-number: "1"
       jenkins.io/task-stage-name: build
       owner: abayer
-      pipelineType: build
+      jenkins.io/pipelineType: build
       repository: js-test-repo
       tekton.dev/pipeline: abayer-js-test-repo-master
       tekton.dev/pipelineRun: abayer-js-test-repo-master-1

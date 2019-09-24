@@ -24,5 +24,5 @@ const (
 	LabelContext = "context"
 
 	// LabelType is the label added to Tekton CRDs for the type of pipeline.
-	LabelType = "pipelineType"
+	LabelType = "jenkins.io/pipelineType"
 )
