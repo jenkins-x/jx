@@ -3,6 +3,7 @@ package opts
 import (
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -66,29 +67,32 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return domain, err
 		}
 
-		log.Logger().Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones")
-		log.Logger().Infof("If you do not have a custom DNS name you can use yet, then you can register a new one here: %s\n",
-			util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
+		// if we are booting, we want to use nip.io directly if a domain is not provided
+		// if one is provided, we'll expose it through external-dns
+		if os.Getenv("JX_INTERPRET_PIPELINE") != "true" {
+			log.Logger().Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones")
+			log.Logger().Infof("If you do not have a custom DNS name you can use yet, then you can register a new one here: %s\n",
+				util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
 
-		if o.BatchMode {
-			return "", fmt.Errorf("Please specify a custom DNS name via --domain when installing on AWS in batch mode")
-		}
-
-		for {
-			if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
-				"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.", o.In, o.Out, o.Err) {
-				customDomain := ""
-				prompt := &survey.Input{
-					Message: "Your custom DNS name: ",
-					Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
+			if o.BatchMode {
+				return "", fmt.Errorf("Please specify a custom DNS name via --domain when installing on AWS in batch mode")
+			}
+			for {
+				if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
+					"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.", o.In, o.Out, o.Err) {
+					customDomain := ""
+					prompt := &survey.Input{
+						Message: "Your custom DNS name: ",
+						Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
+					}
+					survey.AskOne(prompt, &customDomain, nil, surveyOpts)
+					if customDomain != "" {
+						err := amazon.RegisterAwsCustomDomain(customDomain, address)
+						return customDomain, err
+					}
+				} else {
+					break
 				}
-				survey.AskOne(prompt, &customDomain, nil, surveyOpts)
-				if customDomain != "" {
-					err := amazon.RegisterAwsCustomDomain(customDomain, address)
-					return customDomain, err
-				}
-			} else {
-				break
 			}
 		}
 	}
@@ -119,7 +123,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				util.ColorInfo(address))
 
 			addressIP := ""
-			if util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
+			if o.BatchMode || util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
 				"Should we convert "+address+" to an IP address so we can access resources externally", o.In, o.Out, o.Err) {
 
 				log.Logger().Infof("Waiting for %s to be resolvable to an IP address...", util.ColorInfo(address))
