@@ -22,6 +22,4 @@ spec:
       name: jenkins-x-jx-fix-kaniko-special
   serviceAccount: tekton-bot
   timeout: 240h0m0s
-  trigger:
-    type: manual
 status: {}

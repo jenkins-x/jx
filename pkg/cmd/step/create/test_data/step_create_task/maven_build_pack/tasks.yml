@@ -20,6 +20,7 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     steps:
@@ -470,7 +471,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - jx step changelog --version v${VERSION}
+      - cd /workspace/source/charts/jx-demo-qs && jx step changelog --version v${VERSION}
       command:
       - /bin/sh
       - -c
@@ -542,9 +543,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source/charts/jx-demo-qs
+      workingDir: /workspace/source
     - args:
-      - jx step helm release
+      - cd /workspace/source/charts/jx-demo-qs && jx step helm release
       command:
       - /bin/sh
       - -c
@@ -616,9 +617,10 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source/charts/jx-demo-qs
+      workingDir: /workspace/source
     - args:
-      - jx promote -b --all-auto --timeout 1h --version ${VERSION}
+      - cd /workspace/source/charts/jx-demo-qs && jx promote -b --all-auto --timeout
+        1h --version ${VERSION}
       command:
       - /bin/sh
       - -c
@@ -690,7 +692,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source/charts/jx-demo-qs
+      workingDir: /workspace/source
     - args:
       - echo "FRUIT is ${FRUIT}"
       command:

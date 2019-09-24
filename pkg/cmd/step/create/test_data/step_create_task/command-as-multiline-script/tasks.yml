@@ -20,11 +20,13 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     outputs:
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: ""
         type: git
     steps:
@@ -178,6 +180,7 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     steps:

@@ -20,6 +20,7 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     steps:
@@ -154,7 +155,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - jx step helm apply
+      - cd /workspace/source/env && jx step helm apply
       command:
       - /bin/sh
       - -c
@@ -216,7 +217,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source/env
+      workingDir: /workspace/source
     volumes:
     - hostPath:
         path: /var/run/docker.sock

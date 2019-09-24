@@ -20,6 +20,7 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     steps:
@@ -218,7 +219,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - make tag
+      - cd /workspace/source/charts/golang-qs-test && make tag
       command:
       - /bin/sh
       - -c
@@ -280,9 +281,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source/charts/golang-qs-test
+      workingDir: /workspace/source
     - args:
-      - jx step helm build
+      - cd /workspace/source/charts/golang-qs-test && jx step helm build
       command:
       - /bin/sh
       - -c
@@ -344,9 +345,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source/charts/golang-qs-test
+      workingDir: /workspace/source
     - args:
-      - jx step helm version
+      - cd /workspace/source/charts/golang-qs-test && jx step helm version
       command:
       - /bin/sh
       - -c
@@ -408,7 +409,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source/charts/golang-qs-test
+      workingDir: /workspace/source
     - args:
       - make release
       command:

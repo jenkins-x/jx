@@ -22,6 +22,4 @@ spec:
       name: abayer-js-test-repo-no-default
   serviceAccount: tekton-bot
   timeout: 240h0m0s
-  trigger:
-    type: manual
 status: {}

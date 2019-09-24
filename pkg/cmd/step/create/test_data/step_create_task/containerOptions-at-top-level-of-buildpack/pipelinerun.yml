@@ -22,6 +22,4 @@ spec:
       name: abayer-jx-demo-qs-master
   serviceAccount: tekton-bot
   timeout: 240h0m0s
-  trigger:
-    type: manual
 status: {}

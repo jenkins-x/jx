@@ -20,6 +20,7 @@ items:
         name: version
       resources:
       - name: workspace
+        outputImageDir: ""
         targetPath: source
         type: git
     steps:
