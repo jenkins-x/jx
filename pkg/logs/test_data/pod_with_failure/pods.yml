@@ -11,7 +11,7 @@ items:
         build: "1"
         jenkins.io/task-stage-name: app-extension
         owner: fakeowner
-        pipelineType: meta
+        jenkins.io/pipelineType: meta
         repository: fakerepo
         tekton.dev/pipeline: meta-fakeowner-fakerepo-build-1
         tekton.dev/pipelineRun: meta-fakeowner-fakerepo-build-1
@@ -506,7 +506,7 @@ items:
       creationTimestamp: "2019-07-02T12:34:56Z"
       labels:
         jenkins.io/task-stage-name: from-fakebranch
-        pipelineType: build
+        jenkins.io/pipelineType: build
         tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
         tekton.dev/pipelineRun: fakeowner-fakerepo-fakebranch-1
         tekton.dev/task: fakeowner-fakerepo-fakebranch-from-fakebranch-1

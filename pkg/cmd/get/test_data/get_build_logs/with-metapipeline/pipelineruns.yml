@@ -10,7 +10,7 @@ items:
         build: "1"
         created-by-prow: "true"
         owner: fakeowner
-        pipelineType: build
+        jenkins.io/pipelineType: build
         prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
         repo: fakerepo
         tekton.dev/pipeline: fakeowner-fakerepo-fakebranch-1
@@ -158,7 +158,7 @@ items:
         build: "1"
         created-by-prow: "true"
         owner: fakeowner
-        pipelineType: meta
+        jenkins.io/pipelineType: meta
         prowJobName: 3930a5ce-9da8-11e9-9b3d-acde48001122
         repo: fakerepo
         tekton.dev/pipeline: meta-fakeowner-fakerepo-build-1

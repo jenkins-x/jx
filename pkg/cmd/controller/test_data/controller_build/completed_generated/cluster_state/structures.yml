@@ -10,7 +10,7 @@ items:
       build: "1"
       created-by-prow: "true"
       owner: cb-kubecd
-      pipelineType: meta
+      jenkins.io/pipelineType: meta
       prowJobName: 6bae4c2b-d3ed-11e9-b0c6-72256f93bb5c
       repository: bdd-spring-1568135191
     name: meta-cb-kubecd-bdd-spring-15681-1
@@ -39,7 +39,7 @@ items:
       build: "1"
       created-by-prow: "true"
       owner: cb-kubecd
-      pipelineType: build
+      jenkins.io/pipelineType: build
       prowJobName: 6bae4c2b-d3ed-11e9-b0c6-72256f93bb5c
       repository: bdd-spring-1568135191
     name: cb-kubecd-bdd-spring-1568135191-1

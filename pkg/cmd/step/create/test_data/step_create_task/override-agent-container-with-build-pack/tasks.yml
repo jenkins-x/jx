@@ -8,7 +8,7 @@ items:
       build: "1"
       jenkins.io/task-stage-name: from-build-pack
       owner: abayer
-      pipelineType: build
+      jenkins.io/pipelineType: build
       repository: js-test-repo
     name: abayer-js-test-repo-override-de-from-build-pack-1
     namespace: jx
