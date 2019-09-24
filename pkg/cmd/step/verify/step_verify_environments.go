@@ -147,6 +147,7 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 	if err != nil {
 		log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", gitRef).Error())
 		commitish = fmt.Sprintf("%s/%s", "origin", gitRef)
+		log.Logger().Debugf("set commitish to '%s'", commitish)
 	}
 
 	// Duplicate the repo
@@ -155,8 +156,9 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 		return errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, environmentsOrg, gitRepoName)
 	}
 
-	if createPr {
+	log.Logger().Debugf("got duplicate info: %s", duplicateInfo)
 
+	if createPr {
 		_, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(duplicateInfo.CloneURL, dir, "master", "master", provider, o.Git(), gitRepoName)
 		if err != nil {
 			return errors.Wrapf(err, "forking and pulling %s", duplicateInfo.CloneURL)
@@ -207,18 +209,23 @@ func modifyPipelineGitEnvVars(dir string) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to load project config file %s", fileName)
 		}
-		gitConfig := []corev1.EnvVar{
-			{
+
+		envVars := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
+
+		if !envVarsHasEntry(envVars, "GIT_AUTHOR_NAME") {
+			envVars = append(envVars, corev1.EnvVar{
 				Name:  "GIT_AUTHOR_NAME",
 				Value: username,
-			},
-			{
+			})
+		}
+
+		if !envVarsHasEntry(envVars, "GIT_AUTHOR_EMAIL") {
+			envVars = append(envVars, corev1.EnvVar{
 				Name:  "GIT_AUTHOR_EMAIL",
 				Value: email,
-			},
+			})
 		}
-		envVars := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
-		envVars = append(envVars, gitConfig...)
+
 		projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
 
 		err = projectConf.SaveConfig(fileName)
@@ -236,6 +243,16 @@ func modifyPipelineGitEnvVars(dir string) error {
 		}
 	}
 	return nil
+}
+
+func envVarsHasEntry(envVars []corev1.EnvVar, key string) bool {
+	for _, entry := range envVars {
+		if entry.Name == key {
+			return true
+		}
+	}
+	return false
+
 }
 
 func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requirements *config.RequirementsConfig, environment *v1.Environment, gitURL string, lazyCreate bool) error {
