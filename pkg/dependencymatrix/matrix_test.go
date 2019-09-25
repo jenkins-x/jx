@@ -257,3 +257,18 @@ func TestCreateDependencyMatrix(t *testing.T) {
 	assert.NoError(t, err)
 	tests.AssertTextFileContentsEqual(t, filepath.Join("testdata", "new_matrix", "matrix.golden.yaml"), matrixYamlPath)
 }
+
+func TestFindVersionForDependency(t *testing.T) {
+	dir := filepath.Join("testdata", "two_degree_matrix")
+
+	matrix, err := dependencymatrix.LoadDependencyMatrix(dir)
+	assert.NoError(t, err)
+
+	version, err := matrix.FindVersionForDependency("fake.git", "acme", "roadrunner")
+	assert.NoError(t, err)
+	assert.Equal(t, "0.0.1", version)
+
+	_, err = matrix.FindVersionForDependency("doesnotexist", "doesnotexist", "doesnotexist")
+	assert.NotNil(t, err)
+	assert.Equal(t, "could not find a dependency on host doesnotexist, owner doesnotexist, repo doesnotexist in the dependency matrix", err.Error())
+}

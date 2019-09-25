@@ -277,3 +277,14 @@ func GenerateMarkdownDependencyMatrix(path string, matrix DependencyMatrix) erro
 	}
 	return nil
 }
+
+// FindVersionForDependency searches the matrix for a dependency matching the given host, owner, and repo, and if found,
+// returns its version
+func (d *DependencyMatrix) FindVersionForDependency(host, owner, repo string) (string, error) {
+	for _, dep := range d.Dependencies {
+		if dep.Host == host && dep.Owner == owner && dep.Repo == repo {
+			return dep.Version, nil
+		}
+	}
+	return "", fmt.Errorf("could not find a dependency on host %s, owner %s, repo %s in the dependency matrix", host, owner, repo)
+}
