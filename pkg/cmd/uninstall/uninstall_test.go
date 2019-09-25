@@ -1,6 +1,7 @@
 package uninstall_test
 
 import (
+	"errors"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/cmd/uninstall"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -193,6 +194,83 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 
 	console.Close()
 	<-donec
+}
+
+func TestDeleteReleaseIfPresent(t *testing.T) {
+	RegisterMockTestingT(t)
+	commonOpts := opts.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	o := &uninstall.UninstallOptions{
+		CommonOptions: &commonOpts,
+		Namespace:     "ns",
+	}
+
+	mHelm := helm_test.NewMockHelmer()
+	When(mHelm.StatusRelease(EqString("ns"), EqString("chart"))).ThenReturn(nil)
+	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), mHelm)
+
+	errs := o.DeleteReleaseIfPresent("ns", "chart", []error{}, false)
+	assert.Len(t, errs, 0)
+
+	mHelm.VerifyWasCalledOnce().DeleteRelease(EqString("ns"), EqString("chart"), EqBool(true))
+}
+
+func TestForceDeleteReleaseIfPresentNotFound(t *testing.T) {
+	RegisterMockTestingT(t)
+	commonOpts := opts.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	o := &uninstall.UninstallOptions{
+		CommonOptions: &commonOpts,
+		Namespace:     "ns",
+	}
+
+	mHelm := helm_test.NewMockHelmer()
+	When(mHelm.StatusRelease(EqString("ns"), EqString("chart2"))).ThenReturn(errors.New("chart not found"))
+	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), mHelm)
+
+	errs := o.DeleteReleaseIfPresent("ns", "chart2", []error{}, true)
+	assert.Len(t, errs, 0)
+
+	mHelm.VerifyWasCalledOnce().DeleteRelease(EqString("ns"), EqString("chart2"), EqBool(true))
+}
+
+func TestDeleteReleaseNotFound(t *testing.T) {
+	RegisterMockTestingT(t)
+	commonOpts := opts.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	o := &uninstall.UninstallOptions{
+		CommonOptions: &commonOpts,
+		Namespace:     "ns",
+	}
+
+	mHelm := helm_test.NewMockHelmer()
+	When(mHelm.StatusRelease(EqString("ns"), EqString("chart3"))).ThenReturn(errors.New("chart not found"))
+	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), mHelm)
+
+	output := log.CaptureOutput(func() {
+		errs := o.DeleteReleaseIfPresent("ns", "chart3", []error{}, false)
+		assert.Len(t, errs, 0)
+	})
+
+	assert.Equal(t, "WARNING: Not deleting chart3 because the release is not installed\n", output)
+	mHelm.VerifyWasCalled(Never()).DeleteRelease(EqString("ns"), EqString("chart3"), EqBool(true))
+}
+
+func TestForceDeleteReleaseNotFound(t *testing.T) {
+	RegisterMockTestingT(t)
+	commonOpts := opts.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	o := &uninstall.UninstallOptions{
+		CommonOptions: &commonOpts,
+		Namespace:     "ns",
+	}
+
+	mHelm := helm_test.NewMockHelmer()
+	When(mHelm.StatusRelease(EqString("ns"), EqString("chart4"))).ThenReturn(errors.New("chart not found"))
+	When(mHelm.DeleteRelease(EqString("ns"), EqString("chart4"), EqBool(true))).ThenReturn(errors.New("chart not found"))
+	testhelpers.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), mHelm)
+
+	errs := o.DeleteReleaseIfPresent("ns", "chart4", []error{}, true)
+	assert.Len(t, errs, 1)
+
+	assert.Equal(t, "failed to uninstall the chart4 helm chart in namespace ns: chart not found", errs[0].Error())
+	mHelm.VerifyWasCalledOnce().DeleteRelease(EqString("ns"), EqString("chart4"), EqBool(true))
 }
 
 func setup(t *testing.T, context string) {

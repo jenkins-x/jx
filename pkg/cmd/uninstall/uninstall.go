@@ -2,13 +2,10 @@ package uninstall
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
-
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
@@ -36,6 +33,11 @@ var (
 	uninstall_example = templates.Examples(`
 		# Uninstall the Jenkins X platform
 		jx uninstall`)
+)
+
+const (
+	kubeSystemNs     = "kube-system"
+	jxIngressRelease = "jxing"
 )
 
 func NewCmdUninstall(commonOpts *opts.CommonOptions) *cobra.Command {
@@ -75,7 +77,6 @@ func (o *UninstallOptions) Run() error {
 	if namespace == "" {
 		namespace = kube.CurrentNamespace(config)
 	}
-
 	var targetContext string
 
 	if !o.Force {
@@ -134,22 +135,10 @@ func (o *UninstallOptions) Run() error {
 		}
 	}
 
-	errs := []error{}
-
-	err = o.Helm().StatusRelease(namespace, "jx-prow")
-	if err == nil {
-		err := o.Helm().DeleteRelease(namespace, "jx-prow", true)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to uninstall the prow helm chart in namespace %s: %s", namespace, err))
-		}
-	}
-	err = o.Helm().StatusRelease(namespace, "jenkins-x")
-	if err == nil {
-		err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
-		}
-	}
+	var errs []error
+	errs = o.DeleteReleaseIfPresent(namespace, "jx-prow", errs, false)
+	errs = o.DeleteReleaseIfPresent(namespace, "jenkins-x", errs, false)
+	errs = o.DeleteReleaseIfPresent(kubeSystemNs, jxIngressRelease, errs, true)
 
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
@@ -263,4 +252,19 @@ func (o *UninstallOptions) cleanupConfig() error {
 	}
 	server = chartConfigSvc.Config().CurrentServer
 	return chartConfigSvc.DeleteServer(server)
+}
+
+// DeleteReleaseIfPresent deletes the given chart in the given namespace and adds any erro to the passed errors slice
+// as it checks if the release is present before deleting, it can be forced to delete in case it doesn't find it because
+// of an unrelated error
+func (o *UninstallOptions) DeleteReleaseIfPresent(ns string, releaseName string, errors []error, force bool) []error {
+	if err := o.Helm().StatusRelease(ns, releaseName); err == nil || force {
+		err := o.Helm().DeleteRelease(ns, releaseName, true)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("failed to uninstall the %s helm chart in namespace %s: %s", releaseName, ns, err))
+		}
+	} else {
+		log.Logger().Warnf("Not deleting %s because the release is not installed", releaseName)
+	}
+	return errors
 }
