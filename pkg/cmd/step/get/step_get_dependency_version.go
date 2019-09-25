@@ -94,15 +94,9 @@ func (o *StepGetDependencyVersionOptions) Run() error {
 		return errors.Wrapf(err, "failed to load dependency matrix at %s", o.Dir)
 	}
 
-	version := ""
-	for _, dep := range matrix.Dependencies {
-		if dep.Host == o.Host && dep.Owner == o.Owner && dep.Repo == o.Repo {
-			version = dep.Version
-			break
-		}
-	}
-	if version == "" {
-		return fmt.Errorf("could not find a dependency on host %s, owner %s, repo %s in the dependency matrix at %s", o.Host, o.Owner, o.Repo, o.Dir)
+	version, err := matrix.FindVersionForDependency(o.Host, o.Owner, o.Repo)
+	if err != nil {
+		return err
 	}
 	fmt.Fprintf(o.Out, "Version for host %s, owner %s, repo %s in matrix at %s is: %s\n", o.Host, o.Owner, o.Repo, o.Dir, version)
 	return nil
