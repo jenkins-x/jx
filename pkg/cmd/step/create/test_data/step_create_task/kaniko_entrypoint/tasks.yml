@@ -6,9 +6,9 @@ items:
     labels:
       branch: fix-kaniko-special-casing
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: ci
       owner: jenkins-x
-      jenkins.io/pipelineType: build
       repository: jx
     name: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
     namespace: jx
@@ -58,11 +58,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
@@ -103,11 +107,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: docker.io/golang:1.11.5
       name: build-binary
@@ -148,11 +156,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: docker.io/golang:1.11.5
       name: validate-binary
@@ -198,11 +210,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: rawlingsj/executor:dev40
       name: build-and-push-image
@@ -248,11 +264,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: rawlingsj/executor:dev40
       name: build-and-push-nodejs
@@ -298,11 +318,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: rawlingsj/executor:dev40
       name: build-and-push-maven
@@ -348,11 +372,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: rawlingsj/executor:dev40
       name: build-and-push-go
@@ -393,11 +421,15 @@ items:
         value: jx
       - name: BRANCH_NAME
         value: fix-kaniko-special-casing
+      - name: BRANCH_NAME_LOWER
+        value: fix-kaniko-special-casing
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-go:0.1.332
       name: preview

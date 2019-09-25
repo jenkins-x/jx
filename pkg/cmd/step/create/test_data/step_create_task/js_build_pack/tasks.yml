@@ -6,9 +6,9 @@ items:
     labels:
       branch: build-pack
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: from-build-pack
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: js-test-repo
     name: abayer-js-test-repo-build-pack-from-build-pack-1
     namespace: jx
@@ -66,11 +66,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
@@ -130,11 +134,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-nodejs:0.1.235
       name: setup-jx-git-credentials
@@ -194,11 +202,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-nodejs:0.1.235
       name: build-npm-install
@@ -258,11 +270,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-nodejs:0.1.235
       name: build-npm-test
@@ -326,6 +342,8 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
@@ -333,6 +351,8 @@ items:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
       name: build-container-build
@@ -392,11 +412,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-nodejs:0.1.235
       name: build-post-build
@@ -457,11 +481,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-nodejs:0.1.235
       name: promote-changelog
@@ -521,11 +549,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-nodejs:0.1.235
       name: promote-helm-release
@@ -586,11 +618,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
+      - name: BRANCH_NAME_LOWER
+        value: build-pack
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-nodejs:0.1.235
       name: promote-jx-promote

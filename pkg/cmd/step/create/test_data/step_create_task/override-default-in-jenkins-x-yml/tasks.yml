@@ -6,9 +6,9 @@ items:
     labels:
       branch: really-long
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: build-a-really-long-stage-name-please-but-not-too-long-thanks
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: js-test-repo
     name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
     namespace: jx
@@ -58,11 +58,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: really-long
+      - name: BRANCH_NAME_LOWER
+        value: really-long
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
@@ -116,11 +120,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: really-long
+      - name: BRANCH_NAME_LOWER
+        value: really-long
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-go:latest
       name: step2
@@ -184,11 +192,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: really-long
+      - name: BRANCH_NAME_LOWER
+        value: really-long
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-go:latest
       name: step3
@@ -231,9 +243,9 @@ items:
     labels:
       branch: really-long
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: second
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: js-test-repo
     name: abayer-js-test-repo-really-long-second-1
     namespace: jx
@@ -291,11 +303,15 @@ items:
         value: js-test-repo
       - name: BRANCH_NAME
         value: really-long
+      - name: BRANCH_NAME_LOWER
+        value: really-long
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-go:latest
       name: say-hi-to-fruit
