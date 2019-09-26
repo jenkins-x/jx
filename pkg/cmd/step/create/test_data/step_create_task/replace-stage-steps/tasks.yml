@@ -324,7 +324,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - cd /workspace/source/charts/jx-demo-qs && jx step changelog --version v${VERSION}
+      - jx step changelog --version v${VERSION}
       command:
       - /bin/sh
       - -c
@@ -396,9 +396,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/jx-demo-qs
     - args:
-      - cd /workspace/source/charts/jx-demo-qs && jx step helm release
+      - jx step helm release
       command:
       - /bin/sh
       - -c
@@ -470,10 +470,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/jx-demo-qs
     - args:
-      - cd /workspace/source/charts/jx-demo-qs && jx promote -b --all-auto --timeout
-        1h --version ${VERSION}
+      - jx promote -b --all-auto --timeout 1h --version ${VERSION}
       command:
       - /bin/sh
       - -c
@@ -545,7 +544,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/jx-demo-qs
     volumes:
     - hostPath:
         path: /var/run/docker.sock

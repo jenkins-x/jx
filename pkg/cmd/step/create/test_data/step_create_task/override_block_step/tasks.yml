@@ -220,7 +220,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - cd /workspace/source/charts/golang-qs-test && make tag
+      - make tag
       command:
       - /bin/sh
       - -c
@@ -282,9 +282,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/golang-qs-test
     - args:
-      - cd /workspace/source/charts/golang-qs-test && jx step helm build
+      - jx step helm build
       command:
       - /bin/sh
       - -c
@@ -346,9 +346,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/golang-qs-test
     - args:
-      - cd /workspace/source/charts/golang-qs-test && jx step helm version
+      - jx step helm version
       command:
       - /bin/sh
       - -c
@@ -410,7 +410,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/golang-qs-test
     - args:
       - make release
       command:
