@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
+	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -59,7 +60,10 @@ func (o *ComplianceStatusOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}
-	status, err := cc.GetStatus(complianceNamespace)
+	cfg := &client.StatusConfig{
+		Namespace: complianceNamespace,
+	}
+	status, err := cc.GetStatus(cfg)
 	if err != nil {
 		log.Logger().Infof("No compliance status found. Use %s command to start the compliance tests.", util.ColorInfo("jx compliance run"))
 		log.Logger().Infof("You can watch the logs with %s command.", util.ColorInfo("jx compliance logs -f"))
