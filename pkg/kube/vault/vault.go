@@ -422,7 +422,7 @@ func GetVault(vaultOperatorClient versioned.Interface, name string, ns string) (
 }
 
 // GetVaults returns all vaults available in a given namespaces
-func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string, incluster bool) ([]*Vault, error) {
+func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string, useIngressURL bool) ([]*Vault, error) {
 	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing vaults in namespace '%s'", ns)
@@ -436,8 +436,8 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 		// default to using internal kubernetes service dns name
 		vaultURL := fmt.Sprintf(defaultInternalVaultURL, vaultName)
 
-		// if we're not running in cluster let's use the exposed ingress URL
-		if !incluster {
+		// lookup the Ingress URL from the service if default behavior is overridden
+		if useIngressURL {
 			vaultURL, err = services.FindServiceURL(client, ns, vaultName)
 			if err != nil {
 				log.Logger().Warnf("error finding vault service url setting to empty string, err: %s", err)

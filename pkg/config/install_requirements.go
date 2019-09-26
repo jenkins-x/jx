@@ -63,6 +63,8 @@ const (
 	RequirementVaultBucketName = "JX_REQUIREMENT_VAULT_BUCKET_NAME"
 	// RequirementVaultRecreateBucket recreate the bucket that vault uses
 	RequirementVaultRecreateBucket = "JX_REQUIREMENT_VAULT_RECREATE_BUCKET"
+	// RequirementVaultDisableURLDiscovery override the default lookup of the Vault URL, could be incluster service or external ingress
+	RequirementVaultDisableURLDiscovery = "JX_REQUIREMENT_VAULT_DISABLE_URL_DISCOVERY"
 	// RequirementSecretStorageType the secret storage type
 	RequirementSecretStorageType = "JX_REQUIREMENT_SECRET_STORAGE_TYPE"
 	// RequirementKanikoServiceAccountName the service account name for kaniko
@@ -252,6 +254,8 @@ type VaultConfig struct {
 	Key            string `json:"key,omitempty"`
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	RecreateBucket bool   `json:"recreateBucket,omitempty"`
+	// Optionally allow us to override the default lookup of the Vault URL, could be incluster service or external ingress
+	DisableURLDiscovery bool `json:"disableURLDiscovery,omitempty"`
 }
 
 // UnmarshalJSON method handles the rename of EnvironmentGitPrivate to EnvironmentGitPublic.
