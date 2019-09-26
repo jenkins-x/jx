@@ -418,8 +418,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - cd /workspace/source/charts/js-test-repo && jx step changelog --batch-mode
-        --version v${VERSION}
+      - jx step changelog --batch-mode --version v${VERSION}
       command:
       - /bin/sh
       - -c
@@ -481,9 +480,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/js-test-repo
     - args:
-      - cd /workspace/source/charts/js-test-repo && jx step helm release
+      - jx step helm release
       command:
       - /bin/sh
       - -c
@@ -545,10 +544,9 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/js-test-repo
     - args:
-      - cd /workspace/source/charts/js-test-repo && jx promote -b --all-auto --timeout
-        1h --version ${VERSION}
+      - jx promote -b --all-auto --timeout 1h --version ${VERSION}
       command:
       - /bin/sh
       - -c
@@ -610,7 +608,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/source
+      workingDir: /workspace/source/charts/js-test-repo
     volumes:
     - hostPath:
         path: /var/run/docker.sock

@@ -1416,24 +1416,17 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 	// Default to ${WorkingDirRoot}/${sourceDir}
 	workingDir := filepath.Join(WorkingDirRoot, sourceDir)
 
-	// Directory we will cd to if it differs from the working dir.
-	targetDir := workingDir
-
 	if step.Dir != "" {
-		targetDir = step.Dir
+		workingDir = step.Dir
 	} else if baseWorkingDir != nil {
-		targetDir = *baseWorkingDir
+		workingDir = *baseWorkingDir
 	}
 	// Relative working directories are always just added to /workspace/source, e.g.
-	if !filepath.IsAbs(targetDir) {
-		targetDir = filepath.Join(WorkingDirRoot, sourceDir, targetDir)
+	if !filepath.IsAbs(workingDir) {
+		workingDir = filepath.Join(WorkingDirRoot, sourceDir, workingDir)
 	}
 
 	if step.GetCommand() != "" {
-		var targetDirPrefix []string
-		if targetDir != workingDir {
-			targetDirPrefix = append(targetDirPrefix, "cd", targetDir, "&&")
-		}
 		c := &corev1.Container{}
 		if parentContainer != nil {
 			c = parentContainer.DeepCopy()
@@ -1467,15 +1460,12 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 		// Special-casing for commands starting with /kaniko
 		// TODO: Should this be more general?
 		if strings.HasPrefix(step.GetCommand(), "/kaniko") {
-			c.Command = append(targetDirPrefix, step.GetCommand())
+			c.Command = []string{step.GetCommand()}
 			c.Args = step.Arguments
 		} else {
 			cmdStr := step.GetCommand()
 			if len(step.Arguments) > 0 {
 				cmdStr += " " + strings.Join(step.Arguments, " ")
-			}
-			if len(targetDirPrefix) > 0 {
-				cmdStr = strings.Join(targetDirPrefix, " ") + " " + cmdStr
 			}
 			c.Args = []string{cmdStr}
 		}
