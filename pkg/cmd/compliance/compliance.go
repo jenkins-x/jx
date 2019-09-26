@@ -15,7 +15,7 @@ const complianceNamespace = "heptio-sonobuoy"
 const kubeConformanceImage = "gcr.io/heptio-images/kube-conformance:latest"
 
 // compliance is the URL of the docker image to run for the Sonobuoy aggregator and workers
-var complianceImage = "gcr.io/heptio-images/sonobuoy:" + buildinfo.Version
+var complianceWorkerImage = "gcr.io/heptio-images/sonobuoy:" + buildinfo.Version
 
 // ComplianceOptions options for compliance command
 type ComplianceOptions struct {

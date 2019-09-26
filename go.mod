@@ -23,6 +23,8 @@ require (
 	github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
 	github.com/beevik/etree v1.0.1
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/briandowns/spinner v1.7.0 // indirect
+	github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d
 	github.com/chromedp/chromedp v0.1.1
@@ -33,6 +35,7 @@ require (
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.3.3 // indirect
+	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/emirpasic/gods v1.9.0 // indirect
@@ -59,7 +62,7 @@ require (
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/vault v1.1.2
-	github.com/heptio/sonobuoy v0.12.0
+	github.com/heptio/sonobuoy v0.16.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/hpcloud/tail v1.0.0
 	github.com/iancoleman/orderedmap v0.0.0-20181121102841-22c6ecc9fe13
@@ -73,6 +76,7 @@ require (
 	github.com/knative/pkg v0.0.0-20190402181056-ff46edef0ae5
 	github.com/knative/serving v0.5.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
 	github.com/magiconair/properties v1.8.0
@@ -112,6 +116,7 @@ require (
 	github.com/tektoncd/pipeline v0.5.1
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
+	github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d // indirect
 	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb
 	github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
@@ -144,8 +149,6 @@ require (
 	sigs.k8s.io/yaml v1.1.0
 
 )
-
-replace github.com/heptio/sonobuoy => github.com/jenkins-x/sonobuoy v0.11.7-0.20190318120422-253758214767
 
 replace k8s.io/api => k8s.io/api v0.0.0-20181128191700-6db15a15d2d3
 

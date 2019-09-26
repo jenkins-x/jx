@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -60,17 +61,18 @@ func (o *ComplianceRunOptions) Run() error {
 	if err := cc.Run(cfg); err != nil {
 		return errors.Wrap(err, "failed to start the compliance tests")
 	}
+
+	log.Logger().Infof("Compliance tests started in namespace %q", complianceNamespace)
+
 	return nil
 }
 
 func (o *ComplianceRunOptions) config() *client.RunConfig {
-	modeName := client.Conformance
+	modeName := client.CertifiedConformance
 	mode := modeName.Get()
 	genCfg := &client.GenConfig{
 		E2EConfig:            &mode.E2EConfig,
 		Config:               o.getConfigWithMode(modeName),
-		Image:                complianceImage,
-		Namespace:            complianceNamespace,
 		EnableRBAC:           true,
 		ImagePullPolicy:      string(v1.PullAlways),
 		KubeConformanceImage: kubeConformanceImage,
@@ -85,6 +87,8 @@ func (o *ComplianceRunOptions) getConfigWithMode(mode client.Mode) *config.Confi
 	modeConfig := mode.Get()
 	if modeConfig != nil {
 		cfg.PluginSelections = modeConfig.Selectors
+		cfg.Namespace = complianceNamespace
+		cfg.WorkerImage = complianceWorkerImage
 	}
 	return cfg
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/onsi/ginkgo/reporters"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -69,9 +68,13 @@ func (o *ComplianceResultsOptions) Run() error {
 		return errors.Wrap(err, "could not create the compliance client")
 	}
 
-	status, err := cc.GetStatus(complianceNamespace)
+	cfg := &client.StatusConfig{
+		Namespace: complianceNamespace,
+	}
+	status, err := cc.GetStatus(cfg)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve the compliance status")
+		log.Logger().Info("No compliance results found in the cluster")
+		return nil
 	}
 
 	if status.Status != aggregation.CompleteStatus && status.Status != aggregation.FailedStatus {
@@ -79,11 +82,14 @@ func (o *ComplianceResultsOptions) Run() error {
 		return nil
 	}
 
-	cfg := &client.RetrieveConfig{
+	rcfg := &client.RetrieveConfig{
 		Namespace: complianceNamespace,
 	}
 
-	reader, errch := cc.RetrieveResults(cfg)
+	reader, errch, err := cc.RetrieveResults(rcfg)
+	if err != nil {
+		return errors.Wrap(err, "retrieving the compliance results")
+	}
 	eg := &errgroup.Group{}
 	eg.Go(func() error { return <-errch })
 	eg.Go(func() error {
@@ -98,8 +104,8 @@ func (o *ComplianceResultsOptions) Run() error {
 			return errors.Wrap(err, "could not get the results of the compliance tests from the archive")
 		}
 		testResults = filterTests(
-			func(tc reporters.JUnitTestCase) bool {
-				return !results.Skipped(tc)
+			func(tc results.JUnitTestCase) bool {
+				return !results.JUnitSkipped(tc)
 			}, testResults)
 		sort.Sort(StatusSortedTestCases(testResults))
 		o.printResults(testResults)
@@ -125,7 +131,7 @@ func (o *ComplianceResultsOptions) Exit(status int) {
 }
 
 // StatusSortedTestCases implements Sort by status of a list of test case
-type StatusSortedTestCases []reporters.JUnitTestCase
+type StatusSortedTestCases []results.JUnitTestCase
 
 var statuses = map[string]int{
 	"FAILED":  0,
@@ -142,23 +148,23 @@ func (s StatusSortedTestCases) Less(i, j int) bool {
 }
 func (s StatusSortedTestCases) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func (o *ComplianceResultsOptions) printResults(junitResults []reporters.JUnitTestCase) {
+func (o *ComplianceResultsOptions) printResults(junitResults []results.JUnitTestCase) {
 	table := o.CreateTable()
 	table.SetColumnAlign(1, util.ALIGN_LEFT)
 	table.SetColumnAlign(2, util.ALIGN_LEFT)
 	table.AddRow("STATUS", "TEST", "TEST-CLASS")
 	for _, t := range junitResults {
-		table.AddRow(status(t), t.Name, t.ClassName)
+		table.AddRow(status(t), t.Name, t.Classname)
 	}
 	table.Render()
 }
 
-func status(junitResult reporters.JUnitTestCase) string {
-	if results.Skipped(junitResult) {
+func status(junitResult results.JUnitTestCase) string {
+	if results.JUnitSkipped(junitResult) {
 		return "SKIPPED"
-	} else if results.Failed(junitResult) {
+	} else if results.JUnitFailed(junitResult) {
 		return "FAILED"
-	} else if results.Passed(junitResult) {
+	} else if results.JUnitPassed(junitResult) {
 		return "PASSED"
 	} else {
 		return "UNKNOWN"
@@ -194,8 +200,8 @@ func untarResults(src io.Reader) (io.Reader, <-chan error) {
 	return reader, ec
 }
 
-func filterTests(predicate func(testCase reporters.JUnitTestCase) bool, testCases []reporters.JUnitTestCase) []reporters.JUnitTestCase {
-	out := make([]reporters.JUnitTestCase, 0)
+func filterTests(predicate func(testCase results.JUnitTestCase) bool, testCases []results.JUnitTestCase) []results.JUnitTestCase {
+	out := make([]results.JUnitTestCase, 0)
 	for _, tc := range testCases {
 		if predicate(tc) {
 			out = append(out, tc)
