@@ -105,6 +105,14 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Vault.RecreateBucket = false
 		}
 	}
+	if "" != os.Getenv(config.RequirementVaultDisableURLDiscovery) {
+		disable := os.Getenv(config.RequirementVaultDisableURLDiscovery)
+		if disable == "true" {
+			requirements.Vault.DisableURLDiscovery = true
+		} else {
+			requirements.Vault.DisableURLDiscovery = false
+		}
+	}
 	if "" != os.Getenv(config.RequirementSecretStorageType) {
 		requirements.SecretStorage = config.SecretStorageType(os.Getenv(config.RequirementSecretStorageType))
 	}

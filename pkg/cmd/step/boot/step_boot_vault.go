@@ -131,7 +131,6 @@ func (o *StepBootVaultOptions) Run() error {
 		KeyName:             requirements.Vault.Key,
 		ServiceAccountName:  requirements.Vault.ServiceAccount,
 		ClusterName:         requirements.Cluster.ClusterName,
-
 		// TODO - load from a local yaml file if available?
 		// AWSConfig:           o.AWSConfig,
 	}

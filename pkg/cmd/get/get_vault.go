@@ -15,7 +15,8 @@ import (
 type GetVaultOptions struct {
 	GetOptions
 
-	Namespace string
+	Namespace           string
+	DisableURLDiscovery bool
 }
 
 var (
@@ -53,6 +54,7 @@ func NewCmdGetVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.AddGetFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace from where to list the vaults")
+	cmd.Flags().BoolVarP(&options.DisableURLDiscovery, "disableURLDiscovery", "", false, "Disables the automatic Vault URL discovery")
 	return cmd
 }
 
@@ -71,7 +73,13 @@ func (o *GetVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	vaults, err := vault.GetVaults(client, vaultOperatorClient, o.Namespace, cluster.IsInCluster())
+	var useIngressURL bool
+	if o.DisableURLDiscovery {
+		useIngressURL = true
+	} else {
+		useIngressURL = cluster.IsInCluster()
+	}
+	vaults, err := vault.GetVaults(client, vaultOperatorClient, o.Namespace, useIngressURL)
 	if err != nil {
 		log.Logger().Infof("No vault found.")
 		return nil

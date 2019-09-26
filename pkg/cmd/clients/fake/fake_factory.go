@@ -304,7 +304,7 @@ func (f *FakeFactory) CreateVaultClient(name string, namespace string) (vault.Cl
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vault client")
 	}
-	vaultClient, err := clientFactory.NewVaultClient(name, namespace)
+	vaultClient, err := clientFactory.NewVaultClient(name, namespace, true)
 	return vault.NewVaultClient(vaultClient), err
 }
 
