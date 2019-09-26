@@ -512,29 +512,42 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	if err != nil {
 		return "", "", nil, nil, errors.Wrapf(err, "failed to create authenticated fetch URL for %s", originURL)
 	}
-	err = gitter.FetchBranch(dir, originFetchURL, fmt.Sprintf("%s:remotes/%s/%s", branchName, originRemote, branchName))
+	branchNameUUID, err := uuid.NewV4()
+	if err != nil {
+		return "", "", nil, nil, errors.WithStack(err)
+	}
+	originFetchBranch := branchNameUUID.String()
 
-	if err != nil && !IsCouldntFindRemoteRefError(err, branchName) { // We can safely ignore missing remote branches, as they just don't exist
-		return "", "", nil, nil, errors.Wrapf(err, "fetching %s %s", originRemote, branchName)
+	var upstreamFetchBranch string
+	err = gitter.FetchBranch(dir, originFetchURL, fmt.Sprintf("%s:%s", branchName, originFetchBranch))
+
+	if err != nil {
+		if IsCouldntFindRemoteRefError(err, branchName) { // We can safely ignore missing remote branches, as they just don't exist
+			originFetchBranch = ""
+		} else {
+			return "", "", nil, nil, errors.Wrapf(err, "fetching %s %s", originRemote, branchName)
+		}
 	}
 
 	if upstreamRemote != originRemote || baseRef != branchName {
 		upstreamFetchURL, err := gitter.CreateAuthenticatedURL(upstreamInfo.CloneURL, &userDetails)
+		branchNameUUID, err := uuid.NewV4()
+		if err != nil {
+			return "", "", nil, nil, errors.WithStack(err)
+		}
+		upstreamFetchBranch = branchNameUUID.String()
 		if err != nil {
 			return "", "", nil, nil, errors.Wrapf(err, "failed to create authenticated fetch URL for %s", upstreamInfo.CloneURL)
 		}
 		// We're going to start our work from baseRef on the upstream
-		err = gitter.FetchBranch(dir, upstreamFetchURL, fmt.Sprintf("%s:remotes/%s/%s", baseRef, upstreamRemote, baseRef))
+		err = gitter.FetchBranch(dir, upstreamFetchURL, fmt.Sprintf("%s:%s", baseRef, upstreamFetchBranch))
 		if err != nil {
 			return "", "", nil, nil, errors.WithStack(err)
 		}
+
 	}
 
 	// Work out what branch to use and check it out
-	branchExists, err := remoteBranchExists(baseRef, branchName, dir, gitter, originRemote)
-	if err != nil {
-		return "", "", nil, nil, errors.WithStack(err)
-	}
 	localBranchName := gitter.ConvertToValidBranchName(branchName)
 	localBranches, err := gitter.LocalBranches(dir)
 	if err != nil {
@@ -543,13 +556,9 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	localBranchExists := util.Contains(localBranches, localBranchName)
 
 	// We always want to make sure our local branch is in the right state, whether we created it or checked it out
-	resetish := baseRef
-	remoteBaseRefExists, err := remoteBranchExists(baseRef, "", dir, gitter, upstreamRemote)
-	if err != nil {
-		return "", "", nil, nil, errors.WithStack(err)
-	}
-	if remoteBaseRefExists {
-		resetish = fmt.Sprintf("%s/%s", upstreamRemote, baseRef)
+	resetish := originFetchBranch
+	if upstreamFetchBranch != "" {
+		resetish = upstreamFetchBranch
 	}
 
 	var toCherryPick []GitCommit
@@ -601,8 +610,8 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	// one possibility is that the baseRef is not in the same state as an already existing branch, so let's merge in the
 	// already existing branch from the users fork. This is idempotent (safe if that's already the state)
 	// Only do this if the remote branch exists
-	if branchExists {
-		err = gitter.Merge(dir, fmt.Sprintf("%s/%s", originRemote, branchName))
+	if upstreamFetchBranch != "" && originFetchBranch != "" {
+		err = gitter.Merge(dir, originFetchBranch)
 		if err != nil {
 			return "", "", nil, nil, errors.WithStack(err)
 		}
@@ -661,29 +670,6 @@ func FilterOpenPullRequests(provider GitProvider, owner string, repo string, fil
 		}
 	}
 	return answer, nil
-}
-
-func computeBranchName(baseRef string, branchName string, dir string, gitter Gitter) (string, error) {
-
-	if branchName == "" {
-		branchName = baseRef
-	}
-	validBranchName := gitter.ConvertToValidBranchName(branchName)
-
-	branchNames, err := gitter.RemoteBranchNames(dir, "remotes/origin/")
-	if err != nil {
-		return "", errors.Wrapf(err, "Failed to load remote branch names")
-	}
-	if util.StringArrayIndex(branchNames, validBranchName) >= 0 {
-		// lets append a UUID as the branch name already exists
-		branchNameUUID, err := uuid.NewV4()
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-
-		return fmt.Sprintf("%s-%s", validBranchName, branchNameUUID.String()), nil
-	}
-	return validBranchName, nil
 }
 
 func remoteBranchExists(baseRef string, branchName string, dir string, gitter Gitter, remoteName string) (bool, error) {

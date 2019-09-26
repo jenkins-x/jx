@@ -5,8 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
-
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
@@ -58,10 +56,11 @@ type OptionsInterface interface {
 
 // VaultClientFactory keeps the configuration required to build a new vault client factory
 type VaultClientFactory struct {
-	Options          OptionsInterface
-	Selector         Selector
-	kubeClient       kubernetes.Interface
-	defaultNamespace string
+	Options             OptionsInterface
+	Selector            Selector
+	kubeClient          kubernetes.Interface
+	defaultNamespace    string
+	DisableURLDiscovery bool
 }
 
 // NewInteractiveVaultClientFactory creates a VaultClientFactory that allows the user to pick vaults if necessary
@@ -98,8 +97,8 @@ func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient 
 // if namespace is nil, then the default namespace of the factory will be used
 // if the name is nil, and only one vault is found, then that vault will be used. Otherwise the user will be prompted to
 // select a vault for the client.
-func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api.Client, error) {
-	config, jwt, role, err := v.GetConfigData(name, namespace, cluster.IsInCluster())
+func (v *VaultClientFactory) NewVaultClient(name string, namespace string, useIngressURL bool) (*api.Client, error) {
+	config, jwt, role, err := v.GetConfigData(name, namespace, useIngressURL)
 	if err != nil {
 		return nil, err
 	}
@@ -131,12 +130,12 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 
 // GetConfigData generates the information necessary to configure an api.Client object
 // Returns the api.Config object, the JWT needed to create the auth user in vault, and an error if present
-func (v *VaultClientFactory) GetConfigData(name string, namespace string, incluster bool) (config *api.Config, jwt string, saName string, err error) {
+func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIngressURL bool) (config *api.Config, jwt string, saName string, err error) {
 	if namespace == "" {
 		namespace = v.defaultNamespace
 	}
 
-	vlt, err := v.Selector.GetVault(name, namespace, incluster)
+	vlt, err := v.Selector.GetVault(name, namespace, useIngressURL)
 	if err != nil {
 		return nil, "", "", err
 	}

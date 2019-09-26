@@ -203,38 +203,36 @@ func (o *StepCreateInstallValuesOptions) discoverIngressDomain(requirements *con
 		return nil
 	}
 
-	if domain == "" {
+	if o.Provider == "" {
+		o.Provider = requirements.Cluster.Provider
 		if o.Provider == "" {
-			o.Provider = requirements.Cluster.Provider
-			if o.Provider == "" {
-				log.Logger().Warnf("No provider configured\n")
-			}
+			log.Logger().Warnf("No provider configured\n")
 		}
-		domain, err = o.GetDomain(client, "",
-			o.Provider,
-			o.IngressNamespace,
-			o.IngressService,
-			o.ExternalIP)
+	}
+	domain, err = o.GetDomain(client, "",
+		o.Provider,
+		o.IngressNamespace,
+		o.IngressService,
+		o.ExternalIP)
+	if err != nil {
+		return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
+	}
+	if domain == "" {
+		hasHost, err := o.waitForIngressControllerHost(client, o.IngressNamespace, o.IngressService)
 		if err != nil {
 			return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
 		}
-		if domain == "" {
-			hasHost, err := o.waitForIngressControllerHost(client, o.IngressNamespace, o.IngressService)
+		if hasHost {
+			domain, err = o.GetDomain(client, "",
+				o.Provider,
+				o.IngressNamespace,
+				o.IngressService,
+				o.ExternalIP)
 			if err != nil {
 				return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
 			}
-			if hasHost {
-				domain, err = o.GetDomain(client, "",
-					o.Provider,
-					o.IngressNamespace,
-					o.IngressService,
-					o.ExternalIP)
-				if err != nil {
-					return errors.Wrapf(err, "getting a domain for ingress service %s/%s", o.IngressNamespace, o.IngressService)
-				}
-			} else {
-				log.Logger().Warnf("could not find host for  ingress service %s/%s\n", o.IngressNamespace, o.IngressService)
-			}
+		} else {
+			log.Logger().Warnf("could not find host for  ingress service %s/%s\n", o.IngressNamespace, o.IngressService)
 		}
 	}
 

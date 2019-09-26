@@ -1031,6 +1031,7 @@ func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client
 		}
 		o.vaultClient = vaultClient
 	}
+
 	return o.vaultClient, nil
 }
 

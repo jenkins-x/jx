@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/config"
+
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"github.com/jenkins-x/jx/pkg/builds"
@@ -491,7 +493,18 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vault client")
 	}
-	vaultClient, err := clientFactory.NewVaultClient(name, namespace)
+	// if there's an issue loading a requirements yaml lets just default to automatic
+	useIngressURL := false
+	requirements, _, _ := config.LoadRequirementsConfig("")
+
+	// allows us to override using the default lookup URL for vault and ensure we always use the ingress. Used in CI.
+	if requirements.Vault.DisableURLDiscovery {
+		useIngressURL = true
+	} else {
+		useIngressURL = cluster.IsInCluster()
+	}
+
+	vaultClient, err := clientFactory.NewVaultClient(name, namespace, useIngressURL)
 	return vault.NewVaultClient(vaultClient), err
 }
 

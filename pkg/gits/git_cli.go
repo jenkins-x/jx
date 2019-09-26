@@ -848,9 +848,6 @@ func (g *GitCLI) GetCommitPointedToByTag(dir string, tag string) (string, error)
 	if err != nil {
 		return "", errors.Wrapf(err, "running for git rev-list -n 1 %s", tag)
 	}
-	/*	if commitSHA == "" {
-		return "", errors.Wrapf(err, "commit pointed to by tag %s could not be found in %s", tag, dir)
-	}*/
 	return commitSHA, err
 }
 

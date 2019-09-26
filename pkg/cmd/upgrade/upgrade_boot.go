@@ -394,8 +394,13 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	devEnvURL := devEnv.Spec.Source.URL
 
 	cloneDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return errors.Wrapf(err, "failed to create tmp dir to clone dev env repo")
+	}
 	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
-
+	if err != nil {
+		return errors.Wrapf(err, "failed to give write perms to tmp dir to clone dev env repo")
+	}
 	_, userAuth, err := o.pipelineUserAuth()
 	if err != nil {
 		return errors.Wrap(err, "failed to get pipeline user auth")

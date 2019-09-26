@@ -15,7 +15,7 @@ func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("", "myVaultNamespace", false)
+	vault, err := selector.GetVault("", "myVaultNamespace", true)
 
 	assert.Equal(t, "myVault", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
@@ -30,7 +30,7 @@ func Test_GetVault_InclusterUsesInternalVaultURL(t *testing.T) {
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("", "myVaultNamespace", true)
+	vault, err := selector.GetVault("", "myVaultNamespace", false)
 
 	assert.Equal(t, "myVault", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
@@ -45,7 +45,7 @@ func Test_GetVault_ErrorsIfNoVaultsInNamespace(t *testing.T) {
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("", "Nothing Here Jim", false)
+	vault, err := selector.GetVault("", "Nothing Here Jim", true)
 
 	assert.Nil(t, vault)
 	assert.EqualError(t, err, "no vaults found in namespace 'Nothing Here Jim'")
@@ -57,7 +57,7 @@ func Test_GetVault_ErrorsIfRequestedVaultDoesNotExist(t *testing.T) {
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("NoVaultHere", "myVaultNamespace", false)
+	vault, err := selector.GetVault("NoVaultHere", "myVaultNamespace", true)
 
 	assert.Nil(t, vault)
 	assert.EqualError(t, err, "vault 'NoVaultHere' not found in namespace 'myVaultNamespace'")
@@ -70,7 +70,7 @@ func Test_GetVault_GetExplicitVaultSucceedsWhenTwoVaultsAreDefined(t *testing.T)
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
 
-	vault, err := selector.GetVault("vault2", "myVaultNamespace", false)
+	vault, err := selector.GetVault("vault2", "myVaultNamespace", true)
 
 	assert.Equal(t, "vault2", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
@@ -100,7 +100,7 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 		console.ExpectEOF()
 	}()
 
-	vault, err := selector.GetVault("", "myVaultNamespace", false)
+	vault, err := selector.GetVault("", "myVaultNamespace", true)
 
 	console.Close()
 	<-donec

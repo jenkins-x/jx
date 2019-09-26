@@ -1,0 +1,27 @@
+# override the build pod images
+jenkins:
+  Agent:
+    PodTemplates:
+      Maven:
+        Containers:
+          Maven:
+            Image: gcr.io/jenkinsxio/builder-maven:$VERSION
+        EnvVars:
+          CODECOV_TOKEN: $CODECOV_TOKEN
+      Nodejs:
+        Containers:
+          Nodejs:
+            Image: gcr.io/jenkinsxio/builder-nodejs:$VERSION
+        EnvVars:
+          CODECOV_TOKEN: $CODECOV_TOKEN
+      Go:
+        Containers:
+          Go:
+            Image: gcr.io/jenkinsxio/builder-go:$VERSION
+        EnvVars:
+          CODECOV_TOKEN: $CODECOV_TOKEN
+
+controllerbuild:
+  image:
+    repository: gcr.io/jenkinsxio/builder-go
+    tag: $VERSION
