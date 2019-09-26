@@ -295,7 +295,9 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	}
 	jobSpec.Type = prowjobv1.PostsubmitJob
 
-	//todo needs to change when we add support for multiple git providers with Prow
+	// TODO prow only supports github.com
+	// if you want to use anytthng but github.com you should use
+	// lighthouse: https://jenkins-x.io/docs/reference/components/lighthouse/
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", org, repo)
 	sourceSpec := &build.SourceSpec{
 		Git: &build.GitSourceSpec{
