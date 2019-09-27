@@ -2,6 +2,7 @@ package verify
 
 import (
 	"fmt"
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"io/ioutil"
 	"os"
@@ -237,6 +238,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
+	err = o.VerifyRequirementsConfigMap(kubeClient, ns, requirements)
+	if err != nil {
+		return err
+	}
+
 	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!", info("jx boot"))
 	fmt.Println()
 	return nil
@@ -425,6 +431,24 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 		}, nil)
 	if err != nil {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
+	}
+	return nil
+}
+
+// VerifyRequirementsConfigMap saves the current requirements.yaml state in a ConfigMap so we can use it in places of the code where we can't read the requirements.yaml mfile
+func (o *StepVerifyPreInstallOptions) VerifyRequirementsConfigMap(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig) error {
+	log.Logger().Debugf("Verifying the Requirements ConfigMap...")
+	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameRequirementsYaml, func(configMap *corev1.ConfigMap) error {
+		log.Logger().Debugf("Updating the %s ConfigMap with: %+v", kube.ConfigMapNameRequirementsYaml, requirements)
+		reqBytes, err := yaml.Marshal(requirements)
+		if err != nil {
+			return errors.Wrap(err, "there was a problem marshalling the requirements file to include it in the ConfigMap")
+		}
+		modifyMapIfNotBlank(configMap.Data, "requirementsFile", string(reqBytes))
+		return nil
+	}, nil)
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem saving the current state of the requiremens.yaml file in ConfigMap %s in namespace %s", kube.ConfigMapNameRequirementsYaml, ns)
 	}
 	return nil
 }
