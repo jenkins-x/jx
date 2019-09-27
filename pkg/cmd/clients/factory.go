@@ -498,7 +498,7 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	requirements, _, _ := config.LoadRequirementsConfig("")
 
 	// allows us to override using the default lookup URL for vault and ensure we always use the ingress. Used in CI.
-	if requirements.Vault.DisableURLDiscovery {
+	if requirements.Vault.DisableURLDiscovery || os.Getenv(config.RequirementVaultDisableURLDiscovery) == "true" {
 		log.Logger().Debug("disabling vault url discovery")
 		useIngressURL = true
 	} else {

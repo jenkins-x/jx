@@ -35,6 +35,8 @@ pipelineConfig:
                 value: /secrets/kaniko/kaniko-secret.json
               - name: DISABLE_TEST_CACHING
                 value: "true"
+              - name: JX_REQUIREMENT_VAULT_DISABLE_URL_DISCOVERY
+                value: "true"
             options:
               volumes:
                 - name: kaniko-secret
