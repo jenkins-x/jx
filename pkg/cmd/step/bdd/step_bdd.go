@@ -411,13 +411,18 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 		if pullRequestNumber != "" {
 			err = o.Git().FetchBranch(testDir, "origin", fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branchName))
 			if err != nil {
-				return errors.Wrapf(err, "Failed to fetch Pull request number %s", pullRequestNumber)
+				return errors.Wrapf(err, "failed to fetch Pull request number %s", pullRequestNumber)
+			}
+		} else {
+			err = o.Git().FetchBranch(testDir, "origin", branchName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to fetch branch %s", branchName)
 			}
 		}
 
-		err = o.Git().Checkout(testDir, branchName)
+		err = o.Git().CheckoutRemoteBranch(testDir, branchName)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to checkout branch %s", branchName)
+			return errors.Wrapf(err, "failed to checkout branch %s", branchName)
 		}
 	}
 
