@@ -69,5 +69,4 @@ jx step bdd \
     --default-admin-password $JENKINS_PASSWORD \
     --no-delete-app \
     --no-delete-repo \
-    --tests install \
     --tests test-quickstart-golang-http
