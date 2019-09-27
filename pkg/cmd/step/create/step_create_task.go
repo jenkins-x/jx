@@ -921,6 +921,10 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 				Name:  "BRANCH_NAME",
 				Value: branch,
 			})
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "BRANCH_NAME_LOWER",
+				Value: strings.ToLower(branch),
+			})
 		}
 	}
 	if o.InterpretMode {
@@ -973,6 +977,10 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "PREVIEW_VERSION",
 			Value: "${inputs.params.version}",
+		})
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "PREVIEW_VERSION_LOWER",
+			Value: strings.ToLower("${inputs.params.version}"),
 		})
 	}
 	for k, v := range o.AdditionalEnvVars {
