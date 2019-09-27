@@ -91,7 +91,7 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrap(err, "failed to checkout upgrade_branch")
 	}
 
-	bootConfigURL, err := determineBootConfigURL(reqsVersionStream.URL)
+	bootConfigURL, err := o.determineBootConfigURL(reqsVersionStream.URL)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine boot configuration URL")
 	}
@@ -118,13 +118,30 @@ func (o *UpgradeBootOptions) Run() error {
 	return nil
 }
 
-func determineBootConfigURL(versionStreamURL string) (string, error) {
+func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (string, error) {
 	var bootConfigURL string
 	if versionStreamURL == config.DefaultVersionsURL {
 		bootConfigURL = config.DefaultBootRepository
 	}
 	if versionStreamURL == config.DefaultCloudBeesVersionsURL {
 		bootConfigURL = config.DefaultCloudBeesBootRepository
+	}
+
+	if bootConfigURL == "" {
+		requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
+		}
+		exists, err := util.FileExists(requirementsFile)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to check if file %s exists", requirementsFile)
+		}
+		if !exists {
+			return "", fmt.Errorf("no requirements file %s ensure you are running this command inside a GitOps clone", requirementsFile)
+		}
+		if requirements.BootConfigURL != "" {
+			bootConfigURL = requirements.BootConfigURL
+		}
 	}
 
 	if bootConfigURL == "" {
@@ -146,8 +163,8 @@ func (o *UpgradeBootOptions) requirementsVersionStream() (*config.VersionStreamC
 	if !exists {
 		return nil, fmt.Errorf("no requirements file %s ensure you are running this command inside a GitOps clone", requirementsFile)
 	}
-	reqsVersionSteam := requirements.VersionStream
-	return &reqsVersionSteam, nil
+	reqsVersionStream := requirements.VersionStream
+	return &reqsVersionStream, nil
 }
 
 func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionStreamRef string, upgradeRef string) (string, error) {

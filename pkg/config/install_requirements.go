@@ -350,6 +350,8 @@ type RequirementsConfig struct {
 	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
 	// Vault the configuration for vault
 	Vault VaultConfig `json:"vault,omitempty"`
+	// BootConfigURL contains the url to which the dev environment is associated with
+	BootConfigURL string `json:"bootConfigURL,omitempty"`
 }
 
 // NewRequirementsConfig creates a default configuration file
