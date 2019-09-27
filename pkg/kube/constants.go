@@ -139,6 +139,9 @@ const (
 	// ConfigMapNameJXInstallConfig is the ConfigMap containing the jx installation's CA and server url. Used by jx login
 	ConfigMapNameJXInstallConfig = "jx-install-config"
 
+	// ConfigMapNameRequirementsYaml is the ConfigMap containing the marshalled and encoded requirements.yaml file for Boot installs
+	ConfigMapNameRequirementsYaml = "jx-requirements-config"
+
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 
