@@ -122,7 +122,7 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: ./jx/scripts/ci.sh
 
-              - name: stash_xml_report
+              - name: stash-xml-report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: jx
                 args:
@@ -152,7 +152,7 @@ pipelineConfig:
                   - --suite-name
                   - "BDD_Tests"
 
-              - name: stash_html_report
+              - name: stash-html-report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: jx
                 args:
