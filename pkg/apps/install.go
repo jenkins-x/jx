@@ -511,7 +511,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						RestartPolicy:      corev1.RestartPolicyNever,
 					},
 				}
-				log.Logger().Infof("Preparing questions to configure %s."+
+				log.Logger().Infof("Preparing questions to configure %s. "+
 					"If this is the first time you have installed the app, this may take a couple of minutes.",
 					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
@@ -566,9 +566,6 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				}
 			}
 
-			if err != nil {
-				return &chartDetails, errors.Wrapf(err, "locating app resource for %s", chartName)
-			}
 			gitOpsURL := ""
 			if o.GitOps {
 				gitOpsURL = o.DevEnv.Spec.Source.URL
