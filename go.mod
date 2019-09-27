@@ -3,6 +3,7 @@ module github.com/jenkins-x/jx
 require (
 	code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a
 	github.com/Azure/draft v0.15.0
+	github.com/Comcast/kuberhealthy v1.0.2
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2
 	github.com/Jeffail/gabs v1.1.1
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
