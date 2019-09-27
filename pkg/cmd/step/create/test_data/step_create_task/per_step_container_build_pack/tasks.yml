@@ -6,9 +6,9 @@ items:
     labels:
       branch: master
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: from-build-pack
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: golang-qs-test
     name: abayer-golang-qs-test-master-from-build-pack-1
     namespace: jx
@@ -66,11 +66,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
@@ -130,11 +134,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-go:latest
       name: setup-jx-git-credentials
@@ -194,11 +202,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
       name: build-build
@@ -258,11 +270,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-go:latest
       name: build-tag
@@ -322,11 +338,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-go:latest
       name: build-helm-build
@@ -386,11 +406,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
       name: build-helm-version
@@ -450,11 +474,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
       name: promote-release
@@ -514,11 +542,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-go:latest
       name: promote-helm-release
@@ -578,11 +610,15 @@ items:
         value: golang-qs-test
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
       name: promote-jx-promote

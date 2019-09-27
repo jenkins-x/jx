@@ -6,9 +6,9 @@ items:
     labels:
       branch: master
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: from-build-pack
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: jx-demo-qs
     name: abayer-jx-demo-qs-master-from-build-pack-1
     namespace: jx
@@ -72,11 +72,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
@@ -146,11 +150,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: setup-jx-git-credentials
@@ -222,11 +230,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step3
@@ -300,11 +312,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step4
@@ -378,11 +394,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step5
@@ -454,11 +474,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step6
@@ -532,11 +556,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step7
@@ -610,11 +638,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step8
@@ -684,11 +716,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-mvn-deploy
@@ -758,11 +794,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-skaffold-version
@@ -832,11 +872,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-container-build
@@ -906,11 +950,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-post-build
@@ -980,11 +1028,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-changelog
@@ -1054,11 +1106,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-helm-release
@@ -1128,11 +1184,15 @@ items:
         value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
+      - name: BRANCH_NAME_LOWER
+        value: master
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
+        value: ${inputs.params.version}
+      - name: PREVIEW_VERSION_LOWER
         value: ${inputs.params.version}
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-jx-promote
