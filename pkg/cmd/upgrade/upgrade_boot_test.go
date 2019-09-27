@@ -1,18 +1,24 @@
 package upgrade
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	defaultBootRequirements     = "test_data/upgrade_boot"
+	alternativeBootRequirements = "test_data/upgrade_boot_alternative"
 )
 
 type TestUpgradeBootOptions struct {
@@ -20,8 +26,8 @@ type TestUpgradeBootOptions struct {
 	Dir string
 }
 
-func (o *TestUpgradeBootOptions) setup() {
-	dir := "test_data/upgrade_boot"
+func (o *TestUpgradeBootOptions) setup(bootRequirements string) {
+	dir := bootRequirements
 
 	o.UpgradeBootOptions = UpgradeBootOptions{
 		CommonOptions: &opts.CommonOptions{},
@@ -33,12 +39,12 @@ func TestDetermineBootConfigURL(t *testing.T) {
 	t.Parallel()
 
 	o := TestUpgradeBootOptions{}
-	o.setup()
+	o.setup(defaultBootRequirements)
 
 	vs, err := o.requirementsVersionStream()
 	require.NoError(t, err, "could not get requirements version stream")
 
-	URL, err := determineBootConfigURL(vs.URL)
+	URL, err := o.determineBootConfigURL(vs.URL)
 	require.NoError(t, err, "could not determine boot config URL")
 	assert.Equal(t, config.DefaultBootRepository, URL, "DetermineBootConfigURL")
 }
@@ -47,7 +53,7 @@ func TestRequirementsVersionStream(t *testing.T) {
 	t.Parallel()
 
 	o := TestUpgradeBootOptions{}
-	o.setup()
+	o.setup(defaultBootRequirements)
 
 	vs, err := o.requirementsVersionStream()
 	require.NoError(t, err, "could not get requirements version stream")
@@ -60,7 +66,7 @@ func TestUpdateVersionStreamRef(t *testing.T) {
 	t.Parallel()
 
 	o := TestUpgradeBootOptions{}
-	o.setup()
+	o.setup(defaultBootRequirements)
 
 	tmpDir := o.createTmpRequirements(t)
 	defer func() {
@@ -90,4 +96,53 @@ func (o *TestUpgradeBootOptions) createTmpRequirements(t *testing.T) string {
 	_, err = io.Copy(to, from)
 	require.NoError(t, err, "unable to copy test jx-requirements to tmp")
 	return tmpDir
+}
+
+func TestDetermineBootConfigURLAlternative(t *testing.T) {
+	t.Parallel()
+
+	o := TestUpgradeBootOptions{}
+	o.setup(alternativeBootRequirements)
+
+	vs, err := o.requirementsVersionStream()
+	require.NoError(t, err, "could not get requirements version stream")
+
+	URL, err := o.determineBootConfigURL(vs.URL)
+	require.NoError(t, err, "could not determine boot config URL")
+	assert.Equal(t, "https://github.com/some-org/some-org-jenkins-x-boot-config.git", URL, "DetermineBootConfigURL")
+}
+
+func TestRequirementsVersionStreamAlternative(t *testing.T) {
+	t.Parallel()
+
+	o := TestUpgradeBootOptions{}
+	o.setup(alternativeBootRequirements)
+
+	vs, err := o.requirementsVersionStream()
+	require.NoError(t, err, "could not get requirements version stream")
+
+	assert.Equal(t, "2367726d02b9c", vs.Ref, "RequirementsVersionStream Ref")
+	assert.Equal(t, "https://github.com/some-org/some-org-jenkins-x-versions.git", vs.URL, "RequirementsVersionStream URL")
+}
+
+func TestUpdateVersionStreamRefAlternative(t *testing.T) {
+	t.Parallel()
+
+	o := TestUpgradeBootOptions{}
+	o.setup(alternativeBootRequirements)
+
+	tmpDir := o.createTmpRequirements(t)
+	defer func() {
+		err := os.RemoveAll(tmpDir)
+		require.NoError(t, err, "could not clean up temp jx-requirements")
+	}()
+
+	o.UpgradeBootOptions.Dir = tmpDir
+	o.SetGit(gits.NewGitFake())
+	err := o.updateVersionStreamRef("22222222")
+	require.NoError(t, err, "could not update version stream ref")
+
+	vs, err := o.requirementsVersionStream()
+	require.NoError(t, err, "could not get requirements version stream")
+	assert.Equal(t, "22222222", vs.Ref, "UpdateVersionStreamRef Ref")
 }
