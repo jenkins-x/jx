@@ -43,11 +43,15 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 	}
 
 	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", autoMerge)
-
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
 	}
-	log.Logger().Infof("Added app via Pull Request %s", info.PullRequest.URL)
+
+	if info != nil {
+		log.Logger().Infof("Added app via Pull Request %s", info.PullRequest.URL)
+	} else {
+		log.Logger().Infof("Already up to date")
+	}
 	return nil
 }
 
