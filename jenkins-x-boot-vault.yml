@@ -35,8 +35,6 @@ pipelineConfig:
                 value: /secrets/kaniko/kaniko-secret.json
               - name: DISABLE_TEST_CACHING
                 value: "true"
-              - name: JX_REQUIREMENT_VAULT_DISABLE_URL_DISCOVERY
-                value: "true"
             options:
               volumes:
                 - name: kaniko-secret
@@ -117,7 +115,8 @@ pipelineConfig:
                   secretKeyRef:
                     name: test-jenkins-user 
                     key: password
-
+              - name: JX_REQUIREMENT_VAULT_DISABLE_URL_DISCOVERY
+                value: "true"
             steps:
               - name: boot-vault-e2e-tests
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
