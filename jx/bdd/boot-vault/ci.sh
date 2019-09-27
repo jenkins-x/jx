@@ -69,5 +69,7 @@ jx step bdd \
     --default-admin-password $JENKINS_PASSWORD \
     --no-delete-app \
     --no-delete-repo \
-    --tests install \
-    --tests test-quickstart-golang-http
+    --tests test-quickstart-golang-http \
+    --tests test-app-lifecycle \
+    --test-git-repo=https://github.com/hferentschik/bdd-jx.git \
+    --test-git-branch=issue-49

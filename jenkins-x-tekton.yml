@@ -139,7 +139,7 @@ pipelineConfig:
                   - --suite-name
                   - "BDD_Tekton_Tests"
 
-              - name: stash_xml_report
+              - name: stash-XML-report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: jx
                 args:
@@ -151,7 +151,7 @@ pipelineConfig:
                   - "/workspace/source/build/reports/create_spring_application.junit.xml"
                   - --bucket-url gs://jx-prod-logs
 
-              - name: stash_html_report
+              - name: stash-HTML-report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: jx
                 args:
