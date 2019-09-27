@@ -2,6 +2,7 @@ package step
 
 import (
 	"fmt"
+	"io/ioutil"
 	"sort"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -25,6 +26,7 @@ type StepCredentialOptions struct {
 	Namespace string
 	Secret    string
 	Key       string
+	File      string
 	Optional  bool
 }
 
@@ -46,6 +48,13 @@ var (
 
 		# create a local file from a file based secret using the Jenkins Credentials Provider labels
         export MY_KEY_FILE="$(jx step credential -s foo)"
+         
+		# create a local file called cheese from a given key
+        export MY_KEY_FILE="$(jx step credential -s foo -f cheese -k data)"
+
+		# create a local file called cheese from a given key, if the key exists'
+        export MY_KEY_FILE="$(jx step credential -s foo -f cheese -k data --optional)"
+         
 `)
 )
 
@@ -73,6 +82,7 @@ func NewCmdStepCredential(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for a Secret")
 	cmd.Flags().StringVarP(&options.Secret, "name", "s", "", "the name of the Secret")
 	cmd.Flags().StringVarP(&options.Key, "key", "k", "", "the key in the Secret to output")
+	cmd.Flags().StringVarP(&options.File, "file", "f", "", "the key for the filename to use if this is a file based Secret")
 	cmd.Flags().BoolVarP(&options.Optional, "optional", "", false, "if true, then the command will only warn (not error) if the secret or the key doesn't exist")
 
 	return cmd
@@ -116,11 +126,24 @@ func (o *StepCredentialOptions) Run() error {
 	}
 	sort.Strings(keys)
 
+	filename := o.File
 	key := o.Key
 
 	labels := secret.Labels
 	if labels != nil {
 		kind := labels[kube.LabelCredentialsType]
+		if filename == "" && kind == kube.ValueCredentialTypeSecretFile {
+			filenameData, ok := data["filename"]
+			if ok {
+				filename = string(filenameData)
+			} else {
+				return fmt.Errorf("the Secret %s in namespace %s has label %s with value %s but has no filename key", name, ns, kube.LabelCredentialsType, kind)
+			}
+			if key == "" {
+				key = "data"
+			}
+		}
+
 		if key == "" && kind == kube.ValueCredentialTypeUsernamePassword {
 			key = "password"
 		}
@@ -137,6 +160,14 @@ func (o *StepCredentialOptions) Run() error {
 			return nil
 		}
 		return util.InvalidOption("key", key, keys)
+	}
+	if filename != "" {
+		err = ioutil.WriteFile(filename, value, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to store file %s", filename)
+		}
+		fmt.Fprintf(o.Out, "%s\n", filename)
+		return nil
 	}
 	fmt.Fprintf(o.Out, "%s\n", value)
 	return nil
