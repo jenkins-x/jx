@@ -242,6 +242,11 @@ func (o *BootOptions) Run() error {
 	}
 	o.defaultVersionStream(requirements)
 
+	err = requirements.SaveConfig(requirementsFile)
+	if err != nil {
+		return err
+	}
+
 	exists, err = util.FileExists(requirementsFile)
 	if err != nil {
 		return err
