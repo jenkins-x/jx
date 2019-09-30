@@ -428,6 +428,11 @@ func (g *GitLocal) GetLatestCommitSha(dir string) (string, error) {
 	return g.GitCLI.GetLatestCommitSha(dir)
 }
 
+// GetFirstCommitSha gets the first commit sha
+func (g *GitLocal) GetFirstCommitSha(dir string) (string, error) {
+	return g.GitCLI.GetFirstCommitSha(dir)
+}
+
 // Reset performs a git reset --hard back to the commitish specified
 func (g *GitLocal) Reset(dir string, commitish string, hard bool) error {
 	return g.GitCLI.Reset(dir, commitish, true)
