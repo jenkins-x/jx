@@ -1022,6 +1022,11 @@ func (g *GitCLI) GetLatestCommitSha(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", "HEAD")
 }
 
+// GetFirstCommitSha returns the sha of the first commit
+func (g *GitCLI) GetFirstCommitSha(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "rev-list", "--max-parents=0", "HEAD")
+}
+
 // Reset performs a git reset --hard back to the commitish specified
 func (g *GitCLI) Reset(dir string, commitish string, hard bool) error {
 	args := []string{"reset"}

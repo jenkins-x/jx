@@ -255,8 +255,15 @@ func (o *StepChangelogOptions) Run() error {
 			return err
 		}
 		if previousRev == "" {
-			log.Logger().Info("no previous commit version found so change diff unavailable")
-			return nil
+			// lets assume we are the first release
+			previousRev, err = o.Git().GetFirstCommitSha(dir)
+			if err != nil {
+				return errors.Wrap(err, "failed to find first commit after we found no previous releaes")
+			}
+			if previousRev == "" {
+				log.Logger().Info("no previous commit version found so change diff unavailable")
+				return nil
+			}
 		}
 	}
 	currentRev := o.CurrentRevision
