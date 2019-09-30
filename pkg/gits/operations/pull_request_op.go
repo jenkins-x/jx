@@ -498,7 +498,7 @@ func (o *PullRequestOperation) CreatePullRequestGitReleasesFn(name string) Chang
 		log.Logger().Infof("found latest version %s for git repo %s", util.ColorInfo(version), util.ColorInfo(u))
 		o.Version = version
 		if o.SrcGitURL == "" {
-			sv, err := versionstream.LoadStableVersion(dir, versionstream.VersionKind(versionstream.KindGit), name)
+			sv, err := versionstream.LoadStableVersion(dir, versionstream.KindGit, name)
 			if err != nil {
 				return nil, errors.Wrapf(err, "loading stable version")
 			}
