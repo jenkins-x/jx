@@ -168,7 +168,7 @@ func findLegacyPipelineRunBuildNumber(pipelineRun *tektonapis.PipelineRun) strin
 	return buildNumber
 }
 
-func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) (map[string]*tektonapis.PipelineRun, error) {
+func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) (map[string]tektonapis.PipelineRun, error) {
 	filters := []string{
 		fmt.Sprintf("%s=%s", v1.LabelOwner, pa.Spec.GitOwner),
 		fmt.Sprintf("%s=%s", v1.LabelRepository, pa.Spec.GitRepository),
@@ -195,7 +195,7 @@ func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclie
 		return tektonPRs.Items[i].CreationTimestamp.Before(&tektonPRs.Items[j].CreationTimestamp)
 	})
 
-	runs := make(map[string]*tektonapis.PipelineRun)
+	runs := make(map[string]tektonapis.PipelineRun)
 	for _, pr := range tektonPRs.Items {
 		buildNumber := pr.Labels[tekton.LabelBuild]
 		if buildNumber == "" {
@@ -206,7 +206,7 @@ func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclie
 			pipelineType = tekton.BuildPipeline.String()
 		}
 		if buildNumber == pa.Spec.Build {
-			runs[pipelineType] = &pr
+			runs[pipelineType] = pr
 		}
 	}
 
@@ -226,17 +226,17 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 		}
 
 		var runToLog *tektonapis.PipelineRun
-		metaPr := runsByType[tekton.MetaPipeline.String()]
-		buildPr := runsByType[tekton.BuildPipeline.String()]
+		metaPr, hasMetaPr := runsByType[tekton.MetaPipeline.String()]
+		buildPr, hasBuildPr := runsByType[tekton.BuildPipeline.String()]
 		var metaStatus *knativeapis.Condition
-		if metaPr != nil {
+		if hasMetaPr {
 			metaStatus = metaPr.Status.GetCondition(knativeapis.ConditionSucceeded)
 		}
 		// If we don't have a build run yet...
-		if buildPr == nil {
+		if !hasBuildPr {
 			// If we have a metapipeline and either the metapipeline is still running or failed, include the metapipeline
 			if metaStatus != nil && metaStatus.Status != corev1.ConditionTrue {
-				runToLog = metaPr
+				runToLog = &metaPr
 				// If the metapipeline failed, the pipeline as a whole is complete.
 				if metaStatus.Status == corev1.ConditionFalse {
 					loggedAllRunsForActivity = true
@@ -244,7 +244,7 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 			}
 		} else {
 			// Log the build pipeline
-			runToLog = buildPr
+			runToLog = &buildPr
 			loggedAllRunsForActivity = true
 		}
 
