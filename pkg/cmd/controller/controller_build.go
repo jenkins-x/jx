@@ -1049,7 +1049,7 @@ func toYamlString(resource interface{}) string {
 // generates the build log URL and returns the URL
 func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
-	coll, err := collector.NewCollector(location, settings, o.Git())
+	coll, err := collector.NewCollector(location, o.Git())
 	if err != nil {
 		return "", errors.Wrapf(err, "could not create Collector for pod %s in namespace %s with settings %#v", pod.Name, ns, settings)
 	}

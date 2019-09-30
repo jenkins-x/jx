@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/url"
 	"strings"
 
@@ -68,6 +71,20 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 			bucketName, project)
 	}
 	return nil
+}
+
+// UploadFileToBucket uploads a file to the provided GCS bucket with the provided outputName
+func (b *GKEBucketProvider) UploadFileToBucket(reader io.Reader, outputName string, bucketURL string) (string, error) {
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	return gke.UploadFileToBucket(bytes, outputName, bucketURL)
+}
+
+// DownloadFileFromBucket downloads a file from GCS from the given bucketURL and server its contents with a bufio.Scanner
+func (b *GKEBucketProvider) DownloadFileFromBucket(bucketURL string) (*bufio.Scanner, error) {
+	return gke.StreamTransferFileFromBucket(bucketURL)
 }
 
 // NewGKEBucketProvider create a new provider for GKE

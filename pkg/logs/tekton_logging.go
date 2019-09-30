@@ -11,21 +11,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/step"
-	"github.com/jenkins-x/jx/pkg/util"
-
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/tekton"
-
 	"github.com/fatih/color"
+	"github.com/google/uuid"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cloud/factory"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/util"
 	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	tektonapis "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -430,7 +430,6 @@ func (t TektonLogger) waitForContainerToStart(ns string, pod *corev1.Pod, idx in
 
 // StreamPipelinePersistentLogs reads logs from the provided bucket URL and writes them using the provided LogWriter
 func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.CommonOptions) error {
-	//TODO: This should be changed in the future when other bucket providers are supported
 	t.initializeLoggingRoutine()
 	u, err := url.Parse(logsURL)
 	if err != nil {
@@ -439,14 +438,23 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 	var logBytes []byte
 	switch u.Scheme {
 	case "gs":
-		scanner, err := gke.StreamTransferFileFromBucket(logsURL)
+		scanner, err := performProviderDownload(logsURL)
 		if err != nil {
-			return errors.Wrapf(err, "there was a problem obtaining the log file from the configured bucket URL %s", logsURL)
+			// TODO: This is only here as long as we keep supporting non boot clusters, as GKE are the only ones with LTS supported outside of boot
+			scanner, err2 := gke.StreamTransferFileFromBucket(logsURL)
+			if err2 != nil {
+				return util.CombineErrors(err, err2)
+			}
+			return t.streamPipedLogs(scanner, logsURL)
 		}
 		return t.streamPipedLogs(scanner, logsURL)
-	case "http":
-		fallthrough
-	case "https":
+	case "s3":
+		scanner, err := performProviderDownload(logsURL)
+		if err != nil {
+			return errors.Wrap(err, "there was a problem downloading logs from s3 bucket")
+		}
+		return t.streamPipedLogs(scanner, logsURL)
+	case "http", "https":
 		logBytes, err = downloadLogFile(logsURL, o)
 		if err != nil {
 			return errors.Wrapf(err, "there was a problem obtaining the log file from the github pages URL %s", logsURL)
@@ -559,4 +567,12 @@ func downloadLogFile(logsURL string, o *opts.CommonOptions) ([]byte, error) {
 		return nil, err
 	}
 	return logBytes, nil
+}
+
+func performProviderDownload(logsURL string) (*bufio.Scanner, error) {
+	provider, err := factory.NewBucketProviderFromTeamSettingsConfiguration(clients.NewFactory())
+	if err != nil {
+		return nil, errors.Wrap(err, "There was a problem obtaining a Bucket provider for bucket scheme gs://")
+	}
+	return provider.DownloadFileFromBucket(logsURL)
 }

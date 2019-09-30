@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -397,6 +398,31 @@ func StreamTransferFileFromBucket(fullBucketURL string) (*bufio.Scanner, error) 
 	scanner := bufio.NewScanner(stdout)
 	scanner.Split(bufio.ScanLines)
 	return scanner, err
+}
+
+// UploadFileToBucket will perform a stream transfer with the provided bytes to the GCS bucket with the target key name
+func UploadFileToBucket(data []byte, key string, fullBucketURL string) (string, error) {
+	log.Logger().Debugf("Uploading data %s to bucket %s with key %s", string(data), fullBucketURL, key)
+	args := []string{"cp", "-", fullBucketURL + "/" + key}
+	cmd := exec.Command("gsutil", args...)
+	inPipe, err := cmd.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+	err = pipeBytes(inPipe, data)
+	if err != nil {
+		return "", err
+	}
+	return fullBucketURL + "/" + key, cmd.Run()
+}
+
+func pipeBytes(in io.WriteCloser, bytes []byte) error {
+	defer in.Close()
+	_, err := in.Write(bytes)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // DeleteBucket deletes a Google storage bucket
