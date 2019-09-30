@@ -234,7 +234,7 @@ func ReadValuesYamlFileTemplateOutput(templateFile string, params chartutil.Valu
 	}
 
 	templateData := map[string]interface{}{
-		"Parameters":   chartutil.Values(params),
+		"Parameters":   params,
 		"Requirements": chartutil.Values(requirementsMap),
 		"Environments": chartutil.Values(requirements.EnvironmentMap()),
 	}
