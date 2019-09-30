@@ -482,6 +482,24 @@ func (g *GitFake) GetLatestCommitMessage(dir string) (string, error) {
 	return g.Commits[len-1].Message, nil
 }
 
+// GetLatestCommitSha returns the sha of the last commit
+func (g *GitFake) GetLatestCommitSha(dir string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no commits found")
+	}
+	return g.Commits[len-1].SHA, nil
+}
+
+// GetFirstCommitSha returns the last commit message
+func (g *GitFake) GetFirstCommitSha(dir string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no commits found")
+	}
+	return g.Commits[0].SHA, nil
+}
+
 // FetchTags fetches tags
 func (g *GitFake) FetchTags(dir string) error {
 	return nil
@@ -558,11 +576,6 @@ func (g *GitFake) CreateBranchFrom(dir string, branchName string, startPoint str
 // Merge merges the commitish into the current branch
 func (g *GitFake) Merge(dir string, commitish string) error {
 	return nil
-}
-
-// GetLatestCommitSha returns the sha of the last commit
-func (g *GitFake) GetLatestCommitSha(dir string) (string, error) {
-	return "", nil
 }
 
 // Reset performs a git reset --hard back to the commitish specified

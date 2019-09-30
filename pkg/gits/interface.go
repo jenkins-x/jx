@@ -272,6 +272,7 @@ type Gitter interface {
 	FilterTags(dir string, filter string) ([]string, error)
 	CreateTag(dir string, tag string, msg string) error
 	GetLatestCommitSha(dir string) (string, error)
+	GetFirstCommitSha(dir string) (string, error)
 	GetCommits(dir string, start string, end string) ([]GitCommit, error)
 	RevParse(dir string, rev string) (string, error)
 	GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCommit, error)

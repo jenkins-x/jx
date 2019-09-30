@@ -738,6 +738,25 @@ func (mock *MockGitter) GetCommitsNotOnAnyRemote(_param0 string, _param1 string)
 	return ret0, ret1
 }
 
+func (mock *MockGitter) GetFirstCommitSha(_param0 string) (string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetFirstCommitSha", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitter) GetLatestCommitMessage(_param0 string) (string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -2896,6 +2915,33 @@ func (c *MockGitter_GetCommitsNotOnAnyRemote_OngoingVerification) GetAllCaptured
 		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitter) GetFirstCommitSha(_param0 string) *MockGitter_GetFirstCommitSha_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetFirstCommitSha", params, verifier.timeout)
+	return &MockGitter_GetFirstCommitSha_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_GetFirstCommitSha_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_GetFirstCommitSha_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *MockGitter_GetFirstCommitSha_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
 		}
 	}
 	return
