@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -173,7 +174,18 @@ func (o *StepBootVaultOptions) Run() error {
 		}
 	}
 
-	err = create.InstallVaultOperator(o.CommonOptions, ns)
+	tag, err := o.vaultOperatorImageTag()
+	if err != nil {
+		return err
+	}
+	opts := o.CommonOptions
+	values := []string{
+		"image.repository=" + kubevault.VaultOperatorImage,
+		"image.tag=" + tag,
+	}
+	opts.SetValues = strings.Join(values, ",")
+	log.Logger().Infof("installing vault operator with helm values:  %s", util.ColorInfo(opts.SetValues))
+	err = create.InstallVaultOperator(opts, ns)
 	if err != nil {
 		return errors.Wrap(err, "unable to install vault operator")
 	}
@@ -261,6 +273,24 @@ func (o *StepBootVaultOptions) verifyVaultIngress(requirements *config.Requireme
 		return true, errors.Wrapf(err, "failed to apply vault ingress YAML")
 	}
 	return true, nil
+}
+
+// vaultOperatorImageTag lookups the vault operator image tag in the version stream
+func (o *StepBootVaultOptions) vaultOperatorImageTag() (string, error) {
+	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
+	if err != nil {
+		return "", errors.Wrap(err, "creating the vault-operator docker image version resolver")
+	}
+	fullImage, err := resolver.ResolveDockerImage(kubevault.VaultOperatorImage)
+	if err != nil {
+		return "", errors.Wrapf(err, "looking up the vault-operator %q image into the version stream",
+			kubevault.VaultOperatorImage)
+	}
+	parts := strings.Split(fullImage, ":")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("no tag found for image %q in version stream", kubevault.VaultOperatorImage)
+	}
+	return parts[1], nil
 }
 
 // readYamlTemplate evaluates the given go template file and returns the output data
