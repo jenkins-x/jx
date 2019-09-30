@@ -162,7 +162,7 @@ func (o *StepStashOptions) Run() error {
 		return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
 	}
 
-	coll, err := collector.NewCollector(o.StorageLocation, settings, o.Git())
+	coll, err := collector.NewCollector(o.StorageLocation, o.Git())
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the collector for storage settings %s", o.StorageLocation.Description())
 	}

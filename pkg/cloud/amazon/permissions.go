@@ -34,7 +34,7 @@ const (
 // EnableIRSASupportInCluster Associates IAM as an OIDC provider so it can sign requests and assume roles
 func EnableIRSASupportInCluster(requirements *config.RequirementsConfig) error {
 	log.Logger().Infof("Enabling IRSA for cluster %s associating the IAM Open ID Connect provider", util.ColorInfo(requirements.Cluster.ClusterName))
-	args := []string{"utils", "associate-iam-oidc-provider", "--name", requirements.Cluster.ClusterName, "--region", requirements.Cluster.Region}
+	args := []string{"utils", "associate-iam-oidc-provider", "--name", requirements.Cluster.ClusterName, "--region", requirements.Cluster.Region, "--approve"}
 	err := executeEksctlCommand(args)
 	if err != nil {
 		return errors.Wrap(err, "there was a porblem enabling IRSA in the cluster")

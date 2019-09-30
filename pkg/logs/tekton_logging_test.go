@@ -617,9 +617,9 @@ func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 		},
 	}
 
-	err := tl.StreamPipelinePersistentLogs("s3://nonSupportedBucket", &commonOptions)
+	err := tl.StreamPipelinePersistentLogs("azblob://nonSupportedBucket", &commonOptions)
 	assert.NoError(t, err)
-	assert.Contains(t, tl.LogWriter.(*TestWriter).StreamLinesLogged[0], "The provided logsURL scheme is not supported: s3")
+	assert.Contains(t, tl.LogWriter.(*TestWriter).StreamLinesLogged[0], "The provided logsURL scheme is not supported: azblob")
 }
 
 func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
