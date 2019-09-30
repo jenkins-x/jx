@@ -40,6 +40,6 @@ pipelineConfig:
                   - /workspace/go/src/github.com/jenkins-x/jx
 
               - name: lint
-                image: golang:1.12.5
+                image: golang:1.12.10
                 command: ./hack/run-all-checks.sh
                 dir: /workspace/go/src/github.com/jenkins-x/jx
