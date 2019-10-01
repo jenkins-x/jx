@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
-	"github.com/jenkins-x/jx/pkg/cmd/requirements"
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/boot"
@@ -106,7 +105,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)
 	installCommands = append(installCommands, findCommands("jenkins token", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, initcmd.NewCmdInit(commonOpts))
-	installCommands = append(installCommands, requirements.NewCmdRequirements(commonOpts))
 
 	addProjectCommands := []*cobra.Command{
 		importcmd.NewCmdImport(commonOpts),
