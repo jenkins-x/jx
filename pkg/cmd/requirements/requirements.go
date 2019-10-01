@@ -95,7 +95,7 @@ func NewCmdRequirements(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Requirements.Cluster.Namespace, "namespace", "n", "", "configures the namespace to use")
 	cmd.Flags().StringVarP(&options.Requirements.Cluster.Provider, "provider", "p", "", "configures the kubernetes provider")
 	cmd.Flags().StringVarP(&options.Requirements.Cluster.ProjectID, "project", "", "", "configures the Google Project ID")
-	cmd.Flags().StringVarP(&options.Requirements.Cluster.Registry, "registry", "r", "", "configures the host name of the container registry")
+	cmd.Flags().StringVarP(&options.Requirements.Cluster.Registry, "registry", "", "", "configures the host name of the container registry")
 	cmd.Flags().StringVarP(&options.Requirements.Cluster.Region, "region", "r", "", "configures the cloud region")
 	cmd.Flags().StringVarP(&options.Requirements.Cluster.Zone, "zone", "z", "", "configures the cloud zone")
 
