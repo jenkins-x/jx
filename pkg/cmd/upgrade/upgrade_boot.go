@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -13,9 +14,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/gits/operations"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
@@ -37,6 +40,10 @@ var (
 		# create pr for upgrading a jx boot gitOps cluster
 		jx upgrade boot
 `)
+)
+
+const (
+	upgradeVersionStreamRef = "master"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -79,7 +86,7 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrap(err, "failed to get requirements version stream")
 	}
 
-	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, "master")
+	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, upgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to get check for available update")
 	}
@@ -103,6 +110,15 @@ func (o *UpgradeBootOptions) Run() error {
 	}
 
 	err = o.updateVersionStreamRef(upgradeVersionSha)
+	if err != nil {
+		return errors.Wrap(err, "failed to update version stream ref")
+	}
+	resolver, err := o.CreateVersionResolver(reqsVersionStream.URL, upgradeVersionStreamRef)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create version resolver")
+	}
+
+	err = o.updatePipelineBuilderImage(resolver)
 	if err != nil {
 		return errors.Wrap(err, "failed to update version stream ref")
 	}
@@ -210,7 +226,7 @@ func (o *UpgradeBootOptions) updateVersionStreamRef(upgradeRef string) error {
 	}
 
 	if requirements.VersionStream.Ref != upgradeRef {
-		log.Logger().Infof("Upgrading version stream ref to %s", upgradeRef)
+		log.Logger().Infof("Upgrading version stream ref to %s", util.ColorInfo(upgradeRef))
 		requirements.VersionStream.Ref = upgradeRef
 		err = requirements.SaveConfig(requirementsFile)
 		if err != nil {
@@ -251,7 +267,7 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 		return nil
 	}
 	log.Logger().Infof(util.ColorInfo("boot config upgrade available"))
-	log.Logger().Infof("Upgrading from v%s to v%s", currentVersion, upgradeVersion)
+	log.Logger().Infof("Upgrading from v%s to v%s", util.ColorInfo(currentVersion), util.ColorInfo(upgradeVersion))
 
 	err = o.Git().FetchBranch(o.Dir, bootConfigURL, "master")
 	if err != nil {
@@ -462,4 +478,38 @@ func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitP
 		return nil, errors.Wrap(err, "failed to create provider for user")
 	}
 	return provider, nil
+}
+
+func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.VersionResolver) error {
+	builderImage := "gcr.io/jenkinsxio/builder-go"
+	piplineFileGlob := "jenkins-x*.yml"
+	updatedBuilderImage, err := resolver.ResolveDockerImage(builderImage)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve image %s", builderImage)
+	}
+	log.Logger().Infof("Updating pipeline agent images to %s", util.ColorInfo(updatedBuilderImage))
+	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*agent:\n\s*image: (gcr.io\/jenkinsxio\/builder-go.*$)`, piplineFileGlob)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = fn(o.Dir, nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	matches, err := filepath.Glob(filepath.Join(o.Dir, piplineFileGlob))
+	if err != nil {
+		return errors.Wrapf(err, "applying glob %s", piplineFileGlob)
+	}
+	for i, match := range matches {
+		matches[i], err = filepath.Rel(o.Dir, match)
+		if err != nil {
+			return errors.Wrapf(err, "failed to build path for pipeline file %s", match)
+		}
+	}
+	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade pipeline builder images", matches)
+	if err != nil {
+		log.Logger().Info("Skipping builder image update as no changes were detected")
+
+	}
+	return nil
 }
