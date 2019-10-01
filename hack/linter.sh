@@ -2,7 +2,7 @@
 
 set -e -o pipefail
 
-if [ $DISABLE_LINTER == "true" ]
+if [ "$DISABLE_LINTER" == "true" ]
 then
   exit 0
 fi
