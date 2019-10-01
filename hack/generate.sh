@@ -9,8 +9,6 @@ RESET='\033[0m'
 echo "Running validation scripts..."
 
 scripts=(
-    "./hack/gofmt.sh"
-    "./hack/linter.sh"
     "make verify-generation-complete"
     "make generate-docs"
 )

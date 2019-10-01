@@ -26,6 +26,14 @@ pipelineConfig:
                     cpu: 2
                     memory: 2Gi
             steps:
+              - name: fmt
+                image: golang:1.12.10
+                command: ./hack/gofmt.sh
+                dir: /workspace/source
+              - name: lint
+                image: golang:1.12.10
+                command: ./hack/linter.sh
+                dir: /workspace/source
               - name: mk-jx-project-dir	
                 image: busybox	
                 command: mkdir	
@@ -40,8 +48,7 @@ pipelineConfig:
                   - "./"
                   - "/workspace/go/src/github.com/jenkins-x/jx"
                 dir: /workspace/source
-              - name: lint
+              - name: generate
                 image: golang:1.12.10
-                command: ./hack/run-all-checks.sh
+                command: ./hack/generate.sh
                 dir: /workspace/go/src/github.com/jenkins-x/jx
-
