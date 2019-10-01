@@ -92,7 +92,7 @@ func (o *StepVerifyURLOptions) Run() error {
 
 	tr := &http.Transport{}
 	if o.InsecureSkipVerify {
-		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec
 	}
 	client := &http.Client{Transport: tr}
 

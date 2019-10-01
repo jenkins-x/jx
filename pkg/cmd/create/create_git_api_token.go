@@ -218,9 +218,9 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	log.Logger().Info("Generating new token")
 
 	tokenId := "jx-" + string(uuid.NewUUID())
-	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
+	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']" // #nosec
 
-	tokenResultDivSelector := "//div[@class='ui info message']/p"
+	tokenResultDivSelector := "//div[@class='ui info message']/p" // #nosec
 	err = c.Run(ctxt, chromedp.Tasks{
 		chromedp.WaitVisible(generateNewTokenButtonSelector),
 		chromedp.Click(generateNewTokenButtonSelector),

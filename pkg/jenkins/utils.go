@@ -1,7 +1,6 @@
 package jenkins
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -92,11 +91,7 @@ func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigServi
 	}
 	jenkins := gojenkins.NewJenkins(jauth, url)
 
-	// handle insecure TLS for minishift
 	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		}}

@@ -25,7 +25,7 @@ func UpdateVersions(dir string, newVersion string, name string) ([]string, error
 		fmt.Sprintf("FROM %s:", name),
 		fmt.Sprintf("ENV %s ", name),
 		fmt.Sprintf("ARG %s=", name),
-	}
+	} // #nosec
 	oldVersions := make(map[string]bool)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

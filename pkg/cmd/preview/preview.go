@@ -571,7 +571,7 @@ func (o *PreviewOptions) Run() error {
 	if url != "" {
 		// Wait for a 200 range status code, 401 or 404 to make sure that the DNS has propagated
 		f := func() error {
-			resp, err := http.Get(url)
+			resp, err := http.Get(url) // #nosec
 			if err != nil {
 				return errors.Errorf("preview application %s not available, error was %v", url, err)
 			}
