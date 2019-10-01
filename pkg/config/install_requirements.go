@@ -101,6 +101,9 @@ const (
 	SecretStorageTypeLocal SecretStorageType = "local"
 )
 
+// SecretStorageTypeValues the string values for the secret storage
+var SecretStorageTypeValues = []string{"local", "vault"}
+
 // WebhookType is the type of a webhook strategy
 type WebhookType string
 
@@ -115,6 +118,12 @@ const (
 	WebhookTypeLighthouse WebhookType = "lighthouse"
 	// WebhookTypeJenkins specifies that we use jenkins webhooks
 	WebhookTypeJenkins WebhookType = "jenkins"
+)
+
+// WebhookTypeValues the string values for the webhook types
+var WebhookTypeValues = []string{"jenkins", "lighthouse", "prow"}
+
+const (
 	// DefaultVersionsURL default version stream url
 	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
 	// DefaultVersionsRef default version stream ref
@@ -320,35 +329,35 @@ type AutoUpdateConfig struct {
 
 // RequirementsConfig contains the logical installation requirements
 type RequirementsConfig struct {
+	// AutoUpdate contains auto update config
+	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
+	// BootConfigURL contains the url to which the dev environment is associated with
+	BootConfigURL string `json:"bootConfigURL,omitempty"`
 	// Cluster contains cluster specific requirements
 	Cluster ClusterConfig `json:"cluster"`
-	// Kaniko whether to enable kaniko for building docker images
-	Kaniko bool `json:"kaniko,omitempty"`
-	// Velero the configuration for running velero for backing up the cluster resources
-	Velero VeleroConfig `json:"velero,omitempty"`
+	// Environments the requirements for the environments
+	Environments []EnvironmentConfig `json:"environments,omitempty"`
 	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
 	// re-run 'jx boot' when changes merge to the master branch
 	GitOps bool `json:"gitops,omitempty"`
-	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
-	Terraform bool `json:"terraform,omitempty"`
-	// SecretStorage how should we store secrets for the cluster
-	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
-	// Webhook specifies what engine we should use for webhooks
-	Webhook WebhookType `json:"webhook,omitempty"`
-	// Environments the requirements for the environments
-	Environments []EnvironmentConfig `json:"environments,omitempty"`
+	// Kaniko whether to enable kaniko for building docker images
+	Kaniko bool `json:"kaniko,omitempty"`
 	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress"`
+	// SecretStorage how should we store secrets for the cluster
+	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
 	// Storage contains storage requirements
 	Storage StorageConfig `json:"storage"`
-	// VersionStream contains version stream info
-	VersionStream VersionStreamConfig `json:"versionStream"`
-	// AutoUpdate contains auto update config
-	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
+	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
+	Terraform bool `json:"terraform,omitempty"`
 	// Vault the configuration for vault
 	Vault VaultConfig `json:"vault,omitempty"`
-	// BootConfigURL contains the url to which the dev environment is associated with
-	BootConfigURL string `json:"bootConfigURL,omitempty"`
+	// Velero the configuration for running velero for backing up the cluster resources
+	Velero VeleroConfig `json:"velero,omitempty"`
+	// VersionStream contains version stream info
+	VersionStream VersionStreamConfig `json:"versionStream"`
+	// Webhook specifies what engine we should use for webhooks
+	Webhook WebhookType `json:"webhook,omitempty"`
 }
 
 // NewRequirementsConfig creates a default configuration file
