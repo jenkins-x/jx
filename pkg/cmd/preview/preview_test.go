@@ -1,20 +1,16 @@
 package preview_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/preview"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"os"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/preview"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-)
-
-// Constants for some test data to be used.
-const (
-	namespace = "jx"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {

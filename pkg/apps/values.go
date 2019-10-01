@@ -28,21 +28,8 @@ import (
 
 const (
 	//ValuesAnnotation is the name of the annotation used to stash values
-	ValuesAnnotation       = "jenkins.io/values.yaml"
-	appsGeneratedSecretKey = "appsGeneratedSecrets"
+	ValuesAnnotation = "jenkins.io/values.yaml"
 )
-
-const secretTemplate = `
-{{- range .Values.generatedSecrets }}
-apiVersion: v1
-data:
-  {{ .key }}: {{ .value }}
-kind: Secret
-metadata:
-  name: {{ .name }} 
-type: Opaque
-{{- end }}
-`
 
 // StashValues takes the values used to configure an app and annotates the APP CRD with them allowing them to be used
 // at a later date e.g. when the app is upgraded
