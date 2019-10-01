@@ -513,7 +513,7 @@ func (g *GitCLI) AddCommit(dir string, msg string) error {
 // AddCommitFiles perform an add and commit selected files from the repository at the given directory with the given messages
 func (g *GitCLI) AddCommitFiles(dir string, msg string, files []string) error {
 	fileString := strings.Trim(fmt.Sprintf("%v", files), "[]")
-	return g.gitCmd(dir, "commit", "-m", strconv.Quote(msg), "--", fileString)
+	return g.gitCmd(dir, "commit", "-m", msg, "--", fileString)
 }
 
 func (g *GitCLI) gitCmd(dir string, args ...string) error {

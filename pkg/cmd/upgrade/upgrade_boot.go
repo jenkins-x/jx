@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -36,6 +37,10 @@ var (
 		# create pr for upgrading a jx boot gitOps cluster
 		jx upgrade boot
 `)
+)
+
+const (
+	upgradeVersionStreamRef = "master"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -78,7 +83,7 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrap(err, "failed to get requirements version stream")
 	}
 
-	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, "master")
+	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, upgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to get check for available update")
 	}
@@ -102,6 +107,11 @@ func (o *UpgradeBootOptions) Run() error {
 	}
 
 	err = o.updateVersionStreamRef(upgradeVersionSha)
+	if err != nil {
+		return errors.Wrap(err, "failed to update version stream ref")
+	}
+
+	err = o.updatePipelineBuilderImage(reqsVersionStream.URL, upgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to update version stream ref")
 	}
@@ -209,7 +219,7 @@ func (o *UpgradeBootOptions) updateVersionStreamRef(upgradeRef string) error {
 	}
 
 	if requirements.VersionStream.Ref != upgradeRef {
-		log.Logger().Infof("Upgrading version stream ref to %s", upgradeRef)
+		log.Logger().Infof("Upgrading version stream ref to %s", util.ColorInfo(upgradeRef))
 		requirements.VersionStream.Ref = upgradeRef
 		err = requirements.SaveConfig(requirementsFile)
 		if err != nil {
@@ -250,7 +260,7 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 		return nil
 	}
 	log.Logger().Infof(util.ColorInfo("boot config upgrade available"))
-	log.Logger().Infof("Upgrading from v%s to v%s", currentVersion, upgradeVersion)
+	log.Logger().Infof("Upgrading from v%s to v%s", util.ColorInfo(currentVersion), util.ColorInfo(upgradeVersion))
 
 	err = o.Git().FetchBranch(o.Dir, bootConfigURL, "master")
 	if err != nil {
@@ -461,4 +471,37 @@ func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitP
 		return nil, errors.Wrap(err, "failed to create provider for user")
 	}
 	return provider, nil
+}
+
+func (o *UpgradeBootOptions) updatePipelineBuilderImage(versionStreamURL string, versionStreamRef string) error {
+	fileName := filepath.Join(o.Dir, config.ProjectConfigFileName)
+	projectConf, err := config.LoadProjectConfigFile(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load project config file %s", fileName)
+	}
+	image := projectConf.PipelineConfig.Pipelines.PullRequest.Pipeline.Agent.Image
+	builder := image[:strings.IndexByte(image, ':')]
+
+	resolver, err := o.CreateVersionResolver(versionStreamURL, versionStreamRef)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create version resolver for %s", builder)
+	}
+	imageVersion, err := resolver.ResolveDockerImage(builder)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve image %s", builder)
+	}
+
+	log.Logger().Infof("Updating pipeline agent images to %s", util.ColorInfo(imageVersion))
+	projectConf.PipelineConfig.Pipelines.PullRequest.Pipeline.Agent.Image = imageVersion
+	projectConf.PipelineConfig.Pipelines.Release.Pipeline.Agent.Image = imageVersion
+
+	err = projectConf.SaveConfig(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write to %s", fileName)
+	}
+	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade pipeline builder images", []string{fileName})
+	if err != nil {
+		return errors.Wrapf(err, "failed to commit file %s", fileName)
+	}
+	return nil
 }
