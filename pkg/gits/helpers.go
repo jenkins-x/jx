@@ -672,35 +672,9 @@ func FilterOpenPullRequests(provider GitProvider, owner string, repo string, fil
 	return answer, nil
 }
 
-func remoteBranchExists(baseRef string, branchName string, dir string, gitter Gitter, remoteName string) (bool, error) {
-
-	if branchName == "" {
-		branchName = baseRef
-	}
-	validBranchName := gitter.ConvertToValidBranchName(branchName)
-
-	branchNames, err := gitter.RemoteBranchNames(dir, fmt.Sprintf("remotes/%s/", remoteName))
-	if err != nil {
-		return false, errors.Wrapf(err, "Failed to load remote branch names")
-	}
-	if util.StringArrayIndex(branchNames, validBranchName) >= 0 {
-		if err != nil {
-			return false, errors.WithStack(err)
-		}
-		return true, nil
-	}
-	return false, nil
-}
-
 //IsUnadvertisedObjectError returns true if the reason for the error is that the request was for an object that is unadvertised (i.e. doesn't exist)
 func IsUnadvertisedObjectError(err error) bool {
 	return strings.Contains(err.Error(), "Server does not allow request for unadvertised object")
-}
-
-func parseAuthor(l string) (string, string) {
-	open := strings.Index(l, "<")
-	close := strings.Index(l, ">")
-	return strings.TrimSpace(l[:open]), strings.TrimSpace(l[open+1 : close])
 }
 
 // IsCouldntFindRemoteRefError returns true if the error is due to the remote ref not being found

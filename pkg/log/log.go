@@ -24,10 +24,6 @@ var (
 	// given arguments with fmt.Sprint().
 	colorWarn = color.New(color.FgYellow).SprintFunc()
 
-	// colorInfo returns a new function that returns info-colorized (green) strings for the
-	// given arguments with fmt.Sprint().
-	colorInfo = color.New(color.FgGreen).SprintFunc()
-
 	// colorError returns a new function that returns error-colorized (red) strings for the
 	// given arguments with fmt.Sprint().
 	colorError = color.New(color.FgRed).SprintFunc()

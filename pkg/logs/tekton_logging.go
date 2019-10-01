@@ -134,14 +134,6 @@ func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []str
 	return names, paMap, nil
 }
 
-func modifyFilterForPipelineRun(labelsFilter string, context string) string {
-	contextFilter := fmt.Sprintf("context=%s", context)
-	if labelsFilter == "" {
-		return contextFilter
-	}
-	return fmt.Sprintf("%s,%s", labelsFilter, contextFilter)
-}
-
 func createPipelineActivityName(labels map[string]string, buildNumber string) string {
 	repository := labels[v1.LabelRepository]
 	// The label is called "repo" in the PipelineRun CRD and "repository" in the PipelineActivity CRD

@@ -250,9 +250,6 @@ const (
 	StepOverrideAfter   StepOverrideType = "after"
 )
 
-// All possible override types
-var allOverrideTypes = []StepOverrideType{StepOverrideReplace, StepOverrideBefore, StepOverrideAfter}
-
 // PipelineOverride allows for overriding named steps, stages, or pipelines in the build pack or default pipeline
 type PipelineOverride struct {
 	Pipeline         string            `json:"pipeline,omitempty"`

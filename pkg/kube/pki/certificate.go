@@ -112,7 +112,7 @@ func cleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns
 		if allow(s.GetName()) {
 			err := client.CoreV1().Secrets(ns).Delete(s.Name, &metav1.DeleteOptions{})
 			if err != nil {
-				return errors.Wrapf(err, "deleteing the tls secret %s/%s", ns, s.GetName())
+				return errors.Wrapf(err, "deleting the tls secret %s/%s", ns, s.GetName())
 			}
 		}
 	}

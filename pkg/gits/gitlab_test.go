@@ -16,12 +16,11 @@ import (
 )
 
 const (
-	gitlabUserName          = "testperson"
-	gitlabOrgName           = "testorg"
-	gitlabProjectName       = "test-project"
-	gitlabProjectID         = "5690870"
-	gitlabMergeRequestID    = 12
-	gitlabMergeRequestTitle = "testmr12"
+	gitlabUserName       = "testperson"
+	gitlabOrgName        = "testorg"
+	gitlabProjectName    = "test-project"
+	gitlabProjectID      = "5690870"
+	gitlabMergeRequestID = 12
 )
 
 type GitlabProviderSuite struct {
