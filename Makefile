@@ -258,7 +258,9 @@ fmt: ## Format the code
 
 .PHONY: lint
 lint: ## Lint the code
-	./hack/run-all-checks.sh
+	./hack/gofmt.sh
+	./hack/linter.sh
+	./hack/generate.sh
 
 include Makefile.docker
 include Makefile.codegen
