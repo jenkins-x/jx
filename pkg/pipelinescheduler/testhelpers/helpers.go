@@ -133,7 +133,7 @@ func pointerToUUID() *string {
 }
 
 func pointerToRandomNumber() *int {
-	i := rand.Int()
+	i := rand.Int() // #nosec
 	return &i
 }
 

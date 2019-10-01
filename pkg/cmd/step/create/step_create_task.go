@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	kanikoSecretMount = "/kaniko-secret/secret.json"
+	kanikoSecretMount = "/kaniko-secret/secret.json" // #nosec
 	kanikoSecretName  = kube.SecretKaniko
 	kanikoSecretKey   = kube.SecretKaniko
 

@@ -2,7 +2,7 @@ package controller
 
 import (
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec
 	"encoding/hex"
 	"encoding/json"
 	"fmt"

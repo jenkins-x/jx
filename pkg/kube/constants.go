@@ -80,7 +80,7 @@ const (
 	SecretKaniko = "kaniko-secret"
 
 	// SecretVelero the name of the secret containing the velero service account
-	SecretVelero = "velero-secret"
+	SecretVelero = "velero-secret" // #nosec
 
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
@@ -107,16 +107,16 @@ const (
 	SecretJenkinsPipelinePrefix = "jx-pipeline-"
 
 	// SecretJenkinsPipelineAddonCredentials the chat credentials secret
-	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-"
+	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-" // #nosec
 
 	// SecretJenkinsPipelineChatCredentials the chat credentials secret
 	SecretJenkinsPipelineChatCredentials = "jx-pipeline-chat-"
 
 	// SecretJenkinsPipelineGitCredentials the git credentials secret
-	SecretJenkinsPipelineGitCredentials = "jx-pipeline-git-"
+	SecretJenkinsPipelineGitCredentials = "jx-pipeline-git-" // #nosec
 
 	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
-	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
+	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-" // #nosec
 
 	// ConfigMapExposecontroller the name of the ConfigMap with the Exposecontroller configuration
 	ConfigMapExposecontroller = "exposecontroller"
@@ -298,7 +298,7 @@ const (
 	SecretDataPassword = "password"
 
 	// SecretBasicAuth the name for the Jenkins X basic auth secret
-	SecretBasicAuth = "jx-basic-auth"
+	SecretBasicAuth = "jx-basic-auth" // #nosec
 
 	// JenkinsAdminApiToken the API token
 	JenkinsAdminApiToken = "jenkins-admin-api-token"

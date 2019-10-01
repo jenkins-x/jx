@@ -156,7 +156,7 @@ type Secrets struct {
 }
 
 const (
-	JX_GIT_TOKEN = "JX_GIT_TOKEN"
+	JX_GIT_TOKEN = "JX_GIT_TOKEN" // #nosec
 	JX_GIT_USER  = "JX_GIT_USER"
 
 	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekton"

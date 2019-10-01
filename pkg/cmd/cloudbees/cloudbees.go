@@ -2,19 +2,20 @@ package cloudbees
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -180,7 +181,7 @@ func (o CloudBeesOptions) waitForForwarding(localURL string) error {
 	log.Logger().Infof("Waiting for the UI to be ready on %s...", util.ColorInfo(localURL))
 	return o.RetryUntilTrueOrTimeout(time.Minute, time.Second*3, func() (b bool, e error) {
 		log.Logger().Debugf("Checking the status of %s", localURL)
-		resp, err := http.Get(localURL)
+		resp, err := http.Get(localURL) // #nosec
 		if err != nil || (resp != nil && resp.StatusCode != 200) {
 			log.Logger().Debugf("Returned err: %+v", err)
 			log.Logger().Info(".")
