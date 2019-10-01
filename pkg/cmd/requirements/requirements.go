@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+// RequirementsOptions the CLI options for this command
 type RequirementsOptions struct {
 	*opts.CommonOptions
 
@@ -30,10 +31,10 @@ type RequirementsOptions struct {
 	Flags         RequirementBools
 }
 
+// RequirementBools for the boolean flags we only update if specified on the CLI
 type RequirementBools struct {
 	AutoUpgrade, EnvironmentGitPublic, GitOps, Kaniko, Terraform bool
-
-	VaultRecreateBucket, VaultDisableURLDiscover bool
+	VaultRecreateBucket, VaultDisableURLDiscover                 bool
 }
 
 var (
@@ -56,6 +57,7 @@ var (
 `)
 )
 
+// NewCmdRequirements creates the new command
 func NewCmdRequirements(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &RequirementsOptions{
 		CommonOptions: commonOpts,
@@ -142,6 +144,7 @@ func NewCmdRequirements(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
+// Run runs the command
 func (o *RequirementsOptions) Run() error {
 	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
