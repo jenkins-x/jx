@@ -9,7 +9,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/requirements"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -99,7 +98,7 @@ func TestCmdRequirements(t *testing.T) {
 			require.FileExists(t, localReqFile, "file should have been copied")
 		}
 
-		cmd := requirements.NewCmdRequirements(&commonOpts)
+		cmd := NewCmdRequirements(&commonOpts)
 		args := append(tt.args, "--dir", dir)
 
 		err := cmd.ParseFlags(args)

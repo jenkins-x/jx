@@ -39,23 +39,23 @@ type RequirementBools struct {
 
 var (
 	requirementsLong = templates.LongDesc(`
-		Creates or edits the local 'jx-requirements.yml file for 'jx boot'
+		Edits the local 'jx-requirements.yml file for 'jx boot'
 `)
 
 	requirementsExample = templates.Examples(`
-		# creates or modifies the local 'jx-requirements.yml' file used for 'jx boot'
-		jx requirements --domain foo.com --tls --provider eks
+		# edits the local 'jx-requirements.yml' file used for 'jx boot'
+		jx edit requirements --domain foo.com --tls --provider eks
 `)
 )
 
-// NewCmdRequirements creates the new command
-func NewCmdRequirements(commonOpts *opts.CommonOptions) *cobra.Command {
+// NewCmdEditRequirements creates the new command
+func NewCmdEditRequirements(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &RequirementsOptions{
 		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "requirements",
-		Short:   "Creates or edits the local 'jx-requirements.yml file for 'jx boot'",
+		Short:   "Edits the local 'jx-requirements.yml file for 'jx boot'",
 		Long:    requirementsLong,
 		Example: requirementsExample,
 		Aliases: []string{"req", "require", "requirement"},
