@@ -23,9 +23,10 @@ import (
 type StepSyntaxSchemaOptions struct {
 	step.StepOptions
 
-	Pipeline  bool
-	BuildPack bool
-	Out       string
+	Pipeline     bool
+	BuildPack    bool
+	Requirements bool
+	Out          string
 }
 
 // NewCmdStepSyntaxSchema Steps a command object for the "step" command
@@ -51,13 +52,14 @@ func NewCmdStepSyntaxSchema(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Out, "out", "o", "", "the name of the output file for the generated JSON schema")
 	cmd.Flags().BoolVarP(&options.Pipeline, "pipeline", "", false, "Output the JSON schema for jenkins-x.yml files. Defaults to this option if '--buildpack' is not specified")
 	cmd.Flags().BoolVarP(&options.BuildPack, "buildpack", "", false, "Output the JSON schema for build pack pipeline.yaml files")
+	cmd.Flags().BoolVarP(&options.Requirements, "requirements", "", false, "Output the JSON schema for jx-requirements.yml files")
 
 	return cmd
 }
 
 // Run implements this command
 func (o *StepSyntaxSchemaOptions) Run() error {
-	if o.Pipeline == false && o.BuildPack == false {
+	if o.Requirements == false && o.Pipeline == false && o.BuildPack == false {
 		// lets default to pipeine
 		o.Pipeline = true
 	}
@@ -65,11 +67,14 @@ func (o *StepSyntaxSchemaOptions) Run() error {
 	var schemaName string
 	var schemaTarget interface{}
 
-	if o.Pipeline {
+	if o.Requirements {
+		schemaName = "jx-requirements.yml"
+		schemaTarget = &config.RequirementsConfig{}
+
+	} else if o.Pipeline {
 		schemaName = "jenkins-x.yml"
 		schemaTarget = &config.ProjectConfig{}
-	}
-	if o.BuildPack {
+	} else if o.BuildPack {
 		if o.Pipeline {
 			return errors.New("only one of --pipeline or --buildpack may be specified")
 		}
