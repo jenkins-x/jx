@@ -30,7 +30,7 @@ const (
 
 var (
 	env_description = `		
-	An Environment maps to a Kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continous Delivery.
+	An Environment maps to a Kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continuous Delivery.
 
 	You can optionally use GitOps to manage the configuration of an Environment by storing all configuration in a Git repository and then only changing it via Pull Requests and CI/CD.
 

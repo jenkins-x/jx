@@ -103,6 +103,6 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}
 
-	log.Logger().Infof("%s addon succesfully installed.", util.ColorInfo(releaseName))
+	log.Logger().Infof("%s addon successfully installed.", util.ColorInfo(releaseName))
 	return nil
 }

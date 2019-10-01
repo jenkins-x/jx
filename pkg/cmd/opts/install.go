@@ -297,7 +297,7 @@ func (o *CommonOptions) Installhyperv() error {
 	}
 	if strings.Contains(info, "Disabled") {
 
-		log.Logger().Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
+		log.Logger().Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted command.")
 
 		message := fmt.Sprintf("Would you like to restart your computer?")
 

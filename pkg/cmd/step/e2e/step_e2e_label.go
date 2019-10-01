@@ -67,7 +67,7 @@ func NewCmdStepE2ELabel(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run runs the command
 func (o *StepE2ELabelOptions) Run() error {
 	if len(o.Args) == 0 {
-		return errors.New("Please specifiy a cluster name")
+		return errors.New("Please specify a cluster name")
 	}
 	if o.Keep == o.Delete {
 		return errors.New("Please specify either --keep or --delete")
