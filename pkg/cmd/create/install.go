@@ -1782,7 +1782,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 
 			err = git.Add(dir, ".gitignore")
 			if err != nil {
-				return "", errors.Wrap(err, "adding gitignore to the dev environemnt")
+				return "", errors.Wrap(err, "adding gitignore to the dev environment")
 			}
 			err = git.Add(dir, "*")
 			if err != nil {

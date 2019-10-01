@@ -68,11 +68,11 @@ func (o *DeleteAddonSSOOptions) Run() error {
 	for _, releaseName := range o.ReleaseNames {
 		err := o.DeleteChart(releaseName, o.Purge)
 		if err != nil {
-			return errors.Wrapf(err, "deleteing the helm chart release '%s'", releaseName)
+			return errors.Wrapf(err, "deleting the helm chart release '%s'", releaseName)
 		}
 	}
 
-	log.Logger().Infof("%s was succesfully deleted.", util.ColorInfo("sso addon"))
+	log.Logger().Infof("%s was successfully deleted.", util.ColorInfo("sso addon"))
 
 	return nil
 }

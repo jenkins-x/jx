@@ -69,7 +69,7 @@ func GetClusterStatus(client kubernetes.Interface, namespace string, verbose boo
 	}
 	clusterStatus.nodeCount = len(nodes.Items)
 	if clusterStatus.nodeCount < 1 {
-		msg := fmt.Sprintf("Number of nodes in cluster  = %d which is insufficent", clusterStatus.nodeCount)
+		msg := fmt.Sprintf("Number of nodes in cluster  = %d which is not sufficient", clusterStatus.nodeCount)
 		log.Logger().Fatal(msg)
 		err = errors.NewServiceUnavailable(msg)
 		return clusterStatus, err

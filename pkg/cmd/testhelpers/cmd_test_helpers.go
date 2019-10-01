@@ -371,7 +371,7 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 			//dumpFailedActivity(activity)
 			return
 		}
-		log.Logger().Infof("Waiting 1s for PullRequest in Enviroment %s", envName)
+		log.Logger().Infof("Waiting 1s for PullRequest in Environment %s", envName)
 		v, _ := time.ParseDuration("2s")
 		time.Sleep(v)
 		activity, _ = activities.Get(name, metav1.GetOptions{})

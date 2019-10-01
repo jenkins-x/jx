@@ -62,7 +62,7 @@ func NewCmdDeleteUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched users for deletion")
-	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Fitlers the list of users you can pick from")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of users you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
 	return cmd
 }
