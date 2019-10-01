@@ -37,8 +37,9 @@ pipelineConfig:
                 command: cp	
                 args:	
                   - -Rv	
-                  - "/workspace/source/."
+                  - "./"
                   - "/workspace/go/src/github.com/jenkins-x/jx"
+                dir: /workspace/source
               - name: lint
                 image: golang:1.12.10
                 command: ./hack/run-all-checks.sh
