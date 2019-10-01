@@ -26,7 +26,21 @@ pipelineConfig:
                     cpu: 2
                     memory: 2Gi
             steps:
+              - name: mk-jx-project-dir	
+                image: busybox	
+                command: mkdir	
+                args:	
+                  - -p	
+                  - /workspace/go/src/github.com/jenkins-x/jx
+              - name: copy-jx-project-to-gopath
+                image: busybox	
+                command: cp	
+                args:	
+                  - -Rv	
+                  - /workspace/source/
+                  - /workspace/go/src/github.com/jenkins-x/jx/
               - name: lint
                 image: golang:1.12.10
                 command: ./hack/run-all-checks.sh
-                dir: /workspace/source
+                dir: /workspace/go/src/github.com/jenkins-x/jx
+
