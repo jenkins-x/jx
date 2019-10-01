@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+	"github.com/jenkins-x/jx/pkg/cmd/edit/requirements"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -15,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCmdRequirements(t *testing.T) {
+func TestCmdEditRequirements(t *testing.T) {
 	t.Parallel()
 
 	type testData struct {
@@ -98,7 +99,7 @@ func TestCmdRequirements(t *testing.T) {
 			require.FileExists(t, localReqFile, "file should have been copied")
 		}
 
-		cmd := NewCmdRequirements(&commonOpts)
+		cmd := requirements.NewCmdEditRequirements(&commonOpts)
 		args := append(tt.args, "--dir", dir)
 
 		err := cmd.ParseFlags(args)
