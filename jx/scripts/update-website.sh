@@ -21,6 +21,7 @@ pushd jx-docs/content
   mkdir -p schemas
   cd schemas
   ../../../build/linux/jx step syntax schema -o jx-schema.json
+  ../../../build/linux/jx step syntax schema --requirements -o jx-requirements.json
   git add *
   git commit --allow-empty -a -m "updated jx Json Schema from $VERSION"
   git fetch origin && git rebase origin/master
