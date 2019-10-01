@@ -158,6 +158,8 @@ type EnvironmentConfig struct {
 	GitKind string `json:"gitKind,omitempty"`
 	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress,omitempty"`
+	// RemoteCluster specifies this environment runs on a remote cluster to the development cluster
+	RemoteCluster bool `json:"remotetCluster,omitempty"`
 }
 
 // IngressConfig contains dns specific requirements
@@ -243,6 +245,8 @@ type ClusterConfig struct {
 	GitServer string `json:"gitServer,omitempty"`
 	// ExternalDNSSAName the service account name for external dns
 	ExternalDNSSAName string `json:"externalDNSSAName,omitempty"`
+	// Registry the host name of the container registry
+	Registry string `json:"registry,omitempty"`
 	// VaultSAName the service account name for vault
 	// Deprecated
 	VaultSAName string `json:"vaultSAName,omitempty"`
