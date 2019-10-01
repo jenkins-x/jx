@@ -35,7 +35,7 @@ func GetOsVersion() (string, error) {
 	// procfs will tell us the kernel version
 	output, err = getFileContents("/proc/version")
 	if err == nil {
-		return fmt.Sprintf("Unkown Linux distribution %s", output), nil
+		return fmt.Sprintf("Unknown Linux distribution %s", output), nil
 	}
 	return "Unknown Linux version", fmt.Errorf("Unknown Linux version")
 }
