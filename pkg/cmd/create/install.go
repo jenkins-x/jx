@@ -3359,7 +3359,7 @@ func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tena
 	// Create a TenantClient
 	tCli := tenant.NewTenantClient()
 	var err error
-	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, options.GCloud())
+	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, "", options.GCloud())
 	if err != nil {
 		return "", errors.Wrap(err, "getting domain from tenant service")
 	}

@@ -41,6 +41,7 @@ func SetHTTPClient(httpClient *http.Client) Option {
 
 type dRequest struct {
 	Project string
+	Cluster string
 	User    string
 }
 
@@ -63,7 +64,7 @@ type Result struct {
 	Message string `json:"message"`
 }
 
-func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, gcloud gke.GClouder) (string, error) {
+func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, cluster string, gcloud gke.GClouder) (string, error) {
 	url := fmt.Sprintf("%s%s/domain", tenantServiceURL, basePath)
 	var domainName, reqBody, userEmail = "", []byte{}, ""
 
@@ -74,6 +75,7 @@ func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServ
 
 	reqStruct := dRequest{
 		Project: projectID,
+		Cluster: cluster,
 		User:    userEmail,
 	}
 	reqBody, err := json.Marshal(reqStruct)
