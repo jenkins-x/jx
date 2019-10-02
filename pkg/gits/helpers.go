@@ -317,17 +317,8 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			existingPr = nil
 		}
 	}
-	if dryRun {
-		log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(existingPr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
-		return nil, nil
-	} else if push {
-		err := gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
-		if err != nil {
-			return nil, errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
-		}
-	}
 	var pr *GitPullRequest
-	if existingPr != nil {
+	if !dryRun && existingPr != nil {
 		gha.Head = headPrefix + remoteBranch
 		// work out the minimal similar title
 		if strings.HasPrefix(existingPr.Title, "chore(deps): bump ") {
@@ -358,7 +349,17 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			return nil, errors.Wrapf(err, "updating pull request %s", existingPr.URL)
 		}
 		log.Logger().Infof("Updated Pull Request: %s", util.ColorInfo(pr.URL))
-	} else {
+	}
+	if dryRun {
+		log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(existingPr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
+		return nil, nil
+	} else if push {
+		err := gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
+		if err != nil {
+			return nil, errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
+		}
+	}
+	if existingPr == nil {
 		gha.Head = headPrefix + prDetails.BranchName
 
 		pr, err = provider.CreatePullRequest(gha)
