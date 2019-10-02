@@ -106,6 +106,11 @@ func (o *StepVerifyGitOptions) Run() error {
 				return errors.Wrapf(err, "failed to create GitProvider for %s at git server %s", userAuth.Username, server.URL)
 			}
 
+			if provider.CurrentUsername() == "jenkins-x[bot]" {
+				pipeUserValid = true
+				continue
+			}
+
 			orgs, err := provider.ListOrganisations()
 			if err != nil {
 				return errors.Wrapf(err, "failed to list the organisations for %s at git server %s", userAuth.Username, server.URL)
