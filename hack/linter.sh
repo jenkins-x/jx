@@ -24,7 +24,7 @@ golangci-lint run \
     -E gosec \
     -E gofmt \
     --skip-dirs vendor \
-    --deadline 5m0s \
+    --deadline 15m0s \
     --verbose 
 
 # -E errcheck \
