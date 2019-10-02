@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
 	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -39,6 +41,7 @@ func SetHTTPClient(httpClient *http.Client) Option {
 
 type dRequest struct {
 	Project string
+	User    string
 }
 
 type nsRequest struct {
@@ -62,9 +65,16 @@ type Result struct {
 
 func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, gcloud gke.GClouder) (string, error) {
 	url := fmt.Sprintf("%s%s/domain", tenantServiceURL, basePath)
-	var domainName, reqBody = "", []byte{}
+	var domainName, reqBody, userEmail = "", []byte{}, ""
+
+	// temporary change, this will be refactored into a step
+	if "" != os.Getenv("USER_EMAIL") {
+		userEmail = os.Getenv("USER_EMAIL")
+	}
+
 	reqStruct := dRequest{
 		Project: projectID,
+		User:    userEmail,
 	}
 	reqBody, err := json.Marshal(reqStruct)
 	if err != nil {
