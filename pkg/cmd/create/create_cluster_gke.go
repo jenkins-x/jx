@@ -33,27 +33,28 @@ type CreateClusterGKEOptions struct {
 }
 
 type CreateClusterGKEFlags struct {
-	AutoUpgrade     bool   `mapstructure:"enable-autoupgrade"`
-	ClusterName     string `mapstructure:"cluster-name"`
-	ClusterIpv4Cidr string `mapstructure:"cluster-ipv4-cidr"`
-	ClusterVersion  string `mapstructure:"kubernetes-version"`
-	DiskSize        string `mapstructure:"disk-size"`
-	ImageType       string `mapstructure:"image-type"`
-	MachineType     string `mapstructure:"machine-type"`
-	MinNumOfNodes   string `mapstructure:"min-num-nodes"`
-	MaxNumOfNodes   string `mapstructure:"max-num-nodes"`
-	Network         string
-	ProjectId       string `mapstructure:"project-id"`
-	SkipLogin       bool   `mapstructure:"skip-login"`
-	SubNetwork      string
-	Region          string
-	Zone            string
-	Namespace       string
-	Labels          string
-	EnhancedScopes  bool `mapstructure:"enhanced-scopes"`
-	Scopes          []string
-	Preemptible     bool
-	EnhancedApis    bool `mapstructure:"enhanced-apis"`
+	AutoUpgrade              bool   `mapstructure:"enable-autoupgrade"`
+	ClusterName              string `mapstructure:"cluster-name"`
+	ClusterIpv4Cidr          string `mapstructure:"cluster-ipv4-cidr"`
+	ClusterVersion           string `mapstructure:"kubernetes-version"`
+	DiskSize                 string `mapstructure:"disk-size"`
+	ImageType                string `mapstructure:"image-type"`
+	MachineType              string `mapstructure:"machine-type"`
+	MinNumOfNodes            string `mapstructure:"min-num-nodes"`
+	MaxNumOfNodes            string `mapstructure:"max-num-nodes"`
+	Network                  string
+	ProjectID                string `mapstructure:"project-id"`
+	SkipLogin                bool   `mapstructure:"skip-login"`
+	SubNetwork               string
+	Region                   string
+	Zone                     string
+	Namespace                string
+	Labels                   string
+	EnhancedScopes           bool `mapstructure:"enhanced-scopes"`
+	Scopes                   []string
+	Preemptible              bool
+	EnhancedApis             bool `mapstructure:"enhanced-apis"`
+	UseStackDriverMonitoring bool `mapstructure:"use-stackdriver-monitoring"`
 }
 
 const (
@@ -76,6 +77,7 @@ const (
 	subNetworkFlagName        = "subnetwork"
 	labelsFlagName            = "labels"
 	scopeFlagName             = "scope"
+	stackDriverFlagName       = "use-stackdriver-monitoring"
 )
 
 var (
@@ -136,7 +138,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.MachineType, machineTypeFlagName, "m", "", "The type of machine to use for nodes")
 	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, minNodesFlagName, "", "", "The minimum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, maxNodesFlagName, "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	cmd.Flags().StringVarP(&options.Flags.ProjectId, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.ProjectID, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.Network, networkFlagName, "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ImageType, imageTypeFlagName, "", "", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, subNetworkFlagName, "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
@@ -148,7 +150,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
-
+	cmd.Flags().BoolVarP(&options.Flags.UseStackDriverMonitoring, stackDriverFlagName, "", true, "Enable Stackdriver Kubernetes Engine Monitoring")
 	bindGKEConfigToFlags(cmd)
 
 	return cmd
@@ -175,6 +177,7 @@ func bindGKEConfigToFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(clusterConfigKey(preemptibleFlagName), cmd.Flags().Lookup(preemptibleFlagName))
 	_ = viper.BindPFlag(clusterConfigKey(enhancedScopesFlagName), cmd.Flags().Lookup(enhancedScopesFlagName))
 	_ = viper.BindPFlag(clusterConfigKey(enhancedAPIFlagName), cmd.Flags().Lookup(enhancedAPIFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(stackDriverFlagName), cmd.Flags().Lookup(stackDriverFlagName))
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
@@ -212,23 +215,23 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	projectId := o.Flags.ProjectId
-	if projectId == "" {
-		projectId, err = o.GetGoogleProjectID("")
+	projectID := o.Flags.ProjectID
+	if projectID == "" {
+		projectID, err = o.GetGoogleProjectID("")
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Logger().Infof(util.QuestionAnswer("Configured project id", projectId))
+		log.Logger().Infof(util.QuestionAnswer("Configured project id", projectID))
 	}
 
-	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectId)
+	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectID)
 	if err != nil {
 		return err
 	}
 
 	log.Logger().Debugf("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
-	err = o.GCloud().EnableAPIs(projectId, "container", "compute")
+	err = o.GCloud().EnableAPIs(projectID, "container", "compute")
 	if err != nil {
 		return err
 	}
@@ -299,12 +302,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 
 			if "Regional" == clusterType {
-				region, err = o.GetGoogleRegion(projectId)
+				region, err = o.GetGoogleRegion(projectID)
 				if err != nil {
 					return err
 				}
 			} else {
-				zone, err = o.GetGoogleZone(projectId, "")
+				zone, err = o.GetGoogleZone(projectID, "")
 				if err != nil {
 					return err
 				}
@@ -483,7 +486,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if o.Flags.EnhancedApis {
 		log.Logger().Debugf("checking if we need to enable APIs for GCB and GCR")
-		err = o.GCloud().EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
+		err = o.GCloud().EnableAPIs(projectID, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
 		}
@@ -566,6 +569,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--preemptible")
 	}
 
+	if o.Flags.UseStackDriverMonitoring {
+		args = append(args, "--enable-stackdriver-kubernetes")
+	}
+
 	labels := o.Flags.Labels
 	user, err := osUser.Current()
 	if err == nil && user != nil {
@@ -590,7 +597,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Zone:        zone,
 		kube.Region:      region,
-		kube.ProjectID:   projectId,
+		kube.ProjectID:   projectID,
 		kube.ClusterName: o.Flags.ClusterName,
 	})
 
@@ -606,7 +613,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		getCredsCommand = append(getCredsCommand, "--region", region)
 	}
 
-	getCredsCommand = append(getCredsCommand, "--project", projectId)
+	getCredsCommand = append(getCredsCommand, "--project", projectID)
 
 	err = o.RunCommand("gcloud", getCredsCommand...)
 	if err != nil {
