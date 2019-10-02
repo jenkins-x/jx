@@ -1,13 +1,20 @@
 package create
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/aks"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -157,8 +164,19 @@ func (o *StepCreateValuesOptions) Run() error {
 	if o.ValuesFile == "" {
 		o.ValuesFile = filepath.Join(o.Dir, fmt.Sprintf("%s.yaml", o.Name))
 	}
+
+	secretURLClient, err := o.GetSecretURLClient(secrets.ToSecretsLocation(o.SecretsScheme))
+	if err != nil {
+		return err
+	}
+
+	err = o.verifyRegistryConfig(requirements, fileName, secretURLClient)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println()
-	err = o.CreateValuesFile()
+	err = o.CreateValuesFile(secretURLClient)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -168,7 +186,7 @@ func (o *StepCreateValuesOptions) Run() error {
 
 // CreateValuesFile builds the clients and settings from the team needed to run apps.ProcessValues, and then copies the answer
 // to the location requested by the command
-func (o *StepCreateValuesOptions) CreateValuesFile() error {
+func (o *StepCreateValuesOptions) CreateValuesFile(secretURLClient secreturl.Client) error {
 	schema, err := ioutil.ReadFile(o.Schema)
 	if err != nil {
 		return errors.Wrapf(err, "reading schema %s", o.Schema)
@@ -181,10 +199,6 @@ func (o *StepCreateValuesOptions) CreateValuesFile() error {
 	teamName, _, err := o.TeamAndEnvironmentNames()
 	if err != nil {
 		return errors.Wrapf(err, "getting team name")
-	}
-	secretURLClient, err := o.GetSecretURLClient(secrets.ToSecretsLocation(o.SecretsScheme))
-	if err != nil {
-		return err
 	}
 	existing, err := helm.LoadValuesFile(o.ValuesFile)
 	if err != nil {
@@ -201,4 +215,98 @@ func (o *StepCreateValuesOptions) CreateValuesFile() error {
 		return errors.Wrapf(err, "moving %s to %s", valuesFileName, o.ValuesFile)
 	}
 	return nil
+}
+
+func (o *StepCreateValuesOptions) verifyRegistryConfig(requirements *config.RequirementsConfig, requirementsFileName string, secretClient secreturl.Client) error {
+	log.Logger().Debug("Verifying Registry...")
+	registry := requirements.Cluster.Registry
+	configJSON := ""
+	if registry == "" {
+		kubeConfig, _, err := o.Kube().LoadConfig()
+		if err != nil {
+			return errors.Wrapf(err, "failed to load kube config")
+		}
+
+		// lets try default the container registry
+		switch requirements.Cluster.Provider {
+		case cloud.AWS, cloud.EKS:
+			registry, err = amazon.GetContainerRegistryHost()
+			if err != nil {
+				return err
+			}
+		case cloud.GKE:
+			if requirements.Kaniko && requirements.Webhook != config.WebhookTypeJenkins {
+				registry = "gcr.io"
+			}
+		case cloud.AKS:
+			server := kube.CurrentServer(kubeConfig)
+			azureCLI := aks.NewAzureRunner()
+			resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
+			if err != nil {
+				return errors.Wrap(err, "getting cluster from Azure")
+			}
+			registryID := ""
+			azureRegistrySubscription := ""
+			// TODO
+			// azureRegistrySubscription := requirements.Cluster.AzureRegistrySubscription
+			configJSON, registry, registryID, err = azureCLI.GetRegistry(azureRegistrySubscription, resourceGroup, name, registry)
+			if err != nil {
+				return errors.Wrap(err, "getting registry configuration from Azure")
+			}
+			azureCLI.AssignRole(cluster, registryID)
+			log.Logger().Infof("Assign AKS %s a reader role for ACR %s", util.ColorInfo(server), util.ColorInfo(registry))
+		case cloud.IKS:
+			client, err := o.KubeClient()
+			if err != nil {
+				return err
+			}
+			registry = iks.GetClusterRegistry(client)
+			configJSON, err = iks.GetRegistryConfigJSON(registry)
+			if err != nil {
+				return errors.Wrap(err, "getting IKS registry configuration")
+			}
+
+		case cloud.OPENSHIFT, cloud.MINISHIFT:
+			registry = "docker-registry.default.svc:5000"
+			_, err := o.enableOpenShiftRegistryPermissions(requirements.Cluster.Namespace, registry)
+			if err != nil {
+				return errors.Wrap(err, "enabling OpenShift registry permissions")
+			}
+		}
+
+		if registry != "" {
+			requirements.Cluster.Registry = registry
+			err = requirements.SaveConfig(requirementsFileName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
+			}
+		}
+	}
+	if configJSON != "" {
+		// TODO update the secret if its changed
+		log.Logger().Warn("jx boot does not yet support automatically populating the container registry secrets automatically...")
+	}
+	return nil
+}
+
+func (o *StepCreateValuesOptions) enableOpenShiftRegistryPermissions(ns string, registry string) (string, error) {
+	log.Logger().Infof("Enabling permissions for OpenShift registry in namespace %s", ns)
+	// Open the registry so any authenticated user can pull images from the jx namespace
+	err := o.RunCommand("oc", "adm", "policy", "add-role-to-group", "system:image-puller", "system:authenticated", "-n", ns)
+	if err != nil {
+		return "", err
+	}
+	err = o.EnsureServiceAccount(ns, "jenkins-x-registry")
+	if err != nil {
+		return "", err
+	}
+	err = o.RunCommand("oc", "adm", "policy", "add-cluster-role-to-user", "registry-admin", "system:serviceaccount:"+ns+":jenkins-x-registry")
+	if err != nil {
+		return "", err
+	}
+	registryToken, err := o.GetCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins-x-registry", "-n", ns)
+	if err != nil {
+		return "", err
+	}
+	return `{"auths": {"` + registry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte("serviceaccount:"+registryToken)) + `"}}}`, nil
 }
