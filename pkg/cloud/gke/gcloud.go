@@ -276,7 +276,7 @@ func (g *GCloud) BucketExists(projectID string, bucketName string) (bool, error)
 		Name: "gsutil",
 		Args: args,
 	}
-	output, err := cmd.RunWithoutRetry()
+	output, err := cmd.Run()
 	if err != nil {
 		log.Logger().Infof("Error checking bucket exists: %s, %s", output, err)
 		return false, err
