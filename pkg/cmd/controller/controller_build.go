@@ -828,7 +828,7 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 					step.Status = v1.ActivityStatusTypeFailed
 				}
 			} else {
-				if running != nil {
+				if running != nil && isStepRunning(i, stageSteps) {
 					step.Status = v1.ActivityStatusTypeRunning
 				} else {
 					step.Status = v1.ActivityStatusTypePending
@@ -969,6 +969,17 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 			}
 		}
 	}
+}
+
+// isStepRunning checks if the step at the given index is actually running its command, not just waiting for the previous
+// step to finish. The step is running if either there are no steps yet in the stageSteps slice, meaning this is the first
+// step we're adding, or if the step before it in stageSteps has completed.
+func isStepRunning(index int, stageSteps []v1.CoreActivityStep) bool {
+	if len(stageSteps) > 0 {
+		previousStep := stageSteps[index-1]
+		return previousStep.CompletedTimestamp != nil
+	}
+	return true
 }
 
 // determineStepStartTime checks to see if there's a step before this one. If so, it returns the time at which that step
