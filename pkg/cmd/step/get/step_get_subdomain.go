@@ -2,12 +2,13 @@ package get
 
 import (
 	"fmt"
+	"net/url"
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/tenant"
 	"github.com/jenkins-x/jx/pkg/util"
-	"net/url"
-	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -108,7 +109,7 @@ func (o *StepGetSubdomainOptions) discoverIngressDomain(requirements *config.Req
 	}
 
 	if requirements.Ingress.DomainIssuerURL != "" {
-		domain, err = o.getDomainFromIssuer(requirements.Ingress.DomainIssuerURL, requirements.Cluster.ProjectID)
+		domain, err = o.getDomainFromIssuer(requirements.Ingress.DomainIssuerURL, requirements.Cluster.ProjectID, requirements.Cluster.ClusterName)
 		if err != nil {
 			return errors.Wrap(err, "issuing domain")
 		}
@@ -127,7 +128,7 @@ func (o *StepGetSubdomainOptions) discoverIngressDomain(requirements *config.Req
 	return nil
 }
 
-func (o *StepGetSubdomainOptions) getDomainFromIssuer(domainIssuerURL, projectID string) (string, error) {
+func (o *StepGetSubdomainOptions) getDomainFromIssuer(domainIssuerURL, projectID string, cluster string) (string, error) {
 
 	_, err := url.ParseRequestURI(domainIssuerURL)
 	if err != nil {
@@ -145,5 +146,5 @@ func (o *StepGetSubdomainOptions) getDomainFromIssuer(domainIssuerURL, projectID
 
 	tenantServiceAuth := fmt.Sprintf("%s:%s", username, password)
 	tCli := tenant.NewTenantClient()
-	return tCli.GetTenantSubDomain(domainIssuerURL, tenantServiceAuth, projectID, o.GCloud())
+	return tCli.GetTenantSubDomain(domainIssuerURL, tenantServiceAuth, projectID, cluster, o.GCloud())
 }

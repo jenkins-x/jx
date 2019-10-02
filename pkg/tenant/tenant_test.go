@@ -3,18 +3,20 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
-	"github.com/petergtz/pegomock"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	gke_test "github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
+	"github.com/petergtz/pegomock"
 
 	"github.com/stretchr/testify/assert"
 )
 
 const (
 	projectID      = "cheese"
+	cluster        = "brie"
 	domain         = "wine.com"
 	subDomain      = projectID + "." + domain
 	zone           = "zone"
@@ -43,7 +45,7 @@ func TestClientGetTenantSubDomain(t *testing.T) {
 	gclouder := &gke_test.MockGClouder{}
 	pegomock.When(gclouder.CreateDNSZone("cheese", "cheese.wine.com")).ThenReturn("123", []string{"abc"}, nil)
 
-	s, err := cli.GetTenantSubDomain("http://localhost", "", projectID, gclouder)
+	s, err := cli.GetTenantSubDomain("http://localhost", "", projectID, cluster, gclouder)
 
 	assert.Nil(t, err)
 	assert.Equal(t, subDomain, s)
