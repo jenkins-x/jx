@@ -726,7 +726,7 @@ func FindTagForVersion(dir string, version string, gitter Gitter) (string, error
 	return answer, nil
 }
 
-//DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
+// DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
 // head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo
 func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, private bool, provider GitProvider, gitter Gitter) (*GitRepository, error) {
 	duplicateInfo, err := provider.GetRepository(toOrg, toName)
@@ -783,7 +783,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
 		}
-		log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo((fromInfo.HTMLURL)), util.ColorInfo(duplicateInfo.HTMLURL))
+		log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo(fromInfo.HTMLURL), util.ColorInfo(duplicateInfo.HTMLURL))
 		log.Logger().Infof("Setting upstream to %s\n", util.ColorInfo(duplicateInfo.HTMLURL))
 	}
 	return duplicateInfo, nil
