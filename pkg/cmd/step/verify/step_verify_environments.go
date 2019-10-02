@@ -30,15 +30,11 @@ import (
 // StepVerifyEnvironmentsOptions contains the command line flags
 type StepVerifyEnvironmentsOptions struct {
 	StepVerifyOptions
-	Dir            string
-	EnvDir         string
-	LazyCreate     bool
-	LazyCreateFlag string
+	Dir string
 }
 
 // NewCmdStepVerifyEnvironments creates the `jx step verify pod` command
 func NewCmdStepVerifyEnvironments(commonOpts *opts.CommonOptions) *cobra.Command {
-
 	options := &StepVerifyEnvironmentsOptions{
 		StepVerifyOptions: StepVerifyOptions{
 			StepOptions: step.StepOptions{
@@ -58,21 +54,18 @@ func NewCmdStepVerifyEnvironments(commonOpts *opts.CommonOptions) *cobra.Command
 			helper.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.LazyCreateFlag, "lazy-create", "", "", fmt.Sprintf("Specify true/false as to whether to lazily create missing resources. If not specified it is enabled if Terraform is not specified in the %s file", config.RequirementsConfigFileName))
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the install requirements file, by default the current working directory")
-	cmd.Flags().StringVarP(&options.EnvDir, "env-dir", "", "env", "the directory to look for the install requirements file relative to dir")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", fmt.Sprintf("The directory to look for the %s file, by default the current working directory", config.RequirementsConfigFileName))
 	return cmd
 }
 
 // Run implements this command
 func (o *StepVerifyEnvironmentsOptions) Run() error {
-	lazyCreate := true
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(filepath.Join(o.Dir, o.EnvDir))
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -88,7 +81,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		if gitURL != "" && (env.Spec.Kind == v1.EnvironmentKindTypePermanent || (env.Spec.Kind == v1.EnvironmentKindTypeDevelopment && requirements.GitOps)) {
 			log.Logger().Infof("validating git repository for %s at URL %s\n", info(name), info(gitURL))
 
-			err = o.validateGitRepository(name, requirements, env, gitURL, lazyCreate)
+			err = o.validateGitRepository(name, requirements, env, gitURL)
 			if err != nil {
 				return err
 			}
@@ -278,7 +271,7 @@ func envVarsHasEntry(envVars []corev1.EnvVar, key string) bool {
 
 }
 
-func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requirements *config.RequirementsConfig, environment *v1.Environment, gitURL string, lazyCreate bool) error {
+func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requirements *config.RequirementsConfig, environment *v1.Environment, gitURL string) error {
 	message := fmt.Sprintf("for environment %s", environment.Name)
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
