@@ -148,7 +148,7 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			Version:       builderImageVersion,
 			DryRun:        o.DryRun,
 		}
-		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform):(?P<versions>.+)", "jenkins-x-*.yml")
+		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform):(?P<versions>.+)", "jenkins-x*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
