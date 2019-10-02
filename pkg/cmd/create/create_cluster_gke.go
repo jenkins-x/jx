@@ -215,23 +215,23 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	projectId := o.Flags.ProjectID
-	if projectId == "" {
-		projectId, err = o.GetGoogleProjectID("")
+	projectID := o.Flags.ProjectID
+	if projectID == "" {
+		projectID, err = o.GetGoogleProjectID("")
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Logger().Infof(util.QuestionAnswer("Configured project id", projectId))
+		log.Logger().Infof(util.QuestionAnswer("Configured project id", projectID))
 	}
 
-	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectId)
+	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectID)
 	if err != nil {
 		return err
 	}
 
 	log.Logger().Debugf("Let's ensure we have %s and %s enabled on your project", util.ColorInfo("container"), util.ColorInfo("compute"))
-	err = o.GCloud().EnableAPIs(projectId, "container", "compute")
+	err = o.GCloud().EnableAPIs(projectID, "container", "compute")
 	if err != nil {
 		return err
 	}
@@ -302,12 +302,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 
 			if "Regional" == clusterType {
-				region, err = o.GetGoogleRegion(projectId)
+				region, err = o.GetGoogleRegion(projectID)
 				if err != nil {
 					return err
 				}
 			} else {
-				zone, err = o.GetGoogleZone(projectId, "")
+				zone, err = o.GetGoogleZone(projectID, "")
 				if err != nil {
 					return err
 				}
@@ -486,7 +486,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if o.Flags.EnhancedApis {
 		log.Logger().Debugf("checking if we need to enable APIs for GCB and GCR")
-		err = o.GCloud().EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
+		err = o.GCloud().EnableAPIs(projectID, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
 		}
@@ -597,7 +597,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Zone:        zone,
 		kube.Region:      region,
-		kube.ProjectID:   projectId,
+		kube.ProjectID:   projectID,
 		kube.ClusterName: o.Flags.ClusterName,
 	})
 
@@ -613,7 +613,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		getCredsCommand = append(getCredsCommand, "--region", region)
 	}
 
-	getCredsCommand = append(getCredsCommand, "--project", projectId)
+	getCredsCommand = append(getCredsCommand, "--project", projectID)
 
 	err = o.RunCommand("gcloud", getCredsCommand...)
 	if err != nil {
