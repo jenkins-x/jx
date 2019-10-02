@@ -2,7 +2,7 @@
 
 JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.io/)
 
-
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3237/badge)](https://bestpractices.coreinfrastructure.org/projects/3237)
 [![GoDoc](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://godoc.org/github.com/jenkins-x/jx)
 [![Docs](https://readthedocs.org/projects/docs/badge/?version=latest)](https://jenkins-x.io/documentation/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jenkinsxio/jx.svg)](https://hub.docker.com/r/jenkinsxio/jx/tags)
