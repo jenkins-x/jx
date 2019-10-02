@@ -43,7 +43,7 @@ type CreateClusterGKEFlags struct {
 	MinNumOfNodes            string `mapstructure:"min-num-nodes"`
 	MaxNumOfNodes            string `mapstructure:"max-num-nodes"`
 	Network                  string
-	ProjectId                string `mapstructure:"project-id"`
+	ProjectID                string `mapstructure:"project-id"`
 	SkipLogin                bool   `mapstructure:"skip-login"`
 	SubNetwork               string
 	Region                   string
@@ -138,7 +138,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.MachineType, machineTypeFlagName, "m", "", "The type of machine to use for nodes")
 	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, minNodesFlagName, "", "", "The minimum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, maxNodesFlagName, "", "", "The maximum number of nodes to be created in each of the cluster's zones")
-	cmd.Flags().StringVarP(&options.Flags.ProjectId, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.ProjectID, projectIDFlagName, "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.Network, networkFlagName, "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ImageType, imageTypeFlagName, "", "", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, subNetworkFlagName, "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
@@ -215,7 +215,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	projectId := o.Flags.ProjectId
+	projectId := o.Flags.ProjectID
 	if projectId == "" {
 		projectId, err = o.GetGoogleProjectID("")
 		if err != nil {
