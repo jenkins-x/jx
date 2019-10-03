@@ -508,11 +508,11 @@ func AddAppMetaData(chartDir string, app *jenkinsv1.App, repository string) erro
 		app.Annotations = make(map[string]string)
 	}
 	app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
-	repoURL, err := url.Parse(repository)
+	_, err := url.Parse(repository)
 	if err != nil {
 		return errors.Wrap(err, "Invalid repository url")
 	}
-	app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
+	app.Annotations[helm.AnnotationAppRepository] = util.SanitizeURL(repository)
 	if app.Labels == nil {
 		app.Labels = make(map[string]string)
 	}
