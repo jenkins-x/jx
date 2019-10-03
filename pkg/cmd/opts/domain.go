@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/jenkins-x/jx/pkg/util"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -69,7 +69,9 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 
 		// if we are booting, we want to use nip.io directly if a domain is not provided
 		// if one is provided, we'll expose it through external-dns
-		if os.Getenv("JX_INTERPRET_PIPELINE") != "true" {
+		// we also check that we are not in cluster to do this, as the domain gets wiped if we are using .nip/xip.io
+		// and we need to create a new one again
+		if !o.InCluster() && os.Getenv("JX_INTERPRET_PIPELINE") != "true" {
 			log.Logger().Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones")
 			log.Logger().Infof("If you do not have a custom DNS name you can use yet, then you can register a new one here: %s\n",
 				util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))

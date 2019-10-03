@@ -7,25 +7,22 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/gits"
-
 	"github.com/jenkins-x/jx/pkg/boot"
-
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/factory"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -45,6 +42,7 @@ type StepVerifyPreInstallOptions struct {
 	DisableVerifyHelm    bool
 	LazyCreateFlag       string
 	Namespace            string
+	ProviderValuesDir    string
 	TestKanikoSecretData string
 	TestVeleroSecretData string
 	WorkloadIdentity     bool
@@ -76,6 +74,7 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the install requirements file")
 	cmd.Flags().StringVarP(&options.LazyCreateFlag, "lazy-create", "", "", fmt.Sprintf("Specify true/false as to whether to lazily create missing resources. If not specified it is enabled if Terraform is not specified in the %s file", config.RequirementsConfigFileName))
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
+	cmd.Flags().StringVarP(&options.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific files")
 	cmd.Flags().BoolVarP(&options.WorkloadIdentity, "workload-identity", "", false, "Enable this if using GKE Workload Identity to avoid reconnecting to the Cluster.")
 
 	return cmd
@@ -242,6 +241,23 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	err = o.VerifyRequirementsConfigMap(kubeClient, ns, requirements)
 	if err != nil {
 		return err
+	}
+
+	if requirements.Cluster.Provider == cloud.EKS && o.LazyCreate {
+		if !cluster.IsInCluster() {
+			log.Logger().Info("attempting to lazily create the IAM Role for Service Accounts permissions")
+			err = amazon.EnableIRSASupportInCluster(requirements)
+			if err != nil {
+				return errors.Wrap(err, "error enabling IRSA in cluster")
+			}
+			err = amazon.CreateIRSAManagedServiceAccounts(requirements, o.ProviderValuesDir)
+			if err != nil {
+				return errors.Wrap(err, "error creating the IRSA managed Service Accounts")
+			}
+		} else {
+			log.Logger().Info("Running in cluster, not recreating permissions")
+		}
+
 	}
 
 	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!", info("jx boot"))
