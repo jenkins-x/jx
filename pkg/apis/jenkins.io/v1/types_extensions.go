@@ -489,10 +489,10 @@ type SourceRepository struct {
 // Sanitize sanitizes the source repository URL
 func (repo *SourceRepository) Sanitize() {
 	repo.Spec.URL = util.SanitizeURL(repo.Spec.URL)
-	repo.Spec.HTTPCloneURL = util.SanitizeURL(repo.Spec.ProviderName)
-	repo.Spec.SSHCloneURL = util.SanitizeURL(repo.Spec.ProviderName)
+	repo.Spec.HTTPCloneURL = util.SanitizeURL(repo.Spec.HTTPCloneURL)
+	repo.Spec.SSHCloneURL = util.SanitizeURL(repo.Spec.SSHCloneURL)
 	// The URL is stored sometimes in the provider and provider name
-	repo.Spec.Provider = util.SanitizeURL(repo.Spec.ProviderName)
+	repo.Spec.Provider = util.SanitizeURL(repo.Spec.Provider)
 	repo.Spec.ProviderName = util.SanitizeURL(repo.Spec.ProviderName)
 }
 
