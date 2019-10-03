@@ -1,4 +1,4 @@
-package cmd
+package health
 
 import (
 	"encoding/json"
