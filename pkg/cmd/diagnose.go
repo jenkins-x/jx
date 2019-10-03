@@ -3,7 +3,8 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/health"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -37,14 +38,11 @@ func NewCmdDiagnose(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func (o *DiagnoseOptions) Run() error {
 	// Get the namespace to run the diagnostics in, and output it
-	ns := o.Namespace
-	if ns == "" {
-		config, _, err := o.Kube().LoadConfig()
-		if err != nil {
-			return err
-		}
-		ns = kube.CurrentNamespace(config)
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubeClient")
 	}
+
 	log.Logger().Infof("Running in namespace: %s", util.ColorInfo(ns))
 	if o.showOption("version") {
 		err := printStatus(o, "Jenkins X Version", "jx", "version", "--no-version-check")
@@ -83,6 +81,13 @@ func (o *DiagnoseOptions) Run() error {
 
 	if o.showOption("secrets") {
 		err := printStatus(o, "Kubernetes Secrets", "kubectl", "get", "secrets", "--namespace", ns)
+		if err != nil {
+			return err
+		}
+	}
+
+	if o.showOption("health") {
+		err = health.Kuberhealthy(kubeClient, ns)
 		if err != nil {
 			return err
 		}

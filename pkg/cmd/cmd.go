@@ -160,7 +160,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 				NewCmdScan(commonOpts),
 				NewCmdShell(commonOpts),
 				NewCmdStatus(commonOpts),
-				NewCmdHealth(commonOpts),
 			},
 		},
 		{
