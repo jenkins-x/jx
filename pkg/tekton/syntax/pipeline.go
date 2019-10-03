@@ -1163,7 +1163,7 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, parentVolumes []*corev1.Volume, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, versionsDir string, labels map[string]string, defaultImage string) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, parentVolumes []*corev1.Volume, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, versionsDir string, labels map[string]string, defaultImage string, interpretMode bool) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
@@ -1267,7 +1267,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 
 		for _, step := range s.Steps {
-			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, sourceDir, baseWorkingDir, env, stageContainer, podTemplates, versionsDir, stepCounter)
+			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, sourceDir, baseWorkingDir, env, stageContainer, podTemplates, versionsDir, stepCounter, interpretMode)
 			if err != nil {
 				return nil, err
 			}
@@ -1305,7 +1305,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nestedPreviousSibling, podTemplates, versionsDir, labels, defaultImage)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nestedPreviousSibling, podTemplates, versionsDir, labels, defaultImage, interpretMode)
 			if err != nil {
 				return nil, err
 			}
@@ -1322,7 +1322,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 
 		for _, nested := range s.Parallel {
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nil, podTemplates, versionsDir, labels, defaultImage)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nil, podTemplates, versionsDir, labels, defaultImage, interpretMode)
 			if err != nil {
 				return nil, err
 			}
@@ -1401,7 +1401,7 @@ func isNestedFirstStepsStage(enclosingStage *transformedStage) bool {
 	return true
 }
 
-func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, versionsDir string, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {
+func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, versionsDir string, stepCounter int, interpretMode bool) ([]corev1.Container, map[string]corev1.Volume, int, error) {
 	volumes := make(map[string]corev1.Volume)
 	var steps []corev1.Container
 
@@ -1413,17 +1413,24 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 	// Default to ${WorkingDirRoot}/${sourceDir}
 	workingDir := filepath.Join(WorkingDirRoot, sourceDir)
 
+	// Directory we will cd to if it differs from the working dir.
+	targetDir := workingDir
+
 	if step.Dir != "" {
-		workingDir = step.Dir
+		targetDir = step.Dir
 	} else if baseWorkingDir != nil {
-		workingDir = *baseWorkingDir
+		targetDir = *baseWorkingDir
 	}
 	// Relative working directories are always just added to /workspace/source, e.g.
-	if !filepath.IsAbs(workingDir) {
-		workingDir = filepath.Join(WorkingDirRoot, sourceDir, workingDir)
+	if !filepath.IsAbs(targetDir) {
+		targetDir = filepath.Join(WorkingDirRoot, sourceDir, targetDir)
 	}
 
 	if step.GetCommand() != "" {
+		var targetDirPrefix []string
+		if targetDir != workingDir && !interpretMode {
+			targetDirPrefix = append(targetDirPrefix, "cd", targetDir, "&&")
+		}
 		c := &corev1.Container{}
 		if parentContainer != nil {
 			c = parentContainer.DeepCopy()
@@ -1457,16 +1464,23 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 		// Special-casing for commands starting with /kaniko
 		// TODO: Should this be more general?
 		if strings.HasPrefix(step.GetCommand(), "/kaniko") {
-			c.Command = []string{step.GetCommand()}
+			c.Command = append(targetDirPrefix, step.GetCommand())
 			c.Args = step.Arguments
 		} else {
 			cmdStr := step.GetCommand()
 			if len(step.Arguments) > 0 {
 				cmdStr += " " + strings.Join(step.Arguments, " ")
 			}
+			if len(targetDirPrefix) > 0 {
+				cmdStr = strings.Join(targetDirPrefix, " ") + " " + cmdStr
+			}
 			c.Args = []string{cmdStr}
 		}
-		c.WorkingDir = workingDir
+		if interpretMode {
+			c.WorkingDir = targetDir
+		} else {
+			c.WorkingDir = workingDir
+		}
 		stepCounter++
 		if step.Name != "" {
 			c.Name = MangleToRfc1035Label(step.Name, "")
@@ -1487,7 +1501,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 				if s.Name != "" {
 					s.Name = s.Name + strconv.Itoa(1+i)
 				}
-				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, sourceDir, baseWorkingDir, loopEnv, parentContainer, podTemplates, versionsDir, stepCounter)
+				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, sourceDir, baseWorkingDir, loopEnv, parentContainer, podTemplates, versionsDir, stepCounter, interpretMode)
 				if loopErr != nil {
 					return nil, nil, loopCounter, loopErr
 				}
@@ -1517,7 +1531,7 @@ func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, resourceIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, versionsDir string, taskParams []tektonv1alpha1.ParamSpec, sourceDir string, labels map[string]string, defaultImage string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, resourceIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, versionsDir string, taskParams []tektonv1alpha1.ParamSpec, sourceDir string, labels map[string]string, defaultImage string, interpretMode bool) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -1577,7 +1591,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
 
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, parentVolumes, 0, nil, previousStage, podTemplates, versionsDir, labels, defaultImage)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, parentVolumes, 0, nil, previousStage, podTemplates, versionsDir, labels, defaultImage, interpretMode)
 		if err != nil {
 			return nil, nil, nil, err
 		}

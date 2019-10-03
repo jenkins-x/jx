@@ -639,7 +639,7 @@ func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *confi
 		return nil, errors.Wrapf(err, "unable to extract the requested pipeline")
 	}
 
-	pipeline, tasks, structure, err := effectivePipeline.GenerateCRDs(pipelineName, o.BuildNumber, resourceName, ns, o.PodTemplates, o.VersionResolver.VersionsDir, o.getDefaultTaskInputs().Params, o.SourceName, o.labels, "")
+	pipeline, tasks, structure, err := effectivePipeline.GenerateCRDs(pipelineName, o.BuildNumber, resourceName, ns, o.PodTemplates, o.VersionResolver.VersionsDir, o.getDefaultTaskInputs().Params, o.SourceName, o.labels, "", o.InterpretMode)
 	if err != nil {
 		return nil, errors.Wrapf(err, "generation failed for Pipeline")
 	}
