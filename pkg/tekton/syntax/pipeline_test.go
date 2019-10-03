@@ -1155,15 +1155,19 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							tb.ResourceTargetPath("source"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
 					tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
-					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source/a-relative-dir")),
+					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"),
+						tb.Args("cd /workspace/source/a-relative-dir && echo hello world"), workingDir("/workspace/source")),
 				)),
 				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
-					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo again"), workingDir("/an/absolute/dir")),
-					tb.Step("step3", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo in another dir"),
-						workingDir("/workspace/source/another-relative-dir/with/a/subdir")),
+					tb.Step("step2", "some-image:0.0.1", tb.Command("/bin/sh", "-c"),
+						tb.Args("cd /an/absolute/dir && echo again"),
+						workingDir("/workspace/source")),
+					tb.Step("step3", "some-image:0.0.1", tb.Command("/bin/sh", "-c"),
+						tb.Args("cd /workspace/source/another-relative-dir/with/a/subdir && echo in another dir"),
+						workingDir("/workspace/source")),
 				)),
 			},
 			structure: sh.PipelineStructure("somepipeline-1",
@@ -1352,7 +1356,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				}
 			}
 
-			pipeline, tasks, structure, err := parsed.GenerateCRDs("somepipeline", "1", "somepipeline", "jx", nil, testVersionsDir, nil, "source", nil, "")
+			pipeline, tasks, structure, err := parsed.GenerateCRDs("somepipeline", "1", "somepipeline", "jx", nil, testVersionsDir, nil, "source", nil, "", false)
 
 			if err != nil {
 				if tt.expectedErrorMsg != "" {
