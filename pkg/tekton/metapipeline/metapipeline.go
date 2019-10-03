@@ -72,7 +72,19 @@ func createMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		return nil, err
 	}
 
-	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(params.PipelineName, params.BuildNumber, params.ResourceName, params.Namespace, params.PodTemplates, params.VersionsDir, nil, params.SourceDir, labels, params.DefaultImage, false)
+	crdParams := syntax.CRDsFromPipelineParams{
+		PipelineIdentifier: params.PipelineName,
+		BuildIdentifier:    params.BuildNumber,
+		ResourceIdentifier: params.ResourceName,
+		Namespace:          params.Namespace,
+		PodTemplates:       params.PodTemplates,
+		VersionsDir:        params.VersionsDir,
+		SourceDir:          params.SourceDir,
+		Labels:             labels,
+		DefaultImage:       params.DefaultImage,
+		InterpretMode:      false,
+	}
+	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(crdParams)
 	if err != nil {
 		return nil, err
 	}
