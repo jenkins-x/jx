@@ -1163,16 +1163,30 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, sourceDir string, baseWorkingDir *string, parentEnv []corev1.EnvVar, parentAgent *Agent, parentWorkspace string, parentContainer *corev1.Container, parentVolumes []*corev1.Volume, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod, versionsDir string, labels map[string]string, defaultImage string, interpretMode bool) (*transformedStage, error) {
-	if len(s.Post) != 0 {
+type stageToTaskParams struct {
+	parentParams         CRDsFromPipelineParams
+	stage                Stage
+	baseWorkingDir       *string
+	parentEnv            []corev1.EnvVar
+	parentAgent          *Agent
+	parentWorkspace      string
+	parentContainer      *corev1.Container
+	parentVolumes        []*corev1.Volume
+	depth                int8
+	enclosingStage       *transformedStage
+	previousSiblingStage *transformedStage
+}
+
+func stageToTask(params stageToTaskParams) (*transformedStage, error) {
+	if len(params.stage.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
 
 	stageContainer := &corev1.Container{}
 	var stageVolumes []*corev1.Volume
 
-	if s.Options != nil {
-		o := s.Options
+	if params.stage.Options != nil {
+		o := params.stage.Options
 		if o.RootOptions == nil {
 			o.RootOptions = &RootOptions{}
 		} else {
@@ -1193,48 +1207,48 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	// Don't overwrite the inherited working dir if we don't have one specified here.
-	if s.WorkingDir != nil {
-		baseWorkingDir = s.WorkingDir
+	if params.stage.WorkingDir != nil {
+		params.baseWorkingDir = params.stage.WorkingDir
 	}
 
-	if parentContainer != nil {
-		merged, err := MergeContainers(parentContainer, stageContainer)
+	if params.parentContainer != nil {
+		merged, err := MergeContainers(params.parentContainer, stageContainer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error merging stage and parent container overrides: %s", err)
 		}
 		stageContainer = merged
 	}
-	stageVolumes = append(stageVolumes, parentVolumes...)
+	stageVolumes = append(stageVolumes, params.parentVolumes...)
 
-	env := scopedEnv(s.GetEnv(), parentEnv)
+	env := scopedEnv(params.stage.GetEnv(), params.parentEnv)
 
-	agent := s.Agent.DeepCopy()
+	agent := params.stage.Agent.DeepCopy()
 
 	if agent == nil {
-		agent = parentAgent.DeepCopy()
+		agent = params.parentAgent.DeepCopy()
 	}
 
 	stepCounter := 0
-	defaultTaskSpec, err := getDefaultTaskSpec(env, stageContainer, defaultImage, versionsDir)
+	defaultTaskSpec, err := getDefaultTaskSpec(env, stageContainer, params.parentParams.DefaultImage, params.parentParams.VersionsDir)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(s.Steps) > 0 {
+	if len(params.stage.Steps) > 0 {
 		t := &tektonv1alpha1.Task{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: TektonAPIVersion,
 				Kind:       "Task",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), buildIdentifier),
-				Labels:    util.MergeMaps(labels, map[string]string{LabelStageName: s.stageLabelName()}),
+				Namespace: params.parentParams.Namespace,
+				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", params.parentParams.PipelineIdentifier, params.stage.Name), params.parentParams.BuildIdentifier),
+				Labels:    util.MergeMaps(params.parentParams.Labels, map[string]string{LabelStageName: params.stage.stageLabelName()}),
 			},
 		}
 		// Only add the default git merge step if this is the first actual step stage - including if the stage is one of
 		// N stages within a parallel stage, and that parallel stage is the first stage in the pipeline
-		if previousSiblingStage == nil && isNestedFirstStepsStage(enclosingStage) {
+		if params.previousSiblingStage == nil && isNestedFirstStepsStage(params.enclosingStage) {
 			t.Spec = defaultTaskSpec
 		}
 
@@ -1242,7 +1256,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 		ws := &tektonv1alpha1.TaskResource{
 			Name:       "workspace",
-			TargetPath: sourceDir,
+			TargetPath: params.parentParams.SourceDir,
 			Type:       tektonv1alpha1.PipelineResourceTypeGit,
 		}
 
@@ -1266,8 +1280,15 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			volumes[v.Name] = *v
 		}
 
-		for _, step := range s.Steps {
-			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, sourceDir, baseWorkingDir, env, stageContainer, podTemplates, versionsDir, stepCounter, interpretMode)
+		for _, step := range params.stage.Steps {
+			actualSteps, stepVolumes, newCounter, err := generateSteps(generateStepsParams{
+				stageParams:     params,
+				step:            step,
+				inheritedAgent:  agent.Image,
+				env:             env,
+				parentContainer: stageContainer,
+				stepCounter:     stepCounter,
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -1291,21 +1312,33 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			t.Spec.Volumes = append(t.Spec.Volumes, volumes[v])
 		}
 
-		ts := transformedStage{Stage: s, Task: t, Depth: depth, EnclosingStage: enclosingStage, PreviousSiblingStage: previousSiblingStage}
-		ts.computeWorkspace(parentWorkspace)
+		ts := transformedStage{Stage: params.stage, Task: t, Depth: params.depth, EnclosingStage: params.enclosingStage, PreviousSiblingStage: params.previousSiblingStage}
+		ts.computeWorkspace(params.parentWorkspace)
 		return &ts, nil
 	}
-	if len(s.Stages) > 0 {
+	if len(params.stage.Stages) > 0 {
 		var tasks []*transformedStage
-		ts := transformedStage{Stage: s, Depth: depth, EnclosingStage: enclosingStage, PreviousSiblingStage: previousSiblingStage}
-		ts.computeWorkspace(parentWorkspace)
+		ts := transformedStage{Stage: params.stage, Depth: params.depth, EnclosingStage: params.enclosingStage, PreviousSiblingStage: params.previousSiblingStage}
+		ts.computeWorkspace(params.parentWorkspace)
 
-		for i, nested := range s.Stages {
+		for i, nested := range params.stage.Stages {
 			var nestedPreviousSibling *transformedStage
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nestedPreviousSibling, podTemplates, versionsDir, labels, defaultImage, interpretMode)
+			nestedTask, err := stageToTask(stageToTaskParams{
+				parentParams:         params.parentParams,
+				stage:                nested,
+				baseWorkingDir:       params.baseWorkingDir,
+				parentEnv:            env,
+				parentAgent:          agent,
+				parentWorkspace:      *ts.Stage.Options.Workspace,
+				parentContainer:      stageContainer,
+				parentVolumes:        stageVolumes,
+				depth:                params.depth + 1,
+				enclosingStage:       &ts,
+				previousSiblingStage: nestedPreviousSibling,
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -1316,13 +1349,24 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		return &ts, nil
 	}
 
-	if len(s.Parallel) > 0 {
+	if len(params.stage.Parallel) > 0 {
 		var tasks []*transformedStage
-		ts := transformedStage{Stage: s, Depth: depth, EnclosingStage: enclosingStage, PreviousSiblingStage: previousSiblingStage}
-		ts.computeWorkspace(parentWorkspace)
+		ts := transformedStage{Stage: params.stage, Depth: params.depth, EnclosingStage: params.enclosingStage, PreviousSiblingStage: params.previousSiblingStage}
+		ts.computeWorkspace(params.parentWorkspace)
 
-		for _, nested := range s.Parallel {
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, env, agent, *ts.Stage.Options.Workspace, stageContainer, stageVolumes, depth+1, &ts, nil, podTemplates, versionsDir, labels, defaultImage, interpretMode)
+		for _, nested := range params.stage.Parallel {
+			nestedTask, err := stageToTask(stageToTaskParams{
+				parentParams:    params.parentParams,
+				stage:           nested,
+				baseWorkingDir:  params.baseWorkingDir,
+				parentEnv:       env,
+				parentAgent:     agent,
+				parentWorkspace: *ts.Stage.Options.Workspace,
+				parentContainer: stageContainer,
+				parentVolumes:   stageVolumes,
+				depth:           params.depth + 1,
+				enclosingStage:  &ts,
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -1401,42 +1445,51 @@ func isNestedFirstStepsStage(enclosingStage *transformedStage) bool {
 	return true
 }
 
-func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, versionsDir string, stepCounter int, interpretMode bool) ([]corev1.Container, map[string]corev1.Volume, int, error) {
+type generateStepsParams struct {
+	stageParams     stageToTaskParams
+	step            Step
+	inheritedAgent  string
+	env             []corev1.EnvVar
+	parentContainer *corev1.Container
+	stepCounter     int
+}
+
+func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]corev1.Volume, int, error) {
 	volumes := make(map[string]corev1.Volume)
 	var steps []corev1.Container
 
-	stepImage := inheritedAgent
-	if step.GetImage() != "" {
-		stepImage = step.GetImage()
+	stepImage := params.inheritedAgent
+	if params.step.GetImage() != "" {
+		stepImage = params.step.GetImage()
 	}
 
 	// Default to ${WorkingDirRoot}/${sourceDir}
-	workingDir := filepath.Join(WorkingDirRoot, sourceDir)
+	workingDir := filepath.Join(WorkingDirRoot, params.stageParams.parentParams.SourceDir)
 
 	// Directory we will cd to if it differs from the working dir.
 	targetDir := workingDir
 
-	if step.Dir != "" {
-		targetDir = step.Dir
-	} else if baseWorkingDir != nil {
-		targetDir = *baseWorkingDir
+	if params.step.Dir != "" {
+		targetDir = params.step.Dir
+	} else if params.stageParams.baseWorkingDir != nil {
+		targetDir = *(params.stageParams.baseWorkingDir)
 	}
 	// Relative working directories are always just added to /workspace/source, e.g.
 	if !filepath.IsAbs(targetDir) {
-		targetDir = filepath.Join(WorkingDirRoot, sourceDir, targetDir)
+		targetDir = filepath.Join(WorkingDirRoot, params.stageParams.parentParams.SourceDir, targetDir)
 	}
 
-	if step.GetCommand() != "" {
+	if params.step.GetCommand() != "" {
 		var targetDirPrefix []string
-		if targetDir != workingDir && !interpretMode {
+		if targetDir != workingDir && !params.stageParams.parentParams.InterpretMode {
 			targetDirPrefix = append(targetDirPrefix, "cd", targetDir, "&&")
 		}
 		c := &corev1.Container{}
-		if parentContainer != nil {
-			c = parentContainer.DeepCopy()
+		if params.parentContainer != nil {
+			c = params.parentContainer.DeepCopy()
 		}
-		if podTemplates != nil && podTemplates[stepImage] != nil {
-			podTemplate := podTemplates[stepImage]
+		if params.stageParams.parentParams.PodTemplates != nil && params.stageParams.parentParams.PodTemplates[stepImage] != nil {
+			podTemplate := params.stageParams.parentParams.PodTemplates[stepImage]
 			containers := podTemplate.Spec.Containers
 			for _, volume := range podTemplate.Spec.Volumes {
 				volumes[volume.Name] = volume
@@ -1444,7 +1497,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 			if !equality.Semantic.DeepEqual(c, &corev1.Container{}) {
 				merged, err := MergeContainers(&containers[0], c)
 				if err != nil {
-					return nil, nil, stepCounter, errors.Wrapf(err, "Error merging pod template and parent container: %s", err)
+					return nil, nil, params.stepCounter, errors.Wrapf(err, "Error merging pod template and parent container: %s", err)
 				}
 				c = merged
 			} else {
@@ -1455,7 +1508,7 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 			c.Command = []string{"/bin/sh", "-c"}
 		}
 
-		resolvedImage, err := versionstream.ResolveDockerImage(versionsDir, c.Image)
+		resolvedImage, err := versionstream.ResolveDockerImage(params.stageParams.parentParams.VersionsDir, c.Image)
 		if err != nil {
 			log.Logger().Warnf("failed to resolve step image version: %s due to %s", c.Image, err.Error())
 		} else {
@@ -1463,51 +1516,58 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 		}
 		// Special-casing for commands starting with /kaniko
 		// TODO: Should this be more general?
-		if strings.HasPrefix(step.GetCommand(), "/kaniko") {
-			c.Command = append(targetDirPrefix, step.GetCommand())
-			c.Args = step.Arguments
+		if strings.HasPrefix(params.step.GetCommand(), "/kaniko") {
+			c.Command = append(targetDirPrefix, params.step.GetCommand())
+			c.Args = params.step.Arguments
 		} else {
-			cmdStr := step.GetCommand()
-			if len(step.Arguments) > 0 {
-				cmdStr += " " + strings.Join(step.Arguments, " ")
+			cmdStr := params.step.GetCommand()
+			if len(params.step.Arguments) > 0 {
+				cmdStr += " " + strings.Join(params.step.Arguments, " ")
 			}
 			if len(targetDirPrefix) > 0 {
 				cmdStr = strings.Join(targetDirPrefix, " ") + " " + cmdStr
 			}
 			c.Args = []string{cmdStr}
 		}
-		if interpretMode {
+		if params.stageParams.parentParams.InterpretMode {
 			c.WorkingDir = targetDir
 		} else {
 			c.WorkingDir = workingDir
 		}
-		stepCounter++
-		if step.Name != "" {
-			c.Name = MangleToRfc1035Label(step.Name, "")
+		params.stepCounter++
+		if params.step.Name != "" {
+			c.Name = MangleToRfc1035Label(params.step.Name, "")
 		} else {
-			c.Name = "step" + strconv.Itoa(1+stepCounter)
+			c.Name = "step" + strconv.Itoa(1+params.stepCounter)
 		}
 
 		c.Stdin = false
 		c.TTY = false
-		c.Env = scopedEnv(step.Env, scopedEnv(env, c.Env))
+		c.Env = scopedEnv(params.step.Env, scopedEnv(params.env, c.Env))
 
 		steps = append(steps, *c)
-	} else if step.Loop != nil {
-		for i, v := range step.Loop.Values {
-			loopEnv := scopedEnv([]corev1.EnvVar{{Name: step.Loop.Variable, Value: v}}, env)
+	} else if params.step.Loop != nil {
+		for i, v := range params.step.Loop.Values {
+			loopEnv := scopedEnv([]corev1.EnvVar{{Name: params.step.Loop.Variable, Value: v}}, params.env)
 
-			for _, s := range step.Loop.Steps {
+			for _, s := range params.step.Loop.Steps {
 				if s.Name != "" {
 					s.Name = s.Name + strconv.Itoa(1+i)
 				}
-				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, sourceDir, baseWorkingDir, loopEnv, parentContainer, podTemplates, versionsDir, stepCounter, interpretMode)
+				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(generateStepsParams{
+					stageParams:     params.stageParams,
+					step:            s,
+					inheritedAgent:  stepImage,
+					env:             loopEnv,
+					parentContainer: params.parentContainer,
+					stepCounter:     params.stepCounter,
+				})
 				if loopErr != nil {
 					return nil, nil, loopCounter, loopErr
 				}
 
 				// Bump the step counter to what we got from the loop
-				stepCounter = loopCounter
+				params.stepCounter = loopCounter
 
 				// Add the loop-generated steps
 				steps = append(steps, loopSteps...)
@@ -1519,10 +1579,10 @@ func generateSteps(step Step, inheritedAgent, sourceDir string, baseWorkingDir *
 			}
 		}
 	} else {
-		return nil, nil, stepCounter, errors.New("syntactic sugar steps not yet supported")
+		return nil, nil, params.stepCounter, errors.New("syntactic sugar steps not yet supported")
 	}
 
-	return steps, volumes, stepCounter, nil
+	return steps, volumes, params.stepCounter, nil
 }
 
 // PipelineRunName returns the pipeline name given the pipeline and build identifier
@@ -1530,8 +1590,23 @@ func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
 	return MangleToRfc1035Label(fmt.Sprintf("%s", pipelineIdentifier), buildIdentifier)
 }
 
+// CRDsFromPipelineParams is how the parameters to GenerateCRDs are specified
+type CRDsFromPipelineParams struct {
+	PipelineIdentifier string
+	BuildIdentifier    string
+	ResourceIdentifier string
+	Namespace          string
+	PodTemplates       map[string]*corev1.Pod
+	VersionsDir        string
+	TaskParams         []tektonv1alpha1.ParamSpec
+	SourceDir          string
+	Labels             map[string]string
+	DefaultImage       string
+	InterpretMode      bool
+}
+
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, resourceIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, versionsDir string, taskParams []tektonv1alpha1.ParamSpec, sourceDir string, labels map[string]string, defaultImage string, interpretMode bool) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(params CRDsFromPipelineParams) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -1556,13 +1631,13 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 			Kind:       "Pipeline",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      PipelineRunName(pipelineIdentifier, buildIdentifier),
+			Namespace: params.Namespace,
+			Name:      PipelineRunName(params.PipelineIdentifier, params.BuildIdentifier),
 		},
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
 				{
-					Name: resourceIdentifier,
+					Name: params.ResourceIdentifier,
 					Type: tektonv1alpha1.PipelineResourceTypeGit,
 				},
 			},
@@ -1577,9 +1652,9 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 	}
 
-	if len(labels) > 0 {
-		p.Labels = util.MergeMaps(labels)
-		structure.Labels = util.MergeMaps(labels)
+	if len(params.Labels) > 0 {
+		p.Labels = util.MergeMaps(params.Labels)
+		structure.Labels = util.MergeMaps(params.Labels)
 	}
 
 	var previousStage *transformedStage
@@ -1591,7 +1666,18 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
 
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseWorkingDir, baseEnv, j.Agent, "default", parentContainer, parentVolumes, 0, nil, previousStage, podTemplates, versionsDir, labels, defaultImage, interpretMode)
+		stage, err := stageToTask(stageToTaskParams{
+			parentParams:         params,
+			stage:                s,
+			baseWorkingDir:       baseWorkingDir,
+			parentEnv:            baseEnv,
+			parentAgent:          j.Agent,
+			parentWorkspace:      "default",
+			parentContainer:      parentContainer,
+			parentVolumes:        parentVolumes,
+			depth:                0,
+			previousSiblingStage: previousStage,
+		})
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -1615,7 +1701,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 				lt.Spec.Outputs = nil
 			}
 			if len(lt.Spec.Inputs.Params) == 0 {
-				lt.Spec.Inputs.Params = taskParams
+				lt.Spec.Inputs.Params = params.TaskParams
 			}
 		}
 

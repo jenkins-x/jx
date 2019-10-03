@@ -1356,7 +1356,17 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				}
 			}
 
-			pipeline, tasks, structure, err := parsed.GenerateCRDs("somepipeline", "1", "somepipeline", "jx", nil, testVersionsDir, nil, "source", nil, "", false)
+			crdParams := syntax.CRDsFromPipelineParams{
+				PipelineIdentifier: "somepipeline",
+				BuildIdentifier:    "1",
+				ResourceIdentifier: "somepipeline",
+				Namespace:          "jx",
+				VersionsDir:        testVersionsDir,
+				SourceDir:          "source",
+				DefaultImage:       "",
+				InterpretMode:      false,
+			}
+			pipeline, tasks, structure, err := parsed.GenerateCRDs(crdParams)
 
 			if err != nil {
 				if tt.expectedErrorMsg != "" {
