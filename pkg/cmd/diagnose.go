@@ -13,6 +13,7 @@ import (
 type DiagnoseOptions struct {
 	*opts.CommonOptions
 	Namespace string
+	Show      []string
 }
 
 func NewCmdDiagnose(commonOpts *opts.CommonOptions) *cobra.Command {
@@ -30,6 +31,7 @@ func NewCmdDiagnose(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to display the kube resources from. If left out, defaults to the current namespace")
+	cmd.Flags().StringArrayVarP(&options.Show, "show", "", []string{"version", "status", "pvc", "pods", "ingresses", "secrets"}, "Determine what information to diagnose")
 	return cmd
 }
 
@@ -44,36 +46,48 @@ func (o *DiagnoseOptions) Run() error {
 		ns = kube.CurrentNamespace(config)
 	}
 	log.Logger().Infof("Running in namespace: %s", util.ColorInfo(ns))
-
-	err := printStatus(o, "Jenkins X Version", "jx", "version", "--no-version-check")
-	if err != nil {
-		return err
+	if o.showOption("version") {
+		err := printStatus(o, "Jenkins X Version", "jx", "version", "--no-version-check")
+		if err != nil {
+			return err
+		}
 	}
 
-	err = printStatus(o, "Jenkins X Status", "jx", "status")
-	if err != nil {
-		return err
+	if o.showOption("status") {
+		err := printStatus(o, "Jenkins X Status", "jx", "status")
+		if err != nil {
+			return err
+		}
 	}
 
-	err = printStatus(o, "Kubernetes PVCs", "kubectl", "get", "pvc", "--namespace", ns)
-	if err != nil {
-		return err
+	if o.showOption("pvc") {
+		err := printStatus(o, "Kubernetes PVCs", "kubectl", "get", "pvc", "--namespace", ns)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = printStatus(o, "Kubernetes Pods", "kubectl", "get", "po", "--namespace", ns)
-	if err != nil {
-		return err
+	if o.showOption("pods") {
+		err := printStatus(o, "Kubernetes Pods", "kubectl", "get", "po", "--namespace", ns)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = printStatus(o, "Kubernetes Ingresses", "kubectl", "get", "ingress", "--namespace", ns)
-	if err != nil {
-		return err
+	if o.showOption("ingresses") {
+		err := printStatus(o, "Kubernetes Ingresses", "kubectl", "get", "ingress", "--namespace", ns)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = printStatus(o, "Kubernetes Secrets", "kubectl", "get", "secrets", "--namespace", ns)
-	if err != nil {
-		return err
+	if o.showOption("secrets") {
+		err := printStatus(o, "Kubernetes Secrets", "kubectl", "get", "secrets", "--namespace", ns)
+		if err != nil {
+			return err
+		}
 	}
+
 	log.Logger().Info("\nPlease visit https://jenkins-x.io/faq/issues/ for any known issues.")
 	log.Logger().Info("\nFinished printing diagnostic information.")
 	return nil
@@ -87,6 +101,15 @@ func printStatus(o *DiagnoseOptions, header string, command string, options ...s
 		return err
 	}
 	// Print the output of the command, and add a little header at the top for formatting / readability
-	log.Logger().Infof("\n%s:\n %s", header, util.ColorInfo(output))
+	log.Logger().Infof("\n%s:\n%s", header, util.ColorInfo(output))
 	return nil
+}
+
+func (o *DiagnoseOptions) showOption(e string) bool {
+	for _, a := range o.Show {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
