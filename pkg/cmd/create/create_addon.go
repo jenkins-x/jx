@@ -2,8 +2,9 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 
@@ -62,7 +63,6 @@ func NewCmdCreateAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonPrometheus(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonProw(commonOpts))
-	cmd.AddCommand(NewCmdCreateAddonSSO(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonVault(commonOpts))
 
 	options.addFlags(cmd, kube.DefaultNamespace, "", "")
