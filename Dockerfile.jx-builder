@@ -1,3 +1,16 @@
-FROM gcr.io/jenkinsxio/builder-go
+FROM gcr.io/jenkinsxio/builder-go AS builder
 
 WORKDIR /src
+
+COPY . /src/
+
+RUN make build
+
+# 1. Bin stage
+FROM kayosportsau/ubuntu-devops-base:latest
+
+#MAINTAINER Streamotion Pty Ltd <devops@kayosports.com.au>
+
+COPY --from=builder /src/build/jx /usr/bin/jx
+
+
