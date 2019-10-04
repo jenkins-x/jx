@@ -62,7 +62,6 @@ func NewCmdCreateAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonPrometheus(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonProw(commonOpts))
-	cmd.AddCommand(NewCmdCreateAddonSSO(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonVault(commonOpts))
 
 	options.addFlags(cmd, kube.DefaultNamespace, "", "")
