@@ -62,3 +62,11 @@ docs/apidocs/static/jquery-3.2.1.min.js
 docs/apidocs/static/jquery.scrollTo.min.js
 docs/apidocs/static/scroll.js
 pkg/jx/cmd/verify-pod.log
+
+pkg/cmd/importcmd/test_data/import_projects/maven_keep_old_jenkinsfile/.classpath
+pkg/cmd/importcmd/test_data/import_projects/maven_keep_old_jenkinsfile/.project
+pkg/cmd/importcmd/test_data/import_projects/maven_keep_old_jenkinsfile/.settings/
+pkg/cmd/importcmd/test_data/import_projects/maven_keep_old_jenkinsfile/target/
+pkg/cmd/step/test_data/next_version/java/.project
+pkg/cmd/step/test_data/next_version/java/.settings/pkg/cmd/step/buildpack/test_data/import_projects/maven_camel/.settings/org.eclipse.jdt.core.prefs
+pkg/cmd/step/test_data/next_version/java/.settings/
