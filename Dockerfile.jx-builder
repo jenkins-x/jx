@@ -1,0 +1,3 @@
+FROM gcr.io/jenkinsxio/builder-go
+
+WORKDIR /src
