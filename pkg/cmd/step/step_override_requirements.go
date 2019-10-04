@@ -124,7 +124,7 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	}
 	if "" != os.Getenv(config.RequirementIngressTLSProduction) {
 		useProduction := os.Getenv(config.RequirementIngressTLSProduction)
-		if useProduction == "true" {
+		if useProduction == "yes" {
 			requirements.Ingress.TLS.Production = true
 		} else {
 			requirements.Ingress.TLS.Production = false
