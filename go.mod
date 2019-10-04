@@ -9,7 +9,7 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/Masterminds/semver v1.4.2
 	github.com/Netflix/go-expect v0.0.0-20180814212900-124a37274874
-	github.com/Pallinder/go-randomdata v0.0.0-20180616180521-15df0648130a
+	github.com/Pallinder/go-randomdata v1.1.0
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
@@ -141,7 +141,7 @@ require (
 	k8s.io/api v0.0.0-20190126160303-ccdd560a045f
 	k8s.io/apiextensions-apiserver v0.0.0-20190308081736-3a66ae4d2f93
 	k8s.io/apimachinery v0.0.0-20190703205208-4cfb76a8bf76
-	k8s.io/client-go v9.0.0+incompatible
+	k8s.io/client-go v10.0.0+incompatible
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 	k8s.io/kubernetes v1.11.3

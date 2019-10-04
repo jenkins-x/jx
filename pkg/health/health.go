@@ -74,7 +74,7 @@ func kuberHealthyState(kuberHealthIP string) (kh.State, error) {
 	response, err := kuberHealthyRequest(kuberHealthIP)
 
 	state := kh.State{}
-	err = json.Unmarshal([]byte(response), &state)
+	err = json.Unmarshal(response, &state)
 	if err != nil {
 		return state, errors.Wrapf(err, "failed to unmarshal to State")
 	}
