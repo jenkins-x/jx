@@ -28,6 +28,24 @@ pipeline {
               }          
         }
       }
+
+      stage('Build Release') {
+        agent {
+          label "dockerhub-maven"
+        }
+
+        steps {
+          container('maven') {
+                sh "export VERSION=`cat VERSION` && skaffold build -f skaffold-dockerhub.yaml"
+
+                script {
+                  def buildVersion =  readFile "${env.WORKSPACE}/VERSION"
+                  currentBuild.description = "$buildVersion"
+                  currentBuild.displayName = "$buildVersion"
+                }          
+          }
+      }
+
     }
   }
   post {
