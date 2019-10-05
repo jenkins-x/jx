@@ -44,6 +44,7 @@ pipeline {
                   currentBuild.displayName = "$buildVersion"
                 }          
           }
+        }
       }
 
     }
