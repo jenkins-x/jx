@@ -12,10 +12,6 @@ pipeline {
 
   stages {
     stage('CI Build + PREVIEW') {
-      agent {
-        label "dockerhub-maven"
-      }
-    
       when {
         branch 'feature/local-docker-build'
       }
@@ -33,7 +29,7 @@ pipeline {
 //          previewNames("3",BRANCH_NAME, BUILD_NUMBER)
 
           sh "echo $PREVIEW_VERSION > PREVIEW_VERSION"
-          sh "export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold-dockerhub.yaml"
+          sh "export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml"
           script {
             def buildVersion =  readFile "${env.WORKSPACE}/PREVIEW_VERSION"
             currentBuild.description = "$APP_NAME.$PREVIEW_NAMESPACE"
