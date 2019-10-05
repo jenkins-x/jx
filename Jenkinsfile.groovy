@@ -11,6 +11,44 @@ pipeline {
 //--------
 
   stages {
+    stage('CI Build + PREVIEW') {
+      agent {
+        label "dockerhub-maven"
+      }
+    
+      when {
+        branch 'PR-*'
+      }
+      environment {
+//        PREVIEW_VERSION = get_previewVersion(APP_NAME, BRANCH_NAME, BUILD_NUMBER)
+        // PREVIEW_NAMESPACE = get_previewNameSpace(APP_NAME, BRANCH_NAME, BUILD_NUMBER)
+        PREVIEW_VERSION = "0.0.0-SNAPSHOT-$BUILD_NUMBER"
+
+        HELM_RELEASE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
+      }
+      steps {
+//        PREVIEW_VERSION = previewNames("1", BRANCH_NAME, BUILD_NUMBER)["previewName"]
+        container('maven') {
+          sh "echo **************** PREVIEW_VERSION: $PREVIEW_VERSION , PREVIEW_NAMESPACE: $PREVIEW_NAMESPACE, HELM_RELEASE: $HELM_RELEASE"
+//          previewNames("3",BRANCH_NAME, BUILD_NUMBER)
+
+          sh "mvn versions:set -DnewVersion=$PREVIEW_VERSION"
+          sh "echo $PREVIEW_VERSION > PREVIEW_VERSION"
+          sh "export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold-dockerhub.yaml"
+          script {
+            def buildVersion =  readFile "${env.WORKSPACE}/PREVIEW_VERSION"
+            currentBuild.description = "$APP_NAME.$PREVIEW_NAMESPACE"
+          }
+
+
+          dir('charts/preview') {
+            sh "make preview"
+            sh "jx preview --app $APP_NAME --namespace=$PREVIEW_NAMESPACE --dir ../.."
+          }
+        }
+      }
+    }
+
     stage('Build Release') {
       steps {
         container('maven') {
