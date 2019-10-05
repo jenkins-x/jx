@@ -27,9 +27,10 @@ pipeline {
                 currentBuild.displayName = "$buildVersion"
               }          
         }
-      }
+    }}
+  
 
-      stage('Build Release') {
+    stage('Build Release') {
         agent {
           label "dockerhub-maven"
         }
@@ -46,8 +47,8 @@ pipeline {
           }
         }
       }
+  }
 
-    }
   }
   post {
         always {
