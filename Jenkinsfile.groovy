@@ -17,7 +17,7 @@ pipeline {
       }
     
       when {
-        branch 'PR-*'
+        branch 'feature/local-docker-build'
       }
       environment {
 //        PREVIEW_VERSION = get_previewVersion(APP_NAME, BRANCH_NAME, BUILD_NUMBER)
@@ -40,11 +40,6 @@ pipeline {
             currentBuild.description = "$APP_NAME.$PREVIEW_NAMESPACE"
           }
 
-
-          dir('charts/preview') {
-            sh "make preview"
-            sh "jx preview --app $APP_NAME --namespace=$PREVIEW_NAMESPACE --dir ../.."
-          }
         }
       }
     }
