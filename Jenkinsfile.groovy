@@ -11,28 +11,27 @@ pipeline {
 //--------
 
   stages {
-    // stage('Build Release') {
-    //   steps {
-    //     container('maven') {
-    //           // ensure we're not on a detached head
-    //           sh "git config --global credential.helper store"
-    //           sh "jx step git credentials"
+    stage('Build Release') {
+      steps {
+        container('maven') {
+              // ensure we're not on a detached head
+              sh "git config --global credential.helper store"
+              sh "jx step git credentials"
 
-    //           sh "echo \$(jx-release-version) > VERSION"
-    //           sh "jx step tag --version \$(cat VERSION)"
+              sh "echo \$(jx-release-version) > VERSION"
+              sh "jx step tag --version \$(cat VERSION)"
 
-    //           sh "export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml"
+              sh "export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml"
 
-    //           script {
-    //             def buildVersion =  readFile "${env.WORKSPACE}/VERSION"
-    //             currentBuild.description = "$buildVersion"
-    //             currentBuild.displayName = "$buildVersion"
-    //           }          
-    //     }
-    //   }
-    // }
+              script {
+                def buildVersion =  readFile "${env.WORKSPACE}/VERSION"
+                currentBuild.description = "$buildVersion"
+                currentBuild.displayName = "$buildVersion"
+              }          
+        }
+      }
+    }
   
-
     stage('Build Release') {
         agent {
           label "dockerhub-maven"
