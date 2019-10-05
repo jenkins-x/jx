@@ -50,6 +50,10 @@ pipeline {
     }
 
     stage('Build Release') {
+      when {
+        branch 'master'
+      }
+
       steps {
         container('maven') {
               // ensure we're not on a detached head
@@ -73,6 +77,9 @@ pipeline {
     stage('Publish DockerHub Release') {
         agent {
           label "dockerhub-maven"
+        }
+        when {
+          branch 'master'
         }
 
         steps {
