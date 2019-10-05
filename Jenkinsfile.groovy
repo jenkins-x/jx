@@ -32,7 +32,6 @@ pipeline {
           sh "echo **************** PREVIEW_VERSION: $PREVIEW_VERSION , PREVIEW_NAMESPACE: $PREVIEW_NAMESPACE, HELM_RELEASE: $HELM_RELEASE"
 //          previewNames("3",BRANCH_NAME, BUILD_NUMBER)
 
-          sh "mvn versions:set -DnewVersion=$PREVIEW_VERSION"
           sh "echo $PREVIEW_VERSION > PREVIEW_VERSION"
           sh "export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold-dockerhub.yaml"
           script {
