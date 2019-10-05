@@ -32,7 +32,7 @@ pipeline {
       }
     }
   
-    stage('Build Release') {
+    stage('Publish DockerHub Release') {
         agent {
           label "dockerhub-maven"
         }
