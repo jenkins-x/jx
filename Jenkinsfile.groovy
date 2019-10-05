@@ -21,7 +21,7 @@ pipeline {
       }
       environment {
 //        PREVIEW_VERSION = get_previewVersion(APP_NAME, BRANCH_NAME, BUILD_NUMBER)
-        PREVIEW_NAMESPACE = get_previewNameSpace(APP_NAME, BRANCH_NAME, BUILD_NUMBER)
+        PREVIEW_NAMESPACE = "NS"
         PREVIEW_VERSION = "0.0.0-SNAPSHOT-$BUILD_NUMBER"
 
         HELM_RELEASE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
