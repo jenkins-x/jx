@@ -246,9 +246,10 @@ func (o *StepCreateValuesOptions) verifyRegistryConfig(requirements *config.Requ
 				return errors.Wrap(err, "getting cluster from Azure")
 			}
 			registryID := ""
-			azureRegistrySubscription := ""
-			// TODO
-			// azureRegistrySubscription := requirements.Cluster.AzureRegistrySubscription
+			azureRegistrySubscription := requirements.Cluster.AzureConfig.RegistrySubscription
+			if azureRegistrySubscription == "" {
+				log.Logger().Info("no azure registry subscription is specified in 'jx-requirements.yml' at cluster.azure.registrySubscription")
+			}
 			configJSON, registry, registryID, err = azureCLI.GetRegistry(azureRegistrySubscription, resourceGroup, name, registry)
 			if err != nil {
 				return errors.Wrap(err, "getting registry configuration from Azure")

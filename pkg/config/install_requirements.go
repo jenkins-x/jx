@@ -216,8 +216,17 @@ type StorageConfig struct {
 	Backup StorageEntryConfig `json:"backup"`
 }
 
+// AzureConfig contains Azure specific requirements
+type AzureConfig struct {
+	// RegistrySubscription the registry subscription for defaulting the container registry.
+	// Not used if you specify a Registry explicitly
+	RegistrySubscription string `json:"registrySubscription,omitempty"`
+}
+
 // ClusterConfig contains cluster specific requirements
 type ClusterConfig struct {
+	// AzureConfig the azure specific configuration
+	AzureConfig AzureConfig `json:"azure,omitempty"`
 	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// EnvironmentGitPublic determines whether jx boot create public or private git repos for the environments
