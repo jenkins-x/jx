@@ -3,6 +3,8 @@
 package versionstreamrepo_test
 
 import (
+	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -13,14 +15,13 @@ import (
 )
 
 const (
-	RepoURL    = "https://github.com/jenkins-x/jenkins-x-versions-test.git"
-	VersionRef = "v1.0.103"
+	RepoURL    = "https://github.com/jenkins-x/jenkins-x-versions"
+	VersionRef = "v1.0.114"
 	BranchRef  = "master"
 	HEAD       = "HEAD"
-	CommitRef  = "ea16897b7b12f08708c307de49ff21b2a197517c"
 )
 
-func TestCloneJXVersionsRepoWithNoURL(t *testing.T) {
+func TestCloneJXVersionsRepoWithDefaultURL(t *testing.T) {
 	gitter := gits.NewGitCLI()
 	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
 		"",
@@ -34,7 +35,7 @@ func TestCloneJXVersionsRepoWithNoURL(t *testing.T) {
 		nil,
 	)
 
-	// Pull the latest tag so that we know the correct expected verion ref.
+	// Get the latest tag so that we know the correct expected verion ref.
 	tag, _, err := gitter.Describe(dir, false, VersionRef, "")
 
 	assert.NoError(t, err)
@@ -43,16 +44,43 @@ func TestCloneJXVersionsRepoWithNoURL(t *testing.T) {
 	assert.Equal(t, tag, versionRef)
 }
 
+func initializeTempGitRepo(gitter gits.Gitter) (string, error) {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return "", err
+	}
+
+	err = gitter.Init(dir)
+	if err != nil {
+		return "", err
+	}
+
+	err = gitter.AddCommit(dir, "Initial Commit")
+	if err != nil {
+		return "", err
+	}
+
+	err = gitter.CreateTag(dir, VersionRef, "First Tag")
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("file://%s", dir), nil
+}
+
 func TestCloneJXVersionsRepoWithTeamSettings(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	gitDir, err := initializeTempGitRepo(gitter)
+	assert.NoError(t, err)
 	settings := &v1.TeamSettings{
-		VersionStreamURL: RepoURL,
+		VersionStreamURL: gitDir,
 		VersionStreamRef: VersionRef,
 	}
 	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
 		"",
 		"",
 		settings,
-		gits.NewGitCLI(),
+		gitter,
 		true,
 		false,
 		nil,
@@ -66,11 +94,14 @@ func TestCloneJXVersionsRepoWithTeamSettings(t *testing.T) {
 }
 
 func TestCloneJXVersionsRepoWithATag(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	gitDir, err := initializeTempGitRepo(gitter)
+	assert.NoError(t, err)
 	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		RepoURL,
+		gitDir,
 		VersionRef,
 		nil,
-		gits.NewGitCLI(),
+		gitter,
 		true,
 		false,
 		nil,
@@ -84,11 +115,14 @@ func TestCloneJXVersionsRepoWithATag(t *testing.T) {
 }
 
 func TestCloneJXVersionsRepoWithABranch(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	gitDir, err := initializeTempGitRepo(gitter)
+	assert.NoError(t, err)
 	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		RepoURL,
+		gitDir,
 		BranchRef,
 		nil,
-		gits.NewGitCLI(),
+		gitter,
 		true,
 		false,
 		nil,
@@ -102,11 +136,14 @@ func TestCloneJXVersionsRepoWithABranch(t *testing.T) {
 }
 
 func TestCloneJXVersionsRepoWithACommit(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	gitDir, err := initializeTempGitRepo(gitter)
+	assert.NoError(t, err)
 	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		RepoURL,
-		CommitRef,
+		gitDir,
+		HEAD, // We can't know a commit SHA in advance, so this instead of dereferencing it through rev-parse jiggery-pokery
 		nil,
-		gits.NewGitCLI(),
+		gitter,
 		true,
 		false,
 		nil,
