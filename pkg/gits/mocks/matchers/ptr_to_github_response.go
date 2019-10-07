@@ -2,9 +2,10 @@
 package matchers
 
 import (
+	"reflect"
+
 	github "github.com/google/go-github/github"
 	"github.com/petergtz/pegomock"
-	"reflect"
 )
 
 func AnyPtrToGithubResponse() *github.Response {

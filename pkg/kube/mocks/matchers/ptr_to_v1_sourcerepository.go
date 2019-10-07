@@ -2,9 +2,10 @@
 package matchers
 
 import (
+	"reflect"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/petergtz/pegomock"
-	"reflect"
 )
 
 func AnyPtrToV1SourceRepository() *v1.SourceRepository {

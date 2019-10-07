@@ -3,14 +3,15 @@ package logs
 import (
 	"bytes"
 	"fmt"
-	"github.com/acarl005/stripansi"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/acarl005/stripansi"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"

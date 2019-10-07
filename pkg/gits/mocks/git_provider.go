@@ -4,13 +4,14 @@
 package gits_test
 
 import (
+	os "os"
+	"reflect"
+	"time"
+
 	github "github.com/google/go-github/github"
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	pegomock "github.com/petergtz/pegomock"
-	os "os"
-	"reflect"
-	"time"
 )
 
 type MockGitProvider struct {

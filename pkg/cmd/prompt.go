@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"os"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"

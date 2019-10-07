@@ -4,10 +4,11 @@
 package vault_test
 
 import (
-	pegomock "github.com/petergtz/pegomock"
 	url "net/url"
 	"reflect"
 	"time"
+
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockClient struct {

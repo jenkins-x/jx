@@ -3,7 +3,6 @@ package upgrade
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 

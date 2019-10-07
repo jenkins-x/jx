@@ -1,8 +1,9 @@
 package kube
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ObjectReference represents a reference to a k8s resource

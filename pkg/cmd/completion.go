@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"bytes"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"

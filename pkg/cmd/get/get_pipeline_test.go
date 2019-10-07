@@ -1,11 +1,12 @@
 package get_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/get"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/get"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"

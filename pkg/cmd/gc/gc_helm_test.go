@@ -2,10 +2,11 @@ package gc_test
 
 import (
 	"bytes"
-	"github.com/jenkins-x/jx/pkg/cmd/gc"
 	"sort"
 	"testing"
 	"text/template"
+
+	"github.com/jenkins-x/jx/pkg/cmd/gc"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"

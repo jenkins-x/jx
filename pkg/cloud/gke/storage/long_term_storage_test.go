@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateAValidBucketNameWithLongClusterNameAndDashAtCharacterSixty(t *testing.T) {

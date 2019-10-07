@@ -1,8 +1,9 @@
 package git_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/testkube"

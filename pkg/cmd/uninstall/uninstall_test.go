@@ -2,11 +2,12 @@ package uninstall_test
 
 import (
 	"errors"
+	"io/ioutil"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/cmd/uninstall"
 	"github.com/jenkins-x/jx/pkg/log"
-	"io/ioutil"
-	"testing"
 
 	"github.com/Netflix/go-expect"
 	clients_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"

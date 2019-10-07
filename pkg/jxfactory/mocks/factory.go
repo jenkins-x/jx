@@ -4,6 +4,9 @@
 package jxfactory_test
 
 import (
+	"reflect"
+	"time"
+
 	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxfactory "github.com/jenkins-x/jx/pkg/jxfactory"
 	kube "github.com/jenkins-x/jx/pkg/kube"
@@ -11,8 +14,6 @@ import (
 	versioned0 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
-	"reflect"
-	"time"
 )
 
 type MockFactory struct {

@@ -26,7 +26,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"

@@ -1,8 +1,9 @@
 package create
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 

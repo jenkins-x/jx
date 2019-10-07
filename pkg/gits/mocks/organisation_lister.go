@@ -4,10 +4,11 @@
 package gits_test
 
 import (
-	gits "github.com/jenkins-x/jx/pkg/gits"
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	gits "github.com/jenkins-x/jx/pkg/gits"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockOrganisationLister struct {

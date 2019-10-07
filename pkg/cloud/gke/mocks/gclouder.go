@@ -4,11 +4,12 @@
 package gke_test
 
 import (
+	"reflect"
+	"time"
+
 	gke "github.com/jenkins-x/jx/pkg/cloud/gke"
 	pegomock "github.com/petergtz/pegomock"
 	kubernetes "k8s.io/client-go/kubernetes"
-	"reflect"
-	"time"
 )
 
 type MockGClouder struct {

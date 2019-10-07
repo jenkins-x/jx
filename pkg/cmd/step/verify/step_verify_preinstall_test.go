@@ -2,6 +2,12 @@ package verify
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"testing"
+	"time"
+
 	"github.com/acarl005/stripansi"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -14,13 +20,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/sanathkr/go-yaml"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	v12 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"path"
-	"testing"
-	"time"
 )
 
 var timeout = 1 * time.Second

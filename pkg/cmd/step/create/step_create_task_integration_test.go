@@ -4,6 +4,11 @@ package create
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/syntax"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -11,10 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
 )
 
 func TestStepCreateTask(t *testing.T) {

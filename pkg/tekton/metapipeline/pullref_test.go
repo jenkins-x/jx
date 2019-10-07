@@ -1,8 +1,9 @@
 package metapipeline
 
 import (
-	"github.com/magiconair/properties/assert"
 	"testing"
+
+	"github.com/magiconair/properties/assert"
 )
 
 func Test_pull_ref_to_string(t *testing.T) {

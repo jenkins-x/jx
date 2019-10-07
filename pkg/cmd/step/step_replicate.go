@@ -2,12 +2,13 @@ package step
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/rollout/rox-go/core/utils"
-	"regexp"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/util"

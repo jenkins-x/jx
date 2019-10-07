@@ -1,10 +1,11 @@
 package upgrade_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 

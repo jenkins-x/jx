@@ -2,8 +2,9 @@ package create_test
 
 import (
 	"errors"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/stretchr/testify/assert"
 )

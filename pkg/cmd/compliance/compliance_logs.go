@@ -2,9 +2,10 @@ package compliance
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"io"
 	"os"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"

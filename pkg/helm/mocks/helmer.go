@@ -4,10 +4,11 @@
 package helm_test
 
 import (
-	helm "github.com/jenkins-x/jx/pkg/helm"
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	helm "github.com/jenkins-x/jx/pkg/helm"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockHelmer struct {

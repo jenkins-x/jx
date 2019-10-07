@@ -1,8 +1,9 @@
 package users_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

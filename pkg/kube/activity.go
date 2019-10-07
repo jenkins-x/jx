@@ -2,13 +2,14 @@ package kube
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/pkg/errors"

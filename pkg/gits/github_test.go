@@ -1,8 +1,9 @@
 package gits
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsOwnerGitHubUser_isOwner(t *testing.T) {

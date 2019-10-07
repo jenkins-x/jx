@@ -1,14 +1,15 @@
 package amazon
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/pkg/errors"
 	"os"
 	"path"
 	"regexp"
 	"runtime"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/pkg/errors"
 )
 
 const DefaultRegion = "us-west-2"

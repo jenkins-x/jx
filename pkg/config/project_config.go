@@ -2,10 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 

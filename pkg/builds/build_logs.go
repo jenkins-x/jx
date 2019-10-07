@@ -3,11 +3,12 @@ package builds
 import (
 	"bufio"
 	"bytes"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
-	"io"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // GetBuildLogsForPod returns the pod log for a Knative Build style build pod which is based on init containers
