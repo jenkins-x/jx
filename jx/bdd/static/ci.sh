@@ -45,7 +45,7 @@ git config --global --add user.email jenkins-x@googlegroups.com
 
 # lets trigger the BDD tests in a clusterand git provider
 jx step bdd -b \
-  --config jx/bdd/bdd/cluster.yaml \
+  --config jx/bdd/static/cluster.yaml \
   --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
   --provider=gke \
   --git-provider=ghe \
