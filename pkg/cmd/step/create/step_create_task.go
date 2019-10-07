@@ -119,11 +119,9 @@ type StepCreateTaskOptions struct {
 	AdditionalEnvVars map[string]string
 	PodTemplates      map[string]*corev1.Pod
 
-	stepCounter          int
 	GitInfo              *gits.GitRepository
 	BuildNumber          string
 	labels               map[string]string
-	envVars              []corev1.EnvVar
 	Results              tekton.CRDWrapper
 	pipelineParams       []pipelineapi.Param
 	version              string

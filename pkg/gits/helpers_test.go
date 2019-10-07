@@ -198,7 +198,6 @@ type forkAndPullTestArgs struct {
 	dir        string
 	baseRef    string
 	branchName string
-	duplicate  bool
 	provider   *gits.FakeProvider
 	gitter     gits.Gitter
 	initFn     func(args *forkAndPullTestArgs) error // initFn allows us to run some code at the start of the forkAndPullTest
@@ -1699,7 +1698,6 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 	type test struct {
 		name         string
 		args         args
-		dir          string
 		wantErr      bool
 		wantBranch   string
 		wantPRNumber int

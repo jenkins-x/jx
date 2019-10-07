@@ -40,7 +40,6 @@ type GitFake struct {
 	Changes        bool
 	GitTags        []GitTag
 	Revision       string
-	serverURL      string
 }
 
 // NewGitFake creates a new fake Gitter

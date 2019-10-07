@@ -24,12 +24,12 @@ golangci-lint run \
     -E gosec \
     -E gofmt \
     -E goimports \
+    -E structcheck \
     --skip-dirs vendor \
     --deadline 15m0s \
     --verbose 
 
 # -E errcheck \
-# -E structcheck \
 # -E varcheck \
 # -E govet \
 # -E interfacer \
