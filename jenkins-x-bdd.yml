@@ -81,9 +81,9 @@ pipelineConfig:
               volumes:
                 - name: sa
                   secret:
-                    secretName: gke-sa
+                    secretName: bdd-secret
                     items:
-                      - key: data
+                      - key: bdd-credentials
                         path: bdd/sa.json
               containerOptions:
                 volumeMounts:
