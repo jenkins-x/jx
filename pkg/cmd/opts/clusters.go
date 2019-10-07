@@ -51,20 +51,22 @@ func (o *ClusterOptions) CreateClient(requireProject bool) (cluster.Client, erro
 		}
 	}
 
-	// lets try detect the GKE project...
-	g := &gcp.GCloud{}
-	project, err := g.CurrentProject()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to detect if we are using GKE")
-	}
-	if requireProject {
-		if project == "" {
-			log.Logger().Warn("could not detect the current GKE project")
-			return nil, util.MissingOption("gke-project")
+	if o.GKE.Project == "" {
+		// lets try detect the GKE project...
+		g := &gcp.GCloud{}
+		project, err := g.CurrentProject()
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to detect if we are using GKE")
 		}
+		if requireProject {
+			if project == "" {
+				log.Logger().Warn("could not detect the current GKE project")
+				return nil, util.MissingOption("gke-project")
+			}
+		}
+		o.GKE.Project = project
 	}
-	o.GKE.Project = project
-	return gke.NewGKE(project, o.GKE.Region)
+	return gke.NewGKE(o.GKE.Project, o.GKE.Region)
 
 	//return nil, fmt.Errorf("could not detect the kind of cluster via the command line options")
 }
