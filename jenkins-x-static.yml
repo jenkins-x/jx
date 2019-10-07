@@ -1,7 +1,3 @@
-#################################
-# DEPRECATED IN FAVOR OF STATIC #
-#################################
-
 buildPack: none
 pipelineConfig:
   pipelines:
@@ -85,9 +81,9 @@ pipelineConfig:
               volumes:
                 - name: sa
                   secret:
-                    secretName: gke-sa
+                    secretName: bdd-secret
                     items:
-                      - key: data
+                      - key: bdd-credentials
                         path: bdd/sa.json
               containerOptions:
                 volumeMounts:
@@ -124,7 +120,7 @@ pipelineConfig:
             steps:
               - name: e2e-tests
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
-                command: ./jx/scripts/ci.sh
+                command: ./jx/bdd/bdd/ci.sh
 
               - name: stash-xml-report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
@@ -133,7 +129,7 @@ pipelineConfig:
                   - step
                   - stash
                   - -c
-                  - e2e-tests
+                  - static-e2e-tests
                   - -p
                   - "/workspace/source/build/reports/create_spring_application.junit.xml"
                   - --bucket-url gs://jx-prod-logs
@@ -154,7 +150,7 @@ pipelineConfig:
                   - --output-name
                   - junit.html
                   - --suite-name
-                  - "BDD_Tests"
+                  - "Static_BDD_Tests"
 
               - name: stash-html-report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
@@ -163,7 +159,7 @@ pipelineConfig:
                   - step
                   - stash
                   - -c
-                  - e2e-tests
+                  - static-e2e-tests
                   - -p
                   - "/workspace/source/build/reports/junit.html"
                   - --bucket-url gs://jx-prod-logs
