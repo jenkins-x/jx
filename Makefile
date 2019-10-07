@@ -247,6 +247,7 @@ release-distro:
 clean: ## Clean the generated artifacts
 	rm -rf build release dist
 
+.PHONY: clean
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
 	@if [ "$(FORMATTED)" == "" ]; \
@@ -255,6 +256,12 @@ fmt: ## Format the code
       	else \
       		echo "Fixed formatting for: $(FORMATTED)"; \
       	fi
+
+.PHONY: importfmt
+importsfmt:
+	# $(GO_NOMOD) get golang.org/x/tools/cmd/goimports
+	@echo "Formatting the imports..."
+	goimports -w $(GO_DEPENDENCIES)
 
 .PHONY: lint
 lint: ## Lint the code
