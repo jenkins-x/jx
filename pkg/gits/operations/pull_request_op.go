@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -520,7 +520,7 @@ func (o *PullRequestOperation) CreatePullRequestGitReleasesFn(name string) Chang
 // empty it will fetch the latest version using helmer, using the vaultClient to get the repo creds or prompting using
 // in, out and outErr
 func CreateChartChangeFilesFn(name string, version string, kind string, pro *PullRequestOperation, helmer helm.Helmer,
-	vaultClient vault.Client, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ChangeFilesFn {
+	vaultClient secreturl.Client, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ChangeFilesFn {
 	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 		if version == "" && kind == string(versionstream.KindChart) {
 			parts := strings.Split(name, "/")

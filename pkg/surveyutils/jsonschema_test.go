@@ -8,11 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/vault/fake"
-
-	"github.com/jenkins-x/jx/pkg/vault"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
@@ -986,7 +985,7 @@ func TestJSONPointer(t *testing.T) {
 }
 
 func GenerateValuesAsYaml(r *tests.R, schemaName string, existingValues map[string]interface{}, askExisting bool, noAsk bool, autoAcceptDefaults bool, ignoreMissingValues bool, answerQuestions func(
-	console *tests.ConsoleWrapper, donec chan struct{}), vaultClient vault.Client) (string, vault.Client, error) {
+	console *tests.ConsoleWrapper, donec chan struct{}), vaultClient secreturl.Client) (string, secreturl.Client, error) {
 
 	//t.Parallel()
 	console := tests.NewTerminal(r, &timeout)

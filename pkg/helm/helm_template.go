@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -751,7 +752,7 @@ func isWhitespaceOrComments(data []byte) bool {
 	return true
 }
 
-func writeObjectInFile(buf *bytes.Buffer, baseDir string, relativePath, namespace string, fileName string, count int) (string, error) {
+func writeObjectInFile(buf io.WriterTo, baseDir string, relativePath, namespace string, fileName string, count int) (string, error) {
 	relativeDir := filepath.Dir(relativePath)
 
 	const filePrefix = "part"
