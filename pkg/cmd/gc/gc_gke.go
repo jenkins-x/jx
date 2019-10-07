@@ -3,7 +3,6 @@ package gc
 import (
 	"strings"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -28,7 +27,6 @@ type GCGKEOptions struct {
 	*opts.CommonOptions
 	Flags                GCGKEFlags
 	RevisionHistoryLimit int
-	jclient              gojenkins.JenkinsClient
 }
 
 // GCGKEFlags contains the flags for the command

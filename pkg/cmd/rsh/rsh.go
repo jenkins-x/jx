@@ -36,8 +36,6 @@ type RshOptions struct {
 	DevPod      bool
 	Username    string
 	Environment string
-
-	stopCh chan struct{}
 }
 
 var (

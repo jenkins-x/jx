@@ -38,8 +38,6 @@ type SyncOptions struct {
 	RemoteDir string
 	Reload    bool
 	WatchOnly bool
-
-	stopCh chan struct{}
 }
 
 var (

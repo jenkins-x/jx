@@ -126,32 +126,30 @@ type CommonOptions struct {
 	Verbose                bool
 	NotifyCallback         func(LogLevel, string)
 
-	apiExtensionsClient    apiextensionsclientset.Interface
-	certManagerClient      certmngclient.Interface
-	complianceClient       *client.SonobuoyClient
-	currentNamespace       string
-	devNamespace           string
-	environmentsDir        string
-	factory                clients.Factory
-	fakeGitProvider        *gits.FakeProvider
-	git                    gits.Gitter
-	helm                   helm.Helmer
-	jenkinsClient          gojenkins.JenkinsClient
-	jxClient               versioned.Interface
-	gcloudClient           gke.GClouder
-	knbClient              buildclient.Interface
-	kserveClient           kserve.Interface
-	kubeClient             kubernetes.Interface
-	kuber                  kube.Kuber
-	modifyDevEnvironmentFn ModifyDevEnvironmentFn
-	modifyEnvironmentFn    ModifyEnvironmentFn
-	resourcesInstaller     resources.Installer
-	systemVaultClient      vault.Client
-	tektonClient           tektonclient.Interface
-	vaultClient            vault.Client
-	secretURLClient        secreturl.Client
-	vaultOperatorClient    vaultoperatorclient.Interface
-	versionResolver        *versionstream.VersionResolver
+	apiExtensionsClient apiextensionsclientset.Interface
+	certManagerClient   certmngclient.Interface
+	complianceClient    *client.SonobuoyClient
+	currentNamespace    string
+	devNamespace        string
+	environmentsDir     string
+	factory             clients.Factory
+	fakeGitProvider     *gits.FakeProvider
+	git                 gits.Gitter
+	helm                helm.Helmer
+	jenkinsClient       gojenkins.JenkinsClient
+	jxClient            versioned.Interface
+	gcloudClient        gke.GClouder
+	knbClient           buildclient.Interface
+	kserveClient        kserve.Interface
+	kubeClient          kubernetes.Interface
+	kuber               kube.Kuber
+	resourcesInstaller  resources.Installer
+	systemVaultClient   vault.Client
+	tektonClient        tektonclient.Interface
+	vaultClient         vault.Client
+	secretURLClient     secreturl.Client
+	vaultOperatorClient vaultoperatorclient.Interface
+	versionResolver     *versionstream.VersionResolver
 }
 
 type ServerFlags struct {

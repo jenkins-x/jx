@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util/trace"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -26,7 +25,6 @@ type factory struct {
 	kubeConfig      kube.Kuber
 	impersonateUser string
 	bearerToken     string
-	secretLocation  secrets.SecretLocation
 	kubeConfigCache *string
 }
 
