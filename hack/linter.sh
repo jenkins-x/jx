@@ -25,6 +25,8 @@ golangci-lint run \
     -E gofmt \
     -E goimports \
     -E structcheck \
+    -E interfacer \
+    -E typecheck \
     --skip-dirs vendor \
     --deadline 15m0s \
     --verbose 
@@ -32,11 +34,9 @@ golangci-lint run \
 # -E errcheck \
 # -E varcheck \
 # -E govet \
-# -E interfacer \
 # -E unparam \
 # -E megacheck \
 # -E goconst \
-# -E typecheck \
 # -E ineffassign \
 # -E golint
 # -E unparam

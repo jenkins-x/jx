@@ -219,7 +219,7 @@ func GetRepoName(batchMode, allowExistingRepo bool, provider GitProvider, defaul
 	return repoName, nil
 }
 
-func GetOwner(batchMode bool, provider GitProvider, gitUsername string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func GetOwner(batchMode bool, provider OrganisationLister, gitUsername string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
 	owner := ""
 	if batchMode {
 		owner = gitUsername

@@ -765,7 +765,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 }
 
 // ListSelectedPipelineActivities retrieves the PipelineActivities instances matching the specified label and field selectors. Selectors can be empty or nil.
-func ListSelectedPipelineActivities(activitiesClient typev1.PipelineActivityInterface, labelSelector labels.Selector, fieldSelector fields.Selector) (*v1.PipelineActivityList, error) {
+func ListSelectedPipelineActivities(activitiesClient typev1.PipelineActivityInterface, labelSelector fmt.Stringer, fieldSelector fields.Selector) (*v1.PipelineActivityList, error) {
 	log.Logger().Debugf("looking for PipelineActivities with label selector %v and field selector %v", labelSelector, fieldSelector)
 
 	listOptions := metav1.ListOptions{}

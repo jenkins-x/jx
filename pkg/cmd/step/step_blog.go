@@ -468,7 +468,7 @@ func (o *StepBlogOptions) createNewCommitters() string {
 	return buffer.String()
 }
 
-func (o *StepBlogOptions) printUserMap(out *bufio.Writer, role string, newUsers map[string]*v1.UserDetails) {
+func (o *StepBlogOptions) printUserMap(out io.StringWriter, role string, newUsers map[string]*v1.UserDetails) {
 	if len(newUsers) > 0 {
 		out.WriteString(`
 

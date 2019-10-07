@@ -125,7 +125,7 @@ func namespace(o *NamespaceOptions) string {
 	return ns
 }
 
-func changeNamespace(client kubernetes.Interface, config *api.Config, pathOptions *clientcmd.PathOptions, ns string, create bool) (*api.Context, error) {
+func changeNamespace(client kubernetes.Interface, config *api.Config, pathOptions clientcmd.ConfigAccess, ns string, create bool) (*api.Context, error) {
 	_, err := client.CoreV1().Namespaces().Get(ns, meta_v1.GetOptions{})
 	if err != nil {
 		switch err.(type) {
