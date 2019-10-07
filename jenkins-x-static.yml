@@ -83,7 +83,7 @@ pipelineConfig:
                   secret:
                     secretName: bdd-secret
                     items:
-                      - key: bdd-credentials
+                      - key: bdd-credentials.json
                         path: bdd/sa.json
               containerOptions:
                 volumeMounts:
