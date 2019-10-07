@@ -23,6 +23,7 @@ golangci-lint run \
     -E unconvert \
     -E gosec \
     -E gofmt \
+    -E goimports \
     --skip-dirs vendor \
     --deadline 15m0s \
     --verbose 
@@ -37,7 +38,6 @@ golangci-lint run \
 # -E goconst \
 # -E typecheck \
 # -E ineffassign \
-# -E goimports \
 # -E golint
 # -E unparam
 # -E gocritic
