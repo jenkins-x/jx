@@ -2,8 +2,9 @@ package edit
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/auth"

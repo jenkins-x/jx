@@ -3,9 +3,10 @@
 package get_test
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/cmd/get"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"

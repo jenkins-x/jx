@@ -2,9 +2,10 @@
 package matchers
 
 import (
+	"reflect"
+
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	"github.com/petergtz/pegomock"
-	"reflect"
 )
 
 func AnyPtrToGitsGitFileContent() *gits.GitFileContent {

@@ -1,12 +1,13 @@
 package kube
 
 import (
+	"testing"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"testing"
 
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )

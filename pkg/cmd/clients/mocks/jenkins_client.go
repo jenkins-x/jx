@@ -4,13 +4,14 @@
 package clients_test
 
 import (
-	golang_jenkins "github.com/jenkins-x/golang-jenkins"
-	pegomock "github.com/petergtz/pegomock"
 	io "io"
 	http "net/http"
 	url "net/url"
 	"reflect"
 	"time"
+
+	golang_jenkins "github.com/jenkins-x/golang-jenkins"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockJenkinsClient struct {

@@ -3,14 +3,15 @@ package upgrade
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 

@@ -4,13 +4,14 @@
 package gits_test
 
 import (
+	io "io"
+	"reflect"
+	"time"
+
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	pegomock "github.com/petergtz/pegomock"
 	config "gopkg.in/src-d/go-git.v4/config"
-	io "io"
-	"reflect"
-	"time"
 )
 
 type MockGitter struct {

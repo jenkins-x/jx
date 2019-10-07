@@ -1,11 +1,12 @@
 package importcmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/prow"

@@ -2,8 +2,9 @@ package metapipeline
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"

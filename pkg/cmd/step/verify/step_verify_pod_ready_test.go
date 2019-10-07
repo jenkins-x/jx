@@ -1,11 +1,12 @@
 package verify_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step/verify"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step/verify"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"

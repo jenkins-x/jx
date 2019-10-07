@@ -2,10 +2,11 @@ package jxfactory
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util/trace"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/util/trace"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/io/secrets"

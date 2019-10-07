@@ -1,8 +1,9 @@
 package opts_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"

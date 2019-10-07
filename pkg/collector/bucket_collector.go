@@ -2,12 +2,13 @@ package collector
 
 import (
 	"context"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"gocloud.dev/blob"
 	"io/ioutil"
 	"path/filepath"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"gocloud.dev/blob"
 )
 
 // BucketCollector stores the state for the git collector

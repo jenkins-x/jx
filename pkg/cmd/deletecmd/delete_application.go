@@ -2,10 +2,11 @@ package deletecmd
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/fields"
 	"os/user"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/fields"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"

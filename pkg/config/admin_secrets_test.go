@@ -1,9 +1,10 @@
 package config_test
 
 import (
-	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"testing"
+
+	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/tests"

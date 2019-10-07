@@ -3,12 +3,13 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"net/http"
+	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
-	"testing"
 )
 
 var (

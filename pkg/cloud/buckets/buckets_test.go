@@ -1,11 +1,12 @@
 package buckets_test
 
 import (
+	"net/url"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/url"
-	"testing"
 )
 
 func TestSplitBucketURL(t *testing.T) {

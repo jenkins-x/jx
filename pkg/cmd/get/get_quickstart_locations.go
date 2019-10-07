@@ -1,8 +1,9 @@
 package get
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"

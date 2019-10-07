@@ -2,8 +2,9 @@ package iks
 
 import (
 	"fmt"
-	"github.com/IBM-Cloud/bluemix-go/client"
 	"strings"
+
+	"github.com/IBM-Cloud/bluemix-go/client"
 )
 
 type MachineType struct {

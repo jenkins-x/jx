@@ -2,10 +2,11 @@ package util
 
 import (
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"time"
 	"unicode"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EncodeKubernetesName takes a string and turns it into a form suitable for use as a Kubernetes name.

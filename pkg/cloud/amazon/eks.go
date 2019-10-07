@@ -2,10 +2,11 @@ package amazon
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"os/exec"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
 // EksClusterExists checks if EKS cluster with given name exists in given region.

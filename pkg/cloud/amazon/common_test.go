@@ -1,13 +1,14 @@
 package amazon_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/stretchr/testify/assert"
 )
 
 func switchHome() (string, error) {

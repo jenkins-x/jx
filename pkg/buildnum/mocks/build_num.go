@@ -4,10 +4,11 @@
 package buildnum_test
 
 import (
-	kube "github.com/jenkins-x/jx/pkg/kube"
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	kube "github.com/jenkins-x/jx/pkg/kube"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockBuildNumberIssuer struct {

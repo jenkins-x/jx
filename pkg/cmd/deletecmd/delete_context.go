@@ -2,9 +2,10 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	survey "gopkg.in/AlecAivazis/survey.v1"

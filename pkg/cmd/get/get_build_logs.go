@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"

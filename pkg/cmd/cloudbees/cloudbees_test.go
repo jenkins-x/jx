@@ -1,6 +1,9 @@
 package cloudbees
 
 import (
+	"testing"
+	"time"
+
 	"github.com/Netflix/go-expect"
 	"github.com/acarl005/stripansi"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -15,8 +18,6 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"testing"
-	"time"
 )
 
 func TestShowErrorMessageIfIngressFound(t *testing.T) {

@@ -1,6 +1,10 @@
 package metapipeline
 
 import (
+	"os"
+	"path/filepath"
+	"testing"
+
 	jxv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -9,9 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	"path/filepath"
-	"testing"
 )
 
 type testTypeAndPullRef struct {

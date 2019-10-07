@@ -2,6 +2,10 @@ package upgrade
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -15,9 +19,6 @@ import (
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 // UpgradeBootOptions options for the command

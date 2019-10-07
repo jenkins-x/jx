@@ -2,10 +2,11 @@ package health
 
 import (
 	"encoding/json"
+	"testing"
+
 	kh "github.com/Comcast/kuberhealthy/pkg/health"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestCheckHealth(t *testing.T) {

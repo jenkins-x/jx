@@ -2,20 +2,21 @@ package deletecmd_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
+	"testing"
+
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	clients_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/petergtz/pegomock"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
-	"testing"
 )
 
 func TestDeleteApplicationInJenkins(t *testing.T) {

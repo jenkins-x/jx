@@ -3,10 +3,11 @@ package oke
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	"os/exec"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 func GetOptionValues() ([]string, []string, []string, string, error) {

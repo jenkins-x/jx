@@ -3,19 +3,20 @@ package report
 import (
 	"encoding/xml"
 	"errors"
-	"github.com/acarl005/stripansi"
-	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	log2 "github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/reportingtools/mocks"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/petergtz/pegomock"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/acarl005/stripansi"
+	"github.com/google/uuid"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	log2 "github.com/jenkins-x/jx/pkg/log"
+	reportingtools_test "github.com/jenkins-x/jx/pkg/reportingtools/mocks"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/petergtz/pegomock"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReportFromSingleFile(t *testing.T) {

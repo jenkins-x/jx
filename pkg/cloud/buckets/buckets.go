@@ -3,15 +3,16 @@ package buckets
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/url"
+	"strings"
+	"time"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gocloud.dev/blob"
-	"io/ioutil"
-	"net/url"
-	"strings"
-	"time"
 )
 
 // CreateBucketURL creates a go-cloud URL to a bucket

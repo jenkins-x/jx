@@ -2,10 +2,11 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	config2 "github.com/jenkins-x/jx/pkg/config"
 	"strconv"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
+	config2 "github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 

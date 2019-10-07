@@ -2,6 +2,7 @@ package gitresolver
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/util"

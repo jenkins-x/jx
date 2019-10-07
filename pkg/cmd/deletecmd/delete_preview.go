@@ -2,8 +2,9 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/preview"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/preview"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/promote"

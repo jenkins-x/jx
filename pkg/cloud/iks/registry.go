@@ -4,10 +4,11 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	gohttp "net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	ibmcloud "github.com/IBM-Cloud/bluemix-go"
 	"github.com/IBM-Cloud/bluemix-go/authentication"
