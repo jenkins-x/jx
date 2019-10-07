@@ -306,6 +306,9 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 	data *GitPullRequestArguments,
 ) (*GitPullRequest, error) {
 
+	if data.GitRepository.Organisation == "" {
+		data.GitRepository.Organisation = b.Username
+	}
 	head := bitbucket.PullrequestEndpointBranch{Name: data.Head}
 	sourceFullName := fmt.Sprintf("%s/%s", data.GitRepository.Organisation, data.GitRepository.Name)
 	sourceRepo := bitbucket.Repository{FullName: sourceFullName}
@@ -594,9 +597,25 @@ func (b *BitbucketCloudProvider) ListOpenPullRequests(owner string, repo string)
 	var results bitbucket.PaginatedPullrequests
 	var err error
 
+	if owner == "" {
+		owner = b.Username
+	}
+	repoResource, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
+		b.Context,
+		owner,
+		repo,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find repository %s/%s", owner, repo)
+	}
+
+	repoSlug := repoResource.Uuid
+	if repoSlug == "" {
+		return nil, fmt.Errorf("failed to find slug for repository %s/%s", owner, repo)
+	}
 	for {
 		if results.Next == "" {
-			results, _, err = b.Client.PullrequestsApi.PullrequestsTargetUserGet(b.Context, "", owner, nil)
+			results, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsGet(b.Context, owner, repoSlug, nil)
 		} else {
 			results, _, err = b.Client.PagingApi.PullrequestsPageGet(b.Context, results.Next)
 		}
@@ -606,7 +625,9 @@ func (b *BitbucketCloudProvider) ListOpenPullRequests(owner string, repo string)
 		}
 
 		for _, pr := range results.Values {
-			answer = append(answer, b.toPullRequest(pr, int(pr.Id)))
+			if pr.Author != nil && pr.Author.Username == b.Username {
+				answer = append(answer, b.toPullRequest(pr, int(pr.Id)))
+			}
 		}
 
 		if results.Next == "" {
@@ -962,6 +983,9 @@ func (b *BitbucketCloudProvider) UserAuth() auth.UserAuth {
 
 // UserInfo returns the user info
 func (b *BitbucketCloudProvider) UserInfo(username string) *GitUser {
+	if username == "" {
+		username = b.Username
+	}
 	user, _, err := b.Client.UsersApi.UsersUsernameGet(b.Context, username)
 	if err != nil {
 		log.Logger().Error("Unable to fetch user info for " + username + " due to " + err.Error())
