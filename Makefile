@@ -247,7 +247,7 @@ release-distro:
 clean: ## Clean the generated artifacts
 	rm -rf build release dist
 
-.PHONY: clean
+.PHONY: fmt
 fmt: ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
 	@if [ "$(FORMATTED)" == "" ]; \
