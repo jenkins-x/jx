@@ -11,8 +11,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
-	"github.com/jenkins-x/jx/pkg/boot"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -25,6 +23,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+)
+
+const (
+	jxInterpretPipelineEnvKey = "JX_INTERPRET_PIPELINE"
+	configRepoURLEnvKey       = "REPO_URL"
+	configRepoRefEnvKey       = "BASE_CONFIG_REF"
 )
 
 // StepVerifyEnvironmentsOptions contains the command line flags
@@ -79,7 +83,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		env := envMap[name]
 		gitURL := env.Spec.Source.URL
 		if gitURL != "" && (env.Spec.Kind == v1.EnvironmentKindTypePermanent || (env.Spec.Kind == v1.EnvironmentKindTypeDevelopment && requirements.GitOps)) {
-			log.Logger().Infof("validating git repository for %s at URL %s\n", info(name), info(gitURL))
+			log.Logger().Infof("validating git repository for %s environment at URL %s\n", info(name), info(gitURL))
 
 			err = o.validateGitRepository(name, requirements, env, gitURL)
 			if err != nil {
@@ -117,101 +121,40 @@ func (o *StepVerifyEnvironmentsOptions) storeRequirementsInTeamSettings(requirem
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, privateRepo bool, user *auth.UserAuth, requirements *config.RequirementsConfig, server *auth.AuthServer, createPr bool) error {
-	fromGitURL := os.Getenv("REPO_URL")
-	gitRef := os.Getenv("BASE_CONFIG_REF")
-
-	log.Logger().Debugf("Defined REPO_URL env variable value: %s", fromGitURL)
-	log.Logger().Debugf("Defined BASE_CONFIG_REF env variable value: %s", gitRef)
-
-	gitInfo, err := gits.ParseGitURL(fromGitURL)
-	if err != nil {
-		return errors.Wrapf(err, "parsing %s", fromGitURL)
-	}
-
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return errors.Wrapf(err, "getting server kind for %s", fromGitURL)
-	}
-	provider, err := gitInfo.CreateProviderForUser(server, user, gitKind, o.Git())
-	if err != nil {
-		return errors.Wrapf(err, "getting git provider for %s", fromGitURL)
-	}
-	dir, err := filepath.Abs(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "resolving %s to absolute path", o.Dir)
-	}
-
-	if fromGitURL == config.DefaultBootRepository && gitRef == "master" {
-		// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
-		resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
-		if err != nil {
-			return errors.Wrapf(err, "failed to create version resolver")
-		}
-		gitRef, err = resolver.ResolveGitVersion(fromGitURL)
-		if err != nil {
-			return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
-		}
-		if gitRef == "" {
-			log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
-			gitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
-			if err != nil {
-				return errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
-			}
-		}
-	}
-
-	commitish, err := gits.FindTagForVersion(dir, gitRef, o.Git())
-	if err != nil {
-		log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", gitRef).Error())
-		commitish = fmt.Sprintf("%s/%s", "origin", gitRef)
-		log.Logger().Debugf("set commitish to '%s'", commitish)
-	}
-
-	// Duplicate the repo
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(environmentsOrg, gitRepoName, fromGitURL, commitish, "master", privateRepo, provider, o.Git())
-	if err != nil {
-		return errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, environmentsOrg, gitRepoName)
-	}
-
-	if createPr {
-		_, baseRef, upstreamInfo, forkInfo, err := gits.ForkAndPullRepo(duplicateInfo.CloneURL, dir, "master", "master", provider, o.Git(), gitRepoName)
-		if err != nil {
-			return errors.Wrapf(err, "forking and pulling %s", duplicateInfo.CloneURL)
-		}
-
-		err = modifyPipelineGitEnvVars(dir)
-		if err != nil {
-			return errors.Wrap(err, "failed to modify dev environment config")
-		}
-
-		// Add a remote for the user that references the boot config that they originally used
-		err = o.Git().SetRemoteURL(dir, "jenkins-x", fromGitURL)
-		if err != nil {
-			return errors.Wrapf(err, "Setting jenkins-x remote to boot config %s", fromGitURL)
-		}
-
-		details := gits.PullRequestDetails{
-			BranchName: fmt.Sprintf("update-boot-config"),
-			Title:      "chore(config): update configuration",
-			Message:    "chore(config): update configuration",
-		}
-
-		filter := gits.PullRequestFilter{
-			Labels: []string{
-				boot.PullRequestLabel,
-			},
-		}
-
-		_, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, baseRef, &details, &filter, true, "chore(config): update configuration", true, false, o.Git(), provider, []string{boot.PullRequestLabel})
-		if err != nil {
-			return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", baseRef, details.BranchName)
-		}
-	}
-	return nil
+// isJXBoot returns true if this code is executed as part of jx boot, false otherwise.
+func (o *StepVerifyEnvironmentsOptions) isJXBoot() bool {
+	// sort of a hack to determine that `jx boot` is executed opposed to running as a pipeline build
+	// see step_create_task where JX_INTERPRET_PIPELINE is set when the pipeline is executed in interpret mode
+	// which in turn is set by `jx boot` (HF)
+	return os.Getenv(jxInterpretPipelineEnvKey) == "true"
 }
 
-func modifyPipelineGitEnvVars(dir string) error {
+// readEnvironment returns the repository URL as well as the git ref for original boot config repo.
+// An error is returned in case any of the require environment variables needed to setup the environment repository
+// is missing.
+func (o *StepVerifyEnvironmentsOptions) readEnvironment() (string, string, error) {
+	var missingRepoURLErr, missingReoRefErr error
+
+	fromGitURL, foundURL := os.LookupEnv(configRepoURLEnvKey)
+	if !foundURL {
+		missingRepoURLErr = errors.Errorf("the environment variable %s must be specified", configRepoURLEnvKey)
+	}
+	gitRef, foundRef := os.LookupEnv(configRepoRefEnvKey)
+	if !foundRef {
+		missingReoRefErr = errors.Errorf("the environment variable %s must be specified", configRepoRefEnvKey)
+	}
+
+	err := util.CombineErrors(missingRepoURLErr, missingReoRefErr)
+
+	if err == nil {
+		log.Logger().Debugf("Defined %s env variable value: %s", configRepoURLEnvKey, fromGitURL)
+		log.Logger().Debugf("Defined %s env variable value: %s", configRepoRefEnvKey, gitRef)
+	}
+
+	return fromGitURL, gitRef, err
+}
+
+func (o *StepVerifyEnvironmentsOptions) modifyPipelineGitEnvVars(dir string) error {
 	parameterValues, err := helm.LoadParametersValuesFile(dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load parameters values file")
@@ -228,14 +171,14 @@ func modifyPipelineGitEnvVars(dir string) error {
 
 		envVars := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
 
-		if !envVarsHasEntry(envVars, "GIT_AUTHOR_NAME") {
+		if !o.envVarsHasEntry(envVars, "GIT_AUTHOR_NAME") {
 			envVars = append(envVars, corev1.EnvVar{
 				Name:  "GIT_AUTHOR_NAME",
 				Value: username,
 			})
 		}
 
-		if !envVarsHasEntry(envVars, "GIT_AUTHOR_EMAIL") {
+		if !o.envVarsHasEntry(envVars, "GIT_AUTHOR_EMAIL") {
 			envVars = append(envVars, corev1.EnvVar{
 				Name:  "GIT_AUTHOR_EMAIL",
 				Value: email,
@@ -261,19 +204,18 @@ func modifyPipelineGitEnvVars(dir string) error {
 	return nil
 }
 
-func envVarsHasEntry(envVars []corev1.EnvVar, key string) bool {
+func (o *StepVerifyEnvironmentsOptions) envVarsHasEntry(envVars []corev1.EnvVar, key string) bool {
 	for _, entry := range envVars {
 		if entry.Name == key {
 			return true
 		}
 	}
 	return false
-
 }
 
 func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requirements *config.RequirementsConfig, environment *v1.Environment, gitURL string) error {
 	message := fmt.Sprintf("for environment %s", environment.Name)
-	gitInfo, err := gits.ParseGitURL(gitURL)
+	envGitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s and %s", gitURL, message)
 	}
@@ -281,23 +223,23 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requi
 	if err != nil {
 		return err
 	}
-	return o.createEnvGitRepository(name, requirements, authConfigSvc, environment, gitURL, gitInfo)
+	return o.createEnvironmentRepository(name, requirements, authConfigSvc, environment, gitURL, envGitInfo)
 }
 
-func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requirements *config.RequirementsConfig, authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, gitInfo *gits.GitRepository) error {
-	log.Logger().Infof("creating environment %s git repository for URL: %s to namespace %s\n", util.ColorInfo(environment.Name), util.ColorInfo(gitURL), util.ColorInfo(environment.Spec.Namespace))
+func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string, requirements *config.RequirementsConfig, authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, envGitInfo *gits.GitRepository) error {
+	log.Logger().Infof("creating git repository for environment %s with URL %s to namespace %s\n", util.ColorInfo(environment.Name), util.ColorInfo(gitURL), util.ColorInfo(environment.Spec.Namespace))
 
 	envDir, err := ioutil.TempDir("", "jx-env-repo-")
 	if err != nil {
 		return err
 	}
 
-	// TODO
+	// TODO - this is hard coded to GitHub and needs to be extended to support other git providers (HF)
 	gitKind := gits.KindGitHub
-	publicRepo := requirements.Cluster.EnvironmentGitPublic
+	public := requirements.Cluster.EnvironmentGitPublic
 	prefix := ""
 
-	gitServerURL := gitInfo.HostURL()
+	gitServerURL := envGitInfo.HostURL()
 	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
 	helmValues, err := o.createEnvironmentHelmValues(requirements, environment)
 	if err != nil {
@@ -316,12 +258,17 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 		return errors.Wrapf(err, "validating user '%s' of server '%s'", userAuth.Username, server.Name)
 	}
 
+	gitter := o.Git()
+
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
 		if requirements.GitOps {
-			createPr := os.Getenv("JX_INTERPRET_PIPELINE") == "true"
-			err := o.prDevEnvironment(gitInfo.Name, gitInfo.Organisation, !publicRepo, userAuth, requirements, server, createPr)
+			provider, err := envGitInfo.CreateProviderForUser(server, userAuth, gitKind, gitter)
 			if err != nil {
-				return errors.Wrapf(err, "creating dev environment for %s", gitInfo.Name)
+				return errors.Wrap(err, "unable to create git provider")
+			}
+			err = o.createDevEnvironmentRepository(envGitInfo, public, provider, gitter, requirements)
+			if err != nil {
+				return err
 			}
 		}
 	} else {
@@ -330,17 +277,111 @@ func (o *StepVerifyEnvironmentsOptions) createEnvGitRepository(name string, requ
 			ServerKind:               gitKind,
 			Username:                 userAuth.Username,
 			ApiToken:                 userAuth.Password,
-			Owner:                    gitInfo.Organisation,
-			RepoName:                 gitInfo.Name,
-			Public:                   publicRepo,
+			Owner:                    envGitInfo.Organisation,
+			RepoName:                 envGitInfo.Name,
+			Public:                   public,
 			IgnoreExistingRepository: true,
 		}
 
-		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
+		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, gitter, o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create git repository for gitURL %s", gitURL)
 		}
 	}
+	return nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(envGitInfo *gits.GitRepository, public bool, provider gits.GitProvider, gitter gits.Gitter, requirements *config.RequirementsConfig) error {
+	fromGitURL, fromBaseRef, err := o.readEnvironment()
+	if err != nil {
+		return err
+	}
+
+	dir, err := filepath.Abs(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "resolving %s to absolute path", o.Dir)
+	}
+
+	environmentRepo, err := o.createDevEnvironmentRemote(envGitInfo, dir, fromGitURL, fromBaseRef, !public, requirements, provider, gitter)
+	if err != nil {
+		return errors.Wrapf(err, "creating remote for dev environment %s", envGitInfo.Name)
+	}
+
+	if o.isJXBoot() {
+		err = o.pushDevEnvironmentUpdates(environmentRepo, dir, provider, gitter)
+		if err != nil {
+			return errors.Wrapf(err, "error updating dev environment for %s", envGitInfo.Name)
+		}
+
+		// Add a remote for the user that references the boot config that they originally used
+		err = gitter.SetRemoteURL(dir, "jenkins-x", fromGitURL)
+		if err != nil {
+			return errors.Wrapf(err, "setting jenkins-x remote to boot config %s", fromGitURL)
+		}
+	}
+	return nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRemote(gitInfo *gits.GitRepository, localRepoDir string, fromGitURL string, fromGitRef string, privateRepo bool, requirements *config.RequirementsConfig, provider gits.GitProvider, gitter gits.Gitter) (*gits.GitRepository, error) {
+	if fromGitURL == config.DefaultBootRepository && fromGitRef == "master" {
+		// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
+		resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to create version resolver")
+		}
+		fromGitRef, err = resolver.ResolveGitVersion(fromGitURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+		}
+		if fromGitRef == "" {
+			log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
+			fromGitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to resolve version for https://github.com/jenkins-x/jenkins-x-boot-config.git")
+			}
+		}
+	}
+
+	commitish, err := gits.FindTagForVersion(localRepoDir, fromGitRef, gitter)
+	if err != nil {
+		log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", fromGitRef).Error())
+		commitish = fmt.Sprintf("%s/%s", "origin", fromGitRef)
+		log.Logger().Debugf("set commitish to '%s'", commitish)
+	}
+
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(gitInfo.Organisation, gitInfo.Name, fromGitURL, commitish, "master", privateRepo, provider, gitter)
+	if err != nil {
+		return nil, errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, gitInfo.Organisation, gitInfo.Name)
+	}
+	return duplicateInfo, nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) pushDevEnvironmentUpdates(environmentRepo *gits.GitRepository, localRepoDir string, provider gits.GitProvider, gitter gits.Gitter) error {
+	_, _, _, _, err := gits.ForkAndPullRepo(environmentRepo.CloneURL, localRepoDir, "master", "master", provider, gitter, environmentRepo.Name)
+	if err != nil {
+		return errors.Wrapf(err, "forking and pulling %s", environmentRepo.CloneURL)
+	}
+
+	err = o.modifyPipelineGitEnvVars(localRepoDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to modify dev environment config")
+	}
+
+	err = gitter.AddCommit(localRepoDir, "chore(config): update configuration")
+	if err != nil {
+		return errors.Wrapf(err, "unable to commit changes to environment repo in %s", localRepoDir)
+	}
+
+	userDetails := provider.UserAuth()
+	authenticatedPushURL, err := gitter.CreateAuthenticatedURL(environmentRepo.CloneURL, &userDetails)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create push URL for %s", environmentRepo.CloneURL)
+	}
+	err = gitter.Push(localRepoDir, authenticatedPushURL, true, false, "master")
+	if err != nil {
+		return errors.Wrapf(err, "unable to push %s to %s", localRepoDir, environmentRepo.URL)
+	}
+
 	return nil
 }
 
