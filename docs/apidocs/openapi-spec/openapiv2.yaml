@@ -2406,6 +2406,10 @@ definitions:
         type: string
       askOnCreate:
         type: boolean
+      bootRequirements:
+        description: BootRequirements is a marshaled string of the jx-requirements.yaml
+          used in the most recent run for this cluster
+        type: string
       branchPatterns:
         type: string
       buildPackName:

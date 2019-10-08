@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
@@ -472,6 +473,32 @@ func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
 	}
 	config.addDefaults()
 	config.handleDeprecation()
+	return config, nil
+}
+
+// GetRequirementsConfigFromTeamSettings reads the BootRequirements string from TeamSettings and unmarshals it
+func GetRequirementsConfigFromTeamSettings(settings *v1.TeamSettings) (*RequirementsConfig, error) {
+	if settings == nil {
+		return nil, nil
+	}
+	// TeamSettings does not have a real value for BootRequirements, so this is probably not a boot cluster.
+	if settings.BootRequirements == "" {
+		return nil, nil
+	}
+
+	config := &RequirementsConfig{}
+	data := []byte(settings.BootRequirements)
+	validationErrors, err := util.ValidateYaml(config, data)
+	if err != nil {
+		return config, fmt.Errorf("failed to validate requirements from team settings due to %s", err)
+	}
+	if len(validationErrors) > 0 {
+		return config, fmt.Errorf("validation failures in requirements from team settings:\n%s", strings.Join(validationErrors, "\n"))
+	}
+	err = yaml.Unmarshal(data, config)
+	if err != nil {
+		return config, fmt.Errorf("failed to unmarshal requirements from team settings due to %s", err)
+	}
 	return config, nil
 }
 

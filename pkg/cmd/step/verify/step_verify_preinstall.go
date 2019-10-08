@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -238,7 +239,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
-	err = o.VerifyRequirementsConfigMap(kubeClient, ns, requirements)
+	err = o.VerifyRequirementsInTeamSettings(ns, requirements)
 	if err != nil {
 		return err
 	}
@@ -452,20 +453,21 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 	return nil
 }
 
-// VerifyRequirementsConfigMap saves the current requirements.yaml state in a ConfigMap so we can use it in places of the code where we can't read the requirements.yaml mfile
-func (o *StepVerifyPreInstallOptions) VerifyRequirementsConfigMap(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig) error {
-	log.Logger().Debugf("Verifying the Requirements ConfigMap...")
-	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameRequirementsYaml, func(configMap *corev1.ConfigMap) error {
-		log.Logger().Debugf("Updating the %s ConfigMap with: %+v", kube.ConfigMapNameRequirementsYaml, requirements)
+// VerifyRequirementsInTeamSettings saves the current requirements.yaml state in TeamSettings so we can use it in places of the code where we can't read the requirements.yaml mfile
+func (o *StepVerifyPreInstallOptions) VerifyRequirementsInTeamSettings(ns string, requirements *config.RequirementsConfig) error {
+	log.Logger().Debugf("Verifying the Requirements in TeamSettings...")
+
+	err := o.ModifyDevEnvironment(func(env *v1.Environment) error {
+		log.Logger().Debugf("Updating the TeamSettings with: %+v", requirements)
 		reqBytes, err := yaml.Marshal(requirements)
 		if err != nil {
-			return errors.Wrap(err, "there was a problem marshalling the requirements file to include it in the ConfigMap")
+			return errors.Wrap(err, "there was a problem marshalling the requirements file to include it in the TeamSettings")
 		}
-		modifyMapIfNotBlank(configMap.Data, "requirementsFile", string(reqBytes))
+		env.Spec.TeamSettings.BootRequirements = string(reqBytes)
 		return nil
-	}, nil)
+	})
 	if err != nil {
-		return errors.Wrapf(err, "there was a problem saving the current state of the requiremens.yaml file in ConfigMap %s in namespace %s", kube.ConfigMapNameRequirementsYaml, ns)
+		return errors.Wrapf(err, "there was a problem saving the current state of the requirements.yaml file in TeamSettings in namespace %s", ns)
 	}
 	return nil
 }

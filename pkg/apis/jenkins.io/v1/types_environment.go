@@ -236,6 +236,9 @@ type TeamSettings struct {
 
 	// Profile is the profile in use (see jx profile)
 	Profile string `json:"profile,omitempty" protobuf:"bytes,30,opt,name=profile"`
+
+	// BootRequirements is a marshaled string of the jx-requirements.yaml used in the most recent run for this cluster
+	BootRequirements string `json:"bootRequirements,omitempty" protobuf:"bytes,31,opt,name=bootRequirements"`
 }
 
 // StorageLocation
