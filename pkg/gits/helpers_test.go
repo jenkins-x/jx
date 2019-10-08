@@ -1365,7 +1365,7 @@ func runForkAndPullTestCase(t *testing.T, tt forkAndPullTest) {
 	tt.args.cleanFn(&tt.args)
 }
 
-func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
+func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	gitter := gits.NewGitCLI()
 	originalRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
 		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
