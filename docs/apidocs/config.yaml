@@ -68,3 +68,6 @@ resource_categories:
       - name: Fact
         version: v1
         group: jenkins_io
+      - name: Scheduler
+        version: v1
+        group: jenkins_io
