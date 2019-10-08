@@ -174,7 +174,7 @@ func (o *StepBootVaultOptions) Run() error {
 		}
 	}
 
-	tag, err := o.vaultOperatorImageTag()
+	tag, err := o.vaultOperatorImageTag(&requirements.VersionStream)
 	if err != nil {
 		return err
 	}
@@ -276,8 +276,8 @@ func (o *StepBootVaultOptions) verifyVaultIngress(requirements *config.Requireme
 }
 
 // vaultOperatorImageTag lookups the vault operator image tag in the version stream
-func (o *StepBootVaultOptions) vaultOperatorImageTag() (string, error) {
-	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
+func (o *StepBootVaultOptions) vaultOperatorImageTag(versionStream *config.VersionStreamConfig) (string, error) {
+	resolver, err := o.CreateVersionResolver(versionStream.URL, versionStream.Ref)
 	if err != nil {
 		return "", errors.Wrap(err, "creating the vault-operator docker image version resolver")
 	}
