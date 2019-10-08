@@ -38,14 +38,16 @@ import (
 // PullRequestOperation provides a way to execute a PullRequest operation using Git
 type PullRequestOperation struct {
 	*opts.CommonOptions
-	GitURLs    []string
-	SrcGitURL  string
-	Base       string
-	Component  string
-	BranchName string
-	Version    string
-	DryRun     bool
-	SkipCommit bool
+	GitURLs     []string
+	SrcGitURL   string
+	Base        string
+	Component   string
+	BranchName  string
+	Version     string
+	DryRun      bool
+	SkipCommit  bool
+	AuthorName  string
+	AuthorEmail string
 }
 
 // ChangeFilesFn is the function called to create the pull request
@@ -376,6 +378,9 @@ func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRe
 	}
 	message.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
 	commitMessage.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
+	if o.AuthorEmail != "" && o.AuthorName != "" {
+		commitMessage.WriteString(fmt.Sprintf("\n\nSigned-off-by: %s <%s>", o.AuthorName, o.AuthorEmail))
+	}
 	return commitMessage.String(), &gits.PullRequestDetails{
 		BranchName: fmt.Sprintf("bump-%s-version-%s", kind, string(uuid.NewUUID())),
 		Title:      title.String(),

@@ -133,6 +133,11 @@ func (o *StepCreatePullRequestQuickStartsOptions) Run() error {
 			DryRun:        o.DryRun,
 		}
 
+		authorName, authorEmail, err := gits.EnsureUserAndEmailSetup(o.Git())
+		if err != nil {
+			pro.AuthorName = authorName
+			pro.AuthorEmail = authorEmail
+		}
 		callback := func(from *quickstarts.Quickstart, dir string, gitInfo *gits.GitRepository) ([]string, error) {
 			quickstarts, err := versionstream.GetQuickStarts(dir)
 			if err != nil {
