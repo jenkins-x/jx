@@ -145,9 +145,6 @@ func (o *BootOptions) Run() error {
 	}
 
 	requirements, requirementsFile, _ := config.LoadRequirementsConfig(o.Dir)
-	if requirements.BootConfigURL == "" {
-		requirements.BootConfigURL = gitURL
-	}
 
 	// lets report errors parsing this file after the check we are outside of a git clone
 	o.defaultVersionStream(requirements)
@@ -245,6 +242,10 @@ func (o *BootOptions) Run() error {
 		return errors.Wrap(err, "failed to load jx-requirements.yml file")
 	}
 	o.defaultVersionStream(requirements)
+
+	if requirements.BootConfigURL == "" {
+		requirements.BootConfigURL = gitURL
+	}
 
 	err = requirements.SaveConfig(requirementsFile)
 	if err != nil {
