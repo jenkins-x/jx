@@ -258,7 +258,13 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		} else {
 			log.Logger().Info("Running in cluster, not recreating permissions")
 		}
+	}
 
+	// Lets update the TeamSettings with the VersionStream data from the jx-requirements.yaml file so we make sure
+	// we are upgrading with the latest versions
+	err = o.updateVersionStreamRefInDevEnvironment(requirements)
+	if err != nil {
+		return errors.Wrap(err, "error updating the versions stream reference in the dev environment's TeamSettings")
 	}
 
 	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!", info("jx boot"))
@@ -891,6 +897,29 @@ func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.Require
 		if err != nil {
 			return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
 		}
+	}
+	return nil
+}
+
+// updateVersionStreamRefInDevEnvironment takes the current value of the VersionStream in jx-requirements.yaml and
+// updates it in the TeamSettings within the Dev Environment CRD
+func (o StepVerifyPreInstallOptions) updateVersionStreamRefInDevEnvironment(requirements *config.RequirementsConfig) error {
+	jxClient, ns, err := o.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "there was a problem obtaining the Jx client")
+	}
+	devEnv, err := jxClient.JenkinsV1().Environments(ns).Get("dev", metav1.GetOptions{})
+	if err != nil {
+		// otherwise, we probably haven't booted yet, so it's ok if we can't find it
+		log.Logger().Info("The Dev environment could not be updated with the most recent version stream")
+		return nil
+	}
+	devEnv.Spec.TeamSettings.VersionStreamURL = requirements.VersionStream.URL
+	devEnv.Spec.TeamSettings.VersionStreamRef = requirements.VersionStream.Ref
+
+	_, err = jxClient.JenkinsV1().Environments(ns).PatchUpdate(devEnv)
+	if err != nil {
+		return errors.Wrap(err, "there was a problem updating the Dev environment's Team Settings versions refs")
 	}
 	return nil
 }

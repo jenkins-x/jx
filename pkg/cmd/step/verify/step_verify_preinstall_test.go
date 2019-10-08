@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -309,4 +310,45 @@ func TestStepVerifyPreInstallOptions_VerifyRequirementsConfigMapWithModification
 
 	assert.Equal(t, requirements.Storage.Logs, mapRequirements.Storage.Logs, "the change done before calling"+
 		"VerifyRequirementsInTeamSettings should be present in the retrieved configuration")
+}
+
+func TestStepVerifyPreInstallOptions_UpdateVersionStreamRefInDevEnvironment(t *testing.T) {
+	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
+	options := &commonOpts
+	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
+
+	jxClient, ns, err := options.JXClient()
+	assert.NoError(t, err)
+
+	requirements := &config.RequirementsConfig{
+		VersionStream: config.VersionStreamConfig{
+			URL: "https://anotherUrl",
+			Ref: "0123456789",
+		},
+	}
+
+	previousDevEnv, err := jxClient.JenkinsV1().Environments(ns).Get("dev", metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	assert.NotEqual(t, requirements.VersionStream.URL, previousDevEnv.Spec.TeamSettings.VersionStreamURL)
+	assert.NotEqual(t, requirements.VersionStream.Ref, previousDevEnv.Spec.TeamSettings.VersionStreamRef)
+
+	testOptions := &StepVerifyPreInstallOptions{
+		StepVerifyOptions: StepVerifyOptions{
+			StepOptions: step.StepOptions{
+				CommonOptions: options,
+			},
+		},
+	}
+
+	err = testOptions.updateVersionStreamRefInDevEnvironment(requirements)
+	assert.NoError(t, err, "there shouldn't be any error updating the dev env")
+
+	devEnv, err := jxClient.JenkinsV1().Environments(ns).Get("dev", metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	teamSettings := devEnv.Spec.TeamSettings
+
+	assert.Equal(t, requirements.VersionStream.URL, teamSettings.VersionStreamURL, "the versions stream URL should have been changed")
+	assert.Equal(t, requirements.VersionStream.Ref, teamSettings.VersionStreamRef, "the versions stream Ref should have been changed")
 }
