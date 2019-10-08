@@ -6240,6 +6240,13 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Format:      "",
 						},
 					},
+					"bootRequirements": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BootRequirements is a marshaled string of the jx-requirements.yaml used in the most recent run for this cluster",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

@@ -9,19 +9,17 @@ import (
 	"time"
 
 	"github.com/acarl005/stripansi"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/sanathkr/go-yaml"
 	"github.com/stretchr/testify/assert"
-	v12 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var timeout = 1 * time.Second
@@ -222,13 +220,10 @@ func Test_abort_private_repos_with_github_provider(t *testing.T) {
 	assert.Equal(t, "cannot continue without completed git requirements", err.Error())
 }
 
-func TestStepVerifyPreInstallOptions_VerifyRequirementsConfigMap(t *testing.T) {
+func TestStepVerifyPreInstallOptions_VerifyRequirementsInTeamSettings(t *testing.T) {
 	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
 	options := &commonOpts
 	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
-
-	kubeClient, err := options.KubeClient()
-	assert.NoError(t, err, "There shouldn't be any error getting the fake Kube Client")
 
 	testOptions := &StepVerifyPreInstallOptions{
 		StepVerifyOptions: StepVerifyOptions{
@@ -249,14 +244,16 @@ func TestStepVerifyPreInstallOptions_VerifyRequirementsConfigMap(t *testing.T) {
 	err = yaml.Unmarshal(bytes, requirements)
 	assert.NoError(t, err)
 
-	err = testOptions.VerifyRequirementsConfigMap(kubeClient, "jx", requirements)
-	assert.NoError(t, err, "there shouldn't be any error creating the ConfigMap")
+	err = testOptions.VerifyRequirementsInTeamSettings("jx", requirements)
+	assert.NoError(t, err, "there shouldn't be any error adding the requirements to TeamSettings")
 
-	requirementsCm, err := kubeClient.CoreV1().ConfigMaps("jx").Get(kube.ConfigMapNameRequirementsYaml, v1.GetOptions{})
-	assert.NoError(t, err, "the jx-requirements-config ConfigMap should be present")
+	teamSettings, err := testOptions.TeamSettings()
+	assert.NoError(t, err)
 
-	mapRequirements := &config.RequirementsConfig{}
-	err = yaml.Unmarshal([]byte(requirementsCm.Data["requirementsFile"]), mapRequirements)
+	requirementsCm := teamSettings.BootRequirements
+	assert.NotEqual(t, "", requirementsCm, "the BootRequirements field should be present and not empty")
+
+	mapRequirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 	assert.NoError(t, err)
 
 	assert.Equal(t, requirements, mapRequirements)
@@ -278,16 +275,9 @@ func TestStepVerifyPreInstallOptions_VerifyRequirementsConfigMapWithModification
 	err = yaml.Unmarshal(bytes, requirements)
 	assert.NoError(t, err)
 
-	kubeClient, err := options.KubeClient()
-	assert.NoError(t, err, "There shouldn't be any error getting the fake Kube Client")
-
-	_, err = kubeClient.CoreV1().ConfigMaps("jx").Create(&v12.ConfigMap{
-		ObjectMeta: v1.ObjectMeta{
-			Name: kube.ConfigMapNameRequirementsYaml,
-		},
-		Data: map[string]string{
-			"requirementsFile": string(bytes),
-		},
+	err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
+		env.Spec.TeamSettings.BootRequirements = string(bytes)
+		return nil
 	})
 	assert.NoError(t, err)
 
@@ -305,16 +295,18 @@ func TestStepVerifyPreInstallOptions_VerifyRequirementsConfigMapWithModification
 		},
 	}
 
-	err = testOptions.VerifyRequirementsConfigMap(kubeClient, "jx", requirements)
+	err = testOptions.VerifyRequirementsInTeamSettings("jx", requirements)
 	assert.NoError(t, err, "there shouldn't be any error creating the ConfigMap")
 
-	requirementsCm, err := kubeClient.CoreV1().ConfigMaps("jx").Get(kube.ConfigMapNameRequirementsYaml, v1.GetOptions{})
-	assert.NoError(t, err, "the jx-requirements-config ConfigMap should be present")
+	teamSettings, err := testOptions.TeamSettings()
+	assert.NoError(t, err)
 
-	mapRequirements := &config.RequirementsConfig{}
-	err = yaml.Unmarshal([]byte(requirementsCm.Data["requirementsFile"]), mapRequirements)
+	requirementsCm := teamSettings.BootRequirements
+	assert.NotEqual(t, "", requirementsCm, "the BootRequirements field should be present and not empty")
+
+	mapRequirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 	assert.NoError(t, err)
 
 	assert.Equal(t, requirements.Storage.Logs, mapRequirements.Storage.Logs, "the change done before calling"+
-		"VerifyRequirementsConfigMap should be present in the retrieved configuration")
+		"VerifyRequirementsInTeamSettings should be present in the retrieved configuration")
 }
