@@ -148,6 +148,11 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			Version:       builderImageVersion,
 			DryRun:        o.DryRun,
 		}
+		authorName, authorEmail, _ := gits.EnsureUserAndEmailSetup(o.Git())
+		if authorName != "" && authorEmail != "" {
+			pro.AuthorName = authorName
+			pro.AuthorEmail = authorEmail
+		}
 		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform):(?P<versions>.+)", "jenkins-x*.yml")
 		if err != nil {
 			return errors.WithStack(err)
@@ -177,6 +182,10 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			Version:       mlBuilderImageVersion,
 			DryRun:        o.DryRun,
 		}
+		if authorName != "" && authorEmail != "" {
+			pro.AuthorName = authorName
+			pro.AuthorEmail = authorEmail
+		}
 		modifyFns = append(modifyFns, mlPro.WrapChangeFilesWithCommitFn("versions", operations.CreatePullRequestMLBuildersFn(mlBuilderImageVersion)))
 	}
 	if len(o.Includes) > 0 {
@@ -191,6 +200,11 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			BranchName:    o.BranchName,
 			Version:       o.Version,
 			DryRun:        o.DryRun,
+		}
+		authorName, authorEmail, _ := gits.EnsureUserAndEmailSetup(o.Git())
+		if authorName != "" && authorEmail != "" {
+			pro.AuthorName = authorName
+			pro.AuthorEmail = authorEmail
 		}
 		vaultClient, err := o.SystemVaultClient("")
 		if err != nil {
@@ -286,6 +300,11 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 					Base:          o.Base,
 					BranchName:    o.BranchName,
 					DryRun:        o.DryRun,
+				}
+				authorName, authorEmail, err := gits.EnsureUserAndEmailSetup(o.Git())
+				if err != nil {
+					pro.AuthorName = authorName
+					pro.AuthorEmail = authorEmail
 				}
 				var cff operations.ChangeFilesFn
 				switch kindStr {

@@ -131,7 +131,7 @@ func (o *StepCreatePrOptions) CreatePullRequest(kind string, update operations.C
 }
 
 func (o *StepCreatePrOptions) createPullRequestOperation() operations.PullRequestOperation {
-	return operations.PullRequestOperation{
+	op := operations.PullRequestOperation{
 		CommonOptions: o.CommonOptions,
 		GitURLs:       o.GitURLs,
 		BranchName:    o.BranchName,
@@ -142,4 +142,10 @@ func (o *StepCreatePrOptions) createPullRequestOperation() operations.PullReques
 		DryRun:        o.DryRun,
 		SkipCommit:    o.SkipCommit,
 	}
+	authorName, authorEmail, err := gits.EnsureUserAndEmailSetup(o.Git())
+	if err != nil {
+		op.AuthorName = authorName
+		op.AuthorEmail = authorEmail
+	}
+	return op
 }

@@ -735,4 +735,23 @@ func TestPullRequestOperation_WrapChangeFilesWithCommitFn(t *testing.T) {
 	msg, err := gitter.GetLatestCommitMessage(dir)
 	assert.NoError(t, err)
 	assert.True(t, strings.HasPrefix(msg, "chore(deps): bump acme/wile from 1.2.2 to 1.2.3"))
+	// Without AuthorName and AuthorEmail, there shouldn't be a Signed-off-by message.
+	assert.False(t, strings.Contains(msg, "Signed-off-by:"))
+
+	// Wrap another commit, but this time with AuthorName and AuthorEmail set.
+	wrappedWithAuthor := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		return []string{"1.2.3"}, ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("version: 1.2.4"), 0655)
+	}
+	pro.AuthorEmail = "someone@example.com"
+	pro.AuthorName = "Some Author"
+	pro.Version = "1.2.4"
+	fnWithAuthor := pro.WrapChangeFilesWithCommitFn("charts", wrappedWithAuthor)
+	resultWithAuthor, err := fnWithAuthor(dir, gitInfo)
+	assert.NoError(t, err)
+	assert.Len(t, resultWithAuthor, 0)
+	tests.AssertFileContains(t, filepath.Join(dir, "test.yml"), "1.2.4")
+	msgWithAuthor, err := gitter.GetLatestCommitMessage(dir)
+	assert.NoError(t, err)
+	assert.True(t, strings.HasPrefix(msgWithAuthor, "chore(deps): bump acme/wile from 1.2.3 to 1.2.4"))
+	assert.True(t, strings.HasSuffix(msgWithAuthor, "Signed-off-by: Some Author <someone@example.com>"))
 }
