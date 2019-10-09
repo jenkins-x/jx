@@ -510,6 +510,19 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 	return repo, provider, nil
 }
 
+// GetDevEnvTeamSettings gets the team settings from the specified namespace.
+func GetDevEnvTeamSettings(jxClient versioned.Interface, ns string) (*v1.TeamSettings, error) {
+	devEnv, err := GetDevEnvironment(jxClient, ns)
+	if err != nil {
+		log.Logger().Errorf("Error loading team settings. %v", err)
+		return nil, err
+	}
+	if devEnv != nil {
+		return &devEnv.Spec.TeamSettings, nil
+	}
+	return nil, fmt.Errorf("unable to find development environment in %s to get team settings", ns)
+}
+
 // GetDevEnvGitOwner gets the default GitHub owner/organisation to use for Environment repos. This takes the setting
 // from the 'jx' Dev Env to get the one that was selected at installation time.
 func GetDevEnvGitOwner(jxClient versioned.Interface) (string, error) {

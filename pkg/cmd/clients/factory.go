@@ -467,13 +467,14 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 		return nil, errors.Wrap(err, "creating the kube client")
 	}
 
+	devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting the dev namespace from current namespace %q",
+			defaultNamespace)
+	}
+
 	// Use the dev namespace from default namespace if nothing is specified by the user
 	if namespace == "" {
-		devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting the dev namespace from current namespace %q",
-				defaultNamespace)
-		}
 		namespace = devNamespace
 	}
 
@@ -496,16 +497,21 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	// if there's an issue loading a requirements yaml lets just default to automatic
 	useIngressURL := false
 	requirements, _, _ := config.LoadRequirementsConfig("")
+	jxClient, _, err := f.CreateJXClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating the JX client")
+	}
+	teamSettings, err := kube.GetDevEnvTeamSettings(jxClient, devNamespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting team settings from namespace %s", devNamespace)
+	}
+	reqsFromTeamSettings, _ := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 
 	// allows us to override using the default lookup URL for vault and ensure we always use the ingress. Used in CI.
-	log.Logger().Debugf("env var %s  is: %s", config.RequirementVaultDisableURLDiscovery, os.Getenv(config.RequirementVaultDisableURLDiscovery))
-	log.Logger().Debugf("requirement disableURLDiscovery is: %t", requirements.Vault.DisableURLDiscovery)
-	if requirements.Vault.DisableURLDiscovery || os.Getenv(config.RequirementVaultDisableURLDiscovery) == "true" {
-		log.Logger().Debug("disabling vault url discovery")
+	if requirements.Vault.DisableURLDiscovery || (reqsFromTeamSettings != nil && reqsFromTeamSettings.Vault.DisableURLDiscovery) {
 		useIngressURL = true
 	} else {
 		useIngressURL = !cluster.IsInCluster()
-		log.Logger().Debugf("discovered vault url %v", useIngressURL)
 	}
 
 	vaultClient, err := clientFactory.NewVaultClient(name, namespace, useIngressURL)
