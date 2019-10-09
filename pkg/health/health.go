@@ -72,9 +72,12 @@ func kuberhealthyURL(kubeClient kubernetes.Interface, namespace string, khServic
 }
 
 func kuberHealthyState(kuberHealthIP string) (kh.State, error) {
-	response, err := kuberHealthyRequest(kuberHealthIP)
-
 	state := kh.State{}
+	response, err := kuberHealthyRequest(kuberHealthIP)
+	if err != nil {
+		return state, errors.Wrapf(err, "failed to get response from kuberhealthy")
+	}
+
 	err = json.Unmarshal(response, &state)
 	if err != nil {
 		return state, errors.Wrapf(err, "failed to unmarshal to State")
@@ -106,7 +109,7 @@ func kuberHealthyRequest(kuberHealthURL string) ([]byte, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrapf(err, "response code %b from hitting kuberhealthy URL %s", resp.StatusCode, kuberHealthURL)
+		return nil, fmt.Errorf("response code %d from kuberhealthy URL %s", resp.StatusCode, kuberHealthURL)
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
