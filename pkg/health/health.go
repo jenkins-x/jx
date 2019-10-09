@@ -99,7 +99,15 @@ func kuberHealthyRequest(kuberHealthURL string) ([]byte, error) {
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get password")
 		}
-		req.SetBasicAuth(username, pwd)
+
+		client = &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= 2 {
+					return errors.New("stopped after 2 kuberhealthy redirects")
+				}
+				req.SetBasicAuth(username, pwd)
+				return nil
+			}}
 	}
 	resp, err := client.Do(req)
 	if err != nil {
