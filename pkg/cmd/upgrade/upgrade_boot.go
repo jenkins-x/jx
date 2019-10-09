@@ -42,10 +42,6 @@ var (
 `)
 )
 
-const (
-	upgradeVersionStreamRef = "master"
-)
-
 // NewCmdUpgradeBoot creates the command
 func NewCmdUpgradeBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeBootOptions{
@@ -85,6 +81,8 @@ func (o *UpgradeBootOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get requirements version stream")
 	}
+
+	upgradeVersionStreamRef := o.determineUpgradeVersionStreamRef(reqsVersionStream.URL)
 
 	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, upgradeVersionStreamRef)
 	if err != nil {
@@ -133,6 +131,13 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrapf(err, "failed to delete local branch %s", localBranch)
 	}
 	return nil
+}
+
+func (o UpgradeBootOptions) determineUpgradeVersionStreamRef(versionStreamURL string) string {
+	if versionStreamURL == config.DefaultCloudBeesVersionsURL {
+		return config.DefaultCloudBeesVersionsRef
+	}
+	return config.DefaultVersionsRef
 }
 
 func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (string, error) {

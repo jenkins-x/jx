@@ -142,7 +142,7 @@ const (
 	// DefaultCloudBeesVersionsURL default version stream url for cloudbees jenkins x distribution
 	DefaultCloudBeesVersionsURL = "https://github.com/cloudbees/cloudbees-jenkins-x-versions.git"
 	// DefaultCloudBeesVersionsRef default version stream ref for cloudbees jenkins x distribution
-	DefaultCloudBeesVersionsRef = "master"
+	DefaultCloudBeesVersionsRef = "stable"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments
