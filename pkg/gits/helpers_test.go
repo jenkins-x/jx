@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -2256,4 +2257,105 @@ func TestGetGitInfoFromDirectoryNoGit(t *testing.T) {
 	assert.Error(t, err)
 
 	assert.Equal(t, fmt.Sprintf("there was a problem obtaining the remote Git URL of directory %s: failed to unmarshal  due to no GitConfDir defined", dir), err.Error())
+}
+
+func Test_SquashIntoSingleCommit_success(t *testing.T) {
+	gitDir, err := ioutil.TempDir("", "test-repo")
+	assert.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(gitDir)
+	}()
+
+	gitter := gits.NewGitCLI()
+
+	err = gitter.Init(gitDir)
+	assert.NoError(t, err)
+
+	readmePath := filepath.Join(gitDir, readme)
+	err = ioutil.WriteFile(readmePath, []byte("readme"), 0600)
+	assert.NoError(t, err)
+	err = gitter.Add(gitDir, readme)
+	assert.NoError(t, err)
+	err = gitter.CommitDir(gitDir, "adding readme")
+	assert.NoError(t, err)
+
+	contributingPath := filepath.Join(gitDir, contributing)
+	err = ioutil.WriteFile(contributingPath, []byte("contribute"), 0600)
+	assert.NoError(t, err)
+	err = gitter.Add(gitDir, contributing)
+	assert.NoError(t, err)
+	err = gitter.CommitDir(gitDir, "adding contribute")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, commitCount(t, gitDir))
+
+	err = gits.SquashIntoSingleCommit(gitDir, "squashed", gitter)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, commitCount(t, gitDir))
+	assert.FileExists(t, filepath.Join(gitDir, readme))
+	assert.FileExists(t, filepath.Join(gitDir, contributing))
+}
+
+func Test_SquashIntoSingleCommit_with_only_one_commit(t *testing.T) {
+	gitDir, err := ioutil.TempDir("", "test-repo")
+	assert.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(gitDir)
+	}()
+
+	gitter := gits.NewGitCLI()
+
+	err = gitter.Init(gitDir)
+	assert.NoError(t, err)
+
+	readmePath := filepath.Join(gitDir, readme)
+	err = ioutil.WriteFile(readmePath, []byte("readme"), 0600)
+	assert.NoError(t, err)
+	err = gitter.Add(gitDir, readme)
+	assert.NoError(t, err)
+	err = gitter.CommitDir(gitDir, "adding readme")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, commitCount(t, gitDir))
+
+	err = gits.SquashIntoSingleCommit(gitDir, "squashed", gitter)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, commitCount(t, gitDir))
+	assert.FileExists(t, filepath.Join(gitDir, readme))
+	msg, err := gitter.GetLatestCommitMessage(gitDir)
+	assert.NoError(t, err)
+	assert.Equal(t, "squashed", msg)
+}
+
+func Test_SquashIntoSingleCommit_with_no_git_dir_returns_error(t *testing.T) {
+	gitDir, err := ioutil.TempDir("", "test-repo")
+	assert.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(gitDir)
+	}()
+
+	gitter := gits.NewGitCLI()
+
+	err = gits.SquashIntoSingleCommit(gitDir, "squashed", gitter)
+	assert.Error(t, err)
+
+	err = gits.SquashIntoSingleCommit("", "squashed", gitter)
+	assert.Error(t, err)
+}
+
+func commitCount(t *testing.T, repoDir string) int {
+	args := []string{"rev-list", "--count", "HEAD"}
+	cmd := util.Command{
+		Dir:  repoDir,
+		Name: "git",
+		Args: args,
+	}
+	out, err := cmd.RunWithoutRetry()
+	assert.NoError(t, err)
+
+	count, err := strconv.Atoi(out)
+	assert.NoError(t, err)
+	return count
 }
