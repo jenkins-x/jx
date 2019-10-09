@@ -13,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -21,9 +20,7 @@ import (
 
 // Kuberhealthy integrates and checks output from kuberhealthy
 func Kuberhealthy(kubeClient kubernetes.Interface, namespace string) error {
-	khService, err := kubeClient.CoreV1().Services(namespace).Get("kuberhealthy", metav1.GetOptions{})
-
-	installed, err := checkKuberhealthyInstalled(err)
+	installed, err := checkKuberhealthyInstalled(kubeClient, namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kuberhealthy is installed")
 	}
@@ -31,7 +28,7 @@ func Kuberhealthy(kubeClient kubernetes.Interface, namespace string) error {
 		return nil
 	}
 
-	URL, err := kuberhealthyURL(kubeClient, namespace, khService)
+	URL, err := kuberhealthyURL(kubeClient, namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kuberhealthy URL")
 	}
@@ -48,7 +45,8 @@ func Kuberhealthy(kubeClient kubernetes.Interface, namespace string) error {
 	return nil
 }
 
-func checkKuberhealthyInstalled(err error) (bool, error) {
+func checkKuberhealthyInstalled(kubeClient kubernetes.Interface, namespace string) (bool, error) {
+	_, err := kubeClient.CoreV1().Services(namespace).Get("kuberhealthy", metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			log.Logger().Warnf("Kuberhealthy (https://github.com/Comcast/kuberhealthy) " +
@@ -60,9 +58,9 @@ func checkKuberhealthyInstalled(err error) (bool, error) {
 	return true, nil
 }
 
-func kuberhealthyURL(kubeClient kubernetes.Interface, namespace string, khService *v1.Service) (string, error) {
+func kuberhealthyURL(kubeClient kubernetes.Interface, namespace string) (string, error) {
 	if cluster.IsInCluster() {
-		return khService.Spec.ClusterIP, nil
+		return "http://kuberhealthy", nil
 	}
 	ingressHost, err := kube.GetIngress(kubeClient, namespace, "kuberhealthy")
 	if err != nil {
