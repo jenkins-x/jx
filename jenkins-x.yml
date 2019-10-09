@@ -137,6 +137,7 @@ pipelineConfig:
                 - https://github.com/jenkins-x/lighthouse.git
 
               - name: update-jxui-backend
+                image: gcr.io/jenkinsxio/builder-go
                 command: jx
                 args:
                 - step
