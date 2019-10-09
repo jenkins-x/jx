@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
@@ -95,7 +96,31 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	}
 
 	log.Logger().Infof("the git repositories for the environments look good\n")
+
+	err = o.storeRequirementsInTeamSettings(requirements)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println()
+
+	return nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) storeRequirementsInTeamSettings(requirements *config.RequirementsConfig) error {
+	log.Logger().Infof("Storing the requirements in team settings in the dev environment\n")
+	err := o.ModifyDevEnvironment(func(env *v1.Environment) error {
+		log.Logger().Debugf("Updating the TeamSettings with: %+v", requirements)
+		reqBytes, err := yaml.Marshal(requirements)
+		if err != nil {
+			return errors.Wrap(err, "there was a problem marshalling the requirements file to include it in the TeamSettings")
+		}
+		env.Spec.TeamSettings.BootRequirements = string(reqBytes)
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "there was a problem saving the current state of the requirements.yaml file in TeamSettings in the dev environment")
+	}
 	return nil
 }
 
