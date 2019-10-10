@@ -91,7 +91,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 			}
 		}
 	}
-	
+
 	err = o.storeRequirementsInTeamSettings(requirements)
 	if err != nil {
 		return err
@@ -226,8 +226,6 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requi
 }
 
 func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string, requirements *config.RequirementsConfig, authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, envGitInfo *gits.GitRepository) error {
-	log.Logger().Infof("Creating git repository for environment %s with URL %s to namespace %s\n", util.ColorInfo(environment.Name), util.ColorInfo(gitURL), util.ColorInfo(environment.Spec.Namespace))
-
 	envDir, err := ioutil.TempDir("", "jx-env-repo-")
 	if err != nil {
 		return err
@@ -385,6 +383,7 @@ func (o *StepVerifyEnvironmentsOptions) pushDevEnvironmentUpdates(environmentRep
 	if err != nil {
 		return errors.Wrapf(err, "unable to push %s to %s", localRepoDir, environmentRepo.URL)
 	}
+	log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(environmentRepo.HTMLURL))
 
 	return nil
 }
