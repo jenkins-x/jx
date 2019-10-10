@@ -202,7 +202,7 @@ type Gitter interface {
 	ShallowClone(dir string, url string, commitish string, pullRequest string) error
 	FetchUnshallow(dir string) error
 	IsShallow(dir string) (bool, error)
-	Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error
+	Push(dir string, remote string, force bool, refspec ...string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error
 	// CreateAuthenticatedURL adds username and password into the specified git URL.

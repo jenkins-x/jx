@@ -400,7 +400,7 @@ func (options *ImportOptions) Run() error {
 		}
 	} else {
 		if shouldClone {
-			err = options.Git().Push(options.Dir, "origin", false, false, "HEAD")
+			err = options.Git().Push(options.Dir, "origin", false, "HEAD")
 			if err != nil {
 				return err
 			}
