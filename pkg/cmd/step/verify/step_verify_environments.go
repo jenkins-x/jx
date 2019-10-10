@@ -364,14 +364,21 @@ func (o *StepVerifyEnvironmentsOptions) pushDevEnvironmentUpdates(environmentRep
 		return errors.Wrap(err, "failed to modify dev environment config")
 	}
 
-	err = gitter.Add(localRepoDir, ".")
+	hasChanges, err := gitter.HasChanges(localRepoDir)
 	if err != nil {
-		return errors.Wrap(err, "unable to add stage commit")
+		return errors.Wrap(err, "unable to check for changes")
 	}
 
-	err = gitter.CommitDir(localRepoDir, "chore(config): update configuration")
-	if err != nil {
-		return errors.Wrapf(err, "unable to commit changes to environment repo in %s", localRepoDir)
+	if hasChanges {
+		err = gitter.Add(localRepoDir, ".")
+		if err != nil {
+			return errors.Wrap(err, "unable to add stage commit")
+		}
+
+		err = gitter.CommitDir(localRepoDir, "chore(config): update configuration")
+		if err != nil {
+			return errors.Wrapf(err, "unable to commit changes to environment repo in %s", localRepoDir)
+		}
 	}
 
 	userDetails := provider.UserAuth()
