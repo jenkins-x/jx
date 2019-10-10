@@ -358,7 +358,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(existingPr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
 		return nil, nil
 	} else if push {
-		err := gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
+		err := gitter.Push(dir, forkPushURL, true, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
 		if err != nil {
 			return nil, errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
 		}
@@ -792,7 +792,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to set remote url to %s", duplicateInfo.CloneURL)
 	}
-	err = gitter.Push(dir, duplicatePushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", toBranch))
+	err = gitter.Push(dir, duplicatePushURL, true, fmt.Sprintf("%s:%s", "HEAD", toBranch))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
 	}

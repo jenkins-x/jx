@@ -501,7 +501,7 @@ func TestExistingForkAndNewDir(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -600,7 +600,7 @@ func TestExistingForkAndExistingDir(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -698,7 +698,7 @@ func TestExistingForkAndExistingCheckout(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -904,7 +904,7 @@ func TestExistingForkAndExistingCheckoutWithLocalModifications(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1011,7 +1011,7 @@ func TestExistingForkAndExistingCheckoutWithNonConflictingLocalModifications(t *
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1118,7 +1118,7 @@ func TestExistingForkAndExistingCheckoutWithExistingLocalCommits(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1231,7 +1231,7 @@ func TestExistingForkAndChangesToOriginAndExistingCheckoutWithExistingLocalCommi
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1264,7 +1264,7 @@ func TestExistingForkAndChangesToOriginAndExistingCheckoutWithExistingLocalCommi
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(origindir, "commit cheese")
 				assert.NoError(t, err)
-				err = args.gitter.Push(origindir, "origin", false, false, "HEAD:master")
+				err = args.gitter.Push(origindir, "origin", false, "HEAD:master")
 				assert.NoError(t, err)
 
 				return nil
@@ -1397,7 +1397,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	err = gitter.CommitDir(dir, "add license")
 	assert.NoError(t, err)
 
-	err = gitter.Push(dir, "origin", false, false, "HEAD")
+	err = gitter.Push(dir, "origin", false, "HEAD")
 	assert.NoError(t, err)
 
 	err = gitter.CreateBranch(dir, "release")
@@ -1418,7 +1418,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	err = gitter.CreateTag(dir, "v1.0.0", "1.0.0")
 	assert.NoError(t, err)
 
-	err = gitter.Push(dir, "origin", false, false, "HEAD")
+	err = gitter.Push(dir, "origin", false, "HEAD")
 	assert.NoError(t, err)
 
 	err = gitter.PushTag(dir, "v1.0.0")
@@ -1836,7 +1836,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(args.dir, "commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(args.dir, "origin", false, false, "HEAD")
+					err = args.gitter.Push(args.dir, "origin", false, "HEAD")
 					assert.NoError(t, err)
 					return nil
 				},
@@ -1997,7 +1997,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(args.dir, "commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(args.dir, "origin", false, false, "HEAD")
+					err = args.gitter.Push(args.dir, "origin", false, "HEAD")
 					assert.NoError(t, err)
 					return nil
 				},

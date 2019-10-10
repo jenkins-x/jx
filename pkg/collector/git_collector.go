@@ -106,7 +106,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 		log.Logger().Errorf("%s", err)
 		return urls, err
 	}
-	err = gitClient.Push(ghPagesDir, "origin", false, false, c.gitBranch)
+	err = gitClient.Push(ghPagesDir, "origin", false, c.gitBranch)
 	return urls, err
 }
 
@@ -154,7 +154,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 	if err != nil {
 		return u, err
 	}
-	err = gitClient.Push(ghPagesDir, "origin", false, false, "HEAD:"+c.gitBranch)
+	err = gitClient.Push(ghPagesDir, "origin", false, "HEAD:"+c.gitBranch)
 	return u, err
 }
 

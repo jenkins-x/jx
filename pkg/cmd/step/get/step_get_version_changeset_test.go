@@ -67,13 +67,13 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.Add(testDir, ".")
 	gitter.AddCommit(testDir, "Initial Commit")
-	gitter.Push(testDir, "origin", false, false, "HEAD")
+	gitter.Push(testDir, "origin", false, "HEAD")
 	gitter.CreateBranch(testDir, testBranch)
 	gitter.Checkout(testDir, testBranch)
 	stableVersion.Version = "1.0.1"
 	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.AddCommit(testDir, "Bump version")
-	gitter.Push(testDir, "origin", false, false, "HEAD")
+	gitter.Push(testDir, "origin", false, "HEAD")
 	gitter.Checkout(testDir, stableBranch)
 
 	err = options.Run()
@@ -132,7 +132,7 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.Add(testDir, ".")
 	gitter.AddCommit(testDir, "Initial Commit")
-	gitter.Push(testDir, "origin", false, false, "HEAD")
+	gitter.Push(testDir, "origin", false, "HEAD")
 	gitter.CreateBranch(testDir, testBranch)
 	gitter.Checkout(testDir, testBranch)
 	stableVersion.Version = "1.0.1"
