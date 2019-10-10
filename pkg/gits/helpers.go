@@ -602,7 +602,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 					return "", "", nil, nil, errors.Wrapf(err, "running git reset --hard")
 				}
 			} else {
-				log.Logger().Warnf(errors.Wrapf(err, "Unable to cherry-pick %s", util.ColorWarning(c.SHA)).Error())
+				return "", "", nil, nil, errors.Wrapf(err, "Unable to cherry-pick %s", util.ColorWarning(c.SHA))
 			}
 		} else {
 			log.Logger().Infof("  Cherry-picked %s", c.OneLine())
