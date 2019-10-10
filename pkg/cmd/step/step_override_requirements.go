@@ -78,6 +78,14 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Cluster.EnvironmentGitPublic = false
 		}
 	}
+	publicAppRepo, found := os.LookupEnv(config.RequirementGitPublic)
+	if found {
+		if publicAppRepo == "true" {
+			requirements.Cluster.GitPublic = true
+		} else {
+			requirements.Cluster.GitPublic = false
+		}
+	}
 	if "" != os.Getenv(config.RequirementExternalDNSServiceAccountName) {
 		requirements.Cluster.ExternalDNSSAName = os.Getenv(config.RequirementExternalDNSServiceAccountName)
 	}

@@ -47,6 +47,8 @@ const (
 	RequirementEnvGitOwner = "JX_REQUIREMENT_ENV_GIT_OWNER"
 	// RequirementEnvGitPublic sets the visibility of the environment repositories as private (subscription required for GitHub Organisations)
 	RequirementEnvGitPublic = "JX_REQUIREMENT_ENV_GIT_PUBLIC"
+	// RequirementGitPublic sets the visibility of the application repositories as private (subscription required for GitHub Organisations)
+	RequirementGitPublic = "JX_REQUIREMENT_GIT_PUBLIC"
 	// RequirementExternalDNSServiceAccountName the service account name for external dns
 	RequirementExternalDNSServiceAccountName = "JX_REQUIREMENT_EXTERNALDNS_SA_NAME"
 	// RequirementVaultName the name for vault
@@ -232,6 +234,8 @@ type ClusterConfig struct {
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// EnvironmentGitPublic determines whether jx boot create public or private git repos for the environments
 	EnvironmentGitPublic bool `json:"environmentGitPublic,omitempty"`
+	// GitPublic determines whether jx boot create public or private git repos for the applications
+	GitPublic bool `json:"gitPublic,omitempty"`
 	// Provider the kubernetes provider (e.g. gke)
 	Provider string `json:"provider,omitempty"`
 	// Namespace the namespace to install the dev environment
