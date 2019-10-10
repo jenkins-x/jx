@@ -112,7 +112,7 @@ func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, env
 	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigRepoURLEnvVarName, fromGitURL)
 	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigBaseRefEnvVarName, gitRef)
 
-	gitInfo, err := gits.ParseGitURL(fromGitURL)
+	_, err := gits.ParseGitURL(fromGitURL)
 	if err != nil {
 		return err
 	}
