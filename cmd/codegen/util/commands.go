@@ -189,7 +189,7 @@ func (c *Command) String() string {
 }
 
 func (c *Command) run() (string, error) {
-	e := exec.Command(c.Name, c.Args...)
+	e := exec.Command(c.Name, c.Args...) // #nosec
 	if c.Dir != "" {
 		e.Dir = c.Dir
 	}
