@@ -156,6 +156,7 @@ func (o *StepCreateValuesOptions) Run() error {
 	if o.Schema == "" {
 		o.Schema = filepath.Join(o.Dir, fmt.Sprintf("%s.schema.json", o.Name))
 	}
+
 	err = surveyutils.TemplateSchemaFile(o.Schema, requirements)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s from template", o.Schema)
