@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
@@ -90,6 +91,12 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	mockKubeClient.CoreV1().ConfigMaps(nsObj.Namespace).Create(ingressConfig)
+	mockTektonDeployment := &v1beta1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.DeploymentTektonController,
+		},
+	}
+	mockKubeClient.AppsV1beta1().Deployments(nsObj.Namespace).Create(mockTektonDeployment)
 	jxClient := jxfake.NewSimpleClientset()
 
 	const (
@@ -150,7 +157,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err = promoteKey.OnPromotePullRequest(jxClient, nsObj.Namespace, promotePullRequestStarted)
+	err = promoteKey.OnPromotePullRequest(mockKubeClient, jxClient, nsObj.Namespace, promotePullRequestStarted)
 	assert.Nil(t, err)
 
 	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
@@ -160,7 +167,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err = promoteKey.OnPromoteUpdate(jxClient, nsObj.Namespace, promoteStarted)
+	err = promoteKey.OnPromoteUpdate(mockKubeClient, jxClient, nsObj.Namespace, promoteStarted)
 	assert.Nil(t, err)
 
 	// lets validate that we added a PromotePullRequest step
@@ -197,6 +204,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, pullRequestStep.Status, "pullRequestStep status")
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, updateStep.Status, "updateStep status")
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, promote.Status, "promote status")
+	assert.Equal(t, v1.ActivityStatusTypeSucceeded, a.Spec.Status, "activity status")
 
 	//tests.Debugf("Has Promote %#v\n", promote)
 }

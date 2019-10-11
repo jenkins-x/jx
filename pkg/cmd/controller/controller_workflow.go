@@ -517,8 +517,13 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 							log.Logger().Warnf("Failed to get the jx client: %s", err)
 							return
 						}
-						promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
-						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
+						kubeClient, err := o.KubeClient()
+						if err != nil {
+							log.Logger().Warnf("Failed to get the Kubernetes client: %s", err)
+							return
+						}
+						promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, mergedPR)
+						promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
 							log.Logger().Infof("Pull Request %d merged but we are not waiting for the update pipeline to complete!",
@@ -527,7 +532,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 							if err != nil {
 								log.Logger().Warnf("Failed to comment on issues: %s", err)
 							}
-							err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
+							err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.CompletePromotionUpdate)
 							if err != nil {
 								log.Logger().Warnf("PipelineActivity update failed while completing promotion step. activity=%s",
 									activity.Name)
@@ -572,7 +577,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(jxClient, o.Namespace, updateStatuses)
+								promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -597,7 +602,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 										log.Logger().Warnf("Failed to comment on issues: %s", err)
 										return
 									}
-									err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
+									err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									if err != nil {
 										log.Logger().Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}
