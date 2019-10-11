@@ -34,6 +34,8 @@ git config --global --add user.email jenkins-x@googlegroups.com
 
 echo "running the BDD tests with JX_HOME = $JX_HOME"
 jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
+    --test-git-repo=https://github.com/abayer/bdd-jx.git \
+    --test-git-branch=turn-activity-success-check-back-on \
   --config jx/bdd/tekton/cluster.yaml \
   --gopath /tmp  \
   --git-provider=github \

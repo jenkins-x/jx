@@ -59,6 +59,8 @@ helm init --client-only
 helm repo add jenkins-x https://storage.googleapis.com/chartmuseum.jenkins-x.io
 
 jx step bdd \
+    --test-git-repo=https://github.com/abayer/bdd-jx.git \
+    --test-git-branch=turn-activity-success-check-back-on \
     --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
     --config ../jx/bdd/boot-vault/cluster.yaml \
     --gopath /tmp \
