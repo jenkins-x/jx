@@ -55,11 +55,11 @@ func NewCmdStepVerifyValues(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.SchemaFile, schemaFileOption, "s", "", "the path to the schema file")
+	cmd.Flags().StringVarP(&options.SchemaFile, schemaFileOption, "s", "", "the path to the JSON schema file")
 	cmd.Flags().StringVarP(&options.RequirementsDir, requirementsDirOption, "r", "",
 		fmt.Sprintf("the path to the dir which contains the %s file, if omitted looks in the current directory",
 			config.RequirementsConfigFileName))
-	cmd.Flags().StringVarP(&options.ValuesFile, valuesFileOption, "v", "", "the path to the values file")
+	cmd.Flags().StringVarP(&options.ValuesFile, valuesFileOption, "v", "", "the path to the values YAML file")
 
 	return cmd
 }
