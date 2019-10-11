@@ -1,11 +1,18 @@
 package util
 
 import (
+	"bytes"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/cenkalti/backoff"
 
 	"github.com/jenkins-x/jx/pkg/log"
 )
@@ -64,4 +71,56 @@ func getBoolFromEnv(key string, fallback bool) bool {
 		log.Logger().Warnf("Unable to convert env var %s with value %s to boolean, using default value of %t instead", key, value, fallback)
 	}
 	return fallback
+}
+
+func CallWithExponentialBackOff(url string, auth string, httpMethod string, reqBody []byte, reqParams url.Values) ([]byte, error) {
+	log.Logger().Debugf("%sing %s to %s", httpMethod, reqBody, url)
+	resp, respBody := &http.Response{}, []byte{}
+	if url != "" && httpMethod != "" {
+		f := func() error {
+			req, err := http.NewRequest(httpMethod, url, bytes.NewBuffer(reqBody))
+			req.Header.Set("Content-Type", "application/json")
+			if !strings.Contains(url, "localhost") || !strings.Contains(url, "127.0.0.1") {
+				if strings.Count(auth, ":") == 1 {
+					jxBasicAuthUser, jxBasicAuthPass := getBasicAuthUserAndPassword(auth)
+					req.SetBasicAuth(jxBasicAuthUser, jxBasicAuthPass)
+				}
+			}
+
+			if reqParams != nil {
+				req.URL.RawQuery = reqParams.Encode()
+			}
+
+			resp, err = defaultClient.Do(req)
+			if err != nil {
+				return backoff.Permanent(err)
+			}
+			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
+				return errors.Errorf("%s not available, error was %d %s", url, resp.StatusCode, resp.Status)
+			}
+			respBody, err = ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return backoff.Permanent(errors.Wrap(err, "parsing response body"))
+			}
+			resp.Body.Close()
+			return nil
+		}
+		exponentialBackOff := backoff.NewExponentialBackOff()
+		timeout := 1 * time.Minute
+		exponentialBackOff.MaxElapsedTime = timeout
+		exponentialBackOff.Reset()
+		err := backoff.Retry(f, exponentialBackOff)
+		if err != nil {
+			return []byte{}, errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
+		}
+	}
+	return respBody, nil
+}
+
+func getBasicAuthUserAndPassword(auth string) (string, string) {
+	if auth != "" {
+		creds := strings.Fields(strings.Replace(auth, ":", " ", -1))
+		return creds[0], creds[1]
+	}
+	return "", ""
 }
