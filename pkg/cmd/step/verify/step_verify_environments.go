@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"sigs.k8s.io/yaml"
@@ -407,7 +408,8 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 	}
 	useHTTP := "true"
 	tlsAcme := "false"
-	if envCfg.Ingress.TLS.Enabled {
+
+	if requirements.Ingress.TLS.Enabled {
 		useHTTP = "false"
 		tlsAcme = "true"
 	}
@@ -415,12 +417,28 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 	helmValues := config.HelmValuesConfig{
 		ExposeController: &config.ExposeController{
 			Config: config.ExposeControllerConfig{
-				Domain:  domain,
-				Exposer: exposer,
-				HTTP:    useHTTP,
-				TLSAcme: tlsAcme,
+				Domain:      domain,
+				Exposer:     exposer,
+				HTTP:        useHTTP,
+				TLSAcme:     tlsAcme,
+				URLTemplate: config.ExposeDefaultURLTemplate,
 			},
 		},
 	}
+
+	// set the exposecontroller helm values needed to create an ingress rule with TLS pointing to the right secret containing the cert
+	secretName := ""
+	if requirements.Ingress.TLS.Production {
+		helmValues.ExposeController.Production = true
+		secretName = fmt.Sprintf("tls-%s-p", domain)
+	} else {
+		secretName = fmt.Sprintf("tls-%s-s", domain)
+	}
+
+	// only set the secret name if TLS is enabled else exposecontroller thinks the ingress needs TLS
+	if requirements.Ingress.TLS.Enabled {
+		helmValues.ExposeController.Config.TLSSecretName = strings.Replace(secretName, ".", "-", -1)
+	}
+
 	return helmValues, nil
 }
