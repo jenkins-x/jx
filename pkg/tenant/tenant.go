@@ -1,19 +1,15 @@
 package tenant
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/util"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
-	"strings"
-	"time"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-
-	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 )
@@ -59,9 +55,34 @@ type Domain struct {
 	} `json:"data"`
 }
 
+type Installation struct {
+	InstallationId string `json:installation-id`
+	Organisation   string `json:org`
+}
+
 // Result type for nameservers response
 type Result struct {
 	Message string `json:"message"`
+}
+
+func (tCli *tenantClient) GetInstallationId(tenantServiceURL string, tenantServiceAuth string, gitHubOrg string) (string, error) {
+	requestUrl := fmt.Sprintf("%s%s/installation-id", tenantServiceURL, basePath)
+
+	params := url.Values{}
+	params.Set("org", gitHubOrg)
+
+	respBody, err := util.CallWithExponentialBackOff(requestUrl, tenantServiceAuth, "GET", []byte{}, params)
+	if err != nil {
+		return "", errors.Wrapf(err, "error getting installation id via %s", requestUrl)
+	}
+
+	var installation Installation
+	err = json.Unmarshal(respBody, &installation)
+	if err != nil {
+		return "", errors.Wrap(err, "unmarshalling json message")
+	}
+
+	return installation.InstallationId, nil
 }
 
 func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, cluster string, gcloud gke.GClouder) (string, error) {
@@ -83,7 +104,7 @@ func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServ
 		return "", errors.Wrap(err, "error marshalling struct into json")
 	}
 	if projectID != "" {
-		respBody, err := tCli.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
+		respBody, err := util.CallWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody, nil)
 		if err != nil {
 			return "", errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
 		}
@@ -137,7 +158,7 @@ func (tCli *tenantClient) PostTenantZoneNameServers(tenantServiceURL string, ten
 	}
 
 	if projectID != "" && zone != "" && len(nameServers) > 0 {
-		respBody, err = tCli.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
+		respBody, err = util.CallWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody, nil)
 		if err != nil {
 			return errors.Wrapf(err, "error posting tenant sub-domain nameservers via %s", url)
 		}
@@ -155,61 +176,13 @@ func (tCli *tenantClient) PostTenantZoneNameServers(tenantServiceURL string, ten
 // NewTenantClient creates a new tenant client
 func NewTenantClient(options ...Option) *tenantClient {
 	tCli := tenantClient{
-		httpClient: &http.Client{},
+		httpClient: util.GetClient(),
 	}
 
 	for option := range options {
 		options[option](&tCli)
 	}
 	return &tCli
-}
-
-func (tCli *tenantClient) callWithExponentialBackOff(url string, auth string, httpMethod string, reqBody []byte) ([]byte, error) {
-	log.Logger().Debugf("%sing %s to %s", httpMethod, reqBody, url)
-	resp, respBody := &http.Response{}, []byte{}
-	if url != "" && httpMethod != "" {
-		f := func() error {
-			req, err := http.NewRequest(httpMethod, url, bytes.NewBuffer(reqBody))
-			req.Header.Set("Content-Type", "application/json")
-			if !strings.Contains(url, "localhost") || !strings.Contains(url, "127.0.0.1") {
-				if strings.Count(auth, ":") == 1 {
-					jxBasicAuthUser, jxBasicAuthPass := getBasicAuthUserAndPassword(auth)
-					req.SetBasicAuth(jxBasicAuthUser, jxBasicAuthPass)
-				}
-			}
-
-			resp, err = tCli.httpClient.Do(req)
-			if err != nil {
-				return backoff.Permanent(err)
-			}
-			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
-				return errors.Errorf("%s not available, error was %d %s", url, resp.StatusCode, resp.Status)
-			}
-			respBody, err = ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return backoff.Permanent(errors.Wrap(err, "parsing response body"))
-			}
-			resp.Body.Close()
-			return nil
-		}
-		exponentialBackOff := backoff.NewExponentialBackOff()
-		timeout := 1 * time.Minute
-		exponentialBackOff.MaxElapsedTime = timeout
-		exponentialBackOff.Reset()
-		err := backoff.Retry(f, exponentialBackOff)
-		if err != nil {
-			return []byte{}, errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
-		}
-	}
-	return respBody, nil
-}
-
-func getBasicAuthUserAndPassword(auth string) (string, string) {
-	if auth != "" {
-		creds := strings.Fields(strings.Replace(auth, ":", " ", -1))
-		return creds[0], creds[1]
-	}
-	return "", ""
 }
 
 // ValidateDomainName checks for compliance in a supplied domain name
