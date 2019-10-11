@@ -258,7 +258,7 @@ fmt: ## Format the code
       	fi
 
 .PHONY: importfmt
-importsfmt:
+importfmt:
 	# $(GO_NOMOD) get golang.org/x/tools/cmd/goimports
 	@echo "Formatting the imports..."
 	goimports -w $(GO_DEPENDENCIES)
