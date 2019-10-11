@@ -25,10 +25,9 @@ import (
 type StepVerifyValuesOptions struct {
 	step.StepOptions
 
-	SchemaFile         string
-	SchemaTemplateFile string
-	RequirementsDir    string
-	ValuesFile         string
+	SchemaFile      string
+	RequirementsDir string
+	ValuesFile      string
 }
 
 const (
