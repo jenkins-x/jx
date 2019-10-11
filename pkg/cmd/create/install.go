@@ -912,10 +912,10 @@ func (options *InstallOptions) init() error {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
 			log.Logger().Infof("set exposeController Config PathMode %s", ecConfig.PathMode)
 		}
-		if (ecConfig.UrlTemplate == "" && options.Flags.ExposeControllerURLTemplate != "") ||
+		if (ecConfig.URLTemplate == "" && options.Flags.ExposeControllerURLTemplate != "") ||
 			(options.Flags.ExposeControllerURLTemplate != "" && options.InitOptions.Flags.ExternalDNS) {
-			ecConfig.UrlTemplate = options.Flags.ExposeControllerURLTemplate
-			log.Logger().Infof("set exposeController Config URLTemplate %s", ecConfig.UrlTemplate)
+			ecConfig.URLTemplate = options.Flags.ExposeControllerURLTemplate
+			log.Logger().Infof("set exposeController Config URLTemplate %s", ecConfig.URLTemplate)
 		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
@@ -2565,7 +2565,7 @@ func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) 
 		Domain:      domain,
 		TLS:         tls,
 		Exposer:     exposeController.Config.Exposer,
-		UrlTemplate: exposeController.Config.UrlTemplate,
+		UrlTemplate: exposeController.Config.URLTemplate,
 	}
 	// save ingress config details to a configmap
 	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
