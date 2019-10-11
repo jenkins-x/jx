@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/pkg/errors"
@@ -705,7 +706,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(jxClient versioned.Int
 }
 
 //OnPromotePullRequest updates activities on a Promote PR
-func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
+func (k *PromoteStepActivityKey) OnPromotePullRequest(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
 	if !k.IsValid() {
 		return nil
 	}
@@ -718,21 +719,25 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interfa
 	if err != nil {
 		return err
 	}
-	p1 := *p
+	p1 := asYaml(a)
 	err = fn(a, s, ps, p)
 	if err != nil {
 		return err
 	}
-	p2 := *p
+	if ok, _ := IsTektonEnabled(kubeClient, ns); ok && p.Status != v1.ActivityStatusTypeRunning && p.Status != v1.ActivityStatusTypeSucceeded {
+		a.Spec.Status = p.Status
+	}
 
-	if added || !reflect.DeepEqual(p1, p2) {
+	p2 := asYaml(a)
+
+	if added || p1 == "" || p1 != p2 {
 		_, err = activities.PatchUpdate(a)
 	}
 	return err
 }
 
 //OnPromoteUpdate updates activities on a Promote Update
-func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, ns string, fn PromoteUpdateFn) error {
+func (k *PromoteStepActivityKey) OnPromoteUpdate(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, fn PromoteUpdateFn) error {
 	if !k.IsValid() {
 		return nil
 	}
@@ -755,6 +760,10 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 	}
 	if k.ApplicationURL != "" {
 		ps.ApplicationURL = k.ApplicationURL
+	}
+
+	if ok, _ := IsTektonEnabled(kubeClient, ns); ok && p.Status != v1.ActivityStatusTypeRunning {
+		a.Spec.Status = p.Status
 	}
 	p2 := asYaml(a)
 
