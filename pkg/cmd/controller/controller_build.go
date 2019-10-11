@@ -675,7 +675,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 	allStagesCompleted := true
 	failed := false
-	running := true
+	running := false
 	for i := range spec.Steps {
 		step := &spec.Steps[i]
 		stage := step.Stage
@@ -712,9 +712,22 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 	}
 
-	if allStagesCompleted {
+	// allStagesCompleted means all stages ran and completed. !running && failed means there are no currently running
+	// stages (i.e., they're all either successful, failed, or pending), and at least one of them failed. This is the
+	// best way we've got to determine that an earlier stage has failed and later stages never actually launched.
+	if allStagesCompleted || (!running && failed) {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
+			// Mark any Pending stages as not executed
+			for i := range spec.Steps {
+				step := &spec.Steps[i]
+				stage := step.Stage
+				if stage != nil {
+					if stage.Status == v1.ActivityStatusTypePending {
+						stage.Status = v1.ActivityStatusTypeNotExecuted
+					}
+				}
+			}
 		} else if len(spec.Steps) == 1 && spec.Steps[0].Stage.Name == strings.NewReplacer("-", " ").Replace(metapipeline.MetaPipelineStageName) {
 			// If there's one stage, it's passed, and it's the metapipeline, assume we're still running.
 			spec.Status = v1.ActivityStatusTypeRunning
