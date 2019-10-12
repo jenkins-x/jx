@@ -162,24 +162,11 @@ func (o *BootOptions) Run() error {
 		repo := gitInfo.Name
 		cloneDir := filepath.Join(o.Dir, repo)
 
-		if o.GitURL == "" && o.GitRef == "" {
-			// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
-			resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+		if o.GitRef == "" {
+			gitRef, err = o.determineGitRef(requirements, gitURL)
 			if err != nil {
-				return errors.Wrapf(err, "failed to create version resolver")
+				return errors.Wrapf(err, "failed to determine git ref")
 			}
-			gitRef, err = resolver.ResolveGitVersion(gitURL)
-			if err != nil {
-				return errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s", gitURL))
-			}
-			if gitRef == "" {
-				log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
-				gitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
-				if err != nil {
-					return errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s", config.DefaultBootRepository))
-				}
-			}
-
 		}
 
 		if !o.BatchMode {
@@ -342,6 +329,28 @@ func existingBootClone(pipelineFile string) (bool, error) {
 		return false, err
 	}
 	return requirementsExist && pipelineExists, nil
+}
+
+func (o *BootOptions) determineGitRef(requirements *config.RequirementsConfig, gitURL string) (string, error) {
+	// If the GitRef is not overridden and is set to it's default value then look up the version number
+	resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create version resolver")
+	}
+	gitRef, err := resolver.ResolveGitVersion(gitURL)
+	if err != nil {
+		return "", errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s in version stream %s",
+			gitURL, requirements.VersionStream.URL))
+	}
+	if gitRef == "" {
+		log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
+		gitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
+		if err != nil {
+			return "", errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s in version stream %s",
+				config.DefaultBootRepository, requirements.VersionStream.URL))
+		}
+	}
+	return gitRef, nil
 }
 
 func (o *BootOptions) defaultVersionStream(requirements *config.RequirementsConfig) {
