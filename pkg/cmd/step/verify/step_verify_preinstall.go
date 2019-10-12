@@ -565,12 +565,10 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		var currentRegion, currentClusterName string
 		var autoAcceptDefaults bool
 		if requirements.Cluster.Region == "" || requirements.Cluster.ClusterName == "" {
-			kubeConfig, _, err := o.Kube().LoadConfig()
+			currentClusterName, currentRegion, err = amazon.GetCurrentlyConnectedRegionAndClusterName()
 			if err != nil {
-				return nil, errors.Wrapf(err, "loading kubeconfig")
+				return requirements, errors.Wrap(err, "there was a problem obtaining the current cluster name and region")
 			}
-			context := kube.Cluster(kubeConfig)
-			currentClusterName, currentRegion, err = amazon.ParseContext(context)
 			if currentClusterName != "" && currentRegion != "" {
 				log.Logger().Infof("")
 				log.Logger().Infof("Currently connected cluster is %s in region %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentRegion))
