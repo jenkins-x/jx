@@ -134,7 +134,7 @@ func (o *CreateProjectWizardOptions) importDir() error {
 }
 
 func (o *CreateProjectWizardOptions) importGit() error {
-	repoUrl, err := util.PickValue("Which git repository URL to inmport: ", "", true,
+	repoUrl, err := util.PickValue("Which git repository URL to import: ", "", true,
 		"Please specify the git URL which contains the source code you want to use for your new project", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
