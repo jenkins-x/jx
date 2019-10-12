@@ -358,6 +358,7 @@ func (options *ImportOptions) Run() error {
 			if err != nil {
 				log.Logger().Warnf("Failed to parse git URL %s : %s", options.RepoURL, err)
 			} else {
+				options.Organisation = info.Organisation
 				options.AppName = info.Name
 			}
 		}
