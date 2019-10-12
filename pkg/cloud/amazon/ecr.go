@@ -19,9 +19,11 @@ import (
 // GetAccountIDAndRegion returns the current account ID and region
 func GetAccountIDAndRegion(profile string, region string) (string, string, error) {
 	sess, err := NewAwsSession(profile, region)
-	region = *sess.Config.Region
+	// We nee to get the region from the connected cluster instead of the one configured for the calling user
+	// as it might not be found and it would then use the default (us-west-2)
+	_, region, err = GetCurrentlyConnectedRegionAndClusterName()
 	if err != nil {
-		return "", region, err
+		return "", "", err
 	}
 	svc := sts.New(sess)
 

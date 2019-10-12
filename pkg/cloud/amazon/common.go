@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 )
 
@@ -72,6 +73,21 @@ func ParseContext(context string) (string, string, error) {
 		return "", "", errors.Errorf("unable to parse %s as <cluster_name>.<region>.*", context)
 	}
 	return result[1], result[2], nil
+}
+
+// GetCurrentlyConnectedRegionAndClusterName gets the current context for the connected cluster and parses it
+// to extract both the Region and the ClusterName
+func GetCurrentlyConnectedRegionAndClusterName() (string, string, error) {
+	kubeConfig, _, err := kube.NewKubeConfig().LoadConfig()
+	if err != nil {
+		return "", "", errors.Wrapf(err, "loading kubeconfig")
+	}
+	context := kube.Cluster(kubeConfig)
+	currentClusterName, currentRegion, err := ParseContext(context)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "parsing the current Kubeernetes context %s", context)
+	}
+	return currentClusterName, currentRegion, nil
 }
 
 // UserHomeDir returns the home directory for the user the process is running under.
