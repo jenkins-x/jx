@@ -107,9 +107,10 @@ func (o *BootOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	exists, err := util.FileExists(pipelineFile)
+
+	isBootClone, err := existingBootClone(pipelineFile)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to check if this is an existing boot clone")
 	}
 
 	gitURL, gitRef, err := gits.GetGitInfoFromDirectory(o.Dir, o.Git())
@@ -149,8 +150,9 @@ func (o *BootOptions) Run() error {
 	// lets report errors parsing this file after the check we are outside of a git clone
 	o.defaultVersionStream(requirements)
 
-	if !exists {
-		log.Logger().Infof("No Jenkins X pipeline file %s found. You are not running this command from inside a Jenkins X Boot git clone", info(pipelineFile))
+	if !isBootClone {
+		log.Logger().Infof("No Jenkins X pipeline file %s or no jx boot requirements file %s found. You are not running this command from inside a "+
+			"Jenkins X Boot git clone", info(pipelineFile), info(config.RequirementsConfigFileName))
 
 		gitInfo, err := gits.ParseGitURL(gitURL)
 		if err != nil {
@@ -190,11 +192,11 @@ func (o *BootOptions) Run() error {
 			}
 		}
 
-		exists, err = util.FileExists(cloneDir)
+		bootCloneExists, err := util.FileExists(cloneDir)
 		if err != nil {
 			return err
 		}
-		if exists {
+		if bootCloneExists {
 			return fmt.Errorf("Cannot clone git repository to %s as the dir already exists. Maybe try 'cd %s' and re-run the 'jx boot' command?", repo, repo)
 		}
 
@@ -227,12 +229,12 @@ func (o *BootOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		exists, err = util.FileExists(pipelineFile)
+		bootCloneExists, err = util.FileExists(pipelineFile)
 		if err != nil {
 			return err
 		}
 
-		if !exists {
+		if !bootCloneExists {
 			return fmt.Errorf("The cloned repository %s does not include a Jenkins X Pipeline file at %s", gitURL, pipelineFile)
 		}
 	}
@@ -252,11 +254,11 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 
-	exists, err = util.FileExists(requirementsFile)
+	isBootClone, err = util.FileExists(requirementsFile)
 	if err != nil {
 		return err
 	}
-	if !exists {
+	if !isBootClone {
 		return fmt.Errorf("No requirements file %s are you sure you are running this command inside a GitOps clone?", requirementsFile)
 	}
 
@@ -328,6 +330,18 @@ func (o *BootOptions) Run() error {
 	no.Args = []string{requirements.Cluster.Namespace}
 	log.Logger().Infof("switching to the namespace %s so that you can use %s commands on the installation", info(requirements.Cluster.Namespace), info("jx"))
 	return no.Run()
+}
+
+func existingBootClone(pipelineFile string) (bool, error) {
+	pipelineExists, err := util.FileExists(pipelineFile)
+	if err != nil {
+		return false, err
+	}
+	requirementsExist, err := util.FileExists(config.RequirementsConfigFileName)
+	if err != nil {
+		return false, err
+	}
+	return requirementsExist && pipelineExists, nil
 }
 
 func (o *BootOptions) defaultVersionStream(requirements *config.RequirementsConfig) {
