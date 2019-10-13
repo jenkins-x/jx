@@ -6,8 +6,12 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"path"
+	"path/filepath"
 	"sort"
 	"strings"
+
+	"gopkg.in/src-d/go-git.v4/config"
 
 	uuid "github.com/satori/go.uuid"
 
@@ -354,7 +358,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(existingPr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
 		return nil, nil
 	} else if push {
-		err := gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
+		err := gitter.Push(dir, forkPushURL, true, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
 		if err != nil {
 			return nil, errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
 		}
@@ -598,7 +602,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 					return "", "", nil, nil, errors.Wrapf(err, "running git reset --hard")
 				}
 			} else {
-				log.Logger().Warnf(errors.Wrapf(err, "Unable to cherry-pick %s", util.ColorWarning(c.SHA)).Error())
+				return "", "", nil, nil, errors.Wrapf(err, "Unable to cherry-pick %s", util.ColorWarning(c.SHA))
 			}
 		} else {
 			log.Logger().Infof("  Cherry-picked %s", c.OneLine())
@@ -726,67 +730,119 @@ func FindTagForVersion(dir string, version string, gitter Gitter) (string, error
 	return answer, nil
 }
 
-//DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
+// DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
 // head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo
 func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, private bool, provider GitProvider, gitter Gitter) (*GitRepository, error) {
 	duplicateInfo, err := provider.GetRepository(toOrg, toName)
-	// If the duplicate doesn't exist create it
-	if err != nil {
-		log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", toOrg, toName).Error())
-		fromInfo, err := ParseGitURL(fromGitURL)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
-		}
-		fromInfo, err = provider.GetRepository(fromInfo.Organisation, fromInfo.Name)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
-		}
-		duplicateInfo, err = provider.CreateRepository(toOrg, toName, private)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", toOrg, toName)
-		}
-		dir, err := ioutil.TempDir("", "")
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		err = gitter.Clone(fromInfo.CloneURL, dir)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.CloneURL)
-		}
-		if !strings.Contains(fromCommitish, "/") {
-			// if the commitish looks like a tag, fetch the tags
-			err = gitter.FetchTags(dir)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.CloneURL)
-			}
-		} else {
-			parts := strings.Split(fromCommitish, "/")
-			err = gitter.FetchBranch(dir, parts[0], parts[1])
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
-			}
-		}
-		err = gitter.Reset(dir, fromCommitish, true)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
-		}
-		userDetails := provider.UserAuth()
-		duplicatePushURL, err := gitter.CreateAuthenticatedURL(duplicateInfo.CloneURL, &userDetails)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
-		}
-		err = gitter.SetRemoteURL(dir, "origin", duplicateInfo.CloneURL)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to set remote url to %s", duplicateInfo.CloneURL)
-		}
-		err = gitter.Push(dir, duplicatePushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", toBranch))
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
-		}
-		log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo((fromInfo.HTMLURL)), util.ColorInfo(duplicateInfo.HTMLURL))
-		log.Logger().Infof("Setting upstream to %s\n", util.ColorInfo(duplicateInfo.HTMLURL))
+	if err == nil {
+		return duplicateInfo, nil
 	}
+
+	// If the duplicate doesn't exist create it
+	log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", toOrg, toName).Error())
+	fromInfo, err := ParseGitURL(fromGitURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
+	}
+	fromInfo, err = provider.GetRepository(fromInfo.Organisation, fromInfo.Name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
+	}
+	duplicateInfo, err = provider.CreateRepository(toOrg, toName, private)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", toOrg, toName)
+	}
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	err = gitter.Clone(fromInfo.CloneURL, dir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.CloneURL)
+	}
+	if !strings.Contains(fromCommitish, "/") {
+		// if the commitish looks like a tag, fetch the tags
+		err = gitter.FetchTags(dir)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.CloneURL)
+		}
+	} else {
+		parts := strings.Split(fromCommitish, "/")
+		err = gitter.FetchBranch(dir, parts[0], parts[1])
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
+		}
+	}
+	err = gitter.Reset(dir, fromCommitish, true)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
+	}
+
+	err = SquashIntoSingleCommit(dir, fmt.Sprintf("initial config based of %s/%s with ref %s", toOrg, toName, fromCommitish), gitter)
+	if err != nil {
+		return nil, err
+	}
+
+	userDetails := provider.UserAuth()
+	duplicatePushURL, err := gitter.CreateAuthenticatedURL(duplicateInfo.CloneURL, &userDetails)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
+	}
+	err = gitter.SetRemoteURL(dir, "origin", duplicateInfo.CloneURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to set remote url to %s", duplicateInfo.CloneURL)
+	}
+	err = gitter.Push(dir, duplicatePushURL, true, fmt.Sprintf("%s:%s", "HEAD", toBranch))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
+	}
+	log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo(fromInfo.HTMLURL), util.ColorInfo(duplicateInfo.HTMLURL))
+	log.Logger().Infof("Setting upstream to %s\n\n", util.ColorInfo(duplicateInfo.HTMLURL))
+
 	return duplicateInfo, nil
+}
+
+// SquashIntoSingleCommit takes the git repository in the specified directory and squashes all commits into a single
+// one using the specified message.
+func SquashIntoSingleCommit(repoDir string, commitMsg string, gitter Gitter) error {
+	cfg := config.NewConfig()
+	data, err := ioutil.ReadFile(filepath.Join(repoDir, ".git", "config"))
+	if err != nil {
+		return errors.Wrapf(err, "failed to load git config from %s", repoDir)
+	}
+
+	err = cfg.Unmarshal(data)
+	if err != nil {
+		return errors.Wrapf(err, "failed to unmarshal %s", repoDir)
+	}
+
+	err = os.RemoveAll(path.Join(repoDir, ".git"))
+	if err != nil {
+		return errors.Wrap(err, "unable to squash")
+	}
+
+	err = gitter.Init(repoDir)
+	if err != nil {
+		return errors.Wrap(err, "unable to init git")
+	}
+
+	for _, remote := range cfg.Remotes {
+		err = gitter.AddRemote(repoDir, remote.Name, remote.URLs[0])
+		if err != nil {
+			return errors.Wrap(err, "unable to update remote")
+		}
+	}
+
+	err = gitter.Add(repoDir, ".")
+	if err != nil {
+		return errors.Wrap(err, "unable to add stage commit")
+	}
+
+	err = gitter.CommitDir(repoDir, commitMsg)
+	if err != nil {
+		return errors.Wrap(err, "unable to add initial commit")
+	}
+	return nil
 }
 
 // GetGitInfoFromDirectory obtains remote origin HTTPS and current branch of a given directory and fails if it's not a git repository

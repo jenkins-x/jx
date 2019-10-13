@@ -736,7 +736,7 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	}
 
 	for _, c := range cluster.Commands {
-		e := exec.Command(c.Command, c.Args...)
+		e := exec.Command(c.Command, c.Args...) // #nosec
 		e.Stdout = o.Out
 		e.Stderr = o.Err
 		os.Setenv("PATH", util.PathWithBinary())

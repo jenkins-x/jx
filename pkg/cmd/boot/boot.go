@@ -115,7 +115,7 @@ func (o *BootOptions) Run() error {
 
 	gitURL, gitRef, err := gits.GetGitInfoFromDirectory(o.Dir, o.Git())
 	if err != nil {
-		log.Logger().Warn(fmt.Sprintf("there was a problem obtaining the boot config repository git configuration, falling back to defaults"))
+		log.Logger().Warnf("there was a problem obtaining the boot config repository git configuration, falling back to defaults. Error: %s", err.Error())
 		gitURL = config.DefaultBootRepository
 		gitRef = config.DefaultVersionsRef
 	}

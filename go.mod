@@ -102,6 +102,7 @@ require (
 	github.com/rollout/rox-go v0.0.0-20181220111955-29ddae74a8c4
 	github.com/russross/blackfriday v1.5.1
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735 // indirect
+	github.com/sanathkr/go-yaml v0.0.0-20170819195128-ed9d249f429b
 	github.com/satori/go.uuid v1.2.1-0.20180103174451-36e9d2ebbde5
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sethvargo/go-password v0.1.2

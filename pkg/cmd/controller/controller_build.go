@@ -823,7 +823,11 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 
 			if terminated != nil {
 				if terminated.ExitCode == 0 {
-					step.Status = v1.ActivityStatusTypeSucceeded
+					if didPreviousStepFail(i, stageSteps) {
+						step.Status = v1.ActivityStatusTypeNotExecuted
+					} else {
+						step.Status = v1.ActivityStatusTypeSucceeded
+					}
 				} else {
 					step.Status = v1.ActivityStatusTypeFailed
 				}
@@ -969,6 +973,16 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 			}
 		}
 	}
+}
+
+// didPreviousStepFail checks if the step before the given index failed. This is used to mark not-actually-executed steps
+// correctly.
+func didPreviousStepFail(index int, stageSteps []v1.CoreActivityStep) bool {
+	if len(stageSteps) > 0 {
+		previousStep := stageSteps[index-1]
+		return previousStep.CompletedTimestamp != nil && previousStep.Status != v1.ActivityStatusTypeSucceeded
+	}
+	return false
 }
 
 // isStepRunning checks if the step at the given index is actually running its command, not just waiting for the previous

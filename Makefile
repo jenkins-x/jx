@@ -47,7 +47,7 @@ GOTEST := GO111MODULE=on gotestsum --junitfile $(REPORTS_DIR)/integration.junit.
 endif
 
 # set dev version unless VERSION is explicitly set via environment
-VERSION ?= $(shell echo "$$(git describe --abbrev=0 --tags 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
+VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
 
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
@@ -258,7 +258,7 @@ fmt: ## Format the code
       	fi
 
 .PHONY: importfmt
-importsfmt:
+importfmt:
 	# $(GO_NOMOD) get golang.org/x/tools/cmd/goimports
 	@echo "Formatting the imports..."
 	goimports -w $(GO_DEPENDENCIES)

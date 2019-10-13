@@ -58,7 +58,7 @@ func TestEnvironmentExposecontrollerHelmValuesWithUrlTemplate(t *testing.T) {
 	values.ExposeController.Config.Domain = "jenkinsx.io"
 	values.ExposeController.Config.HTTP = "false"
 	values.ExposeController.Config.TLSAcme = "false"
-	values.ExposeController.Config.UrlTemplate = "{{.Service}}-{{.Namespace}}.{{.Domain}}"
+	values.ExposeController.Config.URLTemplate = "{{.Service}}-{{.Namespace}}.{{.Domain}}"
 	assert.Equal(t, helmValuesFromFile, values, "expected exposecontroller helm values do not match")
 }
 

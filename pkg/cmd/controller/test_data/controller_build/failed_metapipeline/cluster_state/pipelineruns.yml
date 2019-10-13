@@ -69,16 +69,16 @@ items:
           - name: create-effective-pipeline
             terminated:
               containerID: docker://58e2714e5547bc1e5228a3a20670f0a5de34b9ccf21b995136cfa96870240909
-              exitCode: 0
+              exitCode: 1
               finishedAt: "2019-09-10T17:07:35Z"
-              reason: Completed
+              reason: Error
               startedAt: "2019-09-10T17:07:26Z"
           - name: create-tekton-crds
             terminated:
               containerID: docker://a0f8fbbfd6ab4080db9276e0aaedb3df941b6a0e99f24d693f9429c1d4f88094
-              exitCode: 1
+              exitCode: 0
               finishedAt: "2019-09-10T17:08:20Z"
-              reason: Error
+              reason: Completed
               startedAt: "2019-09-10T17:07:27Z"
           - name: git-source-meta-cb-kubecd-bdd-spring-15681-d925z
             terminated:

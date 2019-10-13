@@ -63,11 +63,11 @@ spec:
       - completedTimestamp: "2019-09-10T17:07:35Z"
         name: Create Effective Pipeline
         startedTimestamp: "2019-09-10T17:07:30Z"
-        status: Succeeded
+        status: Failed
       - completedTimestamp: "2019-09-10T17:08:20Z"
         name: Create Tekton Crds
         startedTimestamp: "2019-09-10T17:07:35Z"
-        status: Failed
+        status: NotExecuted
   version: 0.0.1
   workflowStatus: Running
 status: {}

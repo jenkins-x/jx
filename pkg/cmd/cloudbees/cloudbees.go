@@ -135,7 +135,7 @@ func (o CloudBeesOptions) executePortForwardRoutine(serviceName string) {
 		log.Logger().Debugf("Executed command: %s", util.ColorInfo(cmd))
 		outWriter = o.Out
 	}
-	c := exec.Command("kubectl", "port-forward", fmt.Sprintf("service/%s", serviceName), fmt.Sprintf("%s:80", o.LocalPort))
+	c := exec.Command("kubectl", "port-forward", fmt.Sprintf("service/%s", serviceName), fmt.Sprintf("%s:80", o.LocalPort)) // #nosec
 	c.Stdout = outWriter
 	c.Stderr = o.Err
 	err := c.Run()

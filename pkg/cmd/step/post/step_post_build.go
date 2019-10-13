@@ -146,7 +146,7 @@ func (o *StepPostBuildOptions) addImageToAnchore() (string, error) {
 		return "", err
 	}
 
-	cmd := exec.Command("anchore-cli", "image", "add", o.FullImageName)
+	cmd := exec.Command("anchore-cli", "image", "add", o.FullImageName) // #nosec
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "ANCHORE_CLI_USER="+a.Username)
 	cmd.Env = append(cmd.Env, "ANCHORE_CLI_PASS="+a.Password)

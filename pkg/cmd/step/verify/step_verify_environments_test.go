@@ -12,8 +12,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/stretchr/testify/assert"
+
 	"sigs.k8s.io/yaml"
+
+	"fmt"
+	"os"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStepVerifyEnvironmentsOptions_StoreRequirementsInTeamSettings(t *testing.T) {
@@ -105,4 +110,86 @@ func TestStepVerifyEnvironmentsOptions_StoreRequirementsConfigMapWithModificatio
 
 	assert.Equal(t, requirements.Storage.Logs, mapRequirements.Storage.Logs, "the change done before calling"+
 		"VerifyRequirementsInTeamSettings should be present in the retrieved configuration")
+}
+
+func Test_IsJXBoot(t *testing.T) {
+	orig, found := os.LookupEnv(jxInterpretPipelineEnvKey)
+	defer func() {
+		if found {
+			_ = os.Setenv(jxInterpretPipelineEnvKey, orig)
+		}
+	}()
+
+	o := StepVerifyEnvironmentsOptions{}
+
+	err := os.Setenv(jxInterpretPipelineEnvKey, "")
+	assert.NoError(t, err)
+	assert.False(t, o.isJXBoot(), "we should not be in boot mode")
+
+	err = os.Setenv(jxInterpretPipelineEnvKey, "false")
+	assert.NoError(t, err)
+	assert.False(t, o.isJXBoot(), "we should not be in boot mode")
+
+	err = os.Setenv(jxInterpretPipelineEnvKey, "true")
+	assert.NoError(t, err)
+	assert.True(t, o.isJXBoot(), "we should be in boot mode")
+}
+
+func Test_ReadEnvironment(t *testing.T) {
+	origConfigRepoURL, foundConfigRepoURLEnvKey := os.LookupEnv(configRepoURLEnvKey)
+	origConfigRepoRef, foundConfigRepoRefEnvKey := os.LookupEnv(configRepoRefEnvKey)
+	defer func() {
+		if foundConfigRepoURLEnvKey {
+			_ = os.Setenv(configRepoURLEnvKey, origConfigRepoURL)
+		}
+
+		if foundConfigRepoRefEnvKey {
+			_ = os.Setenv(configRepoRefEnvKey, origConfigRepoRef)
+		}
+	}()
+
+	o := StepVerifyEnvironmentsOptions{}
+
+	var tests = []struct {
+		url         string
+		ref         string
+		expectError bool
+		errorString string
+	}{
+		{"https://github.com/jenkins-x/jenkins-x-boot-config", "master", false, ""},
+		{"https://github.com/jenkins-x/jenkins-x-boot-config", "", true, "the environment variable BASE_CONFIG_REF must be specified"},
+		{"", "master", true, "the environment variable REPO_URL must be specified"},
+		{"", "", true, "[the environment variable REPO_URL must be specified, the environment variable BASE_CONFIG_REF must be specified]"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(fmt.Sprintf("%s-%s", testCase.url, testCase.ref), func(t *testing.T) {
+			if testCase.url == "" {
+				err := os.Unsetenv(configRepoURLEnvKey)
+				assert.NoError(t, err)
+			} else {
+				err := os.Setenv(configRepoURLEnvKey, testCase.url)
+				assert.NoError(t, err)
+			}
+
+			if testCase.ref == "" {
+				err := os.Unsetenv(configRepoRefEnvKey)
+				assert.NoError(t, err)
+			} else {
+				err := os.Setenv(configRepoRefEnvKey, testCase.ref)
+				assert.NoError(t, err)
+
+			}
+
+			repo, ref, err := o.readEnvironment()
+			if testCase.expectError {
+				assert.Error(t, err)
+				assert.Equal(t, testCase.errorString, err.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.url, repo)
+				assert.Equal(t, testCase.ref, ref)
+			}
+		})
+	}
 }
