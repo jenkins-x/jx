@@ -9,7 +9,7 @@ type RemoteConnector struct {
 	GKE *GKEConnector `json:"gcp,omitempty" protobuf:"bytes,1,opt,name=gcp"`
 }
 
-// Key returns the key used for caching connectors
+// Path returns the relative path used for caching connectors
 func (c *RemoteConnector) Path() string {
 	if c.GKE != nil {
 		return c.GKE.Path()
@@ -25,6 +25,7 @@ type GKEConnector struct {
 	Zone    string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
 }
 
+// Path returns the relative path for the dir for any configuration files needed for this connector
 func (c *GKEConnector) Path() string {
 	if c.Region != "" {
 		return filepath.Join("gcp", c.Project, c.Cluster, "region", c.Region)
