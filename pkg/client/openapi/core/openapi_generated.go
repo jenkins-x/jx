@@ -71,6 +71,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactList":                            schema_pkg_apis_jenkinsio_v1_FactList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec":                            schema_pkg_apis_jenkinsio_v1_FactSpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus":                          schema_pkg_apis_jenkinsio_v1_FactStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GKEConnector":                        schema_pkg_apis_jenkinsio_v1_GKEConnector(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService":                          schema_pkg_apis_jenkinsio_v1_GitService(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceList":                      schema_pkg_apis_jenkinsio_v1_GitServiceList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec":                      schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref),
@@ -117,6 +118,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseList":                         schema_pkg_apis_jenkinsio_v1_ReleaseList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseSpec":                         schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseStatus":                       schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RemoteConnection":                    schema_pkg_apis_jenkinsio_v1_RemoteConnection(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RemoteConnector":                     schema_pkg_apis_jenkinsio_v1_RemoteConnector(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy": schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringContextPolicy(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString":        schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringString(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins":   schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfExternalPlugins(ref),
@@ -1723,11 +1726,16 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"connector": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RemoteConnector"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRepository", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewGitSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSettings"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRepository", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewGitSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RemoteConnector", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSettings"},
 	}
 }
 
@@ -2643,6 +2651,44 @@ func schema_pkg_apis_jenkinsio_v1_FactStatus(ref common.ReferenceCallback) commo
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_GKEConnector(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GKEConnector the connection details for using Google Cloud",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"project": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"cluster": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"region": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"zone": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -4988,6 +5034,46 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_RemoteConnection(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RemoteConnection specifies how to connect to a remote",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_RemoteConnector(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RemoteConnector specifies the namespace in the remote cluster",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"gcp": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GKEConnector"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GKEConnector"},
 	}
 }
 

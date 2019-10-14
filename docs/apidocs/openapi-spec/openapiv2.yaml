@@ -623,6 +623,8 @@ definitions:
     properties:
       cluster:
         type: string
+      connector:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RemoteConnector'
       kind:
         type: string
       label:
@@ -1008,6 +1010,18 @@ definitions:
     description: FactStatus is the status for an Fact resource
     properties:
       version:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GKEConnector:
+    description: GKEConnector the connection details for using Google Cloud
+    properties:
+      cluster:
+        type: string
+      project:
+        type: string
+      region:
+        type: string
+      zone:
         type: string
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitService:
@@ -1952,6 +1966,18 @@ definitions:
     properties:
       status:
         type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RemoteConnection:
+    description: RemoteConnection specifies how to connect to a remote
+    properties:
+      namespace:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RemoteConnector:
+    description: RemoteConnector specifies the namespace in the remote cluster
+    properties:
+      gcp:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GKEConnector'
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringContextPolicy:
     description: ReplaceableMapOfStringContextPolicy is a map of context policies
