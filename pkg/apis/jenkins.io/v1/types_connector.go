@@ -19,10 +19,10 @@ func (c *RemoteConnector) Path() string {
 
 // GKEConnector the connection details for using Google Cloud
 type GKEConnector struct {
-	Project string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
-	Cluster string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
-	Region  string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
-	Zone    string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
+	Project string `json:"project,omitempty" protobuf:"bytes,1,opt,name=project"`
+	Cluster string `json:"cluster,omitempty" protobuf:"bytes,2,opt,name=cluster"`
+	Region  string `json:"region,omitempty" protobuf:"bytes,3,opt,name=region"`
+	Zone    string `json:"zone,omitempty" protobuf:"bytes,4,opt,name=zone"`
 }
 
 // Path returns the relative path for the dir for any configuration files needed for this connector
