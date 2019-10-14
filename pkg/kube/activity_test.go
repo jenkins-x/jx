@@ -318,6 +318,79 @@ func TestCreateOrUpdateActivityForBatchBuild(t *testing.T) {
 	assert.Equal(t, expectedBuild, pa3.Spec.BatchPipelineActivity.BatchBuildNumber, "The batch build number that is going to merge this PR should be %s", expectedBuild)
 }
 
+func TestCreateOrUpdateActivityForBatchBuildWithoutExistingActivities(t *testing.T) {
+	t.Parallel()
+
+	nsObj := &k8s_v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jx-testing",
+			Namespace: "testing_ns",
+		},
+	}
+
+	jxClient := jxfake.NewSimpleClientset()
+
+	const (
+		expectedName         = "demo-2"
+		expectedBuild        = "2"
+		expectedOrganisation = "test-org"
+	)
+	expectedPipeline := expectedOrganisation + "/" + expectedName + "/master"
+
+	key := kube.PipelineActivityKey{
+		Name:     expectedName,
+		Pipeline: expectedPipeline,
+		Build:    expectedBuild,
+		GitInfo: &gits.GitRepository{
+			Name:         expectedName,
+			Organisation: expectedOrganisation,
+			URL:          "https://github.com/" + expectedOrganisation + "/" + expectedName,
+		},
+		PullRefs: map[string]string{
+			"1": "sha1",
+			"2": "sha2",
+		},
+	}
+
+	//lets create a few "builds" for PR-2 with the same SHA so we can check if we choose the right one
+	for i := 1; i < 4; i++ {
+		_, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Create(&v1.PipelineActivity{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("PA%d", i),
+				Labels: map[string]string{
+					"lastCommitSha": "sha2",
+					"branch":        "PR-2",
+				},
+			},
+			Spec: v1.PipelineActivitySpec{
+				Build: strconv.Itoa(i),
+			},
+		})
+		assert.NoError(t, err)
+	}
+
+	a, _, err := key.GetOrCreate(jxClient, nsObj.Namespace)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedName, a.Name)
+	spec := &a.Spec
+	assert.Equal(t, expectedPipeline, spec.Pipeline)
+	assert.Equal(t, expectedBuild, spec.Build)
+
+	pa3, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Get("PA3", metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	assert.Len(t, a.Spec.BatchPipelineActivity.ComprisingPulLRequests, 1, "There should be %d PRs information in the ComprisingPullRequests property", 1)
+	exists := false
+	for _, i := range a.Spec.BatchPipelineActivity.ComprisingPulLRequests {
+		if i.PullRequestNumber == "PR-2" {
+			exists = true
+			assert.Equal(t, "3", i.LastBuildNumberForCommit)
+		}
+	}
+	assert.True(t, exists, "There should be a Pull Request called PR-2 within the ComprisingPullRequests property")
+	assert.Equal(t, expectedBuild, pa3.Spec.BatchPipelineActivity.BatchBuildNumber, "The batch build number that is going to merge this PR should be %s", expectedBuild)
+}
+
 func TestCreateOrUpdatePRActivityWithLastCommitSHA(t *testing.T) {
 	t.Parallel()
 

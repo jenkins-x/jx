@@ -369,40 +369,44 @@ func (k *PipelineActivityKey) addBatchBuildData(activitiesClient typev1.Pipeline
 			return errors.Wrapf(err, "there was a problem listing all PipelineActivities for PR-%s with lastCommitSha %s", sha, prNumber)
 		}
 
-		//Select the first one as the latest build for this SHA, then iterate the rest
-		selectedPipeline := list.Items[0]
-		list.Items = list.Items[1:]
-		for _, i := range list.Items {
-			if i.Spec.Build != "" && selectedPipeline.Spec.Build != "" {
-				ib, err := strconv.Atoi(i.Spec.Build)
-				if err != nil {
-					log.Logger().Errorf("%s", err)
-				}
-				cb, err := strconv.Atoi(selectedPipeline.Spec.Build)
-				if err != nil {
-					log.Logger().Errorf("%s", err)
-				}
-				if ib > cb {
-					selectedPipeline = i
+		// Only proceed if there are existing PipelineActivitys for this commit/branch - it's entirely possible they've
+		// all been GCed since they last ran. If there are none, just continue to the next commit/branch.
+		if len(list.Items) > 0 {
+			//Select the first one as the latest build for this SHA, then iterate the rest
+			selectedPipeline := list.Items[0]
+			list.Items = list.Items[1:]
+			for _, i := range list.Items {
+				if i.Spec.Build != "" && selectedPipeline.Spec.Build != "" {
+					ib, err := strconv.Atoi(i.Spec.Build)
+					if err != nil {
+						log.Logger().Errorf("%s", err)
+					}
+					cb, err := strconv.Atoi(selectedPipeline.Spec.Build)
+					if err != nil {
+						log.Logger().Errorf("%s", err)
+					}
+					if ib > cb {
+						selectedPipeline = i
+					}
 				}
 			}
-		}
 
-		//Update the selected PR's PipelineActivity with the batch info
-		selectedPipeline.Spec.BatchPipelineActivity = v1.BatchPipelineActivity{
-			BatchBranchName:  currentActivity.Labels[v1.LabelBranch],
-			BatchBuildNumber: k.Build,
-		}
+			//Update the selected PR's PipelineActivity with the batch info
+			selectedPipeline.Spec.BatchPipelineActivity = v1.BatchPipelineActivity{
+				BatchBranchName:  currentActivity.Labels[v1.LabelBranch],
+				BatchBuildNumber: k.Build,
+			}
 
-		_, err = activitiesClient.Update(&selectedPipeline)
-		if err != nil {
-			return errors.Wrap(err, "there was a problem updating the PR's PipelineActivity")
+			_, err = activitiesClient.Update(&selectedPipeline)
+			if err != nil {
+				return errors.Wrap(err, "there was a problem updating the PR's PipelineActivity")
+			}
+			//Add this PR's PipelineActivity info to the pull requests array of the batch build's PipelineActivity
+			prInfos = append(prInfos, v1.PullRequestInfo{
+				PullRequestNumber:        selectedPipeline.Labels[v1.LabelBranch],
+				LastBuildNumberForCommit: selectedPipeline.Spec.Build,
+			})
 		}
-		//Add this PR's PipelineActivity info to the pull requests array of the batch build's PipelineActivity
-		prInfos = append(prInfos, v1.PullRequestInfo{
-			PullRequestNumber:        selectedPipeline.Labels[v1.LabelBranch],
-			LastBuildNumberForCommit: selectedPipeline.Spec.Build,
-		})
 	}
 	currentActivity.Spec.BatchPipelineActivity = v1.BatchPipelineActivity{
 		ComprisingPulLRequests: prInfos,
