@@ -38,6 +38,11 @@ type Environment struct {
 	Status EnvironmentStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
+// RemoteConnection specifies how to connect to a remote
+type RemoteConnection struct {
+	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
+}
+
 // EnvironmentSpec is the specification of an Environment
 type EnvironmentSpec struct {
 	Label             string                `json:"label,omitempty" protobuf:"bytes,1,opt,name=label"`
@@ -53,7 +58,8 @@ type EnvironmentSpec struct {
 	WebHookEngine     WebHookEngineType     `json:"webHookEngine,omitempty" protobuf:"bytes,11,opt,name=webHookEngine"`
 
 	// RemoteCluster flag indicates if the Environment is deployed in a separate cluster to the Development Environment
-	RemoteCluster bool `json:"remoteCluster,omitempty" protobuf:"bytes,12,opt,name=remoteCluster"`
+	RemoteCluster bool            `json:"remoteCluster,omitempty" protobuf:"bytes,12,opt,name=remoteCluster"`
+	Connector     RemoteConnector `json:"connector,omitempty" protobuf:"bytes,13,opt,name=connector"`
 }
 
 // EnvironmentStatus is the status for an Environment resource
