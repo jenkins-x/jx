@@ -91,7 +91,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
 			log.Logger().Infof("Installing %s", p)
-			err = o.RunCommand("go", "get", "-u", p)
+			err = o.RunCommand("go", "get", p)
 			if err != nil {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
 			}
@@ -99,7 +99,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 		log.Logger().Info("Installed micro dependencies")
 
 		log.Logger().Info("Downloading and building micro - this can take a minute or so...")
-		err = o.RunCommand("go", "get", "-u", "github.com/micro/micro")
+		err = o.RunCommand("go", "get", "github.com/micro/micro")
 		if err == nil {
 			log.Logger().Info("Installed micro and its dependencies!")
 		}
