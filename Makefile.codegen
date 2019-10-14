@@ -52,7 +52,12 @@ generate-openapi: codegen-openapi fmt
 
 codegen-openapi: build-codegen
 	@echo "Generating OpenAPI structs for Kubernetes Clients"
-	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client --input-package=github.com/jenkins-x/jx/pkg/apis --group-with-version=jenkins.io:v1
+	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client \
+	--input-package=github.com/jenkins-x/jx/pkg \
+	--group-with-version=apis/jenkins.io:v1 \
+	--group-with-version=config: \
+	--group-with-version=jenkinsfile: \
+	--group-with-version=tekton:syntax
 
 stash:
 	# Making sure repo has no outstanding changes

@@ -155,6 +155,82 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowSpec":                        schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStatus":                      schema_pkg_apis_jenkinsio_v1_WorkflowStatus(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStep":                        schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref),
+		"github.com/jenkins-x/jx/pkg/config.AddonConfig":                                     schema_jenkins_x_jx_pkg_config_AddonConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.AdminSecretsConfig":                              schema_jenkins_x_jx_pkg_config_AdminSecretsConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.AdminSecretsFlags":                               schema_jenkins_x_jx_pkg_config_AdminSecretsFlags(ref),
+		"github.com/jenkins-x/jx/pkg/config.AdminSecretsService":                             schema_jenkins_x_jx_pkg_config_AdminSecretsService(ref),
+		"github.com/jenkins-x/jx/pkg/config.AutoUpdateConfig":                                schema_jenkins_x_jx_pkg_config_AutoUpdateConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.AzureConfig":                                     schema_jenkins_x_jx_pkg_config_AzureConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.BasicAuth":                                       schema_jenkins_x_jx_pkg_config_BasicAuth(ref),
+		"github.com/jenkins-x/jx/pkg/config.ChartMuseum":                                     schema_jenkins_x_jx_pkg_config_ChartMuseum(ref),
+		"github.com/jenkins-x/jx/pkg/config.ChartMuseumEnv":                                  schema_jenkins_x_jx_pkg_config_ChartMuseumEnv(ref),
+		"github.com/jenkins-x/jx/pkg/config.ChartMuseumSecret":                               schema_jenkins_x_jx_pkg_config_ChartMuseumSecret(ref),
+		"github.com/jenkins-x/jx/pkg/config.ChatConfig":                                      schema_jenkins_x_jx_pkg_config_ChatConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.ClusterConfig":                                   schema_jenkins_x_jx_pkg_config_ClusterConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.EnabledConfig":                                   schema_jenkins_x_jx_pkg_config_EnabledConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.EnvironmentConfig":                               schema_jenkins_x_jx_pkg_config_EnvironmentConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.ExposeController":                                schema_jenkins_x_jx_pkg_config_ExposeController(ref),
+		"github.com/jenkins-x/jx/pkg/config.ExposeControllerConfig":                          schema_jenkins_x_jx_pkg_config_ExposeControllerConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.Grafana":                                         schema_jenkins_x_jx_pkg_config_Grafana(ref),
+		"github.com/jenkins-x/jx/pkg/config.GrafanaSecret":                                   schema_jenkins_x_jx_pkg_config_GrafanaSecret(ref),
+		"github.com/jenkins-x/jx/pkg/config.HelmValuesConfig":                                schema_jenkins_x_jx_pkg_config_HelmValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.HelmValuesConfigService":                         schema_jenkins_x_jx_pkg_config_HelmValuesConfigService(ref),
+		"github.com/jenkins-x/jx/pkg/config.Image":                                           schema_jenkins_x_jx_pkg_config_Image(ref),
+		"github.com/jenkins-x/jx/pkg/config.IngressConfig":                                   schema_jenkins_x_jx_pkg_config_IngressConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.IssueTrackerConfig":                              schema_jenkins_x_jx_pkg_config_IssueTrackerConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.Jenkins":                                         schema_jenkins_x_jx_pkg_config_Jenkins(ref),
+		"github.com/jenkins-x/jx/pkg/config.JenkinsAdminSecret":                              schema_jenkins_x_jx_pkg_config_JenkinsAdminSecret(ref),
+		"github.com/jenkins-x/jx/pkg/config.JenkinsGiteaServersValuesConfig":                 schema_jenkins_x_jx_pkg_config_JenkinsGiteaServersValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.JenkinsGithubServersValuesConfig":                schema_jenkins_x_jx_pkg_config_JenkinsGithubServersValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.JenkinsPipelineSecretsValuesConfig":              schema_jenkins_x_jx_pkg_config_JenkinsPipelineSecretsValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.JenkinsServersGlobalConfig":                      schema_jenkins_x_jx_pkg_config_JenkinsServersGlobalConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.JenkinsServersValuesConfig":                      schema_jenkins_x_jx_pkg_config_JenkinsServersValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.JenkinsValuesConfig":                             schema_jenkins_x_jx_pkg_config_JenkinsValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.JxInstallProfile":                                schema_jenkins_x_jx_pkg_config_JxInstallProfile(ref),
+		"github.com/jenkins-x/jx/pkg/config.KanikoSecret":                                    schema_jenkins_x_jx_pkg_config_KanikoSecret(ref),
+		"github.com/jenkins-x/jx/pkg/config.Nexus":                                           schema_jenkins_x_jx_pkg_config_Nexus(ref),
+		"github.com/jenkins-x/jx/pkg/config.PipelineSecrets":                                 schema_jenkins_x_jx_pkg_config_PipelineSecrets(ref),
+		"github.com/jenkins-x/jx/pkg/config.Preview":                                         schema_jenkins_x_jx_pkg_config_Preview(ref),
+		"github.com/jenkins-x/jx/pkg/config.PreviewEnvironmentConfig":                        schema_jenkins_x_jx_pkg_config_PreviewEnvironmentConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.PreviewValuesConfig":                             schema_jenkins_x_jx_pkg_config_PreviewValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.ProjectConfig":                                   schema_jenkins_x_jx_pkg_config_ProjectConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.ProwValuesConfig":                                schema_jenkins_x_jx_pkg_config_ProwValuesConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.RequirementsConfig":                              schema_jenkins_x_jx_pkg_config_RequirementsConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.StorageConfig":                                   schema_jenkins_x_jx_pkg_config_StorageConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.StorageEntryConfig":                              schema_jenkins_x_jx_pkg_config_StorageEntryConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.TLSConfig":                                       schema_jenkins_x_jx_pkg_config_TLSConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.VaultConfig":                                     schema_jenkins_x_jx_pkg_config_VaultConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.VeleroConfig":                                    schema_jenkins_x_jx_pkg_config_VeleroConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.VersionStreamConfig":                             schema_jenkins_x_jx_pkg_config_VersionStreamConfig(ref),
+		"github.com/jenkins-x/jx/pkg/config.WikiConfig":                                      schema_jenkins_x_jx_pkg_config_WikiConfig(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.CreateJenkinsfileArguments":                 schema_jenkins_x_jx_pkg_jenkinsfile_CreateJenkinsfileArguments(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.CreatePipelineArguments":                    schema_jenkins_x_jx_pkg_jenkinsfile_CreatePipelineArguments(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.ImportFile":                                 schema_jenkins_x_jx_pkg_jenkinsfile_ImportFile(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.Module":                                     schema_jenkins_x_jx_pkg_jenkinsfile_Module(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.Modules":                                    schema_jenkins_x_jx_pkg_jenkinsfile_Modules(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.NamedLifecycle":                             schema_jenkins_x_jx_pkg_jenkinsfile_NamedLifecycle(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineConfig":                             schema_jenkins_x_jx_pkg_jenkinsfile_PipelineConfig(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineExtends":                            schema_jenkins_x_jx_pkg_jenkinsfile_PipelineExtends(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle":                          schema_jenkins_x_jx_pkg_jenkinsfile_PipelineLifecycle(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycles":                         schema_jenkins_x_jx_pkg_jenkinsfile_PipelineLifecycles(ref),
+		"github.com/jenkins-x/jx/pkg/jenkinsfile.Pipelines":                                  schema_jenkins_x_jx_pkg_jenkinsfile_Pipelines(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Agent":                                    schema_jx_pkg_tekton_syntax_Agent(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.CRDsFromPipelineParams":                   schema_jx_pkg_tekton_syntax_CRDsFromPipelineParams(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Loop":                                     schema_jx_pkg_tekton_syntax_Loop(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.ParsedPipeline":                           schema_jx_pkg_tekton_syntax_ParsedPipeline(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.PipelineOverride":                         schema_jx_pkg_tekton_syntax_PipelineOverride(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Post":                                     schema_jx_pkg_tekton_syntax_Post(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.PostAction":                               schema_jx_pkg_tekton_syntax_PostAction(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.RootOptions":                              schema_jx_pkg_tekton_syntax_RootOptions(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Stage":                                    schema_jx_pkg_tekton_syntax_Stage(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.StageOptions":                             schema_jx_pkg_tekton_syntax_StageOptions(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Stash":                                    schema_jx_pkg_tekton_syntax_Stash(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Step":                                     schema_jx_pkg_tekton_syntax_Step(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Timeout":                                  schema_jx_pkg_tekton_syntax_Timeout(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.Unstash":                                  schema_jx_pkg_tekton_syntax_Unstash(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.generateStepsParams":                      schema_jx_pkg_tekton_syntax_generateStepsParams(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.stageToTaskParams":                        schema_jx_pkg_tekton_syntax_stageToTaskParams(ref),
+		"github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage":                         schema_jx_pkg_tekton_syntax_transformedStage(ref),
 	}
 }
 
@@ -6800,5 +6876,3301 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref common.ReferenceCallback) com
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteWorkflowStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowPreconditions"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_AddonConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_AdminSecretsConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"JXBasicAuth": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"chartmuseum": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ChartMuseum"),
+						},
+					},
+					"grafana": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.Grafana"),
+						},
+					},
+					"jenkins": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.Jenkins"),
+						},
+					},
+					"nexus": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.Nexus"),
+						},
+					},
+					"PipelineSecrets": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.PipelineSecrets"),
+						},
+					},
+					"KanikoSecret": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.KanikoSecret"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.ChartMuseum", "github.com/jenkins-x/jx/pkg/config.Grafana", "github.com/jenkins-x/jx/pkg/config.Jenkins", "github.com/jenkins-x/jx/pkg/config.KanikoSecret", "github.com/jenkins-x/jx/pkg/config.Nexus", "github.com/jenkins-x/jx/pkg/config.PipelineSecrets"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_AdminSecretsFlags(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"DefaultAdminUsername": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"DefaultAdminPassword": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"KanikoSecret": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"DefaultAdminUsername", "DefaultAdminPassword", "KanikoSecret"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_AdminSecretsService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"FileName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Secrets": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.AdminSecretsConfig"),
+						},
+					},
+					"Flags": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.AdminSecretsFlags"),
+						},
+					},
+					"ingressAuth": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.BasicAuth"),
+						},
+					},
+				},
+				Required: []string{"FileName", "Secrets", "Flags", "ingressAuth"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.AdminSecretsConfig", "github.com/jenkins-x/jx/pkg/config.AdminSecretsFlags", "github.com/jenkins-x/jx/pkg/config.BasicAuth"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_AutoUpdateConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AutoUpdateConfig contains auto update config",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enabled autoupdate",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"schedule": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Schedule cron of auto updates",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"enabled", "schedule"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_AzureConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AzureConfig contains Azure specific requirements",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"registrySubscription": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RegistrySubscription the registry subscription for defaulting the container registry. Not used if you specify a Registry explicitly",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_BasicAuth(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BasicAuth keeps the credentials for basic authentication",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"username": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Username stores the basic authentication user name",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"password": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Password stores the basic authentication password",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"username", "password"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ChartMuseum(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ChartMuseumEnv"),
+						},
+					},
+				},
+				Required: []string{"env"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.ChartMuseumEnv"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ChartMuseumEnv(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"secret": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ChartMuseumSecret"),
+						},
+					},
+				},
+				Required: []string{"secret"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.ChartMuseumSecret"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ChartMuseumSecret(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"BASIC_AUTH_USER": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"BASIC_AUTH_PASS": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"BASIC_AUTH_USER", "BASIC_AUTH_PASS"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ChatConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"developerChannel": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"userChannel": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ClusterConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ClusterConfig contains cluster specific requirements",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"azure": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AzureConfig the azure specific configuration",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.AzureConfig"),
+						},
+					},
+					"environmentGitOwner": {
+						SchemaProps: spec.SchemaProps{
+							Description: "EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"environmentGitPublic": {
+						SchemaProps: spec.SchemaProps{
+							Description: "EnvironmentGitPublic determines whether jx boot create public or private git repos for the environments",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"gitPublic": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GitPublic determines whether jx boot create public or private git repos for the applications",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"provider": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Provider the kubernetes provider (e.g. gke)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespace the namespace to install the dev environment",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"project": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProjectID the cloud project ID e.g. on GCP",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"clusterName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ClusterName the logical name of the cluster",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"vaultName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VaultName the name of the vault if using vault for secrets Deprecated",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"region": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Region the cloud region being used",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"zone": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Zone the cloud zone being used",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gitName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GitName is the name of the default git service",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gitKind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GitKind is the kind of git server (github, bitbucketserver etc)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gitServer": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GitServer is the URL of the git server",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"externalDNSSAName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExternalDNSSAName the service account name for external dns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"registry": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Registry the host name of the container registry",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"vaultSAName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VaultSAName the service account name for vault Deprecated",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kanikoSAName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "KanikoSAName the service account name for kaniko",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"helmMajorVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HelmMajorVersion contains the major helm version number. Assumes helm 2.x with no tiller if no value specified",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.AzureConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_EnabledConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EnabledConfig to configure the feature on/off",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"enabled"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_EnvironmentConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EnvironmentConfig configures the organisation and repository name of the git repositories for environments",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Key is the key of the environment configuration",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"owner": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Owner is the git user or organisation for the repository",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"repository": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Repository is the name of the repository within the owner",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gitServer": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GitServer is the URL of the git server",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gitKind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GitKind is the kind of git server (github, bitbucketserver etc)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ingress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ingress contains ingress specific requirements",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.IngressConfig"),
+						},
+					},
+					"remotetCluster": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RemoteCluster specifies this environment runs on a remote cluster to the development cluster",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.IngressConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ExposeController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"config": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ExposeControllerConfig"),
+						},
+					},
+					"Annotations": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"production": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.ExposeControllerConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ExposeControllerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"domain": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"exposer": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"http": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"tlsacme": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"pathMode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"urltemplate": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ingressClass": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"tlsSecretName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_Grafana(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"server": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.GrafanaSecret"),
+						},
+					},
+				},
+				Required: []string{"server"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.GrafanaSecret"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_GrafanaSecret(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"adminUser": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"adminPassword": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"adminUser", "adminPassword"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_HelmValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"expose": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ExposeController"),
+						},
+					},
+					"jenkins": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.JenkinsValuesConfig"),
+						},
+					},
+					"prow": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ProwValuesConfig"),
+						},
+					},
+					"PipelineSecrets": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.JenkinsPipelineSecretsValuesConfig"),
+						},
+					},
+					"controllerbuild": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.EnabledConfig"),
+						},
+					},
+					"controllerworkflow": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.EnabledConfig"),
+						},
+					},
+					"docker-registry": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.EnabledConfig"),
+						},
+					},
+					"dockerRegistry": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.EnabledConfig", "github.com/jenkins-x/jx/pkg/config.ExposeController", "github.com/jenkins-x/jx/pkg/config.JenkinsPipelineSecretsValuesConfig", "github.com/jenkins-x/jx/pkg/config.JenkinsValuesConfig", "github.com/jenkins-x/jx/pkg/config.ProwValuesConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_HelmValuesConfigService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"FileName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Config": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.HelmValuesConfig"),
+						},
+					},
+				},
+				Required: []string{"FileName", "Config"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.HelmValuesConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_Image(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"repository": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"tag": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_IngressConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "IngressConfig contains dns specific requirements",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"externalDNS": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DNS is enabled",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"cloud_dns_secret_name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CloudDNSSecretName secret name which contains the service account for external-dns and cert-manager issuer to access the Cloud DNS service to resolve a DNS challenge",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"domain": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Domain to expose ingress endpoints",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespaceSubDomain": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NamespaceSubDomain the sub domain expression to expose ingress. Defaults to \".jx.\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"tls": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TLS enable automated TLS using certmanager",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.TLSConfig"),
+						},
+					},
+					"domainIssuerURL": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DomainIssuerURL contains a URL used to retrieve a Domain",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"externalDNS", "domain", "namespaceSubDomain", "tls"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.TLSConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_IssueTrackerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"project": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_Jenkins(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Master": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.JenkinsAdminSecret"),
+						},
+					},
+				},
+				Required: []string{"Master"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.JenkinsAdminSecret"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JenkinsAdminSecret(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"AdminPassword": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"AdminPassword"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JenkinsGiteaServersValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Url": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Credential": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JenkinsGithubServersValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Url": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JenkinsPipelineSecretsValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"DockerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JenkinsServersGlobalConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"EnvVars": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JenkinsServersValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Gitea": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/config.JenkinsGiteaServersValuesConfig"),
+									},
+								},
+							},
+						},
+					},
+					"GHE": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/config.JenkinsGithubServersValuesConfig"),
+									},
+								},
+							},
+						},
+					},
+					"Global": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.JenkinsServersGlobalConfig"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.JenkinsGiteaServersValuesConfig", "github.com/jenkins-x/jx/pkg/config.JenkinsGithubServersValuesConfig", "github.com/jenkins-x/jx/pkg/config.JenkinsServersGlobalConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JenkinsValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Servers": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.JenkinsServersValuesConfig"),
+						},
+					},
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.JenkinsServersValuesConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_JxInstallProfile(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JxInstallProfile contains the jx profile info",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"InstallType": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"InstallType"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_KanikoSecret(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "KanikoSecret store the kaniko service account",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Data": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_Nexus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"defaultAdminPassword": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_PipelineSecrets(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"MavenSettingsXML": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_Preview(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.Image"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.Image"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_PreviewEnvironmentConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"maximumInstances": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_PreviewValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"expose": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ExposeController"),
+						},
+					},
+					"preview": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.Preview"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.ExposeController", "github.com/jenkins-x/jx/pkg/config.Preview"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ProjectConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "List of global environment variables to add to each branch build and each step",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"previewEnvironments": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.PreviewEnvironmentConfig"),
+						},
+					},
+					"issueTracker": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.IssueTrackerConfig"),
+						},
+					},
+					"chat": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.ChatConfig"),
+						},
+					},
+					"wiki": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/config.WikiConfig"),
+						},
+					},
+					"addons": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/config.AddonConfig"),
+									},
+								},
+							},
+						},
+					},
+					"buildPack": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"buildPackGitURL": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"buildPackGitRef": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"pipelineConfig": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineConfig"),
+						},
+					},
+					"noReleasePrepare": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"dockerRegistryHost": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"dockerRegistryOwner": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.AddonConfig", "github.com/jenkins-x/jx/pkg/config.ChatConfig", "github.com/jenkins-x/jx/pkg/config.IssueTrackerConfig", "github.com/jenkins-x/jx/pkg/config.PreviewEnvironmentConfig", "github.com/jenkins-x/jx/pkg/config.WikiConfig", "github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineConfig", "k8s.io/api/core/v1.EnvVar"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_ProwValuesConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"user": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"hmacToken": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"oauthToken": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_RequirementsConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RequirementsConfig contains the logical installation requirements",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"autoUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AutoUpdate contains auto update config",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.AutoUpdateConfig"),
+						},
+					},
+					"bootConfigURL": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BootConfigURL contains the url to which the dev environment is associated with",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cluster": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Cluster contains cluster specific requirements",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.ClusterConfig"),
+						},
+					},
+					"environments": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environments the requirements for the environments",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/config.EnvironmentConfig"),
+									},
+								},
+							},
+						},
+					},
+					"gitops": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can re-run 'jx boot' when changes merge to the master branch",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"kaniko": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kaniko whether to enable kaniko for building docker images",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"ingress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ingress contains ingress specific requirements",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.IngressConfig"),
+						},
+					},
+					"secretStorage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecretStorage how should we store secrets for the cluster",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"storage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Storage contains storage requirements",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.StorageConfig"),
+						},
+					},
+					"terraform": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"vault": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Vault the configuration for vault",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.VaultConfig"),
+						},
+					},
+					"velero": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Velero the configuration for running velero for backing up the cluster resources",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.VeleroConfig"),
+						},
+					},
+					"versionStream": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VersionStream contains version stream info",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.VersionStreamConfig"),
+						},
+					},
+					"webhook": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Webhook specifies what engine we should use for webhooks",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"cluster", "ingress", "storage", "versionStream"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.AutoUpdateConfig", "github.com/jenkins-x/jx/pkg/config.ClusterConfig", "github.com/jenkins-x/jx/pkg/config.EnvironmentConfig", "github.com/jenkins-x/jx/pkg/config.IngressConfig", "github.com/jenkins-x/jx/pkg/config.StorageConfig", "github.com/jenkins-x/jx/pkg/config.VaultConfig", "github.com/jenkins-x/jx/pkg/config.VeleroConfig", "github.com/jenkins-x/jx/pkg/config.VersionStreamConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_StorageConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StorageConfig contains dns specific requirements",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"logs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Logs for storing build logs",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.StorageEntryConfig"),
+						},
+					},
+					"reports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tests for storing test results, coverage + code quality reports",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.StorageEntryConfig"),
+						},
+					},
+					"repository": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Repository for storing repository artifacts",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.StorageEntryConfig"),
+						},
+					},
+					"backup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Backup for backing up kubernetes resource",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/config.StorageEntryConfig"),
+						},
+					},
+				},
+				Required: []string{"logs", "reports", "repository", "backup"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/config.StorageEntryConfig"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_StorageEntryConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StorageEntryConfig contains dns specific requirements for a kind of storage",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enabled if the storage is enabled",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL the cloud storage bucket URL such as 'gs://mybucket' or 's3://foo' or `azblob://thingy' see https://jenkins-x.io/architecture/storage/",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"enabled", "url"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_TLSConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TLSConfig contains TLS specific requirements",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TLS enabled",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"email": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Email address to register with services like LetsEncrypt",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"production": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"enabled", "email", "production"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_VaultConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name the name of the vault if using vault for secretts",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"bucket": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"keyring": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"serviceAccount": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"recreateBucket": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"disableURLDiscovery": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optionally allow us to override the default lookup of the Vault URL, could be incluster service or external ingress",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_VeleroConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VeleroConfig contains the configuration for velero",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespace the namespace to install velero into",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"serviceAccount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccount the cloud service account used to run velero",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_VersionStreamConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VersionStreamConfig contains version stream config",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL of the version stream to use",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ref": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ref of the version stream to use",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"url", "ref"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_config_WikiConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"space": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_CreateJenkinsfileArguments(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ConfigFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"TemplateFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"OutputFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"JenkinsfileRunner": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"ClearContainerNames": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"ConfigFile", "TemplateFile", "OutputFile", "JenkinsfileRunner", "ClearContainerNames"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_CreatePipelineArguments(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CreatePipelineArguments contains the arguments to translate a build pack into a pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Lifecycles": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycles"),
+						},
+					},
+					"PodTemplates": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Pod"),
+									},
+								},
+							},
+						},
+					},
+					"CustomImage": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"DefaultImage": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"WorkspaceDir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"GitHost": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"GitName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"GitOrg": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ProjectID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"DockerRegistry": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"DockerRegistryOrg": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"KanikoImage": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"UseKaniko": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"NoReleasePrepare": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"StepCounter": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+				Required: []string{"Lifecycles", "PodTemplates", "CustomImage", "DefaultImage", "WorkspaceDir", "GitHost", "GitName", "GitOrg", "ProjectID", "DockerRegistry", "DockerRegistryOrg", "KanikoImage", "UseKaniko", "NoReleasePrepare", "StepCounter"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycles", "k8s.io/api/core/v1.Pod"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_ImportFile(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ImportFile represents an import of a file from a module (usually a version of a git repo)",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Import": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"File": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"Import", "File"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_Module(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Module defines a dependent module for a build pack",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"gitUrl": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"gitRef": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_Modules(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Modules defines the dependent modules for a build pack",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"modules": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.Module"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/jenkinsfile.Module"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_NamedLifecycle(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NamedLifecycle a lifecycle and its name",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Lifecycle": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+				},
+				Required: []string{"Name", "Lifecycle"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_PipelineConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineConfig defines the pipeline configuration",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"extends": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineExtends"),
+						},
+					},
+					"agent": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Agent"),
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"environment": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"pipelines": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.Pipelines"),
+						},
+					},
+					"containerOptions": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.Container"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineExtends", "github.com/jenkins-x/jx/pkg/jenkinsfile.Pipelines", "github.com/jenkins-x/jx/pkg/tekton/syntax.Agent", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.EnvVar"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_PipelineExtends(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineExtends defines the extension (e.g. parent pipeline which is overloaded",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"import": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"file": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_PipelineLifecycle(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineLifecycle defines the steps of a lifecycle section",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"steps": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+									},
+								},
+							},
+						},
+					},
+					"preSteps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PreSteps if using inheritance then invoke these steps before the base steps",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+									},
+								},
+							},
+						},
+					},
+					"replace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replace if using inheritance then replace steps from the base pipeline",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Step"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_PipelineLifecycles(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineLifecycles defines the steps of a lifecycle section",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"setup": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+					"setVersion": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+					"preBuild": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+					"build": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+					"postBuild": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+					"promote": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+					"pipeline": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.ParsedPipeline"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle", "github.com/jenkins-x/jx/pkg/tekton/syntax.ParsedPipeline"},
+	}
+}
+
+func schema_jenkins_x_jx_pkg_jenkinsfile_Pipelines(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Pipelines contains all the different kinds of pipeline for different branches",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pullRequest": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycles"),
+						},
+					},
+					"release": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycles"),
+						},
+					},
+					"feature": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycles"),
+						},
+					},
+					"post": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle"),
+						},
+					},
+					"overrides": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.PipelineOverride"),
+									},
+								},
+							},
+						},
+					},
+					"default": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.ParsedPipeline"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycle", "github.com/jenkins-x/jx/pkg/jenkinsfile.PipelineLifecycles", "github.com/jenkins-x/jx/pkg/tekton/syntax.ParsedPipeline", "github.com/jenkins-x/jx/pkg/tekton/syntax.PipelineOverride"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Agent(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Agent defines where the pipeline, stage, or step should run.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"label": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One of label or image is required.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"container": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Legacy fields from jenkinsfile.PipelineAgent",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"dir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_CRDsFromPipelineParams(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CRDsFromPipelineParams is how the parameters to GenerateCRDs are specified",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"PipelineIdentifier": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"BuildIdentifier": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"ResourceIdentifier": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Namespace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"PodTemplates": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Pod"),
+									},
+								},
+							},
+						},
+					},
+					"VersionsDir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"TaskParams": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1.ParamSpec"),
+									},
+								},
+							},
+						},
+					},
+					"SourceDir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"Labels": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"DefaultImage": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"InterpretMode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"PipelineIdentifier", "BuildIdentifier", "ResourceIdentifier", "Namespace", "PodTemplates", "VersionsDir", "TaskParams", "SourceDir", "Labels", "DefaultImage", "InterpretMode"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1.ParamSpec", "k8s.io/api/core/v1.Pod"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Loop(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to repeat for each value for the variable, with the variable set with that value in the environment for the execution of those steps.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"variable": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The variable name.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"values": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The list of values to iterate over",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"steps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The steps to run",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"variable", "values", "steps"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Step"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_ParsedPipeline(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"agent": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Agent"),
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.RootOptions"),
+						},
+					},
+					"stages": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Stage"),
+									},
+								},
+							},
+						},
+					},
+					"post": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Post"),
+									},
+								},
+							},
+						},
+					},
+					"dir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"environment": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replaced by Env, retained for backwards compatibility",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"stages"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Agent", "github.com/jenkins-x/jx/pkg/tekton/syntax.Post", "github.com/jenkins-x/jx/pkg/tekton/syntax.RootOptions", "github.com/jenkins-x/jx/pkg/tekton/syntax.Stage", "k8s.io/api/core/v1.EnvVar"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_PipelineOverride(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineOverride allows for overriding named steps, stages, or pipelines in the build pack or default pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipeline": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"stage": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"step": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+						},
+					},
+					"steps": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+									},
+								},
+							},
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"agent": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Agent"),
+						},
+					},
+					"containerOptions": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.Container"),
+						},
+					},
+					"volumes": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Agent", "github.com/jenkins-x/jx/pkg/tekton/syntax.Step", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Post(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Post contains a PostCondition and one more actions to be executed after a pipeline or stage if the condition is met.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"condition": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"actions": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.PostAction"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"condition", "actions"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.PostAction"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_PostAction(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PostAction contains the name of a built-in post action and options to pass to that action.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Also, we'll need to do some magic to do type verification during translation - i.e., this action wants a number for this option, so translate the string value for that option to a number.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_RootOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RootOptions contains options that can be configured on either a pipeline or a stage",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Timeout"),
+						},
+					},
+					"retry": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "byte",
+						},
+					},
+					"containerOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContainerOptions allows for advanced configuration of containers for a single stage or the whole pipeline, adding to configuration that can be configured through the syntax already. This includes things like CPU/RAM requests/limits, secrets, ports, etc. Some of these things will end up with native syntax approaches down the road.",
+							Ref:         ref("k8s.io/api/core/v1.Container"),
+						},
+					},
+					"volumes": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"distributeParallelAcrossNodes": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Timeout", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Stage(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in parallel with common configuration.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"agent": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Agent"),
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.StageOptions"),
+						},
+					},
+					"steps": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+									},
+								},
+							},
+						},
+					},
+					"stages": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Stage"),
+									},
+								},
+							},
+						},
+					},
+					"parallel": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Stage"),
+									},
+								},
+							},
+						},
+					},
+					"post": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Post"),
+									},
+								},
+							},
+						},
+					},
+					"dir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"environment": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replaced by Env, retained for backwards compatibility",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Agent", "github.com/jenkins-x/jx/pkg/tekton/syntax.Post", "github.com/jenkins-x/jx/pkg/tekton/syntax.Stage", "github.com/jenkins-x/jx/pkg/tekton/syntax.StageOptions", "github.com/jenkins-x/jx/pkg/tekton/syntax.Step", "k8s.io/api/core/v1.EnvVar"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_StageOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StageOptions contains both options that can be configured on either a pipeline or a stage, via RootOptions, or stage-specific options.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"stash": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Stash"),
+						},
+					},
+					"unstash": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Unstash"),
+						},
+					},
+					"workspace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Stash", "github.com/jenkins-x/jx/pkg/tekton/syntax.Unstash"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Stash(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Stash defines files to be saved for use in a later stage, marked with a name",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"files": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Eventually make this optional so that you can do volumes instead",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name", "files"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Step(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Step defines a single step, from the author's perspective, to be executed within a stage.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "An optional name to give the step for reporting purposes",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One of command, step, or loop is required.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "args is optional, but only allowed with command",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"dir": {
+						SchemaProps: spec.SchemaProps{
+							Description: "dir is optional, but only allowed with command. Refers to subdirectory of workspace",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"step": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "options is optional, but only allowed with step Also, we'll need to do some magic to do type verification during translation - i.e., this step wants a number for this option, so translate the string value for that option to a number.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"loop": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Loop"),
+						},
+					},
+					"agent": {
+						SchemaProps: spec.SchemaProps{
+							Description: "agent can be overridden on a step",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Agent"),
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image alows the docker image for a step to be specified",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "env allows defining per-step environment variables",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"comment": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Legacy fields from jenkinsfile.PipelineStep before it was eliminated.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"groovy": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"steps": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+									},
+								},
+							},
+						},
+					},
+					"when": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"container": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"sh": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Agent", "github.com/jenkins-x/jx/pkg/tekton/syntax.Loop", "github.com/jenkins-x/jx/pkg/tekton/syntax.Step", "k8s.io/api/core/v1.EnvVar"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Timeout(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Timeout defines how long a stage or pipeline can run before timing out.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"time": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int64",
+						},
+					},
+					"unit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Has some sane default - probably seconds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"time"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_Unstash(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Unstash defines a previously-defined stash to be copied into this stage's workspace",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"dir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_generateStepsParams(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"stageParams": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.stageToTaskParams"),
+						},
+					},
+					"step": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Step"),
+						},
+					},
+					"inheritedAgent": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"parentContainer": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.Container"),
+						},
+					},
+					"stepCounter": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+				Required: []string{"stageParams", "step", "inheritedAgent", "env", "parentContainer", "stepCounter"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Step", "github.com/jenkins-x/jx/pkg/tekton/syntax.stageToTaskParams", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.EnvVar"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_stageToTaskParams(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"parentParams": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.CRDsFromPipelineParams"),
+						},
+					},
+					"stage": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Stage"),
+						},
+					},
+					"baseWorkingDir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"parentEnv": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"parentAgent": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Agent"),
+						},
+					},
+					"parentWorkspace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"parentContainer": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.Container"),
+						},
+					},
+					"parentVolumes": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"depth": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "byte",
+						},
+					},
+					"enclosingStage": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage"),
+						},
+					},
+					"previousSiblingStage": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage"),
+						},
+					},
+				},
+				Required: []string{"parentParams", "stage", "baseWorkingDir", "parentEnv", "parentAgent", "parentWorkspace", "parentContainer", "parentVolumes", "depth", "enclosingStage", "previousSiblingStage"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Agent", "github.com/jenkins-x/jx/pkg/tekton/syntax.CRDsFromPipelineParams", "github.com/jenkins-x/jx/pkg/tekton/syntax.Stage", "github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_jx_pkg_tekton_syntax_transformedStage(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Stage": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.Stage"),
+						},
+					},
+					"Sequential": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Only one of Sequential, Parallel, and Task is non-empty",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage"),
+									},
+								},
+							},
+						},
+					},
+					"Parallel": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage"),
+									},
+								},
+							},
+						},
+					},
+					"Task": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1.Task"),
+						},
+					},
+					"PipelineTask": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PipelineTask is non-empty only if Task is non-empty, but it is populated after Task is populated so the reverse is not true.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1.PipelineTask"),
+						},
+					},
+					"Depth": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The depth of this stage in the full tree of stages",
+							Type:        []string{"integer"},
+							Format:      "byte",
+						},
+					},
+					"EnclosingStage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The parallel or sequntial stage enclosing this stage, or nil if this stage is at top level",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage"),
+						},
+					},
+					"PreviousSiblingStage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The stage immediately before this stage at the same depth, or nil if there is no such stage",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage"),
+						},
+					},
+				},
+				Required: []string{"Stage", "Sequential", "Parallel", "Task", "PipelineTask", "Depth", "EnclosingStage", "PreviousSiblingStage"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/tekton/syntax.Stage", "github.com/jenkins-x/jx/pkg/tekton/syntax.transformedStage", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1.PipelineTask", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1.Task"},
 	}
 }

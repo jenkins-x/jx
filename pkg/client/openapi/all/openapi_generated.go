@@ -18,6 +18,8 @@ import (
 
 	openapi5 "github.com/jenkins-x/jx/pkg/client/openapi/k8s_io_api_rbac_v1"
 
+	openapi6 "github.com/jenkins-x/jx/pkg/client/openapi/github_com_tektoncd_pipeline_pipeline_v1alpha1"
+
 	"k8s.io/kube-openapi/pkg/common"
 )
 
@@ -50,6 +52,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	}
 
 	for k, v := range openapi5.GetOpenAPIDefinitions(ref) {
+		result[k] = v
+	}
+
+	for k, v := range openapi6.GetOpenAPIDefinitions(ref) {
 		result[k] = v
 	}
 

@@ -2699,6 +2699,1575 @@ definitions:
       trigger:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowPreconditions'
     type: object
+  com.github.jenkins-x.jx.pkg.config.AddonConfig:
+    properties:
+      name:
+        type: string
+      version:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.AdminSecretsConfig:
+    properties:
+      JXBasicAuth:
+        type: string
+      KanikoSecret:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.KanikoSecret'
+      PipelineSecrets:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.PipelineSecrets'
+      chartmuseum:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ChartMuseum'
+      grafana:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.Grafana'
+      jenkins:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.Jenkins'
+      nexus:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.Nexus'
+    type: object
+  com.github.jenkins-x.jx.pkg.config.AdminSecretsFlags:
+    properties:
+      DefaultAdminPassword:
+        type: string
+      DefaultAdminUsername:
+        type: string
+      KanikoSecret:
+        type: string
+    required:
+    - DefaultAdminUsername
+    - DefaultAdminPassword
+    - KanikoSecret
+    type: object
+  com.github.jenkins-x.jx.pkg.config.AdminSecretsService:
+    properties:
+      FileName:
+        type: string
+      Flags:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.AdminSecretsFlags'
+      Secrets:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.AdminSecretsConfig'
+      ingressAuth:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.BasicAuth'
+    required:
+    - FileName
+    - Secrets
+    - Flags
+    - ingressAuth
+    type: object
+  com.github.jenkins-x.jx.pkg.config.AutoUpdateConfig:
+    description: AutoUpdateConfig contains auto update config
+    properties:
+      enabled:
+        description: Enabled autoupdate
+        type: boolean
+      schedule:
+        description: Schedule cron of auto updates
+        type: string
+    required:
+    - enabled
+    - schedule
+    type: object
+  com.github.jenkins-x.jx.pkg.config.AzureConfig:
+    description: AzureConfig contains Azure specific requirements
+    properties:
+      registrySubscription:
+        description: RegistrySubscription the registry subscription for defaulting
+          the container registry. Not used if you specify a Registry explicitly
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.BasicAuth:
+    description: BasicAuth keeps the credentials for basic authentication
+    properties:
+      password:
+        description: Password stores the basic authentication password
+        type: string
+      username:
+        description: Username stores the basic authentication user name
+        type: string
+    required:
+    - username
+    - password
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ChartMuseum:
+    properties:
+      env:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ChartMuseumEnv'
+    required:
+    - env
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ChartMuseumEnv:
+    properties:
+      secret:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ChartMuseumSecret'
+    required:
+    - secret
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ChartMuseumSecret:
+    properties:
+      BASIC_AUTH_PASS:
+        type: string
+      BASIC_AUTH_USER:
+        type: string
+    required:
+    - BASIC_AUTH_USER
+    - BASIC_AUTH_PASS
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ChatConfig:
+    properties:
+      developerChannel:
+        type: string
+      kind:
+        type: string
+      url:
+        type: string
+      userChannel:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ClusterConfig:
+    description: ClusterConfig contains cluster specific requirements
+    properties:
+      azure:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.AzureConfig'
+        description: AzureConfig the azure specific configuration
+      clusterName:
+        description: ClusterName the logical name of the cluster
+        type: string
+      environmentGitOwner:
+        description: EnvironmentGitOwner the default git owner for environment repositories
+          if none is specified explicitly
+        type: string
+      environmentGitPublic:
+        description: EnvironmentGitPublic determines whether jx boot create public
+          or private git repos for the environments
+        type: boolean
+      externalDNSSAName:
+        description: ExternalDNSSAName the service account name for external dns
+        type: string
+      gitKind:
+        description: GitKind is the kind of git server (github, bitbucketserver etc)
+        type: string
+      gitName:
+        description: GitName is the name of the default git service
+        type: string
+      gitPublic:
+        description: GitPublic determines whether jx boot create public or private
+          git repos for the applications
+        type: boolean
+      gitServer:
+        description: GitServer is the URL of the git server
+        type: string
+      helmMajorVersion:
+        description: HelmMajorVersion contains the major helm version number. Assumes
+          helm 2.x with no tiller if no value specified
+        type: string
+      kanikoSAName:
+        description: KanikoSAName the service account name for kaniko
+        type: string
+      namespace:
+        description: Namespace the namespace to install the dev environment
+        type: string
+      project:
+        description: ProjectID the cloud project ID e.g. on GCP
+        type: string
+      provider:
+        description: Provider the kubernetes provider (e.g. gke)
+        type: string
+      region:
+        description: Region the cloud region being used
+        type: string
+      registry:
+        description: Registry the host name of the container registry
+        type: string
+      vaultName:
+        description: VaultName the name of the vault if using vault for secrets Deprecated
+        type: string
+      vaultSAName:
+        description: VaultSAName the service account name for vault Deprecated
+        type: string
+      zone:
+        description: Zone the cloud zone being used
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.EnabledConfig:
+    description: EnabledConfig to configure the feature on/off
+    properties:
+      enabled:
+        type: boolean
+    required:
+    - enabled
+    type: object
+  com.github.jenkins-x.jx.pkg.config.EnvironmentConfig:
+    description: EnvironmentConfig configures the organisation and repository name
+      of the git repositories for environments
+    properties:
+      gitKind:
+        description: GitKind is the kind of git server (github, bitbucketserver etc)
+        type: string
+      gitServer:
+        description: GitServer is the URL of the git server
+        type: string
+      ingress:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.IngressConfig'
+        description: Ingress contains ingress specific requirements
+      key:
+        description: Key is the key of the environment configuration
+        type: string
+      owner:
+        description: Owner is the git user or organisation for the repository
+        type: string
+      remotetCluster:
+        description: RemoteCluster specifies this environment runs on a remote cluster
+          to the development cluster
+        type: boolean
+      repository:
+        description: Repository is the name of the repository within the owner
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ExposeController:
+    properties:
+      Annotations:
+        additionalProperties:
+          type: string
+        type: object
+      config:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ExposeControllerConfig'
+      production:
+        type: boolean
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ExposeControllerConfig:
+    properties:
+      domain:
+        type: string
+      exposer:
+        type: string
+      http:
+        type: string
+      ingressClass:
+        type: string
+      pathMode:
+        type: string
+      tlsSecretName:
+        type: string
+      tlsacme:
+        type: string
+      urltemplate:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.Grafana:
+    properties:
+      server:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.GrafanaSecret'
+    required:
+    - server
+    type: object
+  com.github.jenkins-x.jx.pkg.config.GrafanaSecret:
+    properties:
+      adminPassword:
+        type: string
+      adminUser:
+        type: string
+    required:
+    - adminUser
+    - adminPassword
+    type: object
+  com.github.jenkins-x.jx.pkg.config.HelmValuesConfig:
+    properties:
+      PipelineSecrets:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.JenkinsPipelineSecretsValuesConfig'
+      controllerbuild:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.EnabledConfig'
+      controllerworkflow:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.EnabledConfig'
+      docker-registry:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.EnabledConfig'
+      dockerRegistry:
+        type: string
+      expose:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ExposeController'
+      jenkins:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.JenkinsValuesConfig'
+      prow:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ProwValuesConfig'
+    type: object
+  com.github.jenkins-x.jx.pkg.config.HelmValuesConfigService:
+    properties:
+      Config:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.HelmValuesConfig'
+      FileName:
+        type: string
+    required:
+    - FileName
+    - Config
+    type: object
+  com.github.jenkins-x.jx.pkg.config.Image:
+    properties:
+      repository:
+        type: string
+      tag:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.IngressConfig:
+    description: IngressConfig contains dns specific requirements
+    properties:
+      cloud_dns_secret_name:
+        description: CloudDNSSecretName secret name which contains the service account
+          for external-dns and cert-manager issuer to access the Cloud DNS service
+          to resolve a DNS challenge
+        type: string
+      domain:
+        description: Domain to expose ingress endpoints
+        type: string
+      domainIssuerURL:
+        description: DomainIssuerURL contains a URL used to retrieve a Domain
+        type: string
+      externalDNS:
+        description: DNS is enabled
+        type: boolean
+      namespaceSubDomain:
+        description: NamespaceSubDomain the sub domain expression to expose ingress.
+          Defaults to ".jx."
+        type: string
+      tls:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.TLSConfig'
+        description: TLS enable automated TLS using certmanager
+    required:
+    - externalDNS
+    - domain
+    - namespaceSubDomain
+    - tls
+    type: object
+  com.github.jenkins-x.jx.pkg.config.IssueTrackerConfig:
+    properties:
+      kind:
+        type: string
+      project:
+        type: string
+      url:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.Jenkins:
+    properties:
+      Master:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.JenkinsAdminSecret'
+    required:
+    - Master
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JenkinsAdminSecret:
+    properties:
+      AdminPassword:
+        type: string
+    required:
+    - AdminPassword
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JenkinsGiteaServersValuesConfig:
+    properties:
+      Credential:
+        type: string
+      Name:
+        type: string
+      Url:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JenkinsGithubServersValuesConfig:
+    properties:
+      Name:
+        type: string
+      Url:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JenkinsPipelineSecretsValuesConfig:
+    properties:
+      DockerConfig:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JenkinsServersGlobalConfig:
+    properties:
+      EnvVars:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JenkinsServersValuesConfig:
+    properties:
+      GHE:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.JenkinsGithubServersValuesConfig'
+        type: array
+      Gitea:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.JenkinsGiteaServersValuesConfig'
+        type: array
+      Global:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.JenkinsServersGlobalConfig'
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JenkinsValuesConfig:
+    properties:
+      Servers:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.JenkinsServersValuesConfig'
+      enabled:
+        type: boolean
+    type: object
+  com.github.jenkins-x.jx.pkg.config.JxInstallProfile:
+    description: JxInstallProfile contains the jx profile info
+    properties:
+      InstallType:
+        type: string
+    required:
+    - InstallType
+    type: object
+  com.github.jenkins-x.jx.pkg.config.KanikoSecret:
+    description: KanikoSecret store the kaniko service account
+    properties:
+      Data:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.Nexus:
+    properties:
+      defaultAdminPassword:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.PipelineSecrets:
+    properties:
+      MavenSettingsXML:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.Preview:
+    properties:
+      image:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.Image'
+    type: object
+  com.github.jenkins-x.jx.pkg.config.PreviewEnvironmentConfig:
+    properties:
+      disabled:
+        type: boolean
+      maximumInstances:
+        format: int32
+        type: integer
+    type: object
+  com.github.jenkins-x.jx.pkg.config.PreviewValuesConfig:
+    properties:
+      expose:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ExposeController'
+      preview:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.Preview'
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ProjectConfig:
+    properties:
+      addons:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.AddonConfig'
+        type: array
+      buildPack:
+        type: string
+      buildPackGitRef:
+        type: string
+      buildPackGitURL:
+        type: string
+      chat:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ChatConfig'
+      dockerRegistryHost:
+        type: string
+      dockerRegistryOwner:
+        type: string
+      env:
+        description: List of global environment variables to add to each branch build
+          and each step
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      issueTracker:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.IssueTrackerConfig'
+      noReleasePrepare:
+        type: boolean
+      pipelineConfig:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineConfig'
+      previewEnvironments:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.PreviewEnvironmentConfig'
+      wiki:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.WikiConfig'
+    type: object
+  com.github.jenkins-x.jx.pkg.config.ProwValuesConfig:
+    properties:
+      hmacToken:
+        type: string
+      oauthToken:
+        type: string
+      user:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.RequirementsConfig:
+    description: RequirementsConfig contains the logical installation requirements
+    properties:
+      autoUpdate:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.AutoUpdateConfig'
+        description: AutoUpdate contains auto update config
+      bootConfigURL:
+        description: BootConfigURL contains the url to which the dev environment is
+          associated with
+        type: string
+      cluster:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.ClusterConfig'
+        description: Cluster contains cluster specific requirements
+      environments:
+        description: Environments the requirements for the environments
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.EnvironmentConfig'
+        type: array
+      gitops:
+        description: GitOps if enabled we will setup a webhook in the boot configuration
+          git repository so that we can re-run 'jx boot' when changes merge to the
+          master branch
+        type: boolean
+      ingress:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.IngressConfig'
+        description: Ingress contains ingress specific requirements
+      kaniko:
+        description: Kaniko whether to enable kaniko for building docker images
+        type: boolean
+      secretStorage:
+        description: SecretStorage how should we store secrets for the cluster
+        type: string
+      storage:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.StorageConfig'
+        description: Storage contains storage requirements
+      terraform:
+        description: Terraform specifies if  we are managing the kubernetes cluster
+          and cloud resources with Terraform
+        type: boolean
+      vault:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.VaultConfig'
+        description: Vault the configuration for vault
+      velero:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.VeleroConfig'
+        description: Velero the configuration for running velero for backing up the
+          cluster resources
+      versionStream:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.VersionStreamConfig'
+        description: VersionStream contains version stream info
+      webhook:
+        description: Webhook specifies what engine we should use for webhooks
+        type: string
+    required:
+    - cluster
+    - ingress
+    - storage
+    - versionStream
+    type: object
+  com.github.jenkins-x.jx.pkg.config.StorageConfig:
+    description: StorageConfig contains dns specific requirements
+    properties:
+      backup:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.StorageEntryConfig'
+        description: Backup for backing up kubernetes resource
+      logs:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.StorageEntryConfig'
+        description: Logs for storing build logs
+      reports:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.StorageEntryConfig'
+        description: Tests for storing test results, coverage + code quality reports
+      repository:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.config.StorageEntryConfig'
+        description: Repository for storing repository artifacts
+    required:
+    - logs
+    - reports
+    - repository
+    - backup
+    type: object
+  com.github.jenkins-x.jx.pkg.config.StorageEntryConfig:
+    description: StorageEntryConfig contains dns specific requirements for a kind
+      of storage
+    properties:
+      enabled:
+        description: Enabled if the storage is enabled
+        type: boolean
+      url:
+        description: URL the cloud storage bucket URL such as 'gs://mybucket' or 's3://foo'
+          or `azblob://thingy' see https://jenkins-x.io/architecture/storage/
+        type: string
+    required:
+    - enabled
+    - url
+    type: object
+  com.github.jenkins-x.jx.pkg.config.TLSConfig:
+    description: TLSConfig contains TLS specific requirements
+    properties:
+      email:
+        description: Email address to register with services like LetsEncrypt
+        type: string
+      enabled:
+        description: TLS enabled
+        type: boolean
+      production:
+        description: Production false uses self-signed certificates from the LetsEncrypt
+          staging server, true enables the production server which incurs higher rate
+          limiting https://letsencrypt.org/docs/rate-limits/
+        type: boolean
+    required:
+    - enabled
+    - email
+    - production
+    type: object
+  com.github.jenkins-x.jx.pkg.config.VaultConfig:
+    properties:
+      bucket:
+        type: string
+      disableURLDiscovery:
+        description: Optionally allow us to override the default lookup of the Vault
+          URL, could be incluster service or external ingress
+        type: boolean
+      key:
+        type: string
+      keyring:
+        type: string
+      name:
+        description: Name the name of the vault if using vault for secretts
+        type: string
+      recreateBucket:
+        type: boolean
+      serviceAccount:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.VeleroConfig:
+    description: VeleroConfig contains the configuration for velero
+    properties:
+      namespace:
+        description: Namespace the namespace to install velero into
+        type: string
+      serviceAccount:
+        description: ServiceAccount the cloud service account used to run velero
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.config.VersionStreamConfig:
+    description: VersionStreamConfig contains version stream config
+    properties:
+      ref:
+        description: Ref of the version stream to use
+        type: string
+      url:
+        description: URL of the version stream to use
+        type: string
+    required:
+    - url
+    - ref
+    type: object
+  com.github.jenkins-x.jx.pkg.config.WikiConfig:
+    properties:
+      kind:
+        type: string
+      space:
+        type: string
+      url:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.CreateJenkinsfileArguments:
+    description: CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles
+      dynamically
+    properties:
+      ClearContainerNames:
+        type: boolean
+      ConfigFile:
+        type: string
+      JenkinsfileRunner:
+        type: boolean
+      OutputFile:
+        type: string
+      TemplateFile:
+        type: string
+    required:
+    - ConfigFile
+    - TemplateFile
+    - OutputFile
+    - JenkinsfileRunner
+    - ClearContainerNames
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.CreatePipelineArguments:
+    description: CreatePipelineArguments contains the arguments to translate a build
+      pack into a pipeline
+    properties:
+      CustomImage:
+        type: string
+      DefaultImage:
+        type: string
+      DockerRegistry:
+        type: string
+      DockerRegistryOrg:
+        type: string
+      GitHost:
+        type: string
+      GitName:
+        type: string
+      GitOrg:
+        type: string
+      KanikoImage:
+        type: string
+      Lifecycles:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycles'
+      NoReleasePrepare:
+        type: boolean
+      PodTemplates:
+        additionalProperties:
+          $ref: '#/definitions/io.k8s.api.core.v1.Pod'
+        type: object
+      ProjectID:
+        type: string
+      StepCounter:
+        format: int32
+        type: integer
+      UseKaniko:
+        type: boolean
+      WorkspaceDir:
+        type: string
+    required:
+    - Lifecycles
+    - PodTemplates
+    - CustomImage
+    - DefaultImage
+    - WorkspaceDir
+    - GitHost
+    - GitName
+    - GitOrg
+    - ProjectID
+    - DockerRegistry
+    - DockerRegistryOrg
+    - KanikoImage
+    - UseKaniko
+    - NoReleasePrepare
+    - StepCounter
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.ImportFile:
+    description: ImportFile represents an import of a file from a module (usually
+      a version of a git repo)
+    properties:
+      File:
+        type: string
+      Import:
+        type: string
+    required:
+    - Import
+    - File
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.Module:
+    description: Module defines a dependent module for a build pack
+    properties:
+      gitRef:
+        type: string
+      gitUrl:
+        type: string
+      name:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.Modules:
+    description: Modules defines the dependent modules for a build pack
+    properties:
+      modules:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.Module'
+        type: array
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.NamedLifecycle:
+    description: NamedLifecycle a lifecycle and its name
+    properties:
+      Lifecycle:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+      Name:
+        type: string
+    required:
+    - Name
+    - Lifecycle
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineConfig:
+    description: PipelineConfig defines the pipeline configuration
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Agent'
+      containerOptions:
+        $ref: '#/definitions/io.k8s.api.core.v1.Container'
+      env:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      environment:
+        type: string
+      extends:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineExtends'
+      pipelines:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.Pipelines'
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineExtends:
+    description: PipelineExtends defines the extension (e.g. parent pipeline which
+      is overloaded
+    properties:
+      file:
+        type: string
+      import:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle:
+    description: PipelineLifecycle defines the steps of a lifecycle section
+    properties:
+      preSteps:
+        description: PreSteps if using inheritance then invoke these steps before
+          the base steps
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+        type: array
+      replace:
+        description: Replace if using inheritance then replace steps from the base
+          pipeline
+        type: boolean
+      steps:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+        type: array
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycles:
+    description: PipelineLifecycles defines the steps of a lifecycle section
+    properties:
+      build:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+      pipeline:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.ParsedPipeline'
+      postBuild:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+      preBuild:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+      promote:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+      setVersion:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+      setup:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+    type: object
+  com.github.jenkins-x.jx.pkg.jenkinsfile.Pipelines:
+    description: Pipelines contains all the different kinds of pipeline for different
+      branches
+    properties:
+      default:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.ParsedPipeline'
+      feature:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycles'
+      overrides:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.PipelineOverride'
+        type: array
+      post:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycle'
+      pullRequest:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycles'
+      release:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.jenkinsfile.PipelineLifecycles'
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Agent:
+    description: Agent defines where the pipeline, stage, or step should run.
+    properties:
+      container:
+        description: Legacy fields from jenkinsfile.PipelineAgent
+        type: string
+      dir:
+        type: string
+      image:
+        type: string
+      label:
+        description: One of label or image is required.
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.CRDsFromPipelineParams:
+    description: CRDsFromPipelineParams is how the parameters to GenerateCRDs are
+      specified
+    properties:
+      BuildIdentifier:
+        type: string
+      DefaultImage:
+        type: string
+      InterpretMode:
+        type: boolean
+      Labels:
+        additionalProperties:
+          type: string
+        type: object
+      Namespace:
+        type: string
+      PipelineIdentifier:
+        type: string
+      PodTemplates:
+        additionalProperties:
+          $ref: '#/definitions/io.k8s.api.core.v1.Pod'
+        type: object
+      ResourceIdentifier:
+        type: string
+      SourceDir:
+        type: string
+      TaskParams:
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.ParamSpec'
+        type: array
+      VersionsDir:
+        type: string
+    required:
+    - PipelineIdentifier
+    - BuildIdentifier
+    - ResourceIdentifier
+    - Namespace
+    - PodTemplates
+    - VersionsDir
+    - TaskParams
+    - SourceDir
+    - Labels
+    - DefaultImage
+    - InterpretMode
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Loop:
+    description: Loop is a special step that defines a variable, a list of possible
+      values for that variable, and a set of steps to repeat for each value for the
+      variable, with the variable set with that value in the environment for the execution
+      of those steps.
+    properties:
+      steps:
+        description: The steps to run
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+        type: array
+      values:
+        description: The list of values to iterate over
+        items:
+          type: string
+        type: array
+      variable:
+        description: The variable name.
+        type: string
+    required:
+    - variable
+    - values
+    - steps
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.ParsedPipeline:
+    description: ParsedPipeline is the internal representation of the Pipeline, used
+      to validate and create CRDs
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Agent'
+      dir:
+        type: string
+      env:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      environment:
+        description: Replaced by Env, retained for backwards compatibility
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      options:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.RootOptions'
+      post:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Post'
+        type: array
+      stages:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Stage'
+        type: array
+    required:
+    - stages
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.PipelineOverride:
+    description: PipelineOverride allows for overriding named steps, stages, or pipelines
+      in the build pack or default pipeline
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Agent'
+      containerOptions:
+        $ref: '#/definitions/io.k8s.api.core.v1.Container'
+      name:
+        type: string
+      pipeline:
+        type: string
+      stage:
+        type: string
+      step:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+      steps:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+        type: array
+      type:
+        type: string
+      volumes:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.Volume'
+        type: array
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Post:
+    description: Post contains a PostCondition and one more actions to be executed
+      after a pipeline or stage if the condition is met.
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.PostAction'
+        type: array
+      condition:
+        type: string
+    required:
+    - condition
+    - actions
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.PostAction:
+    description: PostAction contains the name of a built-in post action and options
+      to pass to that action.
+    properties:
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        description: Also, we'll need to do some magic to do type verification during
+          translation - i.e., this action wants a number for this option, so translate
+          the string value for that option to a number.
+        type: object
+    required:
+    - name
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.RootOptions:
+    description: RootOptions contains options that can be configured on either a pipeline
+      or a stage
+    properties:
+      containerOptions:
+        $ref: '#/definitions/io.k8s.api.core.v1.Container'
+        description: ContainerOptions allows for advanced configuration of containers
+          for a single stage or the whole pipeline, adding to configuration that can
+          be configured through the syntax already. This includes things like CPU/RAM
+          requests/limits, secrets, ports, etc. Some of these things will end up with
+          native syntax approaches down the road.
+      distributeParallelAcrossNodes:
+        type: boolean
+      retry:
+        format: byte
+        type: integer
+      timeout:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Timeout'
+      volumes:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.Volume'
+        type: array
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Stage:
+    description: Stage is a unit of work in a pipeline, corresponding either to a
+      Task or a set of Tasks to be run sequentially or in parallel with common configuration.
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Agent'
+      dir:
+        type: string
+      env:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      environment:
+        description: Replaced by Env, retained for backwards compatibility
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      name:
+        type: string
+      options:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.StageOptions'
+      parallel:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Stage'
+        type: array
+      post:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Post'
+        type: array
+      stages:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Stage'
+        type: array
+      steps:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+        type: array
+    required:
+    - name
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.StageOptions:
+    description: StageOptions contains both options that can be configured on either
+      a pipeline or a stage, via RootOptions, or stage-specific options.
+    properties:
+      stash:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Stash'
+      unstash:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Unstash'
+      workspace:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Stash:
+    description: Stash defines files to be saved for use in a later stage, marked
+      with a name
+    properties:
+      files:
+        description: Eventually make this optional so that you can do volumes instead
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    - files
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Step:
+    description: Step defines a single step, from the author's perspective, to be
+      executed within a stage.
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Agent'
+        description: agent can be overridden on a step
+      args:
+        description: args is optional, but only allowed with command
+        items:
+          type: string
+        type: array
+      command:
+        description: One of command, step, or loop is required.
+        type: string
+      comment:
+        description: Legacy fields from jenkinsfile.PipelineStep before it was eliminated.
+        type: string
+      container:
+        type: string
+      dir:
+        description: dir is optional, but only allowed with command. Refers to subdirectory
+          of workspace
+        type: string
+      env:
+        description: env allows defining per-step environment variables
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      groovy:
+        type: string
+      image:
+        description: Image alows the docker image for a step to be specified
+        type: string
+      loop:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Loop'
+      name:
+        description: An optional name to give the step for reporting purposes
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        description: options is optional, but only allowed with step Also, we'll need
+          to do some magic to do type verification during translation - i.e., this
+          step wants a number for this option, so translate the string value for that
+          option to a number.
+        type: object
+      sh:
+        type: string
+      step:
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+        type: array
+      when:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Timeout:
+    description: Timeout defines how long a stage or pipeline can run before timing
+      out.
+    properties:
+      time:
+        format: int64
+        type: integer
+      unit:
+        description: Has some sane default - probably seconds
+        type: string
+    required:
+    - time
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.Unstash:
+    description: Unstash defines a previously-defined stash to be copied into this
+      stage's workspace
+    properties:
+      dir:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.generateStepsParams:
+    properties:
+      env:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      inheritedAgent:
+        type: string
+      parentContainer:
+        $ref: '#/definitions/io.k8s.api.core.v1.Container'
+      stageParams:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.stageToTaskParams'
+      step:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Step'
+      stepCounter:
+        format: int32
+        type: integer
+    required:
+    - stageParams
+    - step
+    - inheritedAgent
+    - env
+    - parentContainer
+    - stepCounter
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.stageToTaskParams:
+    properties:
+      baseWorkingDir:
+        type: string
+      depth:
+        format: byte
+        type: integer
+      enclosingStage:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.transformedStage'
+      parentAgent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Agent'
+      parentContainer:
+        $ref: '#/definitions/io.k8s.api.core.v1.Container'
+      parentEnv:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+      parentParams:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.CRDsFromPipelineParams'
+      parentVolumes:
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.Volume'
+        type: array
+      parentWorkspace:
+        type: string
+      previousSiblingStage:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.transformedStage'
+      stage:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Stage'
+    required:
+    - parentParams
+    - stage
+    - baseWorkingDir
+    - parentEnv
+    - parentAgent
+    - parentWorkspace
+    - parentContainer
+    - parentVolumes
+    - depth
+    - enclosingStage
+    - previousSiblingStage
+    type: object
+  com.github.jenkins-x.jx.pkg.tekton.syntax.transformedStage:
+    properties:
+      Depth:
+        description: The depth of this stage in the full tree of stages
+        format: byte
+        type: integer
+      EnclosingStage:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.transformedStage'
+        description: The parallel or sequntial stage enclosing this stage, or nil
+          if this stage is at top level
+      Parallel:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.transformedStage'
+        type: array
+      PipelineTask:
+        $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTask'
+        description: PipelineTask is non-empty only if Task is non-empty, but it is
+          populated after Task is populated so the reverse is not true.
+      PreviousSiblingStage:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.transformedStage'
+        description: The stage immediately before this stage at the same depth, or
+          nil if there is no such stage
+      Sequential:
+        description: Only one of Sequential, Parallel, and Task is non-empty
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.transformedStage'
+        type: array
+      Stage:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.tekton.syntax.Stage'
+      Task:
+        $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Task'
+    required:
+    - Stage
+    - Sequential
+    - Parallel
+    - Task
+    - PipelineTask
+    - Depth
+    - EnclosingStage
+    - PreviousSiblingStage
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Inputs:
+    description: Inputs are the requirements that a task needs to run a Build.
+    properties:
+      params:
+        description: Params is a list of input parameters required to run the task.
+          Params must be supplied as inputs in TaskRuns unless they declare a default
+          value.
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.ParamSpec'
+        type: array
+      resources:
+        description: Resources is a list of the input resources required to run the
+          task. Resources are represented in TaskRuns as bindings to instances of
+          PipelineResources.
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TaskResource'
+        type: array
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Outputs:
+    description: Outputs allow a task to declare what data the Build/Task will be
+      producing, i.e. results such as logs and artifacts such as images.
+    properties:
+      resources:
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TaskResource'
+        type: array
+      results:
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TestResult'
+        type: array
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Param:
+    description: Param declares a value to use for the Param called Name.
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+    required:
+    - name
+    - value
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.ParamSpec:
+    description: ParamSpec defines arbitrary parameters needed beyond typed inputs
+      (such as resources). Parameter values are provided by users as inputs on a TaskRun
+      or PipelineRun.
+    properties:
+      default:
+        description: Default is the value a parameter takes if no input value is supplied.
+          If default is set, a Task may be executed without a supplied value for the
+          parameter.
+        type: string
+      description:
+        description: Description is a user-facing description of the parameter that
+          may be used to populate a UI.
+        type: string
+      name:
+        description: Name declares the name by which a parameter is referenced.
+        type: string
+    required:
+    - name
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTask:
+    description: PipelineTask defines a task in a Pipeline, passing inputs from both
+      Params and from the output of previous tasks.
+    properties:
+      name:
+        description: Name is the name of this task within the context of a Pipeline.
+          Name is used as a coordinate with the `from` and `runAfter` fields to establish
+          the execution order of tasks relative to one another.
+        type: string
+      params:
+        description: Parameters declares parameters passed to this task.
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Param'
+        type: array
+      resources:
+        $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTaskResources'
+        description: Resources declares the resources given to this task as inputs
+          and outputs.
+      retries:
+        description: 'Retries represents how many times this task should be retried
+          in case of task failure: ConditionSucceeded set to False'
+        format: int32
+        type: integer
+      runAfter:
+        description: RunAfter is the list of PipelineTask names that should be executed
+          before this Task executes. (Used to force a specific ordering in graph execution.)
+        items:
+          type: string
+        type: array
+      taskRef:
+        $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TaskRef'
+        description: TaskRef is a reference to a task definition.
+    required:
+    - taskRef
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTaskInputResource:
+    description: PipelineTaskInputResource maps the name of a declared PipelineResource
+      input dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources
+      that should be used. This input may come from a previous task.
+    properties:
+      from:
+        description: From is the list of PipelineTask names that the resource has
+          to come from. (Implies an ordering in the execution graph.)
+        items:
+          type: string
+        type: array
+      name:
+        description: Name is the name of the PipelineResource as declared by the Task.
+        type: string
+      resource:
+        description: Resource is the name of the DeclaredPipelineResource to use.
+        type: string
+    required:
+    - name
+    - resource
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTaskOutputResource:
+    description: PipelineTaskOutputResource maps the name of a declared PipelineResource
+      output dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources
+      that should be used.
+    properties:
+      name:
+        description: Name is the name of the PipelineResource as declared by the Task.
+        type: string
+      resource:
+        description: Resource is the name of the DeclaredPipelienResource to use.
+        type: string
+    required:
+    - name
+    - resource
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTaskResources:
+    description: PipelineTaskResources allows a Pipeline to declare how its DeclaredPipelineResources
+      should be provided to a Task as its inputs and outputs.
+    properties:
+      inputs:
+        description: Inputs holds the mapping from the PipelineResources declared
+          in DeclaredPipelineResources to the input PipelineResources required by
+          the Task.
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTaskInputResource'
+        type: array
+      outputs:
+        description: Outputs holds the mapping from the PipelineResources declared
+          in DeclaredPipelineResources to the input PipelineResources required by
+          the Task.
+        items:
+          $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.PipelineTaskOutputResource'
+        type: array
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Task:
+    description: Task represents a collection of sequential steps that are run as
+      part of a Pipeline using a set of inputs and producing a set of outputs. Tasks
+      execute when TaskRuns are created that provide the input parameters and resources
+      and output resources the Task requires.
+    properties:
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
+      spec:
+        $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TaskSpec'
+        description: Spec holds the desired state of the Task from the client
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TaskRef:
+    description: 'TaskRef can be used to refer to a specific instance of a task. Copied
+      from CrossVersionObjectReference: https://github.com/kubernetes/kubernetes/blob/169df7434155cbbc22f1532cba8e0a9588e29ad8/pkg/apis/autoscaling/types.go#L64'
+    properties:
+      apiVersion:
+        description: API version of the referent
+        type: string
+      kind:
+        description: TaskKind inficates the kind of the task, namespaced or cluster
+          scoped.
+        type: string
+      name:
+        description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+        type: string
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TaskResource:
+    description: TaskResource defines an input or output Resource declared as a requirement
+      by a Task. The Name field will be used to refer to these Resources within the
+      Task definition, and when provided as an Input, the Name will be the path to
+      the volume mounted containing this Resource as an input (e.g. an input Resource
+      named `workspace` will be mounted at `/workspace`).
+    properties:
+      name:
+        description: Name declares the name by which a resource is referenced in the
+          Task's definition. Resources may be referenced by name in the definition
+          of a Task's steps.
+        type: string
+      outputImageDir:
+        description: Path to the index.json file for output container images.
+        type: string
+      targetPath:
+        description: TargetPath is the path in workspace directory where the task
+          resource will be copied.
+        type: string
+      type:
+        description: Type is the type of this resource;
+        type: string
+    required:
+    - name
+    - type
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TaskSpec:
+    description: TaskSpec defines the desired state of Task.
+    properties:
+      containerTemplate:
+        $ref: '#/definitions/io.k8s.api.core.v1.Container'
+        description: ContainerTemplate is the deprecated previous name of the StepTemplate
+          field (#977).
+      inputs:
+        $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Inputs'
+        description: Inputs is an optional set of parameters and resources which must
+          be supplied by the user when a Task is executed by a TaskRun.
+      outputs:
+        $ref: '#/definitions/com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.Outputs'
+        description: Outputs is an optional set of resources and results produced
+          when this Task is run.
+      stepTemplate:
+        $ref: '#/definitions/io.k8s.api.core.v1.Container'
+        description: StepTemplate can be used as the basis for all step containers
+          within the Task, so that the steps inherit settings on the base container.
+      steps:
+        description: Steps are the steps of the build; each step is run sequentially
+          with the source mounted into /workspace.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.Container'
+        type: array
+      volumes:
+        description: Volumes is a collection of volumes that are available to mount
+          into the steps of the build.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.Volume'
+        type: array
+    type: object
+  com.github.tektoncd.pipeline.pkg.apis.pipeline.v1alpha1.TestResult:
+    description: TestResult allows a task to specify the location where test logs
+      can be found and what format they will be in.
+    properties:
+      format:
+        type: string
+      name:
+        description: Name declares the name by which a result is referenced in the
+          Task's definition. Results may be referenced by name in the definition of
+          a Task's steps.
+        type: string
+      path:
+        type: string
+    required:
+    - name
+    - format
+    - path
+    type: object
   io.k8s.api.batch.v1.Job:
     description: Job represents the configuration of a single job.
     properties:
@@ -3272,6 +4841,105 @@ definitions:
         type: string
     required:
     - containerPort
+    type: object
+  io.k8s.api.core.v1.ContainerState:
+    description: ContainerState holds a possible state of container. Only one of its
+      members may be specified. If none of them is specified, the default one is ContainerStateWaiting.
+    properties:
+      running:
+        $ref: '#/definitions/io.k8s.api.core.v1.ContainerStateRunning'
+        description: Details about a running container
+      terminated:
+        $ref: '#/definitions/io.k8s.api.core.v1.ContainerStateTerminated'
+        description: Details about a terminated container
+      waiting:
+        $ref: '#/definitions/io.k8s.api.core.v1.ContainerStateWaiting'
+        description: Details about a waiting container
+    type: object
+  io.k8s.api.core.v1.ContainerStateRunning:
+    description: ContainerStateRunning is a running state of a container.
+    properties:
+      startedAt:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        description: Time at which the container was last (re-)started
+    type: object
+  io.k8s.api.core.v1.ContainerStateTerminated:
+    description: ContainerStateTerminated is a terminated state of a container.
+    properties:
+      containerID:
+        description: Container's ID in the format 'docker://<container_id>'
+        type: string
+      exitCode:
+        description: Exit status from the last termination of the container
+        format: int32
+        type: integer
+      finishedAt:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        description: Time at which the container last terminated
+      message:
+        description: Message regarding the last termination of the container
+        type: string
+      reason:
+        description: (brief) reason from the last termination of the container
+        type: string
+      signal:
+        description: Signal from the last termination of the container
+        format: int32
+        type: integer
+      startedAt:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        description: Time at which previous execution of the container started
+    required:
+    - exitCode
+    type: object
+  io.k8s.api.core.v1.ContainerStateWaiting:
+    description: ContainerStateWaiting is a waiting state of a container.
+    properties:
+      message:
+        description: Message regarding why the container is not yet running.
+        type: string
+      reason:
+        description: (brief) reason the container is not yet running.
+        type: string
+    type: object
+  io.k8s.api.core.v1.ContainerStatus:
+    description: ContainerStatus contains details for the current status of this container.
+    properties:
+      containerID:
+        description: Container's ID in the format 'docker://<container_id>'.
+        type: string
+      image:
+        description: 'The image the container is running. More info: https://kubernetes.io/docs/concepts/containers/images'
+        type: string
+      imageID:
+        description: ImageID of the container's image.
+        type: string
+      lastState:
+        $ref: '#/definitions/io.k8s.api.core.v1.ContainerState'
+        description: Details about the container's last termination condition.
+      name:
+        description: This must be a DNS_LABEL. Each container in a pod must have a
+          unique name. Cannot be updated.
+        type: string
+      ready:
+        description: Specifies whether the container has passed its readiness probe.
+        type: boolean
+      restartCount:
+        description: The number of times the container has been restarted, currently
+          based on the number of dead containers that have not yet been removed. Note
+          that this is calculated from dead containers. But those containers are subject
+          to garbage collection. This value will get capped at 5 by GC.
+        format: int32
+        type: integer
+      state:
+        $ref: '#/definitions/io.k8s.api.core.v1.ContainerState'
+        description: Details about the container's current condition.
+    required:
+    - name
+    - ready
+    - restartCount
+    - image
+    - imageID
     type: object
   io.k8s.api.core.v1.DownwardAPIProjection:
     description: Represents downward API info for projecting into a projected volume.
@@ -3881,6 +5549,32 @@ definitions:
     required:
     - pdID
     type: object
+  io.k8s.api.core.v1.Pod:
+    description: Pod is a collection of containers that can run on a host. This resource
+      is created by clients and scheduled onto hosts.
+    properties:
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
+        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+      spec:
+        $ref: '#/definitions/io.k8s.api.core.v1.PodSpec'
+        description: 'Specification of the desired behavior of the pod. More info:
+          https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+      status:
+        $ref: '#/definitions/io.k8s.api.core.v1.PodStatus'
+        description: 'Most recently observed status of the pod. This data may not
+          be up to date. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+    type: object
   io.k8s.api.core.v1.PodAffinity:
     description: Pod affinity is a group of inter pod affinity scheduling rules.
     properties:
@@ -3963,6 +5657,32 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.PodAffinityTerm'
         type: array
+    type: object
+  io.k8s.api.core.v1.PodCondition:
+    description: PodCondition contains details for the current condition of this pod.
+    properties:
+      lastProbeTime:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        description: Last time we probed the condition.
+      lastTransitionTime:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        description: Last time the condition transitioned from one status to another.
+      message:
+        description: Human-readable message indicating details about last transition.
+        type: string
+      reason:
+        description: Unique, one-word, CamelCase reason for the condition's last transition.
+        type: string
+      status:
+        description: 'Status is the status of the condition. Can be True, False, Unknown.
+          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-conditions'
+        type: string
+      type:
+        description: 'Type is the type of the condition. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-conditions'
+        type: string
+    required:
+    - type
+    - status
     type: object
   io.k8s.api.core.v1.PodDNSConfig:
     description: PodDNSConfig defines the DNS parameters of a pod in addition to those
@@ -4259,6 +5979,76 @@ definitions:
         x-kubernetes-patch-strategy: merge,retainKeys
     required:
     - containers
+    type: object
+  io.k8s.api.core.v1.PodStatus:
+    description: PodStatus represents information about the status of a pod. Status
+      may trail the actual state of a system, especially if the node that hosts the
+      pod cannot contact the control plane.
+    properties:
+      conditions:
+        description: 'Current service state of pod. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-conditions'
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.PodCondition'
+        type: array
+        x-kubernetes-patch-merge-key: type
+        x-kubernetes-patch-strategy: merge
+      containerStatuses:
+        description: 'The list has one entry per container in the manifest. Each entry
+          is currently the output of `docker inspect`. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-and-container-status'
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.ContainerStatus'
+        type: array
+      hostIP:
+        description: IP address of the host to which the pod is assigned. Empty if
+          not yet scheduled.
+        type: string
+      initContainerStatuses:
+        description: 'The list has one entry per init container in the manifest. The
+          most recent successful init container will have ready = true, the most recently
+          started container will have startTime set. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-and-container-status'
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.ContainerStatus'
+        type: array
+      message:
+        description: A human readable message indicating details about why the pod
+          is in this condition.
+        type: string
+      nominatedNodeName:
+        description: nominatedNodeName is set only when this pod preempts other pods
+          on the node, but it cannot be scheduled right away as preemption victims
+          receive their graceful termination periods. This field does not guarantee
+          that the pod will be scheduled on this node. Scheduler may decide to place
+          the pod elsewhere if other nodes become available sooner. Scheduler may
+          also decide to give the resources on this node to a higher priority pod
+          that is created after preemption. As a result, this field may be different
+          than PodSpec.nodeName when the pod is scheduled.
+        type: string
+      phase:
+        description: |-
+          The phase of a Pod is a simple, high-level summary of where the Pod is in its lifecycle. The conditions array, the reason and message fields, and the individual container status arrays contain more detail about the pod's status. There are five possible phase values:
+
+          Pending: The pod has been accepted by the Kubernetes system, but one or more of the container images has not been created. This includes time before being scheduled as well as time spent downloading images over the network, which could take a while. Running: The pod has been bound to a node, and all of the containers have been created. At least one container is still running, or is in the process of starting or restarting. Succeeded: All containers in the pod have terminated in success, and will not be restarted. Failed: All containers in the pod have terminated, and at least one container has terminated in failure. The container either exited with non-zero status or was terminated by the system. Unknown: For some reason the state of the pod could not be obtained, typically due to an error in communicating with the host of the pod.
+
+          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-phase
+        type: string
+      podIP:
+        description: IP address allocated to the pod. Routable at least within the
+          cluster. Empty if not yet allocated.
+        type: string
+      qosClass:
+        description: 'The Quality of Service (QOS) classification assigned to the
+          pod based on resource requirements See PodQOSClass type for available QOS
+          classes More info: https://git.k8s.io/community/contributors/design-proposals/node/resource-qos.md'
+        type: string
+      reason:
+        description: A brief CamelCase message indicating details about why the pod
+          is in this state. e.g. 'Evicted'
+        type: string
+      startTime:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        description: RFC 3339 date and time at which the object was acknowledged by
+          the Kubelet. This is before the Kubelet pulled the container image(s) for
+          the pod.
     type: object
   io.k8s.api.core.v1.PodTemplateSpec:
     description: PodTemplateSpec describes the data a pod should have when created

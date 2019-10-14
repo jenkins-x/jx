@@ -85,6 +85,7 @@ func NewCmdCreateClientOpenAPI(genOpts GenerateOptions) *cobra.Command {
 		"k8s.io/api::batch:v1",
 		"k8s.io/api::core:v1",
 		"k8s.io/api::rbac:v1",
+		"github.com/tektoncd/pipeline:pkg/apis:pipeline:v1alpha1",
 	}
 
 	moduleName := strings.TrimPrefix(strings.TrimPrefix(wd, filepath.Join(build.Default.GOPATH, "src")), "/")
