@@ -9,21 +9,23 @@ import (
 	"net/url"
 )
 
+// InstallationToken represents an installation from the github app
 type InstallationToken struct {
 	InstallationToken string `json:installationToken`
-	InstallationId    string `json:installation_id`
+	InstallationID    string `json:installation_id`
 	ExpireAt          string `json:expires_at`
 }
 
+// GetInstallationToken retrieves a github app installation token
 func GetInstallationToken(githubAppUrl string, installationId string) (InstallationToken, error) {
-	requestUrl := fmt.Sprintf("%s/installation_token", githubAppUrl)
+	requestURL := fmt.Sprintf("%s/installation_token", githubAppUrl)
 
 	params := url.Values{}
 	params.Set("installation-id", installationId)
 
-	respBody, err := util.CallWithExponentialBackOff(requestUrl, "", "GET", []byte{}, params)
+	respBody, err := util.CallWithExponentialBackOff(requestURL, "", "GET", []byte{}, params)
 	if err != nil {
-		return InstallationToken{}, errors.Wrapf(err, "error getting installation id via %s", requestUrl)
+		return InstallationToken{}, errors.Wrapf(err, "error getting installation id via %s", requestURL)
 	}
 
 	var installationToken InstallationToken
