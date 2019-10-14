@@ -81,6 +81,13 @@ func (o *DomainGKEOptions) Run() error {
 			return errors.Wrap(err, "while trying to get Google Project ID")
 		}
 	}
+
+	// Checking whether dns api is enabled
+	err = o.GCloud().EnableAPIs(o.ProjectID, "dns")
+	if err != nil {
+		return errors.Wrap(err, "enabling the DNS API")
+	}
+
 	// Create domain if it doesn't exist and return name servers list
 	_, nameServers, err := o.GCloud().CreateDNSZone(o.ProjectID, o.Domain)
 	if err != nil {
