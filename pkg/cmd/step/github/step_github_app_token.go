@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-// StepVerifyPodCountOptions contains the command line flags
+// StepGithubAppTokenOptions contains the command line flags
 type StepGithubAppTokenOptions struct {
 	step.StepOptions
 	GithubOrg         string
@@ -38,7 +38,7 @@ var (
 	`)
 )
 
-// NewCmdStepGithubApp calls the Jenkins-X github app to get an access token
+// NewCmdStepGithubAppToken calls the Jenkins-X github app to get an access token
 func NewCmdStepGithubAppToken(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := StepGithubAppTokenOptions{
@@ -175,7 +175,7 @@ func (options *StepGithubAppTokenOptions) createSecret(token string, requirement
 		"username": []byte("jenkins-x[bot]"),
 	}
 
-	k8Secret := &v1.Secret{
+	k8Secret := &v1.Secret{ //pragma: allowlist secret
 		ObjectMeta: metav1.ObjectMeta{
 			Name:                       name,
 			DeletionGracePeriodSeconds: nil,
@@ -202,8 +202,7 @@ func (options *StepGithubAppTokenOptions) createSecret(token string, requirement
 	currentSecret, err := secretInterface.Get(name, metav1.GetOptions{})
 	if err != nil {
 		log.Logger().Errorf("error getting secret %v", err)
-	}
-	if currentSecret != nil {
+	} else if currentSecret != nil {
 		_, err = secretInterface.Update(k8Secret)
 		if err != nil {
 			log.Logger().Errorf("error updating secret %v", err)
@@ -240,21 +239,21 @@ func (options *StepGithubAppTokenOptions) getInstallationId() (string, error) {
 	log.Logger().Debugf("github org %s", org)
 	tenantServiceClient := tenant.NewTenantClient()
 
-	installationId, err := tenantServiceClient.GetInstallationId(options.TenantServiceUrl, options.TenantServiceAuth, org)
+	installationID, err := tenantServiceClient.GetInstallationID(options.TenantServiceUrl, options.TenantServiceAuth, org)
 	if err != nil {
 		log.Logger().Errorf("error calling tenant service %v", err)
 		return "", err
 	}
 
-	log.Logger().Debugf("installation id %q\n", installationId)
-	return installationId, nil
+	log.Logger().Debugf("installation id %q\n", installationID)
+	return installationID, nil
 }
 
-func (options *StepGithubAppTokenOptions) getInstallationToken(installationId string) (string, error) {
+func (options *StepGithubAppTokenOptions) getInstallationToken(installationID string) (string, error) {
 	org := options.GithubOrg
 	log.Logger().Debugf("github org %s\n", org)
 
-	installationToken, err := github.GetInstallationToken(options.GithubAppUrl, installationId)
+	installationToken, err := github.GetInstallationToken(options.GithubAppUrl, installationID)
 	if err != nil {
 		log.Logger().Errorf("error calling github app %v", err)
 		return "", err
