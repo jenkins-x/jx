@@ -65,7 +65,7 @@ type Result struct {
 	Message string `json:"message"`
 }
 
-func (tCli *tenantClient) GetInstallationId(tenantServiceURL string, tenantServiceAuth string, gitHubOrg string) (string, error) {
+func (tCli *tenantClient) GetInstallationID(tenantServiceURL string, tenantServiceAuth string, gitHubOrg string) (string, error) {
 	requestUrl := fmt.Sprintf("%s%s/installation-id", tenantServiceURL, basePath)
 
 	params := url.Values{}

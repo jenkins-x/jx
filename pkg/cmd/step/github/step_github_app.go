@@ -7,11 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// StepVerifyOptions contains the command line flags
+// StepGithubOptions contains the command line flags
 type StepGithubAppOptions struct {
 	step.StepOptions
 }
 
+// NewCmdStepGithubApp access to github app commands
 func NewCmdStepGithubApp(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepGithubOptions{
 		StepOptions: step.StepOptions{
