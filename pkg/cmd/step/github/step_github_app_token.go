@@ -75,7 +75,7 @@ func (options *StepGithubAppTokenOptions) Run() error {
 
 	requirements, requirementsFileName, err := config.LoadRequirementsConfig(options.Dir)
 	if err != nil {
-		log.Logger().Error("Unable to find requirements file %q", requirementsFileName)
+		log.Logger().Errorf("Unable to find requirements file %q", requirementsFileName)
 		return errors.Wrapf(err, "failed to load Jenkins X requirements")
 	}
 
