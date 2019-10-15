@@ -259,12 +259,12 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	gitter := o.Git()
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		if requirements.GitOps {
+		if o.isJXBoot() && requirements.GitOps {
 			provider, err := envGitInfo.CreateProviderForUser(server, userAuth, gitKind, gitter)
 			if err != nil {
 				return errors.Wrap(err, "unable to create git provider")
 			}
-			err = o.createDevEnvironmentRepository(envGitInfo, public, provider, gitter, requirements)
+			err = o.handleDevEnvironmentRepository(envGitInfo, public, provider, gitter, requirements)
 			if err != nil {
 				return err
 			}
@@ -289,7 +289,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(envGitInfo *gits.GitRepository, public bool, provider gits.GitProvider, gitter gits.Gitter, requirements *config.RequirementsConfig) error {
+func (o *StepVerifyEnvironmentsOptions) handleDevEnvironmentRepository(envGitInfo *gits.GitRepository, public bool, provider gits.GitProvider, gitter gits.Gitter, requirements *config.RequirementsConfig) error {
 	fromGitURL, fromBaseRef, err := o.readEnvironment()
 	if err != nil {
 		return err
@@ -300,27 +300,30 @@ func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(envGitInf
 		return errors.Wrapf(err, "resolving %s to absolute path", o.Dir)
 	}
 
-	environmentRepo, err := o.createDevEnvironmentRemote(envGitInfo, dir, fromGitURL, fromBaseRef, !public, requirements, provider, gitter)
+	environmentRepo, err := provider.GetRepository(envGitInfo.Organisation, envGitInfo.Name)
+	// Assuming an error implies the repo does not exist. There is currently no way to distinguish between error and non existing repo
+	// see https://github.com/jenkins-x/jx/issues/5822
 	if err != nil {
-		return errors.Wrapf(err, "creating remote for dev environment %s", envGitInfo.Name)
+		environmentRepo, err = o.createDevEnvironmentRepository(envGitInfo, dir, fromGitURL, fromBaseRef, !public, requirements, provider, gitter)
+		if err != nil {
+			return errors.Wrapf(err, "creating remote for dev environment %s", envGitInfo.Name)
+		}
 	}
 
-	if o.isJXBoot() {
-		err = o.pushDevEnvironmentUpdates(environmentRepo, dir, provider, gitter)
-		if err != nil {
-			return errors.Wrapf(err, "error updating dev environment for %s", envGitInfo.Name)
-		}
+	err = o.pushDevEnvironmentUpdates(environmentRepo, dir, provider, gitter)
+	if err != nil {
+		return errors.Wrapf(err, "error updating dev environment for %s", envGitInfo.Name)
+	}
 
-		// Add a remote for the user that references the boot config that they originally used
-		err = gitter.SetRemoteURL(dir, "jenkins-x", fromGitURL)
-		if err != nil {
-			return errors.Wrapf(err, "setting jenkins-x remote to boot config %s", fromGitURL)
-		}
+	// Add a remote for the user that references the boot config that they originally used
+	err = gitter.SetRemoteURL(dir, "jenkins-x", fromGitURL)
+	if err != nil {
+		return errors.Wrapf(err, "setting jenkins-x remote to boot config %s", fromGitURL)
 	}
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRemote(gitInfo *gits.GitRepository, localRepoDir string, fromGitURL string, fromGitRef string, privateRepo bool, requirements *config.RequirementsConfig, provider gits.GitProvider, gitter gits.Gitter) (*gits.GitRepository, error) {
+func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(gitInfo *gits.GitRepository, localRepoDir string, fromGitURL string, fromGitRef string, privateRepo bool, requirements *config.RequirementsConfig, provider gits.GitProvider, gitter gits.Gitter) (*gits.GitRepository, error) {
 	if fromGitURL == config.DefaultBootRepository && fromGitRef == "master" {
 		// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
 		resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)

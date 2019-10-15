@@ -1678,6 +1678,35 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	}
 }
 
+func Test_DuplicateGitRepoFromCommitish_returns_error_if_target_repo_exists(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	originalRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+		if err != nil {
+			return errors.Wrapf(err, "writing README")
+		}
+		return nil
+	}, gitter)
+	assert.NoError(t, err)
+
+	targetRepo, err := gits.NewFakeRepository("acme", "coyote", func(dir string) error {
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("World!"), 0655)
+		if err != nil {
+			return errors.Wrapf(err, "writing README")
+		}
+		return nil
+	}, gitter)
+	assert.NoError(t, err)
+
+	provider := gits.NewFakeProvider(originalRepo, targetRepo)
+	provider.Gitter = gitter
+
+	repo, err := gits.DuplicateGitRepoFromCommitish(targetRepo.GitRepo.Organisation, targetRepo.GitRepo.Name, originalRepo.GitRepo.CloneURL, "origin/foo", "bar", false, provider, gitter)
+	assert.Error(t, err)
+	assert.Equal(t, "repository acme/coyote already exists", err.Error())
+	assert.Nil(t, repo)
+}
+
 func TestPushRepoAndCreatePullRequest(t *testing.T) {
 	type args struct {
 		gitURL     string

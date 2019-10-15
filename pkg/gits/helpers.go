@@ -731,11 +731,12 @@ func FindTagForVersion(dir string, version string, gitter Gitter) (string, error
 }
 
 // DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
-// head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo
+// head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo.
+// If the repository already exist and error is returned.
 func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, private bool, provider GitProvider, gitter Gitter) (*GitRepository, error) {
-	duplicateInfo, err := provider.GetRepository(toOrg, toName)
+	_, err := provider.GetRepository(toOrg, toName)
 	if err == nil {
-		return duplicateInfo, nil
+		return nil, errors.Errorf("repository %s/%s already exists", toOrg, toName)
 	}
 
 	// If the duplicate doesn't exist create it
@@ -748,7 +749,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
 	}
-	duplicateInfo, err = provider.CreateRepository(toOrg, toName, private)
+	duplicateInfo, err := provider.CreateRepository(toOrg, toName, private)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", toOrg, toName)
 	}
