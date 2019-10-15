@@ -93,9 +93,12 @@ const (
 	RequirementStorageRepositoryEnabled = "JX_REQUIREMENT_STORAGE_REPOSITORY_ENABLED"
 	// RequirementStorageRepositoryURL repository storage url
 	RequirementStorageRepositoryURL = "JX_REQUIREMENT_STORAGE_REPOSITORY_URL"
-
 	// RequirementGkeProjectNumber is the gke project number
 	RequirementGkeProjectNumber = "JX_REQUIREMENT_GKE_PROJECT_NUMBER"
+	// RequirementGitAppEnabled if the github app should be used for access tokens
+	RequirementGitAppEnabled = "JX_REQUIREMENT_GITHUB_APP_ENABLED"
+	// RequirementGitAppURL contains the URL to the github app
+	RequirementGitAppURL = "JX_REQUIREMENT_GITHUB_APP_URL"
 )
 
 const (
@@ -365,7 +368,15 @@ type AutoUpdateConfig struct {
 	Schedule string `json:"schedule"`
 }
 
-// +exported
+// GithubAppConfig contains github app config
+type GithubAppConfig struct {
+	// Enabled this determines whether this install should use the jenkins x github app for access tokens
+	Enabled bool `json:"enabled"`
+	// Schedule cron of the github app token refresher
+	Schedule string `json:"schedule"`
+	// URL contains a URL to the github app
+	URL string `json:"url,omitempty"`
+}
 
 // RequirementsConfig contains the logical installation requirements in the `jx-requirements.yml` file when
 // installing, configuring or upgrading Jenkins X via `jx boot`
@@ -378,6 +389,8 @@ type RequirementsConfig struct {
 	Cluster ClusterConfig `json:"cluster"`
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
+	// GithubApp contains github app config
+	GithubApp GithubAppConfig `json:"githubApp,omitempty"`
 	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
 	// re-run 'jx boot' when changes merge to the master branch
 	GitOps bool `json:"gitops,omitempty"`
