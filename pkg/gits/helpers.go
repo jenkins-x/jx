@@ -195,7 +195,7 @@ func GitProviderURL(text string) string {
 // It creates a branch called branchName from a base.
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
-func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, dryRun bool, gitter Gitter, provider GitProvider, labels []string) (*PullRequestInfo, error) {
+func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, dryRun bool, gitter Gitter, provider GitProvider) (*PullRequestInfo, error) {
 	userAuth := provider.UserAuth()
 	if commit {
 		err := gitter.Add(dir, "-A")
@@ -372,20 +372,31 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		}
 		log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	}
-	if len(labels) > 0 {
-		number := *pr.Number
-		var err error
-		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, labels)
-		if err != nil {
-			return nil, err
-		}
-		log.Logger().Infof("Added label %s to Pull Request %s", util.ColorInfo(strings.Join(labels, ", ")), pr.URL)
-	}
 	return &PullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,
 		PullRequestArguments: gha,
 	}, nil
+}
+
+// AddLabelsToPullRequest adds the provided labels, if not already present, to the provided pull request
+func AddLabelsToPullRequest(prInfo *PullRequestInfo, labels []string) error {
+	if prInfo == nil {
+		return errors.New("pull request to label cannot be nil")
+	}
+	pr := prInfo.PullRequest
+	provider := prInfo.GitProvider
+
+	if len(labels) > 0 {
+		number := *pr.Number
+		var err error
+		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, labels)
+		if err != nil {
+			return err
+		}
+		log.Logger().Infof("Added label %s to Pull Request %s", util.ColorInfo(strings.Join(labels, ", ")), pr.URL)
+	}
+	return nil
 }
 
 // ForkAndPullRepo pulls the specified gitUrl into dir using gitter, creating a remote fork if needed using the git provider

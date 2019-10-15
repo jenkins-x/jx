@@ -85,9 +85,13 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update ChangeFiles
 		filter := &gits.PullRequestFilter{
 			Labels: labels,
 		}
-		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, !o.SkipCommit, commitMessage, true, o.DryRun, o.Git(), provider, labels)
+		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, !o.SkipCommit, commitMessage, true, o.DryRun, o.Git(), provider)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
+		}
+		err = gits.AddLabelsToPullRequest(result, labels)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to add labels %+v to PR %s", labels, result.PullRequest.URL)
 		}
 	}
 	return result, nil

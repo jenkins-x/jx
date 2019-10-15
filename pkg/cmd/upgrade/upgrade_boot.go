@@ -400,9 +400,13 @@ func (o *UpgradeBootOptions) raisePR() error {
 			boot.PullRequestLabel,
 		},
 	}
-	_, err = gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider, []string{boot.PullRequestLabel})
+	prInfo, err := gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
+	}
+	err = gits.AddLabelsToPullRequest(prInfo, []string{boot.PullRequestLabel})
+	if err != nil {
+		return errors.Wrapf(err, "failed to add label %s to PR %s", boot.PullRequestLabel, prInfo.PullRequest.URL)
 	}
 	return nil
 }

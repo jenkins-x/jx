@@ -70,7 +70,15 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if autoMerge {
 		labels = append(labels, gits.LabelUpdatebot)
 	}
-	return gits.PushRepoAndCreatePullRequest(dir, upstreamRepo, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, false, o.Gitter, o.GitProvider, labels)
+	prInfo, err := gits.PushRepoAndCreatePullRequest(dir, upstreamRepo, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, false, o.Gitter, o.GitProvider)
+	if err != nil {
+		return nil, err
+	}
+	err = gits.AddLabelsToPullRequest(prInfo, labels)
+	if err != nil {
+		return nil, err
+	}
+	return prInfo, nil
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function
