@@ -2,7 +2,7 @@ package util
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
+
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 )
 
 // defaults mirror the default http.Transport values
@@ -83,7 +83,7 @@ func CallWithExponentialBackOff(url string, auth string, httpMethod string, reqB
 			req.Header.Set("Content-Type", "application/json")
 			if !strings.Contains(url, "localhost") || !strings.Contains(url, "127.0.0.1") {
 				if strings.Count(auth, ":") == 1 {
-					jxBasicAuthUser, jxBasicAuthPass := getBasicAuthUserAndPassword(auth)
+					jxBasicAuthUser, jxBasicAuthPass := GetBasicAuthUserAndPassword(auth)
 					req.SetBasicAuth(jxBasicAuthUser, jxBasicAuthPass)
 				}
 			}
@@ -118,7 +118,7 @@ func CallWithExponentialBackOff(url string, auth string, httpMethod string, reqB
 	return respBody, nil
 }
 
-func getBasicAuthUserAndPassword(auth string) (string, string) {
+func GetBasicAuthUserAndPassword(auth string) (string, string) {
 	if auth != "" {
 		creds := strings.Fields(strings.Replace(auth, ":", " ", -1))
 		return creds[0], creds[1]

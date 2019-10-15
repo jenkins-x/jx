@@ -3,14 +3,14 @@ package tenant
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/util"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
 

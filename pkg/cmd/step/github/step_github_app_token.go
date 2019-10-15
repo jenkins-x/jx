@@ -2,6 +2,9 @@ package github
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -12,10 +15,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"strings"
 )
 
 // StepGithubAppTokenOptions contains the command line flags
@@ -175,7 +176,7 @@ func (options *StepGithubAppTokenOptions) createSecret(token string, requirement
 		"username": []byte("jenkins-x[bot]"),
 	}
 
-	k8Secret := &v1.Secret{ //pragma: allowlist secret
+	k8Secret := &corev1.Secret{ //pragma: allowlist secret
 		ObjectMeta: metav1.ObjectMeta{
 			Name:                       name,
 			DeletionGracePeriodSeconds: nil,
