@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	gke_test "github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
+	gkeTest "github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/petergtz/pegomock"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +42,7 @@ func TestClientGetTenantSubDomain(t *testing.T) {
 	cli := NewTenantClient()
 	cli.httpClient = httpClient
 
-	gclouder := &gke_test.MockGClouder{}
+	gclouder := &gkeTest.MockGClouder{}
 	pegomock.When(gclouder.CreateDNSZone("cheese", "cheese.wine.com")).ThenReturn("123", []string{"abc"}, nil)
 
 	s, err := cli.GetTenantSubDomain("http://localhost", "", projectID, cluster, gclouder)
@@ -82,7 +82,7 @@ func testingHTTPClient(handler http.Handler) (*http.Client, func()) {
 
 func TestGetBasicAuthUserAndPassword(t *testing.T) {
 	auth := "some_user:some_password"
-	user, pass := getBasicAuthUserAndPassword(auth)
+	user, pass := util.GetBasicAuthUserAndPassword(auth)
 	assert.Equal(t, auth, user+":"+pass)
 }
 
