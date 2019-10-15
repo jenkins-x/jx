@@ -249,10 +249,17 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 			}
 
 			allStages := structure.GetAllStagesWithSteps()
+			var stagesToCheckCount int
+			if pa.Spec.Status != v1.ActivityStatusTypeRunning && pa.Spec.Status != v1.ActivityStatusTypePending {
+				// Add all stages that actually ran while ignoring ones that were never executed, since the activity is done.
+				stagesToCheckCount = len(runToLog.Status.TaskRuns)
+			} else {
+				stagesToCheckCount = len(allStages)
+			}
 			stagesSeen := make(map[string]bool)
 
 			// Repeat until we've seen pods for all stages
-			for len(allStages) > len(stagesSeen) {
+			for stagesToCheckCount > len(stagesSeen) {
 				pods, err := builds.GetPipelineRunPods(t.KubeClient, pa.Namespace, runToLog.Name)
 				if err != nil {
 					return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", runToLog.Name, pa.Namespace)
