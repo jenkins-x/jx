@@ -176,6 +176,15 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Storage.Repository.URL = os.Getenv(config.RequirementStorageRepositoryURL)
 		}
 	}
+	githubApp, found := os.LookupEnv(config.RequirementGitApp)
+	if found {
+		if githubApp == "true" {
+			requirements.Cluster.GithubApp = true
+		} else {
+			requirements.Cluster.GithubApp = false
+		}
+	}
+
 	log.Logger().Debugf("saving %s", requirementsFileName)
 	requirements.SaveConfig(requirementsFileName)
 

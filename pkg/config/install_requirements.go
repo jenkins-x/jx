@@ -91,6 +91,8 @@ const (
 	RequirementStorageRepositoryEnabled = "JX_REQUIREMENT_STORAGE_REPOSITORY_ENABLED"
 	// RequirementStorageRepositoryURL repository storage url
 	RequirementStorageRepositoryURL = "JX_REQUIREMENT_STORAGE_REPOSITORY_URL"
+	// RequirementGitAppif the github app should be used for access tokens
+	RequirementGitApp = "JX_REQUIREMENT_GIT_APP"
 )
 
 // SecretStorageType is the type of storage used for secrets
@@ -257,6 +259,8 @@ type ClusterConfig struct {
 	GitKind string `json:"gitKind,omitempty"`
 	// GitServer is the URL of the git server
 	GitServer string `json:"gitServer,omitempty"`
+	// GithubApp determines whether this install should use the jenkins x github app for access tokens
+	GithubApp bool `json:"githubApp,omitempty"`
 	// ExternalDNSSAName the service account name for external dns
 	ExternalDNSSAName string `json:"externalDNSSAName,omitempty"`
 	// Registry the host name of the container registry
