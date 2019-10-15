@@ -100,7 +100,7 @@ pipelineConfig:
                 - -f
                 - /workspace/source/charts/jx/Makefile
 
-              - name: update-builders-and-serverless
+              - name: update-builders
                 image: gcr.io/jenkinsxio/builder-go
                 command: jx
                 args:
@@ -114,8 +114,6 @@ pipelineConfig:
                 - $VERSION
                 - --repo
                 - https://github.com/jenkins-x/jenkins-x-builders.git
-                - --repo
-                - https://github.com/jenkins-x/jenkins-x-serverless.git
                 - --repo
                 - https://github.com/jenkins-x/jenkins-x-builders-ml.git
 
