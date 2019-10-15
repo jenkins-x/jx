@@ -47,6 +47,7 @@ type TektonLogger struct {
 	logsChannel       chan LogLine
 	errorsChannel     chan error
 	wg                *sync.WaitGroup
+	FailIfPodFails    bool
 }
 
 // LogWriter is an interface that can be implemented to define different ways to stream / write logs
@@ -317,6 +318,9 @@ func (t *TektonLogger) getContainerLogsFromPod(pod *corev1.Pod, pa *v1.PipelineA
 			if err != nil {
 				return err
 			}
+			if t.FailIfPodFails {
+				return errors.Errorf("Pipeline failed on stage '%s' : container '%s'. The execution of the pipeline has stopped.", stageName, ic.Name)
+			}
 			break
 		}
 	}
@@ -457,10 +461,19 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 
 func (t *TektonLogger) streamPipedLogs(scanner *bufio.Scanner, logsURL string) error {
 	for scanner.Scan() {
-		if err := t.LogWriter.WriteLog(LogLine{
-			Line: scanner.Text(),
-		}, t.logsChannel); err != nil {
+		text := scanner.Text()
+		err := t.LogWriter.WriteLog(LogLine{
+			Line: text,
+		}, t.logsChannel)
+
+		if err != nil {
 			return errors.Wrapf(err, "there was a problem streaming the log file from the GKE bucket %s", logsURL)
+		}
+
+		if t.FailIfPodFails {
+			if strings.Contains(text, "The execution of the pipeline has stopped.") {
+				return errors.New("The execution of the pipeline has stopped.")
+			}
 		}
 	}
 	return nil
