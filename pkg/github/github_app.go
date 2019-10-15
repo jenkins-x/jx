@@ -3,10 +3,11 @@ package github
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"net/url"
 )
 
 // InstallationToken represents an installation from the github app
