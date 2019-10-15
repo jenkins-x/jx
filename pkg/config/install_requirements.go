@@ -93,6 +93,11 @@ const (
 	RequirementStorageRepositoryURL = "JX_REQUIREMENT_STORAGE_REPOSITORY_URL"
 )
 
+const (
+	// BootDeployNamespace environment variable for deployment namespace
+	BootDeployNamespace = "DEPLOY_NAMESPACE"
+)
+
 // SecretStorageType is the type of storage used for secrets
 type SecretStorageType string
 

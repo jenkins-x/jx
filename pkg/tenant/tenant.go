@@ -12,16 +12,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/cenkalti/backoff"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	basePath = "/api/v1"
+	basePath                     = "/api/v1"
+	tenantServiceTokenSecretName = "tenant-service-token"
+	tenantServiceTokenSecretKey  = "token"
 )
 
 var (
@@ -89,6 +94,63 @@ func (tCli *tenantClient) GetInstallationID(tenantServiceURL string, tenantServi
 	}
 
 	return installation.InstallationId, nil
+}
+
+func (tCli *tenantClient) GetAndStoreTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string, namespace string, kubeClient kubernetes.Interface) error {
+	if project != "" {
+		token, err := tCli.GetTenantToken(tenantServiceURL, tenantServiceAuth, project, tempToken)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("getting tenant-service token for %s project", project))
+		}
+		if "" != token {
+			err := writeKubernetesSecret([]byte(token), namespace, kubeClient)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("writing kubernetes secret in namespace: %s", namespace))
+			}
+			response, err := tCli.DeleteTempTenantToken(tenantServiceURL, tenantServiceAuth, project, tempToken)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("deleting temporary tenant-service token for %s project", project))
+			}
+			log.Logger().Infof("temporary tenant-service token response: %s", response)
+		} else {
+			return errors.Errorf("tenant token is empty")
+		}
+	} else {
+		return errors.Errorf("project is empty")
+	}
+	return nil
+}
+
+func (tCli *tenantClient) GetTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) (string, error) {
+	var url, token = "", ""
+	if project != "" {
+		url = fmt.Sprintf("%s%s/rockets/token/tmp/%s", tenantServiceURL, basePath, project)
+		reqBody := []byte(tempToken)
+		respBody, err := tCli.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
+		if err != nil {
+			return "", errors.Wrapf(err, "error getting tenant token via %s", url)
+		}
+		token = string(respBody)
+	} else {
+		return "", errors.Errorf("project is empty")
+	}
+	return token, nil
+}
+
+func (tCli *tenantClient) DeleteTempTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) (string, error) {
+	var url, token = "", ""
+	if project != "" {
+		url = fmt.Sprintf("%s%s/rockets/token/tmp/%s", tenantServiceURL, basePath, project)
+		reqBody := []byte(tempToken)
+		respBody, err := tCli.callWithExponentialBackOff(url, tenantServiceAuth, "DELETE", reqBody)
+		if err != nil {
+			return "", errors.Wrapf(err, "error getting tenant token via %s", url)
+		}
+		token = string(respBody)
+	} else {
+		return "", errors.Errorf("project is empty")
+	}
+	return token, nil
 }
 
 func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, cluster string, gcloud gke.GClouder) (string, error) {
@@ -250,6 +312,26 @@ func ValidateDomainName(domain string) error {
 	if !allowedDomainRegex.MatchString(domain) {
 		err := fmt.Errorf("domain name %v contains invalid characters", domain)
 		return err
+	}
+	return nil
+}
+
+func writeKubernetesSecret(token []byte, namespace string, client kubernetes.Interface) error {
+	var err error
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: tenantServiceTokenSecretName,
+		},
+		Data: map[string][]byte{
+			tenantServiceTokenSecretKey: token,
+		},
+	}
+	secrets := client.CoreV1().Secrets(namespace)
+	_, err = secrets.Get(tenantServiceTokenSecretName, metav1.GetOptions{})
+	if err != nil {
+		_, err = secrets.Create(secret)
+	} else {
+		_, err = secrets.Update(secret)
 	}
 	return nil
 }
