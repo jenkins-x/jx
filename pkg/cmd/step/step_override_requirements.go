@@ -186,6 +186,19 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 		requirements.Cluster.GKEConfig.ProjectNumber = os.Getenv(config.RequirementGkeProjectNumber)
 	}
 
+	githubApp, found := os.LookupEnv(config.RequirementGitAppEnabled)
+	if found {
+		if githubApp == "true" {
+			requirements.GithubApp.Enabled = true
+		} else {
+			requirements.GithubApp.Enabled = false
+		}
+	}
+
+	if "" != os.Getenv(config.RequirementGitAppURL) {
+		requirements.GithubApp.URL = os.Getenv(config.RequirementGitAppURL)
+	}
+
 	log.Logger().Debugf("saving %s", requirementsFileName)
 	requirements.SaveConfig(requirementsFileName)
 
