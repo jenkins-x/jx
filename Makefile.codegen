@@ -60,13 +60,13 @@ install-refdocs:
 generate-refdocs: generate-api-refdocs generate-config-refdocs
 
 generate-api-refdocs: install-refdocs
-	gen-crd-api-reference-docs -config "docs/refdocs/config.json" \
+	${GOPATH}/bin/gen-crd-api-reference-docs -config "docs/refdocs/config.json" \
 	-template-dir docs/refdocs/templates \
     -api-dir "./pkg/apis/jenkins.io" \
     -out-file docs/apidocs.md
 
 generate-config-refdocs:
-	gen-crd-api-reference-docs -config "docs/configdocs/config.json" \
+	${GOPATH}/bin/gen-crd-api-reference-docs -config "docs/configdocs/config.json" \
 	-template-dir docs/configdocs/templates \
     -api-dir "./pkg/config" \
     -out-file docs/config.md
