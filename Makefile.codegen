@@ -55,13 +55,21 @@ codegen-openapi: build-codegen
 	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client --input-package=github.com/jenkins-x/jx/pkg/apis --group-with-version=jenkins.io:v1
 
 install-refdocs:
-	$(GO) get github.com/ahmetb/gen-crd-api-reference-docs 
+	$(GO) get github.com/jenkins-x/gen-crd-api-reference-docs
 
-generate-refdocs: install-refdocs
+generate-refdocs: generate-api-refdocs generate-config-refdocs
+
+generate-api-refdocs: install-refdocs
 	gen-crd-api-reference-docs -config "docs/refdocs/config.json" \
 	-template-dir docs/refdocs/templates \
     -api-dir "./pkg/apis/jenkins.io" \
     -out-file docs/apidocs.md
+
+generate-config-refdocs:
+	gen-crd-api-reference-docs -config "docs/configdocs/config.json" \
+	-template-dir docs/configdocs/templates \
+    -api-dir "./pkg/config" \
+    -out-file docs/config.md
 
 stash:
 	# Making sure repo has no outstanding changes
