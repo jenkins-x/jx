@@ -58,6 +58,9 @@ rm tmp.yaml
 helm init --client-only
 helm repo add jenkins-x https://storage.googleapis.com/chartmuseum.jenkins-x.io
 
+# We need to use the image from the Pull Request instead of the versions stream, otherwise we are not testing the PR itself
+sed -i "s/builder-go.*/&:$VERSION/g" jenkins-x.yml
+
 jx step bdd \
     --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
     --config ../jx/bdd/boot-vault/cluster.yaml \

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
 	"github.com/jenkins-x/jx/pkg/config"
 
@@ -61,8 +63,7 @@ type CreateVaultOptions struct {
 	CreateOptions
 
 	GKECreateVaultOptions
-	kubevault.AWSConfig
-
+	AWSCreateVaultOptions
 	ClusterName         string
 	Namespace           string
 	SecretsPathPrefix   string
@@ -80,6 +81,13 @@ type CreateVaultOptions struct {
 type GKECreateVaultOptions struct {
 	GKEProjectID string
 	GKEZone      string
+}
+
+// AWSCreateVaultOptions are the AWS specific Vault creation options
+type AWSCreateVaultOptions struct {
+	kubevault.AWSConfig
+	AWSTemplatesDir string
+	Boot            bool
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
@@ -362,34 +370,73 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 	kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
 
 	if o.AutoCreate {
-		defaultRegion, err := amazon.ResolveRegionWithoutOptions()
+		_, clusterRegion, err := amazon.GetCurrentlyConnectedRegionAndClusterName()
 		if err != nil {
 			return errors.Wrap(err, "finding default AWS region")
 		}
 
-		if err := o.ApplyDefaultRegionIfEmpty(defaultRegion); err != nil {
+		if err := o.ApplyDefaultRegionIfEmpty(clusterRegion); err != nil {
 			return errors.Wrap(err, "setting the default region")
 		}
 
 		domain := "jenkins-x-domain"
-		username := "vault_" + defaultRegion
+		username := o.ProvidedIAMUsername
+		if username == "" {
+			username = "vault_" + clusterRegion
+		}
 
-		accessKey, keySecret, kmsID, s3Name, tableName, err := awsvault.CreateVaultResources(awsvault.ResourceCreationOpts{
-			Region:    defaultRegion,
-			Domain:    domain,
-			Username:  username,
-			TableName: autoCreateTableName,
-		})
+		bucketName := o.S3Bucket
+		if bucketName == "" {
+			bucketName = "vault-unseal." + o.S3Region + "." + domain
+		}
+
+		valueUUID, err := uuid.NewV4()
+		if err != nil {
+			return errors.Wrapf(err, "Generating UUID failed")
+		}
+
+		// Create suffix to apply to resources
+		suffixString := valueUUID.String()[:7]
+		var kmsID, s3Name, tableName, accessID, secretKey *string
+		if o.Boot {
+			accessID, secretKey, kmsID, s3Name, tableName, err = awsvault.CreateVaultResourcesBoot(awsvault.ResourceCreationOpts{
+				Region:          clusterRegion,
+				Domain:          domain,
+				Username:        username,
+				BucketName:      bucketName,
+				TableName:       autoCreateTableName,
+				AWSTemplatesDir: o.AWSTemplatesDir,
+				UniqueSuffix:    suffixString,
+			})
+		} else {
+			// left for non-boot clusters until deprecation
+			accessID, secretKey, kmsID, s3Name, tableName, err = awsvault.CreateVaultResources(awsvault.ResourceCreationOpts{
+				Region:     clusterRegion,
+				Domain:     domain,
+				Username:   username,
+				BucketName: bucketName,
+				TableName:  autoCreateTableName,
+			})
+		}
 
 		if err != nil {
 			return errors.Wrap(err, "an error occurred while creating the vault resources")
 		}
-
-		o.S3Bucket = *s3Name
-		o.KMSKeyID = *kmsID
-		o.AccessKeyID = *accessKey
-		o.SecretAccessKey = *keySecret
-		o.DynamoDBTable = *tableName
+		if s3Name != nil {
+			o.S3Bucket = *s3Name
+		}
+		if kmsID != nil {
+			o.KMSKeyID = *kmsID
+		}
+		if tableName != nil {
+			o.DynamoDBTable = *tableName
+		}
+		if accessID != nil {
+			o.AccessKeyID = *accessID
+		}
+		if secretKey != nil {
+			o.SecretAccessKey = *secretKey
+		}
 
 	} else {
 		if o.S3Bucket == "" {
@@ -484,7 +531,7 @@ func (o *CreateVaultOptions) ApplyDefaultRegionIfEmpty(enforcedDefault string) e
 		var defaultRegion string
 		var err error
 		if enforcedDefault == "" {
-			defaultRegion, err = amazon.ResolveRegionWithoutOptions()
+			_, defaultRegion, err = amazon.GetCurrentlyConnectedRegionAndClusterName()
 			if err != nil {
 				return errors.Wrap(err, "finding default AWS region")
 			}

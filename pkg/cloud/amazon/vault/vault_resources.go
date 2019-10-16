@@ -1,38 +1,69 @@
 package vault
 
 import (
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/aws/aws-sdk-go/aws/request"
+
+	"github.com/aws/aws-sdk-go/service/iam"
+
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/aws/aws-sdk-go/service/iam"
 	goformation "github.com/awslabs/goformation/cloudformation"
 	"github.com/awslabs/goformation/cloudformation/resources"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 const stackNamePrefix = "jenkins-x-vault-stack"
 
 const (
-	readCapacityUnits  = 2
-	writeCapacityUnits = 2
+	readCapacityUnits               = 2
+	writeCapacityUnits              = 2
+	vaultCloudFormationTemplateName = "vault_cf_tmpl.yml"
+	resourceSuffixParamName         = "ResourcesSuffixParameter"
+	iamUserParamName                = "IAMUser"
+	dynamoDBTableNameParamName      = "DynamoDBTableName"
+	s3BucketNameParamName           = "S3BucketName"
 )
+
+// WaitConfigFunc function that configures a waiter for an AWS request with a 10 minute timeout
+func WaitConfigFunc(waiter *request.Waiter) {
+	waiter.Delay = request.ConstantWaiterDelay(30 * time.Second)
+	waiter.MaxAttempts = 20
+}
 
 // ResourceCreationOpts The input parameters to create a vault by default on aws
 type ResourceCreationOpts struct {
-	Region    string
-	Domain    string
-	Username  string
-	TableName string
+	Region          string
+	Domain          string
+	Username        string
+	TableName       string
+	BucketName      string
+	AWSTemplatesDir string
+	UniqueSuffix    string
 }
 
-// CreateVaultResources will automatically create the preresiquites for vault on aws
+// StackOutputs the CloudFormation stack outputs for Vault
+type StackOutputs struct {
+	KMSKeyARN        *string
+	S3BucketARN      *string
+	DynamoDBTableARN *string
+}
+
+// CreateVaultResources will automatically create the prerequisites for vault on aws
+// Deprecated
+// Will be deleted once we don't support jx install
 func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *string, *string, *string, error) {
-	log.Logger().Infof("Creating vault presiquite resources with following values, %s, %s, %s, %s",
+	log.Logger().Infof("Creating vault prerequisite resources with following values, %s, %s, %s, %s",
 		util.ColorInfo(vaultParams.Region),
 		util.ColorInfo(vaultParams.Domain),
 		util.ColorInfo(vaultParams.Username),
@@ -40,7 +71,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 
 	valueUUID, err := uuid.NewV4()
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating UUID failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating UUID failed")
 	}
 
 	// Create suffix to apply to resources
@@ -65,7 +96,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	awsKmsKey := "AWSKMSKey"
 	kmsKey, err := createKmsKey(iamUsername, []string{awsIamUserKey})
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating the vault CloudFormation template failed")
 	}
 	template.Resources[awsKmsKey] = kmsKey
 
@@ -73,15 +104,15 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	policy := createIamUserPolicy(iamUsername, []string{awsDynamoDbKey, awsS3BucketKey, awsKmsKey, awsIamUserKey})
 	template.Resources[awsIamPolicy] = &policy
 
-	log.Logger().Debugf("Generating the vault cloudformation template")
+	log.Logger().Debugf("Generating the vault CloudFormation template")
 
 	// and also the YAML AWS CloudFormation template
 	yaml, err := template.JSON()
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating the vault CloudFormation template failed")
 	}
 
-	log.Logger().Debugf("Generated the vault cloudformation template successfully")
+	log.Logger().Debugf("Generated the vault CloudFormation template successfully")
 
 	yamlProcessed := string(yaml)
 	yamlProcessed = setProperIntrinsics(yamlProcessed)
@@ -89,19 +120,78 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 	// Create dynamic stack name
 	stackName := stackNamePrefix + suffixString
 
-	runCloudformationTemplate(&yamlProcessed, &stackName)
+	err = runCloudFormationTemplate(&yamlProcessed, &stackName, nil)
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "there was a problem running the Vault CloudFormation stack")
+	}
 
 	kmsID, err := getKmsID(awsKmsKey, stackName)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating the vault CloudFormation template failed")
 	}
 
-	accessKey, keySecret, err := createAccessKey(vaultParams.Region, iamUsername)
+	accessKey, keySecret, err := createAccessKey(iamUsername)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generating the vault cloudformation template failed")
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating the vault CloudFormation template failed")
 	}
 
 	return accessKey, keySecret, kmsID, s3Name, &dynamoDbTableName, nil
+}
+
+// CreateVaultResourcesBoot creates required Vault resources in AWS for a boot cluster
+func CreateVaultResourcesBoot(vaultParams ResourceCreationOpts) (*string, *string, *string, *string, *string, error) {
+	log.Logger().Infof("Creating vault resources with following values, %s, %s, %s, %s",
+		util.ColorInfo(vaultParams.Region),
+		util.ColorInfo(vaultParams.Username),
+		util.ColorInfo(vaultParams.TableName),
+		util.ColorInfo(vaultParams.BucketName))
+
+	templatePath := filepath.Join(vaultParams.AWSTemplatesDir, vaultCloudFormationTemplateName)
+	log.Logger().Debugf("Attempting to read Vault CloudFormation template from path %s", templatePath)
+	exists, err := util.FileExists(templatePath)
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "there was a problem loading the vault_cf_tmpl.yml file")
+	} else if !exists {
+		return nil, nil, nil, nil, nil, fmt.Errorf("vault cloud formation template %s doesn't exist", templatePath)
+	}
+	templateBytes, err := ioutil.ReadFile(templatePath)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	stackName := stackNamePrefix + vaultParams.UniqueSuffix
+	err = runCloudFormationTemplate(aws.String(string(templateBytes)), aws.String(stackName), []*cloudformation.Parameter{
+		{
+			ParameterKey:   aws.String(resourceSuffixParamName),
+			ParameterValue: aws.String(vaultParams.UniqueSuffix),
+		},
+		{
+			ParameterKey:   aws.String(iamUserParamName),
+			ParameterValue: aws.String(vaultParams.Username),
+		},
+		{
+			ParameterKey:   aws.String(dynamoDBTableNameParamName),
+			ParameterValue: aws.String(vaultParams.TableName),
+		},
+		{
+			ParameterKey:   aws.String(s3BucketNameParamName),
+			ParameterValue: aws.String(vaultParams.BucketName),
+		},
+	})
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "executing the Vault CloudFormation ")
+	}
+
+	vaultStackOutputs, err := extractVaultStackOutputs(stackName)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	accessKey, keySecret, err := createAccessKey(vaultParams.Username)
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating the vault CloudFormation template failed")
+	}
+
+	return accessKey, keySecret, vaultStackOutputs.KMSKeyARN, vaultStackOutputs.S3BucketARN, vaultStackOutputs.DynamoDBTableARN, nil
 }
 
 /*
@@ -119,7 +209,7 @@ func setProperIntrinsics(yamlTemplate string) string {
 	return yamlProcessed
 }
 
-func getKmsID(kmsKey string, stackName string) (*string, error) {
+func getKmsID(kmsOutputName string, stackName string) (*string, error) {
 	log.Logger().Debugf("Retrieving the vault kms id")
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
@@ -128,13 +218,13 @@ func getKmsID(kmsKey string, stackName string) (*string, error) {
 	svc := cloudformation.New(sess)
 
 	desInput := &cloudformation.DescribeStackResourceInput{
-		LogicalResourceId: aws.String(kmsKey),
+		LogicalResourceId: aws.String(kmsOutputName),
 		StackName:         aws.String(stackName),
 	}
 	output, err := svc.DescribeStackResource(desInput)
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve kms Id")
+		return nil, errors.Wrapf(err, "unable to retrieve kms Id")
 	}
 
 	log.Logger().Debugf("Retrieved the vault kms id successfully")
@@ -353,7 +443,7 @@ func createIamUserPolicy(username string, depends []string) resources.AWSIAMPoli
 	return policyDocument
 }
 
-func runCloudformationTemplate(templateBody *string, stackName *string) error {
+func runCloudFormationTemplate(templateBody *string, stackName *string, parameters []*cloudformation.Parameter) error {
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
@@ -370,36 +460,76 @@ func runCloudformationTemplate(templateBody *string, stackName *string) error {
 		Capabilities: []*string{
 			aws.String("CAPABILITY_NAMED_IAM"),
 		},
+		Parameters: parameters,
+	}
+	createOutput, err := svc.CreateStack(input)
+	if err != nil {
+		return errors.Wrapf(err, "unable to create vault prerequisite resources")
 	}
 
-	_, err := svc.CreateStack(input)
-	if err != nil {
-		return errors.Wrapf(err, "Unable to create vault preresiquite resources")
-	}
+	log.Logger().Info("Vault CloudFormation stack created")
+	cloudFormationURL := fmt.Sprintf("https://console.aws.amazon.com/cloudformation/home?region=%s#/stacks/stackinfo?stackId=%s", *sess.Config.Region, *createOutput.StackId)
+	log.Logger().Infof("You can watch progress in the CloudFormation console: %s", util.ColorInfo(cloudFormationURL))
 
 	// Wait until stack is created
-	err = svc.WaitUntilStackCreateComplete(desInput)
+	err = svc.WaitUntilStackCreateCompleteWithContext(aws.BackgroundContext(), desInput, WaitConfigFunc)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to create vault preresiquite resources")
+		return errors.Wrapf(err, "unable to create vault prerequisite resources")
 	}
-
-	log.Logger().Debugf("Ran the vault cloudformation template successfully")
+	log.Logger().Debugf("Ran the vault CloudFormation template successfully")
 	return nil
+}
+
+func extractVaultStackOutputs(stackName string) (*StackOutputs, error) {
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	// Create CloudFormation client in region
+	svc := cloudformation.New(sess)
+
+	desInput := &cloudformation.DescribeStacksInput{StackName: aws.String(stackName)}
+
+	output, err := svc.DescribeStacks(desInput)
+	if err != nil {
+		return nil, err
+	}
+	vsp := &StackOutputs{}
+	if len(output.Stacks) > 0 {
+		stack := output.Stacks[0]
+		for _, v := range stack.Outputs {
+			switch *v.OutputKey {
+			case "AWSS3Bucket":
+				vsp.S3BucketARN = v.OutputValue
+			case "AWSKMSKey":
+				vsp.KMSKeyARN = v.OutputValue
+			case "AWSDynamoDBTable":
+				vsp.DynamoDBTableARN = v.OutputValue
+			default:
+				log.Logger().Warnf("CloudFormation parameter %s not expected", *v.OutputKey)
+			}
+		}
+	}
+	return vsp, nil
 }
 
 /**
 We can create an access key using cloudformation, however this results the secret being logged.
 There is supposed to be a way using a custom type but for now using this
 */
-func createAccessKey(region string, username string) (*string, *string, error) {
-	svc := iam.New(session.New())
+func createAccessKey(username string) (*string, *string, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, nil, err
+	}
+	svc := iam.New(sess)
 	input := &iam.CreateAccessKeyInput{
 		UserName: aws.String(username),
 	}
 	result, err := svc.CreateAccessKey(input)
 
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "Unable to create access key")
+		return nil, nil, errors.Wrapf(err, "unable to create access key")
 	}
 
 	log.Logger().Debugf("Created the vault access key successfully")

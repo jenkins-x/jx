@@ -2308,10 +2308,10 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			CreateOptions: CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
-			IngressConfig:       *ic,
-			Namespace:           namespace,
-			AWSConfig:           options.AWSConfig,
-			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
+			GKECreateVaultOptions: GKECreateVaultOptions{},
+			AWSCreateVaultOptions: AWSCreateVaultOptions{
+				AWSConfig: options.AWSConfig,
+			},
 		}
 
 		if options.installValues != nil {
