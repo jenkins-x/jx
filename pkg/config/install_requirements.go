@@ -168,16 +168,16 @@ type EnvironmentConfig struct {
 // IngressConfig contains dns specific requirements
 type IngressConfig struct {
 	// DNS is enabled
-	ExternalDNS bool `json:"externalDNS"`
+	ExternalDNS bool `json:"externalDNS,omitempty"`
 	// CloudDNSSecretName secret name which contains the service account for external-dns and cert-manager issuer to
 	// access the Cloud DNS service to resolve a DNS challenge
 	CloudDNSSecretName string `json:"cloud_dns_secret_name,omitempty"`
 	// Domain to expose ingress endpoints
-	Domain string `json:"domain"`
+	Domain string `json:"domain,omitempty"`
 	// NamespaceSubDomain the sub domain expression to expose ingress. Defaults to ".jx."
-	NamespaceSubDomain string `json:"namespaceSubDomain"`
+	NamespaceSubDomain string `json:"namespaceSubDomain,omitempty"`
 	// TLS enable automated TLS using certmanager
-	TLS TLSConfig `json:"tls"`
+	TLS TLSConfig `json:"tls,omitempty"`
 	// DomainIssuerURL contains a URL used to retrieve a Domain
 	DomainIssuerURL string `json:"domainIssuerURL,omitempty"`
 }
@@ -185,14 +185,14 @@ type IngressConfig struct {
 // TLSConfig contains TLS specific requirements
 type TLSConfig struct {
 	// TLS enabled
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Email address to register with services like LetsEncrypt
-	Email string `json:"email"`
+	Email string `json:"email,omitempty"`
 	// Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production
 	// server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/
-	Production bool `json:"production"`
+	Production bool `json:"production,omitempty"`
 	// SecretName the name of the secret which contains the TLS certificate
-	SecretName string `json:"secretName"`
+	SecretName string `json:"secretName,omitempty"`
 }
 
 // JxInstallProfile contains the jx profile info
