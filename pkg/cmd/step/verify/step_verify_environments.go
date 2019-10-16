@@ -28,8 +28,6 @@ import (
 
 const (
 	jxInterpretPipelineEnvKey = "JX_INTERPRET_PIPELINE"
-	configRepoURLEnvKey       = "REPO_URL"
-	configRepoRefEnvKey       = "BASE_CONFIG_REF"
 )
 
 // StepVerifyEnvironmentsOptions contains the command line flags
@@ -154,20 +152,20 @@ func (o *StepVerifyEnvironmentsOptions) isJXBoot() bool {
 func (o *StepVerifyEnvironmentsOptions) readEnvironment() (string, string, error) {
 	var missingRepoURLErr, missingReoRefErr error
 
-	fromGitURL, foundURL := os.LookupEnv(configRepoURLEnvKey)
+	fromGitURL, foundURL := os.LookupEnv(boot.ConfigRepoURLEnvVarName)
 	if !foundURL {
-		missingRepoURLErr = errors.Errorf("the environment variable %s must be specified", configRepoURLEnvKey)
+		missingRepoURLErr = errors.Errorf("the environment variable %s must be specified", boot.ConfigRepoURLEnvVarName)
 	}
-	gitRef, foundRef := os.LookupEnv(configRepoRefEnvKey)
+	gitRef, foundRef := os.LookupEnv(boot.ConfigBaseRefEnvVarName)
 	if !foundRef {
-		missingReoRefErr = errors.Errorf("the environment variable %s must be specified", configRepoRefEnvKey)
+		missingReoRefErr = errors.Errorf("the environment variable %s must be specified", boot.ConfigBaseRefEnvVarName)
 	}
 
 	err := util.CombineErrors(missingRepoURLErr, missingReoRefErr)
 
 	if err == nil {
-		log.Logger().Debugf("Defined %s env variable value: %s", configRepoURLEnvKey, fromGitURL)
-		log.Logger().Debugf("Defined %s env variable value: %s", configRepoRefEnvKey, gitRef)
+		log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigRepoURLEnvVarName, fromGitURL)
+		log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigBaseRefEnvVarName, gitRef)
 	}
 
 	return fromGitURL, gitRef, err
