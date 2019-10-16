@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"sigs.k8s.io/yaml"
@@ -70,7 +69,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		return err
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -85,7 +84,10 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		gitURL := env.Spec.Source.URL
 		if gitURL != "" && (env.Spec.Kind == v1.EnvironmentKindTypePermanent || (env.Spec.Kind == v1.EnvironmentKindTypeDevelopment && requirements.GitOps)) {
 			log.Logger().Infof("Validating git repository for %s environment at URL %s\n", info(name), info(gitURL))
-
+			err = o.updateEnvironmentIngressConfig(requirements, requirementsFileName, env)
+			if err != nil {
+				return errors.Wrapf(err, "updating the ingress config for environment %q", env.GetName())
+			}
 			err = o.validateGitRepository(name, requirements, env, gitURL)
 			if err != nil {
 				return err
@@ -411,8 +413,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 	}
 	useHTTP := "true"
 	tlsAcme := "false"
-
-	if requirements.Ingress.TLS.Enabled {
+	if envCfg.Ingress.TLS.Enabled {
 		useHTTP = "false"
 		tlsAcme = "true"
 	}
@@ -420,28 +421,33 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 	helmValues := config.HelmValuesConfig{
 		ExposeController: &config.ExposeController{
 			Config: config.ExposeControllerConfig{
-				Domain:      domain,
-				Exposer:     exposer,
-				HTTP:        useHTTP,
-				TLSAcme:     tlsAcme,
-				URLTemplate: config.ExposeDefaultURLTemplate,
+				Domain:        domain,
+				Exposer:       exposer,
+				HTTP:          useHTTP,
+				TLSAcme:       tlsAcme,
+				URLTemplate:   config.ExposeDefaultURLTemplate,
+				TLSSecretName: envCfg.Ingress.TLS.SecretName,
 			},
+			Production: envCfg.Ingress.TLS.Production,
 		},
 	}
 
-	// set the exposecontroller helm values needed to create an ingress rule with TLS pointing to the right secret containing the cert
-	secretName := ""
-	if requirements.Ingress.TLS.Production {
-		helmValues.ExposeController.Production = true
-		secretName = fmt.Sprintf("tls-%s-p", domain)
-	} else {
-		secretName = fmt.Sprintf("tls-%s-s", domain)
-	}
-
-	// only set the secret name if TLS is enabled else exposecontroller thinks the ingress needs TLS
-	if requirements.Ingress.TLS.Enabled {
-		helmValues.ExposeController.Config.TLSSecretName = strings.Replace(secretName, ".", "-", -1)
-	}
-
 	return helmValues, nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) updateEnvironmentIngressConfig(requirements *config.RequirementsConfig, requirementsFileName string, env *v1.Environment) error {
+	if env.Spec.Kind != v1.EnvironmentKindTypeDevelopment {
+		return nil
+	}
+
+	// Override the dev environemtn ingress config from main ingress config
+	name := env.GetName()
+	for i, e := range requirements.Environments {
+		if e.Key == name {
+			requirements.Environments[i].Ingress = requirements.Ingress
+			break
+		}
+	}
+
+	return requirements.SaveConfig(requirementsFileName)
 }
