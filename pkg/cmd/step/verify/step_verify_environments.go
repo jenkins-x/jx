@@ -418,15 +418,19 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 	helmValues := config.HelmValuesConfig{
 		ExposeController: &config.ExposeController{
 			Config: config.ExposeControllerConfig{
-				Domain:        domain,
-				Exposer:       exposer,
-				HTTP:          useHTTP,
-				TLSAcme:       tlsAcme,
-				URLTemplate:   config.ExposeDefaultURLTemplate,
-				TLSSecretName: envCfg.Ingress.TLS.SecretName,
+				Domain:      domain,
+				Exposer:     exposer,
+				HTTP:        useHTTP,
+				TLSAcme:     tlsAcme,
+				URLTemplate: config.ExposeDefaultURLTemplate,
 			},
 			Production: envCfg.Ingress.TLS.Production,
 		},
+	}
+
+	// Only set the secret name if TLS is enabled else exposecontroller thinks the ingress needs TLS
+	if envCfg.Ingress.TLS.Enabled {
+		helmValues.ExposeController.Config.TLSSecretName = envCfg.Ingress.TLS.SecretName
 	}
 
 	return helmValues, nil
