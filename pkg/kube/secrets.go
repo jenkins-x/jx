@@ -12,6 +12,23 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// GetSecret checks and returns a Secret
+func GetSecret(kubeClient kubernetes.Interface, ns string, secretName string, secretKey string) (*v1.Secret, error) {
+	if secretName != "" || secretKey != "" {
+		err := ValidateSecret(kubeClient, secretName, secretKey, ns)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("validating '%s' secret with '%s' key in '%s' namespace", secretName, secretKey, ns))
+		}
+		secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("getting '%s' secret in '%s' namespace", secretName, ns))
+		}
+		return secret, nil
+	} else {
+		return nil, errors.New("secretName or secretKey is empty")
+	}
+}
+
 // GetSecrets returns a map of the Secrets along with a sorted list of names
 func GetSecrets(kubeClient kubernetes.Interface, ns string) (map[string]*v1.Secret, []string, error) {
 	m := map[string]*v1.Secret{}

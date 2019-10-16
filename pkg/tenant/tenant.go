@@ -1,21 +1,18 @@
 package tenant
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
-	"strings"
-	"time"
+
+	"k8s.io/helm/pkg/kube"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -27,6 +24,7 @@ const (
 	basePath                     = "/api/v1"
 	tenantServiceTokenSecretName = "tenant-service-token"
 	tenantServiceTokenSecretKey  = "token"
+	tenantSignatureHeader        = "X-JenkinsX-Signature"
 )
 
 var (
@@ -82,7 +80,14 @@ func (tCli *tenantClient) GetInstallationID(tenantServiceURL string, tenantServi
 	params := url.Values{}
 	params.Set("org", gitHubOrg)
 
-	respBody, err := util.CallWithExponentialBackOff(requestUrl, tenantServiceAuth, "GET", []byte{}, params)
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/json")
+	token := getTenantSignatureToken()
+	if token != "" {
+		headers.Set(tenantSignatureHeader, token)
+	}
+
+	respBody, err := util.CallWithExponentialBackOff(requestUrl, tenantServiceAuth, headers, "GET", []byte{}, params)
 	if err != nil {
 		return "", errors.Wrapf(err, "error getting installation id via %s", requestUrl)
 	}
@@ -171,8 +176,12 @@ func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServ
 	if err != nil {
 		return "", errors.Wrap(err, "error marshalling struct into json")
 	}
+
+	var headers = make(map[string]string)
+	headers["Content-Type"] = "application/json"
+
 	if projectID != "" {
-		respBody, err := tCli.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
+		respBody, err := util.callWithExponentialBackOff(url, tenantServiceAuth, headers, "POST", reqBody, "")
 		if err != nil {
 			return "", errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
 		}
@@ -226,7 +235,7 @@ func (tCli *tenantClient) PostTenantZoneNameServers(tenantServiceURL string, ten
 	}
 
 	if projectID != "" && zone != "" && len(nameServers) > 0 {
-		respBody, err = tCli.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
+		respBody, err = util.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
 		if err != nil {
 			return errors.Wrapf(err, "error posting tenant sub-domain nameservers via %s", url)
 		}
@@ -253,59 +262,11 @@ func NewTenantClient(options ...Option) *tenantClient {
 	return &tCli
 }
 
-func (tCli *tenantClient) callWithExponentialBackOff(url string, auth string, httpMethod string, reqBody []byte) ([]byte, error) {
-	log.Logger().Debugf("%sing %s to %s", httpMethod, reqBody, url)
-	resp, respBody := &http.Response{}, []byte{}
-	if url != "" && httpMethod != "" {
-		f := func() error {
-			req, err := http.NewRequest(httpMethod, url, bytes.NewBuffer(reqBody))
-			req.Header.Set("Content-Type", "application/json")
-			if !strings.Contains(url, "localhost") || !strings.Contains(url, "127.0.0.1") {
-				if strings.Count(auth, ":") == 1 {
-					jxBasicAuthUser, jxBasicAuthPass := getBasicAuthUserAndPassword(auth)
-					req.SetBasicAuth(jxBasicAuthUser, jxBasicAuthPass)
-				}
-			}
-
-			resp, err = tCli.httpClient.Do(req)
-			if err != nil {
-				return backoff.Permanent(err)
-			}
-			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
-				return errors.Errorf("%s not available, error was %d %s", url, resp.StatusCode, resp.Status)
-			}
-			respBody, err = ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return backoff.Permanent(errors.Wrap(err, "parsing response body"))
-			}
-			resp.Body.Close()
-			return nil
-		}
-		exponentialBackOff := backoff.NewExponentialBackOff()
-		timeout := 1 * time.Minute
-		exponentialBackOff.MaxElapsedTime = timeout
-		exponentialBackOff.Reset()
-		err := backoff.Retry(f, exponentialBackOff)
-		if err != nil {
-			return []byte{}, errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
-		}
-	}
-	return respBody, nil
-}
-
-func getBasicAuthUserAndPassword(auth string) (string, string) {
-	if auth != "" {
-		creds := strings.Fields(strings.Replace(auth, ":", " ", -1))
-		return creds[0], creds[1]
-	}
-	return "", ""
-}
-
 // ValidateDomainName checks for compliance in a supplied domain name
 func ValidateDomainName(domain string) error {
 	// Check whether the domain is greater than 3 and fewer than 63 characters in length
 	if len(domain) < 3 || len(domain) > 63 {
-		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 63 characters", domain)
+		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 6G3 characters", domain)
 		return err
 	}
 	// Ensure each part of the domain name only contains lower/upper case characters, numbers and dashes
@@ -334,4 +295,8 @@ func writeKubernetesSecret(token []byte, namespace string, client kubernetes.Int
 		_, err = secrets.Update(secret)
 	}
 	return nil
+}
+
+func getTenantSignatureToken(secretName string, secretKey string) string {
+	client, err := kube.Client{}
 }

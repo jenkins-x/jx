@@ -74,13 +74,19 @@ func getBoolFromEnv(key string, fallback bool) bool {
 }
 
 // CallWithExponentialBackOff make a http call with exponential backoff retry
-func CallWithExponentialBackOff(url string, auth string, httpMethod string, reqBody []byte, reqParams url.Values) ([]byte, error) {
+func CallWithExponentialBackOff(url string, auth string, headers http.Header, httpMethod string, reqBody []byte, reqParams url.Values) ([]byte, error) {
+
 	log.Logger().Debugf("%sing %s to %s", httpMethod, reqBody, url)
 	resp, respBody := &http.Response{}, []byte{}
+
 	if url != "" && httpMethod != "" {
 		f := func() error {
+
 			req, err := http.NewRequest(httpMethod, url, bytes.NewBuffer(reqBody))
-			req.Header.Set("Content-Type", "application/json")
+			if headers != nil {
+				req.Header = headers
+			}
+
 			if !strings.Contains(url, "localhost") || !strings.Contains(url, "127.0.0.1") {
 				if strings.Count(auth, ":") == 1 {
 					jxBasicAuthUser, jxBasicAuthPass := GetBasicAuthUserAndPassword(auth)
