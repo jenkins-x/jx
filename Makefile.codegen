@@ -54,6 +54,15 @@ codegen-openapi: build-codegen
 	@echo "Generating OpenAPI structs for Kubernetes Clients"
 	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client --input-package=github.com/jenkins-x/jx/pkg/apis --group-with-version=jenkins.io:v1
 
+install-refdocs:
+	$(GO) get github.com/ahmetb/gen-crd-api-reference-docs 
+
+generate-refdocs: install-refdocs
+	gen-crd-api-reference-docs -config "docs/refdocs/config.json" \
+	-template-dir docs/refdocs/templates \
+    -api-dir "./pkg/apis/jenkins.io" \
+    -out-file docs/apidocs.md
+
 stash:
 	# Making sure repo has no outstanding changes
 	git stash
