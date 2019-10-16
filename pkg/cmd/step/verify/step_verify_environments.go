@@ -430,7 +430,15 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 
 	// Only set the secret name if TLS is enabled else exposecontroller thinks the ingress needs TLS
 	if envCfg.Ingress.TLS.Enabled {
-		helmValues.ExposeController.Config.TLSSecretName = envCfg.Ingress.TLS.SecretName
+		secretName := envCfg.Ingress.TLS.SecretName
+		if secretName == "" {
+			if envCfg.Ingress.TLS.Production {
+				secretName = fmt.Sprintf("tls-%s-p", domain)
+			} else {
+				secretName = fmt.Sprintf("tls-%s-s", domain)
+			}
+		}
+		helmValues.ExposeController.Config.TLSSecretName = secretName
 	}
 
 	return helmValues, nil
