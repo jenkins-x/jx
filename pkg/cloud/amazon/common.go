@@ -69,10 +69,15 @@ func ResolveRegionWithoutOptions() (string, error) {
 func ParseContext(context string) (string, string, error) {
 	reg := regexp.MustCompile(`([a-zA-Z][-a-zA-Z0-9]*)\.((us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d)\.*`)
 	result := reg.FindStringSubmatch(context)
-	if len(result) < 3 {
-		return "", "", errors.Errorf("unable to parse %s as <cluster_name>.<region>.*", context)
+	arnReg := regexp.MustCompile(`arn:aws:eks:((us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d):[0-9]*:cluster/([a-zA-Z][-a-zA-Z0-9]*)`)
+	arnResult := reg.FindStringSubmatch(context)
+	if len(result) >= 3 {
+		return result[1], result[2], nil
+	} else if len(arnResult) >= 3 {
+		return arnResult[2], arnResult[1], nil
+	} else {
+		return "", "", errors.Errorf("unable to parse %s as <cluster_name>.<region>.* or arn:aws:<region>:account-id:cluster/<cluster_name>", context)
 	}
-	return result[1], result[2], nil
 }
 
 // GetCurrentlyConnectedRegionAndClusterName gets the current context for the connected cluster and parses it
@@ -85,7 +90,7 @@ func GetCurrentlyConnectedRegionAndClusterName() (string, string, error) {
 	context := kube.Cluster(kubeConfig)
 	currentClusterName, currentRegion, err := ParseContext(context)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "parsing the current Kubeernetes context %s", context)
+		return "", "", errors.Wrapf(err, "parsing the current Kubernetes context %s", context)
 	}
 	return currentClusterName, currentRegion, nil
 }
