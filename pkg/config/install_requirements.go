@@ -191,6 +191,8 @@ type TLSConfig struct {
 	// Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production
 	// server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/
 	Production bool `json:"production"`
+	// SecretName the name of the secret which contains the TLS certificate
+	SecretName string `json:"secretName"`
 }
 
 // JxInstallProfile contains the jx profile info
