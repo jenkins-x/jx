@@ -779,7 +779,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 		return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
 	}
 
-	err = SquashIntoSingleCommit(dir, fmt.Sprintf("initial config based of %s/%s with ref %s", toOrg, toName, fromCommitish), gitter)
+	err = SquashIntoSingleCommit(dir, fmt.Sprintf("initial config based of %s/%s with ref %s", fromInfo.Organisation, fromInfo.Name, fromCommitish), gitter)
 	if err != nil {
 		return nil, err
 	}
