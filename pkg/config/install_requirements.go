@@ -330,8 +330,9 @@ type ClusterConfig struct {
 	HelmMajorVersion string `json:"helmMajorVersion,omitempty"`
 }
 
+// VaultConfig contains Vault configuration for boot
 type VaultConfig struct {
-	// Name the name of the vault if using vault for secretts
+	// Name the name of the vault if using vault for secrets
 	Name           string `json:"name,omitempty"`
 	Bucket         string `json:"bucket,omitempty"`
 	Keyring        string `json:"keyring,omitempty"`
@@ -339,7 +340,26 @@ type VaultConfig struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	RecreateBucket bool   `json:"recreateBucket,omitempty"`
 	// Optionally allow us to override the default lookup of the Vault URL, could be incluster service or external ingress
-	DisableURLDiscovery bool `json:"disableURLDiscovery,omitempty"`
+	DisableURLDiscovery bool            `json:"disableURLDiscovery,omitempty"`
+	AWSConfig           *VaultAWSConfig `json:"aws,omitempty"`
+}
+
+// VaultAWSConfig contains all the Vault configuration needed by Vault to be deployed in AWS
+type VaultAWSConfig struct {
+	VaultAWSUnsealConfig
+	AutoCreate          bool   `json:"autoCreate,omitempty"`
+	DynamoDBTable       string `json:"dynamoDBTable,omitempty"`
+	DynamoDBRegion      string `json:"dynamoDBRegion,omitempty"`
+	ProvidedIAMUsername string `json:"iamUserName,omitempty"`
+}
+
+// VaultAWSUnsealConfig contains references to existing AWS resources that can be used to install Vault
+type VaultAWSUnsealConfig struct {
+	KMSKeyID  string `json:"kmsKeyId,omitempty"`
+	KMSRegion string `json:"kmsRegion,omitempty"`
+	S3Bucket  string `json:"s3Bucket,omitempty"`
+	S3Prefix  string `json:"s3Prefix,omitempty"`
+	S3Region  string `json:"s3Region,omitempty"`
 }
 
 // UnmarshalJSON method handles the rename of EnvironmentGitPrivate to EnvironmentGitPublic.
