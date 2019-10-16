@@ -352,7 +352,10 @@ type AutoUpdateConfig struct {
 	Schedule string `json:"schedule"`
 }
 
-// RequirementsConfig contains the logical installation requirements
+// +exported
+
+// RequirementsConfig contains the logical installation requirements in the `jx-requirements.yml` file when
+// installing, configuring or upgrading Jenkins X via `jx boot`
 type RequirementsConfig struct {
 	// AutoUpdate contains auto update config
 	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
