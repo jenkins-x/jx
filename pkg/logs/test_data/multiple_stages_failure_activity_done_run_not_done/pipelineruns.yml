@@ -135,11 +135,12 @@ items:
       cb-kubecd-bdd-spring-1568135191-1-from-build-pack-mrz2r:
         pipelineTaskName: from-build-pack
         status:
+          completionTime: "2019-09-10T17:11:31Z"
           conditions:
           - lastTransitionTime: "2019-09-10T17:11:31Z"
-            message: Not all Steps in the Task have finished executing
-            reason: Building
-            status: Unknown
+            message: All Steps have completed executing
+            reason: Succeeded
+            status: "True"
             type: Succeeded
           podName: cb-kubecd-bdd-spring-1568135191-1-from-build-pack-mrz2r-pod-8d000a
           startTime: "2019-09-10T17:08:20Z"
@@ -194,10 +195,18 @@ items:
               reason: Completed
               startedAt: "2019-09-10T17:08:56Z"
           - name: promote-helm-release
-            running:
+            terminated:
+              containerID: docker://0185c5e21ef22da68133c07c48fbee57396c6bc06d981359550b7e578e8c4e5a
+              exitCode: 0
+              finishedAt: "2019-09-10T17:10:09Z"
+              reason: Completed
               startedAt: "2019-09-10T17:08:56Z"
           - name: promote-jx-promote
-            running:
+            terminated:
+              containerID: docker://863aaccefc672eb10284e165ded50ff2d3755219627956307c3d4db29fa0a076
+              exitCode: 1
+              finishedAt: "2019-09-10T17:11:30Z"
+              reason: Error
               startedAt: "2019-09-10T17:08:56Z"
           - name: git-source-cb-kubecd-bdd-spring-1568135191-7zl6b
             terminated:
