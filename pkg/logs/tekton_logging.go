@@ -251,7 +251,7 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 			allStages := structure.GetAllStagesWithSteps()
 			var stagesToCheckCount int
 			// If the pipeline run is done, we only care about logs from the pods it actually ran.
-			if runToLog.IsDone() {
+			if runToLog.IsDone() || pa.Spec.Status.IsTerminated() {
 				// Add all stages that actually ran while ignoring ones that were never executed, since the run is done.
 				stagesToCheckCount = len(runToLog.Status.TaskRuns)
 			} else {

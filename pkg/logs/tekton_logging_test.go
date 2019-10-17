@@ -714,6 +714,42 @@ func TestGetRunningBuildLogsWithMultipleStagesWithFailureInFirstStage(t *testing
 		stripansi.Strip(firstLine), "'from-build-pack' should be the first stage logged")
 }
 
+func TestGetRunningBuildLogsWithMultipleStagesFailureActivityDoneRunNotDone(t *testing.T) {
+	testCaseDir := path.Join("test_data", "multiple_stages_failure_activity_done_run_not_done")
+	_, _, _, _, ns := getFakeClientsAndNs(t)
+
+	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
+	pa := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
+	kubeClient := kubeMocks.NewSimpleClientset(podsList)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
+	structures := tekton_helpers_test.AssertLoadPipelineStructures(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(structures, pa)
+
+	tl := TektonLogger{
+		KubeClient:   kubeClient,
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
+	err := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1")
+	assert.NoError(t, err)
+
+	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
+	containersNumber := len(containers1)*LogsHeadersMultiplier + 1 // One additional line for the failure
+
+	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.Regexp(t, "Showing logs for build (?s).* stage from-build-pack and container (?s).*$",
+		stripansi.Strip(firstLine), "'from-build-pack' should be the first stage logged")
+}
+
 // Helper method, not supposed to be a test by itself
 func getFakeClientsAndNs(t *testing.T) (versioned.Interface, tektonclient.Interface, kubernetes.Interface, opts.CommonOptions, string) {
 	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
