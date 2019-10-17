@@ -34,7 +34,7 @@ func GetInstallationToken(githubAppUrl string, installationId string) (Installat
 		Auth:       "",
 		ReqBody:    []byte{},
 		Headers:    &headers,
-		HttpMethod: http.MethodGet,
+		HTTPMethod: http.MethodGet,
 		ReqParams:  &params,
 	}
 
