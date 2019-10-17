@@ -162,11 +162,16 @@ func (o *BootOptions) Run() error {
 		repo := gitInfo.Name
 		cloneDir := filepath.Join(o.Dir, repo)
 
-		if o.GitRef == "" {
+		if gitRef == "" {
 			gitRef, err = o.determineGitRef(requirements, gitURL)
 			if err != nil {
 				return errors.Wrapf(err, "failed to determine git ref")
 			}
+		}
+
+		if gitRef == "" {
+			log.Logger().Info("no gitref found, defaulting to master")
+			gitRef = "master"
 		}
 
 		if !o.BatchMode {
