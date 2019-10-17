@@ -19,7 +19,7 @@ const (
 	RepoURL           = "https://github.com/jenkins-x/jenkins-x-versions"
 	TagFromDefaultURL = "v1.0.114"
 	FirstTag          = "v0.0.1"
-	SecondTag         = "v0.02"
+	SecondTag         = "v0.0.2"
 	BranchRef         = "master"
 	HEAD              = "HEAD"
 )
@@ -193,7 +193,7 @@ func TestCloneJXVersionsRepoWithABranch(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)
 	assert.NotNil(t, versionRef)
-	assert.Equal(t, FirstTag, versionRef)
+	assert.Equal(t, SecondTag, versionRef)
 
 	err = gitter.Checkout(dir, versionRef)
 	assert.NoError(t, err)
