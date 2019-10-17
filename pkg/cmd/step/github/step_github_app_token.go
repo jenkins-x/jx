@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -236,11 +238,24 @@ func (options *StepGithubAppTokenOptions) getTenantServiceBasicAuth() (string, e
 }
 
 func (options *StepGithubAppTokenOptions) getInstallationId() (string, error) {
+	namespace := os.Getenv(config.BootDeployNamespace)
+	if namespace == "" {
+		return "", errors.Errorf("no %s environment variable found", config.BootDeployNamespace)
+	}
+
+	client, err := options.KubeClient()
+	if err != nil {
+		errors.Wrap(err, "creating kube client")
+	}
 	org := options.GithubOrg
 	log.Logger().Debugf("github org %s", org)
-	tenantServiceClient := tenant.NewTenantClient()
 
-	installationID, err := tenantServiceClient.GetInstallationID(options.TenantServiceUrl, options.TenantServiceAuth, org)
+	t := tenant.NewTenantClient()
+	t.HttpClient = util.GetClient()
+	t.Kube = client
+	t.Namespace = namespace
+
+	installationID, err := t.GetInstallationID(options.TenantServiceUrl, options.TenantServiceAuth, org)
 	if err != nil {
 		log.Logger().Errorf("error calling tenant service %v", err)
 		return "", err

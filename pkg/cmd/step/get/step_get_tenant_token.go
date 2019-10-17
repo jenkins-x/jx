@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -137,7 +139,13 @@ func (o *StepGetTenantTokenOptions) performTokenExchange(domainIssuerURL, projec
 	}
 
 	tenantServiceAuth := fmt.Sprintf("%s:%s", username, password)
-	tCli := tenant.NewTenantClient()
 
-	return tCli.GetAndStoreTenantToken(domainIssuerURL, tenantServiceAuth, project, tempToken, namespace, kubeClient)
+	t := &tenant.Tenant{
+		HttpClient: util.GetClient(),
+		Gcloud:     o.GCloud(),
+		Kube:       kubeClient,
+		Namespace:  namespace,
+	}
+
+	return t.GetAndStoreTenantToken(domainIssuerURL, tenantServiceAuth, project, tempToken)
 }

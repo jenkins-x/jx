@@ -136,6 +136,7 @@ func (o *StepGetSubdomainOptions) getDomainFromIssuer(domainIssuerURL, projectID
 	}
 	username := os.Getenv(config.RequirementDomainIssuerUsername)
 	password := os.Getenv(config.RequirementDomainIssuerPassword)
+	namespace := os.Getenv(config.BootDeployNamespace)
 
 	if username == "" {
 		return "", errors.Errorf("no %s environment variable found", config.RequirementDomainIssuerUsername)
@@ -144,7 +145,18 @@ func (o *StepGetSubdomainOptions) getDomainFromIssuer(domainIssuerURL, projectID
 		return "", errors.Errorf("no %s environment variable found", config.RequirementDomainIssuerPassword)
 	}
 
+	client, err := o.KubeClient()
+	if err != nil {
+		return "", errors.Wrapf(err, "creating kube client")
+	}
+
 	tenantServiceAuth := fmt.Sprintf("%s:%s", username, password)
-	tCli := tenant.NewTenantClient()
-	return tCli.GetTenantSubDomain(domainIssuerURL, tenantServiceAuth, projectID, cluster, o.GCloud())
+
+	t := tenant.NewTenantClient()
+	t.HttpClient = util.GetClient()
+	t.Gcloud = o.GCloud()
+	t.Kube = client
+	t.Namespace = namespace
+
+	return t.GetTenantSubDomain(domainIssuerURL, tenantServiceAuth, projectID, cluster)
 }

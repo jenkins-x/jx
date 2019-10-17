@@ -23,6 +23,8 @@ const (
 	domain                  = "wine.com"
 	subDomain               = projectID + "." + domain
 	zone                    = "zone"
+	secretName              = "name"
+	secretKey               = "key"
 	tempToken               = "a_temporary_test_token"
 	getTokenResponse        = "a_real_test_token"
 	deleteTempTokenResponse = "temporary token deleted"
@@ -45,16 +47,18 @@ func TestClientGetAndStoreTenantToken(t *testing.T) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	cli := NewTenantClient()
-	cli.httpClient = httpClient
-
 	f := fake.NewFakeFactory()
 	client, namespace, err := f.CreateKubeClient()
 	require.NoError(t, err, "CreateKubeClient() failed")
 	assert.Equal(t, "jx", namespace, "namespace")
 	assert.NotNil(t, client, "client")
 
-	err = cli.GetAndStoreTenantToken("http://localhost", "", projectID, tempToken, namespace, client)
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	tenant.Kube = client
+	tenant.Namespace = namespace
+
+	err = tenant.GetAndStoreTenantToken("http://localhost", "", projectID, tempToken)
 	assert.Nil(t, err)
 }
 
@@ -62,13 +66,13 @@ func TestClientGetTenantToken(t *testing.T) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(getTokenResponse))
 	})
+
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	cli := NewTenantClient()
-	cli.httpClient = httpClient
-
-	token, err := cli.GetTenantToken("http://localhost", "", projectID, tempToken)
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	token, err := tenant.getTenantToken("http://localhost", "", projectID, tempToken)
 	assert.Nil(t, err)
 	assert.Equal(t, getTokenResponse, token)
 }
@@ -80,10 +84,18 @@ func TestClientDeleteTempTenantToken(t *testing.T) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	cli := NewTenantClient()
-	cli.httpClient = httpClient
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
 
-	response, err := cli.DeleteTempTenantToken("http://localhost", "", projectID, tempToken)
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	tenant.Kube = client
+	tenant.Namespace = namespace
+
+	response, err := tenant.deleteTempTenantToken("http://localhost", "", projectID, tempToken)
 	assert.Nil(t, err)
 	assert.Equal(t, deleteTempTokenResponse, response)
 }
@@ -95,7 +107,11 @@ func TestClientWriteKubernetesSecret(t *testing.T) {
 	assert.Equal(t, "jx", namespace, "namespace")
 	assert.NotNil(t, client, "client")
 
-	err = writeKubernetesSecret([]byte(getTokenResponse), namespace, client)
+	tenant := NewTenantClient()
+	tenant.Kube = client
+	tenant.Namespace = namespace
+
+	err = tenant.writeKubernetesSecret(secretName, secretKey, []byte(getTokenResponse))
 	assert.Nil(t, err)
 }
 
@@ -106,13 +122,21 @@ func TestClientGetTenantSubDomain(t *testing.T) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	cli := NewTenantClient()
-	cli.httpClient = httpClient
-
 	gclouder := &gkeTest.MockGClouder{}
 	pegomock.When(gclouder.CreateDNSZone("cheese", "cheese.wine.com")).ThenReturn("123", []string{"abc"}, nil)
 
-	s, err := cli.GetTenantSubDomain("http://localhost", "", projectID, cluster, gclouder)
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
+
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	tenant.Kube = client
+	tenant.Gcloud = gclouder
+	tenant.Namespace = namespace
+	s, err := tenant.GetTenantSubDomain("http://localhost", "", projectID, cluster)
 
 	assert.Nil(t, err)
 	assert.Equal(t, subDomain, s)
@@ -125,11 +149,18 @@ func TestClientPostTenantZoneNameServers(t *testing.T) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	cli := NewTenantClient()
-	cli.httpClient = httpClient
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
 
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	tenant.Kube = client
+	tenant.Namespace = namespace
 	nameServers := []string{"nameServer1", "nameServer2"}
-	err := cli.PostTenantZoneNameServers("http://localhost", "", projectID, subDomain, zone, nameServers)
+	err = tenant.PostTenantZoneNameServers("http://localhost", "", projectID, subDomain, zone, nameServers)
 	assert.Nil(t, err)
 }
 

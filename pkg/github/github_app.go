@@ -3,6 +3,7 @@ package github
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -24,7 +25,20 @@ func GetInstallationToken(githubAppUrl string, installationId string) (Installat
 	params := url.Values{}
 	params.Set("installation-id", installationId)
 
-	respBody, err := util.CallWithExponentialBackOff(requestURL, "", "GET", []byte{}, params)
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/json")
+
+	httpUtils := util.HttpUtils{
+		Client:     util.GetClient(),
+		URL:        requestURL,
+		Auth:       "",
+		ReqBody:    []byte{},
+		Headers:    &headers,
+		HttpMethod: http.MethodGet,
+		ReqParams:  &params,
+	}
+
+	respBody, err := httpUtils.CallWithExponentialBackOff()
 	if err != nil {
 		return InstallationToken{}, errors.Wrapf(err, "error getting installation id via %s", requestURL)
 	}

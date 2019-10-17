@@ -2,7 +2,6 @@ package util
 
 import (
 	"bytes"
-
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -29,6 +28,16 @@ var jxDefaultTransport http.RoundTripper = &http.Transport{
 	TLSHandshakeTimeout:   time.Duration(getIntFromEnv("HTTP_TLS_HANDSHAKE_TIMEOUT", 10)) * time.Second,
 	ExpectContinueTimeout: time.Duration(getIntFromEnv("HTTP_EXPECT_CONTINUE_TIMEOUT", 1)) * time.Second,
 	Proxy:                 http.ProxyFromEnvironment,
+}
+
+type HttpUtils struct {
+	Client     *http.Client
+	URL        string
+	Auth       string
+	ReqBody    []byte
+	Headers    *http.Header
+	HttpMethod string
+	ReqParams  *url.Values
 }
 
 var defaultClient = http.Client{Transport: jxDefaultTransport, Timeout: time.Duration(getIntFromEnv("DEFAULT_HTTP_REQUEST_TIMEOUT", 30)) * time.Second}
@@ -74,36 +83,36 @@ func getBoolFromEnv(key string, fallback bool) bool {
 }
 
 // CallWithExponentialBackOff make a http call with exponential backoff retry
-func CallWithExponentialBackOff(url string, auth string, headers http.Header, httpMethod string, reqBody []byte, reqParams url.Values) ([]byte, error) {
-
-	log.Logger().Debugf("%sing %s to %s", httpMethod, reqBody, url)
+func (utils *HttpUtils) CallWithExponentialBackOff() ([]byte, error) {
+	log.Logger().Debugf("%sing %s to %s", utils.HttpMethod, utils.ReqBody, utils.URL)
 	resp, respBody := &http.Response{}, []byte{}
 
-	if url != "" && httpMethod != "" {
+	if utils.URL != "" && utils.HttpMethod != "" {
 		f := func() error {
 
-			req, err := http.NewRequest(httpMethod, url, bytes.NewBuffer(reqBody))
-			if headers != nil {
-				req.Header = headers
+			req, err := http.NewRequest(utils.HttpMethod, utils.URL, bytes.NewBuffer(utils.ReqBody))
+			if utils.Headers != nil {
+				req.Header = *utils.Headers
 			}
 
-			if !strings.Contains(url, "localhost") || !strings.Contains(url, "127.0.0.1") {
-				if strings.Count(auth, ":") == 1 {
-					jxBasicAuthUser, jxBasicAuthPass := GetBasicAuthUserAndPassword(auth)
+			if !strings.Contains(utils.URL, "localhost") || !strings.Contains(utils.URL, "127.0.0.1") {
+				if strings.Count(utils.Auth, ":") == 1 {
+					jxBasicAuthUser, jxBasicAuthPass := GetBasicAuthUserAndPassword(utils.Auth)
 					req.SetBasicAuth(jxBasicAuthUser, jxBasicAuthPass)
 				}
 			}
 
-			if reqParams != nil {
-				req.URL.RawQuery = reqParams.Encode()
+			if utils.ReqParams != nil {
+				req.URL.RawQuery = utils.ReqParams.Encode()
 			}
 
-			resp, err = defaultClient.Do(req)
+			resp, err = utils.Client.Do(req)
 			if err != nil {
 				return backoff.Permanent(err)
 			}
+
 			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
-				return errors.Errorf("%s not available, error was %d %s", url, resp.StatusCode, resp.Status)
+				return errors.Errorf("%s not available, error was %d %s", utils.URL, resp.StatusCode, resp.Status)
 			}
 			respBody, err = ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -118,7 +127,7 @@ func CallWithExponentialBackOff(url string, auth string, headers http.Header, ht
 		exponentialBackOff.Reset()
 		err := backoff.Retry(f, exponentialBackOff)
 		if err != nil {
-			return []byte{}, errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
+			return []byte{}, errors.Wrapf(err, "error getting tenant sub-domain via %s", utils.URL)
 		}
 	}
 	return respBody, nil

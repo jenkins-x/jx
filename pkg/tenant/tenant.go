@@ -8,12 +8,13 @@ import (
 	"os"
 	"regexp"
 
-	"k8s.io/helm/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -31,17 +32,11 @@ var (
 	allowedDomainRegex = regexp.MustCompile("^[a-z0-9]+([_\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,6}$")
 )
 
-type tenantClient struct {
-	httpClient *http.Client
-}
-
-type Option func(*tenantClient)
-
-// SetHTTPClient used to set the HTTP Client
-func SetHTTPClient(httpClient *http.Client) Option {
-	return func(tCli *tenantClient) {
-		tCli.httpClient = httpClient
-	}
+type Tenant struct {
+	HttpClient *http.Client
+	Gcloud     gke.GClouder
+	Kube       kubernetes.Interface
+	Namespace  string
 }
 
 type dRequest struct {
@@ -74,7 +69,21 @@ type Result struct {
 	Message string `json:"message"`
 }
 
-func (tCli *tenantClient) GetInstallationID(tenantServiceURL string, tenantServiceAuth string, gitHubOrg string) (string, error) {
+type Option func(*Tenant)
+
+// NewTenantClient creates a new tenant
+func NewTenantClient(options ...Option) *Tenant {
+	t := Tenant{
+		HttpClient: &http.Client{},
+	}
+
+	for option := range options {
+		options[option](&t)
+	}
+	return &t
+}
+
+func (t *Tenant) GetInstallationID(tenantServiceURL string, tenantServiceAuth string, gitHubOrg string) (string, error) {
 	requestUrl := fmt.Sprintf("%s%s/installation-id", tenantServiceURL, basePath)
 
 	params := url.Values{}
@@ -82,12 +91,21 @@ func (tCli *tenantClient) GetInstallationID(tenantServiceURL string, tenantServi
 
 	headers := http.Header{}
 	headers.Set("Content-Type", "application/json")
-	token := getTenantSignatureToken()
+	token := t.getTenantSignatureToken(tenantServiceTokenSecretName, tenantServiceTokenSecretKey)
 	if token != "" {
 		headers.Set(tenantSignatureHeader, token)
 	}
 
-	respBody, err := util.CallWithExponentialBackOff(requestUrl, tenantServiceAuth, headers, "GET", []byte{}, params)
+	httpUtils := &util.HttpUtils{
+		Client:     t.HttpClient,
+		HttpMethod: http.MethodGet,
+		URL:        requestUrl,
+		Auth:       tenantServiceAuth,
+		Headers:    &headers,
+		ReqParams:  &params,
+	}
+
+	respBody, err := httpUtils.CallWithExponentialBackOff()
 	if err != nil {
 		return "", errors.Wrapf(err, "error getting installation id via %s", requestUrl)
 	}
@@ -101,37 +119,50 @@ func (tCli *tenantClient) GetInstallationID(tenantServiceURL string, tenantServi
 	return installation.InstallationId, nil
 }
 
-func (tCli *tenantClient) GetAndStoreTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string, namespace string, kubeClient kubernetes.Interface) error {
-	if project != "" {
-		token, err := tCli.GetTenantToken(tenantServiceURL, tenantServiceAuth, project, tempToken)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("getting tenant-service token for %s project", project))
-		}
-		if "" != token {
-			err := writeKubernetesSecret([]byte(token), namespace, kubeClient)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("writing kubernetes secret in namespace: %s", namespace))
-			}
-			response, err := tCli.DeleteTempTenantToken(tenantServiceURL, tenantServiceAuth, project, tempToken)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("deleting temporary tenant-service token for %s project", project))
-			}
-			log.Logger().Infof("temporary tenant-service token response: %s", response)
-		} else {
-			return errors.Errorf("tenant token is empty")
-		}
-	} else {
+func (t *Tenant) GetAndStoreTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) error {
+	if project == "" {
 		return errors.Errorf("project is empty")
 	}
+	token, err := t.getTenantToken(tenantServiceURL, tenantServiceAuth, project, tempToken)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("getting tenant-service token for %s project", project))
+	}
+
+	if token == "" {
+		return errors.Errorf("tenant token is empty")
+	}
+	err = t.writeKubernetesSecret(tenantServiceTokenSecretName, tenantServiceTokenSecretKey, []byte(token))
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("writing kubernetes secret in namespace: %s", t.Namespace))
+	}
+	response, err := t.deleteTempTenantToken(tenantServiceURL, tenantServiceAuth, project, tempToken)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("deleting temporary tenant-service token for %s project", project))
+	}
+	log.Logger().Infof("temporary tenant-service token response: %s", response)
 	return nil
 }
 
-func (tCli *tenantClient) GetTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) (string, error) {
+func (t *Tenant) getTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) (string, error) {
 	var url, token = "", ""
 	if project != "" {
 		url = fmt.Sprintf("%s%s/rockets/token/tmp/%s", tenantServiceURL, basePath, project)
 		reqBody := []byte(tempToken)
-		respBody, err := tCli.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
+
+		headers := http.Header{}
+		headers.Set("Content-Type", "application/json")
+
+		httpUtils := &util.HttpUtils{
+			Client:     t.HttpClient,
+			URL:        url,
+			Auth:       tenantServiceAuth,
+			ReqBody:    reqBody,
+			Headers:    &headers,
+			HttpMethod: http.MethodPost,
+			ReqParams:  nil,
+		}
+
+		respBody, err := httpUtils.CallWithExponentialBackOff()
 		if err != nil {
 			return "", errors.Wrapf(err, "error getting tenant token via %s", url)
 		}
@@ -142,26 +173,45 @@ func (tCli *tenantClient) GetTenantToken(tenantServiceURL string, tenantServiceA
 	return token, nil
 }
 
-func (tCli *tenantClient) DeleteTempTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) (string, error) {
-	var url, token = "", ""
+func (t *Tenant) deleteTempTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) (string, error) {
+	var url = ""
 	if project != "" {
 		url = fmt.Sprintf("%s%s/rockets/token/tmp/%s", tenantServiceURL, basePath, project)
 		reqBody := []byte(tempToken)
-		respBody, err := tCli.callWithExponentialBackOff(url, tenantServiceAuth, "DELETE", reqBody)
+
+		headers := http.Header{}
+		headers.Set("Content-Type", "application/json")
+		token := t.getTenantSignatureToken(tenantServiceTokenSecretName, tenantServiceTokenSecretKey)
+		if token != "" {
+			headers.Set(tenantSignatureHeader, token)
+		}
+
+		httpUtils := &util.HttpUtils{
+			Client:     t.HttpClient,
+			URL:        tenantServiceURL,
+			Auth:       tenantServiceAuth,
+			HttpMethod: http.MethodDelete,
+			Headers:    &headers,
+			ReqBody:    reqBody,
+		}
+
+		respBody, err := httpUtils.CallWithExponentialBackOff()
 		if err != nil {
 			return "", errors.Wrapf(err, "error getting tenant token via %s", url)
 		}
-		token = string(respBody)
+		return string(respBody), nil
 	} else {
 		return "", errors.Errorf("project is empty")
 	}
-	return token, nil
 }
 
-func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, cluster string, gcloud gke.GClouder) (string, error) {
-	url := fmt.Sprintf("%s%s/domain", tenantServiceURL, basePath)
+func (t *Tenant) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, cluster string) (string, error) {
 	var domainName, reqBody, userEmail = "", []byte{}, ""
+	if projectID == "" {
+		return "", errors.Errorf("projectID is empty")
+	}
 
+	url := fmt.Sprintf("%s%s/domain", tenantServiceURL, basePath)
 	// temporary change, this will be refactored into a step
 	if "" != os.Getenv("USER_EMAIL") {
 		userEmail = os.Getenv("USER_EMAIL")
@@ -177,23 +227,32 @@ func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServ
 		return "", errors.Wrap(err, "error marshalling struct into json")
 	}
 
-	var headers = make(map[string]string)
-	headers["Content-Type"] = "application/json"
-
-	if projectID != "" {
-		respBody, err := util.callWithExponentialBackOff(url, tenantServiceAuth, headers, "POST", reqBody, "")
-		if err != nil {
-			return "", errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
-		}
-		var d Domain
-		err = json.Unmarshal(respBody, &d)
-		if err != nil {
-			return "", errors.Wrap(err, "unmarshalling json message")
-		}
-		domainName = d.Data.Subdomain
-	} else {
-		return "", errors.Errorf("projectID is empty")
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/json")
+	token := t.getTenantSignatureToken(tenantServiceTokenSecretName, tenantServiceTokenSecretKey)
+	if token != "" {
+		headers.Set(tenantSignatureHeader, token)
 	}
+
+	httpUtils := &util.HttpUtils{
+		Client:     t.HttpClient,
+		URL:        tenantServiceURL,
+		Auth:       tenantServiceAuth,
+		HttpMethod: http.MethodPost,
+		Headers:    &headers,
+		ReqBody:    reqBody,
+	}
+
+	respBody, err := httpUtils.CallWithExponentialBackOff()
+	if err != nil {
+		return "", errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
+	}
+	var d Domain
+	err = json.Unmarshal(respBody, &d)
+	if err != nil {
+		return "", errors.Wrap(err, "unmarshalling json message")
+	}
+	domainName = d.Data.Subdomain
 
 	err = ValidateDomainName(domainName)
 	if err != nil {
@@ -201,41 +260,57 @@ func (tCli *tenantClient) GetTenantSubDomain(tenantServiceURL string, tenantServ
 	}
 
 	// Checking whether dns api is enabled
-	err = gcloud.EnableAPIs(projectID, "dns")
+	err = t.Gcloud.EnableAPIs(projectID, "dns")
 	if err != nil {
 		return "", errors.Wrap(err, "enabling the dns api")
 	}
 
 	// Create domain if it doesn't exist and return name servers list
-	managedZone, nameServers, err := gcloud.CreateDNSZone(projectID, domainName)
+	managedZone, nameServers, err := t.Gcloud.CreateDNSZone(projectID, domainName)
 	if err != nil {
 		return "", errors.Wrap(err, "while trying to create the tenants subdomain zone")
 	}
 
 	log.Logger().Infof("%s domain is operating on the following nameservers %v", domainName, nameServers)
-	err = tCli.PostTenantZoneNameServers(tenantServiceURL, tenantServiceAuth, projectID, domainName, managedZone, nameServers)
+	err = t.PostTenantZoneNameServers(tenantServiceURL, tenantServiceAuth, projectID, domainName, managedZone, nameServers)
 	if err != nil {
 		return "", errors.Wrap(err, "posting the name service list to the tenant service")
 	}
 	return domainName, nil
 }
 
-func (tCli *tenantClient) PostTenantZoneNameServers(tenantServiceURL string, tenantServiceAuth string, projectID string, domain string, zone string, nameServers []string) error {
+func (t *Tenant) PostTenantZoneNameServers(tenantServiceURL string, tenantServiceAuth string, projectID string, domain string, zone string, nameServers []string) error {
 	url := fmt.Sprintf("%s%s/nameservers", tenantServiceURL, basePath)
-	reqStruct := nsRequest{
-		Project:     projectID,
-		Domain:      domain,
-		Zone:        zone,
-		Nameservers: nameServers,
-	}
-	reqBody, respBody := []byte{}, []byte{}
-	reqBody, err := json.Marshal(reqStruct)
-	if err != nil {
-		return errors.Wrap(err, "error marshalling struct into json")
-	}
-
 	if projectID != "" && zone != "" && len(nameServers) > 0 {
-		respBody, err = util.callWithExponentialBackOff(url, tenantServiceAuth, "POST", reqBody)
+		reqStruct := nsRequest{
+			Project:     projectID,
+			Domain:      domain,
+			Zone:        zone,
+			Nameservers: nameServers,
+		}
+		respBody := []byte{}
+		reqBody, err := json.Marshal(reqStruct)
+		if err != nil {
+			return errors.Wrap(err, "error marshalling struct into json")
+		}
+
+		headers := http.Header{}
+		headers.Set("Content-Type", "application/json")
+		token := t.getTenantSignatureToken(tenantServiceTokenSecretName, tenantServiceTokenSecretKey)
+		if token != "" {
+			headers.Set(tenantSignatureHeader, token)
+		}
+
+		httpUtils := &util.HttpUtils{
+			Client:     t.HttpClient,
+			URL:        tenantServiceURL,
+			Auth:       tenantServiceAuth,
+			HttpMethod: http.MethodPost,
+			Headers:    &headers,
+			ReqBody:    reqBody,
+		}
+
+		respBody, err = httpUtils.CallWithExponentialBackOff()
 		if err != nil {
 			return errors.Wrapf(err, "error posting tenant sub-domain nameservers via %s", url)
 		}
@@ -250,23 +325,11 @@ func (tCli *tenantClient) PostTenantZoneNameServers(tenantServiceURL string, ten
 	return nil
 }
 
-// NewTenantClient creates a new tenant client
-func NewTenantClient(options ...Option) *tenantClient {
-	tCli := tenantClient{
-		httpClient: &http.Client{},
-	}
-
-	for option := range options {
-		options[option](&tCli)
-	}
-	return &tCli
-}
-
 // ValidateDomainName checks for compliance in a supplied domain name
 func ValidateDomainName(domain string) error {
 	// Check whether the domain is greater than 3 and fewer than 63 characters in length
 	if len(domain) < 3 || len(domain) > 63 {
-		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 6G3 characters", domain)
+		err := fmt.Errorf("domain name %v has fewer than 3 or greater than 63 characters", domain)
 		return err
 	}
 	// Ensure each part of the domain name only contains lower/upper case characters, numbers and dashes
@@ -277,18 +340,18 @@ func ValidateDomainName(domain string) error {
 	return nil
 }
 
-func writeKubernetesSecret(token []byte, namespace string, client kubernetes.Interface) error {
+func (t *Tenant) writeKubernetesSecret(secretName string, secretKey string, token []byte) error {
 	var err error
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: tenantServiceTokenSecretName,
+			Name: secretName,
 		},
 		Data: map[string][]byte{
-			tenantServiceTokenSecretKey: token,
+			secretKey: token,
 		},
 	}
-	secrets := client.CoreV1().Secrets(namespace)
-	_, err = secrets.Get(tenantServiceTokenSecretName, metav1.GetOptions{})
+	secrets := t.Kube.CoreV1().Secrets(t.Namespace)
+	_, err = secrets.Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		_, err = secrets.Create(secret)
 	} else {
@@ -297,6 +360,11 @@ func writeKubernetesSecret(token []byte, namespace string, client kubernetes.Int
 	return nil
 }
 
-func getTenantSignatureToken(secretName string, secretKey string) string {
-	client, err := kube.Client{}
+func (t *Tenant) getTenantSignatureToken(secretName string, secretKey string) string {
+	secret, err := kube.GetSecret(t.Kube, t.Namespace, secretName, secretKey)
+	if err != nil {
+		log.Logger().Infof("%e: '%s' secret not found in '%s' namespace", err, secretName, t.Namespace)
+		return ""
+	}
+	return string(secret.Data[secretKey])
 }

@@ -3357,9 +3357,12 @@ func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tena
 
 	log.Logger().Infof("Configuring CloudBees Domain for %s project", projectID)
 	// Create a TenantClient
-	tCli := tenant.NewTenantClient()
+	t := tenant.NewTenantClient()
+	t.Gcloud = options.GCloud()
+	t.HttpClient = util.GetClient()
+
 	var err error
-	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, "", options.GCloud())
+	domain, err := t.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, "")
 	if err != nil {
 		return "", errors.Wrap(err, "getting domain from tenant service")
 	}
