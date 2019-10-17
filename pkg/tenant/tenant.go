@@ -32,6 +32,7 @@ var (
 	allowedDomainRegex = regexp.MustCompile("^[a-z0-9]+([_\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,6}$")
 )
 
+// Tenant type for all tenant interactions
 type Tenant struct {
 	HttpClient *http.Client
 	Gcloud     gke.GClouder
@@ -69,6 +70,7 @@ type Result struct {
 	Message string `json:"message"`
 }
 
+// Option allows configuration to be applied to the client
 type Option func(*Tenant)
 
 // NewTenantClient creates a new tenant
@@ -83,6 +85,7 @@ func NewTenantClient(options ...Option) *Tenant {
 	return &t
 }
 
+// GetInstallationID returns the GitHub InstallationID from the tenant-service
 func (t *Tenant) GetInstallationID(tenantServiceURL string, tenantServiceAuth string, gitHubOrg string) (string, error) {
 	requestUrl := fmt.Sprintf("%s%s/installation-id", tenantServiceURL, basePath)
 
@@ -98,7 +101,7 @@ func (t *Tenant) GetInstallationID(tenantServiceURL string, tenantServiceAuth st
 
 	httpUtils := &util.HttpUtils{
 		Client:     t.HttpClient,
-		HttpMethod: http.MethodGet,
+		HTTPMethod: http.MethodGet,
 		URL:        requestUrl,
 		Auth:       tenantServiceAuth,
 		Headers:    &headers,
@@ -119,6 +122,7 @@ func (t *Tenant) GetInstallationID(tenantServiceURL string, tenantServiceAuth st
 	return installation.InstallationId, nil
 }
 
+// GetAndStoreTenantToken retrieves the real tenant token and stores its value within a kubernetes secret
 func (t *Tenant) GetAndStoreTenantToken(tenantServiceURL string, tenantServiceAuth string, project string, tempToken string) error {
 	if project == "" {
 		return errors.Errorf("project is empty")
@@ -158,7 +162,7 @@ func (t *Tenant) getTenantToken(tenantServiceURL string, tenantServiceAuth strin
 			Auth:       tenantServiceAuth,
 			ReqBody:    reqBody,
 			Headers:    &headers,
-			HttpMethod: http.MethodPost,
+			HTTPMethod: http.MethodPost,
 			ReqParams:  nil,
 		}
 
@@ -190,7 +194,7 @@ func (t *Tenant) deleteTempTenantToken(tenantServiceURL string, tenantServiceAut
 			Client:     t.HttpClient,
 			URL:        tenantServiceURL,
 			Auth:       tenantServiceAuth,
-			HttpMethod: http.MethodDelete,
+			HTTPMethod: http.MethodDelete,
 			Headers:    &headers,
 			ReqBody:    reqBody,
 		}
@@ -205,6 +209,7 @@ func (t *Tenant) deleteTempTenantToken(tenantServiceURL string, tenantServiceAut
 	}
 }
 
+// GetTenantSubDomain requests a subdomain for a given projectID
 func (t *Tenant) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth string, projectID string, cluster string) (string, error) {
 	var domainName, reqBody, userEmail = "", []byte{}, ""
 	if projectID == "" {
@@ -238,7 +243,7 @@ func (t *Tenant) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth s
 		Client:     t.HttpClient,
 		URL:        tenantServiceURL,
 		Auth:       tenantServiceAuth,
-		HttpMethod: http.MethodPost,
+		HTTPMethod: http.MethodPost,
 		Headers:    &headers,
 		ReqBody:    reqBody,
 	}
@@ -279,6 +284,7 @@ func (t *Tenant) GetTenantSubDomain(tenantServiceURL string, tenantServiceAuth s
 	return domainName, nil
 }
 
+// PostTenantZoneNameServers registers a tenants managed domain nameservers in order to delegate to the subdomain from the parent domain
 func (t *Tenant) PostTenantZoneNameServers(tenantServiceURL string, tenantServiceAuth string, projectID string, domain string, zone string, nameServers []string) error {
 	url := fmt.Sprintf("%s%s/nameservers", tenantServiceURL, basePath)
 	if projectID != "" && zone != "" && len(nameServers) > 0 {
@@ -305,7 +311,7 @@ func (t *Tenant) PostTenantZoneNameServers(tenantServiceURL string, tenantServic
 			Client:     t.HttpClient,
 			URL:        tenantServiceURL,
 			Auth:       tenantServiceAuth,
-			HttpMethod: http.MethodPost,
+			HTTPMethod: http.MethodPost,
 			Headers:    &headers,
 			ReqBody:    reqBody,
 		}
@@ -319,10 +325,8 @@ func (t *Tenant) PostTenantZoneNameServers(tenantServiceURL string, tenantServic
 		if err != nil {
 			return errors.Wrap(err, "unmarshalling json message")
 		}
-	} else {
-		return errors.Errorf("projectID/zone/nameServers is empty")
 	}
-	return nil
+	return errors.Errorf("projectID/zone/nameServers is empty")
 }
 
 // ValidateDomainName checks for compliance in a supplied domain name

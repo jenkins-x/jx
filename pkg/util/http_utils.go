@@ -30,13 +30,14 @@ var jxDefaultTransport http.RoundTripper = &http.Transport{
 	Proxy:                 http.ProxyFromEnvironment,
 }
 
+// HttpUtils struct for exponential backoff requests
 type HttpUtils struct {
 	Client     *http.Client
 	URL        string
 	Auth       string
 	ReqBody    []byte
 	Headers    *http.Header
-	HttpMethod string
+	HTTPMethod string
 	ReqParams  *url.Values
 }
 
@@ -84,13 +85,13 @@ func getBoolFromEnv(key string, fallback bool) bool {
 
 // CallWithExponentialBackOff make a http call with exponential backoff retry
 func (utils *HttpUtils) CallWithExponentialBackOff() ([]byte, error) {
-	log.Logger().Debugf("%sing %s to %s", utils.HttpMethod, utils.ReqBody, utils.URL)
+	log.Logger().Debugf("%sing %s to %s", utils.HTTPMethod, utils.ReqBody, utils.URL)
 	resp, respBody := &http.Response{}, []byte{}
 
-	if utils.URL != "" && utils.HttpMethod != "" {
+	if utils.URL != "" && utils.HTTPMethod != "" {
 		f := func() error {
 
-			req, err := http.NewRequest(utils.HttpMethod, utils.URL, bytes.NewBuffer(utils.ReqBody))
+			req, err := http.NewRequest(utils.HTTPMethod, utils.URL, bytes.NewBuffer(utils.ReqBody))
 			if utils.Headers != nil {
 				req.Header = *utils.Headers
 			}
