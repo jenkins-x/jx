@@ -387,12 +387,7 @@ func (o *StepVerifyEnvironmentsOptions) pushDevEnvironmentUpdates(environmentRep
 		}
 	}
 
-	userDetails := provider.UserAuth()
-	authenticatedPushURL, err := gitter.CreateAuthenticatedURL(environmentRepo.CloneURL, &userDetails)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create push URL for %s", environmentRepo.CloneURL)
-	}
-	err = gitter.Push(localRepoDir, authenticatedPushURL, true, "master")
+	err = gitter.Push(localRepoDir, "origin", true, "master")
 	if err != nil {
 		return errors.Wrapf(err, "unable to push %s to %s", localRepoDir, environmentRepo.URL)
 	}

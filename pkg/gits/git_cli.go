@@ -698,6 +698,13 @@ func (g *GitCLI) SetRemoteURL(dir string, name string, gitURL string) error {
 			return err
 		}
 	}
+
+	// TODO issue-5772 Maybe there is a better way to set this? maybe so that the config is also set directly on clone
+	// TODO issue-5772 Need to look at the actual URL to do the rewrite
+	err = g.gitCmd(dir, "config", "url.https://token@github.com/.insteadOf", "https://github.com/")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

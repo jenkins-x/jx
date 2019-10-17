@@ -18,6 +18,10 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
 	"github.com/spf13/viper"
@@ -69,6 +73,10 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
+const (
+	askPassBin = "git-askpass"
+)
+
 // NewJXCommand creates the `jx` command and its nested children.
 // args used to determine binary plugin to run can be overridden (does not affect compiled in commands).
 func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWriter,
@@ -78,7 +86,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	rootCommand := &cobra.Command{
 		Use:              "jx",
 		Short:            "jx is a command line tool for working with Jenkins X",
-		PersistentPreRun: setLoggingLevel,
+		PersistentPreRun: persistentPreRun,
 		Run:              runHelp,
 	}
 
@@ -301,7 +309,12 @@ func fullPath(command *cobra.Command) string {
 	return name
 }
 
-func setLoggingLevel(cmd *cobra.Command, args []string) {
+func persistentPreRun(cmd *cobra.Command, args []string) {
+	setLoggingLevel(cmd)
+	configureGit()
+}
+
+func setLoggingLevel(cmd *cobra.Command) {
 	verbose, err := strconv.ParseBool(cmd.Flag(opts.OptionVerbose).Value.String())
 	if err != nil {
 		log.Logger().Errorf("Unable to determine log level")
@@ -318,6 +331,37 @@ func setLoggingLevel(cmd *cobra.Command, args []string) {
 			log.Logger().Errorf("Unable to set log level to info")
 		}
 	}
+}
+
+func configureGit() {
+	// TODO issue-5772 add a batch file for windows
+	// TODO issue-5772 is will run on each command execution adding a bit of overhead. Is this ok?
+	// TODO issue-5772 should it be able to skip this via a global flag? are there cases where we don't want this?
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		log.Logger().Errorf("unable to determine current X_HOME: %s", err.Error())
+	}
+
+	askPassBin := filepath.Join(configDir, "bin", askPassBin)
+	exists, err := util.FileExists(askPassBin)
+	if err != nil {
+		log.Logger().Errorf("unable to determine file stats for %s: %s", askPassBin, err.Error())
+	}
+
+	if !exists {
+		data := []byte("jx step git credentials --ask-pass")
+		err := ioutil.WriteFile(askPassBin, data, 0750)
+		if err != nil {
+			log.Logger().Errorf("unable to write %s: %s", askPassBin, err.Error())
+		}
+	}
+
+	err = os.Setenv("GIT_ASKPASS", askPassBin)
+	if err != nil {
+		log.Logger().Warnf("unable to set GIT_ASKPASS: %s", err.Error())
+	}
+
+	log.Logger().Tracef("GIT_ASKPASS successfully set to %s", askPassBin)
 }
 
 func runHelp(cmd *cobra.Command, args []string) {

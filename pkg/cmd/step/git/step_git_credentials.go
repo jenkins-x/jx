@@ -25,11 +25,18 @@ const (
 	optionOutputFile = "output"
 )
 
+type credentials struct {
+	user       string
+	password   string
+	serviceURL string
+}
+
 // StepGitCredentialsOptions contains the command line flags
 type StepGitCredentialsOptions struct {
 	step.StepOptions
 
 	OutputFile string
+	AskPass    bool
 }
 
 var (
@@ -45,6 +52,8 @@ var (
 		# generate the Git credentials to a output file
 		jx step git credentials -o /tmp/mycreds
 
+		# respond to a GIT_ASKPASS request
+		jx step git credentials --ask-pass
 `)
 )
 
@@ -67,10 +76,32 @@ func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.OutputFile, optionOutputFile, "o", "", "The output file name")
+	cmd.Flags().BoolVar(&options.AskPass, "ask-pass", false, "respond to a GIT_ASKPASS request")
 	return cmd
 }
 
 func (o *StepGitCredentialsOptions) Run() error {
+	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
+	if err != nil {
+		return err
+	}
+
+	if o.AskPass {
+		// TODO issue-5772 handle input from GIT_ASKPASS poperly by parsing the git provider
+		credentialList := o.readCredentials(secrets)
+		fmt.Println(credentialList[0].password)
+		return nil
+	} else {
+		outFile, err := o.determineOutputFile()
+		if err != nil {
+			return err
+		}
+
+		return o.createGitCredentialsFile(outFile, secrets)
+	}
+}
+
+func (o *StepGitCredentialsOptions) determineOutputFile() (string, error) {
 	outFile := o.OutputFile
 	if outFile == "" {
 		// lets figure out the default output file
@@ -83,27 +114,23 @@ func (o *StepGitCredentialsOptions) Run() error {
 		}
 	}
 	if outFile == "" {
-		return util.MissingOption(optionOutputFile)
+		return "", util.MissingOption(optionOutputFile)
 	}
 	dir, _ := filepath.Split(outFile)
 	if dir != "" {
 		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
-	if err != nil {
-		return err
-	}
-	return o.createGitCredentialsFile(outFile, secrets)
+	return outFile, nil
 }
 
 func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, secrets *corev1.SecretList) error {
 	data := o.CreateGitCredentialsFromSecrets(secrets)
 	err := ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
-		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
+		return fmt.Errorf("failed to write to %s: %s", fileName, err)
 	}
 	log.Logger().Infof("Generated Git credentials file %s", util.ColorInfo(fileName))
 	return nil
@@ -111,37 +138,53 @@ func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, se
 
 // CreateGitCredentialsFromSecrets Creates git credentials from secrets
 func (o *StepGitCredentialsOptions) CreateGitCredentialsFromSecrets(secretList *corev1.SecretList) []byte {
+	credentialList := o.readCredentials(secretList)
+
 	var buffer bytes.Buffer
+	for _, credential := range credentialList {
+		u2, err := url.Parse(credential.serviceURL)
+		if err != nil {
+			log.Logger().Warnf("Ignoring pipeline credential for due to invalid Git service URL %s for user %s", credential.user, credential.serviceURL)
+		} else {
+			u2.User = url.UserPassword(credential.user, credential.password)
+			buffer.WriteString(u2.String() + "\n")
+
+			// lets write the other http protocol for completeness
+			if u2.Scheme == "https" {
+				u2.Scheme = "http"
+			} else {
+				u2.Scheme = "https"
+			}
+			buffer.WriteString(u2.String() + "\n")
+		}
+	}
+
+	return buffer.Bytes()
+}
+
+func (o *StepGitCredentialsOptions) readCredentials(secretList *corev1.SecretList) []credentials {
+	var credentialList []credentials
 	if secretList != nil {
 		for _, secret := range secretList.Items {
 			labels := secret.Labels
 			annotations := secret.Annotations
 			data := secret.Data
 			if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
-				u := annotations[kube.AnnotationURL]
-				if u != "" && data != nil {
+				url := annotations[kube.AnnotationURL]
+				if url != "" && data != nil {
 					username := data[kube.SecretDataUsername]
 					pwd := data[kube.SecretDataPassword]
 					if len(username) > 0 && len(pwd) > 0 {
-						u2, err := url.Parse(u)
-						if err != nil {
-							log.Logger().Warnf("Ignoring invalid Git service URL %s for pipeline credential %s", u, secret.Name)
-						} else {
-							u2.User = url.UserPassword(string(username), string(pwd))
-							buffer.WriteString(u2.String() + "\n")
-
-							// lets write the other http protocol for completeness
-							if u2.Scheme == "https" {
-								u2.Scheme = "http"
-							} else {
-								u2.Scheme = "https"
-							}
-							buffer.WriteString(u2.String() + "\n")
+						creds := credentials{
+							user:       string(username),
+							password:   string(pwd),
+							serviceURL: url,
 						}
+						credentialList = append(credentialList, creds)
 					}
 				}
 			}
 		}
 	}
-	return buffer.Bytes()
+	return credentialList
 }
