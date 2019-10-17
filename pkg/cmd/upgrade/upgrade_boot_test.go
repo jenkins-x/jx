@@ -1,11 +1,15 @@
 package upgrade
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -110,6 +114,36 @@ func TestUpdatePipelineBuilderImage(t *testing.T) {
 	err = o.updatePipelineBuilderImage(resolver)
 	require.NoError(t, err, "could not update builder image in pipeline")
 	data, err := ioutil.ReadFile(to.Name())
+	require.Contains(t, string(data), "gcr.io/jenkinsxio/builder-go:1.0.10", "builder version was not correctly updated")
+}
+
+func TestUpdateTemplateBuilderImage(t *testing.T) {
+	t.Parallel()
+
+	o := TestUpgradeBootOptions{}
+	o.setup(defaultBootRequirements)
+
+	tmpDir, err := ioutil.TempDir("", "")
+	defer func() {
+		err := os.RemoveAll(tmpDir)
+		require.NoError(t, err, "could not clean up temp")
+	}()
+
+	o.UpgradeBootOptions.Dir = tmpDir
+	from, err := os.Open(filepath.Join("test_data", "upgrade_boot_builders", "jenkins-x-boot-config", helm.ValuesTemplateFileName))
+	err = os.MkdirAll(fmt.Sprintf("%s/env", tmpDir), util.DefaultWritePermissions)
+	to, err := os.Create(filepath.Join(tmpDir, fmt.Sprintf("env/%s", helm.ValuesTemplateFileName)))
+	require.NoError(t, err, "unable to create tmp template file")
+
+	_, err = io.Copy(to, from)
+	o.SetGit(gits.NewGitFake())
+	resolver := &versionstream.VersionResolver{
+		VersionsDir: filepath.Join("test_data", "upgrade_boot_builders", "jenkins-x-versions"),
+	}
+	err = o.updateTemplateBuilderImage(resolver)
+	require.NoError(t, err, "could not update builder image in template")
+	data, err := ioutil.ReadFile(to.Name())
+	log.Logger().Infof("**** %s", string(data))
 	require.Contains(t, string(data), "gcr.io/jenkinsxio/builder-go:1.0.10", "builder version was not correctly updated")
 }
 

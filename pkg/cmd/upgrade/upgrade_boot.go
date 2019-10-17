@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/gits/operations"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -45,6 +46,7 @@ var (
 
 const (
 	defaultUpgradeVersionStreamRef = "master"
+	builderImage                   = "gcr.io/jenkinsxio/builder-go"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -123,7 +125,12 @@ func (o *UpgradeBootOptions) Run() error {
 
 	err = o.updatePipelineBuilderImage(resolver)
 	if err != nil {
-		return errors.Wrap(err, "failed to update version stream ref")
+		return errors.Wrap(err, "failed to update pipeline version stream ref")
+	}
+
+	err = o.updateTemplateBuilderImage(resolver)
+	if err != nil {
+		return errors.Wrap(err, "failed to update template version stream ref")
 	}
 
 	err = o.raisePR()
@@ -488,7 +495,6 @@ func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitP
 }
 
 func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.VersionResolver) error {
-	builderImage := "gcr.io/jenkinsxio/builder-go"
 	piplineFileGlob := "jenkins-x*.yml"
 	updatedBuilderImage, err := resolver.ResolveDockerImage(builderImage)
 	if err != nil {
@@ -516,6 +522,29 @@ func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.
 	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade pipeline builder images", matches)
 	if err != nil {
 		log.Logger().Info("Skipping builder image update as no changes were detected")
+
+	}
+	return nil
+}
+
+func (o *UpgradeBootOptions) updateTemplateBuilderImage(resolver *versionstream.VersionResolver) error {
+	templateFile := fmt.Sprintf("env/%s", helm.ValuesTemplateFileName)
+	updatedBuilderImage, err := resolver.ResolveDockerImage(builderImage)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve image %s", builderImage)
+	}
+	log.Logger().Infof("Updating template builder images to %s", util.ColorInfo(updatedBuilderImage))
+	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*builderImage: (gcr.io\/jenkinsxio\/builder-go.*$)`, templateFile)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = fn(o.Dir, nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade template builder images", []string{templateFile})
+	if err != nil {
+		log.Logger().Info("Skipping template builder image update as no changes were detected")
 
 	}
 	return nil
