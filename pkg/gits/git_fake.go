@@ -657,6 +657,6 @@ func (g *GitFake) CherryPickTheirs(dir string, commit string) error {
 }
 
 // Describe does a git describe of commitish, optionally adding the abbrev arg if not empty
-func (g *GitFake) Describe(dir string, contains bool, commitish string, abbrev string) (string, string, error) {
+func (g *GitFake) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
 	return "", "", nil
 }

@@ -765,6 +765,7 @@ func TestDescribe(t *testing.T) {
 		wantErr  bool
 		contains bool
 		abbrev   string // Number of hex digits from object name, defaults to 7
+		fallback bool   // If given, will just return the original ref
 	}{
 		{
 			initFn: func(dir string, git gits.Gitter) error {
@@ -777,10 +778,11 @@ func TestDescribe(t *testing.T) {
 				assert.NoError(t, err)
 				return err
 			},
-			name:     "Valid commit and tag, !contains, abbrev=default",
+			name:     "Valid commit and tag, !contains, abbrev=default, !fallback",
 			wantErr:  false,
 			contains: false,
 			abbrev:   "",
+			fallback: false,
 		},
 		{
 			initFn: func(dir string, git gits.Gitter) error {
@@ -793,19 +795,34 @@ func TestDescribe(t *testing.T) {
 				assert.NoError(t, err)
 				return err
 			},
-			name:     "Commit but no tag, !contains, abbrev=default",
+			name:     "Commit but no tag, !contains, abbrev=default, !fallback",
 			wantErr:  true,
 			contains: false,
 			abbrev:   "",
+			fallback: false,
+		},
+		{
+			initFn: func(dir string, git gits.Gitter) error {
+				var err error
+				assert.NoError(t, err)
+				err = git.Init(dir)
+				assert.NoError(t, err)
+
+				err = git.AddCommit(dir, "Initial Commit")
+				assert.NoError(t, err)
+				return err
+			},
+			name:     "Commit but no tag, contains, abbrev=default, fallback",
+			wantErr:  false,
+			contains: true,
+			abbrev:   "",
+			fallback: true,
 		},
 	}
 
 	for _, test := range tests {
 		dir, err := ioutil.TempDir("", "")
 		assert.NoError(t, err)
-		defer func() {
-			os.RemoveAll(dir)
-		}()
 
 		gitCli := gits.NewGitCLI()
 
@@ -816,6 +833,7 @@ func TestDescribe(t *testing.T) {
 			test.contains,
 			"HEAD",
 			test.abbrev,
+			test.fallback,
 		)
 
 		if !test.wantErr {
