@@ -15,4 +15,3 @@ clusters:
       - command: jx
         args:
           - boot
-          - -b
