@@ -325,6 +325,7 @@ func (t *Tenant) PostTenantZoneNameServers(tenantServiceURL string, tenantServic
 		if err != nil {
 			return errors.Wrap(err, "unmarshalling json message")
 		}
+		return nil
 	}
 	return errors.Errorf("projectID/zone/nameServers is empty")
 }

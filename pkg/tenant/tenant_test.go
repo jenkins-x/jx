@@ -142,6 +142,33 @@ func TestClientGetTenantSubDomain(t *testing.T) {
 	assert.Equal(t, subDomain, s)
 }
 
+func TestClientGetTenantSubDomainwithoutProjectID(t *testing.T) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(domainResponse))
+	})
+	httpClient, teardown := testingHTTPClient(h)
+	defer teardown()
+
+	gclouder := &gkeTest.MockGClouder{}
+	pegomock.When(gclouder.CreateDNSZone("cheese", "cheese.wine.com")).ThenReturn("123", []string{"abc"}, nil)
+
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
+
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	tenant.Kube = client
+	tenant.Gcloud = gclouder
+	tenant.Namespace = namespace
+	_, err = tenant.GetTenantSubDomain("http://localhost", "", "", cluster)
+
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "projectID is empty")
+}
+
 func TestClientPostTenantZoneNameServers(t *testing.T) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(nameServersResponse))
@@ -164,6 +191,51 @@ func TestClientPostTenantZoneNameServers(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestClientPostTenantZoneNameServersWithEmptyNameServers(t *testing.T) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(nameServersResponse))
+	})
+	httpClient, teardown := testingHTTPClient(h)
+	defer teardown()
+
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
+
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	tenant.Kube = client
+	tenant.Namespace = namespace
+	nameServers := []string{}
+	err = tenant.PostTenantZoneNameServers("http://localhost", "", projectID, subDomain, zone, nameServers)
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "projectID/zone/nameServers is empty")
+}
+
+func TestClientPostTenantZoneNameServersWithEmptyProject(t *testing.T) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(nameServersResponse))
+	})
+	httpClient, teardown := testingHTTPClient(h)
+	defer teardown()
+
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
+
+	tenant := NewTenantClient()
+	tenant.HttpClient = httpClient
+	tenant.Kube = client
+	tenant.Namespace = namespace
+	nameServers := []string{"nameServer1", "nameServer2"}
+	err = tenant.PostTenantZoneNameServers("http://localhost", "", "", subDomain, zone, nameServers)
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "projectID/zone/nameServers is empty")
+}
 func testingHTTPClient(handler http.Handler) (*http.Client, func()) {
 	h := httptest.NewServer(handler)
 
