@@ -12,7 +12,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -28,6 +30,9 @@ type StepVerifyValuesOptions struct {
 	SchemaFile      string
 	RequirementsDir string
 	ValuesFile      string
+
+	// SecretClient secrets URL client (added as a filed to be able to easy mock it
+	SecretClient secreturl.Client
 }
 
 const (
@@ -127,16 +132,21 @@ func (o *StepVerifyValuesOptions) Run() error {
 		return errors.Wrapf(err, "reading the values from file %q", o.ValuesFile)
 	}
 
+	values, err = o.resolveSecrets(requirements, values)
+	if err != nil {
+		return errors.Wrapf(err, "resolve the secrets URIs")
+	}
+
 	values, err = convertYamlToJson(values)
 	if err != nil {
 		return errors.Wrap(err, "converting values data from YAML to JSON")
 	}
 
-	if err := o.verfifySchema(schema, values); err != nil {
+	if err := o.verifySchema(schema, values); err != nil {
 		name := filepath.Base(o.ValuesFile)
 		name = strings.TrimSuffix(name, filepath.Ext(name))
 		log.Logger().Infof(`
-The %q values file needs to be updated. You can regnerate the values file from schema %q with command:
+The %q values file needs to be updated. You can regenerate the values file from schema %q with command:
 
 jx step create values --name %s
 		`, o.ValuesFile, o.SchemaFile, name)
@@ -146,7 +156,7 @@ jx step create values --name %s
 	return nil
 }
 
-func (o *StepVerifyValuesOptions) verfifySchema(schema []byte, values []byte) error {
+func (o *StepVerifyValuesOptions) verifySchema(schema []byte, values []byte) error {
 	schemaLoader := gojsonschema.NewBytesLoader(schema)
 	valuesLoader := gojsonschema.NewBytesLoader(values)
 	result, err := gojsonschema.Validate(schemaLoader, valuesLoader)
@@ -158,23 +168,32 @@ func (o *StepVerifyValuesOptions) verfifySchema(schema []byte, values []byte) er
 		return nil
 	}
 
-	var failed bool
 	for _, err := range result.Errors() {
-		switch err.Type() {
-		// The values sometimes contains placeholders to value/local secret path
-		// which doesn't satisfy the schema validation.
-		case "pattern", "string_gte", "number_gte":
-			log.Logger().Warnf("%s", err)
-		default:
-			log.Logger().Errorf("%s", err)
-			failed = true
-		}
+		log.Logger().Errorf("%s", err)
 	}
 
-	if failed {
-		return errors.New("invalid values")
+	return errors.New("invalid values")
+}
+
+func (o *StepVerifyValuesOptions) resolveSecrets(requirements *config.RequirementsConfig, values []byte) ([]byte, error) {
+	client, err := o.secretClient(requirements.SecretStorage)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating secret client")
 	}
-	return nil
+	result, err := client.ReplaceURIs(string(values))
+	if err != nil {
+		return nil, errors.Wrap(err, "replacing secrets URIs")
+	}
+	return []byte(result), nil
+}
+
+func (o *StepVerifyValuesOptions) secretClient(secretStorage config.SecretStorageType) (secreturl.Client, error) {
+	if o.SecretClient != nil {
+		return o.SecretClient, nil
+	}
+
+	location := secrets.ToSecretsLocation(string(secretStorage))
+	return o.GetSecretURLClient(location)
 }
 
 func convertYamlToJson(yml []byte) ([]byte, error) {
