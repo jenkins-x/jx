@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +72,8 @@ func (o *UpgradeIngressOptions) Run() error {
 	// wizard to ask for config values
 	err = o.confirmExposecontrollerConfig()
 	if err != nil {
-		return errors.Wrap(err, "configure exposecontroller")
+		return errors.Wrap(err, ""+
+			"configure exposecontroller")
 	}
 
 	// confirm values

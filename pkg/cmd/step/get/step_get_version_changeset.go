@@ -80,7 +80,7 @@ func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Comman
 // Run implements the command
 func (o *StepGetVersionChangeSetOptions) Run() error {
 	if o.VersionsDir == "" {
-		versionDir, err := o.CloneJXVersionsRepo(o.VersionsRepository, o.VersionsGitRef)
+		versionDir, _, err := o.CloneJXVersionsRepo(o.VersionsRepository, o.VersionsGitRef)
 		if err != nil {
 			return err
 		}

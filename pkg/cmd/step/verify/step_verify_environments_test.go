@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -136,15 +137,15 @@ func Test_IsJXBoot(t *testing.T) {
 }
 
 func Test_ReadEnvironment(t *testing.T) {
-	origConfigRepoURL, foundConfigRepoURLEnvKey := os.LookupEnv(configRepoURLEnvKey)
-	origConfigRepoRef, foundConfigRepoRefEnvKey := os.LookupEnv(configRepoRefEnvKey)
+	origConfigRepoURL, foundConfigRepoURLEnvKey := os.LookupEnv(boot.ConfigRepoURLEnvVarName)
+	origConfigRepoRef, foundConfigRepoRefEnvKey := os.LookupEnv(boot.ConfigBaseRefEnvVarName)
 	defer func() {
 		if foundConfigRepoURLEnvKey {
-			_ = os.Setenv(configRepoURLEnvKey, origConfigRepoURL)
+			_ = os.Setenv(boot.ConfigRepoURLEnvVarName, origConfigRepoURL)
 		}
 
 		if foundConfigRepoRefEnvKey {
-			_ = os.Setenv(configRepoRefEnvKey, origConfigRepoRef)
+			_ = os.Setenv(boot.ConfigBaseRefEnvVarName, origConfigRepoRef)
 		}
 	}()
 
@@ -157,26 +158,26 @@ func Test_ReadEnvironment(t *testing.T) {
 		errorString string
 	}{
 		{"https://github.com/jenkins-x/jenkins-x-boot-config", "master", false, ""},
-		{"https://github.com/jenkins-x/jenkins-x-boot-config", "", true, "the environment variable BASE_CONFIG_REF must be specified"},
-		{"", "master", true, "the environment variable REPO_URL must be specified"},
-		{"", "", true, "[the environment variable REPO_URL must be specified, the environment variable BASE_CONFIG_REF must be specified]"},
+		{"https://github.com/jenkins-x/jenkins-x-boot-config", "", true, "the environment variable CONFIG_BASE_REF must be specified"},
+		{"", "master", true, "the environment variable CONFIG_REPO_URL must be specified"},
+		{"", "", true, "[the environment variable CONFIG_REPO_URL must be specified, the environment variable CONFIG_BASE_REF must be specified]"},
 	}
 
 	for _, testCase := range tests {
 		t.Run(fmt.Sprintf("%s-%s", testCase.url, testCase.ref), func(t *testing.T) {
 			if testCase.url == "" {
-				err := os.Unsetenv(configRepoURLEnvKey)
+				err := os.Unsetenv(boot.ConfigRepoURLEnvVarName)
 				assert.NoError(t, err)
 			} else {
-				err := os.Setenv(configRepoURLEnvKey, testCase.url)
+				err := os.Setenv(boot.ConfigRepoURLEnvVarName, testCase.url)
 				assert.NoError(t, err)
 			}
 
 			if testCase.ref == "" {
-				err := os.Unsetenv(configRepoRefEnvKey)
+				err := os.Unsetenv(boot.ConfigBaseRefEnvVarName)
 				assert.NoError(t, err)
 			} else {
-				err := os.Setenv(configRepoRefEnvKey, testCase.ref)
+				err := os.Setenv(boot.ConfigBaseRefEnvVarName, testCase.ref)
 				assert.NoError(t, err)
 
 			}
