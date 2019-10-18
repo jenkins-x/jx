@@ -138,17 +138,10 @@ func (o *BootOptions) Run() error {
 		gitRef = o.GitRef
 	}
 
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.GitURL == "" {
-		gitURL = config.DefaultCloudBeesBootRepository
+	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
+		gitURL = o.setupCloudBeesProfile(gitURL)
 	}
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.VersionStreamURL == config.DefaultVersionsURL {
-		o.VersionStreamURL = config.DefaultCloudBeesVersionsURL
 
-	}
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile && o.VersionStreamRef == config.DefaultVersionsRef {
-		o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
-
-	}
 	if gitURL == "" {
 		return util.MissingOption("git-url")
 	}
@@ -325,6 +318,19 @@ func (o *BootOptions) Run() error {
 	no.Args = []string{requirements.Cluster.Namespace}
 	log.Logger().Infof("switching to the namespace %s so that you can use %s commands on the installation", info(requirements.Cluster.Namespace), info("jx"))
 	return no.Run()
+}
+
+func (o *BootOptions) setupCloudBeesProfile(gitURL string) string {
+	if o.GitURL == "" {
+		gitURL = config.DefaultCloudBeesBootRepository
+	}
+	if o.VersionStreamURL == config.DefaultVersionsURL {
+		o.VersionStreamURL = config.DefaultCloudBeesVersionsURL
+	}
+	if o.VersionStreamRef == config.DefaultVersionsRef {
+		o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
+	}
+	return gitURL
 }
 
 func existingBootClone(pipelineFile string) (bool, error) {
