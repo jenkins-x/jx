@@ -607,24 +607,6 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		return nil, errors.Wrap(err, "error gathering git requirements")
 	}
 
-	// Lock the version stream to a tag
-	if requirements.VersionStream.Ref == "" {
-		requirements.VersionStream.Ref = os.Getenv(boot.VersionsRepoBaseRefEnvVarName)
-	}
-	if requirements.VersionStream.URL == "" {
-		requirements.VersionStream.URL = os.Getenv(boot.VersionsRepoURLEnvVarName)
-	}
-
-	// attempt to resolve the version stream ref to a tag
-	_, ref, err := o.CloneJXVersionsRepo(requirements.VersionStream.URL, requirements.VersionStream.Ref)
-	if err != nil {
-		return nil, errors.Wrapf(err, "resolving version stream ref")
-	}
-	if ref != "" && ref != requirements.VersionStream.Ref {
-		log.Logger().Infof("Locking version stream %s to release %s. Jenkins X will use this release rather than %s to resolve all versions from now on.", util.ColorInfo(requirements.VersionStream.URL), util.ColorInfo(ref), requirements.VersionStream.Ref)
-		requirements.VersionStream.Ref = ref
-	}
-
 	err = requirements.SaveConfig(requirementsFileName)
 	if err != nil {
 		return nil, errors.Wrap(err, "error saving requirements file")

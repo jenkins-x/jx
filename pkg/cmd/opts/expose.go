@@ -12,7 +12,7 @@ func (o *CommonOptions) Expose(devNamespace, targetNamespace, password string) e
 	if err != nil {
 		return errors.Wrap(err, "creating cert-manager client")
 	}
-	versionsDir, _, err := o.CloneJXVersionsRepo("", "")
+	versionsDir, err := o.CloneJXVersionsRepo("", "")
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
 	}
@@ -21,7 +21,7 @@ func (o *CommonOptions) Expose(devNamespace, targetNamespace, password string) e
 
 // RunExposecontroller runs exponse controller in the given target dir with the given ingress configuration
 func (o *CommonOptions) RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
-	versionsDir, _, err := o.CloneJXVersionsRepo("", "")
+	versionsDir, err := o.CloneJXVersionsRepo("", "")
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
 	}

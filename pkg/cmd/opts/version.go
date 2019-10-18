@@ -3,8 +3,6 @@ package opts
 import (
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
-
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -15,7 +13,7 @@ import (
 
 // CreateVersionResolver creates a new VersionResolver service
 func (o *CommonOptions) CreateVersionResolver(repo string, gitRef string) (*versionstream.VersionResolver, error) {
-	versionsDir, _, err := o.CloneJXVersionsRepo(repo, gitRef)
+	versionsDir, err := o.CloneJXVersionsRepo(repo, gitRef)
 	if err != nil {
 		return nil, err
 	}
@@ -139,13 +137,4 @@ func (o *CommonOptions) GetVersionNumber(kind versionstream.VersionKind, name, r
 		return "", err
 	}
 	return versioner.StableVersionNumber(kind, name)
-}
-
-// CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir
-func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef string) (string, string, error) {
-	settings, err := o.TeamSettings()
-	if err != nil {
-		log.Logger().Debugf("Unable to load team settings because %v", err)
-	}
-	return versionstreamrepo.CloneJXVersionsRepo(versionRepository, versionRef, settings, o.Git(), o.BatchMode, o.AdvancedMode, o.In, o.Out, o.Err)
 }

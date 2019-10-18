@@ -152,7 +152,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	io := &create.InstallOptions{}
 	io.CommonOptions = o.CommonOptions
 	io.Flags = o.InstallFlags
-	versionsDir, _, err := io.CloneJXVersionsRepo(o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
+	versionsDir, err := io.CloneJXVersionsRepo(o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
 	if err != nil {
 		return err
 	}

@@ -676,7 +676,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the docker registry")
 	}
 
-	versionsRepoDir, _, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository, options.Flags.VersionsGitRef)
+	versionsRepoDir, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository, options.Flags.VersionsGitRef)
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx versions repo")
 	}
