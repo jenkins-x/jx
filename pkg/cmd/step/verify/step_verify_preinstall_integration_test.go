@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -22,6 +21,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/verify"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,19 +32,6 @@ const (
 
 func TestStepVerifyPreInstallTerraformKaniko(t *testing.T) {
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
-		origJxHome := os.Getenv("JX_HOME")
-
-		tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
-		assert.NoError(t, err)
-
-		err = os.Setenv("JX_HOME", tmpJxHome)
-		assert.NoError(t, err)
-
-		defer func() {
-			_ = os.RemoveAll(tmpJxHome)
-			err = os.Setenv("JX_HOME", origJxHome)
-		}()
-
 		options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "terraform_kaniko"))
 
 		_, origNamespace, err := options.KubeClientAndDevNamespace()
@@ -59,19 +46,6 @@ func TestStepVerifyPreInstallTerraformKaniko(t *testing.T) {
 func TestStepVerifyPreInstallNoKanikoNoLazyCreate(t *testing.T) {
 	// TODO the fake k8s client always seems to lazily create a namespace on demand so the 'jx step verify preinstall' never fails
 	t.SkipNow()
-
-	origJxHome := os.Getenv("JX_HOME")
-
-	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
-	assert.NoError(t, err)
-
-	err = os.Setenv("JX_HOME", tmpJxHome)
-	assert.NoError(t, err)
-
-	defer func() {
-		_ = os.RemoveAll(tmpJxHome)
-		err = os.Setenv("JX_HOME", origJxHome)
-	}()
 
 	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "no_kaniko_or_terraform"))
 	// explicitly disable lazy create
@@ -91,7 +65,7 @@ func TestStepVerifyPreInstallNoKanikoNoLazyCreate(t *testing.T) {
 func TestStepVerifyPreInstallNoKanikoLazyCreate(t *testing.T) {
 	origJxHome := os.Getenv("JX_HOME")
 
-	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
+	tmpJxHome, err := ioutil.TempDir("", "jx-test-TestStepVerifyPreInstallNoKanikoLazyCreate")
 	assert.NoError(t, err)
 
 	err = os.Setenv("JX_HOME", tmpJxHome)
@@ -114,19 +88,6 @@ func TestStepVerifyPreInstallNoKanikoLazyCreate(t *testing.T) {
 }
 
 func TestStepVerifyPreInstallNoTLS(t *testing.T) {
-	origJxHome := os.Getenv("JX_HOME")
-
-	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
-	assert.NoError(t, err)
-
-	err = os.Setenv("JX_HOME", tmpJxHome)
-	assert.NoError(t, err)
-
-	defer func() {
-		_ = os.RemoveAll(tmpJxHome)
-		err = os.Setenv("JX_HOME", origJxHome)
-	}()
-
 	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "no_tls"))
 
 	_, origNamespace, err := options.KubeClientAndDevNamespace()
@@ -144,19 +105,6 @@ func TestStepVerifyPreInstallRequirements(t *testing.T) {
 		"prow_github":       true,
 		"prow_gitlab":       false,
 	}
-
-	origJxHome := os.Getenv("JX_HOME")
-
-	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
-	assert.NoError(t, err)
-
-	err = os.Setenv("JX_HOME", tmpJxHome)
-	assert.NoError(t, err)
-
-	defer func() {
-		_ = os.RemoveAll(tmpJxHome)
-		err = os.Setenv("JX_HOME", origJxHome)
-	}()
 
 	for dir, actual := range tests {
 		testDir := filepath.Join("test_data", "preinstall", dir)
@@ -183,19 +131,6 @@ func TestStepVerifyPreInstallRequirements(t *testing.T) {
 }
 
 func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
-	origJxHome := os.Getenv("JX_HOME")
-
-	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
-	assert.NoError(t, err)
-
-	err = os.Setenv("JX_HOME", tmpJxHome)
-	assert.NoError(t, err)
-
-	defer func() {
-		_ = os.RemoveAll(tmpJxHome)
-		err = os.Setenv("JX_HOME", origJxHome)
-	}()
-
 	options := createTestStepVerifyPreInstallOptions(filepath.Join("test_data", "preinstall", "set_cluster_req_via_envvar"))
 
 	kc, origNamespace, err := options.KubeClientAndDevNamespace()
@@ -247,7 +182,7 @@ func createTestStepVerifyPreInstallOptions(dir string) *verify.StepVerifyPreInst
 	// fake the output stream to be checked later
 	commonOpts := opts.NewCommonOptionsWithFactory(nil)
 	options.CommonOptions = &commonOpts
-	testhelpers.ConfigureTestOptions(options.CommonOptions, gits.NewGitCLI(), helm_test.NewMockHelmer())
+	testhelpers.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	testhelpers.SetFakeFactoryFromKubeClients(options.CommonOptions)
 	options.Dir = dir
 	options.Namespace = testDeployNamespace

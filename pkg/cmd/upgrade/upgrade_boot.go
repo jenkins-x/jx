@@ -185,7 +185,7 @@ func (o *UpgradeBootOptions) requirementsVersionStream() (*config.VersionStreamC
 }
 
 func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionStreamRef string, upgradeRef string) (string, error) {
-	versionsDir, _, err := o.CloneJXVersionsRepo(versionStreamURL, upgradeRef)
+	versionsDir, err := o.CloneJXVersionsRepo(versionStreamURL, upgradeRef)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone versions repo %s", versionStreamURL)
 	}

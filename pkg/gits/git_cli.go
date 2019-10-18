@@ -27,8 +27,7 @@ const (
 )
 
 var (
-	numberRegex        = regexp.MustCompile("[0-9]")
-	splitDescribeRegex = regexp.MustCompile(`(?:~|\^|-g)`)
+	numberRegex = regexp.MustCompile("[0-9]")
 )
 
 // GitCLI implements common git actions based on git CLI
@@ -1144,25 +1143,4 @@ func (g *GitCLI) CherryPick(dir string, commitish string) error {
 // CherryPickTheirs does a git cherry-pick of commit
 func (g *GitCLI) CherryPickTheirs(dir string, commitish string) error {
 	return g.gitCmd(dir, "cherry-pick", commitish, "--strategy=recursive", "-X", "theirs")
-}
-
-// Describe does a git describe of commitish, optionally adding the abbrev arg if not empty
-func (g *GitCLI) Describe(dir string, contains bool, commitish string, abbrev string) (string, string, error) {
-	args := []string{"describe", commitish}
-	if abbrev != "" {
-		args = append(args, fmt.Sprintf("--abbrev=%s", abbrev))
-	}
-	if contains {
-		args = append(args, "--contains")
-	}
-	out, err := g.gitCmdWithOutput(dir, args...)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
-	}
-	trimmed := strings.TrimSpace(strings.Trim(out, "\n"))
-	parts := splitDescribeRegex.Split(trimmed, -1)
-	if len(parts) == 2 {
-		return parts[0], parts[1], nil
-	}
-	return parts[0], "", nil
 }

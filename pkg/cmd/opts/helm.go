@@ -1,6 +1,7 @@
 package opts
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
@@ -17,6 +19,9 @@ import (
 	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/pkg/environments"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -24,6 +29,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
+	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -395,7 +403,7 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 		return err
 	}
 	if options.VersionsDir == "" {
-		options.VersionsDir, _, err = o.CloneJXVersionsRepo(options.VersionsGitURL, options.VersionsGitRef)
+		options.VersionsDir, err = o.CloneJXVersionsRepo(options.VersionsGitURL, options.VersionsGitRef)
 		if err != nil {
 			return err
 		}
@@ -448,6 +456,196 @@ func (o *CommonOptions) detectSecretsLocation() secrets.SecretsLocationKind {
 // SetSecretURLClient sets the Secret URL Client
 func (o *CommonOptions) SetSecretURLClient(client secreturl.Client) {
 	o.secretURLClient = client
+}
+
+// CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir
+func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("error determining config dir %v", err)
+	}
+	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
+
+	if versionRepository == "" || versionRef == "" {
+		settings, err := o.TeamSettings()
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to load TeamSettings")
+		}
+		if versionRepository == "" {
+			versionRepository = settings.VersionStreamURL
+		}
+		if versionRef == "" {
+			versionRef = settings.VersionStreamRef
+		}
+	}
+	if versionRepository == "" {
+		versionRepository = config.DefaultVersionsURL
+	}
+
+	log.Logger().Debugf("Current configuration dir: %s", configDir)
+	log.Logger().Debugf("versionRepository: %s git ref: %s", versionRepository, versionRef)
+
+	// If the repo already exists let's try to fetch the latest version
+	if exists, err := util.DirExists(wrkDir); err == nil && exists {
+		repo, err := git.PlainOpen(wrkDir)
+		if err != nil {
+			log.Logger().Errorf("Error opening %s", wrkDir)
+			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+		}
+		remote, err := repo.Remote("origin")
+		if err != nil {
+			log.Logger().Errorf("Error getting remote origin")
+			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
+		remoteRefs := "+refs/heads/master:refs/remotes/origin/master"
+		if versionRef != "" {
+			remoteRefs = "+refs/heads/" + versionRef + ":refs/remotes/origin/" + versionRef
+		}
+		err = remote.FetchContext(ctx, &git.FetchOptions{
+			RefSpecs: []gitconfig.RefSpec{
+				gitconfig.RefSpec(remoteRefs),
+			},
+		})
+
+		// The repository is up to date
+		if err == git.NoErrAlreadyUpToDate {
+			if versionRef != "" {
+				err = o.Git().Checkout(wrkDir, versionRef)
+				if err != nil {
+					return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+				}
+			}
+			return wrkDir, nil
+		} else if err != nil {
+			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+		}
+
+		pullLatest := false
+		if o.BatchMode {
+			pullLatest = true
+		} else if o.AdvancedMode {
+			confirm := &survey.Confirm{
+				Message: "A local Jenkins X versions repository already exists, pull the latest?",
+				Default: true,
+			}
+			err = survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
+			if err != nil {
+				log.Logger().Errorf("Error confirming if we should pull latest, skipping %s", wrkDir)
+			}
+		} else {
+			pullLatest = true
+			log.Logger().Infof(util.QuestionAnswer("A local Jenkins X versions repository already exists, pulling the latest", util.YesNo(pullLatest)))
+		}
+		if pullLatest {
+			w, err := repo.Worktree()
+			if err == nil {
+				err := w.Pull(&git.PullOptions{RemoteName: "origin"})
+				if err != nil {
+					return "", errors.Wrap(err, "pulling the latest")
+				}
+			}
+		}
+		if versionRef != "" {
+			err = o.Git().Checkout(wrkDir, versionRef)
+			if err != nil {
+				return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+			}
+		}
+		return wrkDir, err
+	} else {
+		return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+	}
+}
+
+func (o *CommonOptions) deleteAndReClone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) (string, error) {
+	log.Logger().Info("Deleting and cloning the Jenkins X versions repo")
+	err := os.RemoveAll(wrkDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to delete dir %s: %s\n", wrkDir, err.Error())
+	}
+	err = os.MkdirAll(wrkDir, util.DefaultWritePermissions)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to ensure directory is created %s", wrkDir)
+	}
+	err = o.clone(wrkDir, versionRepository, referenceName, fw)
+	if err != nil {
+		return "", err
+	}
+	return wrkDir, err
+}
+
+func (o *CommonOptions) clone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) error {
+	if referenceName == "" || referenceName == "master" {
+		referenceName = "refs/heads/master"
+	} else if !strings.Contains(referenceName, "/") {
+		if strings.HasPrefix(referenceName, "PR-") {
+			prNumber := strings.TrimPrefix(referenceName, "PR-")
+
+			log.Logger().Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+			return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, prNumber, "")
+		}
+		log.Logger().Infof("Cloning the Jenkins X versions repo %s with revision %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+
+		err := o.Git().Clone(versionRepository, wrkDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to clone repository: %s to dir %s", versionRepository, wrkDir)
+		}
+		err = o.RunCommandFromDir(wrkDir, "git", "fetch", "origin", referenceName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to git fetch origin %s for repo: %s in dir %s", referenceName, versionRepository, wrkDir)
+		}
+		err = o.Git().Checkout(wrkDir, "FETCH_HEAD")
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout FETCH_HEAD of repo: %s in dir %s", versionRepository, wrkDir)
+		}
+		return nil
+
+		// TODO doesn't seem to work at all for a git ref....
+		//return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", referenceName)
+	}
+	log.Logger().Infof("Cloning the Jenkins X versions repo %s with ref %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
+		URL:           versionRepository,
+		ReferenceName: plumbing.ReferenceName(referenceName),
+		SingleBranch:  true,
+		Progress:      nil,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to clone reference: %s", referenceName)
+	}
+	return err
+}
+
+func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, revision string) error {
+	if pullRequestNumber != "" {
+		log.Logger().Infof("shallow cloning pull request %s of repository %s to temp dir %s", gitURL,
+			pullRequestNumber, dir)
+		err := o.Git().ShallowClone(dir, gitURL, "", pullRequestNumber)
+		if err != nil {
+			return errors.Wrapf(err, "shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
+				pullRequestNumber, dir)
+		}
+	} else if revision != "" {
+		log.Logger().Infof("shallow cloning revision %s of repository %s to temp dir %s", gitURL,
+			revision, dir)
+		err := o.Git().ShallowClone(dir, gitURL, revision, "")
+		if err != nil {
+			return errors.Wrapf(err, "shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
+				revision, dir)
+		}
+	} else {
+		log.Logger().Infof("shallow cloning master of repository %s to temp dir %s", gitURL, dir)
+		err := o.Git().ShallowClone(dir, gitURL, "", "")
+		if err != nil {
+			return errors.Wrapf(err, "shallow cloning master of repository %s to temp dir %s\n", gitURL, dir)
+		}
+	}
+
+	return nil
 }
 
 // DeleteChart deletes the given chart
