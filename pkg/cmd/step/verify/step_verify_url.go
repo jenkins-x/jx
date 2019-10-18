@@ -97,6 +97,9 @@ func (o *StepVerifyURLOptions) Run() error {
 	client := &http.Client{Transport: tr}
 
 	log.Logger().Infof("Waiting for %q endpoint to return %d HTTP code", o.Endpoint, o.Code)
+
+	start := time.Now()
+
 	err := util.Retry(o.Timeout, func() error {
 		resp, err := client.Get(o.Endpoint)
 		if err != nil {
@@ -111,6 +114,8 @@ func (o *StepVerifyURLOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "waiting for %q", o.Endpoint)
 	}
-	log.Logger().Infof("Endpoint %q returns expected status code %d", o.Endpoint, o.Code)
+
+	elapsed := time.Since(start)
+	log.Logger().Infof("Endpoint %q returns expected status code %d in %s", o.Endpoint, o.Code, elapsed)
 	return nil
 }
