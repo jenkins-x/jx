@@ -220,6 +220,8 @@ type IngressConfig struct {
 	// domain if you are using a dynamic domain resolver like `.nip.io` rather than a real DNS configuration.
 	// With this flag enabled the `Domain` value will be used and never re-created based on the current LoadBalancer IP address.
 	IgnoreLoadBalancer bool `json:"ignoreLoadBalancer,omitempty"`
+	// Exposer the exposer used to expose ingress endpoints. Defaults to "Ingress"
+	Exposer string `json:"exposer,omitempty"`
 	// NamespaceSubDomain the sub domain expression to expose ingress. Defaults to ".jx."
 	NamespaceSubDomain string `json:"namespaceSubDomain"`
 	// TLS enable automated TLS using certmanager
