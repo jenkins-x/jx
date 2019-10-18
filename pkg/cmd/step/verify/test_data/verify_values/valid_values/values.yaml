@@ -1,10 +1,10 @@
 adminUser:
-  password: vault:some-custer/adminUser:password
+  password: password
   username: test
 enableDocker: false
 pipelineUser:
-  token: "1test2tttttttttttttttttttttttttttttttttt" 
+  token: "aaaaa12345bbbbb12345ccccc12345ddddd12345" 
   email: test@test.org
   username: test
 prow:
-  hmacToken: vault:some-cluster/prow:hmacToken
+  hmacToken: hmacToken

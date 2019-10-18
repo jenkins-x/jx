@@ -1,9 +1,9 @@
 adminUser:
-  password: vault:some-custer/adminUser:password
+  password: testpassword
   username: test
 enableDocker: false
 pipelineUser:
   email: test@test.org
   username: test
 prow:
-  hmacToken: vault:some-cluster/prow:hmacToken
+  hmacToken: hmacToken
