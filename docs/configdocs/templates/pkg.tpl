@@ -2,8 +2,8 @@
 
 {{ with .packages}}
 ---
-title: Configuration
-linktitle: Configuration
+title: Configuration Reference
+linktitle: Reference
 weight: 9
 ---
 
