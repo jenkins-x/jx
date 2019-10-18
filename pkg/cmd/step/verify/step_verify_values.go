@@ -31,7 +31,7 @@ type StepVerifyValuesOptions struct {
 	RequirementsDir string
 	ValuesFile      string
 
-	// SecretClient secrets URL client (added as a filed to be able to easy mock it
+	// SecretClient secrets URL client (added as a field to be able to easy mock it)
 	SecretClient secreturl.Client
 }
 
