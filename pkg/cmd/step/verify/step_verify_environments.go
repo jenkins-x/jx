@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"sigs.k8s.io/yaml"
 
@@ -27,8 +28,6 @@ import (
 
 const (
 	jxInterpretPipelineEnvKey = "JX_INTERPRET_PIPELINE"
-	configRepoURLEnvKey       = "REPO_URL"
-	configRepoRefEnvKey       = "BASE_CONFIG_REF"
 )
 
 // StepVerifyEnvironmentsOptions contains the command line flags
@@ -99,6 +98,22 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	log.Logger().Infof("the git repositories for the environments look good\n")
+	fmt.Println()
+	return nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, privateRepo bool, user *auth.UserAuth, requirements *config.RequirementsConfig, server *auth.AuthServer, createPr bool) error {
+	fromGitURL := os.Getenv(boot.ConfigRepoURLEnvVarName)
+	gitRef := os.Getenv(boot.ConfigBaseRefEnvVarName)
+
+	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigRepoURLEnvVarName, fromGitURL)
+	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigBaseRefEnvVarName, gitRef)
+
+	_, err := gits.ParseGitURL(fromGitURL)
+	if err != nil {
+		return err
+	}
 
 	log.Logger().Infof("The environment git repositories look good\n")
 	fmt.Println()
@@ -137,20 +152,20 @@ func (o *StepVerifyEnvironmentsOptions) isJXBoot() bool {
 func (o *StepVerifyEnvironmentsOptions) readEnvironment() (string, string, error) {
 	var missingRepoURLErr, missingReoRefErr error
 
-	fromGitURL, foundURL := os.LookupEnv(configRepoURLEnvKey)
+	fromGitURL, foundURL := os.LookupEnv(boot.ConfigRepoURLEnvVarName)
 	if !foundURL {
-		missingRepoURLErr = errors.Errorf("the environment variable %s must be specified", configRepoURLEnvKey)
+		missingRepoURLErr = errors.Errorf("the environment variable %s must be specified", boot.ConfigRepoURLEnvVarName)
 	}
-	gitRef, foundRef := os.LookupEnv(configRepoRefEnvKey)
+	gitRef, foundRef := os.LookupEnv(boot.ConfigBaseRefEnvVarName)
 	if !foundRef {
-		missingReoRefErr = errors.Errorf("the environment variable %s must be specified", configRepoRefEnvKey)
+		missingReoRefErr = errors.Errorf("the environment variable %s must be specified", boot.ConfigBaseRefEnvVarName)
 	}
 
 	err := util.CombineErrors(missingRepoURLErr, missingReoRefErr)
 
 	if err == nil {
-		log.Logger().Debugf("Defined %s env variable value: %s", configRepoURLEnvKey, fromGitURL)
-		log.Logger().Debugf("Defined %s env variable value: %s", configRepoRefEnvKey, gitRef)
+		log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigRepoURLEnvVarName, fromGitURL)
+		log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigBaseRefEnvVarName, gitRef)
 	}
 
 	return fromGitURL, gitRef, err

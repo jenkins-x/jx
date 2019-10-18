@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/versionstream"
+
+	"github.com/jenkins-x/jx/pkg/boot"
 	v1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -270,9 +272,11 @@ func (o *BootOptions) Run() error {
 	so.EndStep = o.EndStep
 
 	so.AdditionalEnvVars = map[string]string{
-		"JX_NO_TILLER":    "true",
-		"REPO_URL":        gitURL,
-		"BASE_CONFIG_REF": gitRef,
+		"JX_NO_TILLER":                     "true",
+		boot.ConfigRepoURLEnvVarName:       gitURL,
+		boot.ConfigBaseRefEnvVarName:       gitRef,
+		boot.VersionsRepoURLEnvVarName:     requirements.VersionStream.URL,
+		boot.VersionsRepoBaseRefEnvVarName: requirements.VersionStream.Ref,
 	}
 	if requirements.Cluster.HelmMajorVersion == "3" {
 		so.AdditionalEnvVars["JX_HELM3"] = "true"
