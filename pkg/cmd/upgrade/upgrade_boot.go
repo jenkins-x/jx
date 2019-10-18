@@ -27,7 +27,8 @@ import (
 // UpgradeBootOptions options for the command
 type UpgradeBootOptions struct {
 	*opts.CommonOptions
-	Dir string
+	Dir                     string
+	UpgradeVersionStreamRef string
 }
 
 var (
@@ -43,7 +44,7 @@ var (
 )
 
 const (
-	upgradeVersionStreamRef = "master"
+	defaultUpgradeVersionStreamRef = "master"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -64,6 +65,8 @@ func NewCmdUpgradeBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the Jenkins X Pipeline and requirements")
+	cmd.Flags().StringVarP(&options.UpgradeVersionStreamRef, "upgrade-version-stream-ref", "", defaultUpgradeVersionStreamRef, "a version stream ref to use to upgrade to")
+
 	return cmd
 }
 
@@ -86,7 +89,7 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrap(err, "failed to get requirements version stream")
 	}
 
-	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, upgradeVersionStreamRef)
+	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, o.UpgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to get check for available update")
 	}
@@ -113,7 +116,7 @@ func (o *UpgradeBootOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to update version stream ref")
 	}
-	resolver, err := o.CreateVersionResolver(reqsVersionStream.URL, upgradeVersionStreamRef)
+	resolver, err := o.CreateVersionResolver(reqsVersionStream.URL, o.UpgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create version resolver")
 	}
