@@ -168,16 +168,11 @@ func (o *BootOptions) Run() error {
 		repo := gitInfo.Name
 		cloneDir := filepath.Join(o.Dir, repo)
 
-		if gitRef == "" {
+		if o.GitRef == "" {
 			gitRef, err = o.determineGitRef(requirements, gitURL)
 			if err != nil {
 				return errors.Wrapf(err, "failed to determine git ref")
 			}
-		}
-
-		if gitRef == "" {
-			log.Logger().Info("no gitref found, defaulting to master")
-			gitRef = "master"
 		}
 
 		if !o.BatchMode {
@@ -371,18 +366,16 @@ func (o *BootOptions) determineGitRef(requirements *config.RequirementsConfig, g
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create version resolver")
 	}
+	log.Logger().Infof("Attempting to resolve version for boot config %s from %s", util.ColorInfo(gitURL), util.ColorInfo(requirements.VersionStream.URL))
 	gitRef, err := resolver.ResolveGitVersion(gitURL)
 	if err != nil {
 		return "", errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s in version stream %s",
 			gitURL, requirements.VersionStream.URL))
 	}
 	if gitRef == "" {
-		log.Logger().Infof("Attempting to resolve version for upstream boot config %s", util.ColorInfo(config.DefaultBootRepository))
-		gitRef, err = resolver.ResolveGitVersion(config.DefaultBootRepository)
-		if err != nil {
-			return "", errors.Wrapf(err, fmt.Sprintf("failed to resolve version for %s in version stream %s",
-				config.DefaultBootRepository, requirements.VersionStream.URL))
-		}
+		log.Logger().Infof("no version for %s found in version stream %s, defaulting to %",
+			util.ColorInfo(gitURL), util.ColorInfo(requirements.VersionStream.URL), util.ColorInfo("master"))
+		gitRef = "master"
 	}
 	return gitRef, nil
 }
