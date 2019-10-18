@@ -66,13 +66,13 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	gitter.AddRemote(testDir, "origin", fakeRepo.GitRepo.CloneURL)
 	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.Add(testDir, ".")
-	gitter.AddCommit(testDir, "Initial Commit")
+	gitter.CommitAllChangesToTrackedFiles(testDir, "Initial Commit")
 	gitter.Push(testDir, "origin", false, "HEAD")
 	gitter.CreateBranch(testDir, testBranch)
 	gitter.Checkout(testDir, testBranch)
 	stableVersion.Version = "1.0.1"
 	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
-	gitter.AddCommit(testDir, "Bump version")
+	gitter.CommitAllChangesToTrackedFiles(testDir, "Bump version")
 	gitter.Push(testDir, "origin", false, "HEAD")
 	gitter.Checkout(testDir, stableBranch)
 
@@ -131,13 +131,13 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	gitter.AddRemote(testDir, "origin", fakeRepo.GitRepo.CloneURL)
 	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
 	gitter.Add(testDir, ".")
-	gitter.AddCommit(testDir, "Initial Commit")
+	gitter.CommitAllChangesToTrackedFiles(testDir, "Initial Commit")
 	gitter.Push(testDir, "origin", false, "HEAD")
 	gitter.CreateBranch(testDir, testBranch)
 	gitter.Checkout(testDir, testBranch)
 	stableVersion.Version = "1.0.1"
 	versionstream.SaveStableVersion(testDir, versionstream.KindChart, "test-app", stableVersion)
-	gitter.AddCommit(testDir, "Bump version")
+	gitter.CommitAllChangesToTrackedFiles(testDir, "Bump version")
 	gitter.CreateBranch(testDir, "1")
 	gitter.Checkout(testDir, stableBranch)
 

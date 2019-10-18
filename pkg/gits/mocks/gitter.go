@@ -47,7 +47,7 @@ func (mock *MockGitter) Add(_param0 string, _param1 ...string) error {
 	return ret0
 }
 
-func (mock *MockGitter) AddCommit(_param0 string, _param1 string) error {
+func (mock *MockGitter) CommitAllChangesToTrackedFiles(_param0 string, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
 	}
@@ -1649,7 +1649,7 @@ func (c *MockGitter_Add_OngoingVerification) GetAllCapturedArguments() (_param0 
 	return
 }
 
-func (verifier *VerifierMockGitter) AddCommit(_param0 string, _param1 string) *MockGitter_AddCommit_OngoingVerification {
+func (verifier *VerifierMockGitter) CommitAllChangesToTrackedFiles(_param0 string, _param1 string) *MockGitter_AddCommit_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddCommit", params, verifier.timeout)
 	return &MockGitter_AddCommit_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}

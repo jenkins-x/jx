@@ -205,8 +205,8 @@ func (g *GitLocal) CommitDir(dir string, message string) error {
 }
 
 // AddCommit perform an add and commit of the changes from the repository at the given directory with the given messages
-func (g *GitLocal) AddCommit(dir string, msg string) error {
-	return g.GitCLI.AddCommit(dir, msg)
+func (g *GitLocal) CommitAllChangesToTrackedFiles(dir string, msg string) error {
+	return g.GitCLI.CommitAllChangesToTrackedFiles(dir, msg)
 }
 
 // CreateAuthenticatedURL creates the Git repository URL with the username and password encoded for HTTPS based URLs

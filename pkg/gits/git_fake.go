@@ -431,7 +431,7 @@ func (g *GitFake) CommitDir(dir string, message string) error {
 }
 
 // AddCommit add a commit
-func (g *GitFake) AddCommit(dir string, msg string) error {
+func (g *GitFake) CommitAllChangesToTrackedFiles(dir string, msg string) error {
 	return g.CommitIfChanges(dir, msg)
 }
 

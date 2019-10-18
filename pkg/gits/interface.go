@@ -256,7 +256,7 @@ type Gitter interface {
 
 	CommitIfChanges(dir string, message string) error
 	CommitDir(dir string, message string) error
-	AddCommit(dir string, msg string) error
+	CommitAllChangesToTrackedFiles(dir string, msg string) error
 	AddCommitFiles(dir string, msg string, files []string) error
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)

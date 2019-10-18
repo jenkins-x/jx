@@ -497,7 +497,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 			return "", "", nil, nil, errors.Wrapf(err, "failed to run git init in %s", dir)
 		}
 		// Need an initial commit to make branching work. We'll do an empty commit
-		err = gitter.AddCommit(dir, "initial commit")
+		err = gitter.CommitAllChangesToTrackedFiles(dir, "initial commit")
 		if err != nil {
 			return "", "", nil, nil, errors.WithStack(err)
 		}

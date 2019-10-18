@@ -141,7 +141,7 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 	log.Logger().Debugf("performing git commit")
-	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
+	err = o.Git().CommitAllChangesToTrackedFiles("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
