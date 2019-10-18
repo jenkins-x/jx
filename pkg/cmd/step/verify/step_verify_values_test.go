@@ -85,5 +85,5 @@ func TestStepVerifyValuesWithErrorSecretValues(t *testing.T) {
 
 	err = options.Run()
 
-	assert.NoError(t, err, "Command failed: %v", options)
+	assert.Error(t, err, "Command didn't fail: %v", options)
 }
