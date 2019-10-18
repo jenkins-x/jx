@@ -510,6 +510,6 @@ func (g *GitLocal) CherryPickTheirs(dir string, commit string) error {
 }
 
 // Describe does a git describe of commitish, optionally adding the abbrev arg if not empty
-func (g *GitLocal) Describe(dir string, contains bool, commitish string, abbrev string) (string, string, error) {
-	return g.GitCLI.Describe(dir, false, commitish, abbrev)
+func (g *GitLocal) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
+	return g.GitCLI.Describe(dir, false, commitish, abbrev, fallback)
 }

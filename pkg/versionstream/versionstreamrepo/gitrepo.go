@@ -254,7 +254,7 @@ func resolveRefToTag(dir string, commitish string, gitter gits.Gitter) (string, 
 	if err != nil {
 		return "", errors.Wrapf(err, "fetching tags")
 	}
-	resolved, _, err := gitter.Describe(dir, true, commitish, "0")
+	resolved, _, err := gitter.Describe(dir, true, commitish, "0", true)
 	if err != nil {
 		return "", errors.Wrapf(err, "running git describe %s --abbrev=0", commitish)
 	}
