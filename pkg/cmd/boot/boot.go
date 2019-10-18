@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/versionstream"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 	v1 "k8s.io/api/core/v1"
 
@@ -169,7 +171,11 @@ func (o *BootOptions) Run() error {
 		cloneDir := filepath.Join(o.Dir, repo)
 
 		if o.GitRef == "" {
-			gitRef, err = o.determineGitRef(requirements, gitURL)
+			resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create version resolver")
+			}
+			gitRef, err = o.determineGitRef(resolver, requirements, gitURL)
 			if err != nil {
 				return errors.Wrapf(err, "failed to determine git ref")
 			}
@@ -360,12 +366,8 @@ func (o *BootOptions) overrideRequirements(defaultBootConfigURL string) error {
 	return nil
 }
 
-func (o *BootOptions) determineGitRef(requirements *config.RequirementsConfig, gitURL string) (string, error) {
+func (o *BootOptions) determineGitRef(resolver *versionstream.VersionResolver, requirements *config.RequirementsConfig, gitURL string) (string, error) {
 	// If the GitRef is not overridden and is set to it's default value then look up the version number
-	resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to create version resolver")
-	}
 	log.Logger().Infof("Attempting to resolve version for boot config %s from %s", util.ColorInfo(gitURL), util.ColorInfo(requirements.VersionStream.URL))
 	gitRef, err := resolver.ResolveGitVersion(gitURL)
 	if err != nil {
@@ -373,7 +375,7 @@ func (o *BootOptions) determineGitRef(requirements *config.RequirementsConfig, g
 			gitURL, requirements.VersionStream.URL))
 	}
 	if gitRef == "" {
-		log.Logger().Infof("no version for %s found in version stream %s, defaulting to %",
+		log.Logger().Infof("no version for %s found in version stream %s, defaulting to %s",
 			util.ColorInfo(gitURL), util.ColorInfo(requirements.VersionStream.URL), util.ColorInfo("master"))
 		gitRef = "master"
 	}
