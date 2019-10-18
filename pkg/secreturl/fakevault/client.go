@@ -57,5 +57,5 @@ func (c *FakeClient) WriteObject(secretName string, secret interface{}) (map[str
 
 // ReplaceURIs will replace any local: URIs in a string
 func (c *FakeClient) ReplaceURIs(s string) (string, error) {
-	return secreturl.ReplaceURIs(s, c, fakeURIRegex, "local:")
+	return secreturl.ReplaceURIs(s, c, fakeURIRegex, "vault:")
 }
