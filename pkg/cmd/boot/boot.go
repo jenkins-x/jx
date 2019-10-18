@@ -40,6 +40,9 @@ type BootOptions struct {
 	VersionStreamURL string
 	// The bootstrap ref for the version stream. Once we have a jx-requirements.yaml, we read that
 	VersionStreamRef string
+
+	// RequirementsFile provided by the user to override the default requirements file from repository
+	RequirementsFile string
 }
 
 var (
@@ -90,6 +93,8 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.StartStep, "start-step", "s", "", "the step in the pipeline to start from")
 	cmd.Flags().StringVarP(&options.EndStep, "end-step", "e", "", "the step in the pipeline to end at")
 	cmd.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
+	cmd.Flags().StringVarP(&options.RequirementsFile, "requirements", "r", "", "requirements file which will overwrite the default requirements file")
+
 	return cmd
 }
 
@@ -146,7 +151,7 @@ func (o *BootOptions) Run() error {
 		return util.MissingOption("git-url")
 	}
 
-	requirements, requirementsFile, _ := config.LoadRequirementsConfig(o.Dir)
+	requirements, _, _ := config.LoadRequirementsConfig(o.Dir)
 
 	// lets report errors parsing this file after the check we are outside of a git clone
 	o.defaultVersionStream(requirements)
@@ -232,19 +237,13 @@ func (o *BootOptions) Run() error {
 		}
 	}
 
-	requirements, requirementsFile, err = config.LoadRequirementsConfig(o.Dir)
+	if err := o.overrideRequirements(gitURL); err != nil {
+		return errors.Wrap(err, "overwriting the default requirements")
+	}
+
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load jx-requirements.yml file")
-	}
-	o.defaultVersionStream(requirements)
-
-	if requirements.BootConfigURL == "" {
-		requirements.BootConfigURL = gitURL
-	}
-
-	err = requirements.SaveConfig(requirementsFile)
-	if err != nil {
-		return err
 	}
 
 	isBootClone, err = util.FileExists(requirementsFile)
@@ -337,6 +336,33 @@ func existingBootClone(pipelineFile string) (bool, error) {
 		return false, err
 	}
 	return requirementsExist && pipelineExists, nil
+}
+
+func (o *BootOptions) overrideRequirements(defaultBootConfigURL string) error {
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "loading requirements from dir %q", o.Dir)
+	}
+
+	// overwrite the default requirements with provided requirements
+	if o.RequirementsFile != "" {
+		providedRequirements, err := config.LoadRequirementsConfigFile(o.RequirementsFile)
+		if err != nil {
+			return errors.Wrapf(err, "loading requirements from file %q", o.RequirementsFile)
+		}
+		*requirements = *providedRequirements
+	}
+
+	o.defaultVersionStream(requirements)
+	if requirements.BootConfigURL == "" {
+		requirements.BootConfigURL = defaultBootConfigURL
+	}
+
+	if err := requirements.SaveConfig(requirementsFile); err != nil {
+		return errors.Wrapf(err, "saving the requirements into file %q", requirementsFile)
+	}
+
+	return nil
 }
 
 func (o *BootOptions) determineGitRef(requirements *config.RequirementsConfig, gitURL string) (string, error) {
