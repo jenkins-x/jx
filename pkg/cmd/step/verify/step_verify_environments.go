@@ -28,6 +28,10 @@ import (
 
 const (
 	jxInterpretPipelineEnvKey = "JX_INTERPRET_PIPELINE"
+	gitAuthorNameEnvKey       = "GIT_AUTHOR_NAME"
+	gitAuthorEmailEnvKey      = "GIT_AUTHOR_EMAIL"
+	gitCommitterNameEnvKey    = "GIT_COMMITTER_NAME"
+	gitCommitterEmailEnvKey   = "GIT_COMMITTER_EMAIL"
 )
 
 // StepVerifyEnvironmentsOptions contains the command line flags
@@ -188,18 +192,21 @@ func (o *StepVerifyEnvironmentsOptions) modifyPipelineGitEnvVars(dir string) err
 
 		envVars := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
 
-		if !o.envVarsHasEntry(envVars, "GIT_AUTHOR_NAME") {
-			envVars = append(envVars, corev1.EnvVar{
-				Name:  "GIT_AUTHOR_NAME",
-				Value: username,
-			})
+		envVars, err = o.setEnvVarInPipelineAndCurrentEnv(gitAuthorNameEnvKey, username, envVars)
+		if err != nil {
+			return err
 		}
-
-		if !o.envVarsHasEntry(envVars, "GIT_AUTHOR_EMAIL") {
-			envVars = append(envVars, corev1.EnvVar{
-				Name:  "GIT_AUTHOR_EMAIL",
-				Value: email,
-			})
+		envVars, err = o.setEnvVarInPipelineAndCurrentEnv(gitCommitterNameEnvKey, username, envVars)
+		if err != nil {
+			return err
+		}
+		envVars, err = o.setEnvVarInPipelineAndCurrentEnv(gitAuthorEmailEnvKey, email, envVars)
+		if err != nil {
+			return err
+		}
+		envVars, err = o.setEnvVarInPipelineAndCurrentEnv(gitCommitterEmailEnvKey, email, envVars)
+		if err != nil {
+			return err
 		}
 
 		projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
@@ -208,17 +215,24 @@ func (o *StepVerifyEnvironmentsOptions) modifyPipelineGitEnvVars(dir string) err
 		if err != nil {
 			return errors.Wrapf(err, "failed to write to %s", fileName)
 		}
-
-		err = os.Setenv("GIT_AUTHOR_NAME", username)
-		if err != nil {
-			return errors.Wrap(err, "failed to set GIT_AUTHOR_NAME env variable")
-		}
-		err = os.Setenv("GIT_AUTHOR_EMAIL", email)
-		if err != nil {
-			return errors.Wrap(err, "failed to set GIT_AUTHOR_EMAIL env variable")
-		}
 	}
 	return nil
+}
+
+func (o *StepVerifyEnvironmentsOptions) setEnvVarInPipelineAndCurrentEnv(envVarName string, envVarValue string, envVars []corev1.EnvVar) ([]corev1.EnvVar, error) {
+	if !o.envVarsHasEntry(envVars, envVarName) {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  envVarName,
+			Value: envVarValue,
+		})
+	}
+
+	err := os.Setenv(envVarName, envVarValue)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to set %s env variable", envVarName)
+	}
+
+	return envVars, nil
 }
 
 func (o *StepVerifyEnvironmentsOptions) envVarsHasEntry(envVars []corev1.EnvVar, key string) bool {
