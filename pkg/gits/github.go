@@ -782,13 +782,13 @@ func (p *GitHubProvider) asGitHubCommit(commit *github.RepositoryCommit) GitComm
 		log.Logger().Warnf("No Commit object for for commit: %s", commit.GetSHA())
 	}
 	var author *GitUser
-	if commit.Author != nil {
+	if commit.Commit.Author != nil {
 		author = &GitUser{
-			Login:     commit.Author.GetLogin(),
-			Email:     commit.Author.GetEmail(),
-			Name:      commit.Author.GetName(),
-			URL:       commit.Author.GetURL(),
-			AvatarURL: commit.Author.GetAvatarURL(),
+			Login:     commit.Commit.Author.GetLogin(),
+			Email:     commit.Commit.Author.GetEmail(),
+			Name:      commit.Commit.Author.GetName(),
+			URL:       commit.Commit.Author.GetURL(),
+			AvatarURL: commit.Commit.Author.GetAvatarURL(),
 		}
 	} else {
 		log.Logger().Warnf("No author for commit: %s", commit.GetSHA())
