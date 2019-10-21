@@ -289,6 +289,11 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 
 	gitter := o.Git()
 
+	gitUserName, gitUserEmail, err := gits.EnsureUserAndEmailSetup(gitter)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't configure git with user %s and email %s", gitUserName, gitUserEmail)
+	}
+
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
 		if o.isJXBoot() && requirements.GitOps {
 			provider, err := envGitInfo.CreateProviderForUser(server, userAuth, gitKind, gitter)
