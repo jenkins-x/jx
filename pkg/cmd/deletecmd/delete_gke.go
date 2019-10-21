@@ -2,7 +2,6 @@ package deletecmd
 
 import (
 	"errors"
-
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/get"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -18,6 +17,8 @@ type DeleteGkeOptions struct {
 	get.GetOptions
 	Region    string
 	ProjectID string
+	ClusterName string
+
 }
 
 var (
@@ -48,11 +49,16 @@ func NewCmdDeleteGke(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Args = args
 			err := options.Run()
 			helper.CheckErr(err)
+			g
+
+
+
 		},
 	}
 	cmd.Flags().StringVarP(&options.Region, "region", "", "europe-west1-c", "GKE region to use. Default: europe-west1-c")
 	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "p", "", "Google Project ID to delete cluster from")
-	options.AddGetFlags(cmd)
+	cmd.Flags().StringVarP(&options.ClusterName, "cluster-name", "c", "", "Google Cluster name to delete")
+
 	return cmd
 }
 
