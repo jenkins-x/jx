@@ -17,7 +17,7 @@ type DeleteGkeOptions struct {
 	get.GetOptions
 	Region    string
 	ProjectID string
-	ClusterName string
+	cluster string
 
 }
 
@@ -49,7 +49,7 @@ func NewCmdDeleteGke(commonOpts *opts.CommonOptions) *cobra.Command {
 			options.Args = args
 			err := options.Run()
 			helper.CheckErr(err)
-			g
+
 
 
 
@@ -57,7 +57,7 @@ func NewCmdDeleteGke(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.Region, "region", "", "europe-west1-c", "GKE region to use. Default: europe-west1-c")
 	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "p", "", "Google Project ID to delete cluster from")
-	cmd.Flags().StringVarP(&options.ClusterName, "cluster-name", "c", "", "Google Cluster name to delete")
+	cmd.Flags().StringVarP(&options.cluster, "cluster-name", "c", "", "Google Cluster name to delete")
 
 	return cmd
 }
@@ -67,12 +67,11 @@ func (o *DeleteGkeOptions) Run() error {
 	if len(o.Args) == 0 {
 		return errors.New("cluster name expected")
 	}
-	cluster := o.Args[0]
 	err := o.InstallRequirements(cloud.GKE)
 	if err != nil {
 		return err
 	}
-	args := []string{"container", "clusters", "delete", cluster, "--region=" + o.Region, "--quiet", "--async"}
+	args := []string{"container", "clusters", "delete", o.cluster, "--region=" + o.Region, "--quiet", "--async"}
 	if o.ProjectID != "" {
 		args = append(args, "--project="+o.ProjectID)
 	}

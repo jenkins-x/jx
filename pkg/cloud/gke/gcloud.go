@@ -1249,21 +1249,3 @@ func (g *GCloud) CurrentProject() (string, error) {
 	return strings.TrimSpace(text), nil
 }
 
-
-func (g *GCloud) DeleteGKECluster(clusterName string) (string, error){
-	args := []string{"container",
-		"clusters",
-		"delete",
-		clusterName}
-
-	cmd := util.Command{
-		Name: "gcloud",
-		Args: args,
-	}
-	text, err := cmd.RunWithoutRetry()
-	if err != nil {
-		return text, errors.Wrap(err, "failed to delete the current GCP project")
-
-	}
-	return strings.TrimSpace(text), nil
-}
