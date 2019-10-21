@@ -1248,3 +1248,4 @@ func (g *GCloud) CurrentProject() (string, error) {
 	}
 	return strings.TrimSpace(text), nil
 }
+
