@@ -16,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/expose"
 	"github.com/jenkins-x/jx/pkg/cmd/step/get"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
-	"github.com/jenkins-x/jx/pkg/cmd/step/github"
 	"github.com/jenkins-x/jx/pkg/cmd/step/helm"
 	"github.com/jenkins-x/jx/pkg/cmd/step/nexus"
 	"github.com/jenkins-x/jx/pkg/cmd/step/post"
@@ -87,7 +86,6 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(update.NewCmdStepUpdate(commonOpts))
 	cmd.AddCommand(report.NewCmdStepReport(commonOpts))
 	cmd.AddCommand(step.NewCmdStepOverrideRequirements(commonOpts))
-	cmd.AddCommand(github.NewCmdStepGithub(commonOpts))
 
 	return cmd
 }
