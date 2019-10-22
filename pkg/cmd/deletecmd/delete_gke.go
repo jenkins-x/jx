@@ -64,7 +64,7 @@ func NewCmdDeleteGke(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *DeleteGkeOptions) Run() error {
-	if len(o.Args) == 0 {
+	if o.cluster == "" {
 		return errors.New("cluster name expected")
 	}
 	err := o.InstallRequirements(cloud.GKE)
