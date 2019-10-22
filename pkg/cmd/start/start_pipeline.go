@@ -225,7 +225,7 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 	}
 
 	log.Logger().Debug("creating meta pipeline client")
-	client, err := metapipeline.NewMetaPipelineClient()
+	client, err := metapipeline.NewMetaPipelineClient(o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.Wrap(err, "unable to create meta pipeline client")
 	}
