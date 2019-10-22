@@ -86,11 +86,11 @@ func (o *UpgradeBootOptions) Run() error {
 		}
 	}
 
-	reqsVersionStream, err := o.requirementsVersionStream()
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
-		return errors.Wrap(err, "failed to get requirements version stream")
+		return errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
 	}
-
+	reqsVersionStream := requirements.VersionStream
 	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, o.UpgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to get check for available update")
@@ -133,6 +133,22 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrap(err, "failed to update template version stream ref")
 	}
 
+	// load modified requirements so we can merge with the base ones
+	modifiedRequirements, modifiedRequirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load requirements config %s", modifiedRequirementsFile)
+	}
+
+	err = requirements.MergeSave(modifiedRequirements, modifiedRequirementsFile)
+	if err != nil {
+		return errors.Wrap(err, "error merging the modified jx-requirements.yml file with the dev environment's one")
+	}
+
+	err = o.createCommitForRequirements(requirementsFile)
+	if err != nil {
+		return errors.Wrap(err, "failed to create a merge commit for jx-requirements.yml")
+	}
+
 	err = o.raisePR()
 	if err != nil {
 		return errors.Wrap(err, "failed to raise pr")
@@ -141,6 +157,15 @@ func (o *UpgradeBootOptions) Run() error {
 	err = o.deleteLocalBranch(localBranch)
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete local branch %s", localBranch)
+	}
+	return nil
+}
+
+func (o UpgradeBootOptions) createCommitForRequirements(requirementsFileName string) error {
+	err := o.Git().AddCommitFiles(o.Dir, "Merge jx-requirements.yml", []string{requirementsFileName})
+	if err != nil {
+		return errors.Wrapf(err, "error creating a commit with the merged jx-requirements.yml file from dir %s",
+			requirementsFileName)
 	}
 	return nil
 }
@@ -176,22 +201,6 @@ func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (str
 	}
 	log.Logger().Infof("using default boot config %s", bootConfigURL)
 	return bootConfigURL, nil
-}
-
-func (o *UpgradeBootOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
-	}
-	exists, err := util.FileExists(requirementsFile)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if file %s exists", requirementsFile)
-	}
-	if !exists {
-		return nil, fmt.Errorf("no requirements file %s ensure you are running this command inside a GitOps clone", requirementsFile)
-	}
-	reqsVersionStream := requirements.VersionStream
-	return &reqsVersionStream, nil
 }
 
 func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionStreamRef string, upgradeRef string) (string, error) {
