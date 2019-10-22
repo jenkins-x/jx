@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
@@ -130,6 +131,80 @@ func initializeTempGitRepo(gitter gits.Gitter) (string, string, error) {
 	}
 
 	return fmt.Sprint(dir), filepath.Base(testFile.Name()), nil
+}
+
+func TestCloneJXVersionsRepoReplacingCurrent(t *testing.T) {
+	origJxHome := os.Getenv("JX_HOME")
+
+	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
+	assert.NoError(t, err)
+
+	err = os.Setenv("JX_HOME", tmpJxHome)
+	assert.NoError(t, err)
+
+	defer func() {
+		_ = os.RemoveAll(tmpJxHome)
+		err = os.Setenv("JX_HOME", origJxHome)
+	}()
+
+	gitter := gits.NewGitCLI()
+	// First, clone the default URL so we can make sure it gets removed.
+	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
+		"",
+		TagFromDefaultURL,
+		nil,
+		gitter,
+		true,
+		false,
+		nil,
+		nil,
+		nil,
+	)
+
+	// Get the latest tag so that we know the correct expected version ref.
+	tag, _, err := gitter.Describe(dir, false, TagFromDefaultURL, "", true)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dir)
+	assert.NotNil(t, versionRef)
+	assert.Equal(t, tag, versionRef)
+
+	// Sleep briefly so that git GC in the background has finished
+	time.Sleep(5 * time.Second)
+
+	// Next, switch to using the temp repo and make sure that replaces the current one.
+	gitDir, testFileName, err := initializeTempGitRepo(gitter)
+	defer func() {
+		err := os.RemoveAll(gitDir)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+	settings := &v1.TeamSettings{
+		VersionStreamURL: gitDir,
+		VersionStreamRef: FirstTag,
+	}
+	dir, versionRef, err = versionstreamrepo.CloneJXVersionsRepo(
+		"",
+		"",
+		settings,
+		gitter,
+		true,
+		false,
+		nil,
+		nil,
+		nil,
+	)
+	assert.NoError(t, err)
+	assert.NotNil(t, dir)
+	assert.NotNil(t, versionRef)
+	assert.Equal(t, FirstTag, versionRef)
+
+	err = gitter.Checkout(dir, versionRef)
+	assert.NoError(t, err)
+
+	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", string(actualFileContents))
 }
 
 func TestCloneJXVersionsRepoWithTeamSettings(t *testing.T) {

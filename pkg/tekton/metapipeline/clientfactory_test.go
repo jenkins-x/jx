@@ -1,7 +1,6 @@
 package metapipeline
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -53,7 +51,7 @@ func Test_default_version_stream_and_url(t *testing.T) {
 	ns := "jx"
 	jxClient := fake.NewSimpleClientset()
 
-	url, ref, err := versionStreamURLAndRef(jxClient, ns)
+	_, url, ref, err := versionStreamURLAndRef(jxClient, ns)
 	assert.NoError(t, err)
 	assert.Equal(t, config.DefaultVersionsURL, url)
 	assert.Equal(t, config.DefaultVersionsRef, ref)
@@ -74,53 +72,10 @@ func Test_version_stream_and_url_from_team_setting(t *testing.T) {
 	jxObjects = append(jxObjects, devEnv)
 	jxClient := fake.NewSimpleClientset(jxObjects...)
 
-	url, ref, err := versionStreamURLAndRef(jxClient, ns)
+	_, url, ref, err := versionStreamURLAndRef(jxClient, ns)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedURL, url)
 	assert.Equal(t, expectedVersion, ref)
-}
-
-func Test_clone_version_stream_from_tag(t *testing.T) {
-	ref := "v1.0.8"
-	dir, err := cloneVersionStream("https://github.com/jenkins-x/jenkins-x-versions.git", ref)
-	defer func() {
-		_ = os.RemoveAll(dir)
-	}()
-
-	assert.NoError(t, err)
-	assert.DirExists(t, dir)
-
-	args := []string{"describe", "--tags", "--abbrev=0"}
-	cmd := util.Command{
-		Dir:  dir,
-		Name: "git",
-		Args: args,
-	}
-	output, err := cmd.RunWithoutRetry()
-	assert.NoError(t, err)
-	assert.Equal(t, ref, output)
-}
-
-func Test_clone_version_stream_from_sha(t *testing.T) {
-	// This ref is the HEAD on https://github.com/jenkins-x/jenkins-x-versions/pull/417, which is closed and won't change.
-	ref := "72d36667196e2bfbb52b8220d55ef79747283a5b"
-	dir, err := cloneVersionStream("https://github.com/jenkins-x/jenkins-x-versions.git", ref)
-	defer func() {
-		_ = os.RemoveAll(dir)
-	}()
-
-	assert.NoError(t, err)
-	assert.DirExists(t, dir)
-
-	args := []string{"rev-parse", "HEAD"}
-	cmd := util.Command{
-		Dir:  dir,
-		Name: "git",
-		Args: args,
-	}
-	output, err := cmd.RunWithoutRetry()
-	assert.NoError(t, err)
-	assert.Equal(t, ref, output)
 }
 
 func Test_verify_pull_refs_on_activity(t *testing.T) {
