@@ -215,7 +215,7 @@ func (o *PromoteOptions) Run() error {
 				names = append(names, n)
 			}
 		}
-		o.Environment, err = kube.PickEnvironment(names, "", o.In, o.Out, o.Err)
+		o.Environment, err = kube.PickEnvironment(names, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -945,7 +945,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -1050,7 +1050,7 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 		names = append(names, text)
 		m[text] = &charts[i]
 	}
-	name, err := util.PickName(names, "Pick chart to promote: ", "", o.In, o.Out, o.Err)
+	name, err := util.PickName(names, "Pick chart to promote: ", "", o.GetIOFileHandles())
 	if err != nil {
 		return answer, err
 	}

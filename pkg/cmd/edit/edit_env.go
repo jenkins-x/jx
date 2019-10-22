@@ -137,7 +137,7 @@ func (o *EditEnvOptions) Run() error {
 	} else {
 		name = o.Options.Name
 		if name == "" {
-			name, err = kube.PickEnvironment(envNames, currentEnv, o.In, o.Out, o.Err)
+			name, err = kube.PickEnvironment(envNames, currentEnv, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -155,7 +155,7 @@ func (o *EditEnvOptions) Run() error {
 	}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
 	gitProvider, err := kube.CreateEnvironmentSurvey(o.BatchMode, authConfigSvc, devEnv, env, &o.Options, true, o.ForkEnvironmentGitRepo,
-		ns, jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
+		ns, jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.ResolveChartMuseumURL, o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}

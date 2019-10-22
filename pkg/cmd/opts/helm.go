@@ -290,7 +290,7 @@ func (o *CommonOptions) AddHelmBinaryRepoIfMissing(url, repoName, username, pass
 	if err != nil {
 		vaultClient = nil
 	}
-	name, err := helm.AddHelmRepoIfMissing(url, repoName, username, password, o.Helm(), vaultClient, o.In, o.Out, o.Err)
+	name, err := helm.AddHelmRepoIfMissing(url, repoName, username, password, o.Helm(), vaultClient, o.GetIOFileHandles())
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

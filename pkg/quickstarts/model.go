@@ -2,7 +2,6 @@ package quickstarts
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -114,8 +112,8 @@ func (model *QuickstartModel) Add(q *Quickstart) bool {
 }
 
 // CreateSurvey creates a survey to query pick a quickstart
-func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*QuickstartForm, error) {
-	surveyOpts := survey.WithStdio(in, out, errOut)
+func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode bool, handles util.IOFileHandles) (*QuickstartForm, error) {
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	language := filter.Language
 	if language != "" {
 		languages := model.Languages()

@@ -121,7 +121,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 					u = gitInfo.Host
 				}
 			}
-			user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode, "", o.In, o.Out, o.Err)
+			user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode, "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

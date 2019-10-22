@@ -89,7 +89,7 @@ func (o *DeleteNamespaceOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing namespace name argument")
 		}
-		names, err = util.SelectNamesWithFilter(namespaceNames, "Which namespaces do you want to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+		names, err = util.SelectNamesWithFilter(namespaceNames, "Which namespaces do you want to delete: ", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

@@ -115,9 +115,9 @@ func (o *CreateVariableOptions) Run() error {
 		message := "environment variable name: "
 		help := "the name of the environment variable which is usually upper case without spaces or dashes"
 		if len(keys) == 0 {
-			name, err = util.PickValue(message, "", true, help, o.In, o.Out, o.Err)
+			name, err = util.PickValue(message, "", true, help, o.GetIOFileHandles())
 		} else {
-			name, err = util.PickName(keys, message, help, o.In, o.Out, o.Err)
+			name, err = util.PickName(keys, message, help, o.GetIOFileHandles())
 		}
 		if err != nil {
 			return err
@@ -128,7 +128,7 @@ func (o *CreateVariableOptions) Run() error {
 	}
 	if value == "" {
 		message := "environment variable value: "
-		value, err = util.PickValue(message, defaultValues[name], true, "", o.In, o.Out, o.Err)
+		value, err = util.PickValue(message, defaultValues[name], true, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

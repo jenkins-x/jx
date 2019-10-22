@@ -2,7 +2,6 @@ package metapipeline
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -16,11 +15,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	kubeclient "k8s.io/client-go/kubernetes"
@@ -42,10 +41,8 @@ type clientFactory struct {
 	kubeClient   kubernetes.Interface
 	ns           string
 
-	git    gits.Gitter
-	stderr io.Writer
-	stdin  terminal.FileReader
-	stdout terminal.FileWriter
+	git     gits.Gitter
+	handles util.IOFileHandles
 
 	versionDir       string
 	versionStreamURL string
@@ -55,23 +52,23 @@ type clientFactory struct {
 // NewMetaPipelineClient creates a new client for the creation and application of meta pipelines.
 // The responsibility of the meta pipeline is to prepare the execution pipeline and to allow Apps to contribute
 // the this execution pipeline.
-func NewMetaPipelineClient(gitter gits.Gitter, stdin terminal.FileReader, stdout terminal.FileWriter, stderr io.Writer) (Client, error) {
+func NewMetaPipelineClient(gitter gits.Gitter, handles util.IOFileHandles) (Client, error) {
 	tektonClient, jxClient, kubeClient, ns, err := getClientsAndNamespace()
 	if err != nil {
 		return nil, err
 	}
 
-	return NewMetaPipelineClientWithClientsAndNamespace(jxClient, tektonClient, kubeClient, ns, gitter, stdin, stdout, stderr)
+	return NewMetaPipelineClientWithClientsAndNamespace(jxClient, tektonClient, kubeClient, ns, gitter, handles)
 }
 
 // NewMetaPipelineClientWithClientsAndNamespace creates a new client for the creation and application of meta pipelines using the specified parameters.
-func NewMetaPipelineClientWithClientsAndNamespace(jxClient versioned.Interface, tektonClient tektonclient.Interface, kubeClient kubernetes.Interface, ns string, gitter gits.Gitter, stdin terminal.FileReader, stdout terminal.FileWriter, stderr io.Writer) (Client, error) {
+func NewMetaPipelineClientWithClientsAndNamespace(jxClient versioned.Interface, tektonClient tektonclient.Interface, kubeClient kubernetes.Interface, ns string, gitter gits.Gitter, handles util.IOFileHandles) (Client, error) {
 	teamSettings, url, ref, err := versionStreamURLAndRef(jxClient, ns)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to determine versions stream URL and ref")
 	}
 
-	versionDir, _, err := versionstreamrepo.CloneJXVersionsRepo(url, ref, teamSettings, gitter, true, false, stdin, stdout, stderr)
+	versionDir, _, err := versionstreamrepo.CloneJXVersionsRepo(url, ref, teamSettings, gitter, true, false, handles)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to clone version dir")
 	}
@@ -82,9 +79,7 @@ func NewMetaPipelineClientWithClientsAndNamespace(jxClient versioned.Interface, 
 		kubeClient:       kubeClient,
 		ns:               ns,
 		git:              gitter,
-		stdin:            stdin,
-		stdout:           stdout,
-		stderr:           stderr,
+		handles:          handles,
 		versionDir:       versionDir,
 		versionStreamURL: url,
 		versionStreamRef: ref,
@@ -237,7 +232,7 @@ func (c *clientFactory) cloneVersionStreamIfNeeded() error {
 
 	if c.versionStreamURL != url || c.versionStreamRef != ref {
 		oldVersionStreamDir := c.versionDir
-		c.versionDir, _, err = versionstreamrepo.CloneJXVersionsRepo(url, ref, teamSettings, c.git, true, false, c.stdin, c.stdout, c.stderr)
+		c.versionDir, _, err = versionstreamrepo.CloneJXVersionsRepo(url, ref, teamSettings, c.git, true, false, c.handles)
 		c.versionStreamURL = url
 		c.versionStreamRef = ref
 		if err != nil {

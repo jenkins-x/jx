@@ -118,11 +118,9 @@ func (o *GetAppsOptions) Run() error {
 		return errors.Wrap(err, "getting the the GitOps environments dir")
 	}
 	installOptions := apps.InstallOptions{
-		In:              o.In,
+		IOFileHandles:   o.GetIOFileHandles(),
 		DevEnv:          o.DevEnv,
 		Verbose:         o.Verbose,
-		Err:             o.Err,
-		Out:             o.Out,
 		GitOps:          o.GitOps,
 		BatchMode:       o.BatchMode,
 		Helmer:          o.Helm(),

@@ -6,7 +6,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/secreturl"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 
@@ -529,7 +528,7 @@ func (o *PullRequestOperation) CreatePullRequestGitReleasesFn(name string) Chang
 // empty it will fetch the latest version using helmer, using the vaultClient to get the repo creds or prompting using
 // in, out and outErr
 func CreateChartChangeFilesFn(name string, version string, kind string, pro *PullRequestOperation, helmer helm.Helmer,
-	vaultClient secreturl.Client, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ChangeFilesFn {
+	vaultClient secreturl.Client, handles util.IOFileHandles) ChangeFilesFn {
 	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 		if version == "" && kind == string(versionstream.KindChart) {
 			parts := strings.Split(name, "/")
@@ -547,7 +546,7 @@ func CreateChartChangeFilesFn(name string, version string, kind string, pro *Pul
 					} else if len(urls) == 0 {
 						log.Logger().Warnf("helm repo %s has more than no urls, not adding", prefix)
 					}
-					prefix, err = helm.AddHelmRepoIfMissing(urls[0], prefix, "", "", helmer, vaultClient, in, out, outErr)
+					prefix, err = helm.AddHelmRepoIfMissing(urls[0], prefix, "", "", helmer, vaultClient, handles)
 					if err != nil {
 						return nil, errors.Wrapf(err, "adding repository %s with url %s", prefix, urls[0])
 					}

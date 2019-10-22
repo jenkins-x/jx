@@ -145,7 +145,7 @@ func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver *versionstream.Vers
 	} else {
 		log.Logger().Info("\n")
 		message := fmt.Sprintf("Would you like to upgrade to the %s version?", info("jx"))
-		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
+		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles()) {
 			options := &upgrade.UpgradeCLIOptions{
 				CreateOptions: create.CreateOptions{
 					CommonOptions: o.CommonOptions,

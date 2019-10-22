@@ -3,11 +3,9 @@ package vault
 import (
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -20,9 +18,7 @@ type Selector interface {
 type vaultSelector struct {
 	vaultOperatorClient versioned.Interface
 	kubeClient          kubernetes.Interface
-	In                  terminal.FileReader
-	Out                 terminal.FileWriter
-	Err                 io.Writer
+	Handles             util.IOFileHandles
 }
 
 // NewVaultSelector creates a new vault selector
@@ -39,8 +35,8 @@ func NewVaultSelector(o OptionsInterface) (Selector, error) {
 	v := &vaultSelector{
 		vaultOperatorClient: operator,
 		kubeClient:          kubeclient,
+		Handles:             o.GetIOFileHandles(),
 	}
-	v.In, v.Out, v.Err = o.GetIn(), o.GetOut(), o.GetErr()
 	return v, nil
 }
 
@@ -78,7 +74,7 @@ func (v *vaultSelector) selectVault(vaults []*Vault) (*Vault, error) {
 		vaultNames[i] = vault.Name
 	}
 
-	vaultName, err := util.PickName(vaultNames, "Select Vault:", "", v.In, v.Out, v.Err)
+	vaultName, err := util.PickName(vaultNames, "Select Vault:", "", v.Handles)
 	if err != nil {
 		return nil, err
 	}

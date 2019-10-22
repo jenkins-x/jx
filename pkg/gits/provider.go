@@ -2,7 +2,6 @@ package gits
 
 import (
 	"fmt"
-	"io"
 	"net/url"
 	"sort"
 	"strconv"
@@ -10,8 +9,8 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 type GitOrganisation struct {
@@ -310,18 +309,18 @@ func ProviderAccessTokenURL(kind string, url string, username string) string {
 }
 
 // PickOwner allows to select a potential owner of a repository
-func PickOwner(orgLister OrganisationLister, userName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func PickOwner(orgLister OrganisationLister, userName string, handles util.IOFileHandles) (string, error) {
 	msg := "Who should be the owner of the repository?"
-	return pickOwner(orgLister, userName, msg, in, out, errOut)
+	return pickOwner(orgLister, userName, msg, handles)
 }
 
 // PickOrganisation picks an organisations login if there is one available
-func PickOrganisation(orgLister OrganisationLister, userName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func PickOrganisation(orgLister OrganisationLister, userName string, handles util.IOFileHandles) (string, error) {
 	msg := "Which organisation do you want to use?"
-	return pickOwner(orgLister, userName, msg, in, out, errOut)
+	return pickOwner(orgLister, userName, msg, handles)
 }
 
-func pickOwner(orgLister OrganisationLister, userName string, message string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func pickOwner(orgLister OrganisationLister, userName string, message string, handles util.IOFileHandles) (string, error) {
 	prompt := &survey.Select{
 		Message: message,
 		Options: GetOrganizations(orgLister, userName),
@@ -329,7 +328,7 @@ func pickOwner(orgLister OrganisationLister, userName string, message string, in
 	}
 
 	orgName := ""
-	surveyOpts := survey.WithStdio(in, out, errOut)
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	err := survey.AskOne(prompt, &orgName, nil, surveyOpts)
 	if err != nil {
 		return "", err
@@ -358,7 +357,7 @@ func GetOrganizations(orgLister OrganisationLister, userName string) []string {
 	return orgNames
 }
 
-func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) ([]*GitRepository, error) {
+func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string, handles util.IOFileHandles) ([]*GitRepository, error) {
 	answer := []*GitRepository{}
 	repos, err := provider.ListRepositories(owner)
 	if err != nil {
@@ -387,7 +386,7 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 		prompt.Default = allRepoNames
 	}
 	repoNames := []string{}
-	surveyOpts := survey.WithStdio(in, out, errOut)
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	err = survey.AskOne(prompt, &repoNames, nil, surveyOpts)
 
 	for _, n := range repoNames {
@@ -427,19 +426,19 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, handles util.IOFileHandles) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
 	server := config.GetOrCreateServer(hostUrl)
 	if server.Kind == "" {
 		server.Kind = gitKind
 	}
-	userAuth, err := config.PickServerUserAuth(server, message, batchMode, "", in, out, errOut)
+	userAuth, err := config.PickServerUserAuth(server, message, batchMode, "", handles)
 	if err != nil {
 		return nil, err
 	}
 	if userAuth.IsInvalid() {
-		userAuth, err = createUserForServer(batchMode, userAuth, authConfigSvc, server, git, in, out, errOut)
+		userAuth, err = createUserForServer(batchMode, userAuth, authConfigSvc, server, git, handles)
 	}
 	return i.CreateProviderForUser(server, userAuth, gitKind, git)
 }
@@ -454,9 +453,9 @@ func (i *GitRepository) CreateProviderForUser(server *auth.AuthServer, user *aut
 	return CreateProvider(server, user, git)
 }
 
-func (i *GitRepository) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func (i *GitRepository) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, git Gitter, batchMode bool, handles util.IOFileHandles) (GitProvider, error) {
 	hostUrl := i.HostURLWithoutUser()
-	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
+	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, git, batchMode, handles)
 }
 
 // ProviderURL returns the git provider URL
@@ -470,7 +469,7 @@ func (i *GitRepository) ProviderURL() string {
 
 // CreateProviderForURL creates the Git provider for the given git kind and host URL
 func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool,
-	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+	handles util.IOFileHandles) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(hostUrl)
 	if gitKind != "" {
@@ -490,7 +489,7 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 	if !userAuthVar.IsInvalid() {
 		return CreateProvider(server, &userAuthVar, git)
 	}
-	userAuth, err := createUserForServer(batchMode, &userAuthVar, authConfigSvc, server, git, in, out, errOut)
+	userAuth, err := createUserForServer(batchMode, &userAuthVar, authConfigSvc, server, git, handles)
 	if err != nil {
 		return nil, err
 	}
@@ -498,15 +497,15 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 }
 
 func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.AuthServer,
-	git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*auth.UserAuth, error) {
+	git Gitter, handles util.IOFileHandles) (*auth.UserAuth, error) {
 
 	f := func(username string) error {
-		git.PrintCreateRepositoryGenerateAccessToken(server, username, out)
+		git.PrintCreateRepositoryGenerateAccessToken(server, username, handles.Out)
 		return nil
 	}
 
 	defaultUserName := ""
-	err := authConfigSvc.Config().EditUserAuth(server.Label(), userAuth, defaultUserName, false, batchMode, f, in, out, errOut)
+	err := authConfigSvc.Config().EditUserAuth(server.Label(), userAuth, defaultUserName, false, batchMode, f, handles)
 	if err != nil {
 		return userAuth, err
 	}

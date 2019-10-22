@@ -3,7 +3,6 @@ package create
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,13 +14,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/quickstarts"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -222,9 +219,9 @@ func (o *CreateMLQuickstartOptions) Run() error {
 	}
 	var q *quickstarts.QuickstartForm
 	if o.BatchMode {
-		q, err = pickMLProject(model, &o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+		q, err = pickMLProject(model, &o.Filter, o.BatchMode)
 	} else {
-		q, err = model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+		q, err = model.CreateSurvey(&o.Filter, o.BatchMode, o.GetIOFileHandles())
 	}
 
 	if err != nil {
@@ -363,7 +360,7 @@ func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConf
 }
 
 // PickMLProject picks a mlquickstart project set from filtered results
-func pickMLProject(model *quickstarts.QuickstartModel, filter *quickstarts.QuickstartFilter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*quickstarts.QuickstartForm, error) {
+func pickMLProject(model *quickstarts.QuickstartModel, filter *quickstarts.QuickstartFilter, batchMode bool) (*quickstarts.QuickstartForm, error) {
 	mlquickstarts := model.Filter(filter)
 	names := []string{}
 	m := map[string]*quickstarts.Quickstart{}

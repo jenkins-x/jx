@@ -317,7 +317,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 			IgnoreExistingRepository: true,
 		}
 
-		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, gitter, o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
+		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, gitter, o.ResolveChartMuseumURL, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "failed to create git repository for gitURL %s", gitURL)
 		}

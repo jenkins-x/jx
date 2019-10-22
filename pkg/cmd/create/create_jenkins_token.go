@@ -195,7 +195,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 			return nil
 		}
 
-		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
+		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "updating the Jenkins auth configuration for user %q", o.Username)
 		}

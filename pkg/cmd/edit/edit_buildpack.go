@@ -144,7 +144,7 @@ func (o *EditBuildPackOptions) Run() error {
 			}
 			var label string
 			if o.AdvancedMode {
-				label, err = util.PickNameWithDefault(labels, "Pick default workload build pack: ", defaultValue, "Build packs are used to automate your CI/CD pipelines when you create or import projects", o.In, o.Out, o.Err)
+				label, err = util.PickNameWithDefault(labels, "Pick default workload build pack: ", defaultValue, "Build packs are used to automate your CI/CD pipelines when you create or import projects", o.GetIOFileHandles())
 				if err != nil {
 					return err
 				}

@@ -286,7 +286,7 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 		if label == "" {
-			label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", "", o.In, o.Out, o.Err)
+			label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

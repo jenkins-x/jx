@@ -2,13 +2,10 @@ package vault
 
 import (
 	"fmt"
-	"io"
-
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 )
@@ -77,7 +74,7 @@ func CreateVaultGCPServiceAccount(gcloud gke.GClouder, kubeClient kubernetes.Int
 }
 
 // CreateBucket Creates a bucket in GKE to store the backend (encrypted) data for vault
-func CreateBucket(gcloud gke.GClouder, vaultName, bucketName string, projectID, zone string, recreate bool, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+func CreateBucket(gcloud gke.GClouder, vaultName, bucketName string, projectID, zone string, recreate bool, batchMode bool, handles util.IOFileHandles) (string, error) {
 	if bucketName == "" {
 		bucketName = gke.BucketName(vaultName)
 	}
@@ -93,7 +90,7 @@ func CreateBucket(gcloud gke.GClouder, vaultName, bucketName string, projectID, 
 			log.Logger().Warnf("We are deleting the Vault bucket %s so that Vault will install cleanly", bucketName)
 		} else {
 			if !util.Confirm(fmt.Sprintf("We are about to delete bucket %q, so we can install a clean Vault. Are you sure: ", bucketName),
-				true, "We recommend you delete the Vault bucket on install to ensure Vault starts up reliably", in, out, outErr) {
+				true, "We recommend you delete the Vault bucket on install to ensure Vault starts up reliably", handles) {
 				return bucketName, nil
 			}
 		}

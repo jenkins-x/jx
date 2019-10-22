@@ -168,19 +168,19 @@ func (o *CreateStepOptions) configureNewStepDetails(stepDetails *NewStepDetails)
 	var err error
 
 	if s.Pipeline == "" {
-		s.Pipeline, err = util.PickNameWithDefault(jenkinsfile.PipelineKinds, "Pick the pipeline kind: ", defaultPipeline, "which kind of pipeline do you want to add a step", o.In, o.Out, o.Err)
+		s.Pipeline, err = util.PickNameWithDefault(jenkinsfile.PipelineKinds, "Pick the pipeline kind: ", defaultPipeline, "which kind of pipeline do you want to add a step", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
 	}
 	if s.Lifecycle == "" {
-		s.Lifecycle, err = util.PickNameWithDefault(jenkinsfile.PipelineLifecycleNames, "Pick the lifecycle: ", defaultLifecycle, "which lifecycle (stage) do you want to add the step", o.In, o.Out, o.Err)
+		s.Lifecycle, err = util.PickNameWithDefault(jenkinsfile.PipelineLifecycleNames, "Pick the lifecycle: ", defaultLifecycle, "which lifecycle (stage) do you want to add the step", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
 	}
 	if s.Mode == "" {
-		s.Mode, err = util.PickNameWithDefault(jenkinsfile.CreateStepModes, "Pick the create mode: ", defaultMode, "which create mode do you want to use to add the step - pre (before), post (after) or replace?", o.In, o.Out, o.Err)
+		s.Mode, err = util.PickNameWithDefault(jenkinsfile.CreateStepModes, "Pick the create mode: ", defaultMode, "which create mode do you want to use to add the step - pre (before), post (after) or replace?", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

@@ -46,7 +46,7 @@ func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfig
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, o.In, o.Out, o.Err)
+	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, o.GetIOFileHandles())
 }
 
 // CreateGitProvider creates a git from the given directory
@@ -73,7 +73,7 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -294,7 +294,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		if o.BatchMode {
 			return "", fmt.Errorf("No Git server kind could be found for URL %s\nPlease try specify it via: jx create git server someKind %s", hostURL, hostURL)
 		}
-		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of Git server is: %s", hostURL), "", o.In, o.Out, o.Err)
+		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of Git server is: %s", hostURL), "", o.GetIOFileHandles())
 		if err != nil {
 			return "", err
 		}
@@ -322,7 +322,7 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles())
 }
 
 // GitProviderForURL returns a GitProvider for the given Git server URL
@@ -334,7 +334,7 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.GetIOFileHandles())
 }
 
 // CreateGitProviderForURLWithoutKind creates a git provider from URL wihtout kind
@@ -408,7 +408,7 @@ func (o *CommonOptions) DisableFeatures(orgs []string, includes []string, exclud
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", org)
 		}
-		err = features.DisableFeaturesForOrg(info.Organisation, includes, excludes, dryRun, o.BatchMode, provider, o.In, o.Out, o.Err)
+		err = features.DisableFeaturesForOrg(info.Organisation, includes, excludes, dryRun, o.BatchMode, provider, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "disabling features for %s", org)
 		}

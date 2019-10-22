@@ -115,7 +115,7 @@ func (o *StopPipelineOptions) stopJenkinsJob() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to stop: ", defaultName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to stop: ", defaultName, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -204,12 +204,12 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 
 	args := o.Args
 	if len(args) == 0 {
-		name, err := util.PickName(names, "Which pipeline do you want to stop: ", "select a pipeline to cancel", o.In, o.Out, o.Err)
+		name, err := util.PickName(names, "Which pipeline do you want to stop: ", "select a pipeline to cancel", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
 
-		if !util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.In, o.Out, o.Err) {
+		if !util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.GetIOFileHandles()) {
 			return nil
 		}
 		args = []string{name}

@@ -179,7 +179,7 @@ func (o *BootOptions) Run() error {
 
 			help := "A git clone of a Jenkins X Boot source repository is required for 'jx boot'"
 			message := "Do you want to clone the Jenkins X Boot Git repository?"
-			if !util.Confirm(message, true, help, o.In, o.Out, o.Err) {
+			if !util.Confirm(message, true, help, o.GetIOFileHandles()) {
 				return fmt.Errorf("Please run this command again inside a git clone from a Jenkins X Boot repository")
 			}
 		}

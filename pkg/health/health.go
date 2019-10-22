@@ -91,11 +91,16 @@ func kuberHealthyRequest(kuberHealthURL string) ([]byte, error) {
 	}
 
 	if !cluster.IsInCluster() {
-		username, err := util.PickValue("Enter your admin username: ", "", true, "", os.Stdin, os.Stdout, os.Stderr)
+		handles := util.IOFileHandles{
+			Err: os.Stderr,
+			In:  os.Stdin,
+			Out: os.Stdout,
+		}
+		username, err := util.PickValue("Enter your admin username: ", "", true, "", handles)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get username")
 		}
-		pwd, err := util.PickPassword("Enter your admin password:", "", os.Stdin, os.Stdout, os.Stderr) // pragma: allowlist secret
+		pwd, err := util.PickPassword("Enter your admin password:", "", handles) // pragma: allowlist secret
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get password")
 		}

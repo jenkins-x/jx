@@ -349,7 +349,7 @@ func (o *ControllerOptions) LoadProwOAuthConfig(ns string) (string, error) {
 	config := authConfigSvc.Config()
 	// lets assume github.com for now so ignore config.CurrentServer
 	server := config.GetOrCreateServer("https://github.com")
-	userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", true, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", true, "", o.GetIOFileHandles())
 	if err != nil {
 		return "", err
 	}
