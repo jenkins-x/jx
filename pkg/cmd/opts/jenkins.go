@@ -75,7 +75,7 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 		}
 
 		o.factory.SetBatch(o.BatchMode)
-		jenkins, err := o.factory.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
+		jenkins, err := o.factory.CreateJenkinsClient(kubeClient, ns, o.GetIOFileHandles())
 
 		if err != nil {
 			return nil, err
@@ -92,7 +92,7 @@ func (o *CommonOptions) CustomJenkinsClient(jenkinsServiceName string) (gojenkin
 		return nil, err
 	}
 	o.factory.SetBatch(o.BatchMode)
-	return o.factory.CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName, o.In, o.Out, o.Err)
+	return o.factory.CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName, o.GetIOFileHandles())
 }
 
 // CustomJenkinsURL returns the default or the custom Jenkins URL
@@ -139,7 +139,7 @@ func (o *CommonOptions) PickCustomJenkinsName(jenkinsSelector *JenkinsSelectorOp
 			if o.BatchMode {
 				return "", util.MissingOptionWithOptions("jenkins-name", names)
 			}
-			customJenkinsName, err = util.PickName(names, "Pick which custom Jenkins App you wish to use: ", "Jenkins Apps are a way to add custom Jenkins servers into Jenkins X", o.GetIn(), o.GetOut(), o.GetErr())
+			customJenkinsName, err = util.PickName(names, "Pick which custom Jenkins App you wish to use: ", "Jenkins Apps are a way to add custom Jenkins servers into Jenkins X", o.GetIOFileHandles())
 			if err != nil {
 				return "", err
 			}
@@ -295,7 +295,7 @@ func (o *CommonOptions) UpdateJenkinsURL(namespaces []string) error {
 
 		log.Logger().Infof("Updating Jenkins with new external URL details %s", externalURL)
 
-		jenkins, err := o.factory.CreateJenkinsClient(client, n, o.In, o.Out, o.Err)
+		jenkins, err := o.factory.CreateJenkinsClient(client, n, o.GetIOFileHandles())
 
 		if err != nil {
 			return err

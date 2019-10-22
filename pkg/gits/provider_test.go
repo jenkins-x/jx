@@ -801,11 +801,13 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				}
 
 				var result gits.GitProvider
+				handles := util.IOFileHandles{}
 				if console != nil {
-					result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, console.In, console.Out, console.Err)
-				} else {
-					result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
+					handles.In = console.In
+					handles.Out = console.Out
+					handles.Err = console.Err
 				}
+				result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, handles)
 				if tc.wantError {
 					assert.Error(r, err, "should fail to create provider")
 					assert.Nil(r, result, "created provider should be nil")

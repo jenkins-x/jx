@@ -1208,7 +1208,7 @@ func (options *InstallOptions) selectJenkinsInstallation() error {
 				ServerlessJenkins,
 				StaticMasterJenkins,
 			}
-			jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.In, options.Out, options.Err)
+			jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.GetIOFileHandles())
 			if err != nil {
 				return errors.Wrap(err, "picking Jenkins installation type")
 			}
@@ -1375,14 +1375,14 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 		authServer = authConfig.GetOrCreateServerName(gitServer, "", kind)
 	} else {
-		authServer, err = authConfig.PickServer("Which Git provider:", options.BatchMode, options.In, options.Out, options.Err)
+		authServer, err = authConfig.PickServer("Which Git provider:", options.BatchMode, options.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrap(err, "getting the git provider from user")
 		}
 	}
 
 	message := fmt.Sprintf("local Git user for %s server:", authServer.Label())
-	userAuth, err = authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
+	userAuth, err = authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.GetIOFileHandles())
 	if err != nil {
 		return errors.Wrapf(err, "selecting the local user for git server %s", authServer.Label())
 	}
@@ -1395,7 +1395,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 		defaultUserName := ""
 		err = authConfig.EditUserAuth(authServer.Label(), userAuth, defaultUserName, false, options.BatchMode, f,
-			options.In, options.Out, options.Err)
+			options.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "creating a user authentication for git server %s", authServer.Label())
 		}
@@ -1424,13 +1424,13 @@ func (options *InstallOptions) configureGitAuth() error {
 			pipelineAuthServer = authServer
 		} else {
 			pipelineAuthServerURL, err := util.PickValue("Git Service URL:", gits.GitHubURL, true, "",
-				options.In, options.Out, options.Err)
+				options.GetIOFileHandles())
 			if err != nil {
 				return errors.Wrap(err, "reading the pipelines Git service URL")
 			}
 			pipelineAuthServer, err = authConfig.PickOrCreateServer(gits.GitHubURL, pipelineAuthServerURL,
 				"Which Git Service do you wish to use:",
-				options.BatchMode, options.In, options.Out, options.Err)
+				options.BatchMode, options.GetIOFileHandles())
 			if err != nil {
 				return errors.Wrap(err, "selecting the pipelines Git Service")
 			}
@@ -1456,7 +1456,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 		defaultUserName := ""
 		err = authConfig.EditUserAuth(pipelineAuthServer.Label(), pipelineUserAuth, defaultUserName, false, options.BatchMode,
-			f, options.In, options.Out, options.Err)
+			f, options.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "creating a pipeline user authentication for git server %s", authServer.Label())
 		}
@@ -1761,7 +1761,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return "", errors.Wrap(err, "building the git repository options for environment")
 			}
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
-				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.ResolveChartMuseumURL, options.In, options.Out, options.Err)
+				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.ResolveChartMuseumURL, options.GetIOFileHandles())
 			if err != nil || repo == nil || gitProvider == nil {
 				return "", errors.Wrap(err, "creating git repository for the dev environment source")
 			}
@@ -1828,7 +1828,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
 		applyEnv := true
 		if !options.BatchMode {
-			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.In, options.Out, options.Err) {
+			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.GetIOFileHandles()) {
 				applyEnv = false
 			}
 		}

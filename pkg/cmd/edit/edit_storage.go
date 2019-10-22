@@ -97,7 +97,7 @@ func (o *EditStorageOptions) Run() error {
 
 	classifier := o.StorageLocation.Classifier
 	if classifier == "" && !o.BatchMode {
-		o.StorageLocation.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
+		o.StorageLocation.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "failed to pick the classification name")
 		}
@@ -116,7 +116,7 @@ func (o *EditStorageOptions) Run() error {
 			}
 		}
 		if o.StorageLocation.BucketURL == "" {
-			o.StorageLocation.BucketURL, err = util.PickValue("Bucket URL:", o.StorageLocation.BucketURL, false, "The go-cloud bucket URL for storage such as 'gs://mybucket/ or s3://bucket2/", o.In, o.Out, o.Err)
+			o.StorageLocation.BucketURL, err = util.PickValue("Bucket URL:", o.StorageLocation.BucketURL, false, "The go-cloud bucket URL for storage such as 'gs://mybucket/ or s3://bucket2/", o.GetIOFileHandles())
 			if err != nil {
 				return errors.Wrapf(err, "failed to pick the bucket URL")
 			}
@@ -129,7 +129,7 @@ func (o *EditStorageOptions) Run() error {
 				}
 				o.StorageLocation.GitURL = currentLocation.GitURL
 			} else {
-				o.StorageLocation.GitURL, err = util.PickValue("Git repository URL to store content:", currentLocation.GitURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
+				o.StorageLocation.GitURL, err = util.PickValue("Git repository URL to store content:", currentLocation.GitURL, false, "The Git URL will be used to clone and push the storage to", o.GetIOFileHandles())
 				if err != nil {
 					return errors.Wrapf(err, "failed to pick the git URL")
 				}

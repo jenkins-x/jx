@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
 	"github.com/stretchr/testify/assert"
 
@@ -48,9 +49,7 @@ func TestCloneJXVersionsRepoWithDefaultURL(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 
 	// Get the latest tag so that we know the correct expected verion ref.
@@ -156,9 +155,7 @@ func TestCloneJXVersionsRepoReplacingCurrent(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 
 	// Get the latest tag so that we know the correct expected version ref.
@@ -190,9 +187,7 @@ func TestCloneJXVersionsRepoReplacingCurrent(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)
@@ -239,9 +234,7 @@ func TestCloneJXVersionsRepoWithTeamSettings(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)
@@ -284,9 +277,7 @@ func TestCloneJXVersionsRepoWithATag(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)
@@ -329,9 +320,7 @@ func TestCloneJXVersionsRepoWithABranch(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)
@@ -377,9 +366,7 @@ func TestCloneJXVersionsRepoWithACommit(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)
@@ -425,9 +412,7 @@ func TestCloneJXVersionsRepoWithAnUntaggedCommit(t *testing.T) {
 		gitter,
 		true,
 		false,
-		nil,
-		nil,
-		nil,
+		util.IOFileHandles{},
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)

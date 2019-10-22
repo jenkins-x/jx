@@ -482,7 +482,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 	}
 	var err error
 	if requirements.Cluster.Provider == "" {
-		requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.In, o.Out, o.Err)
+		requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.GetIOFileHandles())
 		if err != nil {
 			return nil, errors.Wrap(err, "selecting Kubernetes provider")
 		}
@@ -511,7 +511,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			if currentClusterName != "" && currentProject != "" && currentZone != "" {
 				log.Logger().Infof("")
 				log.Logger().Infof("Currently connected cluster is %s in %s in project %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentZone), util.ColorInfo(currentProject))
-				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
+				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
 			} else {
 				log.Logger().Infof("Enter the cluster you want to jx boot")
 			}
@@ -542,7 +542,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				requirements.Cluster.ClusterName = currentClusterName
 			} else {
 				requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
-					"The name for your cluster", o.In, o.Out, o.Err)
+					"The name for your cluster", o.GetIOFileHandles())
 				if err != nil {
 					return nil, errors.Wrap(err, "getting cluster name")
 				}
@@ -572,7 +572,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			if currentClusterName != "" && currentRegion != "" {
 				log.Logger().Infof("")
 				log.Logger().Infof("Currently connected cluster is %s in region %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentRegion))
-				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
+				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
 			} else {
 				log.Logger().Infof("Enter the cluster you want to jx boot")
 			}
@@ -588,7 +588,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				requirements.Cluster.ClusterName = currentClusterName
 			} else {
 				requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
-					"The name for your cluster", o.In, o.Out, o.Err)
+					"The name for your cluster", o.GetIOFileHandles())
 				if err != nil {
 					return nil, errors.Wrap(err, "getting cluster name")
 				}
@@ -652,7 +652,7 @@ func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config
 			"Jenkins X leverages GitOps to track and control what gets deployed into environments.  "+
 				"This requires a Git repository per environment. "+
 				"This question is asking for the Git Owner where these repositories will live.",
-			o.In, o.Out, o.Err)
+			o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrap(err, "error configuring git owner for env repositories")
 		}
@@ -679,7 +679,7 @@ func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.Re
 	if requirements.Cluster.GitKind == "github" {
 		message := fmt.Sprintf("If '%s' is an GitHub organisation it needs to have a paid subscription to create private repos. Do you wish to continue?", requirements.Cluster.EnvironmentGitOwner)
 		help := fmt.Sprint("GitHub organisation on a free plan cannot create private repositories. You either need to upgrade, use a GitHub user instead or use public repositories.")
-		confirmed := util.Confirm(message, false, help, o.In, o.Out, o.Err)
+		confirmed := util.Confirm(message, false, help, o.GetIOFileHandles())
 		if !confirmed {
 			return errors.New("cannot continue without completed git requirements")
 		}
@@ -743,7 +743,7 @@ func (o *StepVerifyPreInstallOptions) verifyTLS(requirements *config.Requirement
 
 			message := fmt.Sprintf("Do you wish to continue?")
 			help := fmt.Sprintf("Jenkins X needs TLS enabled to send secrets securely. We strongly recommend enabling TLS.")
-			value := util.Confirm(message, false, help, o.In, o.Out, o.Err)
+			value := util.Confirm(message, false, help, o.GetIOFileHandles())
 			if !value {
 				return errors.Errorf("cannot continue because TLS is not enabled.")
 			}
@@ -776,7 +776,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 		}
 		message := fmt.Sprintf("%s bucket URL. Press enter to create and use a new bucket", text)
 		help := fmt.Sprintf("please enter the URL of the bucket to use for storage using the format %s://<bucket-name>", scheme)
-		value, err := util.PickValue(message, "", false, help, o.In, o.Out, o.Err)
+		value, err := util.PickValue(message, "", false, help, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "failed to pick storage bucket for %s", name)
 		}
@@ -942,7 +942,7 @@ func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() bool {
 	log.Logger().Info("jx boot has only been validated on GKE, we'd love feedback and contributions for other Kubernetes providers")
 	if !o.BatchMode {
 		return util.Confirm("Continue execution anyway?",
-			true, "", o.In, o.Out, o.Err)
+			true, "", o.GetIOFileHandles())
 	}
 	log.Logger().Info("Running in Batch Mode, execution will continue")
 	return true

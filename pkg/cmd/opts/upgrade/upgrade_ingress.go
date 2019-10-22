@@ -78,7 +78,7 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	// confirm values
 	if !o.BatchMode {
-		if !util.Confirm(fmt.Sprintf("Using config values %v, ok?", o.IngressConfig), true, "", o.In, o.Out, o.Err) {
+		if !util.Confirm(fmt.Sprintf("Using config values %v, ok?", o.IngressConfig), true, "", o.GetIOFileHandles()) {
 			log.Logger().Infof("Terminating")
 			return nil
 		}
@@ -255,7 +255,7 @@ func (o *UpgradeIngressOptions) updateResources(previousWebHookEndpoint string) 
 	log.Logger().Infof("Updated webhook endpoint %s", updatedWebHookEndpoint)
 	updateWebHooks := true
 	if !o.BatchMode {
-		if !util.Confirm("Do you want to update all existing webhooks?", true, "", o.In, o.Out, o.Err) {
+		if !util.Confirm("Do you want to update all existing webhooks?", true, "", o.GetIOFileHandles()) {
 			updateWebHooks = false
 		}
 	}
@@ -430,24 +430,24 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 			}
 		}
 	} else {
-		o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, "", o.In, o.Out, o.Err)
+		o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
 
-		o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, "", o.In, o.Out, o.Err)
+		o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
 
 		if !strings.HasSuffix(o.IngressConfig.Domain, "nip.io") {
 			if !o.BatchMode {
-				o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.In, o.Out, o.Err)
+				o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.GetIOFileHandles())
 			}
 
 			if o.IngressConfig.TLS {
 				log.Logger().Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
-				clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", "", o.In, o.Out, o.Err)
+				clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", "", o.GetIOFileHandles())
 				// if the cluster issuer is production the string needed by letsencrypt is prod
 				if clusterIssuer == "production" {
 					clusterIssuer = "prod"
@@ -466,13 +466,13 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 					o.IngressConfig.Email = strings.TrimSpace(email1)
 				}
 
-				o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, "", o.In, o.Out, o.Err)
+				o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, "", o.GetIOFileHandles())
 				if err != nil {
 					return err
 				}
 			}
 		}
-		o.IngressConfig.UrlTemplate, err = util.PickValue("URLTemplate (press <Enter> to keep the current value):", o.IngressConfig.UrlTemplate, false, "", o.In, o.Out, o.Err)
+		o.IngressConfig.UrlTemplate, err = util.PickValue("URLTemplate (press <Enter> to keep the current value):", o.IngressConfig.UrlTemplate, false, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -607,7 +607,7 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 	username := userAuth.Username
 
 	// organisation
-	organisation, err := gits.PickOrganisation(git, username, o.In, o.Out, o.Err)
+	organisation, err := gits.PickOrganisation(git, username, o.GetIOFileHandles())
 	updateWebHook.Username = ReturnUserNameIfPicked(organisation, username)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")

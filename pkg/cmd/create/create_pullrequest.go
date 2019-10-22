@@ -142,7 +142,7 @@ func (o *CreatePullRequestOptions) createPullRequestDetails(gitInfo *gits.GitRep
 		if o.Body == "" {
 			o.Body = body
 		}
-		title, err = util.PickValue("PullRequest title:", defaultValue, true, "", o.In, o.Out, o.Err)
+		title, err = util.PickValue("PullRequest title:", defaultValue, true, "", o.GetIOFileHandles())
 		if err != nil {
 			return nil, err
 		}

@@ -213,7 +213,7 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 		for _, kind := range o.Kinds {
 			switch kind {
 			case string(versionstream.KindChart):
-				modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreateChartChangeFilesFn(o.Name, o.Version, kind, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err)))
+				modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreateChartChangeFilesFn(o.Name, o.Version, kind, &pro, o.Helm(), vaultClient, o.GetIOFileHandles())))
 			}
 
 		}
@@ -314,7 +314,7 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 					if err != nil {
 						vaultClient = nil
 					}
-					cff = pro.WrapChangeFilesWithCommitFn(kindStr, operations.CreateChartChangeFilesFn(name, "", kindStr, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err))
+					cff = pro.WrapChangeFilesWithCommitFn(kindStr, operations.CreateChartChangeFilesFn(name, "", kindStr, &pro, o.Helm(), vaultClient, o.GetIOFileHandles()))
 				case string(versionstream.KindGit):
 					cff = pro.WrapChangeFilesWithCommitFn(kindStr, pro.CreatePullRequestGitReleasesFn(name))
 				}

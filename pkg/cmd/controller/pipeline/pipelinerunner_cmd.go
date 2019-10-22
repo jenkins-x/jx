@@ -105,7 +105,7 @@ func (o *PipelineRunnerOptions) Run() error {
 		return err
 	}
 
-	metapipelineClient, err := metapipeline.NewMetaPipelineClient(o.Git(), o.In, o.Out, o.Err)
+	metapipelineClient, err := metapipeline.NewMetaPipelineClient(o.Git(), o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}

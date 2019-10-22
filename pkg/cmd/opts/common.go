@@ -682,7 +682,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 				defaultServerName = s.Name
 			}
 		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.GetIOFileHandles())
 		if err != nil {
 			return nil, err
 		}
@@ -717,7 +717,7 @@ func (o *CommonOptions) FindService(name string) (string, error) {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.GetIOFileHandles())
 			if err != nil {
 				return "", err
 			}
@@ -782,7 +782,7 @@ func (o *CommonOptions) FindServiceInNamespace(name string, ns string) (string, 
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.GetIOFileHandles())
 			if err != nil {
 				return "", err
 			}
@@ -1187,6 +1187,15 @@ func (o *CommonOptions) InCDPipeline() bool {
 // SetBatchMode configures the batch mode
 func (o *CommonOptions) SetBatchMode(batchMode bool) {
 	o.factory.SetBatch(batchMode)
+}
+
+// GetIOFileHandles returns In, Out, and Err as an IOFileHandles struct
+func (o *CommonOptions) GetIOFileHandles() util.IOFileHandles {
+	return util.IOFileHandles{
+		Err: o.Err,
+		In:  o.In,
+		Out: o.Out,
+	}
 }
 
 // IstioClient creates a new Kubernetes client for Istio resources

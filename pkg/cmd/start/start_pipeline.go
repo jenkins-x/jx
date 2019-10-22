@@ -167,7 +167,7 @@ func (o *StartPipelineOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to start: ", defaultName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to start: ", defaultName, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -225,7 +225,7 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 	}
 
 	log.Logger().Debug("creating meta pipeline client")
-	client, err := metapipeline.NewMetaPipelineClient(o.Git(), o.In, o.Out, o.Err)
+	client, err := metapipeline.NewMetaPipelineClient(o.Git(), o.GetIOFileHandles())
 	if err != nil {
 		return errors.Wrap(err, "unable to create meta pipeline client")
 	}

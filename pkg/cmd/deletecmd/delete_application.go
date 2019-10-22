@@ -175,7 +175,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 	}
 
 	if len(o.Args) == 0 {
-		o.Args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Prow:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+		o.Args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Prow:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return deletedApplications, err
 		}
@@ -296,7 +296,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 	}
 
 	if len(args) == 0 {
-		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return deletedApplications, err
 		}
@@ -313,7 +313,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 	deleteMessage := strings.Join(args, ", ")
 
 	if !o.BatchMode {
-		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.In, o.Out, o.Err) {
+		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.GetIOFileHandles()) {
 			return deletedApplications, err
 		}
 	}

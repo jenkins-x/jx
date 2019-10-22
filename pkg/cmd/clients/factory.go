@@ -24,16 +24,14 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/dynamic"
+	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -98,7 +96,7 @@ func (f *factory) WithBearerToken(token string) Factory {
 }
 
 // CreateJenkinsClient creates a new Jenkins client
-func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, handles util.IOFileHandles) (gojenkins.JenkinsClient, error) {
 	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns, "")
 	if err != nil {
 		return nil, err
@@ -107,11 +105,11 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 	if err != nil {
 		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
 	}
-	return jenkins.GetJenkinsClient(url, f.Batch, svc, in, out, errOut)
+	return jenkins.GetJenkinsClient(url, f.Batch, svc, handles)
 }
 
 // CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
-func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, handles util.IOFileHandles) (gojenkins.JenkinsClient, error) {
 	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns, jenkinsServiceName)
 	if err != nil {
 		return nil, err
@@ -120,7 +118,7 @@ func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns 
 	if err != nil {
 		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
 	}
-	return jenkins.GetJenkinsClient(url, f.Batch, svc, in, out, errOut)
+	return jenkins.GetJenkinsClient(url, f.Batch, svc, handles)
 }
 
 // GetJenkinsURL gets the Jenkins URL for the given namespace
@@ -615,12 +613,12 @@ func (f *factory) CreateKubeClient() (kubernetes.Interface, string, error) {
 	return client, ns, nil
 }
 
-func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, handles util.IOFileHandles) (gits.GitProvider, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, in, out, errOut)
+	return gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, handles)
 }
 
 func (f *factory) CreateKubeConfig() (*rest.Config, error) {

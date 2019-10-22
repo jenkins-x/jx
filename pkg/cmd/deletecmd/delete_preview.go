@@ -75,7 +75,7 @@ func (o *DeletePreviewOptions) Run() error {
 			}
 			selected := []string{}
 			for {
-				selected, err = util.PickNames(names, "Pick preview environments to delete: ", "", o.In, o.Out, o.Err)
+				selected, err = util.PickNames(names, "Pick preview environments to delete: ", "", o.GetIOFileHandles())
 				if err != nil {
 					return err
 				}
@@ -85,12 +85,12 @@ func (o *DeletePreviewOptions) Run() error {
 				log.Logger().Warn("\nYou did not select any preview environments to delete\n")
 				log.Logger().Infof("Press the %s to select a preview environment to delete\n", util.ColorInfo("[space bar]"))
 
-				if !util.Confirm("Do you want to pick a preview environment to delete?", true, "Use the space bar to select previews", o.In, o.Out, o.Err) {
+				if !util.Confirm("Do you want to pick a preview environment to delete?", true, "Use the space bar to select previews", o.GetIOFileHandles()) {
 					return nil
 				}
 			}
 			deletePreviews := strings.Join(selected, ", ")
-			if !util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Environments to be deleted", o.In, o.Out, o.Err) {
+			if !util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Environments to be deleted", o.GetIOFileHandles()) {
 				return nil
 			}
 
