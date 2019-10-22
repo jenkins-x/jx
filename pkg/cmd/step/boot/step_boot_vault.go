@@ -185,7 +185,7 @@ func (o *StepBootVaultOptions) Run() error {
 	}
 	opts.SetValues = strings.Join(values, ",")
 	log.Logger().Infof("installing vault operator with helm values:  %s", util.ColorInfo(opts.SetValues))
-	err = create.InstallVaultOperator(opts, ns)
+	err = create.InstallVaultOperator(opts, ns, &requirements.VersionStream)
 	if err != nil {
 		return errors.Wrap(err, "unable to install vault operator")
 	}
