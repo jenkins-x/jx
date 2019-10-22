@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/imdario/mergo"
+
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -532,6 +534,51 @@ func (c *RequirementsConfig) SaveConfig(fileName string) error {
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save file %s", fileName)
+	}
+	return nil
+}
+
+type environmentsSliceTransformer struct{}
+
+// environmentsSliceTransformer.Transformer is handling the correct merge of two EnvironmentConfig slices
+// so we can both append extra items and merge existing ones so we don't lose any data
+func (t environmentsSliceTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
+	if typ == reflect.TypeOf([]EnvironmentConfig{}) {
+		return func(dst, src reflect.Value) error {
+			d := dst.Interface().([]EnvironmentConfig)
+			s := src.Interface().([]EnvironmentConfig)
+			if dst.CanSet() {
+				for i, v := range s {
+					if i > len(d)-1 {
+						d = append(d, v)
+					} else {
+						err := mergo.Merge(&d[i], &v, mergo.WithOverride)
+						if err != nil {
+							return errors.Wrap(err, "error merging EnvironmentConfig slices")
+						}
+					}
+				}
+				dst.Set(reflect.ValueOf(d))
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+// MergeSave attempts to merge the provided RequirementsConfig with the caller's data.
+// It does so overriding values in the source struct with non-zero values from the provided struct
+// it defines non-zero per property and not for a while embedded struct, meaning that nested properties
+// in embedded structs should also be merged correctly.
+// if a slice is added a transformer will be needed to handle correctly merging the contained values
+func (c *RequirementsConfig) MergeSave(src *RequirementsConfig, requirementsFileName string) error {
+	err := mergo.Merge(c, src, mergo.WithOverride, mergo.WithTransformers(environmentsSliceTransformer{}))
+	if err != nil {
+		return errors.Wrap(err, "error merging jx-requirements.yml files")
+	}
+	err = c.SaveConfig(requirementsFileName)
+	if err != nil {
+		return errors.Wrapf(err, "error saving the merged jx-requirements.yml files to %s", requirementsFileName)
 	}
 	return nil
 }

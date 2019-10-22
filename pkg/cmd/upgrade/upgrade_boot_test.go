@@ -41,8 +41,9 @@ func TestDetermineBootConfigURL(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(defaultBootRequirements)
 
-	vs, err := o.requirementsVersionStream()
-	require.NoError(t, err, "could not get requirements version stream")
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	require.NoError(t, err, "could not get requirements file")
+	vs := &requirements.VersionStream
 
 	URL, err := o.determineBootConfigURL(vs.URL)
 	require.NoError(t, err, "could not determine boot config URL")
@@ -55,8 +56,9 @@ func TestRequirementsVersionStream(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(defaultBootRequirements)
 
-	vs, err := o.requirementsVersionStream()
-	require.NoError(t, err, "could not get requirements version stream")
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	require.NoError(t, err, "could not get requirements file")
+	vs := &requirements.VersionStream
 
 	assert.Equal(t, "2367726d02b8c", vs.Ref, "RequirementsVersionStream Ref")
 	assert.Equal(t, "https://github.com/jenkins-x/jenkins-x-versions.git", vs.URL, "RequirementsVersionStream URL")
@@ -79,8 +81,9 @@ func TestUpdateVersionStreamRef(t *testing.T) {
 	err := o.updateVersionStreamRef("22222222")
 	require.NoError(t, err, "could not update version stream ref")
 
-	vs, err := o.requirementsVersionStream()
-	require.NoError(t, err, "could not get requirements version stream")
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	require.NoError(t, err, "could not get requirements file")
+	vs := &requirements.VersionStream
 	assert.Equal(t, "22222222", vs.Ref, "UpdateVersionStreamRef Ref")
 }
 
@@ -133,8 +136,9 @@ func TestDetermineBootConfigURLAlternative(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(alternativeBootRequirements)
 
-	vs, err := o.requirementsVersionStream()
-	require.NoError(t, err, "could not get requirements version stream")
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	require.NoError(t, err, "could not get requirements file")
+	vs := &requirements.VersionStream
 
 	URL, err := o.determineBootConfigURL(vs.URL)
 	require.NoError(t, err, "could not determine boot config URL")
@@ -147,8 +151,9 @@ func TestRequirementsVersionStreamAlternative(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(alternativeBootRequirements)
 
-	vs, err := o.requirementsVersionStream()
-	require.NoError(t, err, "could not get requirements version stream")
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	require.NoError(t, err, "could not get requirements file")
+	vs := &requirements.VersionStream
 
 	assert.Equal(t, "2367726d02b9c", vs.Ref, "RequirementsVersionStream Ref")
 	assert.Equal(t, "https://github.com/some-org/some-org-jenkins-x-versions.git", vs.URL, "RequirementsVersionStream URL")
@@ -171,7 +176,9 @@ func TestUpdateVersionStreamRefAlternative(t *testing.T) {
 	err := o.updateVersionStreamRef("22222222")
 	require.NoError(t, err, "could not update version stream ref")
 
-	vs, err := o.requirementsVersionStream()
-	require.NoError(t, err, "could not get requirements version stream")
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	require.NoError(t, err, "could not get requirements file")
+	vs := &requirements.VersionStream
+
 	assert.Equal(t, "22222222", vs.Ref, "UpdateVersionStreamRef Ref")
 }
