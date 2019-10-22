@@ -3,8 +3,6 @@ package gke
 import (
 	"fmt"
 	"os"
-	"strings"
-
 	gcp "github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cluster"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -83,7 +81,7 @@ func (c *gcloud) SetClusterLabels(cluster *cluster.Cluster, labelMap map[string]
 	return c.gcloud.UpdateGkeClusterLabels(cluster.Location, c.project, cluster.Name, labels)
 }
 
-// Deletes kubernetes Cluster
+
 
 
 
