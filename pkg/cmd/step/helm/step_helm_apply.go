@@ -364,6 +364,11 @@ func (o *StepHelmApplyOptions) Run() error {
 		ValueFiles:  valueFiles,
 		Dir:         dir,
 	}
+	if o.Boot {
+		helmOptions.VersionsGitURL = requirements.VersionStream.URL
+		helmOptions.VersionsGitRef = requirements.VersionStream.Ref
+	}
+
 	if o.Wait {
 		helmOptions.Wait = true
 		err = o.InstallChartWithOptionsAndTimeout(helmOptions, "600")
