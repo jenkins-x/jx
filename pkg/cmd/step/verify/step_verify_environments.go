@@ -486,7 +486,7 @@ func (o *StepVerifyEnvironmentsOptions) updateEnvironmentIngressConfig(requireme
 		return nil
 	}
 
-	// Override the dev environemtn ingress config from main ingress config
+	// Override the dev environment ingress config from main ingress config
 	name := env.GetName()
 	for i, e := range requirements.Environments {
 		if e.Key == name {
