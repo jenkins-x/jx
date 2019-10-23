@@ -54,6 +54,7 @@ type testCase struct {
 	useKaniko             bool
 	pipelineUserName      string
 	pipelineUserEmail     string
+	branchAsRevision      bool
 }
 
 func TestGenerateTektonCRDs(t *testing.T) {
@@ -336,12 +337,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:         "distribute-parallel-across-nodes",
-			language:     "none",
-			repoName:     "js-test-repo",
-			organization: "abayer",
-			branch:       "really-long",
-			kind:         "release",
+			name:             "distribute-parallel-across-nodes",
+			language:         "none",
+			repoName:         "js-test-repo",
+			organization:     "abayer",
+			branch:           "really-long",
+			kind:             "release",
+			branchAsRevision: true,
 		},
 		{
 			name:                  "no_pipeline_for_kind",
@@ -422,9 +424,10 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					Name:         tt.repoName,
 					Organisation: tt.organization,
 				},
-				Branch:       tt.branch,
-				PipelineKind: tt.kind,
-				NoKaniko:     !tt.useKaniko,
+				Branch:              tt.branch,
+				UseBranchAsRevision: tt.branchAsRevision,
+				PipelineKind:        tt.kind,
+				NoKaniko:            !tt.useKaniko,
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
 						ServiceAccount: "tekton-bot",
