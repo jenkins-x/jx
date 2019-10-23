@@ -134,6 +134,11 @@ func TestParseContext(t *testing.T) {
 			cluster: "cluster-name-jx",
 			region:  "eu-north-4",
 		},
+		"full cluster name eks arn": {
+			context: "arn:aws:eks:us-east-1:111111111111:cluster/cluster-name-jx",
+			cluster: "cluster-name-jx",
+			region:  "us-east-1",
+		},
 	}
 
 	for name, tc := range tests {
