@@ -71,7 +71,7 @@ func ParseContext(context string) (string, string, error) {
 	result := reg.FindStringSubmatch(context)
 	// Also check if the context name matchesAWS ARN format as defined:
 	// https://docs.aws.amazon.com/IAM/latest/UserGuide/list_amazonelasticcontainerserviceforkubernetes.html#amazonelasticcontainerserviceforkubernetes-resources-for-iam-policies
-	arnReg := regexp.MustCompile(`arn:aws:eks:((us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d):[0-9]*:cluster/([a-zA-Z][-a-zA-Z0-9]*)`)
+	arnReg := regexp.MustCompile(`arn:aws:eks:((?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d):[0-9]*:cluster\/([a-zA-Z][-a-zA-Z0-9]*)`)
 	arnResult := arnReg.FindStringSubmatch(context)
 	if len(result) >= 3 {
 		return result[1], result[2], nil
