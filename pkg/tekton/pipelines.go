@@ -3,11 +3,14 @@ package tekton
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"time"
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	v1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -117,54 +120,115 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 	return answer, nil
 }
 
-// GenerateNextBuildNumber generates a new build number for the given project.
-func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration, context string) (string, error) {
-	nextBuildNumber := ""
+func nextBuildNumberFromActivity(activityInterface v1.PipelineActivityInterface, gitInfo *gits.GitRepository, branch string) (string, error) {
+	labelMap := labels.Set{
+		"owner":      gitInfo.Organisation,
+		"repository": gitInfo.Name,
+		"branch":     branch,
+	}
+
+	activityList, err := kube.ListSelectedPipelineActivities(activityInterface, labelMap.AsSelector(), nil)
+	if err != nil {
+		return "", errors.Wrapf(err, "Unable to list pipeline activities for %s/%s/%s", gitInfo.Organisation, gitInfo.Name, branch)
+	}
+	if len(activityList.Items) == 0 {
+		return "1", nil
+	}
+	sort.Slice(activityList.Items, func(i, j int) bool {
+		iBuildNum, err := strconv.Atoi(activityList.Items[i].Spec.Build)
+		if err != nil {
+			iBuildNum = 0
+		}
+		jBuildNum, err := strconv.Atoi(activityList.Items[j].Spec.Build)
+		if err != nil {
+			jBuildNum = 0
+		}
+		return iBuildNum >= jBuildNum
+	})
+	// Iterate over the sorted (highest to lowest build number) list of activities, returning a new build number
+	// as soon as we reach one we can parse to an int and add one to.
+	for _, activity := range activityList.Items {
+		actBuildNum, err := strconv.Atoi(activity.Spec.Build)
+		if err != nil {
+			continue
+		}
+		return strconv.Itoa(actBuildNum + 1), nil
+	}
+	// If we couldn't parse any build numbers, just set the next build number to 1.
+	return "1", nil
+}
+
+func nextBuildNumberFromSourceRepo(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, context string) (string, error) {
 	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
 	// TODO: How does SourceRepository handle name overlap?
 	sourceRepoName := naming.ToValidName(gitInfo.Organisation + "-" + gitInfo.Name)
 
-	f := func() error {
-		sourceRepo, err := kube.GetOrCreateSourceRepository(jxClient, ns, gitInfo.Name, gitInfo.Organisation, gitInfo.ProviderURL())
+	lastBuildNumber := 0
+	sourceRepo, err := kube.GetOrCreateSourceRepository(jxClient, ns, gitInfo.Name, gitInfo.Organisation, gitInfo.ProviderURL())
+	if err != nil {
+		return "", errors.Wrapf(err, "Unable to generate next build number for %s/%s", sourceRepoName, branch)
+	}
+	sourceRepoName = sourceRepo.Name
+	if sourceRepo.Annotations == nil {
+		sourceRepo.Annotations = make(map[string]string, 1)
+	}
+	annKey := LastBuildNumberAnnotationPrefix + naming.ToValidName(branch)
+	annVal := sourceRepo.Annotations[annKey]
+	if annVal != "" {
+		lastBuildNumber, err = strconv.Atoi(annVal)
 		if err != nil {
-			return errors.Wrapf(err, "Unable to generate next build number for %s/%s", sourceRepoName, branch)
+			return "", errors.Wrapf(err, "Expected number but SourceRepository %s has annotation %s with value %s\n", sourceRepoName, annKey, annVal)
 		}
-		sourceRepoName = sourceRepo.Name
-		if sourceRepo.Annotations == nil {
-			sourceRepo.Annotations = make(map[string]string, 1)
-		}
-		annKey := LastBuildNumberAnnotationPrefix + naming.ToValidName(branch)
-		annVal := sourceRepo.Annotations[annKey]
-		lastBuildNumber := 0
-		if annVal != "" {
-			lastBuildNumber, err = strconv.Atoi(annVal)
-			if err != nil {
-				return errors.Wrapf(err, "Expected number but SourceRepository %s has annotation %s with value %s\n", sourceRepoName, annKey, annVal)
-			}
-		}
-		for nextNumber := lastBuildNumber + 1; true; nextNumber++ {
-			// lets check there is not already a PipelineRun for this number
-			buildIdentifier := strconv.Itoa(nextNumber)
+	}
 
-			labelSelector := fmt.Sprintf("owner=%s,repo=%s,branch=%s,build=%s", gitInfo.Organisation, gitInfo.Name, branch, buildIdentifier)
-			if context != "" {
-				labelSelector += fmt.Sprintf(",context=%s", context)
-			}
+	for nextNumber := lastBuildNumber + 1; true; nextNumber++ {
+		// lets check there is not already a PipelineRun for this number
+		buildIdentifier := strconv.Itoa(nextNumber)
 
-			prs, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{
-				LabelSelector: labelSelector,
-			})
-			if err == nil && len(prs.Items) > 0 {
-				// lets try make another build number as there's already a PipelineRun
-				// which could be due to name clashes
-				continue
-			}
+		labelSelector := fmt.Sprintf("owner=%s,repo=%s,branch=%s,build=%s", gitInfo.Organisation, gitInfo.Name, branch, buildIdentifier)
+		if context != "" {
+			labelSelector += fmt.Sprintf(",context=%s", context)
+		}
+
+		prs, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err == nil && len(prs.Items) > 0 {
+			// lets try make another build number as there's already a PipelineRun
+			// which could be due to name clashes
+			continue
+		}
+		if sourceRepo != nil {
 			sourceRepo.Annotations[annKey] = buildIdentifier
 			if _, err := resourceInterface.Update(sourceRepo); err != nil {
+				return "", err
+			}
+		}
+
+		return buildIdentifier, nil
+	}
+	// We've somehow gotten here without determining the next build number, so let's error.
+	return "", fmt.Errorf("couldn't determine next build number for %s/%s/%s", gitInfo.Organisation, gitInfo.Name, branch)
+}
+
+// GenerateNextBuildNumber generates a new build number for the given project.
+func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration, context string, useActivity bool) (string, error) {
+	nextBuildNumber := ""
+	activityInterface := jxClient.JenkinsV1().PipelineActivities(ns)
+
+	f := func() error {
+		if useActivity {
+			bn, err := nextBuildNumberFromActivity(activityInterface, gitInfo, branch)
+			if err != nil {
 				return err
 			}
-			nextBuildNumber = sourceRepo.Annotations[annKey]
-			return nil
+			nextBuildNumber = bn
+		} else {
+			bn, err := nextBuildNumberFromSourceRepo(tektonClient, jxClient, ns, gitInfo, branch, context)
+			if err != nil {
+				return err
+			}
+			nextBuildNumber = bn
 		}
 		return nil
 	}

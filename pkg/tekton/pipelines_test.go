@@ -1,9 +1,17 @@
 package tekton_test
 
 import (
+	"path"
 	"testing"
+	"time"
 
+	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -154,4 +162,48 @@ func TestPipelineRunIsNotPendingWaitingStepsInPodInitializing(t *testing.T) {
 	}
 
 	assert.True(t, tekton.PipelineRunIsNotPending(pr))
+}
+
+func TestGenerateNextBuildNumber(t *testing.T) {
+	testCases := []struct {
+		name                string
+		expectedBuildNumber string
+	}{{
+		name:                "valid",
+		expectedBuildNumber: "309",
+	},
+		{
+			name:                "no_activities",
+			expectedBuildNumber: "1",
+		},
+		{
+			name:                "unparseable_build_number",
+			expectedBuildNumber: "308",
+		}}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			testCaseDir := path.Join("test_data", "next_build_number", tt.name)
+
+			activities := tekton_helpers_test.AssertLoadPipelineActivities(t, testCaseDir)
+
+			commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
+			options := &commonOpts
+			testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
+
+			tektonClient, ns, err := options.TektonClient()
+			assert.NoError(t, err, "There shouldn't be any error getting the fake Tekton Client")
+
+			jxClient := jxfake.NewSimpleClientset(activities)
+
+			repo := &gits.GitRepository{
+				Name:         "jx",
+				Host:         "github.com",
+				Organisation: "jenkins-x",
+			}
+			nextBuildNumber, err := tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, repo, "master", 30*time.Second, "release", true)
+			assert.NoError(t, err, "There shouldn't be an error getting the next build number")
+			assert.Equal(t, tt.expectedBuildNumber, nextBuildNumber)
+		})
+	}
 }

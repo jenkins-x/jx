@@ -38,23 +38,24 @@ const (
 
 // CRDCreationParameters are the parameters needed to create the Tekton CRDs
 type CRDCreationParameters struct {
-	Namespace        string
-	Context          string
-	PipelineName     string
-	ResourceName     string
-	PipelineKind     PipelineKind
-	BuildNumber      string
-	GitInfo          gits.GitRepository
-	BranchIdentifier string
-	PullRef          PullRef
-	SourceDir        string
-	PodTemplates     map[string]*corev1.Pod
-	ServiceAccount   string
-	Labels           map[string]string
-	EnvVars          map[string]string
-	DefaultImage     string
-	Apps             []jenkinsv1.App
-	VersionsDir      string
+	Namespace           string
+	Context             string
+	PipelineName        string
+	ResourceName        string
+	PipelineKind        PipelineKind
+	BuildNumber         string
+	GitInfo             gits.GitRepository
+	BranchIdentifier    string
+	PullRef             PullRef
+	SourceDir           string
+	PodTemplates        map[string]*corev1.Pod
+	ServiceAccount      string
+	Labels              map[string]string
+	EnvVars             map[string]string
+	DefaultImage        string
+	Apps                []jenkinsv1.App
+	VersionsDir         string
+	UseBranchAsRevision bool
 }
 
 // createMetaPipelineCRDs creates the Tekton CRDs needed to execute the meta pipeline.
@@ -241,7 +242,9 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
-
+	if params.UseBranchAsRevision {
+		args = append(args, "--branch-as-revision")
+	}
 	for k, v := range params.Labels {
 		args = append(args, "--label", fmt.Sprintf("%s=%s", k, v))
 	}

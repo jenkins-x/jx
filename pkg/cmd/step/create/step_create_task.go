@@ -79,45 +79,46 @@ var (
 type StepCreateTaskOptions struct {
 	step.StepOptions
 
-	Pack              string
-	BuildPackURL      string
-	BuildPackRef      string
-	PipelineKind      string
-	Context           string
-	CustomLabels      []string
-	CustomEnvs        []string
-	NoApply           *bool
-	DryRun            bool
-	InterpretMode     bool
-	DisableConcurrent bool
-	StartStep         string
-	EndStep           string
-	Trigger           string
-	TargetPath        string
-	SourceName        string
-	CustomImage       string
-	DefaultImage      string
-	CloneGitURL       string
-	Branch            string
-	Revision          string
-	PullRequestNumber string
-	DeleteTempDir     bool
-	ViewSteps         bool
-	EffectivePipeline bool
-	NoReleasePrepare  bool
-	Duration          time.Duration
-	FromRepo          bool
-	NoKaniko          bool
-	SemanticRelease   bool
-	KanikoImage       string
-	KanikoSecretMount string
-	KanikoSecret      string
-	KanikoSecretKey   string
-	ProjectID         string
-	DockerRegistry    string
-	DockerRegistryOrg string
-	AdditionalEnvVars map[string]string
-	PodTemplates      map[string]*corev1.Pod
+	Pack                string
+	BuildPackURL        string
+	BuildPackRef        string
+	PipelineKind        string
+	Context             string
+	CustomLabels        []string
+	CustomEnvs          []string
+	NoApply             *bool
+	DryRun              bool
+	InterpretMode       bool
+	DisableConcurrent   bool
+	StartStep           string
+	EndStep             string
+	Trigger             string
+	TargetPath          string
+	SourceName          string
+	CustomImage         string
+	DefaultImage        string
+	CloneGitURL         string
+	Branch              string
+	Revision            string
+	PullRequestNumber   string
+	DeleteTempDir       bool
+	ViewSteps           bool
+	EffectivePipeline   bool
+	NoReleasePrepare    bool
+	Duration            time.Duration
+	FromRepo            bool
+	NoKaniko            bool
+	SemanticRelease     bool
+	KanikoImage         string
+	KanikoSecretMount   string
+	KanikoSecret        string
+	KanikoSecretKey     string
+	ProjectID           string
+	DockerRegistry      string
+	DockerRegistryOrg   string
+	AdditionalEnvVars   map[string]string
+	PodTemplates        map[string]*corev1.Pod
+	UseBranchAsRevision bool
 
 	GitInfo              *gits.GitRepository
 	BuildNumber          string
@@ -176,6 +177,7 @@ func NewCmdStepCreateTaskAndOption(commonOpts *opts.CommonOptions) (*cobra.Comma
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().BoolVarP(&options.EffectivePipeline, "effective-pipeline", "", false, "Just view the effective pipeline definition that would be created")
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "Enable semantic releases")
+	cmd.Flags().BoolVarP(&options.UseBranchAsRevision, "branch-as-revision", "", false, "Use the provided branch as the revision for release pipelines, not the version tag")
 
 	options.AddCommonFlags(cmd)
 	options.setupViper(cmd)
@@ -514,7 +516,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 			o.BuildNumber = "1"
 		} else {
 			log.Logger().Debugf("generating build number...")
-			o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, o.Context)
+			o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, o.Context, false)
 			if err != nil {
 				return nil, err
 			}
@@ -1293,7 +1295,7 @@ func (o *StepCreateTaskOptions) setBuildVersion(pipelineConfig *jenkinsfile.Pipe
 			version = "0.0.1"
 		}
 		o.version = version
-		o.Revision = "v" + version
+		o.setRevisionForReleasePipeline(version)
 		o.pipelineParams = append(o.pipelineParams, pipelineapi.Param{
 			Name:  "version",
 			Value: o.version,
@@ -1332,7 +1334,7 @@ func (o *StepCreateTaskOptions) setBuildVersion(pipelineConfig *jenkinsfile.Pipe
 		if err != nil {
 			return err
 		}
-		o.Revision = "v" + version
+		o.setRevisionForReleasePipeline(version)
 	} else {
 		// lets use the branch name if we can find it for the version number
 		branch := o.Branch
@@ -1361,6 +1363,14 @@ func (o *StepCreateTaskOptions) setBuildVersion(pipelineConfig *jenkinsfile.Pipe
 		}
 	}
 	return nil
+}
+
+func (o *StepCreateTaskOptions) setRevisionForReleasePipeline(version string) {
+	if o.UseBranchAsRevision {
+		o.Revision = o.Branch
+	} else {
+		o.Revision = "v" + version
+	}
 }
 
 func hasParam(params []pipelineapi.Param, name string) bool {
