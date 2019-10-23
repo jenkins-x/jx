@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -143,14 +144,14 @@ func (o *StepGitMergeOptions) Run() error {
 func (o *StepGitMergeOptions) setGitConfig() error {
 	user, err := o.GetCommandOutput(o.Dir, "git", "config", "user.name")
 	if err != nil || user == "" {
-		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.name", util.DefaultGitUserName)
 		if err != nil {
 			return err
 		}
 	}
 	email, err := o.GetCommandOutput(o.Dir, "git", "config", "user.email")
 	if email == "" || err != nil {
-		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.email", "jenkins-x@googlegroups.com")
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.email", util.DefaultGitUserEmail)
 		if err != nil {
 			return err
 		}

@@ -884,6 +884,45 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			Value: o.Context,
 		})
 	}
+	gitUserName := util.DefaultGitUserName
+	gitUserEmail := util.DefaultGitUserEmail
+
+	settings, err := o.TeamSettings()
+	// If there's an error getting the team settings, just ignore it and keep using the defaults.
+	if err == nil {
+		if settings.PipelineUsername != "" {
+			gitUserName = settings.PipelineUsername
+		}
+		if settings.PipelineUserEmail != "" {
+			gitUserEmail = settings.PipelineUserEmail
+		}
+	}
+
+	if kube.GetSliceEnvVar(envVars, "GIT_AUTHOR_NAME") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "GIT_AUTHOR_NAME",
+			Value: gitUserName,
+		})
+	}
+	if kube.GetSliceEnvVar(envVars, "GIT_AUTHOR_EMAIL") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "GIT_AUTHOR_EMAIL",
+			Value: gitUserEmail,
+		})
+	}
+	if kube.GetSliceEnvVar(envVars, "GIT_COMMITTER_NAME") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "GIT_COMMITTER_NAME",
+			Value: gitUserName,
+		})
+	}
+	if kube.GetSliceEnvVar(envVars, "GIT_COMMITTER_EMAIL") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "GIT_COMMITTER_EMAIL",
+			Value: gitUserEmail,
+		})
+	}
+
 	gitInfo := o.GitInfo
 	branch := o.Branch
 	if gitInfo != nil {

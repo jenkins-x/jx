@@ -77,7 +77,7 @@ func (o *StepGitValidateOptions) Run() error {
 			}
 		}
 		if userName == "" {
-			userName = "jenkins-x-bot"
+			userName = util.DefaultGitUserName
 		}
 		err = o.Git().SetUsername("", userName)
 		if err != nil {
@@ -96,7 +96,7 @@ func (o *StepGitValidateOptions) Run() error {
 			}
 		}
 		if userEmail == "" {
-			userEmail = "jenkins-x@googlegroups.com"
+			userEmail = util.DefaultGitUserEmail
 		}
 		err = o.Git().SetEmail("", userEmail)
 		if err != nil {
