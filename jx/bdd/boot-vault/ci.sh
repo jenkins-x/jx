@@ -15,17 +15,17 @@ export BUILD_NUMBER="$BUILD_ID"
 JX_HOME="/tmp/jxhome"
 KUBECONFIG="/tmp/jxhome/config"
 
-mkdir -p $JX_HOME
-
+mkdir -p $JX_HOME/.jx
+mkdir-p $HOME/.jx
 #### JANKY TEST to force jenkins-x-versions to be old.
-pushd $HOME
+pushd $HOME/.jx
   git clone https://github.com/jenkins-x/jenkins-x-versions.git
   pushd jenkins-x-versions
     git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
   popd
 popd
 
-pushd $JX_HOME
+pushd $JX_HOME/.jx
   git clone https://github.com/jenkins-x/jenkins-x-versions.git
   pushd jenkins-x-versions
     git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
