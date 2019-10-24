@@ -41,8 +41,7 @@ type StepStashOptions struct {
 }
 
 const (
-	envVarBranchName = "BRANCH_NAME"
-	envVarSourceUrl  = "SOURCE_URL"
+	envVarSourceURL = "SOURCE_URL"
 
 	// storageSupportDescription common text for long command descriptions around storage
 	StorageSupportDescription = `
@@ -144,7 +143,7 @@ func (o *StepStashOptions) Run() error {
 
 		if o.StorageLocation.IsEmpty() {
 			// we have no team settings so lets try detect the git repository using an env var or local file system
-			sourceURL := os.Getenv(envVarSourceUrl)
+			sourceURL := os.Getenv(envVarSourceURL)
 			if sourceURL == "" {
 				_, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 				if err != nil {
@@ -194,24 +193,9 @@ func (o *StepStashOptions) Run() error {
 	projectOrg := projectGitInfo.Organisation
 	projectRepoName := projectGitInfo.Name
 
-	projectBranchName := o.ProjectBranch
-	if projectBranchName == "" {
-		projectBranchName = o.StorageLocation.GitBranch
-	}
-	if projectBranchName == "" {
-		projectBranchName = os.Getenv(envVarBranchName)
-	}
-	if projectBranchName == "" {
-		// lets try find the branch name via git
-		if gitURL == "" {
-			projectBranchName, err = o.Git().Branch(o.Dir)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	if projectBranchName == "" {
-		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
+	projectBranchName, err := o.determineProjectBranchName(o.ProjectBranch, gitURL)
+	if err != nil {
+		return err
 	}
 
 	storagePath := o.ToPath
@@ -258,4 +242,34 @@ func (o *StepStashOptions) Run() error {
 		}
 	}
 	return nil
+}
+
+func (o *StepStashOptions) determineProjectBranchName(projectBranchName string, gitURL string) (string, error) {
+	if projectBranchName != "" {
+		return projectBranchName, nil
+	}
+	// If there isn't a bucket URL, use the configured git branch
+	if o.StorageLocation.BucketURL == "" {
+		return o.StorageLocation.GitBranch, nil
+	}
+	// If there is a bucket URL, try using the BRANCH_NAME env var.
+	if projectBranchName == "" {
+		projectBranchName = os.Getenv(util.EnvVarBranchName)
+	}
+	if projectBranchName == "" {
+		// lets try find the branch name via git
+		if gitURL == "" {
+			var err error
+			projectBranchName, err = o.Git().Branch(o.Dir)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+
+	if projectBranchName == "" {
+		return "", fmt.Errorf("environment variable %s is empty, and couldn't find a branch from %s as a git repository", util.EnvVarBranchName, o.Dir)
+	}
+
+	return projectBranchName, nil
 }

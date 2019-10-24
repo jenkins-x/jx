@@ -335,7 +335,7 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 	branch := params.BranchIdentifier
 	if branch != "" {
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "BRANCH_NAME",
+			Name:  util.EnvVarBranchName,
 			Value: branch,
 		})
 	}

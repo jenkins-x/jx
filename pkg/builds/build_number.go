@@ -64,7 +64,7 @@ func getDownwardAPILabelsMap() map[string]string {
 
 // GetBranchName returns the branch name using environment variables and/or pod Downward API
 func GetBranchName() string {
-	branch := os.Getenv("BRANCH_NAME")
+	branch := os.Getenv(util.EnvVarBranchName)
 	if branch == "" {
 		m := getDownwardAPILabelsMap()
 		if m != nil {

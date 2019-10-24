@@ -21,4 +21,7 @@ const (
 
 	// DefaultGitUserEmail default value to use for git "user.email"
 	DefaultGitUserEmail = "jenkins-x@googlegroups.com"
+
+	// EnvVarBranchName is the environment variable that will hold the name of the branch being built during pipelines
+	EnvVarBranchName = "BRANCH_NAME"
 )
