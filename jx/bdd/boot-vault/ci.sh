@@ -16,7 +16,7 @@ JX_HOME="/tmp/jxhome"
 KUBECONFIG="/tmp/jxhome/config"
 
 mkdir -p $JX_HOME/.jx
-mkdir-p $HOME/.jx
+mkdir -p $HOME/.jx
 #### JANKY TEST to force jenkins-x-versions to be old.
 pushd $HOME/.jx
   git clone https://github.com/jenkins-x/jenkins-x-versions.git
