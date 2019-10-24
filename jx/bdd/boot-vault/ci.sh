@@ -55,13 +55,13 @@ cp jx/bdd/boot-vault/jx-requirements.yml boot-source/boot-overrides
 cp jx/bdd/boot-vault/parameters.yaml boot-source/boot-overrides/env
 cd boot-source
 
-cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
-cat tmp.yaml ../boot-vault.platform.yaml > boot-overrides/env/jenkins-x-platform/values.tmpl.yaml
-rm tmp.yaml
-
-cp env/prow/values.tmpl.yaml tmp.yaml
-cat tmp.yaml ../boot-vault.prow.yaml > boot-overrides/env/prow/values.tmpl.yaml
-rm tmp.yaml
+#cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
+#cat tmp.yaml ../boot-vault.platform.yaml > boot-overrides/env/jenkins-x-platform/values.tmpl.yaml
+#rm tmp.yaml
+#
+#cp env/prow/values.tmpl.yaml tmp.yaml
+#cat tmp.yaml ../boot-vault.prow.yaml > boot-overrides/env/prow/values.tmpl.yaml
+#rm tmp.yaml
 
 # TODO hack until we fix boot to do this too!
 helm init --client-only
