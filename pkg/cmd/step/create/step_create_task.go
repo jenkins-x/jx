@@ -966,9 +966,9 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 		}
 	}
 	if branch != "" {
-		if kube.GetSliceEnvVar(envVars, "BRANCH_NAME") == nil {
+		if kube.GetSliceEnvVar(envVars, util.EnvVarBranchName) == nil {
 			envVars = append(envVars, corev1.EnvVar{
-				Name:  "BRANCH_NAME",
+				Name:  util.EnvVarBranchName,
 				Value: branch,
 			})
 		}
