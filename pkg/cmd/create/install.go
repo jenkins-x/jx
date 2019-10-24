@@ -3019,7 +3019,7 @@ func (options *InstallOptions) CloneJXCloudEnvironmentsRepo() (string, error) {
 	if options.Flags.CloudEnvRepository == "" {
 		options.Flags.CloudEnvRepository = opts.DefaultCloudEnvironmentsURL
 	}
-	log.Logger().Infof("Cloning the Jenkins X cloud environments repo to %s", wrkDir)
+	log.Logger().Debugf("Cloning the Jenkins X cloud environments repo to %s", wrkDir)
 	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           options.Flags.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",

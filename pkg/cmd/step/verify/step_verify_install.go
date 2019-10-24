@@ -108,6 +108,6 @@ func (o *StepVerifyInstallOptions) Run() error {
 			}
 		}
 	}
-	log.Logger().Infof("installation is currently looking: %s\n", util.ColorInfo("GOOD"))
+	log.Logger().Infof("Installation is currently looking: %s\n", util.ColorInfo("GOOD"))
 	return nil
 }

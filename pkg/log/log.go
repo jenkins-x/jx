@@ -102,6 +102,11 @@ func SetLevel(s string) error {
 	return nil
 }
 
+// GetLevel gets the current log level
+func GetLevel() string {
+	return logrus.GetLevel().String()
+}
+
 // GetLevels returns the list of valid log levels
 func GetLevels() []string {
 	var levels []string
