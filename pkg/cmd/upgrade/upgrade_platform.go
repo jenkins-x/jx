@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/platform"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"sigs.k8s.io/yaml"
 
 	"io/ioutil"
@@ -94,6 +94,8 @@ func NewCmdUpgradePlatform(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *UpgradePlatformOptions) Run() error {
+	opts.LogInstallDeprecated()
+
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 
 	configStore := configio.NewFileStore()

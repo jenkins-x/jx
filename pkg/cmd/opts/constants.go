@@ -19,4 +19,6 @@ work
 	DefaultIngressNamesapce = "kube-system"
 	// DefaultIngressServiceName default name for ingress controller service and deployment
 	DefaultIngressServiceName = "jxing-nginx-ingress-controller"
+
+	// DeprecatedWarning warning for old commands that pre-date boot
 )
