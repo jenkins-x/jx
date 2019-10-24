@@ -18,6 +18,13 @@ KUBECONFIG="/tmp/jxhome/config"
 mkdir -p $JX_HOME
 
 #### JANKY TEST to force jenkins-x-versions to be old.
+pushd $HOME
+  git clone https://github.com/jenkins-x/jenkins-x-versions.git
+  pushd jenkins-x-versions
+    git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
+  popd
+popd
+
 pushd $JX_HOME
   git clone https://github.com/jenkins-x/jenkins-x-versions.git
   pushd jenkins-x-versions
@@ -50,7 +57,7 @@ export JX_VALUE_PROW_HMACTOKEN="$GH_ACCESS_TOKEN"
 export JX_BATCH_MODE="true"
 
 #git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
-mkdir -p boot-source/boot-overrides
+mkdir -p boot-source/boot-overrides/env
 cp jx/bdd/boot-vault/jx-requirements.yml boot-source/boot-overrides
 cp jx/bdd/boot-vault/parameters.yaml boot-source/boot-overrides/env
 cd boot-source
