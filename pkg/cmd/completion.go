@@ -3,7 +3,9 @@ package cmd
 import (
 	"bytes"
 	"io"
+	"strings"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -48,6 +50,34 @@ var (
 		"bash": runCompletionBash,
 		"zsh":  runCompletionZsh,
 	}
+	// It is likely that the user has the completions for kubectl loaded, so reusing function from there if they exist
+	bashCompletionFunctions = `
+__jx_get_env() {
+	local jx_out
+    if jx_out=$(jx get env | tail -n +2 | cut -d' ' -f1 2>/dev/null); then
+        COMPREPLY=( $( compgen -W "${jx_out[*]}" -- "$cur" ) )
+    fi
+}
+
+__jx_get_promotionstrategies() {
+	COMPREPLY=( $(compgen -W "` + strings.Join(v1.PromotionStrategyTypeValues, " ") + `" -- ${cur}) )
+}
+
+__jx_custom_func() {
+    case ${last_command} in
+        jx_environment )
+            __jx_get_env
+            return
+            ;;
+		jx_namespace )
+			declare -f __kubectl_get_resource_namespace > /dev/null && __kubectl_get_resource_namespace
+			return
+			;;
+        *)
+            ;;
+    esac
+}
+`
 )
 
 // CompletionOptions options for completion command
@@ -116,6 +146,8 @@ func (o *CompletionOptions) Run() error {
 	if !found {
 		return helper.UsageError(cmd, "Unsupported shell type %q.", args[0])
 	}
+
+	cmd.Parent().BashCompletionFunction = bashCompletionFunctions
 
 	return run(o.Out, cmd.Parent())
 }

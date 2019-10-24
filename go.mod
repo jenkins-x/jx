@@ -30,7 +30,6 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d
 	github.com/chromedp/chromedp v0.1.1
 	github.com/codeship/codeship-go v0.0.0-20180717142545-7793ca823354
-	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
@@ -86,7 +85,6 @@ require (
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/nwaples/rardecode v1.0.0 // indirect
@@ -102,7 +100,7 @@ require (
 	github.com/rickar/props v0.0.0-20170718221555-0b06aeb2f037
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/rollout/rox-go v0.0.0-20181220111955-29ddae74a8c4
-	github.com/russross/blackfriday v1.5.1
+	github.com/russross/blackfriday v1.5.2
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735 // indirect
 	github.com/sanathkr/go-yaml v0.0.0-20170819195128-ed9d249f429b
 	github.com/satori/go.uuid v1.2.1-0.20180103174451-36e9d2ebbde5
@@ -111,9 +109,9 @@ require (
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
 	github.com/sirupsen/logrus v1.4.1
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/spf13/viper v1.2.1
+	github.com/spf13/viper v1.3.2
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/testify v1.3.0

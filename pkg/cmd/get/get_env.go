@@ -62,6 +62,7 @@ func NewCmdGetEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.AddGetFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promote", "p", "", "Filters the environments by promotion strategy. Possible values: "+strings.Join(v1.PromotionStrategyTypeValues, ", "))
+	cmd.Flags().SetAnnotation("promote", cobra.BashCompCustom, []string{"__jx_get_promotionstrategies"})
 
 	return cmd
 }
