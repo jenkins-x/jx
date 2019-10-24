@@ -17,6 +17,14 @@ KUBECONFIG="/tmp/jxhome/config"
 
 mkdir -p $JX_HOME
 
+#### JANKY TEST to force jenkins-x-versions to be old.
+pushd $JX_HOME
+  git clone https://github.com/jenkins-x/jenkins-x-versions.git
+  pushd jenkins-x-versions
+    git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
+  popd
+popd
+
 jx --version
 jx step git credentials
 
@@ -41,17 +49,18 @@ export JX_VALUE_PROW_HMACTOKEN="$GH_ACCESS_TOKEN"
 # TODO temporary hack until the batch mode in jx is fixed...
 export JX_BATCH_MODE="true"
 
-git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
-cp jx/bdd/boot-vault/jx-requirements.yml boot-source
-cp jx/bdd/boot-vault/parameters.yaml boot-source/env
+#git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
+mkdir -p boot-source/boot-overrides
+cp jx/bdd/boot-vault/jx-requirements.yml boot-source/boot-overrides
+cp jx/bdd/boot-vault/parameters.yaml boot-source/boot-overrides/env
 cd boot-source
 
 cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
-cat tmp.yaml ../boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
+cat tmp.yaml ../boot-vault.platform.yaml > boot-overrides/env/jenkins-x-platform/values.tmpl.yaml
 rm tmp.yaml
 
 cp env/prow/values.tmpl.yaml tmp.yaml
-cat tmp.yaml ../boot-vault.prow.yaml > env/prow/values.tmpl.yaml
+cat tmp.yaml ../boot-vault.prow.yaml > boot-overrides/env/prow/values.tmpl.yaml
 rm tmp.yaml
 
 # TODO hack until we fix boot to do this too!
