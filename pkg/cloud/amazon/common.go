@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 )
@@ -65,21 +66,57 @@ func ResolveRegionWithoutOptions() (string, error) {
 	return ResolveRegion("", "")
 }
 
+// GetClusterNameFromAWS uses the AWS SDK to parse through each EKS cluster until it finds one that matches the endpoint in
+// the kubeconfig. From there it will retrieve the cluster name
+func GetClusterNameFromAWS(profileOption string, regionOption string, kubeEndpoint string) (string, error) {
+	sess, err := NewAwsSession(profileOption, regionOption)
+	if err != nil {
+		return "", errors.Wrapf(err, "Error creating AWS Session")
+	}
+	svc := eks.New(sess)
+
+	input := &eks.ListClustersInput{}
+	result, err := svc.ListClusters(input)
+	if err != nil {
+		return "", errors.Wrapf(err, "Error calling Eks List Clusters")
+	}
+
+	for _, cluster := range result.Clusters {
+		input := &eks.DescribeClusterInput{
+			Name: aws.String(*cluster),
+		}
+		result, err := svc.DescribeCluster(input)
+		if err != nil {
+			return "", errors.Wrapf(err, "Error calling Describe Cluster on "+*cluster)
+		}
+
+		if *result.Cluster.Endpoint == kubeEndpoint {
+			return *result.Cluster.Name, nil
+		}
+	}
+
+	return "", errors.Errorf("Unable to get cluster name from AWS")
+}
+
 // ParseContext parses the EKS cluster context to extract the cluster name and the region
 func ParseContext(context string) (string, string, error) {
+	// First check if context name matches <cluster-name>.<region>.*
 	reg := regexp.MustCompile(`([a-zA-Z][-a-zA-Z0-9]*)\.((us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d)\.*`)
 	result := reg.FindStringSubmatch(context)
-	// Also check if the context name matchesAWS ARN format as defined:
-	// https://docs.aws.amazon.com/IAM/latest/UserGuide/list_amazonelasticcontainerserviceforkubernetes.html#amazonelasticcontainerserviceforkubernetes-resources-for-iam-policies
-	arnReg := regexp.MustCompile(`arn:aws:eks:((?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d):[0-9]*:cluster\/([a-zA-Z][-a-zA-Z0-9]*)`)
-	arnResult := arnReg.FindStringSubmatch(context)
 	if len(result) >= 3 {
 		return result[1], result[2], nil
-	} else if len(arnResult) >= 3 {
-		return arnResult[2], arnResult[1], nil
-	} else {
-		return "", "", errors.Errorf("unable to parse %s as <cluster_name>.<region>.* or arn:aws:<region>:account-id:cluster/<cluster_name>", context)
 	}
+
+	// or else if the context name matchesAWS ARN format as defined:
+	// https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
+	reg = regexp.MustCompile(`arn:aws:eks:((?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d):[0-9]*:cluster\/([a-zA-Z][-a-zA-Z0-9]*)`)
+	result = reg.FindStringSubmatch(context)
+	if len(result) >= 3 {
+		return result[2], result[1], nil
+	}
+
+	return "", "", errors.Errorf("unable to parse %s as <cluster_name>.<region>.* or arn:aws:<region>:account-id:cluster/<cluster_name>", context)
+
 }
 
 // GetCurrentlyConnectedRegionAndClusterName gets the current context for the connected cluster and parses it
@@ -89,10 +126,22 @@ func GetCurrentlyConnectedRegionAndClusterName() (string, string, error) {
 	if err != nil {
 		return "", "", errors.Wrapf(err, "loading kubeconfig")
 	}
+
 	context := kube.Cluster(kubeConfig)
-	currentClusterName, currentRegion, err := ParseContext(context)
+	server := kube.CurrentServer(kubeConfig)
+	currentClusterName, err := GetClusterNameFromAWS("", "", server)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "parsing the current Kubernetes context %s", context)
+		currentClusterName, currentRegion, err := ParseContext(context)
+		if err != nil {
+			return "", "", errors.Wrapf(err, "parsing the current Kubernetes context %s", context)
+		}
+
+		return currentClusterName, currentRegion, nil
+	}
+
+	currentRegion, err := ResolveRegionWithoutOptions()
+	if err != nil {
+		return "", "", errors.Wrapf(err, "Error resolving Region")
 	}
 	return currentClusterName, currentRegion, nil
 }
