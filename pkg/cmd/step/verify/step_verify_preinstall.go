@@ -119,18 +119,17 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	o.SetDevNamespace(ns)
 
-	log.Logger().Infof("verifying the kubernetes cluster before we try to boot Jenkins X in namespace: %s", info(ns))
+	log.Logger().Infof("Verifying the kubernetes cluster before we try to boot Jenkins X in namespace: %s", info(ns))
 	if o.LazyCreate {
-		log.Logger().Infof("we will try to lazily create any missing resources to get the current cluster ready to boot Jenkins X")
+		log.Logger().Infof("Trying to lazily create any missing resources to get the current cluster ready to boot Jenkins X")
 	} else {
-		log.Logger().Warn("lazy create of cloud resources is disabled")
-
+		log.Logger().Warn("Lazy create of cloud resources is disabled")
 	}
 
 	err = o.verifyDevNamespace(kubeClient, ns)
 	if err != nil {
 		if o.LazyCreate {
-			log.Logger().Infof("attempting to lazily create the deploy namespace %s", info(ns))
+			log.Logger().Infof("Attempting to lazily create the deploy namespace %s", info(ns))
 
 			err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
 			if err != nil {
@@ -152,11 +151,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	no := &namespace.NamespaceOptions{}
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{ns}
-	log.Logger().Infof("setting the local kubernetes context to the deploy namespace %s", info(ns))
 	err = no.Run()
 	if err != nil {
 		return err
 	}
+	log.Logger().Info("\n")
 
 	po := &StepVerifyPackagesOptions{}
 	po.CommonOptions = o.CommonOptions
@@ -165,6 +164,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	log.Logger().Info("\n")
 
 	err = o.VerifyInstallConfig(kubeClient, ns, requirements, requirementsFileName)
 	if err != nil {
@@ -175,6 +175,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	log.Logger().Info("\n")
 
 	if !o.DisableVerifyHelm {
 		err = o.verifyHelm(ns)
@@ -185,7 +186,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	if requirements.Kaniko {
 		if requirements.Cluster.Provider == cloud.GKE {
-			log.Logger().Infof("validating the kaniko secret in namespace %s", info(ns))
+			log.Logger().Infof("Validating Kaniko secret in namespace %s", info(ns))
 
 			err = o.validateKaniko(ns)
 			if err != nil {
@@ -203,17 +204,18 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			log.Logger().Info("\n")
 		}
 	}
 
 	if vns := requirements.Velero.Namespace; vns != "" {
 		if requirements.Cluster.Provider == cloud.GKE {
-			log.Logger().Infof("validating the velero secret in namespace %s", info(vns))
+			log.Logger().Infof("Validating the velero secret in namespace %s", info(vns))
 
 			err = o.validateVelero(vns)
 			if err != nil {
 				if o.LazyCreate {
-					log.Logger().Infof("attempting to lazily create the deploy namespace %s", info(vns))
+					log.Logger().Infof("Attempting to lazily create the deploy namespace %s", info(vns))
 
 					err = o.lazyCreateVeleroSecret(requirements, vns)
 					if err != nil {
@@ -226,6 +228,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			log.Logger().Info("\n")
 		}
 	}
 
@@ -239,7 +242,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	if requirements.Cluster.Provider == cloud.EKS && o.LazyCreate {
 		if !cluster.IsInCluster() {
-			log.Logger().Info("attempting to lazily create the IAM Role for Service Accounts permissions")
+			log.Logger().Info("Attempting to lazily create the IAM Role for Service Accounts permissions")
 			err = amazon.EnableIRSASupportInCluster(requirements)
 			if err != nil {
 				return errors.Wrap(err, "error enabling IRSA in cluster")
@@ -255,7 +258,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	// Lets update the TeamSettings with the VersionStream data from the jx-requirements.yaml file so we make sure
 	// we are upgrading with the latest versions
-	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!", info("jx boot"))
+	log.Logger().Infof("Cluster looks good, you are ready to '%s' now!", info("jx boot"))
 	fmt.Println()
 	return nil
 }
@@ -285,14 +288,14 @@ func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
 	if err != nil {
 		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
 	}
-	log.Logger().Infof("helm client is setup")
 
 	o.EnableRemoteKubeCluster()
+
 	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, kube.DefaultChartMuseumJxRepoName, "", "")
 	if err != nil {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
 	}
-	log.Logger().Infof("ensure we have the helm repository %s", kube.DefaultChartMuseumURL)
+	log.Logger().Infof("Ensuring Helm chart repository %s is configured\n", kube.DefaultChartMuseumURL)
 
 	return nil
 }
@@ -304,10 +307,10 @@ func (o *StepVerifyPreInstallOptions) verifyDevNamespace(kubeClient kubernetes.I
 		return err
 	}
 	if ns == "" {
-		return fmt.Errorf("No dev namespace name found")
+		return fmt.Errorf("no dev namespace name found")
 	}
 	if envName == "" {
-		return fmt.Errorf("Namespace %s has no team label", ns)
+		return fmt.Errorf("namespace %s has no team label", ns)
 	}
 	return nil
 }
@@ -504,7 +507,6 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				return nil, errors.Wrapf(err, "")
 			}
 			if currentClusterName != "" && currentProject != "" && currentZone != "" {
-				log.Logger().Infof("")
 				log.Logger().Infof("Currently connected cluster is %s in %s in project %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentZone), util.ColorInfo(currentProject))
 				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
 			} else {
@@ -684,7 +686,7 @@ func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.Re
 
 // verifyStorage verifies the associated buckets exist or if enabled lazily create them
 func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.RequirementsConfig, requirementsFileName string) error {
-	log.Logger().Debug("Verifying Storage...")
+	log.Logger().Info("Verifying Storage...")
 	storage := &requirements.Storage
 	err := o.verifyStorageEntry(requirements, requirementsFileName, &storage.Logs, "logs", "Long term log storage")
 	if err != nil {
@@ -702,7 +704,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("the storage looks good")
+	log.Logger().Infof("Storage configuration looks good\n")
 	return nil
 }
 
@@ -873,16 +875,17 @@ func (o *StepVerifyPreInstallOptions) verifyConfigMapExists(kubeClient kubernete
 }
 
 func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.RequirementsConfig, requirementsFileName string) error {
-	log.Logger().Debug("Verifying Ingress...")
+	log.Logger().Info("Verifying Ingress...")
 	domain := requirements.Ingress.Domain
 	if requirements.Ingress.IsAutoDNSDomain() {
-		log.Logger().Infof("clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated", util.ColorInfo(domain))
+		log.Logger().Infof("Clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated", util.ColorInfo(domain))
 		requirements.Ingress.Domain = ""
 		err := requirements.SaveConfig(requirementsFileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
 		}
 	}
+	log.Logger().Info("\n")
 	return nil
 }
 

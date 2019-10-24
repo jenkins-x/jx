@@ -83,6 +83,6 @@ func ValidateSecret(kubeClient kubernetes.Interface, secretName, key, ns string)
 	if secret.Data == nil || len(secret.Data[key]) == 0 {
 		return fmt.Errorf("the Secret %s in the namespace: %s does not have a key: %s", secretName, ns, key)
 	}
-	log.Logger().Infof("valid: there is a Secret: %s in namespace: %s\n", util.ColorInfo(secretName), util.ColorInfo(ns))
+	log.Logger().Debugf("valid: there is a Secret: %s in namespace: %s\n", util.ColorInfo(secretName), util.ColorInfo(ns))
 	return nil
 }

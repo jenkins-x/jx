@@ -87,7 +87,8 @@ func (o *StepVerifyRequirementsOptions) Run() error {
 		return errors.Wrapf(err, "failed to load boot requirements")
 	}
 	vs := requirements.VersionStream
-	log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
+
+	log.Logger().Debugf("Verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
 
 	resolver, err := o.CreateVersionResolver(vs.URL, vs.Ref)
 	if err != nil {
@@ -145,7 +146,7 @@ func (o *StepVerifyRequirementsOptions) verifyRequirementsYAML(resolver *version
 			}
 			dep.Version = newVersion
 			modified = true
-			log.Logger().Infof("adding version %s to dependency %s in file %s", newVersion, name, fileName)
+			log.Logger().Debugf("adding version %s to dependency %s in file %s", newVersion, name, fileName)
 		}
 	}
 

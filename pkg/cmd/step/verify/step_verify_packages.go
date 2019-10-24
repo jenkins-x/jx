@@ -78,8 +78,6 @@ func NewCmdStepVerifyPackages(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepVerifyPackagesOptions) Run() error {
-	log.Logger().Infof("verifying the CLI packages\n")
-
 	packages, table := o.GetPackageVersions(o.Namespace, o.HelmTLS)
 
 	verifyMap := map[string]string{}
@@ -94,7 +92,7 @@ func (o *StepVerifyPackagesOptions) Run() error {
 	vs := requirements.VersionStream
 	u := vs.URL
 	ref := vs.Ref
-	log.Logger().Infof("verifying the CLI package using version stream URL: %s and git ref: %s\n", u, vs.Ref)
+	log.Logger().Infof("Verifying the CLI packages using version stream URL: %s and git ref: %s\n", u, vs.Ref)
 
 	resolver, err := o.CreateVersionResolver(u, ref)
 	if err != nil {
@@ -113,9 +111,7 @@ func (o *StepVerifyPackagesOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("the CLI packages seem to be setup correctly %s\n", util.ColorInfo(strings.Join(o.Packages, ", ")))
-	log.Logger().Infof("\n")
-
+	log.Logger().Infof("CLI packages %s seem to be setup correctly", util.ColorInfo(strings.Join(o.Packages, ", ")))
 	table.Render()
 
 	return nil

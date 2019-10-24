@@ -245,7 +245,7 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 	if !isBootClone {
-		return fmt.Errorf("No requirements file %s are you sure you are running this command inside a GitOps clone?", requirementsFile)
+		return fmt.Errorf("no requirements file %s are you sure you are running this command inside a GitOps clone?", requirementsFile)
 	}
 
 	err = o.verifyRequirements(requirements, requirementsFile)
@@ -253,7 +253,7 @@ func (o *BootOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("booting up Jenkins X")
+	log.Logger().Infof("Booting Jenkins X")
 
 	// now lets really boot
 	_, so := create.NewCmdStepCreateTaskAndOption(o.CommonOptions)
@@ -316,7 +316,6 @@ func (o *BootOptions) Run() error {
 	no := &namespace.NamespaceOptions{}
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{requirements.Cluster.Namespace}
-	log.Logger().Infof("switching to the namespace %s so that you can use %s commands on the installation", info(requirements.Cluster.Namespace), info("jx"))
 	return no.Run()
 }
 

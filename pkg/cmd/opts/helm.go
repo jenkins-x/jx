@@ -226,7 +226,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Info("helm installed and configured")
+	log.Logger().Info("Helm installed and configured")
 
 	return nil
 }

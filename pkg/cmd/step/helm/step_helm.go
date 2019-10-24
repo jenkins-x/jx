@@ -230,7 +230,6 @@ func (o *StepHelmOptions) discoverValuesFiles(dir string) ([]string, error) {
 func (o *StepHelmOptions) getOrCreateVersionResolver(requirementsConfig *config.RequirementsConfig) (*versionstream.VersionResolver, error) {
 	if o.versionResolver == nil {
 		vs := requirementsConfig.VersionStream
-		log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
 
 		var err error
 		o.versionResolver, err = o.CreateVersionResolver(vs.URL, vs.Ref)
@@ -274,7 +273,7 @@ func (o *StepHelmOptions) verifyRequirementsYAML(resolver *versionstream.Version
 			}
 			dep.Version = newVersion
 			modified = true
-			log.Logger().Infof("adding version %s to dependency %s in file %s", newVersion, name, fileName)
+			log.Logger().Debugf("adding version %s to dependency %s in file %s", newVersion, name, fileName)
 		}
 	}
 
@@ -283,7 +282,7 @@ func (o *StepHelmOptions) verifyRequirementsYAML(resolver *versionstream.Version
 		if err != nil {
 			return errors.Wrapf(err, "failed to save %s", fileName)
 		}
-		log.Logger().Infof("adding dependency versions to file %s", fileName)
+		log.Logger().Debugf("adding dependency versions to file %s", fileName)
 	}
 	return nil
 }
@@ -295,12 +294,13 @@ func (o *StepHelmOptions) replaceMissingVersionsFromVersionStream(requirementsCo
 		return errors.Wrapf(err, "failed to check for file %s", fileName)
 	}
 	if !exists {
-		log.Logger().Infof("no requirements file: %s so not checking for missing versions\n", fileName)
+		log.Logger().Infof("No requirements file: %s so not checking for missing versions\n", fileName)
 		return nil
 	}
 
 	vs := requirementsConfig.VersionStream
-	log.Logger().Infof("verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
+
+	log.Logger().Infof("Verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
 
 	resolver, err := o.getOrCreateVersionResolver(requirementsConfig)
 	if err != nil {

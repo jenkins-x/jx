@@ -102,7 +102,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("the git repositories for the environments look good\n")
+	log.Logger().Infof("Environment git repositories look good\n")
 	fmt.Println()
 	return nil
 }

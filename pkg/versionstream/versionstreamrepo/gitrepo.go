@@ -60,7 +60,7 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 	}
 
 	log.Logger().Debugf("Current configuration dir: %s", configDir)
-	log.Logger().Debugf("versionRepository: %s git ref: %s", versionRepository, versionRef)
+	log.Logger().Debugf("VersionRepository: %s git ref: %s", versionRepository, versionRef)
 
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
@@ -160,7 +160,7 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 }
 
 func deleteAndReClone(wrkDir string, versionRepository string, referenceName string, gitter gits.Gitter, fw terminal.FileWriter) (string, error) {
-	log.Logger().Info("Deleting and cloning the Jenkins X versions repo")
+	log.Logger().Debug("Deleting and cloning the Jenkins X versions repo")
 	err := os.RemoveAll(wrkDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to delete dir %s: %s\n", wrkDir, err.Error())
@@ -183,10 +183,10 @@ func clone(wrkDir string, versionRepository string, referenceName string, gitter
 		if strings.HasPrefix(referenceName, "PR-") {
 			prNumber := strings.TrimPrefix(referenceName, "PR-")
 
-			log.Logger().Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+			log.Logger().Debugf("Cloning the Jenkins X versions repo %s with PR: %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 			return "", shallowCloneGitRepositoryToDir(wrkDir, versionRepository, prNumber, "", gitter)
 		}
-		log.Logger().Infof("Cloning the Jenkins X versions repo %s with revision %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+		log.Logger().Debugf("Cloning the Jenkins X versions repo %s with revision %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 
 		err := gitter.Clone(versionRepository, wrkDir)
 		if err != nil {

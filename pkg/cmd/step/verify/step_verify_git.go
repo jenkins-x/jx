@@ -46,7 +46,7 @@ func NewCmdStepVerifyGit(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepVerifyGitOptions) Run() error {
-	log.Logger().Infof("verifying the git Secrets\n")
+	log.Logger().Infof("Verifying the git Secrets\n")
 
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
 	if err != nil {
@@ -55,7 +55,7 @@ func (o *StepVerifyGitOptions) Run() error {
 
 	info := util.ColorInfo
 	for _, secret := range secrets.Items {
-		log.Logger().Infof("verifying git Secret %s\n", info(secret.Name))
+		log.Logger().Infof("Verifying git Secret %s\n", info(secret.Name))
 		annotations := secret.Annotations
 		data := secret.Data
 		if annotations == nil {
@@ -99,7 +99,7 @@ func (o *StepVerifyGitOptions) Run() error {
 	for _, server := range servers {
 		for _, userAuth := range server.Users {
 
-			log.Logger().Infof("verifying username %s at git server %s at %s\n", info(userAuth.Username), info(server.Name), info(server.URL))
+			log.Logger().Infof("Verifying username %s at git server %s at %s\n", info(userAuth.Username), info(server.Name), info(server.URL))
 
 			provider, err := gits.CreateProvider(server, userAuth, o.Git())
 			if err != nil {
@@ -120,7 +120,7 @@ func (o *StepVerifyGitOptions) Run() error {
 				orgNames = append(orgNames, org.Login)
 			}
 			sort.Strings(orgNames)
-			log.Logger().Infof("found %d organisations in git server %s: %s\n", len(orgs), info(server.URL), info(strings.Join(orgNames, ", ")))
+			log.Logger().Infof("Found %d organisations in git server %s: %s\n", len(orgs), info(server.URL), info(strings.Join(orgNames, ", ")))
 			if config.PipeLineServer == server.URL && config.PipeLineUsername == userAuth.Username {
 				pipeUserValid = true
 			}
@@ -133,6 +133,6 @@ func (o *StepVerifyGitOptions) Run() error {
 		return errors.Errorf("pipeline user %s on git server %s not valid", util.ColorError(config.PipeLineUsername), util.ColorError(config.PipeLineServer))
 	}
 
-	log.Logger().Infof("git tokens seem to be setup correctly\n")
+	log.Logger().Infof("Git tokens seem to be setup correctly\n")
 	return nil
 }

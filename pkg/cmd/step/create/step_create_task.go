@@ -315,7 +315,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Logger().Debug("loaded effective project configuration from file")
 	} else {
 		// TODO: This branch also goes away when the metapipeline is actually in place in pipelinerunner (AB)
-		log.Logger().Debug("creating effective project configuration")
+		log.Logger().Debug("Creating effective project configuration")
 		effectiveProjectConfig, err = o.createEffectiveProjectConfigFromOptions(tektonClient, jxClient, kubeClient, ns, pipelineName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create effective project configuration")
@@ -327,18 +327,18 @@ func (o *StepCreateTaskOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Debug("setting build version")
+	log.Logger().Debug("Setting build version")
 	err = o.setBuildVersion(effectiveProjectConfig.PipelineConfig)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
 
-	log.Logger().Debug("creating Tekton CRDs")
+	log.Logger().Debug("Creating Tekton CRDs")
 	tektonCRDs, err := o.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRDs")
 	}
-	log.Logger().Debugf("tekton CRDs for %s created", tektonCRDs.PipelineRun().Name)
+	log.Logger().Debugf("Tekton CRDs for %s created", tektonCRDs.PipelineRun().Name)
 	o.Results = *tektonCRDs
 
 	if o.ViewSteps {
@@ -486,7 +486,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 	if o.DefaultImage == "" {
 		o.DefaultImage = syntax.DefaultContainerImage
 	}
-	log.Logger().Debugf("cloning git for %s", o.CloneGitURL)
+
 	if o.KanikoImage == "" {
 		o.KanikoImage = syntax.KanikoDockerImage
 	}
@@ -497,8 +497,6 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 	if o.KanikoSecretMount == "" {
 		o.KanikoSecretMount = kanikoSecretMount
 	}
-
-	log.Logger().Debugf("setting up docker registry for %s", o.CloneGitURL)
 
 	if o.DockerRegistry == "" && !o.InterpretMode {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
@@ -1559,12 +1557,18 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, step *corev1.Container)
 			dir = filepath.Join(curDir, relPath)
 		}
 	}
-	envMap := toEnvMap(step.Env)
+
+	envMap := createEnvMapForInterpretExecution(step.Env)
+
 	suffix := ""
 	if o.Verbose {
 		suffix = fmt.Sprintf(" with env: %s", util.ColorInfo(fmt.Sprintf("%#v", envMap)))
 	}
-	log.Logger().Infof("\nSTEP: %s command: %s in dir: %s%s\n\n", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(dir), suffix)
+	path, err := filepath.Abs(dir)
+	if err != nil {
+		path = dir
+	}
+	log.Logger().Infof("\nSTEP: %s command: %s in dir: %s%s\n\n", util.ColorInfo(step.Name), util.ColorInfo(commandLine), util.ColorInfo(path), suffix)
 
 	if !o.DryRun {
 		cmd := util.Command{
@@ -1587,10 +1591,15 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, step *corev1.Container)
 	return nil
 }
 
-func toEnvMap(envVars []corev1.EnvVar) map[string]string {
+func createEnvMapForInterpretExecution(envVars []corev1.EnvVar) map[string]string {
 	m := map[string]string{}
 	for _, envVar := range envVars {
 		m[envVar.Name] = envVar.Value
 	}
+
+	if _, exists := m["JX_LOG_LEVEL"]; !exists {
+		m["JX_LOG_LEVEL"] = log.GetLevel()
+	}
+
 	return m
 }
