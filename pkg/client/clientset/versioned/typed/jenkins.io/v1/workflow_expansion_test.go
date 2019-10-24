@@ -73,7 +73,7 @@ func TestPatchUpdateWorkflowWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := workflows.PatchUpdate(testWorkflow)
+	updated, err := workflows.PatchUpdate(clonedWorkflow)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testWorkflow, updated)
 	assert.Equal(t, pipelineName, updated.Spec.PipelineName)
@@ -118,8 +118,10 @@ func TestPatchUpdateWorkflowWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := workflows.PatchUpdate(testWorkflow)
+	pipelineName := "dummy-pipeline"
+	clonedWorkflow := testWorkflow.DeepCopy()
+	clonedWorkflow.Spec.PipelineName = pipelineName
+	updated, err := workflows.PatchUpdate(clonedWorkflow)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

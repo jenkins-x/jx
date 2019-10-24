@@ -78,7 +78,7 @@ func TestPatchUpdateEnvironmentRoleBindingWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := environmentRoleBindings.PatchUpdate(testEnvironmentRoleBinding)
+	updated, err := environmentRoleBindings.PatchUpdate(clonedEnvironmentRoleBinding)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testEnvironmentRoleBinding, updated)
 	assert.Equal(t, subject, updated.Spec.Subjects[0].Name)
@@ -123,8 +123,14 @@ func TestPatchUpdateEnvironmentRoleBindingWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := environmentRoleBindings.PatchUpdate(testEnvironmentRoleBinding)
+	subject := "snafu"
+	clonedEnvironmentRoleBinding := testEnvironmentRoleBinding.DeepCopy()
+	clonedEnvironmentRoleBinding.Spec.Subjects = []rbacv1.Subject{
+		{
+			Name: subject,
+		},
+	}
+	updated, err := environmentRoleBindings.PatchUpdate(clonedEnvironmentRoleBinding)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

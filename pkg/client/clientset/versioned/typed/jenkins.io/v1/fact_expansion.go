@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"bytes"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	util "github.com/jenkins-x/jx/pkg/util/json"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +29,9 @@ func (c *facts) PatchUpdate(fact *v1.Fact) (*v1.Fact, error) {
 	patch, err := util.CreatePatch(orig, fact)
 	if err != nil {
 		return nil, err
+	}
+	if bytes.Equal(patch, []byte("[]")) {
+		return orig, nil
 	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
 	if err != nil {

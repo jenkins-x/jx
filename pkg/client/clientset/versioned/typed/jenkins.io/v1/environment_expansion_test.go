@@ -73,7 +73,7 @@ func TestPatchUpdateEnvironmentWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := environments.PatchUpdate(testEnvironment)
+	updated, err := environments.PatchUpdate(clonedEnvironment)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testEnvironment, updated)
 	assert.Equal(t, namespace, updated.Spec.Namespace)
@@ -118,8 +118,10 @@ func TestPatchUpdateEnvironmentWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := environments.PatchUpdate(testEnvironment)
+	namespace := "jx"
+	clonedEnvironment := testEnvironment.DeepCopy()
+	clonedEnvironment.Spec.Namespace = namespace
+	updated, err := environments.PatchUpdate(clonedEnvironment)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

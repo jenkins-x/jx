@@ -73,7 +73,7 @@ func TestPatchUpdateReleaseWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := releases.PatchUpdate(testRelease)
+	updated, err := releases.PatchUpdate(clonedRelease)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testRelease, updated)
 	assert.Equal(t, name, updated.Spec.Name)
@@ -118,8 +118,10 @@ func TestPatchUpdateReleaseWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := releases.PatchUpdate(testRelease)
+	name := "susfu"
+	clonedRelease := testRelease.DeepCopy()
+	clonedRelease.Spec.Name = name
+	updated, err := releases.PatchUpdate(clonedRelease)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)
