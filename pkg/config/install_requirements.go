@@ -93,6 +93,9 @@ const (
 	RequirementStorageRepositoryEnabled = "JX_REQUIREMENT_STORAGE_REPOSITORY_ENABLED"
 	// RequirementStorageRepositoryURL repository storage url
 	RequirementStorageRepositoryURL = "JX_REQUIREMENT_STORAGE_REPOSITORY_URL"
+
+	// RequirementGkeProjectNumber is the gke project number
+	RequirementGkeProjectNumber = "JX_REQUIREMENT_GKE_PROJECT_NUMBER"
 )
 
 const (
@@ -235,10 +238,18 @@ type AzureConfig struct {
 	RegistrySubscription string `json:"registrySubscription,omitempty"`
 }
 
+// GKEConfig contains GKE specific requirements
+type GKEConfig struct {
+	// ProjectNumber the unique project number GKE assigns to a project (required for workload identity).
+	ProjectNumber string `json:"projectNumber,omitempty"`
+}
+
 // ClusterConfig contains cluster specific requirements
 type ClusterConfig struct {
 	// AzureConfig the azure specific configuration
-	AzureConfig AzureConfig `json:"azure,omitempty"`
+	AzureConfig *AzureConfig `json:"azure,omitempty"`
+	// GKEConfig the gke specific configuration
+	GKEConfig *GKEConfig `json:"gke,omitempty"`
 	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// EnvironmentGitPublic determines whether jx boot create public or private git repos for the environments

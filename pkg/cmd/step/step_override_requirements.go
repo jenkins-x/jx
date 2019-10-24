@@ -176,6 +176,16 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Storage.Repository.URL = os.Getenv(config.RequirementStorageRepositoryURL)
 		}
 	}
+
+	// GKE specific requirements
+	if "" != os.Getenv(config.RequirementGkeProjectNumber) {
+		if requirements.Cluster.GKEConfig == nil {
+			requirements.Cluster.GKEConfig = &config.GKEConfig{}
+		}
+
+		requirements.Cluster.GKEConfig.ProjectNumber = os.Getenv(config.RequirementGkeProjectNumber)
+	}
+
 	log.Logger().Debugf("saving %s", requirementsFileName)
 	requirements.SaveConfig(requirementsFileName)
 
