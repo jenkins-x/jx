@@ -72,7 +72,7 @@ func TestPatchUpdatePipelineStructureWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := pipelineStructures.PatchUpdate(testPipelineStructure)
+	updated, err := pipelineStructures.PatchUpdate(clonedPipelineStructure)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testPipelineStructure, updated)
 	assert.Equal(t, &ref, updated.PipelineRef)
@@ -117,8 +117,10 @@ func TestPatchUpdatePipelineStructureWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := pipelineStructures.PatchUpdate(testPipelineStructure)
+	ref := "susfu"
+	clonedPipelineStructure := testPipelineStructure.DeepCopy()
+	clonedPipelineStructure.PipelineRef = &ref
+	updated, err := pipelineStructures.PatchUpdate(clonedPipelineStructure)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

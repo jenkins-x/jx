@@ -77,7 +77,7 @@ func TestPatchUpdateCommitStatusWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := commitStatuses.PatchUpdate(testCommitStatus)
+	updated, err := commitStatuses.PatchUpdate(clonedCommitStatus)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testCommitStatus, updated)
 	assert.Equal(t, context, updated.Spec.Items[0].Context)
@@ -122,8 +122,14 @@ func TestPatchUpdateCommitStatusWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := commitStatuses.PatchUpdate(testCommitStatus)
+	context := "foo"
+	clonedCommitStatus := testCommitStatus.DeepCopy()
+	clonedCommitStatus.Spec.Items = []v1.CommitStatusDetails{
+		{
+			Context: context,
+		},
+	}
+	updated, err := commitStatuses.PatchUpdate(clonedCommitStatus)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

@@ -73,7 +73,7 @@ func TestPatchUpdateFactWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := facts.PatchUpdate(testFact)
+	updated, err := facts.PatchUpdate(clonedFact)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testFact, updated)
 	assert.Equal(t, name, updated.Spec.Name)
@@ -118,8 +118,10 @@ func TestPatchUpdateFactWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := facts.PatchUpdate(testFact)
+	name := "susfu"
+	clonedFact := testFact.DeepCopy()
+	clonedFact.Spec.Name = name
+	updated, err := facts.PatchUpdate(clonedFact)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)
