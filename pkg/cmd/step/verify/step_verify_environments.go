@@ -386,7 +386,7 @@ func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(gitInfo *
 		log.Logger().Debugf("set commitish to '%s'", commitish)
 	}
 
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(gitInfo.Organisation, gitInfo.Name, fromGitURL, commitish, "master", privateRepo, provider, gitter)
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(gitInfo.Organisation, gitInfo.Name, fromGitURL, commitish+"~1", "master", privateRepo, provider, gitter)
 	if err != nil {
 		return nil, errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, gitInfo.Organisation, gitInfo.Name)
 	}
