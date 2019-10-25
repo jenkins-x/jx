@@ -18,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -67,7 +66,7 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 		repo, err := git.PlainOpen(wrkDir)
 		if err != nil {
 			log.Logger().Errorf("Error opening %s", wrkDir)
-			_, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter, handles.Out)
+			_, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
 			if err != nil {
 				return "", "", errors.WithStack(err)
 			}
@@ -75,7 +74,7 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 		remote, err := repo.Remote("origin")
 		if err != nil {
 			log.Logger().Errorf("Error getting remote origin")
-			dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter, handles.Out)
+			dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
 			if err != nil {
 				return "", "", errors.WithStack(err)
 			}
@@ -99,7 +98,7 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 			if versionRef != "" {
 				err = gitter.Checkout(wrkDir, versionRef)
 				if err != nil {
-					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter, handles.Out)
+					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
 					if err != nil {
 						return "", "", errors.WithStack(err)
 					}
@@ -108,7 +107,7 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 			}
 			return wrkDir, versionRef, nil
 		} else if err != nil {
-			dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter, handles.Out)
+			dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
 			if err != nil {
 				return "", "", errors.WithStack(err)
 			}
@@ -136,14 +135,18 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 			if err == nil {
 				err := w.Pull(&git.PullOptions{RemoteName: "origin"})
 				if err != nil {
-					return "", "", errors.Wrap(err, "pulling the latest")
+					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
+					if err != nil {
+						return "", "", errors.WithStack(err)
+					}
+					return dir, versionRef, nil
 				}
 			}
 		}
 		if versionRef != "" {
 			err = gitter.Checkout(wrkDir, versionRef)
 			if err != nil {
-				dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter, handles.Out)
+				dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
 				if err != nil {
 					return "", "", errors.WithStack(err)
 				}
@@ -152,14 +155,14 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 		}
 		return wrkDir, versionRef, err
 	}
-	dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter, handles.Out)
+	dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
 	return dir, versionRef, nil
 }
 
-func deleteAndReClone(wrkDir string, versionRepository string, referenceName string, gitter gits.Gitter, fw terminal.FileWriter) (string, error) {
+func deleteAndReClone(wrkDir string, versionRepository string, referenceName string, gitter gits.Gitter) (string, error) {
 	log.Logger().Debug("Deleting and cloning the Jenkins X versions repo")
 	err := os.RemoveAll(wrkDir)
 	if err != nil {
@@ -169,14 +172,14 @@ func deleteAndReClone(wrkDir string, versionRepository string, referenceName str
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to ensure directory is created %s", wrkDir)
 	}
-	_, err = clone(wrkDir, versionRepository, referenceName, gitter, fw)
+	_, err = clone(wrkDir, versionRepository, referenceName, gitter)
 	if err != nil {
 		return "", err
 	}
 	return wrkDir, err
 }
 
-func clone(wrkDir string, versionRepository string, referenceName string, gitter gits.Gitter, fw terminal.FileWriter) (string, error) {
+func clone(wrkDir string, versionRepository string, referenceName string, gitter gits.Gitter) (string, error) {
 	if referenceName == "" || referenceName == "master" {
 		referenceName = "refs/heads/master"
 	} else if !strings.Contains(referenceName, "/") {
