@@ -15,28 +15,7 @@ export BUILD_NUMBER="$BUILD_ID"
 JX_HOME="/tmp/jxhome"
 KUBECONFIG="/tmp/jxhome/config"
 
-mkdir -p $JX_HOME/.jx
-mkdir -p $HOME/.jx
-#### JANKY TEST to force jenkins-x-versions to be old.
-pushd $HOME/.jx
-  git clone https://github.com/jenkins-x/jenkins-x-versions.git
-  pushd jenkins-x-versions
-    git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
-    touch foo
-    git add foo
-    git commit -m "foo"
-  popd
-popd
-
-pushd $JX_HOME/.jx
-  git clone https://github.com/jenkins-x/jenkins-x-versions.git
-  pushd jenkins-x-versions
-    git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
-    touch foo
-    git add foo
-    git commit -m "foo"
-  popd
-popd
+mkdir -p $JX_HOME
 
 jx --version
 jx step git credentials
@@ -62,19 +41,21 @@ export JX_VALUE_PROW_HMACTOKEN="$GH_ACCESS_TOKEN"
 # TODO temporary hack until the batch mode in jx is fixed...
 export JX_BATCH_MODE="true"
 
-#git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
-mkdir -p boot-source/boot-overrides/env
-cp jx/bdd/boot-vault/jx-requirements.yml boot-source/boot-overrides
-cp jx/bdd/boot-vault/parameters.yaml boot-source/boot-overrides/env
+git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
+pushd boot-source
+  git reset v1.0.32 --hard
+popd
+cp jx/bdd/boot-vault/jx-requirements.yml boot-source
+cp jx/bdd/boot-vault/parameters.yaml boot-source/env
 cd boot-source
 
-#cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
-#cat tmp.yaml ../boot-vault.platform.yaml > boot-overrides/env/jenkins-x-platform/values.tmpl.yaml
-#rm tmp.yaml
-#
-#cp env/prow/values.tmpl.yaml tmp.yaml
-#cat tmp.yaml ../boot-vault.prow.yaml > boot-overrides/env/prow/values.tmpl.yaml
-#rm tmp.yaml
+cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
+cat tmp.yaml ../boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
+rm tmp.yaml
+
+cp env/prow/values.tmpl.yaml tmp.yaml
+cat tmp.yaml ../boot-vault.prow.yaml > env/prow/values.tmpl.yaml
+rm tmp.yaml
 
 # TODO hack until we fix boot to do this too!
 helm init --client-only

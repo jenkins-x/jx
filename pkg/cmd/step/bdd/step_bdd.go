@@ -591,7 +591,7 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	args := cluster.Args
 
 	// lets modify the local requirements file if it exists
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(filepath.Join(o.Flags.Dir, "boot-overrides"))
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Flags.Dir)
 	if err != nil {
 		return err
 	}

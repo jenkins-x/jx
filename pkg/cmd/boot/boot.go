@@ -213,16 +213,6 @@ func (o *BootOptions) Run() error {
 			return errors.Wrapf(err, "setting HEAD to %s", commitish)
 		}
 
-		// If there's already an existing "boot-overrides" directory, copy its contents into the repository.
-		existingOverridesDir := filepath.Join(o.Dir, "boot-overrides")
-		overridesExist, err := util.DirExists(existingOverridesDir)
-		if err == nil && overridesExist {
-			err = util.CopyDirOverwrite(existingOverridesDir, cloneDir)
-			if err != nil {
-				return err
-			}
-		}
-
 		o.Dir, err = filepath.Abs(cloneDir)
 		if err != nil {
 			return err
