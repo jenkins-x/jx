@@ -1,5 +1,7 @@
 # JX 
 
+Hello world!
+
 JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.io/)
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3237/badge)](https://bestpractices.coreinfrastructure.org/projects/3237)
