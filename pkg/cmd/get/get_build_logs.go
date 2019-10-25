@@ -170,7 +170,7 @@ func (o *GetBuildLogsOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -322,7 +322,7 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 		}
 	}
 
-	name, err := util.PickNameWithDefault(filteredNames, "Which build do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
+	name, err := util.PickNameWithDefault(filteredNames, "Which build do you want to view the logs of?: ", defaultName, "", o.GetIOFileHandles())
 	if err != nil {
 		return len(filteredNames) == 0, err
 	}

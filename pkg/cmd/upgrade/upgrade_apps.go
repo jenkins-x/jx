@@ -124,11 +124,9 @@ func (o *UpgradeAppsOptions) Run() error {
 	}
 
 	installOpts := apps.InstallOptions{
-		In:            o.In,
+		IOFileHandles: o.GetIOFileHandles(),
 		DevEnv:        o.DevEnv,
 		Verbose:       o.Verbose,
-		Err:           o.Err,
-		Out:           o.Out,
 		GitOps:        o.GitOps,
 		BatchMode:     o.BatchMode,
 		AutoMerge:     o.AutoMerge,

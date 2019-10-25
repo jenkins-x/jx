@@ -114,7 +114,7 @@ func (o *StepReleaseOptions) Run() error {
 			gitUser, _ = o.GetUsername("")
 		}
 		if gitUser == "" {
-			gitUser = "jenkins-x-bot"
+			gitUser = util.DefaultGitUserName
 		}
 		err = o.Git().SetUsername(dir, gitUser)
 		if err != nil {
@@ -125,7 +125,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil || gitEmail == "" {
 		gitEmail = o.GitEmail
 		if gitEmail == "" {
-			gitEmail = "jenkins-x@googlegroups.com"
+			gitEmail = util.DefaultGitUserEmail
 		}
 		err = o.Git().SetEmail(dir, gitEmail)
 		if err != nil {

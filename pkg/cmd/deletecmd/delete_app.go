@@ -82,14 +82,12 @@ func (o *DeleteAppOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
 
 	installOptions := apps.InstallOptions{
-		In:        o.In,
-		DevEnv:    o.DevEnv,
-		Verbose:   o.Verbose,
-		Err:       o.Err,
-		Out:       o.Out,
-		GitOps:    o.GitOps,
-		BatchMode: o.BatchMode,
-		Helmer:    o.Helm(),
+		IOFileHandles: o.GetIOFileHandles(),
+		DevEnv:        o.DevEnv,
+		Verbose:       o.Verbose,
+		GitOps:        o.GitOps,
+		BatchMode:     o.BatchMode,
+		Helmer:        o.Helm(),
 	}
 
 	if o.GitOps {

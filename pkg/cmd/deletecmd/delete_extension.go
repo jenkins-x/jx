@@ -133,7 +133,7 @@ func (o *DeleteExtensionOptions) Run() error {
 		args = names
 	}
 	if len(args) == 0 && !o.BatchMode {
-		args, err = util.PickNames(names, "Pick Extension(s):", "", o.In, o.Out, o.Err)
+		args, err = util.PickNames(names, "Pick Extension(s):", "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -166,7 +166,7 @@ func (o *DeleteExtensionOptions) Run() error {
 	// TODO display the extensions to delete in a tree view
 	if !o.BatchMode && !util.Confirm(fmt.Sprintf("You are about to delete the Extensions: %s",
 		strings.Join(extensionsToDeleteStrings, ", ")), false,
-		"The list of Extensions to be deleted", o.In, o.Out, o.Err) {
+		"The list of Extensions to be deleted", o.GetIOFileHandles()) {
 		return nil
 	}
 	deletedExtensions := make([]string, 0)

@@ -123,7 +123,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 
 	// validate the git URL
 	if o.GitSourceURL == "" && !o.BatchMode {
-		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
+		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		o.GitKind = gits.SaasGitKind(serverURL)
 	}
 	if o.GitKind == "" && !o.BatchMode {
-		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
+		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

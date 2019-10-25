@@ -842,7 +842,7 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 	}
 
 	if o.PullRequest == "" {
-		o.PullRequest = os.Getenv("BRANCH_NAME")
+		o.PullRequest = os.Getenv(util.EnvVarBranchName)
 	}
 
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")

@@ -89,7 +89,7 @@ func (o *UninstallOptions) Run() error {
 			}
 
 			uninstall := util.Confirm("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?", false,
-				help, o.In, o.Out, o.Err)
+				help, o.GetIOFileHandles())
 			if !uninstall {
 				return nil
 			}
@@ -100,7 +100,7 @@ func (o *UninstallOptions) Run() error {
 			msg := fmt.Sprintf("This action will permanently delete Jenkins X from the Kubernetes context %s. "+
 				"Please type in the name of the context to confirm:", util.ColorInfo(currentContext))
 			helpMsg := "To prevent accidental uninstallation from the wrong cluster, you must enter the current Kubernetes context."
-			targetContext, err = util.PickValue(msg, "", true, helpMsg, o.In, o.Out, o.Err)
+			targetContext, err = util.PickValue(msg, "", true, helpMsg, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

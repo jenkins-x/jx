@@ -73,7 +73,7 @@ func TestPatchUpdatePipelineActivityWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
+	updated, err := pipelineActivities.PatchUpdate(clonedPipelineActivity)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testPipelineActivity, updated)
 	assert.Equal(t, name, updated.Spec.Pipeline)
@@ -118,8 +118,10 @@ func TestPatchUpdatePipelineActivityWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
+	name := "test"
+	clonedPipelineActivity := testPipelineActivity.DeepCopy()
+	clonedPipelineActivity.Spec.Pipeline = name
+	updated, err := pipelineActivities.PatchUpdate(clonedPipelineActivity)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

@@ -116,7 +116,7 @@ func (o *LogsOptions) Run() error {
 	name := ""
 	if len(args) == 0 {
 		if o.Label == "" && !o.KNativeBuild {
-			n, err := util.PickName(names, "Pick Deployment:", "", o.In, o.Out, o.Err)
+			n, err := util.PickName(names, "Pick Deployment:", "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

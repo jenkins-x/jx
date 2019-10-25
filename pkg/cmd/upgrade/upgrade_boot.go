@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/gits/operations"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -45,6 +46,7 @@ var (
 
 const (
 	defaultUpgradeVersionStreamRef = "master"
+	builderImage                   = "gcr.io/jenkinsxio/builder-go"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -84,11 +86,11 @@ func (o *UpgradeBootOptions) Run() error {
 		}
 	}
 
-	reqsVersionStream, err := o.requirementsVersionStream()
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
-		return errors.Wrap(err, "failed to get requirements version stream")
+		return errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
 	}
-
+	reqsVersionStream := requirements.VersionStream
 	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, o.UpgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to get check for available update")
@@ -123,7 +125,28 @@ func (o *UpgradeBootOptions) Run() error {
 
 	err = o.updatePipelineBuilderImage(resolver)
 	if err != nil {
-		return errors.Wrap(err, "failed to update version stream ref")
+		return errors.Wrap(err, "failed to update pipeline version stream ref")
+	}
+
+	err = o.updateTemplateBuilderImage(resolver)
+	if err != nil {
+		return errors.Wrap(err, "failed to update template version stream ref")
+	}
+
+	// load modified requirements so we can merge with the base ones
+	modifiedRequirements, modifiedRequirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load requirements config %s", modifiedRequirementsFile)
+	}
+
+	err = requirements.MergeSave(modifiedRequirements, modifiedRequirementsFile)
+	if err != nil {
+		return errors.Wrap(err, "error merging the modified jx-requirements.yml file with the dev environment's one")
+	}
+
+	err = o.createCommitForRequirements(requirementsFile)
+	if err != nil {
+		return errors.Wrap(err, "failed to create a merge commit for jx-requirements.yml")
 	}
 
 	err = o.raisePR()
@@ -134,6 +157,15 @@ func (o *UpgradeBootOptions) Run() error {
 	err = o.deleteLocalBranch(localBranch)
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete local branch %s", localBranch)
+	}
+	return nil
+}
+
+func (o UpgradeBootOptions) createCommitForRequirements(requirementsFileName string) error {
+	err := o.Git().AddCommitFiles(o.Dir, "Merge jx-requirements.yml", []string{requirementsFileName})
+	if err != nil {
+		return errors.Wrapf(err, "error creating a commit with the merged jx-requirements.yml file from dir %s",
+			requirementsFileName)
 	}
 	return nil
 }
@@ -169,22 +201,6 @@ func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (str
 	}
 	log.Logger().Infof("using default boot config %s", bootConfigURL)
 	return bootConfigURL, nil
-}
-
-func (o *UpgradeBootOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
-	}
-	exists, err := util.FileExists(requirementsFile)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if file %s exists", requirementsFile)
-	}
-	if !exists {
-		return nil, fmt.Errorf("no requirements file %s ensure you are running this command inside a GitOps clone", requirementsFile)
-	}
-	reqsVersionStream := requirements.VersionStream
-	return &reqsVersionStream, nil
 }
 
 func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionStreamRef string, upgradeRef string) (string, error) {
@@ -488,7 +504,6 @@ func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitP
 }
 
 func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.VersionResolver) error {
-	builderImage := "gcr.io/jenkinsxio/builder-go"
 	piplineFileGlob := "jenkins-x*.yml"
 	updatedBuilderImage, err := resolver.ResolveDockerImage(builderImage)
 	if err != nil {
@@ -516,6 +531,29 @@ func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.
 	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade pipeline builder images", matches)
 	if err != nil {
 		log.Logger().Info("Skipping builder image update as no changes were detected")
+
+	}
+	return nil
+}
+
+func (o *UpgradeBootOptions) updateTemplateBuilderImage(resolver *versionstream.VersionResolver) error {
+	templateFile := fmt.Sprintf("env/%s", helm.ValuesTemplateFileName)
+	updatedBuilderImage, err := resolver.ResolveDockerImage(builderImage)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve image %s", builderImage)
+	}
+	log.Logger().Infof("Updating template builder images to %s", util.ColorInfo(updatedBuilderImage))
+	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*builderImage: (gcr.io\/jenkinsxio\/builder-go.*$)`, templateFile)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = fn(o.Dir, nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade template builder images", []string{templateFile})
+	if err != nil {
+		log.Logger().Info("Skipping template builder image update as no changes were detected")
 
 	}
 	return nil

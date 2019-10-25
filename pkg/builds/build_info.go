@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -103,7 +104,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			if v.Name == "PULL_BASE_SHA" {
 				pullBaseSha = v.Value
 			}
-			if v.Name == "BRANCH_NAME" {
+			if v.Name == util.EnvVarBranchName {
 				branch = v.Value
 			}
 			if v.Name == "REPO_OWNER" {

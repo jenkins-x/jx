@@ -138,17 +138,9 @@ pipelineConfig:
                   - --suite-name
                   - "BDD_Boot_Vault_Tests"
 
-              - name: stash_xml_report
+              - name: clear-kubeconfig
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
-                command: jx
-                args:
-                  - step
-                  - stash
-                  - -c
-                  - e2e-tests
-                  - -p
-                  - "/workspace/source/build/reports/create_spring_application.junit.xml"
-                  - --bucket-url gs://jx-prod-logs
+                command: rm ~/.kube/config
 
               - name: stash_html_report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}

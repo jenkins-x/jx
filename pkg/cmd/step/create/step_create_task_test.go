@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -51,6 +52,9 @@ type testCase struct {
 	generateError         error
 	effectiveProjectError error
 	useKaniko             bool
+	pipelineUserName      string
+	pipelineUserEmail     string
+	branchAsRevision      bool
 }
 
 func TestGenerateTektonCRDs(t *testing.T) {
@@ -122,12 +126,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:         "kaniko_entrypoint",
-			language:     "none",
-			repoName:     "jx",
-			organization: "jenkins-x",
-			branch:       "fix-kaniko-special-casing",
-			kind:         "pullrequest",
+			name:              "kaniko_entrypoint",
+			language:          "none",
+			repoName:          "jx",
+			organization:      "jenkins-x",
+			branch:            "fix-kaniko-special-casing",
+			kind:              "pullrequest",
+			pipelineUserName:  "bob",
+			pipelineUserEmail: "bob@bob.bob",
 		},
 		{
 			name:         "set-agent-container-with-agentless-build-pack",
@@ -189,12 +195,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:         "default-in-buildpack",
-			language:     "default-pipeline",
-			repoName:     "golang-qs-test",
-			organization: "abayer",
-			branch:       "master",
-			kind:         "release",
+			name:              "default-in-buildpack",
+			language:          "default-pipeline",
+			repoName:          "golang-qs-test",
+			organization:      "abayer",
+			branch:            "master",
+			kind:              "release",
+			pipelineUserEmail: "bob@bob.bob",
 		},
 		{
 			name:         "add-env-to-default-in-buildpack",
@@ -304,12 +311,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:         "pipeline-timeout",
-			language:     "none",
-			repoName:     "js-test-repo",
-			organization: "abayer",
-			branch:       "really-long",
-			kind:         "release",
+			name:             "pipeline-timeout",
+			language:         "none",
+			repoName:         "js-test-repo",
+			organization:     "abayer",
+			branch:           "really-long",
+			kind:             "release",
+			pipelineUserName: "bob",
 		},
 		{
 			name:         "containerOptions-at-top-level-of-buildpack",
@@ -329,12 +337,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 		},
 		{
-			name:         "distribute-parallel-across-nodes",
-			language:     "none",
-			repoName:     "js-test-repo",
-			organization: "abayer",
-			branch:       "really-long",
-			kind:         "release",
+			name:             "distribute-parallel-across-nodes",
+			language:         "none",
+			repoName:         "js-test-repo",
+			organization:     "abayer",
+			branch:           "really-long",
+			kind:             "release",
+			branchAsRevision: true,
 		},
 		{
 			name:                  "no_pipeline_for_kind",
@@ -358,7 +367,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			},
 		},
 	}
-	jxObjects := []runtime.Object{}
 	repoOwnerUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	repoOwner := repoOwnerUUID.String()
@@ -370,6 +378,32 @@ func TestGenerateTektonCRDs(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
+			devEnv := v1.Environment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kube.LabelValueDevEnvironment,
+					Namespace: "jx",
+				},
+				Spec: v1.EnvironmentSpec{
+					Namespace:         "jx",
+					Label:             kube.LabelValueDevEnvironment,
+					PromotionStrategy: v1.PromotionStrategyTypeNever,
+					Kind:              v1.EnvironmentKindTypeDevelopment,
+					TeamSettings: v1.TeamSettings{
+						UseGitOps:           true,
+						AskOnCreate:         false,
+						QuickstartLocations: kube.DefaultQuickstartLocations,
+						PromotionEngine:     v1.PromotionEngineJenkins,
+						AppsRepository:      kube.DefaultChartMuseumURL,
+					},
+				},
+			}
+			if tt.pipelineUserName != "" {
+				devEnv.Spec.TeamSettings.PipelineUsername = tt.pipelineUserName
+			}
+			if tt.pipelineUserEmail != "" {
+				devEnv.Spec.TeamSettings.PipelineUserEmail = tt.pipelineUserEmail
+			}
+			jxObjects := []runtime.Object{&devEnv}
 
 			caseDir := path.Join(testData, tt.name)
 			_, err = os.Stat(caseDir)
@@ -390,9 +424,10 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					Name:         tt.repoName,
 					Organisation: tt.organization,
 				},
-				Branch:       tt.branch,
-				PipelineKind: tt.kind,
-				NoKaniko:     !tt.useKaniko,
+				Branch:              tt.branch,
+				UseBranchAsRevision: tt.branchAsRevision,
+				PipelineKind:        tt.kind,
+				NoKaniko:            !tt.useKaniko,
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
 						ServiceAccount: "tekton-bot",

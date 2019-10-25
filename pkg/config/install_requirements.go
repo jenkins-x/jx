@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/imdario/mergo"
+
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -91,6 +93,12 @@ const (
 	RequirementStorageRepositoryEnabled = "JX_REQUIREMENT_STORAGE_REPOSITORY_ENABLED"
 	// RequirementStorageRepositoryURL repository storage url
 	RequirementStorageRepositoryURL = "JX_REQUIREMENT_STORAGE_REPOSITORY_URL"
+	// RequirementGkeProjectNumber is the gke project number
+	RequirementGkeProjectNumber = "JX_REQUIREMENT_GKE_PROJECT_NUMBER"
+	// RequirementGitAppEnabled if the github app should be used for access tokens
+	RequirementGitAppEnabled = "JX_REQUIREMENT_GITHUB_APP_ENABLED"
+	// RequirementGitAppURL contains the URL to the github app
+	RequirementGitAppURL = "JX_REQUIREMENT_GITHUB_APP_URL"
 )
 
 const (
@@ -233,10 +241,18 @@ type AzureConfig struct {
 	RegistrySubscription string `json:"registrySubscription,omitempty"`
 }
 
+// GKEConfig contains GKE specific requirements
+type GKEConfig struct {
+	// ProjectNumber the unique project number GKE assigns to a project (required for workload identity).
+	ProjectNumber string `json:"projectNumber,omitempty"`
+}
+
 // ClusterConfig contains cluster specific requirements
 type ClusterConfig struct {
 	// AzureConfig the azure specific configuration
-	AzureConfig AzureConfig `json:"azure,omitempty"`
+	AzureConfig *AzureConfig `json:"azure,omitempty"`
+	// GKEConfig the gke specific configuration
+	GKEConfig *GKEConfig `json:"gke,omitempty"`
 	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// EnvironmentGitPublic determines whether jx boot create public or private git repos for the environments
@@ -352,7 +368,15 @@ type AutoUpdateConfig struct {
 	Schedule string `json:"schedule"`
 }
 
-// +exported
+// GithubAppConfig contains github app config
+type GithubAppConfig struct {
+	// Enabled this determines whether this install should use the jenkins x github app for access tokens
+	Enabled bool `json:"enabled,omitempty"`
+	// Schedule cron of the github app token refresher
+	Schedule string `json:"schedule,omitempty"`
+	// URL contains a URL to the github app
+	URL string `json:"url,omitempty"`
+}
 
 // RequirementsConfig contains the logical installation requirements in the `jx-requirements.yml` file when
 // installing, configuring or upgrading Jenkins X via `jx boot`
@@ -365,6 +389,8 @@ type RequirementsConfig struct {
 	Cluster ClusterConfig `json:"cluster"`
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
+	// GithubApp contains github app config
+	GithubApp *GithubAppConfig `json:"githubApp,omitempty"`
 	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
 	// re-run 'jx boot' when changes merge to the master branch
 	GitOps bool `json:"gitops,omitempty"`
@@ -532,6 +558,51 @@ func (c *RequirementsConfig) SaveConfig(fileName string) error {
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save file %s", fileName)
+	}
+	return nil
+}
+
+type environmentsSliceTransformer struct{}
+
+// environmentsSliceTransformer.Transformer is handling the correct merge of two EnvironmentConfig slices
+// so we can both append extra items and merge existing ones so we don't lose any data
+func (t environmentsSliceTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
+	if typ == reflect.TypeOf([]EnvironmentConfig{}) {
+		return func(dst, src reflect.Value) error {
+			d := dst.Interface().([]EnvironmentConfig)
+			s := src.Interface().([]EnvironmentConfig)
+			if dst.CanSet() {
+				for i, v := range s {
+					if i > len(d)-1 {
+						d = append(d, v)
+					} else {
+						err := mergo.Merge(&d[i], &v, mergo.WithOverride)
+						if err != nil {
+							return errors.Wrap(err, "error merging EnvironmentConfig slices")
+						}
+					}
+				}
+				dst.Set(reflect.ValueOf(d))
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+// MergeSave attempts to merge the provided RequirementsConfig with the caller's data.
+// It does so overriding values in the source struct with non-zero values from the provided struct
+// it defines non-zero per property and not for a while embedded struct, meaning that nested properties
+// in embedded structs should also be merged correctly.
+// if a slice is added a transformer will be needed to handle correctly merging the contained values
+func (c *RequirementsConfig) MergeSave(src *RequirementsConfig, requirementsFileName string) error {
+	err := mergo.Merge(c, src, mergo.WithOverride, mergo.WithTransformers(environmentsSliceTransformer{}))
+	if err != nil {
+		return errors.Wrap(err, "error merging jx-requirements.yml files")
+	}
+	err = c.SaveConfig(requirementsFileName)
+	if err != nil {
+		return errors.Wrapf(err, "error saving the merged jx-requirements.yml files to %s", requirementsFileName)
 	}
 	return nil
 }

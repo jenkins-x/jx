@@ -115,7 +115,7 @@ func (o *StepUpdateReleaseGitHubOptions) Run() error {
 	o.State.GitInfo = gitInfo
 
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), false, o.In, o.Out, o.Err)
+	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), false, o.GetIOFileHandles())
 	if err != nil {
 		return errors.Wrap(err, "Could not create GitProvider, unable to update the release state %s")
 	}

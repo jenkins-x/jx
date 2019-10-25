@@ -246,7 +246,7 @@ func (options *ImportOptions) Run() error {
 			serverURL := gitInfo.HostURLWithoutUser()
 			server = config.GetOrCreateServer(serverURL)
 		} else {
-			server, err = config.PickOrCreateServer(gits.GitHubURL, options.GitRepositoryOptions.ServerURL, "Which Git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
+			server, err = config.PickOrCreateServer(gits.GitHubURL, options.GitRepositoryOptions.ServerURL, "Which Git service do you wish to use", options.BatchMode, options.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -260,7 +260,7 @@ func (options *ImportOptions) Run() error {
 		} else {
 			// Get the org in case there is more than one user auth on the server and batchMode is true
 			org := options.getOrganisationOrCurrentUser()
-			userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
+			userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -279,7 +279,7 @@ func (options *ImportOptions) Run() error {
 			if options.GitRepositoryOptions.ApiToken != "" {
 				userAuth.ApiToken = options.GitRepositoryOptions.ApiToken
 			}
-			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, false, options.BatchMode, f, options.In, options.Out, options.Err)
+			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, false, options.BatchMode, f, options.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -430,7 +430,7 @@ func (options *ImportOptions) Run() error {
 
 // ImportProjectsFromGitHub import projects from github
 func (options *ImportOptions) ImportProjectsFromGitHub() error {
-	repos, err := gits.PickRepositories(options.GitProvider, options.Organisation, "Which repositories do you want to import", options.SelectAll, options.SelectFilter, options.In, options.Out, options.Err)
+	repos, err := gits.PickRepositories(options.GitProvider, options.Organisation, "Which repositories do you want to import", options.SelectAll, options.SelectFilter, options.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -520,7 +520,7 @@ func (options *ImportOptions) DraftCreate() error {
 	options.Organisation = options.GetOrganisation()
 	if options.Organisation == "" {
 		gitUsername := options.GitUserAuth.Username
-		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.In, options.Out, options.Err)
+		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -530,7 +530,7 @@ func (options *ImportOptions) DraftCreate() error {
 		dir := options.Dir
 		_, defaultRepoName := filepath.Split(dir)
 
-		options.AppName, err = gits.GetRepoName(options.BatchMode, false, options.GitProvider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
+		options.AppName, err = gits.GetRepoName(options.BatchMode, false, options.GitProvider, defaultRepoName, options.Organisation, options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -628,7 +628,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	details := &options.GitDetails
 	if details.RepoName == "" {
 		details, err = gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
-			options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
+			options.GitServer, options.GitUserAuth, options.Git(), options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -1478,7 +1478,7 @@ func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, e
 	options.GitRepositoryOptions.Owner = options.Organisation
 	options.GitRepositoryOptions.RepoName = options.Repository
 	details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
-		"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.In, options.Out, options.Err)
+		"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.GetIOFileHandles())
 	if err != nil {
 		return nil, err
 	}

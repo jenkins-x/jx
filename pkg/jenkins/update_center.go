@@ -3,7 +3,6 @@ package jenkins
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"sort"
 	"strings"
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -170,7 +168,7 @@ func LoadUpdateCenterData(data []byte) (*UpdateCenter, error) {
 }
 
 // PickPlugins provides the user with a list of plugins that can be added to a Jenkins App
-func (u *UpdateCenter) PickPlugins(currentValues []string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
+func (u *UpdateCenter) PickPlugins(currentValues []string, handles util.IOFileHandles) ([]string, error) {
 	names := []string{}
 	pluginMap := map[string]string{}
 	maxLen := 1
@@ -202,7 +200,7 @@ func (u *UpdateCenter) PickPlugins(currentValues []string, in terminal.FileReade
 	sort.Strings(names)
 	help := "select the Jenkins plugins you wish to include inside your Jenkins App"
 	message := "pick Jenkins plugins to include in your Jenkins App: "
-	selection, err := util.PickNamesWithDefaults(names, defaults, message, help, in, out, outErr)
+	selection, err := util.PickNamesWithDefaults(names, defaults, message, help, handles)
 	if err != nil {
 		return nil, err
 	}

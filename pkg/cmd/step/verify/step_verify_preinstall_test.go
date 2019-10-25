@@ -8,15 +8,12 @@ import (
 	"time"
 
 	"github.com/acarl005/stripansi"
-	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var timeout = 1 * time.Second
@@ -215,45 +212,4 @@ func Test_abort_private_repos_with_github_provider(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "cannot continue without completed git requirements", err.Error())
-}
-
-func TestStepVerifyPreInstallOptions_UpdateVersionStreamRefInDevEnvironment(t *testing.T) {
-	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
-	options := &commonOpts
-	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
-
-	jxClient, ns, err := options.JXClient()
-	assert.NoError(t, err)
-
-	requirements := &config.RequirementsConfig{
-		VersionStream: config.VersionStreamConfig{
-			URL: "https://anotherUrl",
-			Ref: "0123456789",
-		},
-	}
-
-	previousDevEnv, err := jxClient.JenkinsV1().Environments(ns).Get("dev", metav1.GetOptions{})
-	assert.NoError(t, err)
-
-	assert.NotEqual(t, requirements.VersionStream.URL, previousDevEnv.Spec.TeamSettings.VersionStreamURL)
-	assert.NotEqual(t, requirements.VersionStream.Ref, previousDevEnv.Spec.TeamSettings.VersionStreamRef)
-
-	testOptions := &StepVerifyPreInstallOptions{
-		StepVerifyOptions: StepVerifyOptions{
-			StepOptions: step.StepOptions{
-				CommonOptions: options,
-			},
-		},
-	}
-
-	err = testOptions.updateVersionStreamRefInDevEnvironment(requirements)
-	assert.NoError(t, err, "there shouldn't be any error updating the dev env")
-
-	devEnv, err := jxClient.JenkinsV1().Environments(ns).Get("dev", metav1.GetOptions{})
-	assert.NoError(t, err)
-
-	teamSettings := devEnv.Spec.TeamSettings
-
-	assert.Equal(t, requirements.VersionStream.URL, teamSettings.VersionStreamURL, "the versions stream URL should have been changed")
-	assert.Equal(t, requirements.VersionStream.Ref, teamSettings.VersionStreamRef, "the versions stream Ref should have been changed")
 }

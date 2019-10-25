@@ -206,7 +206,7 @@ func (o *StepCreateValuesOptions) CreateValuesFile(secretURLClient secreturl.Cli
 		return errors.Wrapf(err, "failed to load values file %s", o.ValuesFile)
 	}
 
-	valuesFileName, cleanup, err := apps.ProcessValues(schema, o.Name, gitOpsURL, teamName, o.BasePath, o.BatchMode, false, secretURLClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
+	valuesFileName, cleanup, err := apps.ProcessValues(schema, o.Name, gitOpsURL, teamName, o.BasePath, o.BatchMode, false, secretURLClient, existing, o.SecretsScheme, o.GetIOFileHandles(), o.Verbose)
 	defer cleanup()
 	if err != nil {
 		return errors.WithStack(err)

@@ -52,6 +52,7 @@ type OptionsInterface interface {
 	GetIn() terminal.FileReader
 	GetOut() terminal.FileWriter
 	GetErr() io.Writer
+	GetIOFileHandles() util.IOFileHandles
 }
 
 // VaultClientFactory keeps the configuration required to build a new vault client factory

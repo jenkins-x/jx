@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
@@ -18,22 +19,20 @@ import (
 	"github.com/jenkins-x/jx/pkg/vault"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 
+	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/dynamic"
+	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
-	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	build "github.com/knative/build/pkg/client/clientset/versioned"
 	buildfake "github.com/knative/build/pkg/client/clientset/versioned/fake"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
@@ -132,13 +131,13 @@ func (f *FakeFactory) WithBearerToken(token string) clients.Factory {
 }
 
 // CreateJenkinsClient creates a new Jenkins client
-func (f *FakeFactory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	return f.GetDelegateFactory().CreateJenkinsClient(kubeClient, ns, in, out, errOut)
+func (f *FakeFactory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, handles util.IOFileHandles) (gojenkins.JenkinsClient, error) {
+	return f.GetDelegateFactory().CreateJenkinsClient(kubeClient, ns, handles)
 }
 
 // CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
-func (f *FakeFactory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	return f.GetDelegateFactory().CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName, in, out, errOut)
+func (f *FakeFactory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, handles util.IOFileHandles) (gojenkins.JenkinsClient, error) {
+	return f.GetDelegateFactory().CreateCustomJenkinsClient(kubeClient, ns, jenkinsServiceName, handles)
 }
 
 // GetJenkinsURL gets the Jenkins URL for the given namespace
@@ -384,8 +383,8 @@ func (f *FakeFactory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 }
 
 // CreateGitProvider creates a new Git provider
-func (f *FakeFactory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
-	return f.GetDelegateFactory().CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, in, out, errOut)
+func (f *FakeFactory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, handles util.IOFileHandles) (gits.GitProvider, error) {
+	return f.GetDelegateFactory().CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, handles)
 }
 
 // CreateKubeConfig creates the kubernetes configuration

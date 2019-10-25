@@ -47,7 +47,7 @@ func TestDeleteApplicationInJenkins(t *testing.T) {
 	kubeClient, _, _ := mockFactory.CreateKubeClient()
 
 	jenkinsClient := clients_test.NewMockJenkinsClient()
-	pegomock.When(mockFactory.CreateJenkinsClient(kubeClient, "jx", commonOpts.In, commonOpts.Out, commonOpts.Err)).ThenReturn(pegomock.ReturnValue(jenkinsClient), pegomock.ReturnValue(nil))
+	pegomock.When(mockFactory.CreateJenkinsClient(kubeClient, "jx", commonOpts.GetIOFileHandles())).ThenReturn(pegomock.ReturnValue(jenkinsClient), pegomock.ReturnValue(nil))
 	job := gojenkins.Job{
 		Name:     testRepoName,
 		FullName: fmt.Sprintf("%s/%s", testOrgName, testRepoName),

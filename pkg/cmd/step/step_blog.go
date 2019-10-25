@@ -634,7 +634,7 @@ func (o *StepBlogOptions) CreateChatProvider(chatConfig *config.ChatConfig) (cha
 	config := authConfigSvc.Config()
 
 	server := config.GetOrCreateServer(u)
-	userAuth, err := config.PickServerUserAuth(server, "user to access the chat service at "+u, o.BatchMode, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "user to access the chat service at "+u, o.BatchMode, "", o.GetIOFileHandles())
 	if err != nil {
 		return nil, err
 	}

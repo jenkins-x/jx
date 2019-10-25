@@ -80,7 +80,7 @@ func (o *EditAddonOptions) Run() error {
 	charts := kube.AddonCharts
 	names := util.SortedMapKeys(charts)
 	if o.Name == "" {
-		o.Name, err = util.PickName(names, "Pick the addon to configure", "", o.In, o.Out, o.Err)
+		o.Name, err = util.PickName(names, "Pick the addon to configure", "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ func (o *EditAddonOptions) Run() error {
 		}
 		config.Enabled = value
 	} else {
-		config.Enabled = util.Confirm("Enable addon "+o.Name, config.Enabled, "If an addon is enabled it is installed when using 'jx create cluster' or 'jx install'", o.In, o.Out, o.Err)
+		config.Enabled = util.Confirm("Enable addon "+o.Name, config.Enabled, "If an addon is enabled it is installed when using 'jx create cluster' or 'jx install'", o.GetIOFileHandles())
 	}
 
 	return addonConfig.Save()

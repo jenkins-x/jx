@@ -3,7 +3,6 @@ package maven
 import (
 	"bytes"
 	"encoding/xml"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -214,8 +212,8 @@ func LoadArchetypes(name string, archetypeCatalogURL string, cacheDir string) (*
 	return &model, nil
 }
 
-func (model *ArchetypeModel) CreateSurvey(data *ArchetypeFilter, pickVersion bool, form *ArchetypeForm, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) error {
-	surveyOpts := survey.WithStdio(in, out, errOut)
+func (model *ArchetypeModel) CreateSurvey(data *ArchetypeFilter, pickVersion bool, form *ArchetypeForm, handles util.IOFileHandles) error {
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	groupIds := data.GroupIds
 	if len(data.GroupIds) == 0 {
 		filteredGroups := model.GroupIDs(data.GroupIdFilter)

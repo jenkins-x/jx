@@ -30,6 +30,14 @@ type PipelineCreateParam struct {
 	// DefaultImage defines the default image used for pipeline tasks if no other image is specified.
 	// This parameter is optional and mainly used for development.
 	DefaultImage string
+
+	// UseActivityForNextBuildNumber overrides the default behavior of getting the next build number via SourceRepository,
+	// and instead determines the next build number based on existing PipelineActivitys.
+	UseActivityForNextBuildNumber bool
+
+	// UseBranchAsRevision forces step_create_task to use the branch it's passed as the revision to checkout for release
+	// pipelines, rather than use the version tag
+	UseBranchAsRevision bool
 }
 
 // Client defines the interface for meta pipeline creation and application.

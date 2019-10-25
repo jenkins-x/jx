@@ -266,7 +266,14 @@ func (g *GitCLI) ResetToUpstream(dir string, branch string) error {
 
 // AddRemote adds a remote repository at the given URL and with the given name
 func (g *GitCLI) AddRemote(dir string, name string, url string) error {
-	return g.gitCmd(dir, "remote", "add", name, url)
+	err := g.gitCmd(dir, "remote", "add", name, url)
+	if err != nil {
+		err = g.gitCmd(dir, "remote", "set-url", name, url)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // UpdateRemote updates the URL of the remote repository
@@ -514,7 +521,7 @@ func (g *GitCLI) AddCommit(dir string, msg string) error {
 // AddCommitFiles perform an add and commit selected files from the repository at the given directory with the given messages
 func (g *GitCLI) AddCommitFiles(dir string, msg string, files []string) error {
 	fileString := strings.Trim(fmt.Sprintf("%v", files), "[]")
-	return g.gitCmd(dir, "commit", "-m", strconv.Quote(msg), "--", fileString)
+	return g.gitCmd(dir, "commit", "-m", msg, "--", fileString)
 }
 
 func (g *GitCLI) gitCmd(dir string, args ...string) error {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/stretchr/testify/assert"
@@ -215,7 +216,12 @@ func TestDisableIssuesForOrg(t *testing.T) {
 
 				terminal := tests.NewTerminal(t, nil)
 
-				err := DisableFeaturesForOrg("acme", tt.args.includes, tt.args.excludes, tt.args.dryRun, true, provider, terminal.In, terminal.Out, terminal.Err)
+				handles := util.IOFileHandles{
+					Err: terminal.Err,
+					In:  terminal.In,
+					Out: terminal.Out,
+				}
+				err := DisableFeaturesForOrg("acme", tt.args.includes, tt.args.excludes, tt.args.dryRun, true, provider, handles)
 
 				if tt.wantErr {
 					assert.Error(t, err)

@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/pkg/util"
 	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
@@ -209,7 +210,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 			if v.Name == "PULL_BASE_SHA" {
 				pullBaseSha = v.Value
 			}
-			if v.Name == "BRANCH_NAME" {
+			if v.Name == util.EnvVarBranchName {
 				branch = v.Value
 			}
 			if v.Name == "REPO_OWNER" {

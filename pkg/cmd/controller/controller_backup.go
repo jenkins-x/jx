@@ -272,7 +272,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 	defaultRepoName := fmt.Sprintf("organisation-%s-backup", o.Organisation)
 
 	details, err := gits.PickNewOrExistingGitRepository(o.BatchMode, authConfigSvc,
-		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true, o.In, o.Out, o.Err)
+		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true, o.GetIOFileHandles())
 	if err != nil {
 		return "", err
 	}

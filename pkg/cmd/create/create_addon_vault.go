@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/config"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -69,11 +71,11 @@ func NewCmdCreateAddonVault(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateAddonVaultOptions) Run() error {
-	return InstallVaultOperator(o.CommonOptions, o.Namespace)
+	return InstallVaultOperator(o.CommonOptions, o.Namespace, nil)
 }
 
 // InstallVaultOperator installs a vault operator in the namespace provided
-func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
+func InstallVaultOperator(o *opts.CommonOptions, namespace string, vs *config.VersionStreamConfig) error {
 	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "checking if helm is installed")
@@ -98,6 +100,12 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 		Ns:          namespace,
 		SetValues:   values,
 	}
+
+	if vs != nil {
+		helmOptions.VersionsGitURL = vs.URL
+		helmOptions.VersionsGitRef = vs.Ref
+	}
+
 	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
