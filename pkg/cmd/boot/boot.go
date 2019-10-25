@@ -151,6 +151,17 @@ func (o *BootOptions) Run() error {
 	// lets report errors parsing this file after the check we are outside of a git clone
 	o.defaultVersionStream(requirements)
 
+	resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem creating a version resolver from versions stream repository %s and ref %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	}
+	if o.GitRef == "" {
+		gitRef, err = o.determineGitRef(resolver, requirements, gitURL)
+		if err != nil {
+			return errors.Wrapf(err, "failed to determine git ref")
+		}
+	}
+
 	if !isBootClone {
 		log.Logger().Infof("No Jenkins X pipeline file %s or no jx boot requirements file %s found. You are not running this command from inside a "+
 			"Jenkins X Boot git clone", info(pipelineFile), info(config.RequirementsConfigFileName))
@@ -162,17 +173,6 @@ func (o *BootOptions) Run() error {
 
 		repo := gitInfo.Name
 		cloneDir := filepath.Join(o.Dir, repo)
-
-		if o.GitRef == "" {
-			resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create version resolver")
-			}
-			gitRef, err = o.determineGitRef(resolver, requirements, gitURL)
-			if err != nil {
-				return errors.Wrapf(err, "failed to determine git ref")
-			}
-		}
 
 		if !o.BatchMode {
 			log.Logger().Infof("To continue we will clone %s @ %s to %s", info(gitURL), info(gitRef), info(cloneDir))
@@ -248,6 +248,11 @@ func (o *BootOptions) Run() error {
 		return fmt.Errorf("no requirements file %s are you sure you are running this command inside a GitOps clone?", requirementsFile)
 	}
 
+	err = o.updateBootCloneIfOutOfDate(gitRef)
+	if err != nil {
+		return err
+	}
+
 	err = o.verifyRequirements(requirements, requirementsFile)
 	if err != nil {
 		return err
@@ -299,10 +304,7 @@ func (o *BootOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "setting namespace in jenkins-x.yml")
 	}
-	so.VersionResolver, err = o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
-	if err != nil {
-		return errors.Wrapf(err, "there was a problem creating a version resolver from versions stream repository %s and ref %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
-	}
+	so.VersionResolver = resolver
 
 	if o.BatchMode {
 		so.AdditionalEnvVars["JX_BATCH_MODE"] = "true"
@@ -317,6 +319,45 @@ func (o *BootOptions) Run() error {
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{requirements.Cluster.Namespace}
 	return no.Run()
+}
+
+func (o *BootOptions) updateBootCloneIfOutOfDate(gitRef string) error {
+	// Get the tag corrresponding to the git ref.
+	commitish, err := gits.FindTagForVersion(o.Dir, gitRef, o.Git())
+	if err != nil {
+		log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", gitRef).Error())
+		commitish = fmt.Sprintf("%s/%s", "origin", gitRef)
+	}
+
+	// Get the tag on the current boot clone HEAD, if any.
+	resolved, _, err := o.Git().Describe(o.Dir, true, "HEAD", "0", true)
+	if err != nil {
+		return errors.Wrap(err, "could not describe boot clone HEAD to find its tag with git describe HEAD --abbrev=0 --contains --always")
+	}
+
+	if resolved != commitish {
+		log.Logger().Infof("Local boot clone is out of date. It is based on %s, but the version stream is using %s. The clone will now be updated to %s.",
+			resolved, commitish, commitish)
+		log.Logger().Info("Stashing any changes made in local boot clone.")
+
+		err = o.Git().StashPush(o.Dir)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		err = o.Git().Reset(o.Dir, commitish, true)
+		if err != nil {
+			return errors.Wrapf(err, "Could not reset local boot clone to %s", commitish)
+		}
+
+		err = o.Git().StashPop(o.Dir)
+		if err != nil && !gits.IsNoStashEntriesError(err) { // Ignore no stashes as that's just because there was nothing to stash
+			return fmt.Errorf("Could not update local boot clone due to conflicts between local changes and %s.\n"+
+				"To fix this, resolve the conflicts listed below manually, run 'git reset HEAD', and run 'jx boot' again.\n%s",
+				commitish, gits.GetSimpleIndentedStashPopErrorMessage(err))
+		}
+	}
+
+	return nil
 }
 
 func (o *BootOptions) setupCloudBeesProfile(gitURL string) string {
