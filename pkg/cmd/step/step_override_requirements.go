@@ -188,6 +188,9 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 
 	githubApp, found := os.LookupEnv(config.RequirementGitAppEnabled)
 	if found {
+		if requirements.GithubApp == nil {
+			requirements.GithubApp = &config.GithubAppConfig{}
+		}
 		if githubApp == "true" {
 			requirements.GithubApp.Enabled = true
 		} else {
@@ -196,6 +199,9 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	}
 
 	if "" != os.Getenv(config.RequirementGitAppURL) {
+		if requirements.GithubApp == nil {
+			requirements.GithubApp = &config.GithubAppConfig{}
+		}
 		requirements.GithubApp.URL = os.Getenv(config.RequirementGitAppURL)
 	}
 

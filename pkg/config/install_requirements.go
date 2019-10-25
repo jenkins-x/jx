@@ -390,7 +390,7 @@ type RequirementsConfig struct {
 	// Environments the requirements for the environments
 	Environments []EnvironmentConfig `json:"environments,omitempty"`
 	// GithubApp contains github app config
-	GithubApp GithubAppConfig `json:"githubApp,omitempty"`
+	GithubApp *GithubAppConfig `json:"githubApp,omitempty"`
 	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
 	// re-run 'jx boot' when changes merge to the master branch
 	GitOps bool `json:"gitops,omitempty"`
