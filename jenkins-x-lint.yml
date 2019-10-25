@@ -28,27 +28,5 @@ pipelineConfig:
             steps:
               - name: fmt
                 image: golang:1.12.10
-                command: ./hack/gofmt.sh
+                command: echo "no op"
                 dir: /workspace/source
-              - name: lint
-                image: golang:1.12.10
-                command: ./hack/linter.sh
-                dir: /workspace/source
-              - name: mk-jx-project-dir	
-                image: busybox	
-                command: mkdir	
-                args:	
-                  - -p	
-                  - /workspace/go/src/github.com/jenkins-x/jx
-              - name: copy-jx-project-to-gopath
-                image: busybox	
-                command: cp	
-                args:	
-                  - -Rv	
-                  - "./"
-                  - "/workspace/go/src/github.com/jenkins-x/jx"
-                dir: /workspace/source
-              - name: generate
-                image: golang:1.12.10
-                command: ./hack/generate.sh
-                dir: /workspace/go/src/github.com/jenkins-x/jx
