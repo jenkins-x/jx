@@ -1274,3 +1274,33 @@ func (g *GCloud) CurrentProject() (string, error) {
 	}
 	return strings.TrimSpace(text), nil
 }
+
+func (g *GCloud) GetProjectNumber(projectID string) (string, error) {
+	args := []string{
+		"projects",
+		"describe",
+		projectID,
+		"--format=json",
+	}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+
+	log.Logger().Infof("running: gcloud %s", strings.Join(args, " "))
+	output, err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	var project project
+	err = json.Unmarshal([]byte(output), &project)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to unmarshal %s", output)
+	}
+	return project.ProjectNumber, nil
+}
+
+type project struct {
+	ProjectNumber string `json:"projectNumber"`
+}

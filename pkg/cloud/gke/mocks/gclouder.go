@@ -438,6 +438,25 @@ func (mock *MockGClouder) GetOrCreateServiceAccount(_param0 string, _param1 stri
 	return ret0, ret1
 }
 
+func (mock *MockGClouder) GetProjectNumber(_param0 string) (string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGClouder().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetProjectNumber", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGClouder) GetServiceAccountKeys(_param0 string, _param1 string) ([]string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGClouder().")
@@ -1452,6 +1471,33 @@ func (c *MockGClouder_GetOrCreateServiceAccount_OngoingVerification) GetAllCaptu
 		_param3 = make([][]string, len(params[3]))
 		for u, param := range params[3] {
 			_param3[u] = param.([]string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGClouder) GetProjectNumber(_param0 string) *MockGClouder_GetProjectNumber_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetProjectNumber", params, verifier.timeout)
+	return &MockGClouder_GetProjectNumber_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGClouder_GetProjectNumber_OngoingVerification struct {
+	mock              *MockGClouder
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGClouder_GetProjectNumber_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *MockGClouder_GetProjectNumber_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
 		}
 	}
 	return

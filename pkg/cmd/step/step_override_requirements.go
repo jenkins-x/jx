@@ -204,6 +204,21 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 		}
 		requirements.GithubApp.URL = os.Getenv(config.RequirementGitAppURL)
 	}
+	// set this if its not currently configured
+	if requirements.Cluster.Provider == "gke" {
+		if requirements.Cluster.GKEConfig == nil {
+			requirements.Cluster.GKEConfig = &config.GKEConfig{}
+		}
+
+		if requirements.Cluster.GKEConfig.ProjectNumber == "" {
+			gcloud := o.GCloud()
+			projectNumber, err := gcloud.GetProjectNumber(requirements.Cluster.ProjectID)
+			if err != nil {
+				log.Logger().Warnf("unable to determine gke project number - %s", err)
+			}
+			requirements.Cluster.GKEConfig.ProjectNumber = projectNumber
+		}
+	}
 
 	log.Logger().Debugf("saving %s", requirementsFileName)
 	requirements.SaveConfig(requirementsFileName)
