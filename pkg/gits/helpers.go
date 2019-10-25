@@ -808,7 +808,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
 	}
-	log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo(fromInfo.HTMLURL), util.ColorInfo(duplicateInfo.HTMLURL))
+	log.Logger().Infof("Duplicated Git repository %s from commit-ish %s to %s\n", util.ColorInfo(fromCommitish), util.ColorInfo(fromInfo.HTMLURL), util.ColorInfo(duplicateInfo.HTMLURL))
 	log.Logger().Infof("Setting upstream to %s\n\n", util.ColorInfo(duplicateInfo.HTMLURL))
 
 	return duplicateInfo, nil

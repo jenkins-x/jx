@@ -22,6 +22,9 @@ pushd $HOME/.jx
   git clone https://github.com/jenkins-x/jenkins-x-versions.git
   pushd jenkins-x-versions
     git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
+    touch foo
+    git add foo
+    git commit -m "foo"
   popd
 popd
 
@@ -29,6 +32,9 @@ pushd $JX_HOME/.jx
   git clone https://github.com/jenkins-x/jenkins-x-versions.git
   pushd jenkins-x-versions
     git reset --hard d438b91f2d7900dcc8bc9fb85dcae549d70e1279
+    touch foo
+    git add foo
+    git commit -m "foo"
   popd
 popd
 
