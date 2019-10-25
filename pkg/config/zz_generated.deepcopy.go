@@ -939,7 +939,15 @@ func (in *RequirementsConfig) DeepCopyInto(out *RequirementsConfig) {
 		*out = make([]EnvironmentConfig, len(*in))
 		copy(*out, *in)
 	}
-	out.GithubApp = in.GithubApp
+	if in.GithubApp != nil {
+		in, out := &in.GithubApp, &out.GithubApp
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(GithubAppConfig)
+			**out = **in
+		}
+	}
 	out.Ingress = in.Ingress
 	out.Storage = in.Storage
 	out.Vault = in.Vault
