@@ -709,6 +709,24 @@ func IsNoStashEntriesError(err error) bool {
 	return strings.Contains(err.Error(), "No stash entries found.")
 }
 
+// GetSimpleIndentedStashPopErrorMessage gets the output of a failed git stash pop without duplication or additional content,
+// with each line indented four characters.
+func GetSimpleIndentedStashPopErrorMessage(err error) string {
+	errStr := err.Error()
+	idx := strings.Index(errStr, ": failed to run 'git stash pop'")
+	if idx > -1 {
+		errStr = errStr[:idx]
+	}
+
+	var indentedLines []string
+
+	for _, line := range strings.Split(errStr, "\n") {
+		indentedLines = append(indentedLines, "    "+line)
+	}
+
+	return strings.Join(indentedLines, "\n")
+}
+
 // FindTagForVersion will find a tag for a version number (first fetching the tags, then looking for a tag <version>
 // then trying the common convention v<version>). It will return the tag or an error if the tag can't be found.
 func FindTagForVersion(dir string, version string, gitter Gitter) (string, error) {
