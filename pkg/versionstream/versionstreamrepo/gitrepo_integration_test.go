@@ -19,12 +19,10 @@ import (
 )
 
 const (
-	RepoURL           = "https://github.com/jenkins-x/jenkins-x-versions"
 	TagFromDefaultURL = "v1.0.114"
 	FirstTag          = "v0.0.1"
 	SecondTag         = "v0.0.2"
 	BranchRef         = "master"
-	HEAD              = "HEAD"
 )
 
 func TestCloneJXVersionsRepoWithDefaultURL(t *testing.T) {
@@ -42,23 +40,7 @@ func TestCloneJXVersionsRepoWithDefaultURL(t *testing.T) {
 	}()
 
 	gitter := gits.NewGitCLI()
-	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		"",
-		TagFromDefaultURL,
-		nil,
-		gitter,
-		true,
-		false,
-		util.IOFileHandles{},
-	)
-
-	// Get the latest tag so that we know the correct expected verion ref.
-	tag, _, err := gitter.Describe(dir, false, TagFromDefaultURL, "", true)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, tag, versionRef)
+	_, _ = assertClonesCorrectly(t, "", TagFromDefaultURL, TagFromDefaultURL, gitter, nil)
 }
 
 func initializeTempGitRepo(gitter gits.Gitter) (string, string, error) {
@@ -148,23 +130,7 @@ func TestCloneJXVersionsRepoReplacingCurrent(t *testing.T) {
 
 	gitter := gits.NewGitCLI()
 	// First, clone the default URL so we can make sure it gets removed.
-	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		"",
-		TagFromDefaultURL,
-		nil,
-		gitter,
-		true,
-		false,
-		util.IOFileHandles{},
-	)
-
-	// Get the latest tag so that we know the correct expected version ref.
-	tag, _, err := gitter.Describe(dir, false, TagFromDefaultURL, "", true)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, tag, versionRef)
+	_, _ = assertClonesCorrectly(t, "", TagFromDefaultURL, TagFromDefaultURL, gitter, nil)
 
 	// Sleep briefly so that git GC in the background has finished
 	time.Sleep(5 * time.Second)
@@ -180,26 +146,8 @@ func TestCloneJXVersionsRepoReplacingCurrent(t *testing.T) {
 		VersionStreamURL: gitDir,
 		VersionStreamRef: FirstTag,
 	}
-	dir, versionRef, err = versionstreamrepo.CloneJXVersionsRepo(
-		"",
-		"",
-		settings,
-		gitter,
-		true,
-		false,
-		util.IOFileHandles{},
-	)
-	assert.NoError(t, err)
-	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, FirstTag, versionRef)
 
-	err = gitter.Checkout(dir, versionRef)
-	assert.NoError(t, err)
-
-	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, "foo", string(actualFileContents))
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, "", "", FirstTag, gitter, testFileName, "foo", settings)
 }
 
 func TestCloneJXVersionsRepoWithTeamSettings(t *testing.T) {
@@ -227,26 +175,8 @@ func TestCloneJXVersionsRepoWithTeamSettings(t *testing.T) {
 		VersionStreamURL: gitDir,
 		VersionStreamRef: FirstTag,
 	}
-	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		"",
-		"",
-		settings,
-		gitter,
-		true,
-		false,
-		util.IOFileHandles{},
-	)
-	assert.NoError(t, err)
-	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, FirstTag, versionRef)
 
-	err = gitter.Checkout(dir, versionRef)
-	assert.NoError(t, err)
-
-	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, "foo", string(actualFileContents))
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, "", "", FirstTag, gitter, testFileName, "foo", settings)
 }
 
 func TestCloneJXVersionsRepoWithATag(t *testing.T) {
@@ -270,26 +200,8 @@ func TestCloneJXVersionsRepoWithATag(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		gitDir,
-		FirstTag,
-		nil,
-		gitter,
-		true,
-		false,
-		util.IOFileHandles{},
-	)
-	assert.NoError(t, err)
-	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, FirstTag, versionRef)
 
-	err = gitter.Checkout(dir, versionRef)
-	assert.NoError(t, err)
-
-	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, "foo", string(actualFileContents))
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, gitDir, FirstTag, FirstTag, gitter, testFileName, "foo", nil)
 }
 
 func TestCloneJXVersionsRepoWithABranch(t *testing.T) {
@@ -313,26 +225,8 @@ func TestCloneJXVersionsRepoWithABranch(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
-	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		gitDir,
-		BranchRef,
-		nil,
-		gitter,
-		true,
-		false,
-		util.IOFileHandles{},
-	)
-	assert.NoError(t, err)
-	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, BranchRef, versionRef)
 
-	err = gitter.Checkout(dir, versionRef)
-	assert.NoError(t, err)
-
-	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, "foobarbaz", string(actualFileContents))
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, gitDir, BranchRef, BranchRef, gitter, testFileName, "foobarbaz", nil)
 }
 
 func TestCloneJXVersionsRepoWithACommit(t *testing.T) {
@@ -359,26 +253,7 @@ func TestCloneJXVersionsRepoWithACommit(t *testing.T) {
 
 	headMinusOne, err := gitter.RevParse(gitDir, "HEAD~1")
 
-	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		fmt.Sprintf("file://%s", gitDir),
-		headMinusOne,
-		nil,
-		gitter,
-		true,
-		false,
-		util.IOFileHandles{},
-	)
-	assert.NoError(t, err)
-	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, SecondTag, versionRef)
-
-	err = gitter.Checkout(dir, versionRef)
-	assert.NoError(t, err)
-
-	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, "foobar", string(actualFileContents))
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, gitDir, headMinusOne, SecondTag, gitter, testFileName, "foobar", nil)
 }
 
 func TestCloneJXVersionsRepoWithAnUntaggedCommit(t *testing.T) {
@@ -405,10 +280,70 @@ func TestCloneJXVersionsRepoWithAnUntaggedCommit(t *testing.T) {
 
 	head, err := gitter.RevParse(gitDir, "HEAD")
 
-	dir, versionRef, err := versionstreamrepo.CloneJXVersionsRepo(
-		fmt.Sprintf("file://%s", gitDir),
-		head,
-		nil,
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, gitDir, head, head, gitter, testFileName, "foobarbaz", nil)
+}
+
+func TestCloneJXVersionsRepoWithNonFastForward(t *testing.T) {
+	origJxHome := os.Getenv("JX_HOME")
+
+	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
+	assert.NoError(t, err)
+
+	err = os.Setenv("JX_HOME", tmpJxHome)
+	assert.NoError(t, err)
+
+	defer func() {
+		_ = os.RemoveAll(tmpJxHome)
+		err = os.Setenv("JX_HOME", origJxHome)
+	}()
+
+	gitter := gits.NewGitCLI()
+	gitDir, testFileName, err := initializeTempGitRepo(gitter)
+	defer func() {
+		err := os.RemoveAll(gitDir)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+
+	dir := assertClonesCorrectlyWithCorrectFileContents(t, gitDir, BranchRef, BranchRef, gitter, testFileName, "foobarbaz", nil)
+
+	// Update the git repo with a new commit
+	testFileContents := []byte("banana")
+	err = ioutil.WriteFile(filepath.Join(gitDir, testFileName), testFileContents, util.DefaultWritePermissions)
+	assert.NoError(t, err)
+
+	err = gitter.AddCommit(gitDir, "changing to banana")
+	assert.NoError(t, err)
+
+	// Make a different change to the local clone of the repo
+	testFileContents = []byte("apple")
+	err = ioutil.WriteFile(filepath.Join(dir, testFileName), testFileContents, util.DefaultWritePermissions)
+	assert.NoError(t, err)
+
+	err = gitter.AddCommit(dir, "changing to apple")
+	assert.NoError(t, err)
+
+	// Run CloneJXVersionsRepo and verify that it does checkout the latest of the branch.
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, gitDir, BranchRef, BranchRef, gitter, testFileName, "banana", nil)
+}
+
+func assertClonesCorrectlyWithCorrectFileContents(t *testing.T, gitDir string, versionRefToCheckout string, expectedRef string, gitter gits.Gitter, testFileName string, expectedFileContent string, settings *v1.TeamSettings) string {
+	dir, actualVersionRef := assertClonesCorrectly(t, gitDir, versionRefToCheckout, expectedRef, gitter, settings)
+	err := gitter.Checkout(dir, actualVersionRef)
+	assert.NoError(t, err)
+
+	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, expectedFileContent, string(actualFileContents))
+
+	return dir
+}
+
+func assertClonesCorrectly(t *testing.T, gitDir string, versionRefToCheckout string, expectedRef string, gitter gits.Gitter, settings *v1.TeamSettings) (string, string) {
+	dir, actualVersionRef, err := versionstreamrepo.CloneJXVersionsRepo(
+		gitDir,
+		versionRefToCheckout,
+		settings,
 		gitter,
 		true,
 		false,
@@ -416,13 +351,8 @@ func TestCloneJXVersionsRepoWithAnUntaggedCommit(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dir)
-	assert.NotNil(t, versionRef)
-	assert.Equal(t, head, versionRef)
+	assert.NotNil(t, actualVersionRef)
+	assert.Equal(t, expectedRef, actualVersionRef)
 
-	err = gitter.Checkout(dir, versionRef)
-	assert.NoError(t, err)
-
-	actualFileContents, err := ioutil.ReadFile(filepath.Join(dir, testFileName))
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("foobarbaz"), actualFileContents)
+	return dir, actualVersionRef
 }
