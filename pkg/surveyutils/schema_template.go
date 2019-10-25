@@ -73,7 +73,7 @@ func ReadSchemaTemplate(templateFile string, requirements *config.RequirementsCo
 	templateData := map[string]interface{}{
 		"GitKind":      requirements.Cluster.GitKind,
 		"GitServer":    requirements.Cluster.GitServer,
-		"GithubApp":    requirements.GithubApp.Enabled,
+		"GithubApp":    requirements.GithubApp != nil && requirements.GithubApp.Enabled,
 		"Requirements": chartutil.Values(requirementsMap),
 		"Environments": chartutil.Values(requirements.EnvironmentMap()),
 	}
