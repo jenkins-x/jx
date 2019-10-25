@@ -1222,6 +1222,15 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 	for _, assignee := range i.Assignees {
 		assignees = append(assignees, *toGitHubUser(assignee))
 	}
+
+	comments := []GitIssueComment{}
+	var err error
+	if *i.Comments > 0 {
+		comments, err = p.fetchComments(org, name, number)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &GitIssue{
 		Number:        &number,
 		URL:           url,
@@ -1236,6 +1245,7 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 		ClosedAt:      i.ClosedAt,
 		ClosedBy:      toGitHubUser(i.ClosedBy),
 		Assignees:     assignees,
+		Comments:      comments,
 	}, nil
 }
 
@@ -1250,6 +1260,32 @@ func (p *GitHubProvider) IssueURL(org string, name string, number int, isPull bo
 	}
 	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
 	return url
+}
+
+func (p *GitHubProvider) fetchComments(owner string, repo string, number int) ([]GitIssueComment, error) {
+	comments := []GitIssueComment{}
+
+	ghComments, _, err := p.Client.Issues.ListComments(context.Background(), owner, repo, number, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ghComment := range ghComments {
+		number := int(ghComment.GetID())
+		createdAt := ghComment.GetCreatedAt()
+		updatedAt := ghComment.GetUpdatedAt()
+		comment := GitIssueComment{
+			Number:    &number,
+			Body:      ghComment.GetBody(),
+			User:      toGitHubUser(ghComment.GetUser()),
+			CreatedAt: &createdAt,
+			UpdatedAt: &updatedAt,
+		}
+
+		comments = append(comments, comment)
+	}
+	return comments, nil
 }
 
 func toGitHubUser(user *github.User) *GitUser {

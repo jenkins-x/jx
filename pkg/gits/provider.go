@@ -63,6 +63,7 @@ type GitPullRequest struct {
 	Labels             []*Label
 	UpdatedAt          *time.Time
 	HeadOwner          *string // HeadOwner is the string the PR is created from
+	Comments           []GitIssueComment
 }
 
 // Label represents a label on an Issue
@@ -113,6 +114,19 @@ type GitIssue struct {
 	User          *GitUser
 	ClosedBy      *GitUser
 	Assignees     []GitUser
+	Comments      []GitIssueComment
+}
+
+// GitIssueComment is a generic representation
+// of a comment on an issue or PR
+type GitIssueComment struct {
+	Number    *int
+	Body      string
+	User      *GitUser
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+	URL       string
+	HTMLURL   string
 }
 
 type GitUser struct {
