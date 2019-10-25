@@ -5,6 +5,7 @@ cluster:
   project: jenkins-x-bdd3
   provider: gke
   zone: europe-west1-c
+  environmentGitPublic: true
 environments:
   - key: dev
     owner: ""
