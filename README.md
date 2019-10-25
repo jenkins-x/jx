@@ -1,6 +1,7 @@
 # JX 
 
 Hello world!
+Bye Bye!
 
 JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.io/)
 
