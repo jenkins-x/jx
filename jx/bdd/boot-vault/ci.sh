@@ -43,7 +43,7 @@ export JX_BATCH_MODE="true"
 
 git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
 pushd boot-source
-  git reset v1.0.32 --hard
+  git reset v1.0.32~1 --hard
 popd
 cp jx/bdd/boot-vault/jx-requirements.yml boot-source
 cp jx/bdd/boot-vault/parameters.yaml boot-source/env
