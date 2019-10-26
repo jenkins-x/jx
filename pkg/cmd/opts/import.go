@@ -199,11 +199,17 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	if jenkBaseURL == "" {
 		jenkBaseURL = jenk.BaseURL()
 	}
+	isInsecureSSL, err := o.IsInsecureSSLWebhooks()
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if we need to setup insecure SSL webhook")
+	}
+
 	webhookUrl := util.UrlJoin(jenkBaseURL, suffix)
 	webhook := &gits.GitWebHookArguments{
-		Owner: gitInfo.Organisation,
-		Repo:  gitInfo,
-		URL:   webhookUrl,
+		Owner:       gitInfo.Organisation,
+		Repo:        gitInfo,
+		URL:         webhookUrl,
+		InsecureSSL: isInsecureSSL,
 	}
 	return gitProvider.CreateWebHook(webhook)
 }

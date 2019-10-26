@@ -185,6 +185,7 @@ type GitWebHookArguments struct {
 	URL         string
 	ExistingURL string
 	Secret      string
+	InsecureSSL bool
 }
 
 type GitFileContent struct {

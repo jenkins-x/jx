@@ -539,13 +539,18 @@ func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret
 			return errors.Wrapf(err, "failed to create git provider for git URL %s", gitURL)
 		}
 	}
+	isInsecureSSL, err := o.IsInsecureSSLWebhooks()
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if we need to setup insecure SSL webhook")
+	}
 	webHookData := &gits.GitWebHookArguments{
 		Owner: o.GitOwner,
 		Repo: &gits.GitRepository{
 			Name: o.GitRepo,
 		},
-		URL:    webhookURL,
-		Secret: string(secret),
+		URL:         webhookURL,
+		Secret:      string(secret),
+		InsecureSSL: isInsecureSSL,
 	}
 	err = provider.CreateWebHook(webHookData)
 	if err != nil {

@@ -1252,3 +1252,18 @@ func configExists(configPath, configKey string) bool {
 	}
 	return viper.InConfig(configKey)
 }
+
+// IsInsecureSSLWebhooks returns true if we should create webhooks with SSL check disabled, used when running BDD tests and should NOT be used for normal installs
+func (o *CommonOptions) IsInsecureSSLWebhooks() (bool, error) {
+	certmngClient, err := o.CertManagerClient()
+	if err != nil {
+		return false, errors.Wrap(err, "creating the cert-manager client")
+	}
+	// lets lookup certmanager certificate and check if one exists, it's a selfsigned cert
+	isStaging, err := kube.IsStagingCertificate(certmngClient, o.devNamespace)
+	if err != nil {
+		// if there's an issue assume we don't need insecure webhooks to keep existing behavior
+		return false, nil
+	}
+	return isStaging, nil
+}
