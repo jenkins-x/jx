@@ -107,6 +107,9 @@ env:
   # lets use JSON output in logs
   JX_LOG_FORMAT: json
 
+  # lets set the logging level
+  JX_LOG_LEVEL: info
+
   # lets mark this pod as being a CI/CD pipeline job so reuse the pipeline git user
   PIPELINE_KIND: dummy
 

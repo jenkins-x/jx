@@ -374,7 +374,7 @@ func (o *StepBDDOptions) gitProviderUrl() string {
 // teamNameSuffix returns a team name suffix using the current branch +
 func (o *StepBDDOptions) teamNameSuffix() string {
 	repo := os.Getenv("REPO_NAME")
-	branch := os.Getenv("BRANCH_NAME")
+	branch := os.Getenv(util.EnvVarBranchName)
 	buildNumber := builds.GetBuildNumber()
 	if buildNumber == "" {
 		buildNumber = "1"

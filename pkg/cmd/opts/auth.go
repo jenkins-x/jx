@@ -238,7 +238,7 @@ func (o *CommonOptions) PickPipelineUserAuth(config *auth.AuthConfig, server *au
 	url := server.URL
 	userAuths := config.FindUserAuths(url)
 	if len(userAuths) > 1 {
-		userAuth, err = config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
+		userAuth, err = config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.GetIOFileHandles())
 		if err != nil {
 			return userAuth, err
 		}

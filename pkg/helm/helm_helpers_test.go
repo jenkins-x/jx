@@ -106,7 +106,7 @@ func TestStoreCredentials(t *testing.T) {
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
-	username, password, err := helm.DecorateWithCredentials(repository, username, password, vaultClient, nil, nil, nil)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, vaultClient, util.IOFileHandles{})
 	assert2.NoError(t, err)
 	vaultClient.VerifyWasCalledOnce().WriteObject(helm.RepoVaultPath, helm.HelmRepoCredentials{
 		repository: helm.HelmRepoCredential{
@@ -135,8 +135,7 @@ func TestRetrieveCredentials(t *testing.T) {
 			nil,
 		}
 	})
-	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, "", "", vaultClient, nil,
-		nil, nil)
+	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, "", "", vaultClient, util.IOFileHandles{})
 	assert2.NoError(t, err)
 	vaultClient.VerifyWasCalledOnce().ReadObject(pegomock.EqString(helm.RepoVaultPath), pegomock.AnyInterface())
 	assert2.Equal(t, username, retrievedUsername)
@@ -165,7 +164,7 @@ func TestOverrideCredentials(t *testing.T) {
 		}
 	})
 	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, newUsername, newPassword,
-		vaultClient, nil, nil, nil)
+		vaultClient, util.IOFileHandles{})
 	assert2.NoError(t, err)
 	assert2.Equal(t, newUsername, retrievedUsername)
 	assert2.Equal(t, newPassword, retrievedPassword)

@@ -108,7 +108,7 @@ func (c *clientFactory) Create(param PipelineCreateParam) (kube.PromoteStepActiv
 	// resourceName is shared across all builds of a branch, while the pipelineName is unique for each build.
 	resourceName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, param.Context, tekton.MetaPipeline.String(), nil, "")
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, param.Context, tekton.MetaPipeline.String(), c.tektonClient, c.ns)
-	buildNumber, err := tekton.GenerateNextBuildNumber(c.tektonClient, c.jxClient, c.ns, gitInfo, branchIdentifier, retryDuration, param.Context)
+	buildNumber, err := tekton.GenerateNextBuildNumber(c.tektonClient, c.jxClient, c.ns, gitInfo, branchIdentifier, retryDuration, param.Context, param.UseActivityForNextBuildNumber)
 	if err != nil {
 		return kube.PromoteStepActivityKey{}, tekton.CRDWrapper{}, errors.Wrap(err, "unable to determine next build number")
 	}
@@ -121,23 +121,24 @@ func (c *clientFactory) Create(param PipelineCreateParam) (kube.PromoteStepActiv
 	}
 
 	crdCreationParams := CRDCreationParameters{
-		Namespace:        c.ns,
-		Context:          param.Context,
-		PipelineName:     pipelineName,
-		ResourceName:     resourceName,
-		PipelineKind:     param.PipelineKind,
-		BuildNumber:      buildNumber,
-		BranchIdentifier: branchIdentifier,
-		PullRef:          param.PullRef,
-		SourceDir:        defaultCheckoutDir,
-		PodTemplates:     podTemplates,
-		ServiceAccount:   param.ServiceAccount,
-		Labels:           param.Labels,
-		EnvVars:          param.EnvVariables,
-		DefaultImage:     param.DefaultImage,
-		Apps:             extendingApps,
-		VersionsDir:      c.versionDir,
-		GitInfo:          *gitInfo,
+		Namespace:           c.ns,
+		Context:             param.Context,
+		PipelineName:        pipelineName,
+		ResourceName:        resourceName,
+		PipelineKind:        param.PipelineKind,
+		BuildNumber:         buildNumber,
+		BranchIdentifier:    branchIdentifier,
+		PullRef:             param.PullRef,
+		SourceDir:           defaultCheckoutDir,
+		PodTemplates:        podTemplates,
+		ServiceAccount:      param.ServiceAccount,
+		Labels:              param.Labels,
+		EnvVars:             param.EnvVariables,
+		DefaultImage:        param.DefaultImage,
+		Apps:                extendingApps,
+		VersionsDir:         c.versionDir,
+		GitInfo:             *gitInfo,
+		UseBranchAsRevision: param.UseBranchAsRevision,
 	}
 
 	return c.createActualCRDs(buildNumber, branchIdentifier, param.Context, param.PullRef, crdCreationParams)

@@ -148,7 +148,7 @@ func (o *CreateVaultOptions) Run() error {
 		// Prompt the user for the vault name
 		vaultName, _ = util.PickValue(
 			"Vault name:", "", true,
-			"The name of the vault that will be created", o.GetIn(), o.GetOut(), o.GetErr())
+			"The name of the vault that will be created", o.GetIOFileHandles())
 	}
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
@@ -331,7 +331,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	}
 	log.Logger().Debugf("KMS Key '%s' created in keying '%s'", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
-	vaultBucket, err := gkevault.CreateBucket(o.GCloud(), vaultName, bucketName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.In, o.Out, o.Err)
+	vaultBucket, err := gkevault.CreateBucket(o.GCloud(), vaultName, bucketName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}

@@ -2,11 +2,8 @@ package features
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
-
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -26,7 +23,7 @@ import (
 //
 // If includes is not empty only those that match an include will be operated on. If dryRun is true, the operations to
 // be done will printed and but nothing done. If batchMode is false, then each change will be prompted.
-func DisableFeaturesForOrg(org string, includes []string, excludes []string, dryRun bool, batchMode bool, provider gits.GitProvider, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) error {
+func DisableFeaturesForOrg(org string, includes []string, excludes []string, dryRun bool, batchMode bool, provider gits.GitProvider, handles util.IOFileHandles) error {
 
 	type closeTypes struct {
 		*gits.GitRepository
@@ -176,7 +173,7 @@ Wiki Pages: %s
 			} else {
 
 				if !batchMode {
-					proceed := util.Confirm(fmt.Sprintf("Are you sure you want to disable %s on %s", strings.Join(toClose, ","), util.ColorInfo(fmt.Sprintf("%s/%s", c.Organisation, c.Name))), true, "", in, out, errOut)
+					proceed := util.Confirm(fmt.Sprintf("Are you sure you want to disable %s on %s", strings.Join(toClose, ","), util.ColorInfo(fmt.Sprintf("%s/%s", c.Organisation, c.Name))), true, "", handles)
 					if !proceed {
 						continue
 					}

@@ -73,7 +73,7 @@ func TestPatchUpdateUserWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := users.PatchUpdate(testUser)
+	updated, err := users.PatchUpdate(clonedUser)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testUser, updated)
 	assert.Equal(t, name, updated.Spec.Name)
@@ -118,8 +118,10 @@ func TestPatchUpdateUserWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := users.PatchUpdate(testUser)
+	name := "susfu"
+	clonedUser := testUser.DeepCopy()
+	clonedUser.Spec.Name = name
+	updated, err := users.PatchUpdate(clonedUser)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

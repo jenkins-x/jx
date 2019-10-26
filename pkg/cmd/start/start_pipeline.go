@@ -32,7 +32,6 @@ import (
 const (
 	repoOwnerEnv      = "REPO_OWNER"
 	repoNameEnv       = "REPO_NAME"
-	jmbrBranchName    = "BRANCH_NAME"
 	jmbrSourceURL     = "SOURCE_URL"
 	releaseBranchName = "master"
 )
@@ -167,7 +166,7 @@ func (o *StartPipelineOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to start: ", defaultName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to start: ", defaultName, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -312,7 +311,7 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 		env := map[string]string{}
 
 		// enrich with jenkins multi branch plugin env vars
-		env[jmbrBranchName] = branch
+		env[util.EnvVarBranchName] = branch
 		env[jmbrSourceURL] = jobSpec.BuildSpec.Source.Git.Url
 		env[repoOwnerEnv] = org
 		env[repoNameEnv] = repo

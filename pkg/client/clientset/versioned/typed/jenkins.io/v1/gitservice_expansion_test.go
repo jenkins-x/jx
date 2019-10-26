@@ -73,7 +73,7 @@ func TestPatchUpdateGitServiceWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := gitServices.PatchUpdate(testGitService)
+	updated, err := gitServices.PatchUpdate(clonedGitService)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testGitService, updated)
 	assert.Equal(t, name, updated.Spec.Name)
@@ -118,8 +118,10 @@ func TestPatchUpdateGitServiceWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := gitServices.PatchUpdate(testGitService)
+	name := "susfu"
+	clonedGitService := testGitService.DeepCopy()
+	clonedGitService.Spec.Name = name
+	updated, err := gitServices.PatchUpdate(clonedGitService)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

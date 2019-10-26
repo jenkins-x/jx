@@ -42,7 +42,7 @@ func EnsureUserAndEmailSetup(gitter Gitter) (string, string, error) {
 			}
 		}
 		if userName == "" {
-			userName = "jenkins-x-bot"
+			userName = util.DefaultGitUserName
 		}
 		err := gitter.SetUsername("", userName)
 		if err != nil {
@@ -52,7 +52,7 @@ func EnsureUserAndEmailSetup(gitter Gitter) (string, string, error) {
 	if userEmail == "" {
 		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
 		if userEmail == "" {
-			userEmail = "jenkins-x@googlegroups.com"
+			userEmail = util.DefaultGitUserEmail
 		}
 		err := gitter.SetEmail("", userEmail)
 		if err != nil {

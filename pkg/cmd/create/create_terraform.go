@@ -333,7 +333,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		}
 	} else {
 		details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
-			defaultRepoName, &options.InstallOptions.GitRepositoryOptions, nil, nil, options.Git(), true, options.In, options.Out, options.Err)
+			defaultRepoName, &options.InstallOptions.GitRepositoryOptions, nil, nil, options.Git(), true, options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

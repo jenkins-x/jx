@@ -583,7 +583,7 @@ func TestCreateChartChangeFilesFn(t *testing.T) {
 		}, helmer)
 		vaultClient := vault_test.NewMockClient()
 		pro := operations.PullRequestOperation{}
-		fn := operations.CreateChartChangeFilesFn("acme/roadrunner", "1.0.1", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		fn := operations.CreateChartChangeFilesFn("acme/roadrunner", "1.0.1", "charts", &pro, helmer, vaultClient, util.IOFileHandles{})
 		dir, err := ioutil.TempDir("", "")
 		defer func() {
 			err := os.RemoveAll(dir)
@@ -611,7 +611,7 @@ func TestCreateChartChangeFilesFn(t *testing.T) {
 		}, helmer)
 		vaultClient := vault_test.NewMockClient()
 		pro := operations.PullRequestOperation{}
-		fn := operations.CreateChartChangeFilesFn("acme/wile", "1.0.1", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		fn := operations.CreateChartChangeFilesFn("acme/wile", "1.0.1", "charts", &pro, helmer, vaultClient, util.IOFileHandles{})
 		dir, err := ioutil.TempDir("", "")
 		defer func() {
 			err := os.RemoveAll(dir)
@@ -654,7 +654,7 @@ func TestCreateChartChangeFilesFn(t *testing.T) {
 		pegomock.When(helmer.IsRepoMissing("https://acme.com/charts")).ThenReturn(pegomock.ReturnValue(false), pegomock.ReturnValue("acme"), pegomock.ReturnValue(nil))
 		vaultClient := vault_test.NewMockClient()
 		pro := operations.PullRequestOperation{}
-		fn := operations.CreateChartChangeFilesFn("acme/wile", "", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		fn := operations.CreateChartChangeFilesFn("acme/wile", "", "charts", &pro, helmer, vaultClient, util.IOFileHandles{})
 		dir, err := ioutil.TempDir("", "")
 		defer func() {
 			err := os.RemoveAll(dir)

@@ -176,6 +176,35 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Storage.Repository.URL = os.Getenv(config.RequirementStorageRepositoryURL)
 		}
 	}
+
+	// GKE specific requirements
+	if "" != os.Getenv(config.RequirementGkeProjectNumber) {
+		if requirements.Cluster.GKEConfig == nil {
+			requirements.Cluster.GKEConfig = &config.GKEConfig{}
+		}
+
+		requirements.Cluster.GKEConfig.ProjectNumber = os.Getenv(config.RequirementGkeProjectNumber)
+	}
+
+	githubApp, found := os.LookupEnv(config.RequirementGitAppEnabled)
+	if found {
+		if requirements.GithubApp == nil {
+			requirements.GithubApp = &config.GithubAppConfig{}
+		}
+		if githubApp == "true" {
+			requirements.GithubApp.Enabled = true
+		} else {
+			requirements.GithubApp.Enabled = false
+		}
+	}
+
+	if "" != os.Getenv(config.RequirementGitAppURL) {
+		if requirements.GithubApp == nil {
+			requirements.GithubApp = &config.GithubAppConfig{}
+		}
+		requirements.GithubApp.URL = os.Getenv(config.RequirementGitAppURL)
+	}
+
 	log.Logger().Debugf("saving %s", requirementsFileName)
 	requirements.SaveConfig(requirementsFileName)
 

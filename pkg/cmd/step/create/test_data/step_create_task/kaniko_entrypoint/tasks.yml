@@ -35,19 +35,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME
@@ -80,19 +80,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME
@@ -125,19 +125,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME
@@ -175,19 +175,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME
@@ -225,19 +225,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME
@@ -275,19 +275,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME
@@ -325,19 +325,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME
@@ -370,19 +370,19 @@ items:
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
-      - name: GIT_AUTHOR_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
-      - name: GIT_COMMITTER_EMAIL
-        value: jenkins-x@googlegroups.com
-      - name: GIT_COMMITTER_NAME
-        value: jenkins-x-bot
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: GIT_AUTHOR_NAME
+        value: bob
+      - name: GIT_AUTHOR_EMAIL
+        value: bob@bob.bob
+      - name: GIT_COMMITTER_NAME
+        value: bob
+      - name: GIT_COMMITTER_EMAIL
+        value: bob@bob.bob
       - name: REPO_OWNER
         value: jenkins-x
       - name: REPO_NAME

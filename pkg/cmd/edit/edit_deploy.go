@@ -172,7 +172,7 @@ func (o *EditDeployKindOptions) pickDeployKind(defaultName string) (string, erro
 	if defaultName == "" || util.StringArrayIndex(deployKinds, defaultName) < 0 {
 		defaultName = "default"
 	}
-	name, err := util.PickNameWithDefault(deployKinds, "Pick the deployment kind: ", defaultName, "lets you switch between knative serve based deployments and default kubernetes deployments", o.In, o.Out, o.Err)
+	name, err := util.PickNameWithDefault(deployKinds, "Pick the deployment kind: ", defaultName, "lets you switch between knative serve based deployments and default kubernetes deployments", o.GetIOFileHandles())
 	if err != nil {
 		return name, err
 	}

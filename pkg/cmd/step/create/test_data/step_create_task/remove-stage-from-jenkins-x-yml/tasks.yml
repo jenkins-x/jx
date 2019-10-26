@@ -42,6 +42,12 @@ items:
         value: "1"
       - name: PIPELINE_KIND
         value: release
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
       - name: REPO_OWNER
         value: abayer
       - name: REPO_NAME

@@ -301,7 +301,7 @@ func (o *CommonOptions) Installhyperv() error {
 
 		message := fmt.Sprintf("Would you like to restart your computer?")
 
-		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.In, o.Out, o.Err) {
+		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.GetIOFileHandles()) {
 
 			err = o.RunCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
 			if err != nil {
@@ -1036,7 +1036,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		// lets assume github.com for now so ignore config.CurrentServer
 		server := config.GetOrCreateServer("https://github.com")
 		message := fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
-		userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode, "", o.In, o.Out, o.Err)
+		userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode, "", o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrap(err, "picking bot user auth")
 		}

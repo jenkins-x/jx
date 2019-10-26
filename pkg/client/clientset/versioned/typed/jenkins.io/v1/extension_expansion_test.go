@@ -73,7 +73,7 @@ func TestPatchUpdateExtensionWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := extensions.PatchUpdate(testExtension)
+	updated, err := extensions.PatchUpdate(clonedExtension)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testExtension, updated)
 	assert.Equal(t, name, updated.Spec.Name)
@@ -118,8 +118,10 @@ func TestPatchUpdateExtensionWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := extensions.PatchUpdate(testExtension)
+	name := "fubu"
+	clonedExtension := testExtension.DeepCopy()
+	clonedExtension.Spec.Name = name
+	updated, err := extensions.PatchUpdate(clonedExtension)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

@@ -96,7 +96,7 @@ func (o *DeleteRepoOptions) Run() error {
 		if o.GitHost != "" {
 			server = config.GetOrCreateServer(o.GitHost)
 		} else {
-			server, err = config.PickServer("Pick the Git server to search for repositories", o.BatchMode, o.In, o.Out, o.Err)
+			server, err = config.PickServer("Pick the Git server to search for repositories", o.BatchMode, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -105,7 +105,7 @@ func (o *DeleteRepoOptions) Run() error {
 	if server == nil {
 		return fmt.Errorf("No Git server provided")
 	}
-	userAuth, err := config.PickServerUserAuth(server, "Git user name", o.BatchMode, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "Git user name", o.BatchMode, "", o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (o *DeleteRepoOptions) Run() error {
 	username := userAuth.Username
 	org := o.Organisation
 	if org == "" {
-		org, err = gits.PickOrganisation(provider, username, o.In, o.Out, o.Err)
+		org, err = gits.PickOrganisation(provider, username, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -128,7 +128,7 @@ func (o *DeleteRepoOptions) Run() error {
 
 	names := o.Repositories
 	if len(names) == 0 {
-		repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to delete:", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+		repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to delete:", o.SelectAll, o.SelectFilter, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

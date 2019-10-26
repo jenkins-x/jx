@@ -19,13 +19,13 @@ import (
 	helm "github.com/jenkins-x/jx/pkg/helm"
 	secrets "github.com/jenkins-x/jx/pkg/io/secrets"
 	table "github.com/jenkins-x/jx/pkg/table"
+	util "github.com/jenkins-x/jx/pkg/util"
 	vault "github.com/jenkins-x/jx/pkg/vault"
 	versioned1 "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	versioned2 "github.com/knative/build/pkg/client/clientset/versioned"
 	versioned3 "github.com/knative/serving/pkg/client/clientset/versioned"
 	pegomock "github.com/petergtz/pegomock"
 	versioned4 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	terminal "gopkg.in/AlecAivazis/survey.v1/terminal"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubernetes "k8s.io/client-go/kubernetes"
@@ -196,11 +196,11 @@ func (mock *MockFactory) CreateComplianceClient() (*client.SonobuoyClient, error
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string, _param3 terminal.FileReader, _param4 terminal.FileWriter, _param5 io.Writer) (golang_jenkins.JenkinsClient, error) {
+func (mock *MockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string, _param3 util.IOFileHandles) (golang_jenkins.JenkinsClient, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateCustomJenkinsClient", params, []reflect.Type{reflect.TypeOf((*golang_jenkins.JenkinsClient)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 golang_jenkins.JenkinsClient
 	var ret1 error
@@ -238,11 +238,11 @@ func (mock *MockFactory) CreateDynamicClient() (*dynamic.APIHelper, string, erro
 	return ret0, ret1, ret2
 }
 
-func (mock *MockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 terminal.FileReader, _param7 terminal.FileWriter, _param8 io.Writer) (gits.GitProvider, error) {
+func (mock *MockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 util.IOFileHandles) (gits.GitProvider, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateGitProvider", params, []reflect.Type{reflect.TypeOf((*gits.GitProvider)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 gits.GitProvider
 	var ret1 error
@@ -333,11 +333,11 @@ func (mock *MockFactory) CreateJenkinsAuthConfigService(_param0 kubernetes.Inter
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 terminal.FileReader, _param3 terminal.FileWriter, _param4 io.Writer) (golang_jenkins.JenkinsClient, error) {
+func (mock *MockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 util.IOFileHandles) (golang_jenkins.JenkinsClient, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+	params := []pegomock.Param{_param0, _param1, _param2}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateJenkinsClient", params, []reflect.Type{reflect.TypeOf((*golang_jenkins.JenkinsClient)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 golang_jenkins.JenkinsClient
 	var ret1 error
@@ -938,8 +938,8 @@ func (c *MockFactory_CreateComplianceClient_OngoingVerification) GetCapturedArgu
 func (c *MockFactory_CreateComplianceClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string, _param3 terminal.FileReader, _param4 terminal.FileWriter, _param5 io.Writer) *MockFactory_CreateCustomJenkinsClient_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5}
+func (verifier *VerifierMockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 string, _param3 util.IOFileHandles) *MockFactory_CreateCustomJenkinsClient_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateCustomJenkinsClient", params, verifier.timeout)
 	return &MockFactory_CreateCustomJenkinsClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -949,12 +949,12 @@ type MockFactory_CreateCustomJenkinsClient_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, string, terminal.FileReader, terminal.FileWriter, io.Writer) {
-	_param0, _param1, _param2, _param3, _param4, _param5 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1]
+func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, string, util.IOFileHandles) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string, _param3 []terminal.FileReader, _param4 []terminal.FileWriter, _param5 []io.Writer) {
+func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string, _param3 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]kubernetes.Interface, len(params[0]))
@@ -969,17 +969,9 @@ func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetAllCaptur
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]terminal.FileReader, len(params[3]))
+		_param3 = make([]util.IOFileHandles, len(params[3]))
 		for u, param := range params[3] {
-			_param3[u] = param.(terminal.FileReader)
-		}
-		_param4 = make([]terminal.FileWriter, len(params[4]))
-		for u, param := range params[4] {
-			_param4[u] = param.(terminal.FileWriter)
-		}
-		_param5 = make([]io.Writer, len(params[5]))
-		for u, param := range params[5] {
-			_param5[u] = param.(io.Writer)
+			_param3[u] = param.(util.IOFileHandles)
 		}
 	}
 	return
@@ -1002,8 +994,8 @@ func (c *MockFactory_CreateDynamicClient_OngoingVerification) GetCapturedArgumen
 func (c *MockFactory_CreateDynamicClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 terminal.FileReader, _param7 terminal.FileWriter, _param8 io.Writer) *MockFactory_CreateGitProvider_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8}
+func (verifier *VerifierMockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 util.IOFileHandles) *MockFactory_CreateGitProvider_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateGitProvider", params, verifier.timeout)
 	return &MockFactory_CreateGitProvider_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1013,12 +1005,12 @@ type MockFactory_CreateGitProvider_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateGitProvider_OngoingVerification) GetCapturedArguments() (string, string, auth.ConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) {
-	_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1], _param7[len(_param7)-1], _param8[len(_param8)-1]
+func (c *MockFactory_CreateGitProvider_OngoingVerification) GetCapturedArguments() (string, string, auth.ConfigService, string, bool, gits.Gitter, util.IOFileHandles) {
+	_param0, _param1, _param2, _param3, _param4, _param5, _param6 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1]
 }
 
-func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []auth.ConfigService, _param3 []string, _param4 []bool, _param5 []gits.Gitter, _param6 []terminal.FileReader, _param7 []terminal.FileWriter, _param8 []io.Writer) {
+func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []auth.ConfigService, _param3 []string, _param4 []bool, _param5 []gits.Gitter, _param6 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1045,17 +1037,9 @@ func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArgume
 		for u, param := range params[5] {
 			_param5[u] = param.(gits.Gitter)
 		}
-		_param6 = make([]terminal.FileReader, len(params[6]))
+		_param6 = make([]util.IOFileHandles, len(params[6]))
 		for u, param := range params[6] {
-			_param6[u] = param.(terminal.FileReader)
-		}
-		_param7 = make([]terminal.FileWriter, len(params[7]))
-		for u, param := range params[7] {
-			_param7[u] = param.(terminal.FileWriter)
-		}
-		_param8 = make([]io.Writer, len(params[8]))
-		for u, param := range params[8] {
-			_param8[u] = param.(io.Writer)
+			_param6[u] = param.(util.IOFileHandles)
 		}
 	}
 	return
@@ -1183,8 +1167,8 @@ func (c *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification) GetAllC
 	return
 }
 
-func (verifier *VerifierMockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 terminal.FileReader, _param3 terminal.FileWriter, _param4 io.Writer) *MockFactory_CreateJenkinsClient_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+func (verifier *VerifierMockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _param1 string, _param2 util.IOFileHandles) *MockFactory_CreateJenkinsClient_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateJenkinsClient", params, verifier.timeout)
 	return &MockFactory_CreateJenkinsClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1194,12 +1178,12 @@ type MockFactory_CreateJenkinsClient_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, terminal.FileReader, terminal.FileWriter, io.Writer) {
-	_param0, _param1, _param2, _param3, _param4 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1]
+func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, util.IOFileHandles) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []terminal.FileReader, _param3 []terminal.FileWriter, _param4 []io.Writer) {
+func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]kubernetes.Interface, len(params[0]))
@@ -1210,17 +1194,9 @@ func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArgu
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]terminal.FileReader, len(params[2]))
+		_param2 = make([]util.IOFileHandles, len(params[2]))
 		for u, param := range params[2] {
-			_param2[u] = param.(terminal.FileReader)
-		}
-		_param3 = make([]terminal.FileWriter, len(params[3]))
-		for u, param := range params[3] {
-			_param3[u] = param.(terminal.FileWriter)
-		}
-		_param4 = make([]io.Writer, len(params[4]))
-		for u, param := range params[4] {
-			_param4[u] = param.(io.Writer)
+			_param2[u] = param.(util.IOFileHandles)
 		}
 	}
 	return

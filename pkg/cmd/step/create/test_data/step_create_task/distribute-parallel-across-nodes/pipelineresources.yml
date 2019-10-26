@@ -7,7 +7,7 @@ items:
   spec:
     params:
     - name: revision
-      value: v0.0.1
+      value: really-long
     - name: url
       value: https://github.com/abayer/js-test-repo
     type: git

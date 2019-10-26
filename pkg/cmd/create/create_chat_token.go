@@ -111,7 +111,7 @@ func (o *CreateChatTokenOptions) Run() error {
 			return nil
 		}
 
-		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
+		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

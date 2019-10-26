@@ -1,8 +1,11 @@
 package verify
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -12,12 +15,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
-
-	"fmt"
-	"os"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -193,4 +195,85 @@ func Test_ReadEnvironment(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_ModifyPipelineGitEnvVars(t *testing.T) {
+	origGitAuthorName, foundGitAuthorName := os.LookupEnv(gitAuthorNameEnvKey)
+	origGitAuthorEmail, foundGitAuthorEmail := os.LookupEnv(gitAuthorEmailEnvKey)
+	origGitCommitterName, foundGitCommitterName := os.LookupEnv(gitCommitterNameEnvKey)
+	origGitCommitterEmail, foundGitCommitterEmail := os.LookupEnv(gitCommitterEmailEnvKey)
+
+	defer func() {
+		if foundGitAuthorName {
+			_ = os.Setenv(gitAuthorNameEnvKey, origGitAuthorName)
+		}
+		if foundGitAuthorEmail {
+			_ = os.Setenv(gitAuthorEmailEnvKey, origGitAuthorEmail)
+		}
+		if foundGitCommitterName {
+			_ = os.Setenv(gitCommitterNameEnvKey, origGitCommitterName)
+		}
+		if foundGitCommitterEmail {
+			_ = os.Setenv(gitCommitterEmailEnvKey, origGitCommitterEmail)
+		}
+	}()
+
+	dir, err := ioutil.TempDir("", "modify-pipeline-git-env-vars-")
+	assert.NoError(t, err)
+
+	defer func() {
+		err := os.RemoveAll(dir)
+		assert.NoError(t, err)
+	}()
+
+	testDir := path.Join("test_data", "verify_environments", "pipeline_git_env_vars")
+	exists, err := util.DirExists(testDir)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	err = util.CopyDir(testDir, dir, true)
+	assert.NoError(t, err)
+
+	o := StepVerifyEnvironmentsOptions{}
+
+	err = o.modifyPipelineGitEnvVars(dir)
+	assert.NoError(t, err)
+
+	parameterValues, err := helm.LoadParametersValuesFile(dir)
+	assert.NoError(t, err)
+
+	expectedUsername := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.username")
+	expectedEmail := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.email")
+	assert.NotEqual(t, "", expectedUsername, "should not have empty expected username")
+	assert.NotEqual(t, "", expectedEmail, "should not have empty expected email")
+
+	newGitAuthorName, _ := os.LookupEnv(gitAuthorNameEnvKey)
+	newGitAuthorEmail, _ := os.LookupEnv(gitAuthorEmailEnvKey)
+	newGitCommitterName, _ := os.LookupEnv(gitCommitterNameEnvKey)
+	newGitCommitterEmail, _ := os.LookupEnv(gitCommitterEmailEnvKey)
+
+	assert.Equal(t, expectedUsername, newGitAuthorName)
+	assert.Equal(t, expectedUsername, newGitCommitterName)
+	assert.Equal(t, expectedEmail, newGitAuthorEmail)
+	assert.Equal(t, expectedEmail, newGitCommitterEmail)
+
+	confFileName := filepath.Join(dir, config.ProjectConfigFileName)
+	projectConf, err := config.LoadProjectConfigFile(confFileName)
+	assert.NoError(t, err)
+
+	pipelineEnv := projectConf.PipelineConfig.Pipelines.Release.Pipeline.Environment
+
+	assert.Equal(t, expectedUsername, pipelineEnvValueForKey(pipelineEnv, gitAuthorNameEnvKey))
+	assert.Equal(t, expectedUsername, pipelineEnvValueForKey(pipelineEnv, gitCommitterNameEnvKey))
+	assert.Equal(t, expectedEmail, pipelineEnvValueForKey(pipelineEnv, gitAuthorEmailEnvKey))
+	assert.Equal(t, expectedEmail, pipelineEnvValueForKey(pipelineEnv, gitCommitterEmailEnvKey))
+}
+
+func pipelineEnvValueForKey(envVars []corev1.EnvVar, key string) string {
+	for _, entry := range envVars {
+		if entry.Name == key {
+			return entry.Value
+		}
+	}
+	return ""
 }

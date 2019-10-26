@@ -64,7 +64,7 @@ func (o *StepGitValidateOptions) Run() error {
 		userName = os.Getenv("GIT_AUTHOR_NAME")
 		if userName == "" {
 			if !o.BatchMode {
-				userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
+				userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.GetIOFileHandles())
 				if err != nil {
 					return err
 				}
@@ -77,7 +77,7 @@ func (o *StepGitValidateOptions) Run() error {
 			}
 		}
 		if userName == "" {
-			userName = "jenkins-x-bot"
+			userName = util.DefaultGitUserName
 		}
 		err = o.Git().SetUsername("", userName)
 		if err != nil {
@@ -89,14 +89,14 @@ func (o *StepGitValidateOptions) Run() error {
 		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
 		if userEmail == "" {
 			if !o.BatchMode {
-				userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
+				userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.GetIOFileHandles())
 				if err != nil {
 					return err
 				}
 			}
 		}
 		if userEmail == "" {
-			userEmail = "jenkins-x@googlegroups.com"
+			userEmail = util.DefaultGitUserEmail
 		}
 		err = o.Git().SetEmail("", userEmail)
 		if err != nil {

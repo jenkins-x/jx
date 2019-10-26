@@ -91,7 +91,7 @@ func (o *EnvironmentOptions) Run() error {
 		env = args[0]
 	}
 	if env == "" && !o.BatchMode {
-		pick, err := kube.PickEnvironment(envNames, currentEnv, o.In, o.Out, o.Err)
+		pick, err := kube.PickEnvironment(envNames, currentEnv, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

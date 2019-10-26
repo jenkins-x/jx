@@ -139,6 +139,10 @@ pipelineConfig:
                   - --suite-name
                   - "BDD_Tekton_Tests"
 
+              - name: clear-kubeconfig
+                image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
+                command: rm ~/.kube/config
+
               - name: stash-xml-report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
                 command: jx

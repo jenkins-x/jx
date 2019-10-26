@@ -147,5 +147,5 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 	if err != nil {
 		log.Logger().Debugf("Unable to load team settings because %v", err)
 	}
-	return versionstreamrepo.CloneJXVersionsRepo(versionRepository, versionRef, settings, o.Git(), o.BatchMode, o.AdvancedMode, o.In, o.Out, o.Err)
+	return versionstreamrepo.CloneJXVersionsRepo(versionRepository, versionRef, settings, o.Git(), o.BatchMode, o.AdvancedMode, o.GetIOFileHandles())
 }
