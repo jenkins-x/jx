@@ -241,13 +241,17 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 	if err != nil {
 		log.Logger().Infof("no webhooks found repository %s/%s", util.ColorInfo(owner), util.ColorInfo(repoName))
 	}
-
+	isInsecureSSL, err := o.IsInsecureSSLWebhooks()
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if we need to setup insecure SSL webhook")
+	}
 	webHookArgs := &gits.GitWebHookArguments{
 		Owner: owner,
 		Repo: &gits.GitRepository{
 			Name: repoName,
 		},
-		URL: webhookURL,
+		URL:         webhookURL,
+		InsecureSSL: isInsecureSSL,
 	}
 	if userName != owner {
 		webHookArgs.Repo.Organisation = owner

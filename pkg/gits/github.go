@@ -431,9 +431,16 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 			}
 		}
 	}
+	// 0 makes insecure SSL not enabled
+	insecureSSL := "0"
+	if data.InsecureSSL {
+		// this is insecure and should only be used in test scenarios
+		insecureSSL = "1"
+	}
 	config := map[string]interface{}{
 		"url":          webhookUrl,
 		"content_type": "json",
+		"insecure_ssl": insecureSSL,
 	}
 	if data.Secret != "" {
 		config["secret"] = data.Secret

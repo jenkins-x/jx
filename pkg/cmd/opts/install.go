@@ -1195,11 +1195,16 @@ func (o *CommonOptions) CreateWebhookProw(gitURL string, gitProvider gits.GitPro
 	if err != nil {
 		return err
 	}
+	isInsecureSSL, err := o.IsInsecureSSLWebhooks()
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if we need to setup insecure SSL webhook")
+	}
 	webhook := &gits.GitWebHookArguments{
-		Owner:  gitInfo.Organisation,
-		Repo:   gitInfo,
-		URL:    webhookUrl,
-		Secret: string(hmacToken.Data["hmac"]),
+		Owner:       gitInfo.Organisation,
+		Repo:        gitInfo,
+		URL:         webhookUrl,
+		Secret:      string(hmacToken.Data["hmac"]),
+		InsecureSSL: isInsecureSSL,
 	}
 	return gitProvider.CreateWebHook(webhook)
 }
