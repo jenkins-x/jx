@@ -530,6 +530,8 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Name: "git",
 		Args: args,
 	}
+	// Ensure that error output is in English so parsing work
+	cmd.Env = map[string]string{"LC_ALL": "C"}
 	output, err := cmd.RunWithoutRetry()
 	return errors.Wrapf(err, "git output: %s", output)
 }
@@ -540,6 +542,8 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 		Name: "git",
 		Args: args,
 	}
+	// Ensure that error output is in English so parsing work
+	cmd.Env = map[string]string{"LC_ALL": "C"}
 	return cmd.RunWithoutRetry()
 }
 
