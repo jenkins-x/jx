@@ -427,9 +427,14 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, handles util.IOFileHandles) (GitProvider, error) {
+func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, githubAppMode bool, gitKind string, git Gitter, handles util.IOFileHandles) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
+	if githubAppMode {
+
+		hostUrl = hostUrl + "/" + i.Organisation
+	}
+
 	server := config.GetOrCreateServer(hostUrl)
 	if server.Kind == "" {
 		server.Kind = gitKind

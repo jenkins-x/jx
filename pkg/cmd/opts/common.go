@@ -58,6 +58,7 @@ const (
 	OptionAlias            = "alias"
 	OptionApplication      = "app"
 	OptionBatchMode        = "batch-mode"
+	OptionGithubAppMode    = "github-app"
 	OptionClusterName      = "cluster-name"
 	OptionEnvironment      = "env"
 	OptionInstallDeps      = "install-dependencies"
@@ -107,6 +108,7 @@ type CommonOptions struct {
 	AdvancedMode           bool
 	Args                   []string
 	BatchMode              bool
+	GithubAppMode          bool
 	Cmd                    *cobra.Command
 	ConfigFile             string
 	Domain                 string
@@ -236,6 +238,7 @@ func (o *CommonOptions) AddBaseFlags(cmd *cobra.Command) {
 		defaultBatchMode = true
 	}
 	cmd.PersistentFlags().BoolVarP(&o.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
+	cmd.PersistentFlags().BoolVarP(&o.GithubAppMode, OptionGithubAppMode, "", false, "Runs in github app mode")
 	cmd.PersistentFlags().BoolVarP(&o.Verbose, OptionVerbose, "", false, "Enables verbose output")
 
 	o.Cmd = cmd

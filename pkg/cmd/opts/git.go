@@ -322,7 +322,7 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles())
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, o.GithubAppMode, gitKind, o.Git(), o.GetIOFileHandles())
 }
 
 // GitProviderForURL returns a GitProvider for the given Git server URL

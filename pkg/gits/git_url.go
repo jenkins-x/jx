@@ -100,7 +100,6 @@ func (i *GitRepository) HostURLWithoutUser() string {
 			u2.Path = ""
 			return u2.String()
 		}
-
 	}
 	host := i.Host
 	if !strings.Contains(host, ":/") {
