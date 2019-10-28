@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
+	"github.com/jenkins-x/jx/pkg/cmd/ui"
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/boot"
-	"github.com/jenkins-x/jx/pkg/cmd/cloudbees"
 	"github.com/jenkins-x/jx/pkg/cmd/compliance"
 	"github.com/jenkins-x/jx/pkg/cmd/controller"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
@@ -173,13 +173,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 			},
 		},
 		{
-			Message: "Working with CloudBees application:",
-			Commands: []*cobra.Command{
-				cloudbees.NewCmdCloudBees(commonOpts),
-				NewCmdLogin(commonOpts),
-			},
-		},
-		{
 			Message:  "Working with Environments:",
 			Commands: environmentsCommands,
 		},
@@ -207,6 +200,12 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 			Commands: []*cobra.Command{
 				controller.NewCmdController(commonOpts),
 				gc.NewCmdGC(commonOpts),
+			},
+		},
+		{
+			Message: "Working with Jenkins X UI:",
+			Commands: []*cobra.Command{
+				ui.NewCmdUI(commonOpts),
 			},
 		},
 	}

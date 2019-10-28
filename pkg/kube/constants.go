@@ -12,9 +12,6 @@ const (
 	// ChartAnchore the default chart for the Anchore plugin
 	ChartAnchore = "stable/anchore-engine"
 
-	// ChartCloudBees the default name of the CloudBees addon chart
-	ChartCloudBees = "cb/jxui"
-
 	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
 	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
 
@@ -87,9 +84,6 @@ const (
 
 	// SecretJenkins is the name of the Jenkins secret
 	SecretJenkins = "jenkins"
-
-	// ServiceCloudBees the service name of the CloudBees UI for Jenkins X
-	ServiceCloudBees = "cb-jxui"
 
 	// ServiceChartMuseum the service name of the Helm ChartMuseum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
@@ -334,7 +328,6 @@ var (
 	AddonCharts = map[string]string{
 		"ambassador":                    ChartAmbassador,
 		"anchore":                       ChartAnchore,
-		"cb":                            ChartCloudBees,
 		DefaultFlaggerReleaseName:       ChartFlagger,
 		"gitea":                         ChartGitea,
 		"istio":                         ChartIstio,
