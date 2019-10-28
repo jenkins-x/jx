@@ -55,6 +55,8 @@ type StartPipelineOptions struct {
 	Context      string
 	CustomLabels []string
 	CustomEnvs   []string
+
+	SkipRepoTag bool
 }
 
 var (
@@ -102,6 +104,7 @@ func NewCmdStartPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVar(&options.ServiceAccount, "service-account", "tekton-bot", "The Kubernetes ServiceAccount to use to run the meta pipeline")
 	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to the generated PipelineRun (can be use multiple times)")
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to the generated PipelineRun that are created (can be use multiple times)")
+	cmd.Flags().BoolVarP(&options.SkipRepoTag, "skip-repo-tag", "", false, "Use activity for next build number and use branch as revision")
 
 	options.JenkinsSelector.AddFlags(cmd)
 
@@ -173,13 +176,8 @@ func (o *StartPipelineOptions) Run() error {
 		args = []string{name}
 	}
 	for _, a := range args {
-		if devEnv.Spec.IsLighthouse() {
+		if devEnv.Spec.IsProwOrLighthouse() {
 			err = o.createMetaPipeline(a)
-			if err != nil {
-				return err
-			}
-		} else if isProw {
-			err = o.createProwJob(a)
 			if err != nil {
 				return err
 			}
@@ -242,14 +240,21 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 	}
 
 	pipelineCreateParam := metapipeline.PipelineCreateParam{
-		PullRef:        pullRef,
-		PipelineKind:   pipelineKind,
-		Context:        o.Context,
-		EnvVariables:   envVarMap,
-		Labels:         labelMap,
-		ServiceAccount: o.ServiceAccount,
+		PullRef:                       pullRef,
+		PipelineKind:                  pipelineKind,
+		Context:                       o.Context,
+		EnvVariables:                  envVarMap,
+		Labels:                        labelMap,
+		ServiceAccount:                o.ServiceAccount,
+		UseActivityForNextBuildNumber: true,
+		UseBranchAsRevision:           true,
 	}
 
+	if o.SkipRepoTag {
+		pipelineCreateParam.UseActivityForNextBuildNumber = true
+		pipelineCreateParam.UseBranchAsRevision = true
+
+	}
 	pipelineActivity, tektonCRDs, err := client.Create(pipelineCreateParam)
 	if err != nil {
 		return errors.Wrap(err, "unable to create Tekton CRDs")

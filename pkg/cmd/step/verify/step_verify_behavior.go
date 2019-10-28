@@ -30,6 +30,7 @@ type BehaviorOptions struct {
 
 	SourceGitURL string
 	Branch       string
+	EnvVars      []string
 }
 
 var (
@@ -65,6 +66,7 @@ func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.SourceGitURL, "git-url", "u", "https://github.com/jenkins-x/bdd-jx.git", "The git URL of the BDD tests pipeline")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "master", "The git branch to use to run the BDD tests")
+	cmd.Flags().StringArrayVarP(&options.EnvVars, "env", "e", nil, "List of custom environment variables to pass onto the pipeline that runs the BDD tests")
 	return cmd
 }
 
@@ -180,6 +182,8 @@ func (o *BehaviorOptions) triggerPipeline(owner string, repo string) error {
 		CommonOptions: o.CommonOptions,
 		Filter:        pipeline,
 		Branch:        o.Branch,
+		CustomEnvs:    o.EnvVars,
+		SkipRepoTag:   true,
 	}
 	err := so.Run()
 	if err != nil {
