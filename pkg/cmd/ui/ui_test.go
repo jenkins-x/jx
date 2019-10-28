@@ -1,4 +1,4 @@
-package cloudbees
+package ui
 
 import (
 	"testing"
@@ -34,7 +34,7 @@ func TestShowErrorMessageIfIngressFound(t *testing.T) {
 	_, err := kubeClient.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
 	assert.NoError(t, err, "there shouldn't be an error when creating the ingress")
 
-	o := CloudBeesOptions{
+	o := UIOptions{
 		CommonOptions: &co,
 	}
 
@@ -52,7 +52,7 @@ func TestGetLocalURL(t *testing.T) {
 
 	_, err := kubeClient.CoreV1().Services(ns).Create(&corev1.Service{
 		ObjectMeta: v1.ObjectMeta{
-			Name: "jxui",
+			Name: "ui",
 			Labels: map[string]string{
 				"jenkins.io/ui-resource": "true",
 			},
@@ -62,7 +62,7 @@ func TestGetLocalURL(t *testing.T) {
 
 	_, err = jxClient.JenkinsV1().Apps(ns).Create(&jenkinsv1.App{
 		ObjectMeta: v1.ObjectMeta{
-			Name: "jxui-app",
+			Name: "jx-app-ui",
 			Labels: map[string]string{
 				"jenkins.io/ui-resource": "true",
 			},
@@ -70,7 +70,7 @@ func TestGetLocalURL(t *testing.T) {
 	})
 	assert.NoError(t, err, "there shouldn't be an error when creating the app")
 
-	o := CloudBeesOptions{
+	o := UIOptions{
 		CommonOptions: &co,
 		LocalPort:     "9000",
 	}
@@ -83,13 +83,13 @@ func TestGetLocalURL(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "http://localhost:9000", url, "The local URL should use port 9000")
-	assert.Equal(t, "jxui", serviceName, "The serviceName should be the same as the UI service")
+	assert.Equal(t, "ui", serviceName, "The serviceName should be the same as the UI service")
 }
 
 func TestGetLocalURLMissingApp(t *testing.T) {
 	_, _, co, _ := getFakeClientsAndNs(t)
 
-	o := CloudBeesOptions{
+	o := UIOptions{
 		CommonOptions: &co,
 	}
 	listOptions := v1.ListOptions{
@@ -99,14 +99,14 @@ func TestGetLocalURLMissingApp(t *testing.T) {
 		o.getLocalURL(listOptions)
 	})
 
-	assert.Equal(t, "ERROR: Couldn't find the jxui app installed in the cluster. Did you add it via jx add app ui?\n", stripansi.Strip(logOutput))
+	assert.Equal(t, "ERROR: Couldn't find the jx-app-ui app installed in the cluster. Did you add it via jx add app jx-app-ui?\n", stripansi.Strip(logOutput))
 }
 
 func TestGetLocalURLMissingService(t *testing.T) {
 	jxClient, _, co, ns := getFakeClientsAndNs(t)
 	_, err := jxClient.JenkinsV1().Apps(ns).Create(&jenkinsv1.App{
 		ObjectMeta: v1.ObjectMeta{
-			Name: "jxui-app",
+			Name: "jx-app-ui",
 			Labels: map[string]string{
 				"jenkins.io/ui-resource": "true",
 			},
@@ -114,7 +114,7 @@ func TestGetLocalURLMissingService(t *testing.T) {
 	})
 	assert.NoError(t, err, "there shouldn't be an error when creating the app")
 
-	o := CloudBeesOptions{
+	o := UIOptions{
 		CommonOptions: &co,
 	}
 	listOptions := v1.ListOptions{
@@ -124,14 +124,14 @@ func TestGetLocalURLMissingService(t *testing.T) {
 		o.getLocalURL(listOptions)
 	})
 
-	assert.Equal(t, "ERROR: Couldn't find the jxui service in the cluster\n", stripansi.Strip(logOutput))
+	assert.Equal(t, "ERROR: Couldn't find the ui service in the cluster\n", stripansi.Strip(logOutput))
 }
 
 func TestChooseLocalPort(t *testing.T) {
 	t.Parallel()
 	_, _, co, _ := getFakeClientsAndNs(t)
 	co.BatchMode = false
-	o := CloudBeesOptions{
+	o := UIOptions{
 		CommonOptions: &co,
 	}
 	var timeout = 5 * time.Second

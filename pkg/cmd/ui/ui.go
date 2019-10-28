@@ -1,4 +1,4 @@
-package cloudbees
+package ui
 
 import (
 	"fmt"
@@ -23,8 +23,8 @@ import (
 	"github.com/pkg/browser"
 )
 
-// CloudBeesOptions are the options to execute the jx cloudbees command
-type CloudBeesOptions struct {
+// UIOptions are the options to execute the jx cloudbees command
+type UIOptions struct {
 	*opts.CommonOptions
 
 	OnlyViewURL  bool
@@ -45,22 +45,23 @@ var (
 `)
 	core_example = templates.Examples(`
 		# Open the JX UI dashboard in a browser
-		jx cloudbees
+		jx ui
 
 		# Print the Jenkins X console URL but do not open a browser
-		jx console -u`)
+		jx ui -u`)
 )
 
-func NewCmdCloudBees(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &CloudBeesOptions{
+// NewCmdUI creates the "jx ui" command
+func NewCmdUI(commonOpts *opts.CommonOptions) *cobra.Command {
+	options := &UIOptions{
 		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
-		Use:     "cloudbees",
-		Short:   "Opens the CloudBees app for Kubernetes for visualising CI/CD and your environments",
+		Use:     "ui",
+		Short:   "Opens the CloudBees Jenkins X UI app for Kubernetes for visualising CI/CD and your environments",
 		Long:    core_long,
 		Example: core_example,
-		Aliases: []string{"cloudbee", "cb", "ui", "jxui"},
+		Aliases: []string{"cloudbees", "cloudbee", "cb", "jxui"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -75,7 +76,8 @@ func NewCmdCloudBees(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func (o *CloudBeesOptions) Run() error {
+// Run implements this command
+func (o *UIOptions) Run() error {
 	kubeClient, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -107,7 +109,7 @@ func (o *CloudBeesOptions) Run() error {
 		}
 
 		log.Logger().Info("Opening the UI in the browser...")
-		err = o.openURL(localURL, "CloudBees UI")
+		err = o.openURL(localURL, "Jenkins X UI")
 		if err != nil {
 			return errors.Wrapf(err, "there was a problem opening the UI in the browser from address %s", util.ColorInfo(localURL))
 		}
@@ -128,7 +130,7 @@ func (o *CloudBeesOptions) Run() error {
 	return nil
 }
 
-func (o CloudBeesOptions) executePortForwardRoutine(serviceName string) {
+func (o UIOptions) executePortForwardRoutine(serviceName string) {
 	outWriter := ioutil.Discard
 	if o.Verbose {
 		cmd := fmt.Sprintf("kubectl port-forward service/%s %s:80", serviceName, o.LocalPort)
@@ -144,7 +146,7 @@ func (o CloudBeesOptions) executePortForwardRoutine(serviceName string) {
 	}
 }
 
-func (o *CloudBeesOptions) getLocalURL(listOptions v1.ListOptions) (string, string, error) {
+func (o *UIOptions) getLocalURL(listOptions v1.ListOptions) (string, string, error) {
 	jxClient, ns, err := o.JXClient()
 	if err != nil {
 		return "", "", err
@@ -155,13 +157,13 @@ func (o *CloudBeesOptions) getLocalURL(listOptions v1.ListOptions) (string, stri
 	}
 	apps, err := jxClient.JenkinsV1().Apps(ns).List(listOptions)
 	if err != nil || len(apps.Items) == 0 {
-		log.Logger().Errorf("Couldn't find the jxui app installed in the cluster. Did you add it via %s?", util.ColorInfo("jx add app ui"))
+		log.Logger().Errorf("Couldn't find the jx-app-ui app installed in the cluster. Did you add it via %s?", util.ColorInfo("jx add app jx-app-ui"))
 		return "", "", err
 	}
 
 	services, err := kubeClient.CoreV1().Services(ns).List(listOptions)
 	if err != nil || len(services.Items) == 0 {
-		log.Logger().Errorf("Couldn't find the jxui service in the cluster")
+		log.Logger().Errorf("Couldn't find the ui service in the cluster")
 		return "", "", err
 	}
 
@@ -177,7 +179,7 @@ func (o *CloudBeesOptions) getLocalURL(listOptions v1.ListOptions) (string, stri
 	return fmt.Sprintf("http://localhost:%s", o.LocalPort), serviceName, nil
 }
 
-func (o CloudBeesOptions) waitForForwarding(localURL string) error {
+func (o UIOptions) waitForForwarding(localURL string) error {
 	log.Logger().Infof("Waiting for the UI to be ready on %s...", util.ColorInfo(localURL))
 	return o.RetryUntilTrueOrTimeout(time.Minute, time.Second*3, func() (b bool, e error) {
 		log.Logger().Debugf("Checking the status of %s", localURL)
@@ -191,7 +193,7 @@ func (o CloudBeesOptions) waitForForwarding(localURL string) error {
 	})
 }
 
-func (o *CloudBeesOptions) decideLocalForwardPort() error {
+func (o *UIOptions) decideLocalForwardPort() error {
 	if o.LocalPort == "" {
 		if o.BatchMode {
 			return errors.New("executing in Batch Mode and no LocalPort flag provided")
@@ -210,7 +212,7 @@ func (o *CloudBeesOptions) decideLocalForwardPort() error {
 	return nil
 }
 
-func (o *CloudBeesOptions) openURL(url string, label string) error {
+func (o *UIOptions) openURL(url string, label string) error {
 	// TODO Logger
 	if o.HideURLLabel {
 		fmt.Fprintf(o.Out, "%s\n", util.ColorInfo(url))
