@@ -7,12 +7,9 @@ import (
 	"time"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/stretchr/testify/require"
 	k8s_v1 "k8s.io/api/core/v1"
 
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -107,8 +104,6 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	)
 	expectedPipeline := expectedOrganisation + "/" + expectedName + "/master"
 
-	sourceRepoName := naming.ToValidName(expectedOrganisation + "-" + expectedName)
-
 	key := kube.PipelineActivityKey{
 		Name:     expectedName,
 		Pipeline: expectedPipeline,
@@ -129,17 +124,6 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		assert.Equal(t, expectedBuild, spec.Build)
 	}
 
-	// validate that we have the expected sourcerepository crd that should have been created
-	sourceRepositoryInterface := jxClient.JenkinsV1().SourceRepositories(nsObj.Namespace)
-	list, err := sourceRepositoryInterface.List(metav1.ListOptions{})
-	require.NoError(t, err, "listing SourceRepository resources")
-	t.Logf("found %d SourceRepository resources in namespace %s\n", len(list.Items), nsObj.Namespace)
-	for _, sr := range list.Items {
-		t.Logf("found SourceRepository %s with organisation %s and repo %s\n", sr.Name, sr.Spec.Org, sr.Spec.Repo)
-	}
-	sr, err := sourceRepositoryInterface.Get(sourceRepoName, metav1.GetOptions{})
-	assert.NotNil(t, sr, "Should have found a sourcerepo %s", sourceRepoName)
-
 	// lazy add a PromotePullRequest
 	promoteKey := kube.PromoteStepActivityKey{
 		PipelineActivityKey: key,
@@ -157,7 +141,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err = promoteKey.OnPromotePullRequest(mockKubeClient, jxClient, nsObj.Namespace, promotePullRequestStarted)
+	err := promoteKey.OnPromotePullRequest(mockKubeClient, jxClient, nsObj.Namespace, promotePullRequestStarted)
 	assert.Nil(t, err)
 
 	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {

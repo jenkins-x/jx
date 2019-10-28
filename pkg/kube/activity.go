@@ -184,22 +184,6 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 	return build, answer, nil
 }
 
-func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, activityKey *PipelineActivityKey) error {
-	repoName := activityKey.GitRepository()
-	owner := activityKey.GitOwner()
-	gitURL := activityKey.GitURL()
-
-	if repoName == "" || owner == "" || gitURL == "" {
-		return nil
-	}
-	srs := jxClient.JenkinsV1().SourceRepositories(ns)
-	if srs == nil {
-		return fmt.Errorf("failed to create sourcerepository resource")
-	}
-	_, err := GetOrCreateSourceRepository(jxClient, ns, repoName, owner, gits.GitProviderURL(gitURL))
-	return err
-}
-
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, bool, error) {
 	name := naming.ToValidName(k.Name)
@@ -232,13 +216,6 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 
 	oldSpec := a.Spec
 	oldLabels := a.Labels
-
-	if a.Labels == nil {
-		err := createSourceRepositoryIfMissing(jxClient, ns, k)
-		if err != nil {
-			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s", err.Error())
-		}
-	}
 
 	updateActivity(k, a)
 
