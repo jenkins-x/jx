@@ -188,12 +188,12 @@ func (o *ControllerBuildOptions) Run() error {
 
 	err = o.ensureSourceRepositoryHasLabels(jxClient, ns)
 	if err != nil {
-		return errors.Wrap(err, "failed to label the PipelineActivity resources")
+		log.Logger().Warnf("failed to label the legacy SourceRepository resources: %s", err)
 	}
 
 	err = o.ensurePipelineActivityHasLabels(jxClient, ns)
 	if err != nil {
-		return errors.Wrap(err, "failed to label the PipelineActivity resources")
+		log.Logger().Warnf("failed to label the legacy PipelineActivity resources: %s", err)
 	}
 
 	if tektonEnabled {
