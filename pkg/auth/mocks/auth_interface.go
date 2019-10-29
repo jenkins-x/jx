@@ -133,7 +133,7 @@ func (c *MockConfigSaver_SaveConfig_OngoingVerification) GetCapturedArguments() 
 func (c *MockConfigSaver_SaveConfig_OngoingVerification) GetAllCapturedArguments() (_param0 []*auth.AuthConfig) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]*auth.AuthConfig, len(params[0]))
+		_param0 = make([]*auth.AuthConfig, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(*auth.AuthConfig)
 		}
