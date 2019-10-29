@@ -200,9 +200,8 @@ func (f *FakeFactory) CreateAuthConfigService(configName string, namespace strin
 			authService = auth.NewVaultAuthConfigService(configName, vaultClient)
 		}
 		return authService, nil
-	} else {
-		return auth.NewFileAuthConfigService(configName)
 	}
+	return auth.NewFileAuthConfigService(configName)
 }
 
 // SecretsLocation indicates the location where the secrets are stored
