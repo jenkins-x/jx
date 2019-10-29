@@ -437,12 +437,27 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 					log.Logger().Warnf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 				} else {
 					if status == "success" {
-						if !o.NoMergePullRequest {
-							err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+						if !(o.NoMergePullRequest) {
+							tideMerge := false
+							// Now check if tide is running or not
+							commitStatues, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, pr.LastCommitSha)
 							if err != nil {
-								if !logMergeFailure {
-									logMergeFailure = true
-									log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+								log.Logger().Warnf("unable to get commit statuses for %s", pr.URL)
+							} else {
+								for _, s := range commitStatues {
+									if s.State == "tide" {
+										tideMerge = true
+										break
+									}
+								}
+							}
+							if !tideMerge {
+								err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+								if err != nil {
+									if !logMergeFailure {
+										logMergeFailure = true
+										log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+									}
 								}
 							}
 						}
