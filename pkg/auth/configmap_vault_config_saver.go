@@ -78,3 +78,19 @@ func NewConfigmapVaultAuthConfigService(secretName string, configMapClient v1.Co
 	saver := NewConfigMapVaultConfigSaver(secretName, configMapClient, vaultClient)
 	return NewAuthConfigService(&saver)
 }
+
+// IsConfigMapVaultAuth checks if is able to find any auth config in a config map
+func IsConfigMapVaultAuth(configMapClient v1.ConfigMapInterface) bool {
+	selector := fmt.Sprintf("%s=%s", labelAuthConfig, labelAuthConfigValue)
+	listOptions := metav1.ListOptions{
+		LabelSelector: selector,
+	}
+	configList, err := configMapClient.List(listOptions)
+	if err != nil || configList == nil {
+		return false
+	}
+	if len(configList.Items) == 0 {
+		return false
+	}
+	return true
+}

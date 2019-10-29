@@ -184,11 +184,25 @@ func (f *FakeFactory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets 
 // It will either save the config to the local file-system, or a Vault
 func (f *FakeFactory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
+		client, _, err := f.CreateKubeClient()
+		if err != nil {
+			return nil, errors.Wrap(err, "creating the kube client")
+		}
 		vaultClient, err := f.CreateSystemVaultClient(namespace)
-		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
-		return authService, err
+		if err != nil {
+			return nil, errors.Wrap(err, "creating the vault client")
+		}
+		var authService auth.ConfigService
+		configMapClient := client.CoreV1().ConfigMaps(namespace)
+		if auth.IsConfigMapVaultAuth(configMapClient) {
+			authService = auth.NewConfigmapVaultAuthConfigService(configName, configMapClient, vaultClient)
+		} else {
+			authService = auth.NewVaultAuthConfigService(configName, vaultClient)
+		}
+		return authService, nil
+	} else {
+		return auth.NewFileAuthConfigService(configName)
 	}
-	return auth.NewFileAuthConfigService(configName)
 }
 
 // SecretsLocation indicates the location where the secrets are stored
