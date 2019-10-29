@@ -17,7 +17,7 @@ import (
 
 func TestConfigMapVaultConfigSaver(t *testing.T) {
 	ns := "test"
-	secretName := "gitAuth.yaml"
+	secretName := "gitAuth.yaml" // #nosec
 	authFile := path.Join("test_data", "configmap_vault_auth.yaml")
 	data, err := ioutil.ReadFile(authFile)
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestConfigMapVaultConfigSaver(t *testing.T) {
 
 func TestConfigMapVaultConfigSaverWithoutVaultURIs(t *testing.T) {
 	ns := "test"
-	secretName := "gitAuth.yaml"
+	secretName := "gitAuth.yaml" // #nosec
 	authFile := path.Join("test_data", "configmap_withoutvault_auth.yaml")
 	data, err := ioutil.ReadFile(authFile)
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestConfigMapVaultConfigSaverWithoutVaultURIs(t *testing.T) {
 
 func TestConfigMapVaultConfigSaverWithoutConfigMapLabel(t *testing.T) {
 	ns := "test"
-	secretName := "gitAuth.yaml"
+	secretName := "gitAuth.yaml" // #nosec
 	authFile := path.Join("test_data", "configmap_vault_auth.yaml")
 	data, err := ioutil.ReadFile(authFile)
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestConfigMapVaultConfigSaverWithoutConfigMapLabel(t *testing.T) {
 
 func TestConfigMapVaultConfigSaverWithoutConfigMapData(t *testing.T) {
 	ns := "test"
-	secretName := "gitAuth.yaml"
+	secretName := "gitAuth.yaml" // #nosec
 	authFile := path.Join("test_data", "configmap_vault_auth.yaml")
 	data, err := ioutil.ReadFile(authFile)
 	require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestConfigMapVaultConfigSaverWithoutConfigMapData(t *testing.T) {
 
 func TestConfigMapVaultConfigSaverWithCorrupted(t *testing.T) {
 	ns := "test"
-	secretName := "gitAuth.yaml"
+	secretName := "gitAuth.yaml" // #nosec
 	authFile := path.Join("test_data", "configmap_vault_corrupted_auth.yaml")
 	data, err := ioutil.ReadFile(authFile)
 	require.NoError(t, err)

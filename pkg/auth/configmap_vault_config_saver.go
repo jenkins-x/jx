@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/secreturl"
-	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -75,8 +74,8 @@ func NewConfigMapVaultConfigSaver(secretName string, configMapClient v1.ConfigMa
 // NewConfigmapVaultAuthConfigService creates a new config service that load the config from
 // a configmap and resolve the secrets URIs from vault
 func NewConfigmapVaultAuthConfigService(secretName string, configMapClient v1.ConfigMapInterface,
-	vaultClient vault.Client) ConfigService {
-	saver := NewConfigMapVaultConfigSaver(secretName, configMapClient, vaultClient)
+	secretURLClient secreturl.Client) ConfigService {
+	saver := NewConfigMapVaultConfigSaver(secretName, configMapClient, secretURLClient)
 	return NewAuthConfigService(&saver)
 }
 
