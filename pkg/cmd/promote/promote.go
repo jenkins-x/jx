@@ -497,7 +497,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	if releaseInfo.PullRequestInfo != nil && releaseInfo.PullRequestInfo.PullRequest != nil {
 		filter.Number = releaseInfo.PullRequestInfo.PullRequest.Number
 	}
-	info, err := options.Create(env, environmentsDir, &details, filter, "", false)
+	info, err := options.Create(env, environmentsDir, &details, filter, "", true)
 	releaseInfo.PullRequestInfo = info
 	return err
 }
@@ -729,12 +729,27 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						log.Logger().Info("The build for the Pull Request last commit is currently in progress.")
 					} else {
 						if status == "success" {
-							if !o.NoMergePullRequest {
-								err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+							if !(o.NoMergePullRequest) {
+								tideMerge := false
+								// Now check if tide is running or not
+								commitStatues, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, pr.LastCommitSha)
 								if err != nil {
-									if !logMergeFailure {
-										logMergeFailure = true
-										log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+									log.Logger().Warnf("unable to get commit statuses for %s", pr.URL)
+								} else {
+									for _, s := range commitStatues {
+										if s.State == "tide" {
+											tideMerge = true
+											break
+										}
+									}
+								}
+								if !tideMerge {
+									err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+									if err != nil {
+										if !logMergeFailure {
+											logMergeFailure = true
+											log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+										}
 									}
 								}
 							}
