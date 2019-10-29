@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/vault"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 type AuthServer struct {
@@ -49,4 +51,11 @@ type VaultAuthConfigSaver struct {
 // MemoryAuthConfigSaver uses memory
 type MemoryAuthConfigSaver struct {
 	config AuthConfig
+}
+
+// ConfigMapVaultConfigSaver save the config in a config map and the secrets in vault
+type ConfigMapVaultConfigSaver struct {
+	secretName      string
+	configMapClient v1.ConfigMapInterface
+	secretURLClient secreturl.Client
 }
