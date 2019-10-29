@@ -15,7 +15,7 @@ const (
 	labelAuthConfigValue = "auth"
 )
 
-// LoadConfig loads the auth config from a ConfigMap witch stores in its
+// LoadConfig loads the auth config from a ConfigMap which stores in its
 // data with a key equal with the secretName, also it resolves any secrets
 // URIs by fetching their secret data from vault.
 func (c *ConfigMapVaultConfigSaver) LoadConfig() (*AuthConfig, error) {
