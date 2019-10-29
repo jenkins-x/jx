@@ -62,6 +62,7 @@ func (c *ConfigMapVaultConfigSaver) SaveConfig(config *AuthConfig) error {
 	return nil
 }
 
+// NewConfigMapVaultConfigSaver creates a new configmap/vault config saver/loader
 func NewConfigMapVaultConfigSaver(secretName string, configMapClient v1.ConfigMapInterface,
 	vaultClient secreturl.Client) ConfigMapVaultConfigSaver {
 	return ConfigMapVaultConfigSaver{

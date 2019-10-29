@@ -383,9 +383,8 @@ func (f *factory) CreateAuthConfigService(configName string, namespace string) (
 			authService = auth.NewVaultAuthConfigService(configName, vaultClient)
 		}
 		return authService, nil
-	} else {
-		return auth.NewFileAuthConfigService(configName)
 	}
+	return auth.NewFileAuthConfigService(configName)
 }
 
 // SecretsLocation indicates the location where the secrets are stored
