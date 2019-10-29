@@ -155,11 +155,11 @@ func (c *MockProvider_CreateNewBucketForCluster_OngoingVerification) GetCaptured
 func (c *MockProvider_CreateNewBucketForCluster_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
@@ -186,7 +186,7 @@ func (c *MockProvider_DownloadFileFromBucket_OngoingVerification) GetCapturedArg
 func (c *MockProvider_DownloadFileFromBucket_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -213,7 +213,7 @@ func (c *MockProvider_EnsureBucketIsCreated_OngoingVerification) GetCapturedArgu
 func (c *MockProvider_EnsureBucketIsCreated_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -240,15 +240,15 @@ func (c *MockProvider_UploadFileToBucket_OngoingVerification) GetCapturedArgumen
 func (c *MockProvider_UploadFileToBucket_OngoingVerification) GetAllCapturedArguments() (_param0 []io.Reader, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]io.Reader, len(params[0]))
+		_param0 = make([]io.Reader, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(io.Reader)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}

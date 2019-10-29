@@ -747,19 +747,19 @@ func (c *MockFactory_AuthMergePipelineSecrets_OngoingVerification) GetCapturedAr
 func (c *MockFactory_AuthMergePipelineSecrets_OngoingVerification) GetAllCapturedArguments() (_param0 []*auth.AuthConfig, _param1 []*v1.SecretList, _param2 []string, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]*auth.AuthConfig, len(params[0]))
+		_param0 = make([]*auth.AuthConfig, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(*auth.AuthConfig)
 		}
-		_param1 = make([]*v1.SecretList, len(params[1]))
+		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(*v1.SecretList)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]bool, len(params[3]))
+		_param3 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(bool)
 		}
@@ -786,11 +786,11 @@ func (c *MockFactory_CreateAddonAuthConfigService_OngoingVerification) GetCaptur
 func (c *MockFactory_CreateAddonAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*v1.SecretList) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*v1.SecretList, len(params[1]))
+		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(*v1.SecretList)
 		}
@@ -834,11 +834,11 @@ func (c *MockFactory_CreateAuthConfigService_OngoingVerification) GetCapturedArg
 func (c *MockFactory_CreateAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
@@ -882,7 +882,7 @@ func (c *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification) Get
 func (c *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -909,11 +909,11 @@ func (c *MockFactory_CreateChatAuthConfigService_OngoingVerification) GetCapture
 func (c *MockFactory_CreateChatAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*v1.SecretList) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*v1.SecretList, len(params[1]))
+		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(*v1.SecretList)
 		}
@@ -957,19 +957,19 @@ func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetCapturedA
 func (c *MockFactory_CreateCustomJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string, _param3 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]kubernetes.Interface, len(params[0]))
+		_param0 = make([]kubernetes.Interface, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(kubernetes.Interface)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]util.IOFileHandles, len(params[3]))
+		_param3 = make([]util.IOFileHandles, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(util.IOFileHandles)
 		}
@@ -1013,31 +1013,31 @@ func (c *MockFactory_CreateGitProvider_OngoingVerification) GetCapturedArguments
 func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []auth.ConfigService, _param3 []string, _param4 []bool, _param5 []gits.Gitter, _param6 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]auth.ConfigService, len(params[2]))
+		_param2 = make([]auth.ConfigService, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(auth.ConfigService)
 		}
-		_param3 = make([]string, len(params[3]))
+		_param3 = make([]string, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
-		_param4 = make([]bool, len(params[4]))
+		_param4 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[4] {
 			_param4[u] = param.(bool)
 		}
-		_param5 = make([]gits.Gitter, len(params[5]))
+		_param5 = make([]gits.Gitter, len(c.methodInvocations))
 		for u, param := range params[5] {
 			_param5[u] = param.(gits.Gitter)
 		}
-		_param6 = make([]util.IOFileHandles, len(params[6]))
+		_param6 = make([]util.IOFileHandles, len(c.methodInvocations))
 		for u, param := range params[6] {
 			_param6[u] = param.(util.IOFileHandles)
 		}
@@ -1064,19 +1064,19 @@ func (c *MockFactory_CreateHelm_OngoingVerification) GetCapturedArguments() (boo
 func (c *MockFactory_CreateHelm_OngoingVerification) GetAllCapturedArguments() (_param0 []bool, _param1 []string, _param2 []bool, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]bool, len(params[0]))
+		_param0 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(bool)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]bool, len(params[2]))
+		_param2 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(bool)
 		}
-		_param3 = make([]bool, len(params[3]))
+		_param3 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(bool)
 		}
@@ -1103,11 +1103,11 @@ func (c *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification) Ge
 func (c *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*v1.SecretList) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*v1.SecretList, len(params[1]))
+		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(*v1.SecretList)
 		}
@@ -1151,15 +1151,15 @@ func (c *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification) GetCapt
 func (c *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]kubernetes.Interface, len(params[0]))
+		_param0 = make([]kubernetes.Interface, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(kubernetes.Interface)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
@@ -1186,15 +1186,15 @@ func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetCapturedArgumen
 func (c *MockFactory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]kubernetes.Interface, len(params[0]))
+		_param0 = make([]kubernetes.Interface, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(kubernetes.Interface)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]util.IOFileHandles, len(params[2]))
+		_param2 = make([]util.IOFileHandles, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(util.IOFileHandles)
 		}
@@ -1306,7 +1306,7 @@ func (c *MockFactory_CreateSystemVaultClient_OngoingVerification) GetCapturedArg
 func (c *MockFactory_CreateSystemVaultClient_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -1333,7 +1333,7 @@ func (c *MockFactory_CreateTable_OngoingVerification) GetCapturedArguments() io.
 func (c *MockFactory_CreateTable_OngoingVerification) GetAllCapturedArguments() (_param0 []io.Writer) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]io.Writer, len(params[0]))
+		_param0 = make([]io.Writer, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(io.Writer)
 		}
@@ -1377,11 +1377,11 @@ func (c *MockFactory_CreateVaultClient_OngoingVerification) GetCapturedArguments
 func (c *MockFactory_CreateVaultClient_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
@@ -1425,15 +1425,15 @@ func (c *MockFactory_GetCustomJenkinsURL_OngoingVerification) GetCapturedArgumen
 func (c *MockFactory_GetCustomJenkinsURL_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]kubernetes.Interface, len(params[0]))
+		_param0 = make([]kubernetes.Interface, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(kubernetes.Interface)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
@@ -1460,11 +1460,11 @@ func (c *MockFactory_GetJenkinsURL_OngoingVerification) GetCapturedArguments() (
 func (c *MockFactory_GetJenkinsURL_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]kubernetes.Interface, len(params[0]))
+		_param0 = make([]kubernetes.Interface, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(kubernetes.Interface)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
@@ -1491,7 +1491,7 @@ func (c *MockFactory_ImpersonateUser_OngoingVerification) GetCapturedArguments()
 func (c *MockFactory_ImpersonateUser_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -1569,7 +1569,7 @@ func (c *MockFactory_SetBatch_OngoingVerification) GetCapturedArguments() bool {
 func (c *MockFactory_SetBatch_OngoingVerification) GetAllCapturedArguments() (_param0 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]bool, len(params[0]))
+		_param0 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(bool)
 		}
@@ -1596,7 +1596,7 @@ func (c *MockFactory_SetOffline_OngoingVerification) GetCapturedArguments() bool
 func (c *MockFactory_SetOffline_OngoingVerification) GetAllCapturedArguments() (_param0 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]bool, len(params[0]))
+		_param0 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(bool)
 		}
@@ -1623,11 +1623,11 @@ func (c *MockFactory_SetSecretsLocation_OngoingVerification) GetCapturedArgument
 func (c *MockFactory_SetSecretsLocation_OngoingVerification) GetAllCapturedArguments() (_param0 []secrets.SecretsLocationKind, _param1 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]secrets.SecretsLocationKind, len(params[0]))
+		_param0 = make([]secrets.SecretsLocationKind, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(secrets.SecretsLocationKind)
 		}
-		_param1 = make([]bool, len(params[1]))
+		_param1 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(bool)
 		}
@@ -1654,7 +1654,7 @@ func (c *MockFactory_WithBearerToken_OngoingVerification) GetCapturedArguments()
 func (c *MockFactory_WithBearerToken_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}

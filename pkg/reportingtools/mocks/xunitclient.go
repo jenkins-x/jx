@@ -127,15 +127,15 @@ func (c *MockXUnitClient_CreateHTMLReport_OngoingVerification) GetCapturedArgume
 func (c *MockXUnitClient_CreateHTMLReport_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
@@ -179,7 +179,7 @@ func (c *MockXUnitClient_EnsureXUnitViewer_OngoingVerification) GetCapturedArgum
 func (c *MockXUnitClient_EnsureXUnitViewer_OngoingVerification) GetAllCapturedArguments() (_param0 []*opts.CommonOptions) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]*opts.CommonOptions, len(params[0]))
+		_param0 = make([]*opts.CommonOptions, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(*opts.CommonOptions)
 		}
