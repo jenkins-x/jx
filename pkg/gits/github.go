@@ -902,7 +902,7 @@ func (p *GitHubProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string
 		return "", err
 	}
 	for _, result := range results {
-		if result.State != nil {
+		if result.State != nil && notNullString(result.Context) != "tide" {
 			return *result.State, nil
 		}
 	}
