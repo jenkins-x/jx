@@ -27,6 +27,7 @@ import (
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/github"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -945,7 +946,17 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, o.GithubAppMode, gitKind, o.Git(), o.GetIOFileHandles())
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	githubApp := github.GithubApp{
+		KubeClient: kubeClient,
+	}
+	githubAppMode := githubApp.IsGitHubAppEnabledForOrganisation(gitInfo.Organisation)
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles(), githubAppMode)
 	if err != nil {
 		return err
 	}
@@ -955,10 +966,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 	if err != nil {
 		return err
 	}
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
+
 	appNames := []string{app, o.ReleaseName, ens + "-" + app}
 	url := ""
 	for _, n := range appNames {

@@ -13,8 +13,8 @@ docker-test-slow-integration:
 	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow-integration"
 
 docker: linux ## Build and push a docker image for Linux
-	docker build -t rawlingsj/jx:dev207 .
-	docker push rawlingsj/jx:dev207
+	docker build -t warrenbailey/jx:dev291019 .
+	docker push warrenbailey/jx:dev291019
 
 docker-go: linux Dockerfile.builder-go ## Build a docker image for Go
 	docker build --no-cache -t builder-go -f Dockerfile.builder-go .

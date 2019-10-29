@@ -1,22 +1,33 @@
-package kube
+package github
 
 import (
 	"os"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 type GithubApp struct {
-	kubeClient kubernetes.Interface
+	KubeClient kubernetes.Interface
 }
 
-func (githubApp *GithubApp) GetGitHubAppOwners() ([]string, error) {
+func (githubApp *GithubApp) IsGitHubAppEnabledForOrganisation(organisation string) bool {
+	for _, owner := range githubApp.GetGitHubAppOwners() {
+		if owner == organisation {
+			return true
+		}
+	}
+	return false
+}
 
-	kubeClient := githubApp.kubeClient
+func (githubApp *GithubApp) GetGitHubAppOwners() []string {
+
+	githubApps := make([]string, 0)
+	kubeClient := githubApp.KubeClient
 	namespace := os.Getenv(config.BootDeployNamespace)
 
 	if namespace == "" {
@@ -25,7 +36,7 @@ func (githubApp *GithubApp) GetGitHubAppOwners() ([]string, error) {
 
 	secretsInterface := kubeClient.CoreV1().Secrets(namespace)
 
-	selector := LabelKind + "=git"
+	selector := kube.LabelKind + "=git"
 
 	options := metav1.ListOptions{
 		LabelSelector: selector,
@@ -34,17 +45,16 @@ func (githubApp *GithubApp) GetGitHubAppOwners() ([]string, error) {
 	secretsList, err := secretsInterface.List(options)
 	if err != nil {
 		log.Logger().Errorf("error listing secrets")
-		return nil, err
+		return githubApps
 	}
 
-	githubApps := make([]string, 0)
 	for _, s := range secretsList.Items {
 		url := s.Annotations["jenkins.io/url"]
 		if isGithubAppUrl(url) {
 			githubApps = append(githubApps, getGithubAppOwner(url))
 		}
 	}
-	return githubApps, err
+	return githubApps
 }
 
 func isGithubAppUrl(url string) bool {

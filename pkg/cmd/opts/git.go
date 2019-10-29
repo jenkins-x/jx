@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits/features"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/github"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -322,7 +323,18 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, o.GithubAppMode, gitKind, o.Git(), o.GetIOFileHandles())
+
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return nil, err
+	}
+
+	githubApp := github.GithubApp{
+		KubeClient: kubeClient,
+	}
+	githubAppMode := githubApp.IsGitHubAppEnabledForOrganisation(gitInfo.Organisation)
+
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles(), githubAppMode)
 }
 
 // GitProviderForURL returns a GitProvider for the given Git server URL
