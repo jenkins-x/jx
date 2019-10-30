@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
 	"github.com/jenkins-x/jx/pkg/maven"
 
 	"github.com/cenkalti/backoff"
@@ -127,6 +128,8 @@ var (
 		`)
 
 	deployKinds = []string{DeployKindKnative, DeployKindDefault}
+
+	removeSourceRepositoryAnnotations = []string{"kubectl.kubernetes.io/last-applied-configuration", "jenkins.io/chart"}
 )
 
 // NewCmdImport the cobra command for jx import
@@ -984,6 +987,61 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 			}
 		}
 
+		sourceGitURL, err := kube.GetRepositoryGitURL(sr)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get the git URL for SourceRepository %s", sr.Name)
+		}
+
+		devGitURL := devEnv.Spec.Source.URL
+		if devGitURL != "" {
+			// lets generate a PR
+			base := devEnv.Spec.Source.Ref
+			if base == "" {
+				base = "master"
+			}
+			pro := &pr.StepCreatePrOptions{
+				SrcGitURL:  sourceGitURL,
+				GitURLs:    []string{devGitURL},
+				Base:       base,
+				Fork:       true,
+				BranchName: sr.Name,
+			}
+			pro.CommonOptions = options.CommonOptions
+
+			changeFn := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+				outDir := filepath.Join(dir, "repositories", "templates")
+				err := os.MkdirAll(outDir, util.DefaultWritePermissions)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to make directories %s", outDir)
+				}
+
+				fileName := filepath.Join(outDir, sr.Name+"-sr.yaml")
+				// lets clear the fields we don't need to save
+				clearSourceRepositoryMetadata(&sr.ObjectMeta)
+				data, err := yaml.Marshal(&sr)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to marshal SourceRepository %s to yaml", sr.Name)
+				}
+
+				err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to save SourceRepository file %s", fileName)
+				}
+				return nil, nil
+			}
+
+			err := pro.CreatePullRequest("resource", changeFn)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create Pull Request on the development environment git repository %s", devGitURL)
+			}
+			info := util.ColorInfo
+			prURL := ""
+			if pro.Results != nil && pro.Results.PullRequest != nil {
+				prURL = pro.Results.PullRequest.URL
+			}
+			log.Logger().Infof("created pull request %s on the development git repository %s", info(prURL), info(devGitURL))
+		}
+
 		err = options.GenerateProwConfig(currentNamespace, devEnv)
 		if err != nil {
 			return err
@@ -1006,6 +1064,23 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 	options.LogImportedProject(false, gitInfo)
 
 	return nil
+}
+
+// clearSourceRepositoryMetadata clears unnecessary data
+func clearSourceRepositoryMetadata(meta *metav1.ObjectMeta) {
+	meta.CreationTimestamp.Time = time.Time{}
+	meta.Namespace = ""
+	meta.OwnerReferences = nil
+	meta.Finalizers = nil
+	meta.Generation = 0
+	meta.GenerateName = ""
+	meta.SelfLink = ""
+	meta.UID = ""
+	meta.ResourceVersion = ""
+
+	for _, k := range removeSourceRepositoryAnnotations {
+		delete(meta.Annotations, k)
+	}
 }
 
 // ensureDockerRepositoryExists for some kinds of container registry we need to pre-initialise its use such as for ECR
