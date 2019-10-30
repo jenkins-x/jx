@@ -28,13 +28,13 @@ generate: build-codegen install-generate-deps generate-mocks generate-openapi ge
 install-generate-deps:
 	$(GO) get github.com/petergtz/pegomock/...@$(PEGOMOCK_VERSION)
 
-generate-mocks: install-generate-deps go-generate fmt ## Generate the mocks
+generate-mocks: install-generate-deps go-generate fmt importfmt ## Generate the mocks
 
 go-generate:
 	@echo "Generating Mocks using pegomock"
 	$(GO) generate ./...
 
-generate-client: codegen-clientset codegen-config fmt ## Generate the client
+generate-client: codegen-clientset codegen-config fmt importfmt ## Generate the client
 
 codegen-clientset: build-codegen ## Generate the k8s types and clients
 	@echo "Generating Kubernetes Clients for pkg/apis in pkg/client for jenkins.io:v1"
@@ -48,7 +48,7 @@ generate-docs: build-codegen ## Generate the docs
 	@echo "Generating HTML docs for Kubernetes Clients"
 	./build/$(CODE_GEN_BIN_NAME) --generator-version $(GEN_APIDOCS_VERSION) docs
 
-generate-openapi: codegen-openapi fmt
+generate-openapi: codegen-openapi fmt importfmt
 
 codegen-openapi: build-codegen
 	@echo "Generating OpenAPI structs for Kubernetes Clients"
