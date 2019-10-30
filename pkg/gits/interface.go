@@ -268,6 +268,7 @@ type Gitter interface {
 	GetCommitPointedToByLatestTag(dir string) (string, string, error)
 	GetCommitPointedToByTag(dir string, tag string) (string, error)
 	FetchTags(dir string) error
+	FetchRemoteTags(dir string, repo string) error
 	Tags(dir string) ([]string, error)
 	FilterTags(dir string, filter string) ([]string, error)
 	CreateTag(dir string, tag string, msg string) error
