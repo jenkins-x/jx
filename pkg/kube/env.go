@@ -968,6 +968,31 @@ func SortEnvironments(environments []v1.Environment) {
 	sort.Sort(ByOrder(environments))
 }
 
+// ByTimestamp is used to fileter a list of PipelineActivities by their given timestamp
+type ByTimestamp []v1.PipelineActivity
+
+func (a ByTimestamp) Len() int      { return len(a) }
+func (a ByTimestamp) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByTimestamp) Less(i, j int) bool {
+	act1 := a[i]
+	act2 := a[j]
+	t1 := act1.Spec.StartedTimestamp
+	if t1 == nil {
+		return false
+	}
+	t2 := act2.Spec.StartedTimestamp
+	if t2 == nil {
+		return true
+	}
+
+	return t1.Before(t2)
+}
+
+// SortActivities sorts a list of PipelineActivities
+func SortActivities(activities []v1.PipelineActivity) {
+	sort.Sort(ByTimestamp(activities))
+}
+
 // NewPermanentEnvironment creates a new permanent environment for testing
 func NewPermanentEnvironment(name string) *v1.Environment {
 	return &v1.Environment{
