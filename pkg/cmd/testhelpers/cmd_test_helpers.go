@@ -587,3 +587,25 @@ func dumpFailedActivity(activity *v1.PipelineActivity) {
 		log.Logger().Warnf("YAML: %s", string(data))
 	}
 }
+
+// FakeOut can be passed to the Common Options for ease of testing. It's also helpful so test output doesn't get polluted by all the printouts
+type FakeOut struct {
+	content []byte
+}
+
+// Write is used to fulfill the terminal Writer interface
+func (f *FakeOut) Write(p []byte) (int, error) {
+	f.content = append(f.content, p...)
+
+	return len(f.content), nil
+}
+
+// Fd is used to fulfill the terminal Writer interface
+func (f *FakeOut) Fd() uintptr {
+	return 0
+}
+
+// GetOutput returns the contents printed to FakeOut
+func (f *FakeOut) GetOutput() string {
+	return string(f.content)
+}

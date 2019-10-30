@@ -24,34 +24,40 @@ func TestGetActivity(t *testing.T) {
 	RunSpecs(t, "Get Activity Suite")
 }
 
-type fakeOut struct {
-	content []byte
-}
-
-func (f *fakeOut) Write(p []byte) (int, error) {
-	f.content = append(f.content, p...)
-
-	return len(f.content), nil
-}
-
-func (f *fakeOut) Fd() uintptr {
-	return 0
-}
-
-func (f *fakeOut) GetOutput() string {
-	return string(f.content)
-}
-
 var _ = Describe("get activity", func() {
 	Describe("Run()", func() {
 		var (
+			originalRepoOwner  string
+			originalRepoName   string
+			originalJobName    string
+			originalBranchName string
+
 			sort   bool
 			err    error
-			stdout *fakeOut
+			stdout *testhelpers.FakeOut
 		)
 
+		BeforeEach(func() {
+			originalRepoOwner = os.Getenv("REPO_OWNER")
+			originalRepoName = os.Getenv("REPO_NAME")
+			originalJobName = os.Getenv("JOB_NAME")
+			originalBranchName = os.Getenv("BRANCH_NAME")
+
+			os.Setenv("REPO_OWNER", "jx-testing")
+			os.Setenv("REPO_NAME", "jx-testing")
+			os.Setenv("JOB_NAME", "job")
+			os.Setenv("BRANCH_NAME", "job")
+		})
+
+		AfterEach(func() {
+			os.Setenv("REPO_OWNER", originalRepoOwner)
+			os.Setenv("REPO_NAME", originalRepoName)
+			os.Setenv("JOB_NAME", originalJobName)
+			os.Setenv("BRANCH_NAME", originalBranchName)
+		})
+
 		JustBeforeEach(func() {
-			stdout = &fakeOut{}
+			stdout = &testhelpers.FakeOut{}
 			commonOpts := &opts.CommonOptions{
 				Out: stdout,
 			}
@@ -77,13 +83,6 @@ var _ = Describe("get activity", func() {
 			}
 
 			err = options.Run()
-		})
-
-		BeforeEach(func() {
-			os.Setenv("REPO_OWNER", "jx-testing")
-			os.Setenv("REPO_NAME", "jx-testing")
-			os.Setenv("JOB_NAME", "job")
-			os.Setenv("BRANCH_NAME", "job")
 		})
 
 		Context("Without flags", func() {

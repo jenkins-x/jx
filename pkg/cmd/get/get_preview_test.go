@@ -42,14 +42,22 @@ var _ = Describe("get preview", func() {
 			stdout []byte
 		)
 
-		BeforeSuite(func() {
+		BeforeEach(func() {
 			originalRepoOwner = os.Getenv("REPO_OWNER")
 			originalRepoName = os.Getenv("REPO_NAME")
 			originalJobName = os.Getenv("JOB_NAME")
 			originalBranchName = os.Getenv("BRANCH_NAME")
+
+			os.Setenv("REPO_OWNER", "jx-testing")
+			os.Setenv("REPO_NAME", "jx-testing")
+			os.Setenv("JOB_NAME", "job")
+			os.Setenv("BRANCH_NAME", "job")
+
+			devEnv = kube.NewPreviewEnvironment("jx-testing-jx-testing-job")
+			devEnv.Spec.PreviewGitSpec.ApplicationURL = "http://example.com"
 		})
 
-		AfterSuite(func() {
+		AfterEach(func() {
 			os.Setenv("REPO_OWNER", originalRepoOwner)
 			os.Setenv("REPO_NAME", originalRepoName)
 			os.Setenv("JOB_NAME", originalJobName)
@@ -103,16 +111,6 @@ var _ = Describe("get preview", func() {
 				w.Close()
 			}()
 			stdout, _ = ioutil.ReadAll(r)
-		})
-
-		BeforeEach(func() {
-			devEnv = kube.NewPreviewEnvironment("jx-testing-jx-testing-job")
-			devEnv.Spec.PreviewGitSpec.ApplicationURL = "http://example.com"
-
-			os.Setenv("REPO_OWNER", "jx-testing")
-			os.Setenv("REPO_NAME", "jx-testing")
-			os.Setenv("JOB_NAME", "job")
-			os.Setenv("BRANCH_NAME", "job")
 		})
 
 		It("prints the preview url to stdout", func() {
