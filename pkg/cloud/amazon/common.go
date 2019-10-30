@@ -66,19 +66,19 @@ func ResolveRegionWithoutOptions() (string, error) {
 	return ResolveRegion("", "")
 }
 
-// GetClusterNameFromAWS uses the AWS SDK to parse through each EKS cluster until it finds one that matches the endpoint in
+// GetClusterNameAndRegionFromAWS uses the AWS SDK to parse through each EKS cluster until it finds one that matches the endpoint in
 // the kubeconfig. From there it will retrieve the cluster name
-func GetClusterNameFromAWS(profileOption string, regionOption string, kubeEndpoint string) (string, error) {
-	sess, err := NewAwsSession(profileOption, regionOption)
+func GetClusterNameAndRegionFromAWS(profileOption string, regionOption string, kubeEndpoint string) (string, string, error) {
+	session, err := NewAwsSession(profileOption, regionOption)
 	if err != nil {
-		return "", errors.Wrapf(err, "Error creating AWS Session")
+		return "", "", errors.Wrapf(err, "Error creating AWS Session")
 	}
-	svc := eks.New(sess)
+	svc := eks.New(session)
 
 	input := &eks.ListClustersInput{}
 	result, err := svc.ListClusters(input)
 	if err != nil {
-		return "", errors.Wrapf(err, "Error calling Eks List Clusters")
+		return "", "", errors.Wrapf(err, "Error calling Eks List Clusters")
 	}
 
 	for _, cluster := range result.Clusters {
@@ -87,15 +87,15 @@ func GetClusterNameFromAWS(profileOption string, regionOption string, kubeEndpoi
 		}
 		result, err := svc.DescribeCluster(input)
 		if err != nil {
-			return "", errors.Wrapf(err, "Error calling Describe Cluster on "+*cluster)
+			return "", "", errors.Wrapf(err, "Error calling Describe Cluster on "+*cluster)
 		}
 
 		if *result.Cluster.Endpoint == kubeEndpoint {
-			return *result.Cluster.Name, nil
+			return *result.Cluster.Name, *session.Config.Region, nil
 		}
 	}
 
-	return "", errors.Errorf("Unable to get cluster name from AWS")
+	return "", "", errors.Errorf("Unable to get cluster name from AWS")
 }
 
 // ParseContext parses the EKS cluster context to extract the cluster name and the region
@@ -129,19 +129,13 @@ func GetCurrentlyConnectedRegionAndClusterName() (string, string, error) {
 
 	context := kube.Cluster(kubeConfig)
 	server := kube.CurrentServer(kubeConfig)
-	currentClusterName, err := GetClusterNameFromAWS("", "", server)
+	currentClusterName, currentRegion, err := GetClusterNameAndRegionFromAWS("", "", server)
 	if err != nil {
 		currentClusterName, currentRegion, err := ParseContext(context)
 		if err != nil {
 			return "", "", errors.Wrapf(err, "parsing the current Kubernetes context %s", context)
 		}
-
 		return currentClusterName, currentRegion, nil
-	}
-
-	currentRegion, err := ResolveRegionWithoutOptions()
-	if err != nil {
-		return "", "", errors.Wrapf(err, "Error resolving Region")
 	}
 	return currentClusterName, currentRegion, nil
 }
