@@ -275,6 +275,7 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to get boot config ref for version stream: %s", versionStreamRef)
 	}
+
 	upgradeSha, upgradeVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, upgradeVersionSha, bootConfigURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get boot config ref for version stream ref: %s", upgradeVersionSha)
@@ -286,11 +287,18 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 		return nil
 	}
 	log.Logger().Infof(util.ColorInfo("boot config upgrade available"))
-	log.Logger().Infof("Upgrading from v%s to v%s", util.ColorInfo(currentVersion), util.ColorInfo(upgradeVersion))
+	log.Logger().Infof("Upgrading from %s to %s", util.ColorInfo(currentVersion), util.ColorInfo(upgradeVersion))
 
-	err = o.Git().FetchBranch(o.Dir, bootConfigURL, "master")
+	// Fetch the tag we're upgrading from.
+	err = o.Git().FetchBranch(o.Dir, bootConfigURL, currentVersion)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch master of %s", bootConfigURL)
+		return errors.Wrapf(err, "failed to fetch current tag %s from %s", currentVersion, bootConfigURL)
+	}
+
+	// Fetch the tag we're upgrading to.
+	err = o.Git().FetchBranch(o.Dir, bootConfigURL, upgradeVersion)
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch upgrade tag %s from %s", upgradeVersion, bootConfigURL)
 	}
 
 	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha)
@@ -317,7 +325,7 @@ func (o *UpgradeBootOptions) bootConfigRef(dir string, versionStreamURL string, 
 	if err != nil {
 		return "", "", errors.Wrapf(err, "failed to get commit pointed to by %s", cmtSha)
 	}
-	return cmtSha, configVersion, nil
+	return cmtSha, "v" + configVersion, nil
 }
 
 func (o *UpgradeBootOptions) cloneBootConfig(configURL string) (string, error) {

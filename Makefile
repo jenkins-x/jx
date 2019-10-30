@@ -157,6 +157,9 @@ test-integration: get-test-deps## Run the integration tests
 test-integration1: make-reports-dir
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration $(COVERFLAGS) -short ./... -test.v -run $(TEST)
 
+test-integration1-pkg: make-reports-dir
+	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration $(COVERFLAGS) -short $(PKG) -test.v -run $(TEST)
+
 test-rich-integration1: make-reports-dir
 	@CGO_ENABLED=$(CGO_ENABLED) richgo test -tags=integration $(COVERFLAGS) -short -test.v $(TEST_PACKAGE) -run $(TEST)
 
