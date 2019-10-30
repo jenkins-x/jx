@@ -12,6 +12,8 @@ export GINKGO_ARGS="-v"
 # fix broken `BUILD_NUMBER` env var
 export BUILD_NUMBER="$BUILD_ID"
 
+BOOT_CONFIG_FROM_VERSION_STREAM=v$(jx step get dependency-version --host=github.com --owner=jenkins-x --repo=jenkins-x-boot-config | sed 's/.*: \(.*\)/\1/')
+
 JX_HOME="/tmp/jxhome"
 KUBECONFIG="/tmp/jxhome/config"
 
@@ -42,9 +44,11 @@ export JX_VALUE_PROW_HMACTOKEN="$GH_ACCESS_TOKEN"
 export JX_BATCH_MODE="true"
 
 git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
-cp jx/bdd/boot-vault/jx-requirements.yml boot-source
-cp jx/bdd/boot-vault/parameters.yaml boot-source/env
 cd boot-source
+git fetch --tags
+git checkout ${BOOT_CONFIG_FROM_VERSION_STREAM}
+cp ../jx/bdd/boot-vault/jx-requirements.yml .
+cp ../jx/bdd/boot-vault/parameters.yaml env
 
 cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
 cat tmp.yaml ../boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
