@@ -324,6 +324,12 @@ func (g *GitLocal) FetchTags(dir string) error {
 	return g.GitFake.FetchTags(dir)
 }
 
+// FetchRemoteTags fetches all the tags from a remote repository
+// Faked out
+func (g *GitLocal) FetchRemoteTags(dir string, repo string) error {
+	return g.GitFake.FetchRemoteTags(dir, repo)
+}
+
 // Tags returns all tags from the repository at the given directory
 func (g *GitLocal) Tags(dir string) ([]string, error) {
 	return g.GitCLI.Tags(dir)

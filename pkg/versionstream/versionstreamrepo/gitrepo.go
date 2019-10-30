@@ -1,17 +1,13 @@
 package versionstreamrepo
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/jenkins-x/jx/pkg/gits"
-	gitconfig "gopkg.in/src-d/go-git.v4/config"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -57,63 +53,15 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 	if versionRepository == "" {
 		versionRepository = config.DefaultVersionsURL
 	}
+	if versionRef == "" {
+		versionRef = config.DefaultVersionsRef
+	}
 
 	log.Logger().Debugf("Current configuration dir: %s", configDir)
 	log.Logger().Debugf("VersionRepository: %s git ref: %s", versionRepository, versionRef)
 
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
-		repo, err := git.PlainOpen(wrkDir)
-		if err != nil {
-			log.Logger().Errorf("Error opening %s", wrkDir)
-			_, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
-			if err != nil {
-				return "", "", errors.WithStack(err)
-			}
-		}
-		remote, err := repo.Remote("origin")
-		if err != nil {
-			log.Logger().Errorf("Error getting remote origin")
-			dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
-			if err != nil {
-				return "", "", errors.WithStack(err)
-			}
-			return dir, versionRef, nil
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
-		remoteRefs := "+refs/heads/master:refs/remotes/origin/master"
-		if versionRef != "" {
-			remoteRefs = "+refs/heads/" + versionRef + ":refs/remotes/origin/" + versionRef
-		}
-		err = remote.FetchContext(ctx, &git.FetchOptions{
-			RefSpecs: []gitconfig.RefSpec{
-				gitconfig.RefSpec(remoteRefs),
-			},
-		})
-
-		// The repository is up to date
-		if err == git.NoErrAlreadyUpToDate {
-			if versionRef != "" {
-				err = gitter.Checkout(wrkDir, versionRef)
-				if err != nil {
-					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
-					if err != nil {
-						return "", "", errors.WithStack(err)
-					}
-					return dir, versionRef, nil
-				}
-			}
-			return wrkDir, versionRef, nil
-		} else if err != nil {
-			dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
-			if err != nil {
-				return "", "", errors.WithStack(err)
-			}
-			return dir, versionRef, nil
-		}
-
 		pullLatest := false
 		if batchMode {
 			pullLatest = true
@@ -131,9 +79,26 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 			log.Logger().Infof(util.QuestionAnswer("A local Jenkins X versions repository already exists, pulling the latest", util.YesNo(pullLatest)))
 		}
 		if pullLatest {
-			w, err := repo.Worktree()
-			if err == nil {
-				err := w.Pull(&git.PullOptions{RemoteName: "origin"})
+			err = gitter.FetchRemoteTags(wrkDir, versionRepository)
+			if err != nil {
+				dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
+				if err != nil {
+					return "", "", errors.WithStack(err)
+				}
+				return dir, versionRef, nil
+			}
+			err = gitter.FetchBranch(wrkDir, versionRepository, versionRef)
+			if err != nil {
+				dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
+				if err != nil {
+					return "", "", errors.WithStack(err)
+				}
+				return dir, versionRef, nil
+			}
+			// TODO: It might be good to do the same behavior for any branch - just the checkout approach works for
+			// tags and commit-ishs, but not branches. I'm not sure how we can tell if it's a branch vs a tag, though.
+			if versionRef == config.DefaultVersionsRef {
+				err = gitter.Checkout(wrkDir, versionRef)
 				if err != nil {
 					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
 					if err != nil {
@@ -141,16 +106,23 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 					}
 					return dir, versionRef, nil
 				}
-			}
-		}
-		if versionRef != "" {
-			err = gitter.Checkout(wrkDir, versionRef)
-			if err != nil {
-				dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
+				err = gitter.Reset(wrkDir, "FETCH_HEAD", true)
 				if err != nil {
-					return "", "", errors.WithStack(err)
+					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
+					if err != nil {
+						return "", "", errors.WithStack(err)
+					}
+					return dir, versionRef, nil
 				}
-				return dir, versionRef, nil
+			} else {
+				err = gitter.Checkout(wrkDir, "FETCH_HEAD")
+				if err != nil {
+					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
+					if err != nil {
+						return "", "", errors.WithStack(err)
+					}
+					return dir, versionRef, nil
+				}
 			}
 		}
 		return wrkDir, versionRef, err
@@ -211,6 +183,7 @@ func clone(wrkDir string, versionRepository string, referenceName string, gitter
 		return "", nil
 	}
 	log.Logger().Infof("Cloning the Jenkins X versions repo %s with ref %s to %s", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
+	// TODO: Change this to use gitter instead, but need to understand exactly what it's doing first.
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           versionRepository,
 		ReferenceName: plumbing.ReferenceName(referenceName),

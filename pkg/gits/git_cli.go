@@ -869,6 +869,11 @@ func (g *GitCLI) FetchTags(dir string) error {
 	return g.gitCmd(dir, "fetch", "--tags")
 }
 
+// FetchRemoteTags fetches all the tags from a remote repository
+func (g *GitCLI) FetchRemoteTags(dir string, repo string) error {
+	return g.gitCmd(dir, "fetch", repo, "--tags")
+}
+
 // Tags returns all tags from the repository at the given directory
 func (g *GitCLI) Tags(dir string) ([]string, error) {
 	return g.FilterTags(dir, "")

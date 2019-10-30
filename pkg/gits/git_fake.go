@@ -504,6 +504,11 @@ func (g *GitFake) FetchTags(dir string) error {
 	return nil
 }
 
+// FetchRemoteTags fetches tags from a remote repository
+func (g *GitFake) FetchRemoteTags(dir string, repo string) error {
+	return nil
+}
+
 // Tags lists the tags
 func (g *GitFake) Tags(dir string) ([]string, error) {
 	tags := []string{}
