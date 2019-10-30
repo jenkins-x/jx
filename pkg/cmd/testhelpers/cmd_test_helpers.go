@@ -277,9 +277,8 @@ func CleanupTestEnvironmentDir(o *opts.CommonOptions) error {
 	return nil
 }
 
-func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string) (*v1.PipelineActivity, error) {
-	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	key := &kube.PromoteStepActivityKey{
+func newPromoteStepActivityKey(folder string, repo string, branch string, build string, workflow string) *kube.PromoteStepActivityKey {
+	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     folder + "-" + repo + "-" + branch + "-" + build,
 			Pipeline: folder + "/" + repo + "/" + branch,
@@ -290,6 +289,12 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 			},
 		},
 	}
+}
+
+// CreateTestPipelineActivity creates a PipelineActivity with the given arguments
+func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string) (*v1.PipelineActivity, error) {
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	key := newPromoteStepActivityKey(folder, repo, branch, build, workflow)
 	a, _, err := key.GetOrCreate(jxClient, ns)
 	version := "1.0." + build
 	a.Spec.GitOwner = folder
@@ -297,6 +302,16 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	a.Spec.GitURL = "https://fake.git/" + folder + "/" + repo + ".git"
 	a.Spec.Version = version
 	a.Spec.Workflow = workflow
+	_, err = activities.Update(a)
+	return a, err
+}
+
+// CreateTestPipelineActivityWithTime creates a PipelineActivity with the given timestamp and adds it to the list of activities
+func CreateTestPipelineActivityWithTime(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string, t metav1.Time) (*v1.PipelineActivity, error) {
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	key := newPromoteStepActivityKey(folder, repo, branch, build, workflow)
+	a, _, err := key.GetOrCreate(jxClient, ns)
+	a.Spec.StartedTimestamp = &t
 	_, err = activities.Update(a)
 	return a, err
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	jenkinsio_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -591,6 +592,105 @@ func TestPipelineID(t *testing.T) {
 	//system - the illegal characters are not yet encoded & will be rejected by K8S.
 	pID = kube.NewPipelineID("O/N!R@1", "therepo", "thebranch")
 	validatePipelineID(t, pID, "O/N!R@1/therepo/thebranch", "o-n!r@1-therepo-thebranch")
+}
+
+func TestSortActivities(t *testing.T) {
+	t.Parallel()
+	date1 := metav1.Date(2009, time.September, 10, 23, 0, 0, 0, time.UTC)
+	date2 := metav1.Date(2009, time.October, 10, 23, 0, 0, 0, time.UTC)
+	date3 := metav1.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+	date4 := metav1.Date(2009, time.December, 10, 23, 0, 0, 0, time.UTC)
+
+	activities := []jenkinsio_v1.PipelineActivity{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a1",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: &date3,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a2",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: &date2,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a3",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: &date1,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a4",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: &date4,
+			},
+		},
+	}
+
+	kube.SortActivities(activities)
+
+	assert.Equal(t, "a3", activities[0].Name, "Activity 0")
+	assert.Equal(t, "a2", activities[1].Name, "Activity 1")
+	assert.Equal(t, "a1", activities[2].Name, "Activity 2")
+	assert.Equal(t, "a4", activities[3].Name, "Activity 3")
+}
+
+func TestSortActivitiesWithPendingCases(t *testing.T) {
+	t.Parallel()
+	date1 := metav1.Date(2009, time.September, 10, 23, 0, 0, 0, time.UTC)
+	date2 := metav1.Date(2009, time.October, 10, 23, 0, 0, 0, time.UTC)
+	date3 := metav1.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+
+	activities := []jenkinsio_v1.PipelineActivity{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a1",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: &date3,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a2",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: &date2,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a3",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: &date1,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "p",
+			},
+			Spec: v1.PipelineActivitySpec{
+				StartedTimestamp: nil,
+			},
+		},
+	}
+
+	kube.SortActivities(activities)
+
+	assert.Equal(t, "a3", activities[0].Name, "Activity 0")
+	assert.Equal(t, "a2", activities[1].Name, "Activity 1")
+	assert.Equal(t, "a1", activities[2].Name, "Activity 2")
+	assert.Equal(t, "p", activities[3].Name, "Activity 3")
 }
 
 func validatePipelineID(t *testing.T, pID kube.PipelineID, expectedID string, expectedName string) {

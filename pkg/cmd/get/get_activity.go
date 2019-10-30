@@ -32,6 +32,7 @@ type GetActivityOptions struct {
 	Filter      string
 	BuildNumber string
 	Watch       bool
+	Sort        bool
 }
 
 var (
@@ -72,6 +73,7 @@ func NewCmdGetActivity(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Text to filter the pipeline names")
 	cmd.Flags().StringVarP(&options.BuildNumber, "build", "", "", "The build number to filter on")
 	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch the activities for changes")
+	cmd.Flags().BoolVarP(&options.Sort, "sort", "s", false, "Sort activities by timestamp")
 	return cmd
 }
 
@@ -89,12 +91,6 @@ func (o *GetActivityOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	kube.SortEnvironments(envList.Items)
-
 	table := o.CreateTable()
 	table.SetColumnAlign(1, util.ALIGN_RIGHT)
 	table.SetColumnAlign(2, util.ALIGN_RIGHT)
@@ -108,6 +104,10 @@ func (o *GetActivityOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	if o.Sort {
+		kube.SortActivities(list.Items)
+	}
+
 	for _, activity := range list.Items {
 		o.addTableRow(&table, &activity)
 	}
