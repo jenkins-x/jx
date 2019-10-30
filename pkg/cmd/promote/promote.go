@@ -756,7 +756,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						} else if status == "error" || status == "failure" {
 							return fmt.Errorf("Pull request %s last commit has status %s for ref %s", pr.URL, status, pr.LastCommitSha)
 						} else {
-							log.Logger().Info("got git provider status %s from PR %s", status, pr.URL)
+							log.Logger().Infof("got git provider status %s from PR %s", status, pr.URL)
 						}
 					}
 				}
