@@ -191,7 +191,7 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 		if requirements.GithubApp == nil {
 			requirements.GithubApp = &config.GithubAppConfig{}
 		}
-		if githubApp == "true" {
+		if githubApp == "yes" {
 			requirements.GithubApp.Enabled = true
 		} else {
 			requirements.GithubApp.Enabled = false
