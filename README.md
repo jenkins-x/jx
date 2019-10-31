@@ -1,6 +1,6 @@
 # JX 
 
-JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.io/)
+JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.io/).
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3237/badge)](https://bestpractices.coreinfrastructure.org/projects/3237)
 [![GoDoc](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://godoc.org/github.com/jenkins-x/jx)
@@ -14,7 +14,7 @@ JX is a command line tool for installing and using [Jenkins X](https://jenkins-x
 
 ## Installing
 
-Check out [how to install jx](https://jenkins-x.io/getting-started/install/)
+Check out [how to install jx](https://jenkins-x.io/getting-started/install/).
 
 ## Getting Help
 
@@ -26,16 +26,16 @@ Or to get help on a specific command, say, `create` then type:
 
     jx help create
 
-You can also browse the [jx command reference documentation](https://jenkins-x.io/commands/jx/)
+You can also browse the [jx command reference documentation](https://jenkins-x.io/commands/jx/).
 
 ## Getting Started
 
-Please check out the [Getting Started Guide](https://jenkins-x.io/getting-started/) on how to 
+Please check out the [Getting Started Guide](https://jenkins-x.io/getting-started/) on how to:
 
 * [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/getting-started/create-cluster/)
 * [install Jenkins X on existing clusters](https://jenkins-x.io/getting-started/install-on-cluster/)
 
-Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/getting-started/next/)
+Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/getting-started/next/).
     
 ## Reference
 
@@ -48,18 +48,18 @@ To open the Jenkins console try:
 
     jx console
     
-Or to open other consoles
+Or to open other consoles:
 
     jx open foo
     
-If you do not know the name
+If you do not know the name:
 
     jx open
     
 
 ## Tail logs
 
-To tail the logs of anything running on Kubernetes (jenkins or your own applications) type
+To tail the logs of anything running on Kubernetes (jenkins or your own applications) type.
 
     jx logs
     
@@ -73,15 +73,15 @@ Then if there's only one deployment with a name that contains `cheese` then it'l
 
 ## Remote shells
 
-You can open a remote shell inside any pods container via the `rsh` command
+You can open a remote shell inside any pods container via the `rsh` command:
 
     jx rsh
     
-Or to open a shell inside a pod named foo
+Or to open a shell inside a pod named foo:
 
     jx rsh foo
 
-Pass `-c` to specify the container name. e.g. to open a shell in a maven build pod
+Pass `-c` to specify the container name. e.g. to open a shell in a maven build pod:
 
     jx rsh -c maven maven
 
@@ -105,7 +105,7 @@ If you have a Maven Archetype you would like to create then use:
     
 ## Starting builds
 
-To start a pipeline using a specific name try
+To start a pipeline using a specific name try:
 
     jx start pipeline myorg/myrepo
 
@@ -123,11 +123,11 @@ You can start and tail the build log via:
 
 ## Viewing Apps and Environments
 
-To view environments for a team
+To view environments for a team:
 
     jx get env
     
-To view the application versions across environments
+To view the application versions across environments:
 
     jx get version
             
@@ -139,7 +139,7 @@ However if you wish to manually promote a version to an environment you can use 
 
     jx promote myapp -e prod 
     
-Or if you wish to use a custom namespace    
+Or if you wish to use a custom namespace:   
 
     jx promote myapp -n my-dummy-namespace
  
@@ -151,7 +151,7 @@ You can switch Environments via:
 
     jx env
     
-Or change it via 
+Or change it via:
 
     jx env staging
     jx env prod
@@ -164,13 +164,13 @@ To view all the environments type:
 
     jx get env
     
-You can create or edit environments too
+You can create or edit environments too:
 
     jx create env
     
     jx edit env staging
     
-You can switch namespaces in the same way via
+You can switch namespaces in the same way via:
 
     jx ns
 
@@ -180,7 +180,7 @@ or
 
 ## Switching Clusters
 
-If you have multiple Kubernetes clusters (e.g. you are using GKE and Minikube together) then you can switch between them via
+If you have multiple Kubernetes clusters (e.g. you are using GKE and Minikube together) then you can switch between them via:
 
     jx ctx
     
@@ -196,7 +196,7 @@ So if you want to work temporarily with, say, the production cluster we highly r
 
     jx shell my-prod-context
     
-Or to pick the context to use for the sub shell
+Or to pick the context to use for the sub shell:
 
     jx shell 
 
@@ -204,7 +204,7 @@ Then your bash prompt will be updated to reflect that you are in a different con
 
 ### Setting your prompt
 
-You can use the `jx prompt` to configure your CLI prompt to display the current team and environment you are working within           
+You can use the `jx prompt` to configure your CLI prompt to display the current team and environment you are working within:          
                                             
 		# Enable the prompt for bash
 		PS1="[\u@\h \W \$(jx prompt)]\$ "
@@ -212,7 +212,7 @@ You can use the `jx prompt` to configure your CLI prompt to display the current 
 		# Enable the prompt for zsh
 		PROMPT='$(jx prompt)'$PROMPT
 
-Note that the prompt is updated automatically for you via the `jx shell` command too
+**Note** that the prompt is updated automatically for you via the `jx shell` command too.
 
 ### Bash completion
 
@@ -231,7 +231,7 @@ For more help try:
            
 ## Addons
 
-We are adding a number of addon capabilities to Jenkins X. To add or remove addons use the `jx create addon` or `jx delete addon` commands
+We are adding a number of addon capabilities to Jenkins X. To add or remove addons use the `jx create addon` or `jx delete addon` commands.
 
 For example to add the [Gitea Git server](https://gitea.io/en-US/) to your Jenkins X installation try:
 
@@ -239,10 +239,10 @@ For example to add the [Gitea Git server](https://gitea.io/en-US/) to your Jenki
 
 This will: 
 
-* install the Gitea Helm chart
-* add Gitea as a Git server (via the `jx create git server gitea` command)
-* create a new user in Gitea (via the `jx create git user -n gitea` command)
-* create a new Git API token in Gitea (via the `jx create git token -n gitea -p password username` command)
+* install the Gitea Helm chart.
+* add Gitea as a Git server (via the `jx create git server gitea` command).
+* create a new user in Gitea (via the `jx create git user -n gitea` command).
+* create a new Git API token in Gitea (via the `jx create git token -n gitea -p password username` command).
      
 ## Troubleshooting
 
@@ -264,7 +264,7 @@ Now try `jx create cluster minikube` again - did that help? Sometimes there are 
 
 Sometimes a reboot can help in cases where virtualisation goes wrong ;)
 
-Otherwise you could try follow the Minikube instructions 
+Otherwise you could try follow the Minikube instructions:
 
 * [install Minikube](https://github.com/kubernetes/minikube#installation)
 * [run Minikube start](https://github.com/kubernetes/minikube#quickstart) 
