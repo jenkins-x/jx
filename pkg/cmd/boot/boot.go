@@ -2,6 +2,7 @@ package boot
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"os"
 	"path/filepath"
 
@@ -129,12 +130,12 @@ func (o *BootOptions) Run() error {
 	}
 
 	if o.GitURL != "" {
-		log.Logger().Infof("GitURL provided, overriding the current value: %s", util.ColorInfo(gitURL))
+		log.Logger().Infof("GitURL provided, overriding the current value: %s with %s", util.ColorInfo(gitURL), util.ColorInfo(o.GitURL))
 		gitURL = o.GitURL
 	}
 
 	if o.GitRef != "" {
-		log.Logger().Infof("GitRef provided, overriding the current value: %s", util.ColorInfo(gitRef))
+		log.Logger().Infof("GitRef provided, overriding the current value: %s with %s", util.ColorInfo(gitRef), util.ColorInfo(o.GitRef))
 		gitRef = o.GitRef
 	}
 
@@ -206,11 +207,31 @@ func (o *BootOptions) Run() error {
 		commitish, err := gits.FindTagForVersion(cloneDir, gitRef, o.Git())
 		if err != nil {
 			log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", o.GitRef).Error())
-			commitish = fmt.Sprintf("%s/%s", "origin", gitRef)
 		}
-		err = o.Git().Reset(cloneDir, commitish, true)
-		if err != nil {
-			return errors.Wrapf(err, "setting HEAD to %s", commitish)
+
+		if commitish != "" {
+			err = o.Git().Reset(cloneDir, commitish, true)
+			if err != nil {
+				return errors.Wrapf(err, "setting HEAD to %s", commitish)
+			}
+		} else {
+			log.Logger().Infof("fetching branch %s", o.GitRef)
+			err = o.Git().FetchBranch(cloneDir, "origin", o.GitRef)
+			if err != nil {
+				return errors.Wrapf(err, "fetching branch %s", o.GitRef)
+			}
+
+			branchName := fmt.Sprintf("pr-%s", uuid.New().String())
+
+			err = o.Git().CreateBranchFrom(cloneDir, branchName, o.GitRef)
+			if err != nil {
+				return errors.Wrapf(err, "create branch %s from %s", branchName, o.GitRef)
+			}
+
+			err = o.Git().Checkout(cloneDir, branchName)
+			if err != nil {
+				return errors.Wrapf(err, "checkout branch %s", branchName)
+			}
 		}
 		o.Dir, err = filepath.Abs(cloneDir)
 		if err != nil {
@@ -248,9 +269,12 @@ func (o *BootOptions) Run() error {
 		return fmt.Errorf("no requirements file %s are you sure you are running this command inside a GitOps clone?", requirementsFile)
 	}
 
-	err = o.updateBootCloneIfOutOfDate(gitRef)
-	if err != nil {
-		return err
+	// only update boot if the a GitRef has not been supplied
+	if o.GitRef == "" {
+		err = o.updateBootCloneIfOutOfDate(gitRef)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = o.verifyRequirements(requirements, requirementsFile)
