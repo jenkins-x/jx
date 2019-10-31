@@ -160,7 +160,7 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", fn))
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreatePullRequestBuildersFn(builderImageVersion)))
 		// Update the pipeline files
-		fn, err = operations.CreatePullRequestRegexFn(builderImageVersion, `(?m)^\s*agent:\n\s*image: .*:(?P<version>.*)$`, "jenkins-x-*.yml")
+		fn, err = operations.CreatePullRequestRegexFn(builderImageVersion, `(?m)^\s*agent:\n\s*image: gcr.io/jenkinsxio/builder-.*:(?P<version>.*)$`, "jenkins-x-*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
