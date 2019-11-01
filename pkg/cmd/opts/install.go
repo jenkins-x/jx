@@ -553,17 +553,17 @@ func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolv
 	}
 	log.Logger().Warnf("could not find the version of jx in the dependency matrix of the version stream at %s", dir)
 
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
+	if config.LatestVersionStringsBucket != "" {
 		err := o.InstallRequirements(cloud.GKE)
 		if err != nil {
 			return semver.Version{}, err
 		}
 		gcloudOpts := &gke.GCloud{}
-		latestVersionStrings, err := gcloudOpts.ListObjects("artifacts.jenkinsxio.appspot.com", "binaries/jx")
+		latestVersionStrings, err := gcloudOpts.ListObjects(config.LatestVersionStringsBucket, "binaries/jx")
 		if err != nil {
 			return semver.Version{}, nil
 		}
-		return util.GetLatestVersionStringCloudBeesBucketURLs(latestVersionStrings)
+		return util.GetLatestVersionStringFromBucketURLs(latestVersionStrings)
 	}
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		log.Logger().Debugf("Locating latest JX version from HomeBrew")
@@ -633,13 +633,7 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 	if runtime.GOOS == "windows" {
 		extension = "zip"
 	}
-	clientURL := ""
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
-		clientURL = fmt.Sprintf("https://storage.googleapis.com/artifacts.jenkinsxio.appspot.com/binaries/jx/%s/"+binary+"-%s-%s.%s", version, runtime.GOOS, runtime.GOARCH, extension)
-
-	} else {
-		clientURL = fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.%s", version, runtime.GOOS, runtime.GOARCH, extension)
-	}
+	clientURL := fmt.Sprintf("%s%s/"+binary+"-%s-%s.%s", config.BinaryDownloadBaseURL, version, runtime.GOOS, runtime.GOARCH, extension)
 	fullPath := filepath.Join(binDir, fileName)
 	if runtime.GOOS == "windows" {
 		fullPath += ".exe"

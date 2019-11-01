@@ -80,8 +80,8 @@ func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, e
 	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
 }
 
-// GetLatestVersionStringCloudBeesBucketURLs return the latest version from a list of buckets with the version at the end of the path
-func GetLatestVersionStringCloudBeesBucketURLs(versionStrings []string) (semver.Version, error) {
+// GetLatestVersionStringFromBucketURLs return the latest version from a list of buckets with the version at the end of the path
+func GetLatestVersionStringFromBucketURLs(versionStrings []string) (semver.Version, error) {
 	versions := make([]semver.Version, 0)
 	for _, versionStr := range versionStrings {
 		versionPaths := strings.Split(versionStr, "/")

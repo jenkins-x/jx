@@ -165,24 +165,28 @@ const (
 var RepositoryTypeValues = []string{"none", "bucketrepo", "nexus", "artifactory"}
 
 const (
-	// DefaultVersionsURL default version stream url
-	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
-	// DefaultVersionsRef default version stream ref
-	DefaultVersionsRef = "master"
 	// DefaultProfileFile location of profle config
 	DefaultProfileFile = "profile.yaml"
 	// OpenSourceProfile constant for OSS profile
 	OpenSourceProfile = "oss"
 	// CloudBeesProfile constant for CloudBees profile
 	CloudBeesProfile = "cloudbees"
+)
+
+// Overrideable at build time - see Makefile
+var (
+	// DefaultVersionsURL default version stream url
+	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
+	// DefaultVersionsRef default version stream ref
+	DefaultVersionsRef = "master"
 	// DefaultBootRepository default git repo for boot
 	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
-	// DefaultCloudBeesBootRepository boot git repo to use when using cloudbees profile
-	DefaultCloudBeesBootRepository = "https://github.com/cloudbees/cloudbees-jenkins-x-boot-config.git"
-	// DefaultCloudBeesVersionsURL default version stream url for cloudbees jenkins x distribution
-	DefaultCloudBeesVersionsURL = "https://github.com/cloudbees/cloudbees-jenkins-x-versions.git"
-	// DefaultCloudBeesVersionsRef default version stream ref for cloudbees jenkins x distribution
-	DefaultCloudBeesVersionsRef = "master"
+	// LatestVersionStringsBucket optional bucket name to search in for latest version strings
+	LatestVersionStringsBucket = ""
+	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
+	BinaryDownloadBaseURL = "https://github.com/jenkins-x/jx/releases/download/v"
+	// TLSDocURL the URL presented by `jx step verify preinstall` for documentation on configuring TLS
+	TLSDocURL = "https://jenkins-x.io/architecture/tls"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments

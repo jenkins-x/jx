@@ -140,10 +140,6 @@ func (o *BootOptions) Run() error {
 		gitRef = o.GitRef
 	}
 
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
-		gitURL = o.setupCloudBeesProfile(gitURL)
-	}
-
 	if gitURL == "" {
 		return util.MissingOption("git-url")
 	}
@@ -396,19 +392,6 @@ func (o *BootOptions) updateBootCloneIfOutOfDate(gitRef string) error {
 	return nil
 }
 
-func (o *BootOptions) setupCloudBeesProfile(gitURL string) string {
-	if o.GitURL == "" {
-		gitURL = config.DefaultCloudBeesBootRepository
-	}
-	if o.VersionStreamURL == config.DefaultVersionsURL {
-		o.VersionStreamURL = config.DefaultCloudBeesVersionsURL
-	}
-	if o.VersionStreamRef == config.DefaultVersionsRef {
-		o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
-	}
-	return gitURL
-}
-
 func existingBootClone(pipelineFile string) (bool, error) {
 	pipelineExists, err := util.FileExists(pipelineFile)
 	if err != nil {
@@ -472,13 +455,10 @@ func (o *BootOptions) defaultVersionStream(requirements *config.RequirementsConf
 	// If we still don't have a complete version stream ref then we better set to a default
 	if requirements.VersionStream.URL == "" || requirements.VersionStream.Ref == "" {
 		log.Logger().Warnf("Incomplete version stream reference %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
-		if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
-			o.VersionStreamRef = config.DefaultCloudBeesVersionsRef
-			o.VersionStreamURL = config.DefaultVersionsURL
-		} else {
-			o.VersionStreamRef = config.DefaultVersionsRef
-			o.VersionStreamURL = config.DefaultVersionsURL
-		}
+		o.VersionStreamRef = config.DefaultVersionsRef
+		o.VersionStreamURL = config.DefaultVersionsURL
+		requirements.VersionStream.URL = o.VersionStreamURL
+		requirements.VersionStream.Ref = o.VersionStreamRef
 		log.Logger().Infof("Setting version stream reference to default %s @ %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
 	}
 }

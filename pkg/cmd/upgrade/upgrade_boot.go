@@ -175,9 +175,6 @@ func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (str
 	if versionStreamURL == config.DefaultVersionsURL {
 		bootConfigURL = config.DefaultBootRepository
 	}
-	if versionStreamURL == config.DefaultCloudBeesVersionsURL {
-		bootConfigURL = config.DefaultCloudBeesBootRepository
-	}
 
 	if bootConfigURL == "" {
 		requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
