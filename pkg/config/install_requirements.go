@@ -139,6 +139,25 @@ const (
 // WebhookTypeValues the string values for the webhook types
 var WebhookTypeValues = []string{"jenkins", "lighthouse", "prow"}
 
+// RepositoryType is the type of a repository we use to store artifacts (jars, tarballs, npm packages etc)
+type RepositoryType string
+
+const (
+	// RepositoryTypeUnknown if we have yet to configure a repository
+	RepositoryTypeUnknown RepositoryType = ""
+	// RepositoryTypeArtifactory if you wish to use Artifactory as the artifact repository
+	RepositoryTypeArtifactory RepositoryType = "artifactory"
+	// RepositoryTypeBucketRepo if you wish to use bucketrepo as the artifact repository. see https://github.com/jenkins-x/bucketrepo
+	RepositoryTypeBucketRepo RepositoryType = "bucketrepo"
+	// RepositoryTypeNone if you do not wish to install an artifact repository
+	RepositoryTypeNone RepositoryType = "none"
+	// RepositoryTypeNexus if you wish to use Sonatype Nexus as the artifact repository
+	RepositoryTypeNexus RepositoryType = "nexus"
+)
+
+// RepositoryTypeValues the string values for the repository types
+var RepositoryTypeValues = []string{"none", "bucketrepo", "nexus", "artifactory"}
+
 const (
 	// DefaultVersionsURL default version stream url
 	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
@@ -187,6 +206,10 @@ type IngressConfig struct {
 	CloudDNSSecretName string `json:"cloud_dns_secret_name,omitempty"`
 	// Domain to expose ingress endpoints
 	Domain string `json:"domain"`
+	// IgnoreLoadBalancer if the nginx-controller LoadBalancer service should not be used to detect and update the
+	// domain if you are using a dynamic domain resolver like `.nip.io` rather than a real DNS configuration.
+	// With this flag enabled the `Domain` value will be used and never re-created based on the current LoadBalancer IP address.
+	IgnoreLoadBalancer bool `json:"ignoreLoadBalancer"`
 	// NamespaceSubDomain the sub domain expression to expose ingress. Defaults to ".jx."
 	NamespaceSubDomain string `json:"namespaceSubDomain"`
 	// TLS enable automated TLS using certmanager
@@ -398,6 +421,8 @@ type RequirementsConfig struct {
 	Kaniko bool `json:"kaniko,omitempty"`
 	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress"`
+	// Repository specifies what kind of artifact repository you wish to use for storing artifacts (jars, tarballs, npm modules etc)
+	Repository RepositoryType `json:"repository,omitempty"`
 	// SecretStorage how should we store secrets for the cluster
 	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
 	// Storage contains storage requirements

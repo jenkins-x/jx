@@ -877,7 +877,7 @@ func (o *StepVerifyPreInstallOptions) verifyConfigMapExists(kubeClient kubernete
 func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.RequirementsConfig, requirementsFileName string) error {
 	log.Logger().Info("Verifying Ingress...")
 	domain := requirements.Ingress.Domain
-	if requirements.Ingress.IsAutoDNSDomain() {
+	if requirements.Ingress.IsAutoDNSDomain() && !requirements.Ingress.IgnoreLoadBalancer {
 		log.Logger().Infof("Clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated", util.ColorInfo(domain))
 		requirements.Ingress.Domain = ""
 		err := requirements.SaveConfig(requirementsFileName)
