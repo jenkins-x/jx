@@ -75,6 +75,8 @@ const (
 	RequirementKaniko = "JX_REQUIREMENT_KANIKO"
 	// RequirementIngressTLSProduction use the lets encrypt production server
 	RequirementIngressTLSProduction = "JX_REQUIREMENT_INGRESS_TLS_PRODUCTION"
+	// RequirementRepository the artifact repository for jx
+	RequirementRepository = "JX_REQUIREMENT_REPOSITORY"
 	// RequirementWebhook the webhook handler for jx
 	RequirementWebhook = "JX_REQUIREMENT_WEBHOOK"
 	// RequirementStorageBackupEnabled if backup storage is required

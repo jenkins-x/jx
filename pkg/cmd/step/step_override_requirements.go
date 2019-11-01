@@ -144,6 +144,10 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 			requirements.Kaniko = true
 		}
 	}
+	if "" != os.Getenv(config.RequirementRepository) {
+		repositoryString := os.Getenv(config.RequirementRepository)
+		requirements.Repository = config.RepositoryType(repositoryString)
+	}
 	if "" != os.Getenv(config.RequirementWebhook) {
 		webhookString := os.Getenv(config.RequirementWebhook)
 		requirements.Webhook = config.WebhookType(webhookString)
