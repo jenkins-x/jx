@@ -326,7 +326,12 @@ func (p *GitHubProvider) DeleteRepository(org string, name string) error {
 }
 
 func toGitHubRepo(name string, org string, repo *github.Repository) *GitRepository {
+	var id int64
+	if repo.ID != nil {
+		id = *repo.ID
+	}
 	return &GitRepository{
+		ID:               id,
 		Name:             name,
 		AllowMergeCommit: util.DereferenceBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),

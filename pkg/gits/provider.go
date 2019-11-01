@@ -18,6 +18,7 @@ type GitOrganisation struct {
 }
 
 type GitRepository struct {
+	ID               int64
 	Name             string
 	AllowMergeCommit bool
 	HTMLURL          string
