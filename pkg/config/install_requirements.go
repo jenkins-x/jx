@@ -75,6 +75,10 @@ const (
 	RequirementKaniko = "JX_REQUIREMENT_KANIKO"
 	// RequirementIngressTLSProduction use the lets encrypt production server
 	RequirementIngressTLSProduction = "JX_REQUIREMENT_INGRESS_TLS_PRODUCTION"
+	// RequirementChartRepository the helm chart repository for jx
+	RequirementChartRepository = "JX_REQUIREMENT_CHART_REPOSITORY"
+	// RequirementRegistry the container registry for jx
+	RequirementRegistry = "JX_REQUIREMENT_REGISTRY"
 	// RequirementRepository the artifact repository for jx
 	RequirementRepository = "JX_REQUIREMENT_REPOSITORY"
 	// RequirementWebhook the webhook handler for jx
@@ -276,6 +280,8 @@ type GKEConfig struct {
 type ClusterConfig struct {
 	// AzureConfig the azure specific configuration
 	AzureConfig *AzureConfig `json:"azure,omitempty"`
+	// ChartRepository the repository URL to deploy charts to
+	ChartRepository string `json:"chartRepository,omitempty"`
 	// GKEConfig the gke specific configuration
 	GKEConfig *GKEConfig `json:"gke,omitempty"`
 	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly

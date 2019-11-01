@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
@@ -771,6 +772,19 @@ func (o *CommonOptions) ReleaseChartMuseumUrl() string {
 		return ""
 	}
 	chartRepo := os.Getenv("CHART_REPOSITORY")
+	if chartRepo == "" {
+		teamSettings, err := o.TeamSettings()
+		if err != nil {
+			log.Logger().Warnf("failed to get the team settings: %s", err.Error())
+		} else {
+			requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+			if err != nil {
+				log.Logger().Warnf("failed to get the requiremnets from team settings: %s", err.Error())
+			} else {
+				chartRepo = requirements.Cluster.ChartRepository
+			}
+		}
+	}
 	if chartRepo == "" {
 		if o.factory.IsInCDPipeline() {
 			chartRepo = DefaultChartRepo
