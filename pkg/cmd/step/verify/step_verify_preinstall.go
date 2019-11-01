@@ -912,7 +912,7 @@ func (o *StepVerifyPreInstallOptions) ValidateRequirements(requirements *config.
 		}
 	}
 	if requirements.Repository == config.RepositoryTypeBucketRepo && requirements.Cluster.ChartRepository == "" {
-		requirements.Cluster.ChartRepository = "http://bucketrepo/bucketrepo/"
+		requirements.Cluster.ChartRepository = "http://bucketrepo/bucketrepo/charts/"
 		err := requirements.SaveConfig(fileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save changes to file: %s", fileName)
