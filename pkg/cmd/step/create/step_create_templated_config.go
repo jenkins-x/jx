@@ -94,12 +94,10 @@ func (o *StepCreateTemplatedConfigOptions) checkFlags() error {
 	}
 
 	if o.ConfigFile == "" {
-		return util.MissingArgument(configFileOption)
+		// Override the rendered config file with the template file if it is not specified
+		o.ConfigFile = o.TemplateFile
 	}
 
-	if exists, err := util.FileExists(o.ConfigFile); err == nil && exists {
-		return fmt.Errorf("config file %q provided in option %q already exists", o.ConfigFile, configFileOption)
-	}
 	return nil
 }
 
