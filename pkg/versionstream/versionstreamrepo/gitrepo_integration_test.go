@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
@@ -112,6 +113,42 @@ func initializeTempGitRepo(gitter gits.Gitter) (string, string, error) {
 	}
 
 	return fmt.Sprint(dir), filepath.Base(testFile.Name()), nil
+}
+
+func TestCloneJXVersionsRepoWithOverriddenDefault(t *testing.T) {
+	origJxHome := os.Getenv("JX_HOME")
+
+	tmpJxHome, err := ioutil.TempDir("", "jx-test-"+t.Name())
+	assert.NoError(t, err)
+
+	err = os.Setenv("JX_HOME", tmpJxHome)
+	assert.NoError(t, err)
+
+	defer func() {
+		_ = os.RemoveAll(tmpJxHome)
+		err = os.Setenv("JX_HOME", origJxHome)
+	}()
+
+	gitter := gits.NewGitCLI()
+	gitDir, testFileName, err := initializeTempGitRepo(gitter)
+	defer func() {
+		err := os.RemoveAll(gitDir)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+
+	originalDefaultVersionsURL := config.DefaultVersionsURL
+	originalDefaultVersionsRef := config.DefaultVersionsRef
+
+	config.DefaultVersionsURL = gitDir
+	config.DefaultVersionsRef = FirstTag
+
+	defer func() {
+		config.DefaultVersionsRef = originalDefaultVersionsRef
+		config.DefaultVersionsURL = originalDefaultVersionsURL
+	}()
+
+	_ = assertClonesCorrectlyWithCorrectFileContents(t, "", "", FirstTag, gitter, testFileName, "foo", nil)
 }
 
 func TestCloneJXVersionsRepoReplacingCurrent(t *testing.T) {
