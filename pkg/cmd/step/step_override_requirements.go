@@ -67,6 +67,12 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	if "" != os.Getenv(config.RequirementZone) {
 		requirements.Cluster.Zone = os.Getenv(config.RequirementZone)
 	}
+	if "" != os.Getenv(config.RequirementChartRepository) {
+		requirements.Cluster.ChartRepository = os.Getenv(config.RequirementChartRepository)
+	}
+	if "" != os.Getenv(config.RequirementRegistry) {
+		requirements.Cluster.Registry = os.Getenv(config.RequirementRegistry)
+	}
 	if "" != os.Getenv(config.RequirementEnvGitOwner) {
 		requirements.Cluster.EnvironmentGitOwner = os.Getenv(config.RequirementEnvGitOwner)
 	}

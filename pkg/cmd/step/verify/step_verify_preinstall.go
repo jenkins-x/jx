@@ -911,6 +911,13 @@ func (o *StepVerifyPreInstallOptions) ValidateRequirements(requirements *config.
 			return fmt.Errorf("invalid requirements in file %s cannot use prow as a webhook for git kind: %s server: %s. Please try using lighthouse instead", fileName, kind, server)
 		}
 	}
+	if requirements.Repository == config.RepositoryTypeBucketRepo && requirements.Cluster.ChartRepository == "" {
+		requirements.Cluster.ChartRepository = "http://bucketrepo/bucketrepo/"
+		err := requirements.SaveConfig(fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save changes to file: %s", fileName)
+		}
+	}
 	return nil
 }
 
