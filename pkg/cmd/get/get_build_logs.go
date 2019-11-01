@@ -338,7 +338,7 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 
 	log.Logger().Infof("Build logs for %s", util.ColorInfo(name))
 	name = strings.TrimSuffix(name, " ")
-	return false, o.TektonLogger.GetRunningBuildLogs(pa, name)
+	return false, o.TektonLogger.GetRunningBuildLogs(pa, name, false)
 }
 
 // StreamLog implementation of LogWriter.StreamLog for CLILogWriter, this implementation will tail logs for the provided pod /container through the defined logger

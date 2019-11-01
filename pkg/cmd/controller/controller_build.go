@@ -1094,7 +1094,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		LogWriter:    logWriter,
 	}
 
-	err = tektonLogger.GetRunningBuildLogs(activity, buildName)
+	err = tektonLogger.GetRunningBuildLogs(activity, buildName, false)
 	if err != nil {
 		return "", errors.Wrapf(err, "there was a problem getting logs for build %s", buildName)
 	}

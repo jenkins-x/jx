@@ -276,7 +276,7 @@ func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -320,7 +320,7 @@ func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -362,7 +362,7 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -409,7 +409,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
 	buildContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(buildContainers) * LogsHeadersMultiplier
@@ -460,7 +460,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedContainerInTheMiddle(
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
 	stepsExecutedBeforeFailure := 4
 	containersNumber := stepsExecutedBeforeFailure*LogsHeadersMultiplier + FailureLineAddition
@@ -511,7 +511,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedMetapipeline(t *testi
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
 	stepsExecutedBeforeFailure := 6
 	containersNumber := stepsExecutedBeforeFailure*LogsHeadersMultiplier + FailureLineAddition
@@ -565,7 +565,7 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1")
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
 	buildContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(buildContainers) * LogsHeadersMultiplier
@@ -665,7 +665,7 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1")
+	err := tl.GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1", false)
 	assert.NoError(t, err)
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
@@ -702,7 +702,7 @@ func TestGetRunningBuildLogsWithMultipleStagesWithFailureInFirstStage(t *testing
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1")
+	err := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1", false)
 	assert.NoError(t, err)
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
@@ -738,7 +738,7 @@ func TestGetRunningBuildLogsWithMultipleStagesFailureActivityDoneRunNotDone(t *t
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1")
+	err := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1", false)
 	assert.NoError(t, err)
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
@@ -748,6 +748,59 @@ func TestGetRunningBuildLogsWithMultipleStagesFailureActivityDoneRunNotDone(t *t
 	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
 	assert.Regexp(t, "Showing logs for build (?s).* stage from-build-pack and container (?s).*$",
 		stripansi.Strip(firstLine), "'from-build-pack' should be the first stage logged")
+}
+
+func TestGetRunningBuildLogsMetapipelineAndPendingGenerated(t *testing.T) {
+	testCaseDir := path.Join("test_data", "metapipeline_and_pending_generated")
+	_, _, _, _, ns := getFakeClientsAndNs(t)
+
+	podsList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
+	kubeClient := kubeMocks.NewSimpleClientset(podsList)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
+	structures := tekton_helpers_test.AssertLoadPipelineStructures(t, testCaseDir)
+	jxClient := jxfake.NewSimpleClientset(structures)
+
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		KubeClient:   kubeClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
+	pa := &v1.PipelineActivity{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PA1",
+			Namespace: ns,
+			Labels: map[string]string{
+				v1.LabelRepository: "fakerepo",
+				v1.LabelBranch:     "fakebranch",
+				v1.LabelOwner:      "fakeowner",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build:         "1",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
+		},
+	}
+
+	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", true)
+	assert.NoError(t, err)
+
+	metapipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
+	containersNumber := len(metapipelineContainers) * LogsHeadersMultiplier
+
+	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.Regexp(t, "Showing logs for build (?s).* stage app-extension and container (?s).*$",
+		stripansi.Strip(firstLine), "'app-extension' should be the first stage logged")
 }
 
 // Helper method, not supposed to be a test by itself

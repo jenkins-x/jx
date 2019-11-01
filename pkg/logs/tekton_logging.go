@@ -207,7 +207,7 @@ func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclie
 }
 
 // GetRunningBuildLogs obtains the logs of the provided PipelineActivity and streams the running build pods' logs using the provided LogWriter
-func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string) error {
+func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, noWaitForRuns bool) error {
 	loggedAllRunsForActivity := false
 	foundLogs := false
 
@@ -225,17 +225,16 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 		if hasMetaPr {
 			metaStatus = metaPr.Status.GetCondition(knativeapis.ConditionSucceeded)
 		}
-		// If we don't have a build run yet...
-		if !hasBuildPr {
-			// If we have a metapipeline and either the metapipeline is still running or failed, include the metapipeline
-			if metaStatus != nil && metaStatus.Status != corev1.ConditionTrue {
-				runToLog = &metaPr
-				// If the metapipeline failed, the pipeline as a whole is complete.
-				if metaStatus.Status == corev1.ConditionFalse {
-					loggedAllRunsForActivity = true
-				}
+		// If we don't have a build run yet, the build run doesn't yet have pods, or none of the build run pods are out
+		// of pending yet, get the logs for the metapipeline.
+		if hasMetaPr && (!hasBuildPr || !tekton.PipelineRunIsNotPending(&buildPr)) {
+			runToLog = &metaPr
+
+			// If we have a metapipeline and the metapipeline is failed, the pipeline as a whole is complete
+			if metaStatus != nil && metaStatus.Status == corev1.ConditionFalse {
+				loggedAllRunsForActivity = true
 			}
-		} else {
+		} else if hasBuildPr {
 			// Log the build pipeline
 			runToLog = &buildPr
 			loggedAllRunsForActivity = true
@@ -290,6 +289,11 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 		}
 		if !foundLogs {
 			break
+		}
+
+		// Flag used for testing - don't loop forever waiting for the build run if it's pending
+		if noWaitForRuns && !tekton.PipelineRunIsNotPending(&buildPr) {
+			loggedAllRunsForActivity = true
 		}
 	}
 	if !foundLogs {
