@@ -5,11 +5,6 @@ approvers:
 - ccojocar
 - garethjevans
 - pmuir
-- jtnord
-- agentgonzo
-- markawm
-- amuniz
-- mikecirioli
 - wbrefvem
 - daveconde
 - hferentschik
@@ -17,7 +12,6 @@ approvers:
 - warrenbailey
 - cagiti
 - dgozalo
-- joseblas
 - macox
 - romainverduci
 reviewers:
@@ -27,19 +21,12 @@ reviewers:
 - ccojocar
 - garethjevans
 - pmuir
-- jtnord
-- agentgonzo
-- markawm
-- amuniz
-- mikecirioli
 - wbrefvem
-- carlossg
 - daveconde
 - hferentschik
 - abayer
 - warrenbailey
 - cagiti
 - dgozalo
-- joseblas
 - macox
 - romainverduci
