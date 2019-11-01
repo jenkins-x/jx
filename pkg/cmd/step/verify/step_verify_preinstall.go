@@ -543,8 +543,10 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				if err != nil {
 					return nil, errors.Wrap(err, "getting cluster name")
 				}
+				if requirements.Cluster.ClusterName == "" {
+					return nil, errors.Errorf("no cluster name provided")
+				}
 			}
-
 		}
 		if !autoAcceptDefaults {
 			if !o.WorkloadIdentity && !o.InCluster() {
@@ -590,6 +592,17 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 					return nil, errors.Wrap(err, "getting cluster name")
 				}
 			}
+		}
+	}
+
+	if requirements.Cluster.ClusterName == "" && !o.BatchMode {
+		requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", "", true,
+			"The name for your cluster", o.GetIOFileHandles())
+		if err != nil {
+			return nil, errors.Wrap(err, "getting cluster name")
+		}
+		if requirements.Cluster.ClusterName == "" {
+			return nil, errors.Errorf("no cluster name provided")
 		}
 	}
 
