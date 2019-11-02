@@ -739,6 +739,9 @@ func (c *RequirementsConfig) addDefaults() {
 			// c.Webhook = WebhookTypeLighthouse
 		}
 	}
+	if c.Repository == "" {
+		c.Repository = "nexus"
+	}
 }
 
 func (c *RequirementsConfig) handleDeprecation() {
