@@ -1010,29 +1010,7 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 			pro.CommonOptions = options.CommonOptions
 
 			changeFn := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-				outDir := filepath.Join(dir, "repositories", "templates")
-				err := os.MkdirAll(outDir, util.DefaultWritePermissions)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to make directories %s", outDir)
-				}
-
-				fileName := filepath.Join(outDir, sr.Name+"-sr.yaml")
-				// lets clear the fields we don't need to save
-				clearSourceRepositoryMetadata(&sr.ObjectMeta)
-				// Ensure it has the type information it needs
-				sr.APIVersion = jenkinsio.GroupName + "/" + jenkinsio.Version
-				sr.Kind = "SourceRepository"
-
-				data, err := yaml.Marshal(&sr)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to marshal SourceRepository %s to yaml", sr.Name)
-				}
-
-				err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to save SourceRepository file %s", fileName)
-				}
-				return nil, nil
+				return nil, writeSourceRepoToYaml(dir, sr)
 			}
 
 			err := pro.CreatePullRequest("resource", changeFn)
@@ -1068,6 +1046,33 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 	}
 	options.LogImportedProject(false, gitInfo)
 
+	return nil
+}
+
+// writeSourceRepoToYaml marshals a SourceRepository to the given directory, making sure it can be loaded by boot.
+func writeSourceRepoToYaml(dir string, sr *v1.SourceRepository) error {
+	outDir := filepath.Join(dir, "repositories", "templates")
+	err := os.MkdirAll(outDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to make directories %s", outDir)
+	}
+
+	fileName := filepath.Join(outDir, sr.Name+"-sr.yaml")
+	// lets clear the fields we don't need to save
+	clearSourceRepositoryMetadata(&sr.ObjectMeta)
+	// Ensure it has the type information it needs
+	sr.APIVersion = jenkinsio.GroupAndVersion
+	sr.Kind = "SourceRepository"
+
+	data, err := yaml.Marshal(&sr)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal SourceRepository %s to yaml", sr.Name)
+	}
+
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save SourceRepository file %s", fileName)
+	}
 	return nil
 }
 
