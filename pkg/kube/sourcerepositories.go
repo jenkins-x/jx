@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -61,6 +62,10 @@ func GetOrCreateSourceRepositoryCallback(jxClient versioned.Interface, ns string
 
 	labels := map[string]string{}
 	sr := &v1.SourceRepository{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SourceRepository",
+			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
 			Labels: labels,
@@ -149,6 +154,10 @@ func CreateSourceRepository(client versioned.Interface, namespace string, name, 
 	resourceName := naming.ToValidName(organisation + "-" + name)
 
 	repository := &v1.SourceRepository{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SourceRepository",
+			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceName,
 		},
