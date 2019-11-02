@@ -115,7 +115,10 @@ func (o *StepHelmReleaseOptions) Run() error {
 		}
 		secret, err := client.CoreV1().Secrets(ns).Get(kube.SecretJenkinsChartMuseum, metav1.GetOptions{})
 		if err != nil {
-			log.Logger().Warnf("Could not load Secret %s in namespace %s: %s", kube.SecretJenkinsChartMuseum, ns, err)
+			secret, err = client.CoreV1().Secrets(ns).Get(kube.SecretBucketRepo, metav1.GetOptions{})
+		}
+		if err != nil {
+			log.Logger().Warnf("Could not load Secret %s or %s in namespace %s: %s", kube.SecretJenkinsChartMuseum, kube.SecretBucketRepo, ns, err)
 		} else {
 			if secret != nil && secret.Data != nil {
 				if userName == "" {

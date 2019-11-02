@@ -94,6 +94,9 @@ const (
 	// SecretJenkinsChartMuseum the chart museum secret
 	SecretJenkinsChartMuseum = "jenkins-x-chartmuseum"
 
+	// SecretBucketRepo the bucket repo secret if using it as a chart repositoru
+	SecretBucketRepo = "jenkins-x-bucketrepo"
+
 	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
 	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
 
