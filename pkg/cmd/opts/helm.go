@@ -779,8 +779,8 @@ func (o *CommonOptions) ReleaseChartMuseumUrl() string {
 		} else {
 			requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 			if err != nil {
-				log.Logger().Warnf("failed to get the requiremnets from team settings: %s", err.Error())
-			} else {
+				log.Logger().Warnf("failed to get the requirements from team settings: %s", err.Error())
+			} else if requirements != nil {
 				chartRepo = requirements.Cluster.ChartRepository
 			}
 		}
