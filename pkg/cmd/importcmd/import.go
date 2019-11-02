@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
 	"github.com/jenkins-x/jx/pkg/maven"
 
@@ -1018,6 +1019,10 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 				fileName := filepath.Join(outDir, sr.Name+"-sr.yaml")
 				// lets clear the fields we don't need to save
 				clearSourceRepositoryMetadata(&sr.ObjectMeta)
+				// Ensure it has the type information it needs
+				sr.APIVersion = jenkinsio.GroupName + "/" + jenkinsio.Version
+				sr.Kind = "SourceRepository"
+
 				data, err := yaml.Marshal(&sr)
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to marshal SourceRepository %s to yaml", sr.Name)
