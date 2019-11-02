@@ -72,6 +72,7 @@ const (
 
 	optionPostPreviewJobTimeout  = "post-preview-job-timeout"
 	optionPostPreviewJobPollTime = "post-preview-poll-time"
+	optionPreviewHealthTimeout   = "preview-health-timeout"
 )
 
 // PreviewOptions the options for viewing running PRs
@@ -90,6 +91,7 @@ type PreviewOptions struct {
 	Dir                    string
 	PostPreviewJobTimeout  string
 	PostPreviewJobPollTime string
+	PreviewHealthTimeout   string
 
 	PullRequestName string
 	GitConfDir      string
@@ -100,6 +102,7 @@ type PreviewOptions struct {
 	// calculated fields
 	PostPreviewJobTimeoutDuration time.Duration
 	PostPreviewJobPollDuration    time.Duration
+	PreviewHealthTimeoutDuration  time.Duration
 
 	HelmValuesConfig config.HelmValuesConfig
 }
@@ -154,6 +157,7 @@ func (o *PreviewOptions) AddPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
 	cmd.Flags().StringVarP(&o.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
 	cmd.Flags().StringVarP(&o.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
+	cmd.Flags().StringVarP(&o.PreviewHealthTimeout, optionPreviewHealthTimeout, "", "5m", "The amount of time to wait for the preview application to become healthy")
 	cmd.Flags().BoolVarP(&o.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
 }
 
@@ -170,6 +174,12 @@ func (o *PreviewOptions) Run() error {
 		o.PostPreviewJobTimeoutDuration, err = time.ParseDuration(o.Timeout)
 		if err != nil {
 			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionPostPreviewJobTimeout, err)
+		}
+	}
+	if o.PreviewHealthTimeout != "" {
+		o.PreviewHealthTimeoutDuration, err = time.ParseDuration(o.PreviewHealthTimeout)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionPreviewHealthTimeout, err)
 		}
 	}
 
@@ -595,7 +605,7 @@ func (o *PreviewOptions) Run() error {
 		exponentialBackOff := backoff.NewExponentialBackOff()
 		exponentialBackOff.InitialInterval = 1 * time.Second
 		exponentialBackOff.MaxInterval = 1 * time.Minute
-		exponentialBackOff.MaxElapsedTime = 5 * time.Minute
+		exponentialBackOff.MaxElapsedTime = o.PreviewHealthTimeoutDuration
 		exponentialBackOff.Reset()
 		err := backoff.RetryNotify(f, exponentialBackOff, notify)
 		if err != nil {
