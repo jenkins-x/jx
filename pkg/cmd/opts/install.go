@@ -776,11 +776,6 @@ func (o *CommonOptions) InstallGcloud() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
 		return errors.New("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
 	}
-	err := o.RunCommand("brew", "tap", "caskroom/cask")
-	if err != nil {
-		return err
-	}
-
 	return o.RunCommand("brew", "cask", "install", "google-cloud-sdk")
 }
 
