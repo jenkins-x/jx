@@ -98,8 +98,8 @@ func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient 
 // if namespace is nil, then the default namespace of the factory will be used
 // if the name is nil, and only one vault is found, then that vault will be used. Otherwise the user will be prompted to
 // select a vault for the client.
-func (v *VaultClientFactory) NewVaultClient(name string, namespace string, useIngressURL bool) (*api.Client, error) {
-	config, jwt, role, err := v.GetConfigData(name, namespace, useIngressURL)
+func (v *VaultClientFactory) NewVaultClient(name string, namespace string, useIngressURL, insecureSSLWebhook bool) (*api.Client, error) {
+	config, jwt, role, err := v.GetConfigData(name, namespace, useIngressURL, insecureSSLWebhook)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string, useIn
 
 // GetConfigData generates the information necessary to configure an api.Client object
 // Returns the api.Config object, the JWT needed to create the auth user in vault, and an error if present
-func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIngressURL bool) (config *api.Config, jwt string, saName string, err error) {
+func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIngressURL, insecureSSLWebhook bool) (config *api.Config, jwt string, saName string, err error) {
 	if namespace == "" {
 		namespace = v.defaultNamespace
 	}
@@ -146,6 +146,11 @@ func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIng
 	cfg := &api.Config{
 		Address:    vlt.URL,
 		MaxRetries: maxRetries,
+	}
+
+	if insecureSSLWebhook {
+		t := api.TLSConfig{Insecure: true}
+		cfg.ConfigureTLS(&t)
 	}
 
 	return cfg, token, serviceAccount.Name, err

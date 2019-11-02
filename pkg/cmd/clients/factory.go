@@ -476,7 +476,6 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the kube client")
 	}
-
 	devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting the dev namespace from current namespace %q",
@@ -523,8 +522,20 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	} else {
 		useIngressURL = !cluster.IsInCluster()
 	}
+	certmngClient, err := f.CreateCertManagerClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating the cert-manager client")
+	}
+	// lets lookup certmanager certificate and check if one exists, it's a selfsigned cert so we need to use insecure SSL
+	// when creating the vault client
+	// NOTE: insecureSSLWebhook should only ever be used with test clusters as it is insecure
+	insecureSSLWebhook, err := kube.IsStagingCertificate(certmngClient, namespace)
+	if err != nil {
+		// if there's an issue assume we don't need insecure webhooks to keep existing secure behavior
+		insecureSSLWebhook = false
+	}
 
-	vaultClient, err := clientFactory.NewVaultClient(name, namespace, useIngressURL)
+	vaultClient, err := clientFactory.NewVaultClient(name, namespace, useIngressURL, insecureSSLWebhook)
 	return vault.NewVaultClient(vaultClient), err
 }
 
