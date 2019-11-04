@@ -17,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/workflow"
@@ -358,7 +357,7 @@ func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envNam
 		Version:           version,
 		NoPoll:            true,
 		IgnoreLocalFiles:  true,
-		HelmRepositoryURL: helm.InClusterHelmRepositoryURL,
+		HelmRepositoryURL: o.DefaultChartRepositoryUrl(),
 		LocalHelmRepoName: kube.LocalHelmRepoName,
 		Namespace:         o.Namespace,
 	}

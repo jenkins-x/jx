@@ -767,6 +767,16 @@ func (o *CommonOptions) DefaultReleaseCharts() []string {
 	return answer
 }
 
+// DefaultChartMuseumUrl returns the default chart repository URL
+func (o *CommonOptions) DefaultChartRepositoryUrl() string {
+	answer := o.ReleaseChartMuseumUrl()
+	if answer == "" {
+		answer = DefaultChartRepo
+	}
+	return answer
+}
+
+// ReleaseChartMuseumUrl returns the chart museum URL for releases
 func (o *CommonOptions) ReleaseChartMuseumUrl() string {
 	if o.RemoteCluster {
 		return ""

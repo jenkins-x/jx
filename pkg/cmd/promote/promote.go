@@ -151,7 +151,7 @@ func (options *PromoteOptions) AddPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
-	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.InClusterHelmRepositoryURL, "The Helm Repository URL to use for the App")
+	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", "", "The Helm Repository URL to use for the App")
 	cmd.Flags().StringVarP(&options.ReleaseName, "release", "", "", "The name of the helm release")
 	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
@@ -203,6 +203,9 @@ func (o *PromoteOptions) Run() error {
 		o.NoWaitForUpdatePipeline = true
 	}
 
+	if o.HelmRepositoryURL == "" {
+		o.HelmRepositoryURL = o.DefaultChartRepositoryUrl()
+	}
 	if o.Environment == "" && !o.BatchMode {
 		names := []string{}
 		m, allEnvNames, err := kube.GetOrderedEnvironments(jxClient, ns)
