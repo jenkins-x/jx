@@ -357,7 +357,7 @@ func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envNam
 		Version:           version,
 		NoPoll:            true,
 		IgnoreLocalFiles:  true,
-		HelmRepositoryURL: o.DefaultChartRepositoryUrl(),
+		HelmRepositoryURL: o.DefaultChartRepositoryURL(),
 		LocalHelmRepoName: kube.LocalHelmRepoName,
 		Namespace:         o.Namespace,
 	}

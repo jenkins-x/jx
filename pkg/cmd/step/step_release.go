@@ -305,7 +305,7 @@ func (o *StepReleaseOptions) releaseAndPromoteChart(dir string) error {
 	}
 
 	if o.HelmRepositoryURL == "" {
-		o.HelmRepositoryURL = o.DefaultChartRepositoryUrl()
+		o.HelmRepositoryURL = o.DefaultChartRepositoryURL()
 	}
 
 	stepHelmReleaseOptions := &helm_cmd.StepHelmReleaseOptions{

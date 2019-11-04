@@ -558,7 +558,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 		if requirements != nil {
 			changed := false
 			// lets replace the release chart museum URL if required
-			chartRepoURL := o.ReleaseChartMuseumUrl()
+			chartRepoURL := o.ReleaseChartRepositoryURL()
 			if chartRepoURL != "" && chartRepoURL != DefaultChartRepo {
 				for i := range requirements.Dependencies {
 					if requirements.Dependencies[i].Repository == DefaultChartRepo {
@@ -757,7 +757,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 
 // DefaultReleaseCharts returns the default release charts
 func (o *CommonOptions) DefaultReleaseCharts() []string {
-	releasesURL := o.ReleaseChartMuseumUrl()
+	releasesURL := o.ReleaseChartRepositoryURL()
 	answer := []string{
 		kube.DefaultChartMuseumURL,
 	}
@@ -768,16 +768,16 @@ func (o *CommonOptions) DefaultReleaseCharts() []string {
 }
 
 // DefaultChartMuseumUrl returns the default chart repository URL
-func (o *CommonOptions) DefaultChartRepositoryUrl() string {
-	answer := o.ReleaseChartMuseumUrl()
+func (o *CommonOptions) DefaultChartRepositoryURL() string {
+	answer := o.ReleaseChartRepositoryURL()
 	if answer == "" {
 		answer = DefaultChartRepo
 	}
 	return answer
 }
 
-// ReleaseChartMuseumUrl returns the chart museum URL for releases
-func (o *CommonOptions) ReleaseChartMuseumUrl() string {
+// ReleaseChartRepositoryURL returns the chart repository URL for releases
+func (o *CommonOptions) ReleaseChartRepositoryURL() string {
 	if o.RemoteCluster {
 		return ""
 	}

@@ -204,7 +204,7 @@ func (o *PromoteOptions) Run() error {
 	}
 
 	if o.HelmRepositoryURL == "" {
-		o.HelmRepositoryURL = o.DefaultChartRepositoryUrl()
+		o.HelmRepositoryURL = o.DefaultChartRepositoryURL()
 	}
 	if o.Environment == "" && !o.BatchMode {
 		names := []string{}
