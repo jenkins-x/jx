@@ -383,6 +383,9 @@ func (o *StepBDDOptions) teamNameSuffix() string {
 }
 
 func (o *StepBDDOptions) runTests(gopath string) error {
+	// clear the CHART_REPOSITORY env repo to avoid passing in a bogus chart repo to manual `jx promote` commands
+	os.Unsetenv("CHART_REPOSITORY")
+
 	gitURL := o.Flags.TestRepoGitCloneUrl
 	gitRepository, err := gits.ParseGitURL(gitURL)
 	if err != nil {
