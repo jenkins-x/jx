@@ -523,8 +523,6 @@ func (o *CommonOptions) DiscoverAppName() (string, error) {
 	}
 	answer = gitInfo.Name
 
-	if answer == "" {
-	}
 	return answer, nil
 }
 
