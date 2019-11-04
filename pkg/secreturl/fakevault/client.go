@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var fakeURIRegex = regexp.MustCompile(`vault:[-_\w\/:]*`)
+var fakeURIRegex = regexp.MustCompile(`:[\s]*vault:[-_\w\/:]*`)
 
 // FakeClient a local file system based client loading/saving content from the given URL
 type FakeClient struct {
