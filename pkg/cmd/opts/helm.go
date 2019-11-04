@@ -767,7 +767,7 @@ func (o *CommonOptions) DefaultReleaseCharts() []string {
 	return answer
 }
 
-// DefaultChartMuseumUrl returns the default chart repository URL
+// DefaultChartRepositoryURL returns the default chart repository URL
 func (o *CommonOptions) DefaultChartRepositoryURL() string {
 	answer := o.ReleaseChartRepositoryURL()
 	if answer == "" {
