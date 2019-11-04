@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 
@@ -39,6 +41,8 @@ func (v *VaultAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 
 // NewVaultAuthConfigService creates a new ConfigService that saves it config to a Vault
 func NewVaultAuthConfigService(secretName string, vaultClient vault.Client) ConfigService {
+	// Only use the base file name as a vault key in case there is a full file path
+	secretName = filepath.Base(secretName)
 	handler := newVaultAuthConfigHandler(secretName, vaultClient)
 	return NewAuthConfigService(&handler)
 }
