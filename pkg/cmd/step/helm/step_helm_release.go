@@ -103,7 +103,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	}
 	defer os.Remove(tarball)
 
-	chartRepo := o.ReleaseChartMuseumUrl()
+	chartRepo := o.ReleaseChartRepositoryURL()
 
 	userName := os.Getenv("CHARTMUSEUM_CREDS_USR")
 	password := os.Getenv("CHARTMUSEUM_CREDS_PSW")
