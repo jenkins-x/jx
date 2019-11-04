@@ -445,7 +445,12 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	}
 
 	log.Logger().Infof("Creating GitHub webhook for %s/%s for url %s", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
-	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
+	_, resp, err := p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
+	if err != nil {
+		if resp.StatusCode == 404 || resp.StatusCode == 403 {
+			return errors.Wrapf(err, "unable to create webhook for %s/%s - permission denied", owner, repo)
+		}
+	}
 	return err
 }
 
