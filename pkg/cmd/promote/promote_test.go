@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/tests"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -224,6 +226,125 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 
 	// however it looks like the activity contains the correct version...
 	assert.Equal(t, "1.0.1", testEnv.Activity.Spec.Version)
+}
+
+func fakeSearchForChart(f string) (string, error) {
+	return "mySearchedApp", nil
+}
+
+func fakeDiscoverAppName() (string, error) {
+	return "myDiscoveredApp", nil
+}
+
+func TestEnsureApplicationNameIsDefinedWithoutApplicationFlagWithArgs(t *testing.T) {
+	promoteOptions := &promote.PromoteOptions{
+		Environment: "production", // --env production
+	}
+
+	commonOpts := &opts.CommonOptions{}
+	promoteOptions.CommonOptions = commonOpts // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	commonOpts.Args = []string{"myArgumentApp"}
+
+	err := promoteOptions.EnsureApplicationNameIsDefined(fakeSearchForChart, fakeDiscoverAppName)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "myArgumentApp", promoteOptions.Application)
+}
+
+func TestEnsureApplicationNameIsDefinedWithoutApplicationFlagWithFilterFlag(t *testing.T) {
+	promoteOptions := &promote.PromoteOptions{
+		Environment: "production", // --env production
+		Filter:      "something",
+	}
+
+	commonOpts := &opts.CommonOptions{}
+	promoteOptions.CommonOptions = commonOpts // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+
+	err := promoteOptions.EnsureApplicationNameIsDefined(fakeSearchForChart, fakeDiscoverAppName)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "mySearchedApp", promoteOptions.Application)
+}
+
+func TestEnsureApplicationNameIsDefinedWithoutApplicationFlagWithBatchFlag(t *testing.T) {
+	promoteOptions := &promote.PromoteOptions{
+		Environment: "production", // --env production
+	}
+
+	commonOpts := &opts.CommonOptions{}
+	promoteOptions.CommonOptions = commonOpts // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.BatchMode = true           // --batch-mode
+
+	err := promoteOptions.EnsureApplicationNameIsDefined(fakeSearchForChart, fakeDiscoverAppName)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "myDiscoveredApp", promoteOptions.Application)
+}
+
+func TestEnsureApplicationNameIsDefinedWithoutApplicationFlag(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+
+	console := tests.NewTerminal(t, nil)
+	defer console.Cleanup()
+
+	promoteOptions := &promote.PromoteOptions{
+		Environment: "production", // --env production
+	}
+
+	commonOpts := &opts.CommonOptions{}
+	promoteOptions.CommonOptions = commonOpts // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.Out = console.Out
+	promoteOptions.In = console.In
+
+	donec := make(chan struct{})
+	go func() {
+		defer close(donec)
+		// Test boolean type
+		console.ExpectString("Are you sure you want to promote the application named: myDiscoveredApp?")
+		console.SendLine("Y")
+		console.ExpectEOF()
+	}()
+
+	err := promoteOptions.EnsureApplicationNameIsDefined(fakeSearchForChart, fakeDiscoverAppName)
+
+	console.Close()
+	<-donec
+
+	assert.NoError(t, err)
+	assert.Equal(t, "myDiscoveredApp", promoteOptions.Application)
+}
+
+func TestEnsureApplicationNameIsDefinedWithoutApplicationFlagUserSaysNo(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+
+	console := tests.NewTerminal(t, nil)
+	defer console.Cleanup()
+
+	promoteOptions := &promote.PromoteOptions{
+		Environment: "production", // --env production
+	}
+
+	commonOpts := &opts.CommonOptions{}
+	promoteOptions.CommonOptions = commonOpts // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.Out = console.Out
+	promoteOptions.In = console.In
+
+	donec := make(chan struct{})
+	go func() {
+		defer close(donec)
+		// Test boolean type
+		console.ExpectString("Are you sure you want to promote the application named: myDiscoveredApp?")
+		console.SendLine("N")
+		console.ExpectEOF()
+	}()
+
+	err := promoteOptions.EnsureApplicationNameIsDefined(fakeSearchForChart, fakeDiscoverAppName)
+
+	console.Close()
+	<-donec
+
+	assert.Error(t, err)
+	assert.Equal(t, "", promoteOptions.Application)
 }
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`

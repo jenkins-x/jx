@@ -143,46 +143,115 @@ func NewCmdPromote(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func (options *PromoteOptions) AddPromoteOptions(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Application, opts.OptionApplication, "a", "", "The Application to promote")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "The search filter to find charts to promote")
-	cmd.Flags().StringVarP(&options.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
-	cmd.Flags().StringVarP(&options.Pipeline, "pipeline", "", "", "The Pipeline string in the form 'folderName/repoName/branch' which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
-	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
-	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
-	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", "", "The Helm Repository URL to use for the App")
-	cmd.Flags().StringVarP(&options.ReleaseName, "release", "", "", "The name of the helm release")
-	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
-	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
-	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
-	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
-	cmd.Flags().BoolVarP(&options.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
-	cmd.Flags().BoolVarP(&options.NoWaitAfterMerge, "no-wait", "", false, "Disables waiting for completing promotion after the Pull request is merged")
-	cmd.Flags().BoolVarP(&options.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the Git repository")
+// AddPromoteOptions adds command level options to `promote`
+func (o *PromoteOptions) AddPromoteOptions(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Application, opts.OptionApplication, "a", "", "The Application to promote")
+	cmd.Flags().StringVarP(&o.Filter, "filter", "f", "", "The search filter to find charts to promote")
+	cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
+	cmd.Flags().StringVarP(&o.Pipeline, "pipeline", "", "", "The Pipeline string in the form 'folderName/repoName/branch' which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
+	cmd.Flags().StringVarP(&o.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
+	cmd.Flags().StringVarP(&o.Version, "version", "v", "", "The Version to promote")
+	cmd.Flags().StringVarP(&o.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
+	cmd.Flags().StringVarP(&o.HelmRepositoryURL, "helm-repo-url", "u", "", "The Helm Repository URL to use for the App")
+	cmd.Flags().StringVarP(&o.ReleaseName, "release", "", "", "The name of the helm release")
+	cmd.Flags().StringVarP(&o.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
+	cmd.Flags().StringVarP(&o.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
+	cmd.Flags().BoolVarP(&o.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
+	cmd.Flags().BoolVarP(&o.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
+	cmd.Flags().BoolVarP(&o.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
+	cmd.Flags().BoolVarP(&o.NoWaitAfterMerge, "no-wait", "", false, "Disables waiting for completing promotion after the Pull request is merged")
+	cmd.Flags().BoolVarP(&o.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the Git repository")
+}
+
+func (o *PromoteOptions) hasApplicationFlag() bool {
+	return o.Application != ""
+}
+
+func (o *PromoteOptions) hasArgs() bool {
+	return len(o.Args) > 0
+}
+
+func (o *PromoteOptions) setApplicationNameFromArgs() {
+	o.Application = o.Args[0]
+}
+
+func (o *PromoteOptions) hasFilterFlag() bool {
+	return o.Filter != ""
+}
+
+type searchForChartFn func(filter string) (string, error)
+
+func (o *PromoteOptions) setApplicationNameFromFilter(searchForChart searchForChartFn) error {
+	app, err := searchForChart(o.Filter)
+	if err != nil {
+		return errors.Wrap(err, "searching app name in chart failed")
+	}
+
+	o.Application = app
+
+	return nil
+}
+
+type discoverAppNameFn func() (string, error)
+
+func (o *PromoteOptions) setApplicationNameFromDiscoveredAppName(discoverAppName discoverAppNameFn) error {
+	app, err := discoverAppName()
+	if err != nil {
+		return errors.Wrap(err, "discovering app name failed")
+	}
+
+	if !o.BatchMode {
+		var continueWithAppName bool
+
+		question := fmt.Sprintf("Are you sure you want to promote the application named: %s?", app)
+
+		prompt := &survey.Confirm{
+			Message: question,
+			Default: true,
+		}
+		surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+		err = survey.AskOne(prompt, &continueWithAppName, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
+
+		if !continueWithAppName {
+			return errors.New("user canceled execution")
+		}
+	}
+
+	o.Application = app
+
+	return nil
+}
+
+// EnsureApplicationNameIsDefined validates if an application name flag was provided by the user. If missing it will
+// try to set it up or return an error
+func (o *PromoteOptions) EnsureApplicationNameIsDefined(sf searchForChartFn, df discoverAppNameFn) error {
+	if !o.hasApplicationFlag() && o.hasArgs() {
+		o.setApplicationNameFromArgs()
+	}
+
+	if !o.hasApplicationFlag() && o.hasFilterFlag() {
+		err := o.setApplicationNameFromFilter(sf)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !o.hasApplicationFlag() {
+		return o.setApplicationNameFromDiscoveredAppName(df)
+	}
+
+	return nil
 }
 
 // Run implements this command
 func (o *PromoteOptions) Run() error {
-	app := o.Application
-	if app == "" {
-		args := o.Args
-		if len(args) == 0 {
-			search := o.Filter
-			var err error
-			if search != "" {
-				app, err = o.SearchForChart(search)
-			} else {
-				app, err = o.DiscoverAppName()
-			}
-			if err != nil {
-				return err
-			}
-		} else {
-			app = args[0]
-		}
+	err := o.EnsureApplicationNameIsDefined(o.SearchForChart, o.DiscoverAppName)
+	if err != nil {
+		return err
 	}
-	o.Application = app
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
@@ -248,7 +317,7 @@ func (o *PromoteOptions) Run() error {
 
 	releaseName := o.ReleaseName
 	if releaseName == "" {
-		releaseName = targetNS + "-" + app
+		releaseName = targetNS + "-" + o.Application
 		o.ReleaseName = releaseName
 	}
 
