@@ -14,7 +14,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	helm_cmd "github.com/jenkins-x/jx/pkg/cmd/step/helm"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -77,7 +76,7 @@ func NewCmdStepRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
-	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "", helm.InClusterHelmRepositoryURL, "The Helm Repository URL to use for the App")
+	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "", "", "The Helm Repository URL to use for the App")
 	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 
 	return cmd
@@ -303,6 +302,10 @@ func (o *StepReleaseOptions) releaseAndPromoteChart(dir string) error {
 	err = stepChangelogOptions.Run()
 	if err != nil {
 		return fmt.Errorf("Failed to generate changelog: %s", err)
+	}
+
+	if o.HelmRepositoryURL == "" {
+		o.HelmRepositoryURL = o.DefaultChartRepositoryUrl()
 	}
 
 	stepHelmReleaseOptions := &helm_cmd.StepHelmReleaseOptions{

@@ -322,7 +322,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		Version:           version,
 		NoPoll:            true,
 		IgnoreLocalFiles:  true,
-		HelmRepositoryURL: helm.InClusterHelmRepositoryURL,
+		HelmRepositoryURL: "http://jenkins-x-chartmuseum:8080",
 		LocalHelmRepoName: kube.LocalHelmRepoName,
 		Namespace:         "jx",
 	}

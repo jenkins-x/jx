@@ -51,9 +51,6 @@ const (
 	// inlined if not a secret which can be referenced from a 'values.yaml` file via a `{{ .Parameters.foo.bar }}` expression
 	ParametersYAMLFile = "parameters.yaml"
 
-	// InClusterHelmRepositoryURL is the default cluster local helm repo
-	InClusterHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
-
 	// FakeChartmusuem is the url for the fake chart museum used in tests
 	FakeChartmusuem = "http://fake.chartmuseum"
 
