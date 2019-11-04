@@ -2,9 +2,10 @@ package boot
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"os"
 	"path/filepath"
+
+	"github.com/google/uuid"
 
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
