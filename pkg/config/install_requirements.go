@@ -402,7 +402,7 @@ type AutoUpdateConfig struct {
 // GithubAppConfig contains github app config
 type GithubAppConfig struct {
 	// Enabled this determines whether this install should use the jenkins x github app for access tokens
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// Schedule cron of the github app token refresher
 	Schedule string `json:"schedule,omitempty"`
 	// URL contains a URL to the github app
