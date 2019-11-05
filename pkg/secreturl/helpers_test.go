@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var uriRegexp = regexp.MustCompile(`:[\s]*vault:[-_\w\/:]*`)
+var uriRegexp = regexp.MustCompile(`:[\s"]*vault:[-_\w\/:]*`)
 
 const schemaPrefix = "vault:"
 
@@ -32,6 +32,22 @@ password: %s
 	assert.EqualValues(t, fmt.Sprintf(testString, testValue), result, "should replace the URIs")
 }
 
+func TestReplaceURIsWithQuotation(t *testing.T) {
+	secretClient := fakevault.NewFakeClient()
+
+	testValue := "test"
+	testKey := "vault:cluster/admin:password"
+	_, err := secretClient.Write("cluster/admin", map[string]interface{}{"password": testValue})
+	require.NoError(t, err)
+
+	testString := `
+user: test
+password: "%s"
+`
+	result, err := secreturl.ReplaceURIs(fmt.Sprintf(testString, testKey), secretClient, uriRegexp, schemaPrefix)
+	assert.NoError(t, err, "should replace the URIs without error")
+	assert.EqualValues(t, fmt.Sprintf(testString, testValue), result, "should replace the URIs")
+}
 func TestReplaceURIsWithoutReplacements(t *testing.T) {
 	secretClient := fakevault.NewFakeClient()
 

@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var localURIRegex = regexp.MustCompile(`:[\s]*local:[-_\w\/:]*`)
+var localURIRegex = regexp.MustCompile(`:[\s"]*local:[-_\w\/:]*`)
 
 // FileSystemClient a local file system based client loading/saving content from the given URL
 type FileSystemClient struct {
