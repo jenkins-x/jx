@@ -335,7 +335,7 @@ func (o *BootOptions) Run() error {
 		return errors.Wrapf(err, "failed to interpret pipeline file %s", pipelineFile)
 	}
 
-	log.Logger().Infof("Using additional vars: %+v", so.AdditionalEnvVars)
+	log.Logger().Debugf("Using additional vars: %+v", so.AdditionalEnvVars)
 
 	// lets switch kubernetes context to it so the user can use `jx` commands immediately
 	no := &namespace.NamespaceOptions{}
