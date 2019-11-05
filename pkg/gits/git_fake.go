@@ -665,3 +665,8 @@ func (g *GitFake) CherryPickTheirs(dir string, commit string) error {
 func (g *GitFake) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
 	return "", "", nil
 }
+
+// IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
+func (g *GitFake) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
+	return false, nil
+}

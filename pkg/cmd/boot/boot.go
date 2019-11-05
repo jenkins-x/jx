@@ -347,11 +347,17 @@ func (o *BootOptions) Run() error {
 }
 
 func (o *BootOptions) updateBootCloneIfOutOfDate(gitRef string) error {
-	// Get the tag corrresponding to the git ref.
+	// Get the tag corresponding to the git ref.
 	commitish, err := gits.FindTagForVersion(o.Dir, gitRef, o.Git())
 	if err != nil {
 		log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", gitRef).Error())
 		commitish = fmt.Sprintf("%s/%s", "origin", gitRef)
+	}
+
+	// Check if the current HEAD is an ancestor of the tag.
+	isAncestor, err := o.Git().IsAncestor(o.Dir, "HEAD", commitish)
+	if err != nil {
+		log.Logger().Debugf(errors.Wrapf(err, "couldn't determine whether HEAD is an ancestor of %s", commitish).Error())
 	}
 
 	// Get the tag on the current boot clone HEAD, if any.
@@ -361,27 +367,32 @@ func (o *BootOptions) updateBootCloneIfOutOfDate(gitRef string) error {
 	}
 
 	if resolved != commitish {
-		log.Logger().Infof("Local boot clone is out of date. It is based on %s, but the version stream is using %s. The clone will now be updated to %s.",
-			resolved, commitish, commitish)
-		log.Logger().Info("Stashing any changes made in local boot clone.")
+		if isAncestor {
+			log.Logger().Infof("Local boot clone is out of date. It is based on %s, but the version stream is using %s. The clone will now be updated to %s.",
+				resolved, commitish, commitish)
+			log.Logger().Info("Stashing any changes made in local boot clone.")
 
-		err = o.Git().StashPush(o.Dir)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		err = o.Git().Reset(o.Dir, commitish, true)
-		if err != nil {
-			return errors.Wrapf(err, "Could not reset local boot clone to %s", commitish)
-		}
+			err = o.Git().StashPush(o.Dir)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			err = o.Git().Reset(o.Dir, commitish, true)
+			if err != nil {
+				return errors.Wrapf(err, "Could not reset local boot clone to %s", commitish)
+			}
 
-		err = o.Git().StashPop(o.Dir)
-		if err != nil && !gits.IsNoStashEntriesError(err) { // Ignore no stashes as that's just because there was nothing to stash
-			return fmt.Errorf("Could not update local boot clone due to conflicts between local changes and %s.\n"+
-				"To fix this, resolve the conflicts listed below manually, run 'git reset HEAD', and run 'jx boot' again.\n%s",
-				commitish, gits.GetSimpleIndentedStashPopErrorMessage(err))
+			err = o.Git().StashPop(o.Dir)
+			if err != nil && !gits.IsNoStashEntriesError(err) { // Ignore no stashes as that's just because there was nothing to stash
+				return fmt.Errorf("Could not update local boot clone due to conflicts between local changes and %s.\n"+
+					"To fix this, resolve the conflicts listed below manually, run 'git reset HEAD', and run 'jx boot' again.\n%s",
+					commitish, gits.GetSimpleIndentedStashPopErrorMessage(err))
+			}
+		} else {
+			log.Logger().Infof("Current HEAD %s in %s is not an ancestor of %s, the boot config version from the version stream.\n"+
+				"Proceeding with current HEAD.", resolved, o.Dir, commitish)
+			return nil
 		}
 	}
-
 	return nil
 }
 

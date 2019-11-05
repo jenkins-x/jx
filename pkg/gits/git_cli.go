@@ -1186,3 +1186,15 @@ func (g *GitCLI) Describe(dir string, contains bool, commitish string, abbrev st
 	}
 	return parts[0], "", nil
 }
+
+// IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
+func (g *GitCLI) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
+	args := []string{"merge-base", "--is-ancestor", possibleAncestor, commitish}
+	_, err := g.gitCmdWithOutput(dir, args...)
+	if err != nil {
+		// Treat any error as meaning that it's not an ancestor. Switch this to use ExitError.ExitCode() when we move to go >=1.12
+		return false, err
+	}
+	// Default case is that this is an ancestor, since there's no error from the merge-base call.
+	return true, nil
+}
