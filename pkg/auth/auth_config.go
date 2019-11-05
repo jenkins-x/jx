@@ -451,3 +451,26 @@ func (c *AuthConfig) GetPipelineAuth() (*AuthServer, *UserAuth) {
 	user := server.GetUserAuth(c.PipeLineUsername)
 	return server, user
 }
+
+// Merge merges another auth config such as if loading git/credentials
+func (c *AuthConfig) Merge(o *AuthConfig) {
+	if o == nil {
+		return
+	}
+	for _, s := range o.Servers {
+		cs := c.GetOrCreateServer(s.URL)
+		for _, u := range s.Users {
+			cu := cs.GetUserAuth(u.Username)
+			if cu == nil {
+				cs.Users = append(cs.Users, u)
+			} else {
+				if u.Password != "" {
+					cu.Password = u.Password
+				}
+				if u.ApiToken != "" {
+					cu.ApiToken = u.ApiToken
+				}
+			}
+		}
+	}
+}
