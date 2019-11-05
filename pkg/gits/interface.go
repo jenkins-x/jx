@@ -278,6 +278,7 @@ type Gitter interface {
 	RevParse(dir string, rev string) (string, error)
 	GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCommit, error)
 	Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error)
+	IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error)
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)

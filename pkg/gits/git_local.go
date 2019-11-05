@@ -519,3 +519,8 @@ func (g *GitLocal) CherryPickTheirs(dir string, commit string) error {
 func (g *GitLocal) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
 	return g.GitCLI.Describe(dir, false, commitish, abbrev, fallback)
 }
+
+// IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
+func (g *GitLocal) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
+	return g.GitCLI.IsAncestor(dir, possibleAncestor, commitish)
+}
