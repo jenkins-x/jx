@@ -1,3 +1,6 @@
+autoUpdate:
+  enabled: false
+  schedule: ""
 cluster:
   clusterName: my-cluster-name
   environmentGitOwner: myorg
@@ -17,8 +20,12 @@ ingress:
     enabled: false
     production: false
 kaniko: true
+repository: nexus
 secretStorage: local
 storage:
+  backup:
+    enabled: false
+    url: ""
   logs:
     enabled: false
     url: ""
@@ -29,6 +36,8 @@ storage:
     enabled: false
     url: ""
 terraform: true
+vault: {}
+velero: {}
 versionStream:
   ref: v1.0.3
   url: https://github.com/jenkins-x/jenkins-x-versions.git

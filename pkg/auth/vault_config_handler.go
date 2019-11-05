@@ -8,7 +8,7 @@ import (
 )
 
 // LoadConfig loads the config from the vault
-func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (v *VaultAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 	data, err := v.vaultClient.ReadYaml(vault.AuthSecretPath(v.secretName))
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading the auth config %q from vault", v.secretName)
@@ -26,7 +26,7 @@ func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the config to the vault
-func (v *VaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
+func (v *VaultAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return errors.Wrap(err, "marshaling auth config")
@@ -39,13 +39,13 @@ func (v *VaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 
 // NewVaultAuthConfigService creates a new ConfigService that saves it config to a Vault
 func NewVaultAuthConfigService(secretName string, vaultClient vault.Client) ConfigService {
-	saver := newVaultAuthConfigSaver(secretName, vaultClient)
-	return NewAuthConfigService(&saver)
+	handler := newVaultAuthConfigHandler(secretName, vaultClient)
+	return NewAuthConfigService(&handler)
 }
 
-// newVaultAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
-func newVaultAuthConfigSaver(secretName string, vaultClient vault.Client) VaultAuthConfigSaver {
-	return VaultAuthConfigSaver{
+// newVaultAuthConfigHandler creates a config handler  that loads/saves the auth config  under a specified secret name in a vault
+func newVaultAuthConfigHandler(secretName string, vaultClient vault.Client) VaultAuthConfigHandler {
+	return VaultAuthConfigHandler{
 		secretName:  secretName,
 		vaultClient: vaultClient,
 	}

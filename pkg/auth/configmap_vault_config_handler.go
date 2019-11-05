@@ -18,7 +18,7 @@ const (
 // LoadConfig loads the auth config from a ConfigMap which stores in its
 // data with a key equal with the secretName, also it resolves any secrets
 // URIs by fetching their secret data from vault.
-func (c *ConfigMapVaultConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (c *ConfigMapVaultConfigHandler) LoadConfig() (*AuthConfig, error) {
 	selector := fmt.Sprintf("%s=%s", labelAuthConfig, labelAuthConfigValue)
 	listOptions := metav1.ListOptions{
 		LabelSelector: selector,
@@ -57,14 +57,14 @@ func (c *ConfigMapVaultConfigSaver) LoadConfig() (*AuthConfig, error) {
 
 // SaveConfig should save config but we keep this read-only to avoid
 // overwriting the existing values configure during installation.
-func (c *ConfigMapVaultConfigSaver) SaveConfig(config *AuthConfig) error {
+func (c *ConfigMapVaultConfigHandler) SaveConfig(config *AuthConfig) error {
 	return nil
 }
 
-// NewConfigMapVaultConfigSaver creates a new configmap/vault config saver/loader
-func NewConfigMapVaultConfigSaver(secretName string, configMapClient v1.ConfigMapInterface,
-	vaultClient secreturl.Client) ConfigMapVaultConfigSaver {
-	return ConfigMapVaultConfigSaver{
+// NewConfigMapVaultConfigHandler creates a new configmap/vault config handler
+func NewConfigMapVaultConfigHandler(secretName string, configMapClient v1.ConfigMapInterface,
+	vaultClient secreturl.Client) ConfigMapVaultConfigHandler {
+	return ConfigMapVaultConfigHandler{
 		secretName:      secretName,
 		configMapClient: configMapClient,
 		secretURLClient: vaultClient,
@@ -75,8 +75,8 @@ func NewConfigMapVaultConfigSaver(secretName string, configMapClient v1.ConfigMa
 // a configmap and resolve the secrets URIs from vault
 func NewConfigmapVaultAuthConfigService(secretName string, configMapClient v1.ConfigMapInterface,
 	secretURLClient secreturl.Client) ConfigService {
-	saver := NewConfigMapVaultConfigSaver(secretName, configMapClient, secretURLClient)
-	return NewAuthConfigService(&saver)
+	handler := NewConfigMapVaultConfigHandler(secretName, configMapClient, secretURLClient)
+	return NewAuthConfigService(&handler)
 }
 
 // IsConfigMapVaultAuth checks if is able to find any auth config in a config map
