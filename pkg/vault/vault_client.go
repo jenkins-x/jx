@@ -16,7 +16,7 @@ const (
 	yamlDataKey = "yaml"
 )
 
-var vaultURIRegex = regexp.MustCompile(`:[\s]*vault:[-_\w\/:]*`)
+var vaultURIRegex = regexp.MustCompile(`:[\s"]*vault:[-_\w\/:]*`)
 
 // Client is an interface for interacting with Vault
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/vault Client -o mocks/vault_client.go
