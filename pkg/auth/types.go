@@ -33,28 +33,28 @@ type AuthConfig struct {
 
 // AuthConfigService implements the generic features of the ConfigService because we don't have superclasses
 type AuthConfigService struct {
-	config *AuthConfig
-	saver  ConfigSaver
+	config  *AuthConfig
+	handler ConfigHandler
 }
 
-// FileAuthConfigSaver is a ConfigSaver that saves its config to the local filesystem
-type FileAuthConfigSaver struct {
-	FileName string
+// FileAuthConfigHandler is a config handlerthat loads/saves the auth config from/to the local filesystem
+type FileAuthConfigHandler struct {
+	fileName string
 }
 
-// VaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
-type VaultAuthConfigSaver struct {
+// VaultAuthConfigHandler is a config handler that loads/saves the auth configs from/to Vault
+type VaultAuthConfigHandler struct {
 	vaultClient vault.Client
 	secretName  string
 }
 
-// MemoryAuthConfigSaver uses memory
-type MemoryAuthConfigSaver struct {
+// MemoryAuthConfigHandler loads/saves the auth config from/into memory
+type MemoryAuthConfigHandler struct {
 	config AuthConfig
 }
 
-// ConfigMapVaultConfigSaver save the config in a config map and the secrets in vault
-type ConfigMapVaultConfigSaver struct {
+// ConfigMapVaultConfigHandler loads/save the config in a config map and the secrets in vault
+type ConfigMapVaultConfigHandler struct {
 	secretName      string
 	configMapClient v1.ConfigMapInterface
 	secretURLClient secreturl.Client

@@ -51,8 +51,8 @@ func TestConfigMapVaultConfigSaver(t *testing.T) {
 	require.NoError(t, err)
 	expectedAuthConfig.Servers[0].Users[0].ApiToken = "test"
 
-	saver := auth.NewConfigMapVaultConfigSaver(secretName, configMapInterface, vaultClient)
-	authConfig, err := saver.LoadConfig()
+	handler := auth.NewConfigMapVaultConfigHandler(secretName, configMapInterface, vaultClient)
+	authConfig, err := handler.LoadConfig()
 
 	assert.NoError(t, err, "auth config should be loaded")
 	assert.NotNil(t, authConfig, "auth config should be set")
@@ -91,8 +91,8 @@ func TestConfigMapVaultConfigSaverWithoutVaultURIs(t *testing.T) {
 	configMapInterface := k8sClient.CoreV1().ConfigMaps(ns)
 	vaultClient := fakevault.NewFakeClient()
 
-	saver := auth.NewConfigMapVaultConfigSaver(secretName, configMapInterface, vaultClient)
-	authConfig, err := saver.LoadConfig()
+	handler := auth.NewConfigMapVaultConfigHandler(secretName, configMapInterface, vaultClient)
+	authConfig, err := handler.LoadConfig()
 
 	assert.NoError(t, err, "auth config should be loaded")
 	assert.NotNil(t, authConfig, "auth config should be set")
@@ -132,8 +132,8 @@ func TestConfigMapVaultConfigSaverWithoutConfigMapLabel(t *testing.T) {
 	require.NoError(t, err)
 	expectedAuthConfig.Servers[0].Users[0].ApiToken = "test"
 
-	saver := auth.NewConfigMapVaultConfigSaver(secretName, configMapInterface, vaultClient)
-	authConfig, err := saver.LoadConfig()
+	handler := auth.NewConfigMapVaultConfigHandler(secretName, configMapInterface, vaultClient)
+	authConfig, err := handler.LoadConfig()
 
 	assert.Error(t, err, "auth config should not be found")
 	assert.Nil(t, authConfig)
@@ -173,8 +173,8 @@ func TestConfigMapVaultConfigSaverWithoutConfigMapData(t *testing.T) {
 	require.NoError(t, err)
 	expectedAuthConfig.Servers[0].Users[0].ApiToken = "test"
 
-	saver := auth.NewConfigMapVaultConfigSaver(secretName, configMapInterface, vaultClient)
-	authConfig, err := saver.LoadConfig()
+	handler := auth.NewConfigMapVaultConfigHandler(secretName, configMapInterface, vaultClient)
+	authConfig, err := handler.LoadConfig()
 
 	assert.Error(t, err, "auth config should not be found")
 	assert.Nil(t, authConfig)
@@ -211,8 +211,8 @@ func TestConfigMapVaultConfigSaverWithCorrupted(t *testing.T) {
 	_, err = vaultClient.Write("test-cluster/pipelineUser", map[string]interface{}{"token": "test"})
 	require.NoError(t, err)
 
-	saver := auth.NewConfigMapVaultConfigSaver(secretName, configMapInterface, vaultClient)
-	authConfig, err := saver.LoadConfig()
+	handler := auth.NewConfigMapVaultConfigHandler(secretName, configMapInterface, vaultClient)
+	authConfig, err := handler.LoadConfig()
 
 	assert.Error(t, err, "auth config should not be found")
 	assert.Nil(t, authConfig)

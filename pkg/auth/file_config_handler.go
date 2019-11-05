@@ -9,34 +9,34 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// NewFileAuthConfigService
+// NewFileAuthConfigService creates a new file config service
 func NewFileAuthConfigService(filename string) (ConfigService, error) {
-	saver, err := newFileAuthSaver(filename)
-	return NewAuthConfigService(saver), err
+	handler, err := newFileAuthHandler(filename)
+	return NewAuthConfigService(handler), err
 }
 
-// newFileBasedAuthConfigSaver creates a new FileBasedAuthConfigService that stores its data under the given filename
+// newFileBasedAuthConfigHandler creates a new FileBasedAuthConfigService that stores its data under the given filename
 // If the fileName is an absolute path, it will be used. If it is a simple filename, it will be stored in the default
 // Config directory
-func newFileAuthSaver(fileName string) (ConfigSaver, error) {
-	svc := &FileAuthConfigSaver{}
+func newFileAuthHandler(fileName string) (ConfigHandler, error) {
+	svc := &FileAuthConfigHandler{}
 	// If the fileName is an absolute path, use that. Otherwise treat it as a config filename to be used in
 	if fileName == filepath.Base(fileName) {
 		dir, err := util.ConfigDir()
 		if err != nil {
 			return svc, err
 		}
-		svc.FileName = filepath.Join(dir, fileName)
+		svc.fileName = filepath.Join(dir, fileName)
 	} else {
-		svc.FileName = fileName
+		svc.fileName = fileName
 	}
 	return svc, nil
 }
 
 // LoadConfig loads the configuration from the users JX config directory
-func (s *FileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (s *FileAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 	config := &AuthConfig{}
-	fileName := s.FileName
+	fileName := s.fileName
 	if fileName != "" {
 		exists, err := util.FileExists(fileName)
 		if err != nil {
@@ -57,8 +57,8 @@ func (s *FileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the configuration to disk
-func (s *FileAuthConfigSaver) SaveConfig(config *AuthConfig) error {
-	fileName := s.FileName
+func (s *FileAuthConfigHandler) SaveConfig(config *AuthConfig) error {
+	fileName := s.fileName
 	if fileName == "" {
 		return fmt.Errorf("no filename defined")
 	}
