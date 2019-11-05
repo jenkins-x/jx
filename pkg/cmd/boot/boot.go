@@ -335,6 +335,8 @@ func (o *BootOptions) Run() error {
 		return errors.Wrapf(err, "failed to interpret pipeline file %s", pipelineFile)
 	}
 
+	log.Logger().Infof("Using additional vars: %+v", so.AdditionalEnvVars)
+
 	// lets switch kubernetes context to it so the user can use `jx` commands immediately
 	no := &namespace.NamespaceOptions{}
 	no.CommonOptions = o.CommonOptions
@@ -468,10 +470,8 @@ func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig
 	if provider == "" {
 		return config.MissingRequirement("provider", requirementsFile)
 	}
-	if provider == "" {
-		if requirements.Cluster.ProjectID == "" {
-			return config.MissingRequirement("project", requirementsFile)
-		}
+	if requirements.Cluster.ProjectID == "" {
+		return config.MissingRequirement("project", requirementsFile)
 	}
 	if requirements.Cluster.Namespace == "" {
 		return config.MissingRequirement("namespace", requirementsFile)
