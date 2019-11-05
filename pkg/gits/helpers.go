@@ -763,6 +763,7 @@ func FindTagForVersion(dir string, version string, gitter Gitter) (string, error
 // head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo.
 // If the repository already exist and error is returned.
 func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, private bool, provider GitProvider, gitter Gitter) (*GitRepository, error) {
+	log.Logger().Debugf("getting repo %s/%s", toOrg, toName)
 	_, err := provider.GetRepository(toOrg, toName)
 	if err == nil {
 		return nil, errors.Errorf("repository %s/%s already exists", toOrg, toName)
@@ -786,6 +787,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	log.Logger().Debugf("cloning repo from %s", fromInfo.CloneURL)
 	err = gitter.Clone(fromInfo.CloneURL, dir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.CloneURL)
@@ -796,17 +798,37 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.CloneURL)
 		}
+		err = gitter.Reset(dir, fromCommitish, true)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
+		}
 	} else {
 		parts := strings.Split(fromCommitish, "/")
 		err = gitter.FetchBranch(dir, parts[0], parts[1])
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
 		}
+		if len(parts[1]) == 40 {
+			uuid, _ := uuid.NewV4()
+			branchName := fmt.Sprintf("pr-%s", uuid.String())
+
+			err = gitter.CreateBranchFrom(dir, branchName, parts[1])
+			if err != nil {
+				return nil, errors.Wrapf(err, "create branch %s from %s", branchName, parts[1])
+			}
+
+			err = gitter.Checkout(dir, branchName)
+			if err != nil {
+				return nil, errors.Wrapf(err, "checkout branch %s", branchName)
+			}
+		} else {
+			err = gitter.Reset(dir, fromCommitish, true)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
+			}
+		}
 	}
-	err = gitter.Reset(dir, fromCommitish, true)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
-	}
+
 
 	err = SquashIntoSingleCommit(dir, fmt.Sprintf("initial config based of %s/%s with ref %s", fromInfo.Organisation, fromInfo.Name, fromCommitish), gitter)
 	if err != nil {
