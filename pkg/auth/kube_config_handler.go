@@ -167,9 +167,9 @@ func (k *KubeAuthConfigHandler) annotations(server *AuthServer) map[string]strin
 }
 
 func (k *KubeAuthConfigHandler) secrets() (*corev1.SecretList, error) {
-	selector := labelKind + "=" + string(k.serverKind)
+	selector := labelKind + "=" + k.serverKind
 	if k.serviceKind != "" {
-		selector = labelServiceKind + "=" + string(k.serviceKind)
+		selector = labelServiceKind + "=" + k.serviceKind
 	}
 	opts := metav1.ListOptions{
 		LabelSelector: selector,
