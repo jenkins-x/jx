@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -58,4 +59,12 @@ type ConfigMapVaultConfigHandler struct {
 	secretName      string
 	configMapClient v1.ConfigMapInterface
 	secretURLClient secreturl.Client
+}
+
+// KubeConfigHandler loads/save the auth config from/into a kubernetes secret
+type KubeAuthConfigHandler struct {
+	client      kubernetes.Interface
+	namespace   string
+	serverKind  string
+	serviceKind string
 }

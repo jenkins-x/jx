@@ -37,7 +37,7 @@ func (v *VaultAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 	return nil
 }
 
-// NewVaultAuthConfigService creates a new ConfigService that saves it config to a Vault
+// NewVaultAuthConfigService creates a new config service  that loads/saves the auth config form/into vault
 func NewVaultAuthConfigService(secretName string, vaultClient vault.Client) ConfigService {
 	handler := newVaultAuthConfigHandler(secretName, vaultClient)
 	return NewAuthConfigService(&handler)
