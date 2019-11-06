@@ -61,7 +61,7 @@ type ConfigMapVaultConfigHandler struct {
 	secretURLClient secreturl.Client
 }
 
-// KubeConfigHandler loads/save the auth config from/into a kubernetes secret
+// KubeAuthConfigHandler loads/save the auth config from/into a kubernetes secret
 type KubeAuthConfigHandler struct {
 	client      kubernetes.Interface
 	namespace   string
