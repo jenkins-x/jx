@@ -42,6 +42,7 @@ type EnvironmentPullRequestOptions struct {
 	Gitter        gits.Gitter
 	GitProvider   gits.GitProvider
 	ModifyChartFn ModifyChartFn
+	Labels        []string
 }
 
 // Create a pull request against the environment repository for env.
@@ -67,6 +68,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 		return nil, err
 	}
 	labels := make([]string, 0)
+	labels = append(labels, o.Labels...)
 	if autoMerge {
 		labels = append(labels, gits.LabelUpdatebot)
 	}
