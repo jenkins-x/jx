@@ -57,4 +57,6 @@ jx step bdd -b \
   --no-delete-repo \
   --tests install \
   --tests test-create-spring
+  --test-git-repo=https://github.com/wbrefvem/bdd-jx.git \
+  --test-git-branch=master
 

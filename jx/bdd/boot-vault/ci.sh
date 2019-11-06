@@ -74,3 +74,5 @@ jx step bdd \
     --no-delete-repo \
     --tests test-quickstart-golang-http \
     --tests test-app-lifecycle
+    --test-git-repo=https://github.com/wbrefvem/bdd-jx.git \
+    --test-git-branch=master

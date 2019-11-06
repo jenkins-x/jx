@@ -51,3 +51,5 @@ jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git 
   --tests test-create-spring \
   --tests test-import-golang-http-from-jenkins-x-yml \
   --tests test-app-lifecycle
+  --test-git-repo=https://github.com/wbrefvem/bdd-jx.git \
+  --test-git-branch=master
