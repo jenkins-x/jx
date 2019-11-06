@@ -791,6 +791,23 @@ func (p *GitHubProvider) ListOpenPullRequests(owner string, repo string) ([]*Git
 	return answer, nil
 }
 
+func extractRepositoryCommitAuthor(rc *github.RepositoryCommit) (gu *GitUser) {
+	gu = &GitUser{}
+
+	if rc.Commit.Author != nil {
+		gu.Email = rc.Commit.Author.GetEmail()
+		gu.Name = rc.Commit.Author.GetName()
+
+		if rc.Author != nil {
+			gu.Login = rc.Author.GetLogin()
+			gu.URL = rc.Author.GetURL()
+			gu.AvatarURL = rc.Author.GetAvatarURL()
+		}
+	}
+
+	return
+}
+
 func (p *GitHubProvider) asGitHubCommit(commit *github.RepositoryCommit) GitCommit {
 	message := ""
 	if commit.Commit != nil {
@@ -798,18 +815,8 @@ func (p *GitHubProvider) asGitHubCommit(commit *github.RepositoryCommit) GitComm
 	} else {
 		log.Logger().Warnf("No Commit object for for commit: %s", commit.GetSHA())
 	}
-	var author *GitUser
-	if commit.Author != nil {
-		author = &GitUser{
-			Login:     commit.Author.GetLogin(),
-			Email:     commit.Author.GetEmail(),
-			Name:      commit.Author.GetName(),
-			URL:       commit.Author.GetURL(),
-			AvatarURL: commit.Author.GetAvatarURL(),
-		}
-	} else {
-		log.Logger().Warnf("No author for commit: %s", commit.GetSHA())
-	}
+	author := extractRepositoryCommitAuthor(commit)
+
 	return GitCommit{
 		Message: message,
 		URL:     commit.GetURL(),
@@ -831,26 +838,6 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 
 	for _, commit := range commits {
 		summary := p.asGitHubCommit(commit)
-		if commit.Author != nil {
-			if summary.Author.Email == "" {
-				log.Logger().Infof("Commit author email is empty for: %s", commit.GetSHA())
-				dir, err := os.Getwd()
-				if err != nil {
-					return answer, err
-				}
-				gitDir, _, err := p.Git.FindGitConfigDir(dir)
-				if err != nil {
-					return answer, err
-				}
-				log.Logger().Infof("Looking for commits in: %s", gitDir)
-				email, err := p.Git.GetAuthorEmailForCommit(gitDir, commit.GetSHA())
-				if err != nil {
-					log.Logger().Warnf("Commit not found: %s", commit.GetSHA())
-					continue
-				}
-				summary.Author.Email = email
-			}
-		}
 		answer = append(answer, &summary)
 	}
 	return answer, nil
