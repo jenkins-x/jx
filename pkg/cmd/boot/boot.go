@@ -470,9 +470,6 @@ func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig
 	if provider == "" {
 		return config.MissingRequirement("provider", requirementsFile)
 	}
-	if requirements.Cluster.ProjectID == "" {
-		return config.MissingRequirement("project", requirementsFile)
-	}
 	if requirements.Cluster.Namespace == "" {
 		return config.MissingRequirement("namespace", requirementsFile)
 	}
