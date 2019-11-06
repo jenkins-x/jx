@@ -204,7 +204,7 @@ type EnvironmentConfig struct {
 	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress,omitempty"`
 	// RemoteCluster specifies this environment runs on a remote cluster to the development cluster
-	RemoteCluster bool `json:"remotetCluster,omitempty"`
+	RemoteCluster bool `json:"remoteCluster,omitempty"`
 }
 
 // IngressConfig contains dns specific requirements
