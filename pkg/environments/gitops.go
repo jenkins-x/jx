@@ -74,9 +74,13 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if err != nil {
 		return nil, err
 	}
-	err = gits.AddLabelsToPullRequest(prInfo, labels)
-	if err != nil {
-		return nil, err
+
+	// this will be nil if no PR was created due to no real changes in source
+	if prInfo != nil {
+		err = gits.AddLabelsToPullRequest(prInfo, labels)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return prInfo, nil
 }
