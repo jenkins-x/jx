@@ -7,7 +7,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
-	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -259,7 +258,7 @@ func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
 		kubevault.VaultImage:      "",
 	}
 
-	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
+	resolver, err := o.CreateVersionResolver("", "")
 	if err != nil {
 		return images, errors.Wrap(err, "creating the docker image version resolver")
 	}

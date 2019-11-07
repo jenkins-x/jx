@@ -5,10 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	config2 "github.com/jenkins-x/jx/pkg/config"
-
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -268,14 +266,13 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 
 	log.Logger().Infof("installing the Environment Controller with values: %s", util.ColorInfo(strings.Join(setValues, ",")))
 	helmOptions := helm.InstallChartOptions{
-		Chart:          "environment-controller",
-		ReleaseName:    o.ReleaseName,
-		Version:        o.Version,
-		Ns:             o.Namespace,
-		SetValues:      setValues,
-		HelmUpdate:     true,
-		Repository:     kube.DefaultChartMuseumURL,
-		VersionsGitURL: config2.DefaultVersionsURL,
+		Chart:       "environment-controller",
+		ReleaseName: o.ReleaseName,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   setValues,
+		HelmUpdate:  true,
+		Repository:  kube.DefaultChartMuseumURL,
 	}
 	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
