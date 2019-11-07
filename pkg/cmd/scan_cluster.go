@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/config"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -162,7 +160,7 @@ func (o *ScanClusterOptions) hunterContainer() *v1.Container {
 
 func (o *ScanClusterOptions) hunterImage() string {
 	defaultImage := kubeHunterImage + ":latest"
-	resolver, err := o.CreateVersionResolver(config.DefaultVersionsURL, "")
+	resolver, err := o.CreateVersionResolver("", "")
 	if err != nil {
 		return defaultImage
 	}
