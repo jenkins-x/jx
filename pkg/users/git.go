@@ -60,7 +60,7 @@ func (r *GitUserResolver) GitUserSliceAsUserDetailsSlice(users []gits.GitUser) (
 // * making a call to the gitProvider
 // as often user info is not complete in a git response
 func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
-	if user == nil {
+	if r == nil || user == nil {
 		return nil, nil
 	}
 	selectUsers := func(id string, users []jenkinsv1.User) (string, []jenkinsv1.User,
@@ -159,6 +159,9 @@ func (r *GitUserResolver) GitUserLogin(user *jenkinsv1.User) string {
 
 // GitProviderKey returns the provider key for this GitUserResolver
 func (r *GitUserResolver) GitProviderKey() string {
+	if r == nil || r.GitProvider == nil {
+		return ""
+	}
 	return fmt.Sprintf("jenkins.io/git-%s-userid", r.GitProvider.Kind())
 }
 

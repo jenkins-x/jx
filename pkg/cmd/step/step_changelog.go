@@ -394,7 +394,7 @@ func (o *StepChangelogOptions) Run() error {
 		Namespace:   devNs,
 		JXClient:    jxClient,
 	}
-	if commits != nil {
+	if commits != nil && gitProvider != nil {
 		for _, commit := range *commits {
 
 			if o.IncludeMergeCommits || len(commit.ParentHashes) <= 1 {
