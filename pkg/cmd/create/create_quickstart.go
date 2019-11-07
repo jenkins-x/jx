@@ -14,6 +14,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 
+	"github.com/jenkins-x/jx/pkg/github"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -138,6 +139,22 @@ func (o *CreateQuickstartOptions) Run() error {
 		}
 		if q.Name == "" {
 			return util.MissingOption("project-name")
+		}
+	}
+
+	githubAppMode, err := o.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
+	if githubAppMode {
+		githubApp := &github.GithubApp{
+			Factory: o.GetFactory(),
+		}
+
+		err := githubApp.Install(details.Organisation, details.RepoName, o.GetIOFileHandles(), true)
+		if err != nil {
+			return err
 		}
 	}
 

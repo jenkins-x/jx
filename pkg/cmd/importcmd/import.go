@@ -24,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/start"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/github"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -429,6 +430,22 @@ func (options *ImportOptions) Run() error {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}
 
+	githubAppMode, err := options.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
+	if githubAppMode {
+		githubApp := &github.GithubApp{
+			Factory: options.GetFactory(),
+		}
+
+		err := githubApp.Install(options.Organisation, options.Repository, options.GetIOFileHandles(), false)
+		if err != nil {
+			return err
+		}
+	}
+
 	return options.doImport()
 }
 
@@ -659,58 +676,66 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	}
 	log.Logger().Infof("Pushed Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
 
-	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
-	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer != nil && options.GitServer.URL == options.PipelineServer {
-		// Make the invitation
-		err := options.GitProvider.AddCollaborator(options.PipelineUserName, details.Organisation, details.RepoName)
-		if err != nil {
-			return err
-		}
+	githubAppMode, err := options.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
 
-		// If repo is put in an organisation that the pipeline user is not part of an invitation needs to be accepted.
-		// Create a new provider for the pipeline user
-		authConfig := authConfigSvc.Config()
-		if err != nil {
-			return err
-		}
-		pipelineUserAuth := authConfig.FindUserAuth(options.GitServer.URL, options.PipelineUserName)
-		if pipelineUserAuth == nil {
-			log.Logger().Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate"+
-				"on %s if %s is not part of %s.\n",
-				options.PipelineUserName, details.RepoName, options.PipelineUserName, details.Organisation)
-		} else {
-			pipelineServerAuth := authConfig.GetServer(authConfig.CurrentServer)
-			pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
+	if !githubAppMode {
+
+		// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
+		if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer != nil && options.GitServer.URL == options.PipelineServer {
+			// Make the invitation
+			err := options.GitProvider.AddCollaborator(options.PipelineUserName, details.Organisation, details.RepoName)
 			if err != nil {
 				return err
 			}
 
-			// Get all invitations for the pipeline user
-			// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
-			f := func() error {
-				invites, _, err := pipelineUserProvider.ListInvitations()
+			// If repo is put in an organisation that the pipeline user is not part of an invitation needs to be accepted.
+			// Create a new provider for the pipeline user
+			authConfig := authConfigSvc.Config()
+			if err != nil {
+				return err
+			}
+			pipelineUserAuth := authConfig.FindUserAuth(options.GitServer.URL, options.PipelineUserName)
+			if pipelineUserAuth == nil {
+				log.Logger().Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate"+
+					"on %s if %s is not part of %s.\n",
+					options.PipelineUserName, details.RepoName, options.PipelineUserName, details.Organisation)
+			} else {
+				pipelineServerAuth := authConfig.GetServer(authConfig.CurrentServer)
+				pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
 				if err != nil {
 					return err
 				}
-				for _, x := range invites {
-					// Accept all invitations for the pipeline user
-					_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+
+				// Get all invitations for the pipeline user
+				// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
+				f := func() error {
+					invites, _, err := pipelineUserProvider.ListInvitations()
 					if err != nil {
 						return err
 					}
+					for _, x := range invites {
+						// Accept all invitations for the pipeline user
+						_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+						if err != nil {
+							return err
+						}
+					}
+					return nil
 				}
-				return nil
+				exponentialBackOff := backoff.NewExponentialBackOff()
+				timeout := 20 * time.Second
+				exponentialBackOff.MaxElapsedTime = timeout
+				exponentialBackOff.Reset()
+				err = backoff.Retry(f, exponentialBackOff)
+				if err != nil {
+					return err
+				}
 			}
-			exponentialBackOff := backoff.NewExponentialBackOff()
-			timeout := 20 * time.Second
-			exponentialBackOff.MaxElapsedTime = timeout
-			exponentialBackOff.Reset()
-			err = backoff.Retry(f, exponentialBackOff)
-			if err != nil {
-				return err
-			}
-		}
 
+		}
 	}
 
 	return nil
