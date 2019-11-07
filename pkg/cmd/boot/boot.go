@@ -203,7 +203,7 @@ func (o *BootOptions) Run() error {
 		}
 		commitish, err := gits.FindTagForVersion(cloneDir, gitRef, o.Git())
 		if err != nil {
-			log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", o.GitRef).Error())
+			log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", gitRef).Error())
 		}
 
 		if commitish != "" {
@@ -212,17 +212,17 @@ func (o *BootOptions) Run() error {
 				return errors.Wrapf(err, "setting HEAD to %s", commitish)
 			}
 		} else {
-			log.Logger().Infof("fetching branch %s", o.GitRef)
-			err = o.Git().FetchBranch(cloneDir, "origin", o.GitRef)
+			log.Logger().Infof("fetching branch %s", gitRef)
+			err = o.Git().FetchBranch(cloneDir, "origin", gitRef)
 			if err != nil {
-				return errors.Wrapf(err, "fetching branch %s", o.GitRef)
+				return errors.Wrapf(err, "fetching branch %s", gitRef)
 			}
 
 			branchName := fmt.Sprintf("pr-%s", uuid.New().String())
 
-			err = o.Git().CreateBranchFrom(cloneDir, branchName, o.GitRef)
+			err = o.Git().CreateBranchFrom(cloneDir, branchName, gitRef)
 			if err != nil {
-				return errors.Wrapf(err, "create branch %s from %s", branchName, o.GitRef)
+				return errors.Wrapf(err, "create branch %s from %s", branchName, gitRef)
 			}
 
 			err = o.Git().Checkout(cloneDir, branchName)
