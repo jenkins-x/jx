@@ -597,7 +597,7 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 	}
 
 	gitServer := authConfigService.Config().CurrentServer
-	git, err := o.GitProviderForGitServerURL(gitServer, "github")
+	git, err := o.GitProviderForGitServerURL(gitServer, "github", "")
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
 	}

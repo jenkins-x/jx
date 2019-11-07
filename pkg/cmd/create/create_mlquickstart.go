@@ -344,7 +344,7 @@ func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConf
 			if kind == "" {
 				kind = gits.KindGitHub
 			}
-			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
+			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind, "")
 			if err != nil {
 				return model, err
 			}
