@@ -103,7 +103,11 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 
-			gitProvider, err := gitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.GetIOFileHandles())
+			ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+			if err != nil {
+				return err
+			}
+			gitProvider, err := gitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

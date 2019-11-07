@@ -6,10 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"github.com/jenkins-x/jx/pkg/gits/features"
 
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
@@ -42,11 +44,11 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 }
 
 // NewGitProvider creates a new git provider for the given list of argumentes
-func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
+func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, ghOwner string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, o.GetIOFileHandles())
+	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, ghOwner, batchMode, gitter, o.GetIOFileHandles())
 }
 
 // CreateGitProvider creates a git from the given directory
@@ -73,7 +75,11 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.GetIOFileHandles())
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return gitInfo, nil, nil, err
+	}
+	gitProvider, err := gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -326,7 +332,7 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 }
 
 // GitProviderForURL returns a GitProvider for the given Git server URL
-func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
+func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind string, ghOwner string) (gits.GitProvider, error) {
 	if o.fakeGitProvider != nil {
 		return o.fakeGitProvider, nil
 	}
@@ -334,7 +340,7 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.GetIOFileHandles())
+	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 }
 
 // CreateGitProviderForURLWithoutKind creates a git provider from URL wihtout kind
@@ -347,8 +353,52 @@ func (o *CommonOptions) CreateGitProviderForURLWithoutKind(gitURL string) (gits.
 	if err != nil {
 		return nil, gitInfo, err
 	}
-	provider, err := o.GitProviderForGitServerURL(gitInfo.HostURL(), gitKind)
+	gitServer := gitInfo.HostURL()
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	provider, err := o.GitProviderForGitServerURL(gitServer, gitKind, ghOwner)
 	return provider, gitInfo, err
+}
+
+// GetGitHubAppOwner returns the github app owner to filter tokens by if using a GitHub app model
+// which requires a separate token per owner
+func (o *CommonOptions) GetGitHubAppOwner(gitInfo *gits.GitRepository) (string, error) {
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return "", err
+	}
+	if gha {
+		return gitInfo.Organisation, nil
+	}
+	return "", nil
+}
+
+// GetGitHubAppOwnerForRepository returns the github app owner to filter tokens by if using a GitHub app model
+//// which requires a separate token per owner
+func (o *CommonOptions) GetGitHubAppOwnerForRepository(repository *jenkinsv1.SourceRepository) (string, error) {
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return "", err
+	}
+	if gha {
+		return repository.Spec.Org, nil
+	}
+	return "", nil
+}
+
+// IsGitHubAppMode returns true if we have enabled github app mode
+func (o *CommonOptions) IsGitHubAppMode() (bool, error) {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return false, err
+	}
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return false, err
+	}
+	return requirements != nil && requirements.GithubApp != nil && requirements.GithubApp.Enabled, nil
 }
 
 // InitGitConfigAndUser validates we have git setup
@@ -404,7 +454,11 @@ func (o *CommonOptions) DisableFeatures(orgs []string, includes []string, exclud
 		if err != nil {
 			return errors.Wrapf(err, "determining git provider kind from %s", org)
 		}
-		provider, err := o.GitProviderForGitServerURL(info.HostURL(), kind)
+		ghOwner, err := o.GetGitHubAppOwner(info)
+		if err != nil {
+			return err
+		}
+		provider, err := o.GitProviderForGitServerURL(info.HostURL(), kind, ghOwner)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", org)
 		}

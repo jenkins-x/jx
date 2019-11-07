@@ -79,7 +79,7 @@ type Factory interface {
 	CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, handles util.IOFileHandles) (gojenkins.JenkinsClient, error)
 
 	// CreateGitProvider creates a new Git provider
-	CreateGitProvider(string, string, auth.ConfigService, string, bool, gits.Gitter, util.IOFileHandles) (gits.GitProvider, error)
+	CreateGitProvider(string, string, auth.ConfigService, string, string, bool, gits.Gitter, util.IOFileHandles) (gits.GitProvider, error)
 
 	// CreateComplianceClient creates a new compliance client
 	CreateComplianceClient() (*client.SonobuoyClient, error)

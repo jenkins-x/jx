@@ -113,7 +113,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	}
 	var gitProvider gits.GitProvider
 	if !o.NoGit {
-		gitProvider, err = o.GitProviderForGitServerURL(gits.GitHubURL, gits.KindGitHub)
+		gitProvider, err = o.GitProviderForGitServerURL(gits.GitHubURL, gits.KindGitHub, "")
 		if err != nil {
 			return err
 		}

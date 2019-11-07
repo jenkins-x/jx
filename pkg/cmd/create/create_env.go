@@ -289,7 +289,11 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 		}
 		message := "user name to create the Git repository"
 		commonOpts := o.CreateOptions.CommonOptions
-		p, err := commonOpts.NewGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git())
+		ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+		if err != nil {
+			return err
+		}
+		p, err := commonOpts.NewGitProvider(gitURL, message, authConfigSvc, gitKind, ghOwner, o.BatchMode, o.Git())
 		if err != nil {
 			return err
 		}
