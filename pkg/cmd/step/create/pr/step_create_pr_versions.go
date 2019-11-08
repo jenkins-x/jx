@@ -153,7 +153,7 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			pro.AuthorName = authorName
 			pro.AuthorEmail = authorEmail
 		}
-		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform):(?P<versions>.+)", "jenkins-x*.yml")
+		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform|go-nodejs):(?P<versions>.+)", "jenkins-x*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
