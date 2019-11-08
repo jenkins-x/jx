@@ -1,18 +1,17 @@
-package gitcreds_test
+package auth_test
 
 import (
 	"path/filepath"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/auth/gitcreds"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLoadGitCredentials(t *testing.T) {
 	fileName := filepath.Join("test_data", "git", "credentials")
-	config, err := gitcreds.LoadGitCredentialsAuthFile(fileName)
+	config, err := auth.LoadGitCredentialsAuthFile(fileName)
 	require.NoError(t, err, "should not have failed to load file %s", fileName)
 	assert.NotNil(t, config, "should have returned not nil config for file %s", fileName)
 
@@ -66,7 +65,7 @@ func assertServerUserPassword(t *testing.T, config *auth.AuthConfig, serverURL s
 }
 
 func TestLoadGitCredentialsFileDoesNotExist(t *testing.T) {
-	config, err := gitcreds.LoadGitCredentialsAuthFile("test_data/does/not/exist")
+	config, err := auth.LoadGitCredentialsAuthFile("test_data/does/not/exist")
 	require.NoError(t, err, "should not have failed to load non existing git creds file")
 	assert.Nil(t, config, "should have returned nil config")
 }
