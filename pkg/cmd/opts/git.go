@@ -424,7 +424,7 @@ func (o *CommonOptions) InitGitConfigAndUser() error {
 }
 
 // GetPipelineGitAuth returns the pipeline git authentication credentials
-func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *CommonOptions) GetPipelineGitAuth(ghOwner string) (*auth.AuthServer, *auth.UserAuth, error) {
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
@@ -434,6 +434,27 @@ func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, 
 		return nil, nil, errors.New("empty Git config")
 	}
 	server, user := authConfig.GetPipelineAuth()
+	if ghOwner != "" {
+		if server != nil {
+			for _, u := range server.Users {
+				if u.GithubAppOwner == ghOwner {
+					user = u
+					break
+				}
+			}
+		} else {
+			for _, server = range authConfig.Servers {
+				if server != nil {
+					for _, u := range server.Users {
+						if u.GithubAppOwner == ghOwner {
+							user = u
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	return server, user, nil
 }
 

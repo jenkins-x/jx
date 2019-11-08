@@ -1136,7 +1136,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsEnvDir string, valuesFiles []string) error {
 	options.SetCurrentNamespace(namespace)
 	if options.Flags.Prow {
-		_, pipelineUser, err := options.GetPipelineGitAuth()
+		_, pipelineUser, err := options.GetPipelineGitAuth("")
 		if err != nil || pipelineUser == nil {
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}

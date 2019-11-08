@@ -474,8 +474,13 @@ func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, g
 		return o.gitHubProvider, nil
 	}
 
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return nil, err
+	}
+
 	// production code always goes this way
-	server, userAuth, err := o.GetPipelineGitAuth()
+	server, userAuth, err := o.GetPipelineGitAuth(ghOwner)
 	if err != nil {
 		return nil, err
 	}
