@@ -203,6 +203,9 @@ const (
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"
 
+	// LabelGithubAppOwner the label to indicate the owner of a repository for github app token secrets
+	LabelGithubAppOwner = "jenkins.io/githubapp-owner"
+
 	// LabelCreatedBy indicates the service that created this resource
 	LabelCreatedBy = "jenkins.io/created-by"
 

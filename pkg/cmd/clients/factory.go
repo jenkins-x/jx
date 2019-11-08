@@ -342,7 +342,14 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 					if data != nil {
 						username := data[kube.SecretDataUsername]
 						pwd := data[kube.SecretDataPassword]
-						if len(username) > 0 && isCDPipeline {
+						ghOwner := labels[kube.LabelGithubAppOwner]
+						if ghOwner != "" && isCDPipeline {
+							server.Users = append(server.Users, &auth.UserAuth{
+								Username:       string(username),
+								ApiToken:       string(pwd),
+								GithubAppOwner: ghOwner,
+							})
+						} else if len(username) > 0 && isCDPipeline {
 							userAuth := config.FindUserAuth(u, string(username))
 							if userAuth == nil {
 								userAuth = &auth.UserAuth{
