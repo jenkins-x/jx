@@ -11,16 +11,18 @@ import (
 )
 
 // NewFileAuthConfigService creates a new file config service
-func NewFileAuthConfigService(filename string) (ConfigService, error) {
-	handler, err := newFileAuthHandler(filename)
+func NewFileAuthConfigService(filename string, useGitCredentialsFile bool) (ConfigService, error) {
+	handler, err := newFileAuthHandler(filename, useGitCredentialsFile)
 	return NewAuthConfigService(handler), err
 }
 
 // newFileBasedAuthConfigHandler creates a new FileBasedAuthConfigService that stores its data under the given filename
 // If the fileName is an absolute path, it will be used. If it is a simple filename, it will be stored in the default
 // Config directory
-func newFileAuthHandler(fileName string) (ConfigHandler, error) {
-	svc := &FileAuthConfigHandler{}
+func newFileAuthHandler(fileName string, useGitCredentialsFile bool) (ConfigHandler, error) {
+	svc := &FileAuthConfigHandler{
+		useGitCredentialsFile: useGitCredentialsFile,
+	}
 	// If the fileName is an absolute path, use that. Otherwise treat it as a config filename to be used in
 	if fileName == filepath.Base(fileName) {
 		dir, err := util.ConfigDir()
@@ -56,12 +58,14 @@ func (s *FileAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 	}
 
 	// lets load any git credentials secrets and override values
-	gitCredConfig, err := LoadGitCredentialsAuth()
-	if err != nil {
-		return config, errors.Wrapf(err, "failed to load git/credentials")
-	}
-	if gitCredConfig != nil {
-		config.Merge(gitCredConfig)
+	if s.useGitCredentialsFile {
+		gitCredConfig, err := LoadGitCredentialsAuth()
+		if err != nil {
+			return config, errors.Wrapf(err, "failed to load git/credentials")
+		}
+		if gitCredConfig != nil {
+			config.Merge(gitCredConfig)
+		}
 	}
 	return config, nil
 }

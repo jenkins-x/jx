@@ -181,7 +181,7 @@ func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string
 }
 
 func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string, jenkinsServiceName string) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile, ns)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile, ns, false)
 
 	if jenkinsServiceName == "" {
 		jenkinsServiceName = kube.SecretJenkins
@@ -260,7 +260,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 }
 
 func (f *factory) CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile, namespace)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile, namespace, false)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -272,7 +272,7 @@ func (f *factory) CreateChartmuseumAuthConfigService(namespace string) (auth.Con
 }
 
 func (f *factory) CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile, namespace)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile, namespace, false)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -287,7 +287,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(namespace string, secrets 
 }
 
 func (f *factory) CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile, namespace)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile, namespace, false)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -302,7 +302,7 @@ func (f *factory) CreateChatAuthConfigService(namespace string, secrets *corev1.
 }
 
 func (f *factory) CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile, namespace)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile, namespace, false)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -372,7 +372,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
-func (f *factory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
+func (f *factory) CreateAuthConfigService(configName string, namespace string, useGitCredentialsFile bool) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
 		client, _, err := f.CreateKubeClient()
 		if err != nil {
@@ -391,7 +391,7 @@ func (f *factory) CreateAuthConfigService(configName string, namespace string) (
 		}
 		return authService, nil
 	}
-	return auth.NewFileAuthConfigService(configName)
+	return auth.NewFileAuthConfigService(configName, useGitCredentialsFile)
 }
 
 // SecretsLocation indicates the location where the secrets are stored

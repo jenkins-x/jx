@@ -182,7 +182,7 @@ func (f *FakeFactory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets 
 
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
-func (f *FakeFactory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
+func (f *FakeFactory) CreateAuthConfigService(configName string, namespace string, useGitCredentialsFile bool) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
 		client, _, err := f.CreateKubeClient()
 		if err != nil {
@@ -201,7 +201,7 @@ func (f *FakeFactory) CreateAuthConfigService(configName string, namespace strin
 		}
 		return authService, nil
 	}
-	return auth.NewFileAuthConfigService(configName)
+	return auth.NewFileAuthConfigService(configName, useGitCredentialsFile)
 }
 
 // SecretsLocation indicates the location where the secrets are stored
