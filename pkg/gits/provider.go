@@ -445,7 +445,8 @@ func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, m
 				break
 			}
 		}
-	} else {
+	}
+	if userAuth == nil {
 		userAuth, err = config.PickServerUserAuth(server, message, batchMode, i.Organisation, handles)
 		if err != nil {
 			return nil, err

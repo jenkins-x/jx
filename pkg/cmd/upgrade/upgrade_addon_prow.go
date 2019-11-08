@@ -172,7 +172,7 @@ func (o *UpgradeAddonProwOptions) Upgrade() error {
 
 	gitOpsEnvDir := ""
 
-	_, pipelineUser, err := o.GetPipelineGitAuth()
+	_, pipelineUser, err := o.GetPipelineGitAuth("")
 	if err != nil {
 		return errors.Wrap(err, "retrieving the pipeline Git Auth")
 	}
