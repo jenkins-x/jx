@@ -71,6 +71,14 @@ func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *StepGitCredentialsOptions) Run() error {
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+	if gha {
+		log.Logger().Infof("this command does nothing if using github app mode")
+		return nil
+	}
 	outFile := o.OutputFile
 	if outFile == "" {
 		// lets figure out the default output file
