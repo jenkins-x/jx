@@ -32,6 +32,9 @@ sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_
 git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
+# lets avoid the git/credentials causing confusion during the test
+export XDG_CONFIG_HOME=$JX_HOME
+
 echo "running the BDD tests with JX_HOME = $JX_HOME"
 jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
   --config jx/bdd/tekton/cluster.yaml \
