@@ -51,7 +51,7 @@ type Factory interface {
 	//
 
 	// CreateAuthConfigService creates a new authentication configuration service
-	CreateAuthConfigService(fileName string, namespace string) (auth.ConfigService, error)
+	CreateAuthConfigService(fileName string, namespace string, useGitCredentialsFile bool) (auth.ConfigService, error)
 
 	// CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
 	CreateJenkinsAuthConfigService(kubernetes.Interface, string, string) (auth.ConfigService, error)

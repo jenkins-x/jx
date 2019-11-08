@@ -130,7 +130,11 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 		log.Logger().Warnf("failed to find development namespace - %s", err)
 	}
 
-	authConfigSvc, err := o.factory.CreateAuthConfigService(fileName, namespace)
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return nil, err
+	}
+	authConfigSvc, err := o.factory.CreateAuthConfigService(fileName, namespace, gha)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -334,5 +338,5 @@ func (o *CommonOptions) AuthConfigService(file string) (auth.ConfigService, erro
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to find development namespace")
 	}
-	return o.factory.CreateAuthConfigService(file, namespace)
+	return o.factory.CreateAuthConfigService(file, namespace, false)
 }
