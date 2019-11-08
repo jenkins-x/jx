@@ -429,6 +429,8 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
+// PickOrCreateProvider picks an existing server and auth or creates a new one if required
+// then create a GitProvider for it
 func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, githubAppMode bool, git Gitter, handles util.IOFileHandles) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
