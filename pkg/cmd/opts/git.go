@@ -328,7 +328,11 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles())
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return nil, err
+	}
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, gha, o.Git(), o.GetIOFileHandles())
 }
 
 // GitProviderForGitServerURL returns a GitProvider for the given Git server URL
@@ -392,11 +396,11 @@ func (o *CommonOptions) GetGitHubAppOwnerForRepository(repository *jenkinsv1.Sou
 func (o *CommonOptions) IsGitHubAppMode() (bool, error) {
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "error loading TeamSettings to determine if in GitHub app mode")
 	}
 	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "error getting Requirements from TeamSettings to determine if in GitHub app mode")
 	}
 	return requirements != nil && requirements.GithubApp != nil && requirements.GithubApp.Enabled, nil
 }
