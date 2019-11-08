@@ -75,6 +75,10 @@ pipelineConfig:
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=gcr.io/jenkinsxio/builder-go:${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
+              - name: build-and-push-go-nodejs
+                command: /kaniko/executor
+                args: ['--dockerfile=/workspace/source/Dockerfile.builder-go-nodejs','--destination=gcr.io/jenkinsxio/builder-go-nodejs:${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+
           - name: e2e-tests
             options:
               volumes:
@@ -118,7 +122,7 @@ pipelineConfig:
 
             steps:
               - name: tekton-e2e-tests
-                image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
+                image: gcr.io/jenkinsxio/builder-go-nodejs:${inputs.params.version}
                 command: ./jx/bdd/tekton/ci.sh
 
               - name: generate-report
