@@ -1,11 +1,10 @@
-package gitcreds
+package auth
 
 import (
 	"io/ioutil"
 	"net/url"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -13,13 +12,13 @@ import (
 
 // LoadGitCredentialsAuth loads the git credentials from the `git/credentials` file
 // in `$XDG_CONFIG_HOME/git/credentials` or in the `~/git/credentials` directory
-func LoadGitCredentialsAuth() (*auth.AuthConfig, error) {
+func LoadGitCredentialsAuth() (*AuthConfig, error) {
 	fileName := util.GitCredentialsFile()
 	return LoadGitCredentialsAuthFile(fileName)
 }
 
 // LoadGitCredentialsAuthFile loads the git credentials file
-func LoadGitCredentialsAuthFile(fileName string) (*auth.AuthConfig, error) {
+func LoadGitCredentialsAuthFile(fileName string) (*AuthConfig, error) {
 	exists, err := util.FileExists(fileName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to check if git credentials file exists %s", fileName)
@@ -33,7 +32,7 @@ func LoadGitCredentialsAuthFile(fileName string) (*auth.AuthConfig, error) {
 		return nil, errors.Wrapf(err, "failed to load git credentials file %s", fileName)
 	}
 
-	config := &auth.AuthConfig{}
+	config := &AuthConfig{}
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -62,7 +61,7 @@ func LoadGitCredentialsAuthFile(fileName string) (*auth.AuthConfig, error) {
 		serverURL := u.String()
 		server := config.GetOrCreateServer(serverURL)
 		server.CurrentUser = username
-		server.Users = append(server.Users, &auth.UserAuth{
+		server.Users = append(server.Users, &UserAuth{
 			Username: username,
 			Password: password,
 			ApiToken: password,

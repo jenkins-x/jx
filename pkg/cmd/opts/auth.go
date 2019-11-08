@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/jenkins-x/jx/pkg/auth/gitcreds"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	jxv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -139,16 +138,6 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 	config, err := authConfigSvc.LoadConfig()
 	if err != nil {
 		return authConfigSvc, err
-	}
-
-	// lets load any git credentials secrets and override values
-	gitCredConfig, err := gitcreds.LoadGitCredentialsAuth()
-	if err != nil {
-		return authConfigSvc, errors.Wrapf(err, "failed to load git/credentials")
-	}
-	if gitCredConfig != nil {
-		config.Merge(gitCredConfig)
-		authConfigSvc.SetConfig(config)
 	}
 
 	if secrets != nil {

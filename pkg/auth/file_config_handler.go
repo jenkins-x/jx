@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 )
 
@@ -52,6 +53,15 @@ func (s *FileAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 				return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 			}
 		}
+	}
+
+	// lets load any git credentials secrets and override values
+	gitCredConfig, err := LoadGitCredentialsAuth()
+	if err != nil {
+		return config, errors.Wrapf(err, "failed to load git/credentials")
+	}
+	if gitCredConfig != nil {
+		config.Merge(gitCredConfig)
 	}
 	return config, nil
 }
