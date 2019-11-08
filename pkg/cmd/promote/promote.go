@@ -1034,7 +1034,11 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles())
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, gha, o.Git(), o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}

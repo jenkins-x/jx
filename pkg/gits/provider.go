@@ -429,16 +429,27 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, handles util.IOFileHandles) (GitProvider, error) {
+func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, githubAppMode bool, git Gitter, handles util.IOFileHandles) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
 	server := config.GetOrCreateServer(hostUrl)
 	if server.Kind == "" {
 		server.Kind = gitKind
 	}
-	userAuth, err := config.PickServerUserAuth(server, message, batchMode, "", handles)
-	if err != nil {
-		return nil, err
+	var userAuth *auth.UserAuth
+	var err error
+	if githubAppMode && i.Organisation != "" {
+		for _, u := range server.Users {
+			if i.Organisation == u.GithubAppOwner {
+				userAuth = u
+				break
+			}
+		}
+	} else {
+		userAuth, err = config.PickServerUserAuth(server, message, batchMode, i.Organisation, handles)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if userAuth.IsInvalid() {
 		userAuth, err = createUserForServer(batchMode, userAuth, authConfigSvc, server, git, handles)
