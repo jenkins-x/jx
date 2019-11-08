@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/deprecation"
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
 	"github.com/jenkins-x/jx/pkg/cmd/ui"
 	"github.com/spf13/viper"
@@ -232,6 +233,9 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	rootCommand.SetVersionTemplate("{{printf .Version}}\n")
 	rootCommand.AddCommand(NewCmdOptions(out))
 	rootCommand.AddCommand(NewCmdDiagnose(commonOpts))
+
+	// Mark the deprecated commands
+	deprecation.DeprecateCommands(rootCommand)
 
 	managedPlugins := &managedPluginHandler{
 		CommonOptions: commonOpts,
