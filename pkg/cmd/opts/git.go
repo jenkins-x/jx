@@ -331,8 +331,8 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.GetIOFileHandles())
 }
 
-// GitProviderForURL returns a GitProvider for the given Git server URL
-func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind string, ghOwner string) (gits.GitProvider, error) {
+// GitProviderForGitServerURL returns a GitProvider for the given Git server URL
+func (o *CommonOptions) GitProviderForGitServerURL(gitServiceURL string, gitKind string, ghOwner string) (gits.GitProvider, error) {
 	if o.fakeGitProvider != nil {
 		return o.fakeGitProvider, nil
 	}
@@ -340,7 +340,7 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
+	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceURL, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 }
 
 // CreateGitProviderForURLWithoutKind creates a git provider from URL wihtout kind

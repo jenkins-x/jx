@@ -259,6 +259,7 @@ func (c *GitCommit) OneLine() string {
 	return fmt.Sprintf("%s %s", c.ShortSha(), c.Subject())
 }
 
+// CreateProvider creates a git provider for the given auth details
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	if server.Kind == "" {
 		server.Kind = SaasGitKind(server.URL)
@@ -470,10 +471,10 @@ func (i *GitRepository) ProviderURL() string {
 }
 
 // CreateProviderForURL creates the Git provider for the given git kind and host URL
-func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, hostUrl string, ghOwner string, git Gitter, batchMode bool,
+func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, hostURL string, ghOwner string, git Gitter, batchMode bool,
 	handles util.IOFileHandles) (GitProvider, error) {
 	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(hostUrl)
+	server := config.GetOrCreateServer(hostURL)
 	if gitKind != "" {
 		server.Kind = gitKind
 	}
