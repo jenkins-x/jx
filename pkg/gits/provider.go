@@ -478,7 +478,17 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 		server.Kind = gitKind
 	}
 
-	userAuth := config.CurrentUser(server, inCluster)
+	var userAuth *auth.UserAuth
+	if ghOwner != "" {
+		for _, u := range server.Users {
+			if ghOwner == u.GithubAppOwner {
+				userAuth = u
+				break
+			}
+		}
+	} else {
+		userAuth = config.CurrentUser(server, inCluster)
+	}
 	if userAuth != nil && !userAuth.IsInvalid() {
 		return CreateProvider(server, userAuth, git)
 	}

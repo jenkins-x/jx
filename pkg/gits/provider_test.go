@@ -72,13 +72,19 @@ func createAuthConfig(currentServer *auth.AuthServer, piplineServer, pipelineUse
 }
 
 func createAuthServer(url string, name string, kind string, currentUser *auth.UserAuth, users ...*auth.UserAuth) *auth.AuthServer {
-	users = append(users, currentUser)
+	if currentUser != nil {
+		users = append(users, currentUser)
+	}
+	currentUsername := ""
+	if currentUser != nil {
+		currentUsername = currentUser.Username
+	}
 	return &auth.AuthServer{
 		URL:         url,
 		Name:        name,
 		Kind:        kind,
 		Users:       users,
-		CurrentUser: currentUser.Username,
+		CurrentUser: currentUsername,
 	}
 }
 

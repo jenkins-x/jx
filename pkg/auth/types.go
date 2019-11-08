@@ -21,6 +21,10 @@ type UserAuth struct {
 	ApiToken    string `json:"apitoken"`
 	BearerToken string `json:"bearertoken"`
 	Password    string `json:"password,omitempty"`
+
+	// GithubAppOwner if using GitHub Apps this represents the owner organisation/user which owns this token.
+	// we need to maintain a different token per owner
+	GithubAppOwner string `json:"appOwner,omitempty"`
 }
 
 type AuthConfig struct {
