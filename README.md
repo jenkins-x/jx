@@ -14,7 +14,7 @@ JX is a command line tool for installing and using [Jenkins X](https://jenkins-x
 
 ## Installing
 
-Check out [how to install jx](https://jenkins-x.io/getting-started/install/).
+Check out [how to install jx](https://jenkins-x.io/docs/getting-started/setup/install/).
 
 ## Getting Help
 
@@ -30,10 +30,10 @@ You can also browse the [jx command reference documentation](https://jenkins-x.i
 
 ## Getting Started
 
-Please check out the [Getting Started Guide](https://jenkins-x.io/getting-started/) on how to:
+Please check out the [Getting Started Guide](https://jenkins-x.io/docs/getting-started/) on how to:
 
-* [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/getting-started/create-cluster/)
-* [install Jenkins X on existing clusters](https://jenkins-x.io/getting-started/install-on-cluster/)
+* [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/docs/getting-started/setup/create-cluster/)
+* [install Jenkins X on existing Kubernetes clusters](https://jenkins-x.io/docs/managing-jx/old/install-on-cluster/)
 
 Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/getting-started/next/).
     
