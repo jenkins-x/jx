@@ -110,6 +110,7 @@ func NewCmdGetBuildLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
 	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "The build number to view")
 	cmd.Flags().StringVarP(&options.BuildFilter.Pod, "pod", "", "", "The pod name to view")
+	cmd.Flags().StringVarP(&options.BuildFilter.GitURL, "giturl", "g", "", "The git URL to filter on. If you specify a link to a github repository or PR we can filter the query of build pods accordingly")
 	cmd.Flags().StringVarP(&options.BuildFilter.Context, "context", "", "", "Filters the context of the build")
 	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
 	options.JenkinsSelector.AddFlags(cmd)
@@ -120,6 +121,10 @@ func NewCmdGetBuildLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetBuildLogsOptions) Run() error {
+	err := o.BuildFilter.Validate()
+	if err != nil {
+		return err
+	}
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
