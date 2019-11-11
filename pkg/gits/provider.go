@@ -472,7 +472,7 @@ func (i *GitRepository) CreateProviderForUser(server *auth.AuthServer, user *aut
 
 func (i *GitRepository) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, ghOwner string, git Gitter, batchMode bool, handles util.IOFileHandles) (GitProvider, error) {
 	hostUrl := i.HostURLWithoutUser()
-	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, ghOwner, hostUrl, git, batchMode, handles)
+	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, ghOwner, git, batchMode, handles)
 }
 
 // ProviderURL returns the git provider URL
