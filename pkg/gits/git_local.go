@@ -180,8 +180,8 @@ func (g *GitLocal) PushMaster(dir string) error {
 
 // PushTag pushes the given tag into the origin
 // Faked out
-func (g *GitLocal) PushTag(dir string, tag string) error {
-	return g.GitFake.PushTag(dir, tag)
+func (g *GitLocal) PushTag(dir string, tag string, force bool) error {
+	return g.GitFake.PushTag(dir, tag, force)
 }
 
 // Add does a git add for all the given arguments

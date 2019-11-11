@@ -46,13 +46,14 @@ var (
 type CreatePullRequestOptions struct {
 	CreateOptions
 
-	Dir    string
-	Title  string
-	Body   string
-	Labels []string
-	Base   string
-	Push   bool
-	Fork   bool
+	Dir            string
+	Title          string
+	Body           string
+	Labels         []string
+	Base           string
+	Push           bool
+	Fork           bool
+	UpdateExisting bool
 
 	Results *gits.PullRequestInfo
 }
@@ -86,6 +87,7 @@ func NewCmdCreatePullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
 	cmd.Flags().BoolVarP(&options.Push, "push", "", false, "If true the contents of the source directory will be committed, pushed, and used to create the pull request")
 	cmd.Flags().BoolVarP(&options.Fork, "fork", "", false, "If true, and the username configured to push the repo is different from the org name a PR is being created against, assume that this is a fork")
+	cmd.Flags().BoolVarP(&options.UpdateExisting, "update-existing", "", false, "If true, lookup existing PRs based on the labels passed in and update an existing PR if one is found")
 
 	return cmd
 }
@@ -122,9 +124,20 @@ func (o *CreatePullRequestOptions) Run() error {
 		return errors.WithStack(err)
 	}
 
-	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, forkInfo, o.Base, details, nil, o.Push, details.Message, o.Push, false, o.Git(), provider)
+	var filter *gits.PullRequestFilter
+	if o.UpdateExisting {
+		filter = &gits.PullRequestFilter{
+			Labels: o.Labels,
+		}
+	}
+
+	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, forkInfo, o.Base, details, filter, o.Push, details.Message, o.Push, false, o.Git(), provider)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
+	}
+	err = gits.AddLabelsToPullRequest(o.Results, o.Labels)
+	if err != nil {
+		return errors.Wrapf(err, "failed to add label %s to PR %s", o.Labels, o.Results.PullRequest.URL)
 	}
 	return nil
 }

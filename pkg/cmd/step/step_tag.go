@@ -45,6 +45,7 @@ type StepTagFlags struct {
 	ChartsDir            string
 	ChartValueRepository string
 	NoApply              bool
+	ForcePush            bool
 }
 
 var (
@@ -94,7 +95,7 @@ func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.ChartValueRepository, "charts-value-repository", "r", "", "the fully qualified image name without the version tag. e.g. 'dockerregistry/myorg/myapp'")
 
 	cmd.Flags().BoolVarP(&options.Flags.NoApply, "no-apply", "", false, "Do not push the tag to the server, this is used for example in dry runs")
-
+	cmd.Flags().BoolVarP(&options.Flags.ForcePush, "force-push", "", false, "force push the tag to the server")
 	return cmd
 }
 
@@ -156,7 +157,7 @@ func (o *StepTagOptions) Run() error {
 	} else {
 
 		log.Logger().Debugf("pushing git tag %s", tag)
-		err = o.Git().PushTag("", tag)
+		err = o.Git().PushTag("", tag, o.Flags.ForcePush)
 		if err != nil {
 			return err
 		}

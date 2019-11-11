@@ -153,7 +153,7 @@ func (g *GitFake) PushMaster(dir string) error {
 }
 
 // PushTag pushes a tag
-func (g *GitFake) PushTag(dir string, tag string) error {
+func (g *GitFake) PushTag(dir string, tag string, force bool) error {
 	return nil
 }
 

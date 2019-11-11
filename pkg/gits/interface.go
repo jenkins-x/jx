@@ -204,7 +204,7 @@ type Gitter interface {
 	IsShallow(dir string) (bool, error)
 	Push(dir string, remote string, force bool, refspec ...string) error
 	PushMaster(dir string) error
-	PushTag(dir string, tag string) error
+	PushTag(dir string, tag string, force bool) error
 	// CreateAuthenticatedURL adds username and password into the specified git URL.
 	CreateAuthenticatedURL(url string, userAuth *auth.UserAuth) (string, error)
 	ForcePushBranch(dir string, localBranch string, remoteBranch string) error

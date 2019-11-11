@@ -432,8 +432,8 @@ func (g *GitCLI) PushMaster(dir string) error {
 }
 
 // Pushtag pushes the given tag into the origin
-func (g *GitCLI) PushTag(dir string, tag string) error {
-	return g.Push(dir, "origin", false, tag)
+func (g *GitCLI) PushTag(dir string, tag string, force bool) error {
+	return g.Push(dir, "origin", force, tag)
 }
 
 // Add does a git add for all the given arguments

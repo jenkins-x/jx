@@ -1421,7 +1421,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	err = gitter.Push(dir, "origin", false, "HEAD")
 	assert.NoError(t, err)
 
-	err = gitter.PushTag(dir, "v1.0.0")
+	err = gitter.PushTag(dir, "v1.0.0", false)
 	assert.NoError(t, err)
 	type args struct {
 		toOrg         string
