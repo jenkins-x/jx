@@ -1,12 +1,13 @@
-package deletecmd_test
+package deletecmd
 
 import (
 	"fmt"
 	"testing"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	clients_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -59,7 +60,7 @@ func TestDeleteApplicationInJenkins(t *testing.T) {
 	pegomock.When(jenkinsClient.GetJobs()).ThenReturn(pegomock.ReturnValue(jobs), pegomock.ReturnValue(nil))
 	pegomock.When(jenkinsClient.GetJob(pegomock.EqString(testRepoName))).ThenReturn(pegomock.ReturnValue(job), pegomock.ReturnValue(nil))
 
-	o := &deletecmd.DeleteApplicationOptions{
+	o := &DeleteApplicationOptions{
 		CommonOptions: &commonOpts,
 	}
 	o.Args = []string{testRepoName}
@@ -68,4 +69,41 @@ func TestDeleteApplicationInJenkins(t *testing.T) {
 	assert.NoError(t, err)
 
 	jenkinsClient.VerifyWasCalledOnce().DeleteJob(job)
+}
+
+func TestRemoveEnvrionmentFromJobs(t *testing.T) {
+	t.Parallel()
+
+	fakeEnv := &v1.Environment{
+		Spec: v1.EnvironmentSpec{
+			Source: v1.EnvironmentRepository{
+				URL: "http://github.com/owner/environment-repo-dev.git",
+			},
+		},
+	}
+
+	tests := []struct {
+		name string
+		jobs []string
+		envs map[string]*v1.Environment
+		want []string
+	}{
+		{
+			"when there's no matching environment",
+			[]string{"owner/job-repo", "owner/environment-foobar"},
+			map[string]*v1.Environment{"dev": fakeEnv},
+			[]string{"owner/job-repo", "owner/environment-foobar"},
+		},
+		{
+			"when there's an environment",
+			[]string{"owner/job-repo", "owner/environment-repo-dev"},
+			map[string]*v1.Environment{"dev": fakeEnv},
+			[]string{"owner/job-repo"},
+		},
+	}
+
+	for _, test := range tests {
+		got := removeEnvironments(test.jobs, test.envs)
+		assert.Equal(t, test.want, got, test.name)
+	}
 }
