@@ -139,6 +139,28 @@ func (o *DeleteApplicationOptions) Run() error {
 	return nil
 }
 
+func matchesWithAnyEnvironmentURL(s string, environments map[string]*v1.Environment) bool {
+	for _, environment := range environments {
+		if strings.Contains(environment.Spec.Source.URL, s) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func removeEnvironments(jobs []string, environments map[string]*v1.Environment) []string {
+	var applications []string
+
+	for _, job := range jobs {
+		if !matchesWithAnyEnvironmentURL(job, environments) {
+			applications = append(applications, job)
+		}
+	}
+
+	return applications
+}
+
 func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.SourceRepositoryInterface) (deletedApplications []string, err error) {
 	jxClient, _, err := o.JXClient()
 	if err != nil {
@@ -160,11 +182,12 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 		NS:           ns,
 		IgnoreBranch: true,
 	}
-	names, err := prowOptions.GetReleaseJobs()
+	jobs, err := prowOptions.GetReleaseJobs()
 	if err != nil {
 		return deletedApplications, fmt.Errorf("Failed to get ProwJobs")
 	}
 
+	names := removeEnvironments(jobs, envMap)
 	if len(names) == 0 {
 		return deletedApplications, fmt.Errorf("There are no Applications in Jenkins")
 	}
