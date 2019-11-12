@@ -355,7 +355,11 @@ func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 		assert.NoError(t, err)
 	}))
 
-	err := tl.StreamPipelinePersistentLogs(server.URL, &commonOptions)
+	jxClient, ns, err := commonOptions.JXClient()
+	assert.NoError(t, err)
+	authSvc, err := commonOptions.GitAuthConfigService()
+	assert.NoError(t, err)
+	err = tl.StreamPipelinePersistentLogs(server.URL, jxClient, ns, authSvc)
 	assert.NoError(t, err)
 
 	assert.Contains(t, tl.LogWriter.(*TestWriter).StreamLinesLogged[0], "This is an example log line")
@@ -373,7 +377,11 @@ func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 		},
 	}
 
-	err := tl.StreamPipelinePersistentLogs("azblob://nonSupportedBucket", &commonOptions)
+	jxClient, ns, err := commonOptions.JXClient()
+	assert.NoError(t, err)
+	authSvc, err := commonOptions.GitAuthConfigService()
+	assert.NoError(t, err)
+	err = tl.StreamPipelinePersistentLogs("azblob://nonSupportedBucket", jxClient, ns, authSvc)
 	assert.NoError(t, err)
 	assert.Contains(t, tl.LogWriter.(*TestWriter).StreamLinesLogged[0], "The provided logsURL scheme is not supported: azblob")
 }

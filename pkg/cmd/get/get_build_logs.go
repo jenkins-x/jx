@@ -338,7 +338,11 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 	}
 
 	if pa.Spec.BuildLogsURL != "" {
-		return false, o.TektonLogger.StreamPipelinePersistentLogs(pa.Spec.BuildLogsURL, o.CommonOptions)
+		authSvc, err := o.GitAuthConfigService()
+		if err != nil {
+			return false, err
+		}
+		return false, o.TektonLogger.StreamPipelinePersistentLogs(pa.Spec.BuildLogsURL, jxClient, ns, authSvc)
 	}
 
 	log.Logger().Infof("Build logs for %s", util.ColorInfo(name))
