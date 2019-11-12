@@ -211,6 +211,9 @@ func (o *BuildPodInfoFilter) LabelSelectorsForActivity() []string {
 	if o.Context != "" {
 		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelContext, o.Context))
 	}
+	if o.Build != "" {
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelBuild, o.Build))
+	}
 	return labelSelectors
 }
 
