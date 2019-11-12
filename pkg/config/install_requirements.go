@@ -803,172 +803,172 @@ func (i *IngressConfig) IsAutoDNSDomain() bool {
 }
 
 // OverrideRequirementsFromEnvironment allows properties to be overridden with environment variables
-func (requirements *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClouder) {
+func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClouder) {
 	if "" != os.Getenv(RequirementClusterName) {
-		requirements.Cluster.ClusterName = os.Getenv(RequirementClusterName)
+		c.Cluster.ClusterName = os.Getenv(RequirementClusterName)
 	}
 	if "" != os.Getenv(RequirementProject) {
-		requirements.Cluster.ProjectID = os.Getenv(RequirementProject)
+		c.Cluster.ProjectID = os.Getenv(RequirementProject)
 	}
 	if "" != os.Getenv(RequirementZone) {
-		requirements.Cluster.Zone = os.Getenv(RequirementZone)
+		c.Cluster.Zone = os.Getenv(RequirementZone)
 	}
 	if "" != os.Getenv(RequirementChartRepository) {
-		requirements.Cluster.ChartRepository = os.Getenv(RequirementChartRepository)
+		c.Cluster.ChartRepository = os.Getenv(RequirementChartRepository)
 	}
 	if "" != os.Getenv(RequirementRegistry) {
-		requirements.Cluster.Registry = os.Getenv(RequirementRegistry)
+		c.Cluster.Registry = os.Getenv(RequirementRegistry)
 	}
 	if "" != os.Getenv(RequirementEnvGitOwner) {
-		requirements.Cluster.EnvironmentGitOwner = os.Getenv(RequirementEnvGitOwner)
+		c.Cluster.EnvironmentGitOwner = os.Getenv(RequirementEnvGitOwner)
 	}
 	publicEnvRepo, found := os.LookupEnv(RequirementEnvGitPublic)
 	if found {
 		if publicEnvRepo == "true" {
-			requirements.Cluster.EnvironmentGitPublic = true
+			c.Cluster.EnvironmentGitPublic = true
 		} else {
-			requirements.Cluster.EnvironmentGitPublic = false
+			c.Cluster.EnvironmentGitPublic = false
 		}
 	}
 	publicAppRepo, found := os.LookupEnv(RequirementGitPublic)
 	if found {
 		if publicAppRepo == "true" {
-			requirements.Cluster.GitPublic = true
+			c.Cluster.GitPublic = true
 		} else {
-			requirements.Cluster.GitPublic = false
+			c.Cluster.GitPublic = false
 		}
 	}
 	if "" != os.Getenv(RequirementExternalDNSServiceAccountName) {
-		requirements.Cluster.ExternalDNSSAName = os.Getenv(RequirementExternalDNSServiceAccountName)
+		c.Cluster.ExternalDNSSAName = os.Getenv(RequirementExternalDNSServiceAccountName)
 	}
 	if "" != os.Getenv(RequirementVaultName) {
-		requirements.Vault.Name = os.Getenv(RequirementVaultName)
+		c.Vault.Name = os.Getenv(RequirementVaultName)
 	}
 	if "" != os.Getenv(RequirementVaultServiceAccountName) {
-		requirements.Vault.ServiceAccount = os.Getenv(RequirementVaultServiceAccountName)
+		c.Vault.ServiceAccount = os.Getenv(RequirementVaultServiceAccountName)
 	}
 	if "" != os.Getenv(RequirementVaultKeyringName) {
-		requirements.Vault.Keyring = os.Getenv(RequirementVaultKeyringName)
+		c.Vault.Keyring = os.Getenv(RequirementVaultKeyringName)
 	}
 	if "" != os.Getenv(RequirementVaultKeyName) {
-		requirements.Vault.Key = os.Getenv(RequirementVaultKeyName)
+		c.Vault.Key = os.Getenv(RequirementVaultKeyName)
 	}
 	if "" != os.Getenv(RequirementVaultBucketName) {
-		requirements.Vault.Bucket = os.Getenv(RequirementVaultBucketName)
+		c.Vault.Bucket = os.Getenv(RequirementVaultBucketName)
 	}
 	if "" != os.Getenv(RequirementVaultRecreateBucket) {
 		recreate := os.Getenv(RequirementVaultRecreateBucket)
 		if recreate == "true" {
-			requirements.Vault.RecreateBucket = true
+			c.Vault.RecreateBucket = true
 		} else {
-			requirements.Vault.RecreateBucket = false
+			c.Vault.RecreateBucket = false
 		}
 	}
 	if "" != os.Getenv(RequirementVaultDisableURLDiscovery) {
 		disable := os.Getenv(RequirementVaultDisableURLDiscovery)
 		if disable == "true" {
-			requirements.Vault.DisableURLDiscovery = true
+			c.Vault.DisableURLDiscovery = true
 		} else {
-			requirements.Vault.DisableURLDiscovery = false
+			c.Vault.DisableURLDiscovery = false
 		}
 	}
 	if "" != os.Getenv(RequirementSecretStorageType) {
-		requirements.SecretStorage = SecretStorageType(os.Getenv(RequirementSecretStorageType))
+		c.SecretStorage = SecretStorageType(os.Getenv(RequirementSecretStorageType))
 	}
 	if "" != os.Getenv(RequirementKanikoServiceAccountName) {
-		requirements.Cluster.KanikoSAName = os.Getenv(RequirementKanikoServiceAccountName)
+		c.Cluster.KanikoSAName = os.Getenv(RequirementKanikoServiceAccountName)
 	}
 	if "" != os.Getenv(RequirementDomainIssuerURL) {
-		requirements.Ingress.DomainIssuerURL = os.Getenv(RequirementDomainIssuerURL)
+		c.Ingress.DomainIssuerURL = os.Getenv(RequirementDomainIssuerURL)
 	}
 	if "" != os.Getenv(RequirementIngressTLSProduction) {
 		useProduction := os.Getenv(RequirementIngressTLSProduction)
 		if useProduction == "yes" {
-			requirements.Ingress.TLS.Production = true
+			c.Ingress.TLS.Production = true
 		} else {
-			requirements.Ingress.TLS.Production = false
+			c.Ingress.TLS.Production = false
 		}
 	}
 	if "" != os.Getenv(RequirementKaniko) {
 		kaniko := os.Getenv(RequirementKaniko)
 		if kaniko == "true" {
-			requirements.Kaniko = true
+			c.Kaniko = true
 		}
 	}
 	if "" != os.Getenv(RequirementRepository) {
 		repositoryString := os.Getenv(RequirementRepository)
-		requirements.Repository = RepositoryType(repositoryString)
+		c.Repository = RepositoryType(repositoryString)
 	}
 	if "" != os.Getenv(RequirementWebhook) {
 		webhookString := os.Getenv(RequirementWebhook)
-		requirements.Webhook = WebhookType(webhookString)
+		c.Webhook = WebhookType(webhookString)
 	}
 	if "" != os.Getenv(RequirementStorageBackupEnabled) {
 		storageBackup := os.Getenv(RequirementStorageBackupEnabled)
 		if storageBackup == "true" && "" != os.Getenv(RequirementStorageBackupURL) {
-			requirements.Storage.Backup.Enabled = true
-			requirements.Storage.Backup.URL = os.Getenv(RequirementStorageBackupURL)
+			c.Storage.Backup.Enabled = true
+			c.Storage.Backup.URL = os.Getenv(RequirementStorageBackupURL)
 		}
 	}
 	if "" != os.Getenv(RequirementStorageLogsEnabled) {
 		storageLogs := os.Getenv(RequirementStorageLogsEnabled)
 		if storageLogs == "true" && "" != os.Getenv(RequirementStorageLogsURL) {
-			requirements.Storage.Logs.Enabled = true
-			requirements.Storage.Logs.URL = os.Getenv(RequirementStorageLogsURL)
+			c.Storage.Logs.Enabled = true
+			c.Storage.Logs.URL = os.Getenv(RequirementStorageLogsURL)
 		}
 	}
 	if "" != os.Getenv(RequirementStorageReportsEnabled) {
 		storageReports := os.Getenv(RequirementStorageReportsEnabled)
 		if storageReports == "true" && "" != os.Getenv(RequirementStorageReportsURL) {
-			requirements.Storage.Reports.Enabled = true
-			requirements.Storage.Reports.URL = os.Getenv(RequirementStorageReportsURL)
+			c.Storage.Reports.Enabled = true
+			c.Storage.Reports.URL = os.Getenv(RequirementStorageReportsURL)
 		}
 	}
 	if "" != os.Getenv(RequirementStorageRepositoryEnabled) {
 		storageRepository := os.Getenv(RequirementStorageRepositoryEnabled)
 		if storageRepository == "true" && "" != os.Getenv(RequirementStorageRepositoryURL) {
-			requirements.Storage.Repository.Enabled = true
-			requirements.Storage.Repository.URL = os.Getenv(RequirementStorageRepositoryURL)
+			c.Storage.Repository.Enabled = true
+			c.Storage.Repository.URL = os.Getenv(RequirementStorageRepositoryURL)
 		}
 	}
-	// GKE specific requirements
+	// GKE specific c
 	if "" != os.Getenv(RequirementGkeProjectNumber) {
-		if requirements.Cluster.GKEConfig == nil {
-			requirements.Cluster.GKEConfig = &GKEConfig{}
+		if c.Cluster.GKEConfig == nil {
+			c.Cluster.GKEConfig = &GKEConfig{}
 		}
 
-		requirements.Cluster.GKEConfig.ProjectNumber = os.Getenv(RequirementGkeProjectNumber)
+		c.Cluster.GKEConfig.ProjectNumber = os.Getenv(RequirementGkeProjectNumber)
 	}
 	githubApp, found := os.LookupEnv(RequirementGitAppEnabled)
 	if found {
-		if requirements.GithubApp == nil {
-			requirements.GithubApp = &GithubAppConfig{}
+		if c.GithubApp == nil {
+			c.GithubApp = &GithubAppConfig{}
 		}
 		if githubApp == "yes" {
-			requirements.GithubApp.Enabled = true
+			c.GithubApp.Enabled = true
 		} else {
-			requirements.GithubApp.Enabled = false
+			c.GithubApp.Enabled = false
 		}
 	}
 	if "" != os.Getenv(RequirementGitAppURL) {
-		if requirements.GithubApp == nil {
-			requirements.GithubApp = &GithubAppConfig{}
+		if c.GithubApp == nil {
+			c.GithubApp = &GithubAppConfig{}
 		}
-		requirements.GithubApp.URL = os.Getenv(RequirementGitAppURL)
+		c.GithubApp.URL = os.Getenv(RequirementGitAppURL)
 	}
 	// set this if its not currently configured
-	if requirements.Cluster.Provider == "gke" {
-		if requirements.Cluster.GKEConfig == nil {
-			requirements.Cluster.GKEConfig = &GKEConfig{}
+	if c.Cluster.Provider == "gke" {
+		if c.Cluster.GKEConfig == nil {
+			c.Cluster.GKEConfig = &GKEConfig{}
 		}
 
-		if requirements.Cluster.GKEConfig.ProjectNumber == "" {
+		if c.Cluster.GKEConfig.ProjectNumber == "" {
 			if gcloud != nil {
-				projectNumber, err := gcloud.GetProjectNumber(requirements.Cluster.ProjectID)
+				projectNumber, err := gcloud.GetProjectNumber(c.Cluster.ProjectID)
 				if err != nil {
 					log.Logger().Warnf("unable to determine gke project number - %s", err)
 				}
-				requirements.Cluster.GKEConfig.ProjectNumber = projectNumber
+				c.Cluster.GKEConfig.ProjectNumber = projectNumber
 			}
 		}
 	}
