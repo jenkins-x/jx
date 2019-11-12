@@ -11,6 +11,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/auth"
+
+	"github.com/jenkins-x/jx/pkg/cloud/buckets"
+	"github.com/jenkins-x/jx/pkg/config"
+
 	"github.com/fatih/color"
 	"github.com/google/uuid"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -18,9 +23,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cloud/factory"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -440,7 +442,7 @@ func (t TektonLogger) waitForContainerToStart(ns string, pod *corev1.Pod, idx in
 }
 
 // StreamPipelinePersistentLogs reads logs from the provided bucket URL and writes them using the provided LogWriter
-func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.CommonOptions) error {
+func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, jxClient versioned.Interface, ns string, authSvc auth.ConfigService) error {
 	t.initializeLoggingRoutine()
 	u, err := url.Parse(logsURL)
 	if err != nil {
@@ -449,7 +451,7 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 	var logBytes []byte
 	switch u.Scheme {
 	case "gs":
-		scanner, err := performProviderDownload(logsURL)
+		scanner, err := performProviderDownload(logsURL, jxClient, ns)
 		if err != nil {
 			// TODO: This is only here as long as we keep supporting non boot clusters, as GKE are the only ones with LTS supported outside of boot
 			scanner, err2 := gke.StreamTransferFileFromBucket(logsURL)
@@ -460,13 +462,13 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 		}
 		return t.streamPipedLogs(scanner, logsURL)
 	case "s3":
-		scanner, err := performProviderDownload(logsURL)
+		scanner, err := performProviderDownload(logsURL, jxClient, ns)
 		if err != nil {
 			return errors.Wrap(err, "there was a problem downloading logs from s3 bucket")
 		}
 		return t.streamPipedLogs(scanner, logsURL)
 	case "http", "https":
-		logBytes, err = downloadLogFile(logsURL, o)
+		logBytes, err = downloadLogFile(logsURL, authSvc)
 		if err != nil {
 			return errors.Wrapf(err, "there was a problem obtaining the log file from the github pages URL %s", logsURL)
 		}
@@ -559,17 +561,11 @@ func (t TektonLogger) retrieveLogsFromPod(pod *corev1.Pod, container *corev1.Con
 	}, nil
 }
 
-func downloadLogFile(logsURL string, o *opts.CommonOptions) ([]byte, error) {
+func downloadLogFile(logsURL string, authSvc auth.ConfigService) ([]byte, error) {
 	f, _ := ioutil.TempFile("", uuid.New().String())
 	defer util.DeleteFile(f.Name())
-	unstashStep := step.StepUnstashOptions{
-		StepOptions: step2.StepOptions{
-			CommonOptions: o,
-		},
-		URL:    logsURL,
-		OutDir: f.Name(),
-	}
-	err := unstashStep.Run()
+
+	err := step.Unstash(logsURL, f.Name(), time.Second*30, authSvc)
 	if err != nil {
 		return nil, err
 	}
@@ -580,10 +576,22 @@ func downloadLogFile(logsURL string, o *opts.CommonOptions) ([]byte, error) {
 	return logBytes, nil
 }
 
-func performProviderDownload(logsURL string) (*bufio.Scanner, error) {
-	provider, err := factory.NewBucketProviderFromTeamSettingsConfiguration(clients.NewFactory())
+func performProviderDownload(logsURL string, jxClient versioned.Interface, ns string) (*bufio.Scanner, error) {
+	provider, err := NewBucketProviderFromTeamSettingsConfiguration(jxClient, ns)
 	if err != nil {
 		return nil, errors.Wrap(err, "There was a problem obtaining a Bucket provider for bucket scheme gs://")
 	}
 	return provider.DownloadFileFromBucket(logsURL)
+}
+
+func NewBucketProviderFromTeamSettingsConfiguration(jxClient versioned.Interface, ns string) (buckets.Provider, error) {
+	teamSettings, err := kube.GetDevEnvTeamSettings(jxClient, ns)
+	if err != nil {
+		return nil, errors.Wrap(err, "error obtaining the dev environment teamSettings to select the correct bucket provider")
+	}
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil || requirements == nil {
+		return nil, util.CombineErrors(err, errors.New("error obtaining the requirements file to decide bucket provider"))
+	}
+	return factory.NewBucketProvider(requirements), nil
 }

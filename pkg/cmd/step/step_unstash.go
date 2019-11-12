@@ -73,12 +73,19 @@ func NewCmdStepUnstash(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run runs the command
 func (o *StepUnstashOptions) Run() error {
-	u := o.URL
+	authSvc, err := o.GitAuthConfigService()
+	if err != nil {
+		return err
+	}
+	return Unstash(o.URL, o.OutDir, o.Timeout, authSvc)
+}
+
+func Unstash(u string, outDir string, timeout time.Duration, authSvc auth.ConfigService) error {
 	if u == "" {
 		// TODO lets guess from the project etc...
 		return util.MissingOption("url")
 	}
-	file := o.OutDir
+	file := outDir
 	if file != "" {
 		isDir, err := util.DirExists(file)
 		if err != nil {
@@ -97,12 +104,7 @@ func (o *StepUnstashOptions) Run() error {
 		}
 	}
 
-	authSvc, err := o.GitAuthConfigService()
-	if err != nil {
-		return err
-	}
-
-	data, err := buckets.ReadURL(u, o.Timeout, CreateBucketHTTPFn(authSvc))
+	data, err := buckets.ReadURL(u, timeout, CreateBucketHTTPFn(authSvc))
 	if err != nil {
 		return err
 	}
@@ -121,14 +123,16 @@ func (o *StepUnstashOptions) Run() error {
 // CreateBucketHTTPFn creates a function to transform a git URL to add the token for accessing a git based bucket
 func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, error) {
 	return func(urlText string) (string, error) {
-		token, err := GetTokenForGitURL(authSvc, urlText)
-		if err != nil {
-			log.Logger().Warnf("Could not find the git token to access urlText %s due to: %s", urlText, err)
-		} else if token != "" {
-			idx := strings.Index(urlText, "://")
-			if idx > 0 {
-				idx += 3
-				urlText = urlText[0:idx] + token + "@" + urlText[idx:]
+		if authSvc != nil {
+			token, err := GetTokenForGitURL(authSvc, urlText)
+			if err != nil {
+				log.Logger().Warnf("Could not find the git token to access urlText %s due to: %s", urlText, err)
+			} else if token != "" {
+				idx := strings.Index(urlText, "://")
+				if idx > 0 {
+					idx += 3
+					urlText = urlText[0:idx] + token + "@" + urlText[idx:]
+				}
 			}
 		}
 		return urlText, nil
