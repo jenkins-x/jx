@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/imdario/mergo"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -180,7 +181,7 @@ var (
 	// DefaultVersionsRef default version stream ref
 	DefaultVersionsRef = "master"
 	// DefaultBootRepository default git repo for boot
-	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
+	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-git"
 	// LatestVersionStringsBucket optional bucket name to search in for latest version strings
 	LatestVersionStringsBucket = ""
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
@@ -390,7 +391,7 @@ func (t *ClusterConfig) UnmarshalJSON(data []byte) error {
 	}
 
 	if gitPrivateSet {
-		log.Logger().Warn("EnvironmentGitPrivate specified in ClusterConfig. EnvironmentGitPrivate is deprecated use EnvironmentGitPublic instead.")
+		log.Logger().Warn("EnvironmentGitPrivate specified in Cluster EnvironmentGitPrivate is deprecated use EnvironmentGitPublic instead.")
 		privateString := string(private)
 		if privateString == "true" {
 			t.EnvironmentGitPublic = false
@@ -799,4 +800,176 @@ func (i *IngressConfig) IsAutoDNSDomain() bool {
 		}
 	}
 	return false
+}
+
+// OverrideRequirementsFromEnvironment allows properties to be overridden with environment variables
+func (requirements *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClouder) {
+	if "" != os.Getenv(RequirementClusterName) {
+		requirements.Cluster.ClusterName = os.Getenv(RequirementClusterName)
+	}
+	if "" != os.Getenv(RequirementProject) {
+		requirements.Cluster.ProjectID = os.Getenv(RequirementProject)
+	}
+	if "" != os.Getenv(RequirementZone) {
+		requirements.Cluster.Zone = os.Getenv(RequirementZone)
+	}
+	if "" != os.Getenv(RequirementChartRepository) {
+		requirements.Cluster.ChartRepository = os.Getenv(RequirementChartRepository)
+	}
+	if "" != os.Getenv(RequirementRegistry) {
+		requirements.Cluster.Registry = os.Getenv(RequirementRegistry)
+	}
+	if "" != os.Getenv(RequirementEnvGitOwner) {
+		requirements.Cluster.EnvironmentGitOwner = os.Getenv(RequirementEnvGitOwner)
+	}
+	publicEnvRepo, found := os.LookupEnv(RequirementEnvGitPublic)
+	if found {
+		if publicEnvRepo == "true" {
+			requirements.Cluster.EnvironmentGitPublic = true
+		} else {
+			requirements.Cluster.EnvironmentGitPublic = false
+		}
+	}
+	publicAppRepo, found := os.LookupEnv(RequirementGitPublic)
+	if found {
+		if publicAppRepo == "true" {
+			requirements.Cluster.GitPublic = true
+		} else {
+			requirements.Cluster.GitPublic = false
+		}
+	}
+	if "" != os.Getenv(RequirementExternalDNSServiceAccountName) {
+		requirements.Cluster.ExternalDNSSAName = os.Getenv(RequirementExternalDNSServiceAccountName)
+	}
+	if "" != os.Getenv(RequirementVaultName) {
+		requirements.Vault.Name = os.Getenv(RequirementVaultName)
+	}
+	if "" != os.Getenv(RequirementVaultServiceAccountName) {
+		requirements.Vault.ServiceAccount = os.Getenv(RequirementVaultServiceAccountName)
+	}
+	if "" != os.Getenv(RequirementVaultKeyringName) {
+		requirements.Vault.Keyring = os.Getenv(RequirementVaultKeyringName)
+	}
+	if "" != os.Getenv(RequirementVaultKeyName) {
+		requirements.Vault.Key = os.Getenv(RequirementVaultKeyName)
+	}
+	if "" != os.Getenv(RequirementVaultBucketName) {
+		requirements.Vault.Bucket = os.Getenv(RequirementVaultBucketName)
+	}
+	if "" != os.Getenv(RequirementVaultRecreateBucket) {
+		recreate := os.Getenv(RequirementVaultRecreateBucket)
+		if recreate == "true" {
+			requirements.Vault.RecreateBucket = true
+		} else {
+			requirements.Vault.RecreateBucket = false
+		}
+	}
+	if "" != os.Getenv(RequirementVaultDisableURLDiscovery) {
+		disable := os.Getenv(RequirementVaultDisableURLDiscovery)
+		if disable == "true" {
+			requirements.Vault.DisableURLDiscovery = true
+		} else {
+			requirements.Vault.DisableURLDiscovery = false
+		}
+	}
+	if "" != os.Getenv(RequirementSecretStorageType) {
+		requirements.SecretStorage = SecretStorageType(os.Getenv(RequirementSecretStorageType))
+	}
+	if "" != os.Getenv(RequirementKanikoServiceAccountName) {
+		requirements.Cluster.KanikoSAName = os.Getenv(RequirementKanikoServiceAccountName)
+	}
+	if "" != os.Getenv(RequirementDomainIssuerURL) {
+		requirements.Ingress.DomainIssuerURL = os.Getenv(RequirementDomainIssuerURL)
+	}
+	if "" != os.Getenv(RequirementIngressTLSProduction) {
+		useProduction := os.Getenv(RequirementIngressTLSProduction)
+		if useProduction == "yes" {
+			requirements.Ingress.TLS.Production = true
+		} else {
+			requirements.Ingress.TLS.Production = false
+		}
+	}
+	if "" != os.Getenv(RequirementKaniko) {
+		kaniko := os.Getenv(RequirementKaniko)
+		if kaniko == "true" {
+			requirements.Kaniko = true
+		}
+	}
+	if "" != os.Getenv(RequirementRepository) {
+		repositoryString := os.Getenv(RequirementRepository)
+		requirements.Repository = RepositoryType(repositoryString)
+	}
+	if "" != os.Getenv(RequirementWebhook) {
+		webhookString := os.Getenv(RequirementWebhook)
+		requirements.Webhook = WebhookType(webhookString)
+	}
+	if "" != os.Getenv(RequirementStorageBackupEnabled) {
+		storageBackup := os.Getenv(RequirementStorageBackupEnabled)
+		if storageBackup == "true" && "" != os.Getenv(RequirementStorageBackupURL) {
+			requirements.Storage.Backup.Enabled = true
+			requirements.Storage.Backup.URL = os.Getenv(RequirementStorageBackupURL)
+		}
+	}
+	if "" != os.Getenv(RequirementStorageLogsEnabled) {
+		storageLogs := os.Getenv(RequirementStorageLogsEnabled)
+		if storageLogs == "true" && "" != os.Getenv(RequirementStorageLogsURL) {
+			requirements.Storage.Logs.Enabled = true
+			requirements.Storage.Logs.URL = os.Getenv(RequirementStorageLogsURL)
+		}
+	}
+	if "" != os.Getenv(RequirementStorageReportsEnabled) {
+		storageReports := os.Getenv(RequirementStorageReportsEnabled)
+		if storageReports == "true" && "" != os.Getenv(RequirementStorageReportsURL) {
+			requirements.Storage.Reports.Enabled = true
+			requirements.Storage.Reports.URL = os.Getenv(RequirementStorageReportsURL)
+		}
+	}
+	if "" != os.Getenv(RequirementStorageRepositoryEnabled) {
+		storageRepository := os.Getenv(RequirementStorageRepositoryEnabled)
+		if storageRepository == "true" && "" != os.Getenv(RequirementStorageRepositoryURL) {
+			requirements.Storage.Repository.Enabled = true
+			requirements.Storage.Repository.URL = os.Getenv(RequirementStorageRepositoryURL)
+		}
+	}
+	// GKE specific requirements
+	if "" != os.Getenv(RequirementGkeProjectNumber) {
+		if requirements.Cluster.GKEConfig == nil {
+			requirements.Cluster.GKEConfig = &GKEConfig{}
+		}
+
+		requirements.Cluster.GKEConfig.ProjectNumber = os.Getenv(RequirementGkeProjectNumber)
+	}
+	githubApp, found := os.LookupEnv(RequirementGitAppEnabled)
+	if found {
+		if requirements.GithubApp == nil {
+			requirements.GithubApp = &GithubAppConfig{}
+		}
+		if githubApp == "yes" {
+			requirements.GithubApp.Enabled = true
+		} else {
+			requirements.GithubApp.Enabled = false
+		}
+	}
+	if "" != os.Getenv(RequirementGitAppURL) {
+		if requirements.GithubApp == nil {
+			requirements.GithubApp = &GithubAppConfig{}
+		}
+		requirements.GithubApp.URL = os.Getenv(RequirementGitAppURL)
+	}
+	// set this if its not currently configured
+	if requirements.Cluster.Provider == "gke" {
+		if requirements.Cluster.GKEConfig == nil {
+			requirements.Cluster.GKEConfig = &GKEConfig{}
+		}
+
+		if requirements.Cluster.GKEConfig.ProjectNumber == "" {
+			if gcloud != nil {
+				projectNumber, err := gcloud.GetProjectNumber(requirements.Cluster.ProjectID)
+				if err != nil {
+					log.Logger().Warnf("unable to determine gke project number - %s", err)
+				}
+				requirements.Cluster.GKEConfig.ProjectNumber = projectNumber
+			}
+		}
+	}
 }
