@@ -109,12 +109,12 @@ func (o *StepGetSubdomainOptions) discoverIngressDomain(requirements *config.Req
 	}
 
 	if requirements.Ingress.DomainIssuerURL != "" {
-		projectName := requirements.Cluster.ProjectID
-		if requirements.Cluster.ConsumerProjectID != "" {
-			projectName = requirements.Cluster.ConsumerProjectID
-			log.Logger().Infof("Overriding projectName with '%s' when getting domain", projectName)
+		domainPrefix := requirements.Cluster.ProjectID
+		if requirements.Ingress.DomainPrefixOverride != "" {
+			domainPrefix = requirements.Ingress.DomainPrefixOverride
+			log.Logger().Infof("Overriding domainPrefix with '%s' when getting domain", domainPrefix)
 		}
-		domain, err = o.getDomainFromIssuer(requirements.Ingress.DomainIssuerURL, projectName, requirements.Cluster.ClusterName)
+		domain, err = o.getDomainFromIssuer(requirements.Ingress.DomainIssuerURL, domainPrefix, requirements.Cluster.ClusterName)
 		if err != nil {
 			return errors.Wrap(err, "issuing domain")
 		}

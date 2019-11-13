@@ -39,12 +39,12 @@ const (
 	RequirementDomainIssuerPassword = "JX_REQUIREMENT_DOMAIN_ISSUER_PASSWORD"
 	// RequirementDomainIssuerURL contains the URL to the service used when requesting a domain
 	RequirementDomainIssuerURL = "JX_REQUIREMENT_DOMAIN_ISSUER_URL"
+	// RequirementDomainPrefixOverride is the name of the prefix to be used rather than the project id
+	RequirementDomainPrefixOverride = "JX_REQUIREMENT_DOMAIN_PREFIX_OVERRIDE"
 	// RequirementClusterName is the cluster name
 	RequirementClusterName = "JX_REQUIREMENT_CLUSTER_NAME"
 	// RequirementProject is the cloudprovider project
 	RequirementProject = "JX_REQUIREMENT_PROJECT"
-	// RequirementConsumerProject is the name of the consumer project
-	RequirementConsumerProject = "JX_REQUIREMENT_CONSUMER_PROJECT"
 	// RequirementZone zone the cluster is in
 	RequirementZone = "JX_REQUIREMENT_ZONE"
 	// RequirementEnvGitOwner the default git owner for environment repositories if none is specified explicitly
@@ -230,6 +230,8 @@ type IngressConfig struct {
 	TLS TLSConfig `json:"tls"`
 	// DomainIssuerURL contains a URL used to retrieve a Domain
 	DomainIssuerURL string `json:"domainIssuerURL,omitempty"`
+	// DomainPrefixOverride when binding to a domain issuer, use this as the prefix rather than the project id
+	DomainPrefixOverride string `json:"domainPrefixOverride,omitempty"`
 }
 
 // TLSConfig contains TLS specific requirements
@@ -304,8 +306,6 @@ type ClusterConfig struct {
 	Namespace string `json:"namespace,omitempty"`
 	// ProjectID the cloud project ID e.g. on GCP
 	ProjectID string `json:"project,omitempty"`
-	// ConsumerProjectID when binding to a domain issuer, this is the consumer project
-	ConsumerProjectID string `json:"consumerProjectId,omitempty"`
 	// ClusterName the logical name of the cluster
 	ClusterName string `json:"clusterName,omitempty"`
 	// VaultName the name of the vault if using vault for secrets
