@@ -7,6 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -33,7 +37,8 @@ import (
 )
 
 var (
-	optionSecretsScheme = "secrets-scheme"
+	optionSecretsScheme    = "secrets-scheme"
+	localSecretsSecretName = "local-param-secrets" //#nosec
 )
 
 var (
@@ -181,6 +186,17 @@ func (o *StepCreateValuesOptions) Run() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
+	err = o.createExternalRegistryValues(requirements, fileName, secretURLClient)
+	if err != nil {
+		return errors.Wrap(err, "error enabling access to an external docker registry")
+	}
+
+	err = o.createLocalSecretFilesSecret(requirements)
+	if err != nil {
+		return errors.Wrap(err, "error creating the secret for local secret scheme")
+	}
+
 	fmt.Println()
 	return nil
 }
@@ -289,6 +305,98 @@ func (o *StepCreateValuesOptions) verifyRegistryConfig(requirements *config.Requ
 		log.Logger().Warn("jx boot does not yet support automatically populating the container registry secrets automatically...")
 	}
 	return nil
+}
+
+func (o *StepCreateValuesOptions) createExternalRegistryValues(requirements *config.RequirementsConfig, requirementsConfigFile string, secretsClient secreturl.Client) error {
+	params, err := helm.LoadParameters(o.Dir, secretsClient)
+	if err != nil {
+		return err
+	}
+
+	if val, exists := params["enableDocker"]; exists && val.(bool) {
+		dockerConfig := params["docker"].(map[string]interface{})
+		requirements.Cluster.Registry = getValidRegistryPushURL(dockerConfig["url"].(string))
+		err = requirements.SaveConfig(requirementsConfigFile)
+		if err != nil {
+			return errors.Wrap(err, "error saving the modified requirements.yml file")
+		}
+	}
+
+	return nil
+}
+
+// Sometimes the push URL is different than the one needed to configure auth, so we need to get the correct ones
+// creating this for future registries
+func getValidRegistryPushURL(url string) string {
+	switch url {
+	case "https://index.docker.io/v1/":
+		return "docker.io"
+	default:
+		log.Logger().Warnf("Unexpected registry auth URL %s - using it as registry push URL", url)
+		return url
+	}
+}
+
+func (o *StepCreateValuesOptions) createLocalSecretFilesSecret(requirements *config.RequirementsConfig) error {
+	if o.SecretsScheme == "local" && (os.Getenv("OVERRIDE_IN_CLUSTER_CHECK") == "true" || !cluster.IsInCluster()) {
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			return err
+		}
+		secretFiles, err := getLocalSecretFilesAsMap(requirements)
+		if err != nil {
+			return errors.Wrap(err, "there was a problem obtaining the local secret files")
+		}
+		existingSecret, err := kubeClient.CoreV1().Secrets(ns).Get(localSecretsSecretName, metav1.GetOptions{})
+		if err != nil {
+			secret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: localSecretsSecretName,
+				},
+				Data: secretFiles,
+			}
+			_, err = kubeClient.CoreV1().Secrets(ns).Create(secret)
+			if err != nil {
+				return errors.Wrap(err, "there was a problem creating the local params secret")
+			}
+			return nil
+		}
+
+		existingSecret.Data = secretFiles
+		_, err = kubeClient.CoreV1().Secrets(ns).Update(existingSecret)
+		if err != nil {
+			return errors.Wrap(err, "there was a problem updating the local params secret")
+		}
+	}
+	return nil
+}
+
+func getLocalSecretFilesAsMap(requirements *config.RequirementsConfig) (map[string][]byte, error) {
+	dir, err := util.LocalFileSystemSecretsDir()
+	if err != nil {
+		return nil, errors.Wrap(err, "there was a problem obtaining the local file system for secrets")
+	}
+	fullSecretsPath := filepath.Join(dir, requirements.Cluster.ClusterName)
+	exists, err := util.DirExists(fullSecretsPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if full secrets path exists")
+	}
+	if !exists {
+		return nil, errors.Wrapf(err, "secrets path for cluster name %s doesn't exist", requirements.Cluster.ClusterName)
+	}
+	files, err := ioutil.ReadDir(fullSecretsPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "error reading secret files from localStorage")
+	}
+	secretFiles := make(map[string][]byte)
+	for _, f := range files {
+		bytes, err := ioutil.ReadFile(filepath.Join(fullSecretsPath, f.Name()))
+		if err != nil {
+			return nil, errors.Wrap(err, "there was a problem reading a local secrets file")
+		}
+		secretFiles[f.Name()] = bytes
+	}
+	return secretFiles, nil
 }
 
 func (o *StepCreateValuesOptions) enableOpenShiftRegistryPermissions(ns string, registry string) (string, error) {
