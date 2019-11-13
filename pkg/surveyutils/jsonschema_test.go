@@ -495,6 +495,24 @@ enablePersistentStorage: false
 	})
 }
 
+func TestIfElseTrueBoolean(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		values, _, err := GenerateValuesAsYaml(r, "ifThenElseTrueBoolean.test.schema.json", make(map[string]interface{}), false, false, false, false, func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("N")
+			console.ExpectString("Enter a value for enableInMemoryDB")
+			console.SendLine("N")
+			console.ExpectEOF()
+		}, nil)
+		assert.NoError(r, err)
+		assert.Equal(r, `enableInMemoryDB: false
+enablePersistentStorage: false
+`, values)
+	})
+}
+
 func TestIfElseNested(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
