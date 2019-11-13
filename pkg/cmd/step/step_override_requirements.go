@@ -64,6 +64,9 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	if "" != os.Getenv(config.RequirementProject) {
 		requirements.Cluster.ProjectID = os.Getenv(config.RequirementProject)
 	}
+	if "" != os.Getenv(config.RequirementConsumerProject) {
+		requirements.Cluster.ConsumerProjectID = os.Getenv(config.RequirementConsumerProject)
+	}
 	if "" != os.Getenv(config.RequirementZone) {
 		requirements.Cluster.Zone = os.Getenv(config.RequirementZone)
 	}

@@ -43,6 +43,8 @@ const (
 	RequirementClusterName = "JX_REQUIREMENT_CLUSTER_NAME"
 	// RequirementProject is the cloudprovider project
 	RequirementProject = "JX_REQUIREMENT_PROJECT"
+	// RequirementConsumerProject is the name of the consumer project
+	RequirementConsumerProject = "JX_REQUIREMENT_CONSUMER_PROJECT"
 	// RequirementZone zone the cluster is in
 	RequirementZone = "JX_REQUIREMENT_ZONE"
 	// RequirementEnvGitOwner the default git owner for environment repositories if none is specified explicitly
@@ -302,6 +304,8 @@ type ClusterConfig struct {
 	Namespace string `json:"namespace,omitempty"`
 	// ProjectID the cloud project ID e.g. on GCP
 	ProjectID string `json:"project,omitempty"`
+	// ConsumerProjectID when binding to a domain issuer, this is the consumer project
+	ConsumerProjectID string `json:"consumerProjectId,omitempty"`
 	// ClusterName the logical name of the cluster
 	ClusterName string `json:"clusterName,omitempty"`
 	// VaultName the name of the vault if using vault for secrets
