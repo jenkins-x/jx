@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"os"
@@ -107,7 +108,7 @@ func (o *StepVerifyPodReadyOptions) waitForReadyPods(kubeClient kubernetes.Inter
 	var listOptions metav1.ListOptions
 	if o.ExcludeBuildPods {
 		listOptions = metav1.ListOptions{
-			LabelSelector: "created-by-prow != true",
+			LabelSelector: fmt.Sprintf("!%s", builds.LabelPipelineRunName),
 		}
 	} else {
 		listOptions = metav1.ListOptions{}
