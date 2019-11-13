@@ -173,6 +173,7 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 			repo := labels[tekton.LabelRepo]
 			branch := labels[tekton.LabelBranch]
 			context := labels[tekton.LabelContext]
+			buildNumber := labels[tekton.LabelBuild]
 
 			if owner == "" {
 				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelOwner, pr.Name, labels)
@@ -187,7 +188,8 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 				continue
 			}
 
-			name := fmt.Sprintf("%s/%s/%s", owner, repo, branch)
+			name := fmt.Sprintf("%s/%s/%s #%s", owner, repo, branch, buildNumber)
+
 			if context != "" {
 				name = fmt.Sprintf("%s-%s", name, context)
 			}
