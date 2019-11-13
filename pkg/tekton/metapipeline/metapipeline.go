@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
@@ -130,6 +131,22 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 		Steps: steps,
 		Agent: &syntax.Agent{
 			Image: determineDefaultStepImage(params.DefaultImage),
+		},
+		Options: &syntax.StageOptions{
+			RootOptions: &syntax.RootOptions{
+				ContainerOptions: &corev1.Container{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"cpu":    resource.MustParse("0.8"),
+							"memory": resource.MustParse("512Mi"),
+						},
+						Requests: corev1.ResourceList{
+							"cpu":    resource.MustParse("0.4"),
+							"memory": resource.MustParse("256Mi"),
+						},
+					},
+				},
+			},
 		},
 	}
 
