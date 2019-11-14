@@ -193,6 +193,13 @@ func PipelineContainerOptions(ops ...builder.ContainerOp) PipelineOptionsOp {
 	}
 }
 
+// PipelineTolerations sets the tolerations for the pipeline
+func PipelineTolerations(tolerations []corev1.Toleration) PipelineOptionsOp {
+	return func(options *syntax.RootOptions) {
+		options.Tolerations = append(options.Tolerations, tolerations...)
+	}
+}
+
 // StageContainerOptions sets the containerOptions for a stage
 func StageContainerOptions(ops ...builder.ContainerOp) StageOptionsOp {
 	return func(options *syntax.StageOptions) {

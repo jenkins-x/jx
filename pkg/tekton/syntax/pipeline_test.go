@@ -1317,6 +1317,44 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					sh.StructureStagePrevious("Parent Stage")),
 			),
 		},
+		{
+			name: "tolerations",
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineOptions(
+					sh.PipelineTolerations([]corev1.Toleration{{
+						Key:      "some-key",
+						Operator: "Exists",
+						Effect:   "NoSchedule",
+					}}),
+				),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
+						sh.StepName("A Step With Spaces And Such"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+				),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("source"))),
+						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+						tb.Step("a-step-with-spaces-and-such", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
+					)),
+			},
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			),
+		},
 	}
 
 	for _, tt := range tests {

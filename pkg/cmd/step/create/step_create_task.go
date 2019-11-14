@@ -665,7 +665,7 @@ func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *confi
 			return nil, errors.Wrapf(err, "parsing of pipeline timeout failed")
 		}
 	}
-	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, o.labels, o.ServiceAccount, o.pipelineParams, timeout, effectivePipeline.GetPossibleAffinityPolicy(pipeline.Name))
+	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, o.labels, o.ServiceAccount, o.pipelineParams, timeout, effectivePipeline.GetPossibleAffinityPolicy(pipeline.Name), effectivePipeline.GetTolerations())
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
 	if err != nil {

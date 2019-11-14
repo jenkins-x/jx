@@ -286,7 +286,8 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 	serviceAccount string,
 	pipelineParams []pipelineapi.Param,
 	timeout *metav1.Duration,
-	affinity *corev1.Affinity) *pipelineapi.PipelineRun {
+	affinity *corev1.Affinity,
+	tolerations []corev1.Toleration) *pipelineapi.PipelineRun {
 	var resourceBindings []pipelineapi.PipelineResourceBinding
 	for _, resource := range resources {
 		resourceBindings = append(resourceBindings, pipelineapi.PipelineResourceBinding{
@@ -320,8 +321,9 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 			Resources: resourceBindings,
 			Params:    pipelineParams,
 			// TODO: We shouldn't have to set a default timeout in the first place. See https://github.com/tektoncd/pipeline/issues/978
-			Timeout:  timeout,
-			Affinity: affinity,
+			Timeout:     timeout,
+			Affinity:    affinity,
+			Tolerations: tolerations,
 		},
 	}
 
