@@ -1,6 +1,7 @@
 package step
 
 import (
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -56,7 +57,9 @@ func (o *StepOverrideRequirementsOptions) Run() error {
 func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *config.RequirementsConfig, requirementsFileName string) (*config.RequirementsConfig, error) {
 	log.Logger().Debug("Overriding Requirements...")
 
-	requirements.OverrideRequirementsFromEnvironment(o.GCloud())
+	requirements.OverrideRequirementsFromEnvironment(func() gke.GClouder {
+		return o.GCloud()
+	})
 
 	log.Logger().Debugf("saving %s", requirementsFileName)
 	requirements.SaveConfig(requirementsFileName)
