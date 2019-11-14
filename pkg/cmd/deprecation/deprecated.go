@@ -40,11 +40,11 @@ type deprecationInfo struct {
 // DeprecateCommands runs recursively over all commands and set the deprecation message
 // on every command defined the deprecated commands map.
 func DeprecateCommands(cmd *cobra.Command) {
+	path := commandPath(cmd)
+	if deprecation, ok := deprecatedCommands[path]; ok {
+		cmd.Deprecated = deprecationMessage(deprecation)
+	}
 	if !cmd.HasSubCommands() {
-		path := commandPath(cmd)
-		if deprecation, ok := deprecatedCommands[path]; ok {
-			cmd.Deprecated = deprecationMessage(deprecation)
-		}
 		return
 	}
 	for _, c := range cmd.Commands() {
