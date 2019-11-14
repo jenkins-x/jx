@@ -78,6 +78,13 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	}
 	info := util.ColorInfo
 
+	// lets store the requirements in the team settings now so that when we create the git auth provider
+	// we will be able to detect if we are using GitHub App secrets or not
+	err = o.storeRequirementsInTeamSettings(requirements)
+	if err != nil {
+		return err
+	}
+
 	envMap, names, err := kube.GetEnvironments(jxClient, ns)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load Environments in namespace %s", ns)
@@ -98,10 +105,6 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		}
 	}
 
-	err = o.storeRequirementsInTeamSettings(requirements)
-	if err != nil {
-		return err
-	}
 	log.Logger().Infof("Environment git repositories look good\n")
 	fmt.Println()
 	return nil
