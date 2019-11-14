@@ -10,13 +10,6 @@ metadata:
     repository: js-test-repo
   name: abayer-js-test-repo-really-long-1
 spec:
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchLabels:
-              tekton.dev/pipelineRun: abayer-js-test-repo-really-long-1
-          topologyKey: failure-domain.beta.kubernetes.io/zone
   params:
   - name: version
     value: 0.0.1
@@ -30,4 +23,8 @@ spec:
       name: abayer-js-test-repo-really-long
   serviceAccount: tekton-bot
   timeout: 240h0m0s
+  tolerations:
+  - key: "some-key"
+    operator: "Exists"
+    effect: "NoSchedule"
 status: {}

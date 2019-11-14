@@ -116,9 +116,10 @@ type RootOptions struct {
 	// pipeline, adding to configuration that can be configured through the syntax already. This includes things
 	// like CPU/RAM requests/limits, secrets, ports, etc. Some of these things will end up with native syntax approaches
 	// down the road.
-	ContainerOptions              *corev1.Container `json:"containerOptions,omitempty"`
-	Volumes                       []*corev1.Volume  `json:"volumes,omitempty"`
-	DistributeParallelAcrossNodes bool              `json:"distributeParallelAcrossNodes,omitempty"`
+	ContainerOptions              *corev1.Container   `json:"containerOptions,omitempty"`
+	Volumes                       []*corev1.Volume    `json:"volumes,omitempty"`
+	DistributeParallelAcrossNodes bool                `json:"distributeParallelAcrossNodes,omitempty"`
+	Tolerations                   []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // Stash defines files to be saved for use in a later stage, marked with a name
@@ -975,22 +976,27 @@ func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	return env
 }
 
+// GetTolerations returns the tolerations configured in the root options for this pipeline, if any.
+func (j *ParsedPipeline) GetTolerations() []corev1.Toleration {
+	if j.Options != nil {
+		return j.Options.Tolerations
+	}
+	return nil
+}
+
 // GetPossibleAffinityPolicy takes the pipeline name and returns the appropriate affinity policy for pods in this
 // pipeline given its configuration, specifically of options.distributeParallelAcrossNodes.
 func (j *ParsedPipeline) GetPossibleAffinityPolicy(name string) *corev1.Affinity {
 	if j.Options != nil && j.Options.DistributeParallelAcrossNodes {
 		return &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								pipeline.GroupName + pipeline.PipelineRunLabelKey: name,
-							},
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
+					LabelSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							pipeline.GroupName + pipeline.PipelineRunLabelKey: name,
 						},
-						TopologyKey: "failure-domain.beta.kubernetes.io/zone",
 					},
+					TopologyKey: "failure-domain.beta.kubernetes.io/zone",
 				}},
 			},
 		}

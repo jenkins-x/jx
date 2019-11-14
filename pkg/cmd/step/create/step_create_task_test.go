@@ -354,6 +354,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:                  "release",
 			effectiveProjectError: errors.New("no pipeline defined for kind release"),
 		},
+		{
+			name:         "tolerations",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
