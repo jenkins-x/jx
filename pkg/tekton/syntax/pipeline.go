@@ -120,6 +120,7 @@ type RootOptions struct {
 	Volumes                       []*corev1.Volume    `json:"volumes,omitempty"`
 	DistributeParallelAcrossNodes bool                `json:"distributeParallelAcrossNodes,omitempty"`
 	Tolerations                   []corev1.Toleration `json:"tolerations,omitempty"`
+	PodLabels                     map[string]string   `json:"podLabels,omitempty"`
 }
 
 // Stash defines files to be saved for use in a later stage, marked with a name
@@ -455,8 +456,10 @@ func (a *Agent) GetImage() string {
 // TODO: Combine with kube.ToValidName (that function needs to handle lengths)
 func MangleToRfc1035Label(body string, suffix string) string {
 	const maxLabelLength = 63
-	maxBodyLength := maxLabelLength - len(suffix) - 1 // Add an extra hyphen before the suffix
-
+	maxBodyLength := maxLabelLength
+	if len(suffix) > 0 {
+		maxBodyLength = maxLabelLength - len(suffix) - 1 // Add an extra hyphen before the suffix
+	}
 	var sb strings.Builder
 	bufferedHyphen := false // Used to make sure we don't output consecutive hyphens.
 	for _, codepoint := range body {
@@ -976,6 +979,24 @@ func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	return env
 }
 
+// GetPodLabels returns the optional additional labels to apply to all pods for this pipeline. The labels and their values
+// will be converted to RFC1035-compliant strings.
+func (j *ParsedPipeline) GetPodLabels() map[string]string {
+	sanitizedLabels := make(map[string]string)
+	if j.Options != nil {
+		for k, v := range j.Options.PodLabels {
+			sanitizedKey := MangleToRfc1035Label(k, "")
+			sanitizedValue := MangleToRfc1035Label(v, "")
+			if sanitizedKey != k || sanitizedValue != v {
+				log.Logger().Infof("Converted custom label/value '%s' to '%s' to conform to Kubernetes label requirements",
+					util.ColorInfo(k+"="+v), util.ColorInfo(sanitizedKey+"="+sanitizedValue))
+			}
+			sanitizedLabels[sanitizedKey] = sanitizedValue
+		}
+	}
+	return sanitizedLabels
+}
+
 // GetTolerations returns the tolerations configured in the root options for this pipeline, if any.
 func (j *ParsedPipeline) GetTolerations() []corev1.Toleration {
 	if j.Options != nil {
@@ -988,15 +1009,20 @@ func (j *ParsedPipeline) GetTolerations() []corev1.Toleration {
 // pipeline given its configuration, specifically of options.distributeParallelAcrossNodes.
 func (j *ParsedPipeline) GetPossibleAffinityPolicy(name string) *corev1.Affinity {
 	if j.Options != nil && j.Options.DistributeParallelAcrossNodes {
+
+		antiAffinityLabels := make(map[string]string)
+		if len(j.Options.PodLabels) > 0 {
+			antiAffinityLabels = util.MergeMaps(j.GetPodLabels())
+		} else {
+			antiAffinityLabels[pipeline.GroupName+pipeline.PipelineRunLabelKey] = name
+		}
 		return &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
 					LabelSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							pipeline.GroupName + pipeline.PipelineRunLabelKey: name,
-						},
+						MatchLabels: antiAffinityLabels,
 					},
-					TopologyKey: "failure-domain.beta.kubernetes.io/zone",
+					TopologyKey: "kubernetes.io/hostname",
 				}},
 			},
 		}

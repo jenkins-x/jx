@@ -362,6 +362,15 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "really-long",
 			kind:         "release",
 		},
+		{
+			name:             "distribute-parallel-across-nodes-with-labels",
+			language:         "none",
+			repoName:         "js-test-repo",
+			organization:     "abayer",
+			branch:           "really-long",
+			kind:             "release",
+			branchAsRevision: true,
+		},
 	}
 
 	k8sObjects := []runtime.Object{

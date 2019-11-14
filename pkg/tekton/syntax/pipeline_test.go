@@ -1327,6 +1327,10 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						Operator: "Exists",
 						Effect:   "NoSchedule",
 					}}),
+					sh.PipelinePodLabels(map[string]string{
+						"foo":   "bar",
+						"fruit": "apple",
+					}),
 				),
 				sh.PipelineStage("A Working Stage",
 					sh.StageStep(

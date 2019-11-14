@@ -9,6 +9,9 @@ pipelineConfig:
             - key: "some-key"
               operator: "Exists"
               effect: "NoSchedule"
+          podLabels:
+            foo: bar
+            fruit: apple
         stages:
           - name: A Working Stage
             steps:
