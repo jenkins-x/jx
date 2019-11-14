@@ -103,6 +103,13 @@ func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []str
 	prMap := make(map[string][]*tektonapis.PipelineRun)
 	for _, pr := range tektonPRs.Items {
 		p := pr
+		prStatus := p.Status.GetCondition(knativeapis.ConditionSucceeded)
+		// Don't include any pipeline runs that failed due to Tekton race conditions and were auto-restarted by Prow
+		if prStatus != nil && prStatus.IsFalse() &&
+			(strings.Contains(prStatus.Message, "can't be found:pipeline.tekton.dev") ||
+				strings.Contains(prStatus.Message, "it contains Tasks that don't exist")) {
+			continue
+		}
 		prBuildNumber := p.Labels[v1.LabelBuild]
 		if prBuildNumber == "" {
 			prBuildNumber = findLegacyPipelineRunBuildNumber(&p)
