@@ -181,7 +181,7 @@ var (
 	// DefaultVersionsRef default version stream ref
 	DefaultVersionsRef = "master"
 	// DefaultBootRepository default git repo for boot
-	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-git"
+	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
 	// LatestVersionStringsBucket optional bucket name to search in for latest version strings
 	LatestVersionStringsBucket = ""
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
@@ -803,7 +803,7 @@ func (i *IngressConfig) IsAutoDNSDomain() bool {
 }
 
 // OverrideRequirementsFromEnvironment allows properties to be overridden with environment variables
-func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClouder) {
+func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func() gke.GClouder) {
 	if "" != os.Getenv(RequirementClusterName) {
 		c.Cluster.ClusterName = os.Getenv(RequirementClusterName)
 	}
@@ -824,7 +824,7 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 	}
 	publicEnvRepo, found := os.LookupEnv(RequirementEnvGitPublic)
 	if found {
-		if publicEnvRepo == "true" {
+		if envVarBoolean(publicEnvRepo) {
 			c.Cluster.EnvironmentGitPublic = true
 		} else {
 			c.Cluster.EnvironmentGitPublic = false
@@ -832,7 +832,7 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 	}
 	publicAppRepo, found := os.LookupEnv(RequirementGitPublic)
 	if found {
-		if publicAppRepo == "true" {
+		if envVarBoolean(publicAppRepo) {
 			c.Cluster.GitPublic = true
 		} else {
 			c.Cluster.GitPublic = false
@@ -858,7 +858,7 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 	}
 	if "" != os.Getenv(RequirementVaultRecreateBucket) {
 		recreate := os.Getenv(RequirementVaultRecreateBucket)
-		if recreate == "true" {
+		if envVarBoolean(recreate) {
 			c.Vault.RecreateBucket = true
 		} else {
 			c.Vault.RecreateBucket = false
@@ -866,7 +866,7 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 	}
 	if "" != os.Getenv(RequirementVaultDisableURLDiscovery) {
 		disable := os.Getenv(RequirementVaultDisableURLDiscovery)
-		if disable == "true" {
+		if envVarBoolean(disable) {
 			c.Vault.DisableURLDiscovery = true
 		} else {
 			c.Vault.DisableURLDiscovery = false
@@ -883,7 +883,7 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 	}
 	if "" != os.Getenv(RequirementIngressTLSProduction) {
 		useProduction := os.Getenv(RequirementIngressTLSProduction)
-		if useProduction == "yes" {
+		if envVarBoolean(useProduction) {
 			c.Ingress.TLS.Production = true
 		} else {
 			c.Ingress.TLS.Production = false
@@ -891,7 +891,7 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 	}
 	if "" != os.Getenv(RequirementKaniko) {
 		kaniko := os.Getenv(RequirementKaniko)
-		if kaniko == "true" {
+		if envVarBoolean(kaniko) {
 			c.Kaniko = true
 		}
 	}
@@ -905,28 +905,28 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 	}
 	if "" != os.Getenv(RequirementStorageBackupEnabled) {
 		storageBackup := os.Getenv(RequirementStorageBackupEnabled)
-		if storageBackup == "true" && "" != os.Getenv(RequirementStorageBackupURL) {
+		if envVarBoolean(storageBackup) && "" != os.Getenv(RequirementStorageBackupURL) {
 			c.Storage.Backup.Enabled = true
 			c.Storage.Backup.URL = os.Getenv(RequirementStorageBackupURL)
 		}
 	}
 	if "" != os.Getenv(RequirementStorageLogsEnabled) {
 		storageLogs := os.Getenv(RequirementStorageLogsEnabled)
-		if storageLogs == "true" && "" != os.Getenv(RequirementStorageLogsURL) {
+		if envVarBoolean(storageLogs) && "" != os.Getenv(RequirementStorageLogsURL) {
 			c.Storage.Logs.Enabled = true
 			c.Storage.Logs.URL = os.Getenv(RequirementStorageLogsURL)
 		}
 	}
 	if "" != os.Getenv(RequirementStorageReportsEnabled) {
 		storageReports := os.Getenv(RequirementStorageReportsEnabled)
-		if storageReports == "true" && "" != os.Getenv(RequirementStorageReportsURL) {
+		if envVarBoolean(storageReports) && "" != os.Getenv(RequirementStorageReportsURL) {
 			c.Storage.Reports.Enabled = true
 			c.Storage.Reports.URL = os.Getenv(RequirementStorageReportsURL)
 		}
 	}
 	if "" != os.Getenv(RequirementStorageRepositoryEnabled) {
 		storageRepository := os.Getenv(RequirementStorageRepositoryEnabled)
-		if storageRepository == "true" && "" != os.Getenv(RequirementStorageRepositoryURL) {
+		if envVarBoolean(storageRepository) && "" != os.Getenv(RequirementStorageRepositoryURL) {
 			c.Storage.Repository.Enabled = true
 			c.Storage.Repository.URL = os.Getenv(RequirementStorageRepositoryURL)
 		}
@@ -944,7 +944,7 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 		if c.GithubApp == nil {
 			c.GithubApp = &GithubAppConfig{}
 		}
-		if githubApp == "yes" {
+		if envVarBoolean(githubApp) {
 			c.GithubApp.Enabled = true
 		} else {
 			c.GithubApp.Enabled = false
@@ -963,13 +963,20 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloud gke.GClo
 		}
 
 		if c.Cluster.GKEConfig.ProjectNumber == "" {
-			if gcloud != nil {
-				projectNumber, err := gcloud.GetProjectNumber(c.Cluster.ProjectID)
-				if err != nil {
-					log.Logger().Warnf("unable to determine gke project number - %s", err)
+			if gcloudFn != nil {
+				gcloud := gcloudFn()
+				if gcloud != nil {
+					projectNumber, err := gcloud.GetProjectNumber(c.Cluster.ProjectID)
+					if err != nil {
+						log.Logger().Warnf("unable to determine gke project number - %s", err)
+					}
+					c.Cluster.GKEConfig.ProjectNumber = projectNumber
 				}
-				c.Cluster.GKEConfig.ProjectNumber = projectNumber
 			}
 		}
 	}
+}
+
+func envVarBoolean(value string) bool {
+	return value == "true" || value == "yes"
 }
