@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/acarl005/stripansi"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
@@ -19,16 +18,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	tektonMocks "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-
 	kubeMocks "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -62,7 +58,11 @@ func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 }
 
 func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
-	jxClient, tektonClient, _, _, ns := getFakeClientsAndNs(t)
+	testCaseDir := path.Join("test_data", "active_single_run")
+	jxClient, _, _, _, ns := getFakeClientsAndNs(t)
+
+	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
 
 	tl := TektonLogger{
 		JXClient:     jxClient,
@@ -75,74 +75,7 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-				v1.LabelContext:    "fakecontext",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	})
-	assert.NoError(t, err)
-
-	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
-	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{
-		Status: &v1alpha1.TaskRunStatus{
-			Steps: []v1alpha1.StepState{{
-				ContainerState: corev1.ContainerState{
-					Running: &corev1.ContainerStateRunning{},
-				},
-			}},
-		},
-	}
-
-	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PR1",
-			Namespace: ns,
-			Labels: map[string]string{
-				tekton.LabelRepo:    "fakerepo",
-				tekton.LabelBranch:  "fakebranch",
-				tekton.LabelOwner:   "fakeowner",
-				tekton.LabelContext: "fakecontext",
-			},
-		},
-		Spec: v1alpha1.PipelineRunSpec{
-			Params: []v1alpha1.Param{
-				{Name: "version", Value: "v1"},
-				{Name: "build_id", Value: "1"},
-			},
-		},
-		Status: v1alpha1.PipelineRunStatus{
-			TaskRuns: taskRunStatusMap,
-		},
-	})
-	assert.NoError(t, err)
-
-	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PR2",
-			Namespace: ns,
-			Labels: map[string]string{
-				tekton.LabelBuild:   "2",
-				tekton.LabelRepo:    "fakerepo",
-				tekton.LabelBranch:  "fakebranch",
-				tekton.LabelOwner:   "fakeowner",
-				tekton.LabelContext: "tekton",
-			},
-		},
-	})
-	assert.NoError(t, err)
+	_ = assertAndCreatePA1(t, jxClient, ns)
 
 	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{"context=fakecontext"})
 
@@ -154,7 +87,11 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 }
 
 func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.T) {
-	jxClient, tektonClient, _, _, ns := getFakeClientsAndNs(t)
+	testCaseDir := path.Join("test_data", "only_waiting_step")
+	jxClient, _, _, _, ns := getFakeClientsAndNs(t)
+
+	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
 	tl := TektonLogger{
 		JXClient:     jxClient,
 		TektonClient: tektonClient,
@@ -166,77 +103,7 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-				v1.LabelContext:    "fakecontext",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			Context:       "fakecontext",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	})
-	assert.NoError(t, err)
-
-	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
-	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{
-		Status: &v1alpha1.TaskRunStatus{
-			Steps: []v1alpha1.StepState{{
-				ContainerState: corev1.ContainerState{
-					Waiting: &corev1.ContainerStateWaiting{
-						Message: "Pending",
-					},
-				},
-			}},
-		},
-	}
-
-	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PR1",
-			Namespace: ns,
-			Labels: map[string]string{
-				tekton.LabelRepo:    "fakerepo",
-				tekton.LabelBranch:  "fakebranch",
-				tekton.LabelOwner:   "fakeowner",
-				tekton.LabelContext: "fakecontext",
-			},
-		},
-		Spec: v1alpha1.PipelineRunSpec{
-			Params: []v1alpha1.Param{
-				{Name: "version", Value: "v1"},
-				{Name: "build_id", Value: "1"},
-			},
-		},
-		Status: v1alpha1.PipelineRunStatus{
-			TaskRuns: taskRunStatusMap,
-		},
-	})
-	assert.NoError(t, err)
-
-	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&v1alpha1.PipelineRun{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PR2",
-			Namespace: ns,
-			Labels: map[string]string{
-				tekton.LabelBuild:   "2",
-				tekton.LabelRepo:    "fakerepo",
-				tekton.LabelBranch:  "fakebranch",
-				tekton.LabelOwner:   "fakeowner",
-				tekton.LabelContext: "tekton",
-			},
-		},
-	})
-	assert.NoError(t, err)
+	_ = assertAndCreatePA1(t, jxClient, ns)
 
 	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{"context=fakecontext"})
 	assert.NoError(t, err)
@@ -258,23 +125,8 @@ func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 		},
 		LogsRetrieverFunc: LogsProvider,
 	}
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 	assert.Error(t, err)
@@ -302,23 +154,7 @@ func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 	assert.Error(t, err)
@@ -344,23 +180,7 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 	assert.Error(t, err)
@@ -391,23 +211,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
@@ -442,23 +246,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedContainerInTheMiddle(
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
@@ -493,23 +281,7 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedMetapipeline(t *testi
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
@@ -547,23 +319,7 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
 
@@ -773,23 +529,7 @@ func TestGetRunningBuildLogsMetapipelineAndPendingGenerated(t *testing.T) {
 		LogsRetrieverFunc: LogsProvider,
 	}
 
-	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      "PA1",
-			Namespace: ns,
-			Labels: map[string]string{
-				v1.LabelRepository: "fakerepo",
-				v1.LabelBranch:     "fakebranch",
-				v1.LabelOwner:      "fakeowner",
-			},
-		},
-		Spec: v1.PipelineActivitySpec{
-			Build:         "1",
-			GitBranch:     "fakebranch",
-			GitRepository: "fakerepo",
-			GitOwner:      "fakeowner",
-		},
-	}
+	pa := assertAndCreatePA1(t, jxClient, ns)
 
 	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", true)
 	assert.NoError(t, err)
@@ -801,6 +541,56 @@ func TestGetRunningBuildLogsMetapipelineAndPendingGenerated(t *testing.T) {
 	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
 	assert.Regexp(t, "Showing logs for build (?s).* stage app-extension and container (?s).*$",
 		stripansi.Strip(firstLine), "'app-extension' should be the first stage logged")
+}
+
+func TestGetTektonPipelinesWithFailedAndRetriedPipeline(t *testing.T) {
+	testCaseDir := path.Join("test_data", "failed_and_rerun")
+	jxClient, _, _, _, ns := getFakeClientsAndNs(t)
+
+	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
+
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
+	_ = assertAndCreatePA1(t, jxClient, ns)
+
+	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PA2",
+			Namespace: ns,
+			Labels: map[string]string{
+				v1.LabelRepository: "fakerepo",
+				v1.LabelBranch:     "fakebranch",
+				v1.LabelOwner:      "fakeowner",
+				v1.LabelContext:    "fakecontext",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build:         "2",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
+		},
+	})
+	assert.NoError(t, err)
+
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{"context=fakecontext"})
+
+	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
+	assert.Equal(t, "fakeowner/fakerepo/fakebranch #2 fakecontext", names[0], "There should be a match build in the returned names")
+	_, exists := paNames[names[0]]
+	assert.True(t, exists, "There should be a matching PipelineActivity in the paMap")
+	// The PipelineActivity corresponding to the failed-and-retried PipelineRun is still in the map
+	assert.Equal(t, len(names)+1, len(paNames))
 }
 
 // Helper method, not supposed to be a test by itself
@@ -848,4 +638,29 @@ func LogsProvider(pod *corev1.Pod, container *corev1.Container) (io.Reader, func
 	return bytes.NewReader([]byte(fmt.Sprintf("Writing pod log for pod %s and container %s", pod.Name, container.Name))), func() {
 		//nothing to clean
 	}, nil
+}
+
+func assertAndCreatePA1(t *testing.T, jxClient versioned.Interface, ns string) *v1.PipelineActivity {
+	pa, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      "PA1",
+			Namespace: ns,
+			Labels: map[string]string{
+				v1.LabelRepository: "fakerepo",
+				v1.LabelBranch:     "fakebranch",
+				v1.LabelOwner:      "fakeowner",
+				v1.LabelContext:    "fakecontext",
+			},
+		},
+		Spec: v1.PipelineActivitySpec{
+			Build:         "1",
+			Context:       "fakecontext",
+			GitBranch:     "fakebranch",
+			GitRepository: "fakerepo",
+			GitOwner:      "fakeowner",
+		},
+	})
+	assert.NoError(t, err)
+
+	return pa
 }
