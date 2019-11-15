@@ -536,6 +536,19 @@ func (o *CommonOptions) InstallTerraform() error {
 
 // GetLatestJXVersion returns latest jx version
 func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolver) (semver.Version, error) {
+	if config.LatestVersionStringsBucket != "" {
+		err := o.InstallRequirements(cloud.GKE)
+		if err != nil {
+			return semver.Version{}, err
+		}
+		gcloudOpts := &gke.GCloud{}
+		latestVersionStrings, err := gcloudOpts.ListObjects(config.LatestVersionStringsBucket, "binaries/jx")
+		if err != nil {
+			return semver.Version{}, nil
+		}
+		return util.GetLatestVersionStringFromBucketURLs(latestVersionStrings)
+	}
+
 	dir := resolver.VersionsDir
 	matrix, err := dependencymatrix.LoadDependencyMatrix(dir)
 	if err != nil {
@@ -553,18 +566,6 @@ func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolv
 	}
 	log.Logger().Warnf("could not find the version of jx in the dependency matrix of the version stream at %s", dir)
 
-	if config.LatestVersionStringsBucket != "" {
-		err := o.InstallRequirements(cloud.GKE)
-		if err != nil {
-			return semver.Version{}, err
-		}
-		gcloudOpts := &gke.GCloud{}
-		latestVersionStrings, err := gcloudOpts.ListObjects(config.LatestVersionStringsBucket, "binaries/jx")
-		if err != nil {
-			return semver.Version{}, nil
-		}
-		return util.GetLatestVersionStringFromBucketURLs(latestVersionStrings)
-	}
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		log.Logger().Debugf("Locating latest JX version from HomeBrew")
 		// incase auto-update is not enabled, lets perform an explicit brew update first
