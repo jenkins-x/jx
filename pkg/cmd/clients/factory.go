@@ -68,8 +68,13 @@ var _ Factory = (*factory)(nil)
 // if optionalClientConfig is nil, then flags will be bound to a new clientcmd.ClientConfig.
 // if optionalClientConfig is not nil, then this factory will make use of it.
 func NewFactory() Factory {
+	return NewUsingFactory(jxfactory.NewFactory())
+}
+
+// NewUsingFactory creates a factory with the given underlying factory
+func NewUsingFactory(jxf jxfactory.Factory) Factory {
 	f := &factory{}
-	f.jxFactory = jxfactory.NewFactory()
+	f.jxFactory = jxf
 	return f
 }
 
