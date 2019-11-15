@@ -353,7 +353,7 @@ func (o *CommonOptions) GetDeployNamespace(namespaceOption string) (string, erro
 		if err != nil {
 			return ns, err
 		}
-		log.Logger().Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
+		log.Logger().Debugf("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s", ns)
 	}
 	return ns, nil
 }
