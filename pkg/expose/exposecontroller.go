@@ -86,12 +86,21 @@ func RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressCo
 
 	CleanExposecontrollerReources(kubeClient, targetNamespace)
 
-	exValues := []string{
-		"config.exposer=" + ic.Exposer,
-		"config.domain=" + ic.Domain,
-		"config.tlsacme=" + strconv.FormatBool(ic.TLS),
-		"config.urltemplate=" + ic.UrlTemplate,
+	exValues := []string{}
+
+	if ic.Exposer != "" {
+		exValues = append(exValues, fmt.Sprintf("config.exposer=%s", ic.Exposer))
 	}
+
+	if ic.Domain != "" {
+		exValues = append(exValues, fmt.Sprintf("config.domain=%s", ic.Domain))
+	}
+
+	if ic.UrlTemplate != "" {
+		exValues = append(exValues, fmt.Sprintf("config.urltemplate=%q", ic.UrlTemplate))
+	}
+
+	exValues = append(exValues, fmt.Sprintf("config.tlsacme=%s", strconv.FormatBool(ic.TLS)))
 
 	if !ic.TLS && ic.Issuer != "" {
 		exValues = append(exValues, "config.http=true")
