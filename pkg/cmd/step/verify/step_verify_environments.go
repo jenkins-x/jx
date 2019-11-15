@@ -78,9 +78,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	}
 	info := util.ColorInfo
 
-	// lets store the requirements in the team settings now so that when we create the git auth provider
-	// we will be able to detect if we are using GitHub App secrets or not
-	err = o.storeRequirementsInTeamSettings(requirements)
+	exists, err := util.FileExists(requirementsFileName)
 	if err != nil {
 		return err
 	}
@@ -89,6 +87,24 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to load Environments in namespace %s", ns)
 	}
+
+	if exists {
+		// lets store the requirements in the team settings now so that when we create the git auth provider
+		// we will be able to detect if we are using GitHub App secrets or not
+		err = o.storeRequirementsInTeamSettings(requirements)
+		if err != nil {
+			return err
+		}
+	} else {
+		devEnv := envMap[kube.LabelValueDevEnvironment]
+		if devEnv != nil {
+			requirements, err = config.GetRequirementsConfigFromTeamSettings(&devEnv.Spec.TeamSettings)
+			if err != nil {
+				return errors.Wrap(err, "failed to load requirements from team settings")
+			}
+		}
+	}
+
 	for _, name := range names {
 		env := envMap[name]
 		gitURL := env.Spec.Source.URL
@@ -265,6 +281,12 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	if err != nil {
 		return err
 	}
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
+	gitOwner := envGitInfo.Organisation
 
 	// TODO - this is hard coded to GitHub and needs to be extended to support other git providers (HF)
 	gitKind := gits.KindGitHub
@@ -272,7 +294,29 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	prefix := ""
 
 	gitServerURL := envGitInfo.HostURL()
-	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
+	config := authConfigSvc.Config()
+	server, userAuth := config.GetPipelineAuth()
+
+	if gha {
+		userAuth = nil
+		if server == nil {
+			for _, s := range config.Servers {
+				if s.URL == gitServerURL {
+					server = s
+					break
+				}
+			}
+		}
+		if server != nil {
+			for _, u := range server.Users {
+				if gitOwner == u.GithubAppOwner {
+					userAuth = u
+					break
+				}
+			}
+		}
+	}
+
 	helmValues, err := o.createEnvironmentHelmValues(requirements, environment)
 	if err != nil {
 		return err
@@ -314,7 +358,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 			ServerKind:               gitKind,
 			Username:                 userAuth.Username,
 			ApiToken:                 userAuth.Password,
-			Owner:                    envGitInfo.Organisation,
+			Owner:                    gitOwner,
 			RepoName:                 envGitInfo.Name,
 			Public:                   public,
 			IgnoreExistingRepository: true,
