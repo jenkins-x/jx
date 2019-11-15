@@ -3,6 +3,8 @@ package vault
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/kube"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -109,4 +111,24 @@ func CreateBucket(gcloud gke.GClouder, vaultName, bucketName string, projectID, 
 		return "", errors.Wrap(err, "creating Vault GCS bucket")
 	}
 	return bucketName, nil
+}
+
+// GetGoogleZone returns the Google zone as registered in the install values during the Jenkins X install process.
+// If the zone cannot be read the empty string is returned.
+func GetGoogleZone(kubeClient kubernetes.Interface, ns string) string {
+	data, err := kube.ReadInstallValues(kubeClient, ns)
+	if err != nil {
+		return ""
+	}
+	return data[kube.Zone]
+}
+
+// GetGoogleProjectID returns the Google project ID as registered in the install values during the Jenkins X install process.
+// If the project ID cannot be read the empty string is returned.
+func GetGoogleProjectID(kubeClient kubernetes.Interface, ns string) string {
+	data, err := kube.ReadInstallValues(kubeClient, ns)
+	if err != nil {
+		return ""
+	}
+	return data[kube.ProjectID]
 }

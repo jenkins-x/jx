@@ -208,7 +208,7 @@ func TestCheckFlags(t *testing.T) {
 				NextGeneration: true,
 				StaticJenkins:  true,
 			},
-			err: errors.New("Incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated"),
+			err: errors.New("incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated"),
 		},
 		{
 			name: "tekton_and_static_jenkins",
@@ -216,7 +216,7 @@ func TestCheckFlags(t *testing.T) {
 				Tekton:        true,
 				StaticJenkins: true,
 			},
-			err: errors.New("Incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated"),
+			err: errors.New("incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated"),
 		},
 		{
 			name: "tekton_and_knative",
@@ -224,7 +224,7 @@ func TestCheckFlags(t *testing.T) {
 				Tekton:       true,
 				KnativeBuild: true,
 			},
-			err: errors.New("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated"),
+			err: errors.New("incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated"),
 		},
 	}
 

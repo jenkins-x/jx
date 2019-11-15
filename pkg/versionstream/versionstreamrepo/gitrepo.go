@@ -76,7 +76,7 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 			}
 		} else {
 			pullLatest = true
-			log.Logger().Infof(util.QuestionAnswer("A local Jenkins X versions repository already exists, pulling the latest", util.YesNo(pullLatest)))
+			log.Logger().Debugf(util.QuestionAnswer("A local Jenkins X versions repository already exists, pulling the latest", util.YesNo(pullLatest)))
 		}
 		if pullLatest {
 			err = gitter.FetchRemoteTags(wrkDir, versionRepository)

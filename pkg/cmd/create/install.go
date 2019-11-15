@@ -10,6 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
+
+	"github.com/jenkins-x/jx/pkg/vault/create"
+
 	createoptions "github.com/jenkins-x/jx/pkg/cmd/create/options"
 	cmdvault "github.com/jenkins-x/jx/pkg/cmd/create/vault"
 
@@ -44,7 +48,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -67,10 +71,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	pkgvault "github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -248,6 +253,8 @@ This repository contains the source code for the Jenkins X Development Environme
 	prowFlagName            = "prow"
 	staticJenkinsFlagName   = "static-jenkins"
 	gitOpsFlagName          = "gitops"
+
+	exposedVaultPort = "8200"
 )
 
 var (
@@ -424,15 +431,15 @@ func (options *InstallOptions) CheckFlags() error {
 	flags := &options.Flags
 
 	if flags.NextGeneration && flags.StaticJenkins {
-		return fmt.Errorf("Incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated")
+		return fmt.Errorf("incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated")
 	}
 
 	if flags.Tekton && flags.StaticJenkins {
-		return fmt.Errorf("Incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated")
+		return fmt.Errorf("incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated")
 	}
 
 	if flags.KnativeBuild && flags.Tekton {
-		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
+		return fmt.Errorf("incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
 	}
 
 	if flags.KnativeBuild {
@@ -2251,7 +2258,7 @@ func (options *InstallOptions) ConfigureKaniko() error {
 		if clusterName == "" {
 			clusterName, err = options.GetGKEClusterNameFromContext()
 			if err != nil {
-				return errors.Wrap(err, "gettting the GKE cluster name from current context")
+				return errors.Wrap(err, "getting the GKE cluster name from current context")
 			}
 		}
 
@@ -2279,59 +2286,14 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			return fmt.Errorf("system vault is not supported for %s provider", options.Flags.Provider)
 		}
 
+		if options.installValues == nil {
+			return errors.New("no install values provided")
+		}
+
 		// Configure the vault flag if only GitOps mode is on
 		options.Flags.Vault = true
 
-		err := InstallVaultOperator(options.CommonOptions, namespace, nil)
-		if err != nil {
-			return errors.Wrap(err, "unable to install vault operator")
-		}
-
-		// Create a new System vault
-		cvo := &cmdvault.CreateVaultOptions{
-			CreateOptions: createoptions.CreateOptions{
-				CommonOptions: options.CommonOptions,
-			},
-			GKECreateVaultOptions: cmdvault.GKECreateVaultOptions{},
-			AWSCreateVaultOptions: cmdvault.AWSCreateVaultOptions{
-				AWSConfig: options.AWSConfig,
-			},
-		}
-
-		if options.installValues != nil {
-			if options.Flags.Provider == cloud.GKE {
-				if cvo.GKEProjectID == "" {
-					cvo.GKEProjectID = options.installValues[kube.ProjectID]
-				}
-				if cvo.GKEZone == "" {
-					cvo.GKEZone = options.installValues[kube.Zone]
-				}
-			}
-			if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
-				defaultRegion := options.installValues[kube.Region]
-
-				// If no parameters required for creating the vault was provided switch to auto create
-				if cvo.DynamoDBTable == "" && cvo.KMSKeyID == "" && cvo.S3Bucket == "" && cvo.AccessKeyID == "" && cvo.SecretAccessKey == "" {
-					cvo.AutoCreate = true
-				}
-
-				if cvo.DynamoDBRegion == "" {
-					cvo.DynamoDBRegion = defaultRegion
-					log.Logger().Infof("Region not specified for DynamoDB, defaulting to %s", util.ColorInfo(defaultRegion))
-				}
-				if cvo.KMSRegion == "" {
-					cvo.KMSRegion = defaultRegion
-					log.Logger().Infof("Region not specified for KMS, defaulting to %s", util.ColorInfo(defaultRegion))
-
-				}
-				if cvo.S3Region == "" {
-					cvo.S3Region = defaultRegion
-					log.Logger().Infof("Region not specified for S3, defaulting to %s", util.ColorInfo(defaultRegion))
-				}
-			}
-		}
-
-		vaultOperatorClient, err := cvo.VaultOperatorClient()
+		vaultOperatorClient, err := options.VaultOperatorClient()
 		if err != nil {
 			return err
 		}
@@ -2341,9 +2303,6 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			return errors.Wrap(err, "building the system vault name from cluster name")
 		}
 
-		if options.installValues == nil {
-			options.installValues = make(map[string]string)
-		}
 		options.installValues[kube.SystemVaultName] = systemVaultName
 
 		if kubevault.FindVault(vaultOperatorClient, systemVaultName, namespace) {
@@ -2351,10 +2310,59 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
 			log.Logger().Info("Creating new system vault")
-			err = cvo.CreateVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
+
+			resolver, err := options.CreateVersionResolver("", "")
 			if err != nil {
-				return err
+				return errors.Wrap(err, "creating the docker image version resolver")
 			}
+
+			err = options.installOperator(resolver, namespace)
+			if err != nil {
+				return errors.Wrap(err, "installing Vault operator")
+			}
+
+			vaultCreateParam := create.VaultCreationParam{
+				VaultName:            systemVaultName,
+				Namespace:            namespace,
+				ClusterName:          options.installValues[kube.ClusterName],
+				SecretsPathPrefix:    pkgvault.DefaultSecretsPathPrefix,
+				KubeProvider:         options.Flags.Provider,
+				KubeClient:           client,
+				VaultOperatorClient:  vaultOperatorClient,
+				VersionResolver:      *resolver,
+				FileHandles:          options.GetIOFileHandles(),
+				CreateCloudResources: true,
+				Boot:                 false,
+				BatchMode:            true,
+			}
+
+			if options.Flags.Provider == cloud.GKE {
+				gkeParam := &create.GKEParam{
+					ProjectID: options.installValues[kube.ProjectID],
+					Zone:      options.installValues[kube.Zone],
+				}
+				vaultCreateParam.GKE = gkeParam
+			}
+
+			if options.Flags.Provider == cloud.EKS {
+				awsParam, err := options.createAWSParam(options.installValues[kube.Region])
+				if err != nil {
+					return errors.Wrap(err, "unable to create Vault creation parameter from requirements")
+				}
+				vaultCreateParam.AWS = &awsParam
+			}
+
+			vaultCreator := create.NewVaultCreator()
+			err = vaultCreator.CreateOrUpdateVault(vaultCreateParam)
+			if err != nil {
+				return errors.Wrap(err, "unable to create/update Vault")
+			}
+
+			err = options.exposeVault(systemVaultName, namespace, ic)
+			if err != nil {
+				return errors.Wrap(err, "unable to expose Vault")
+			}
+
 			log.Logger().Infof("System vault created named %s in namespace %s.",
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		}
@@ -2368,6 +2376,121 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		}
 	}
 	return nil
+}
+
+func (options *InstallOptions) installOperator(resolver *versionstream.VersionResolver, ns string) error {
+	tag, err := options.vaultOperatorImageTag(resolver)
+	if err != nil {
+		return errors.Wrap(err, "unable to determine Vault operator version")
+	}
+
+	values := []string{
+		"image.repository=" + kubevault.VaultOperatorImage,
+		"image.tag=" + tag,
+	}
+	log.Logger().Infof("Installing %s operator with helm values: %v", util.ColorInfo(kube.DefaultVaultOperatorReleaseName), util.ColorInfo(values))
+
+	helmOptions := helm.InstallChartOptions{
+		Chart:       kube.ChartVaultOperator,
+		ReleaseName: kube.DefaultVaultOperatorReleaseName,
+		Version:     options.Version,
+		Ns:          ns,
+		SetValues:   values,
+	}
+	err = options.InstallChartWithOptions(helmOptions)
+	if err != nil {
+		return errors.Wrap(err, "unable to install vault operator")
+	}
+
+	log.Logger().Infof("Vault operator installed in namespace %s", ns)
+	return nil
+}
+
+// vaultOperatorImageTag lookups the vault operator image tag in the version stream
+func (options *InstallOptions) vaultOperatorImageTag(resolver *versionstream.VersionResolver) (string, error) {
+	fullImage, err := resolver.ResolveDockerImage(kubevault.VaultOperatorImage)
+	if err != nil {
+		return "", errors.Wrapf(err, "looking up the vault-operator %q image into the version stream",
+			kubevault.VaultOperatorImage)
+	}
+	parts := strings.Split(fullImage, ":")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("no tag found for image %q in version stream", kubevault.VaultOperatorImage)
+	}
+	return parts[1], nil
+}
+
+func (options *InstallOptions) createAWSParam(defaultRegion string) (create.AWSParam, error) {
+	if defaultRegion == "" {
+		return create.AWSParam{}, errors.New("unable to find cluster region in requirements")
+	}
+
+	dynamoDBRegion := options.DynamoDBRegion
+	if dynamoDBRegion == "" {
+		dynamoDBRegion = defaultRegion
+		log.Logger().Infof("Region not specified for DynamoDB, defaulting to %s", util.ColorInfo(defaultRegion))
+	}
+
+	kmsRegion := options.KMSRegion
+	if kmsRegion == "" {
+		kmsRegion = defaultRegion
+		log.Logger().Infof("Region not specified for KMS, defaulting to %s", util.ColorInfo(defaultRegion))
+
+	}
+
+	s3Region := options.S3Region
+	if s3Region == "" {
+		s3Region = defaultRegion
+		log.Logger().Infof("Region not specified for S3, defaulting to %s", util.ColorInfo(defaultRegion))
+	}
+
+	awsParam := create.AWSParam{
+		IAMUsername:     options.ProvidedIAMUsername,
+		S3Bucket:        options.S3Bucket,
+		S3Region:        s3Region,
+		S3Prefix:        options.S3Prefix,
+		DynamoDBTable:   options.DynamoDBTable,
+		DynamoDBRegion:  dynamoDBRegion,
+		KMSKeyID:        options.KMSKeyID,
+		KMSRegion:       kmsRegion,
+		AccessKeyID:     options.AccessKeyID,
+		SecretAccessKey: options.SecretAccessKey,
+		AutoCreate:      options.AutoCreate,
+	}
+
+	return awsParam, nil
+}
+
+func (options *InstallOptions) exposeVault(vaultService string, namespace string, ic *kube.IngressConfig) error {
+	client, err := options.KubeClient()
+	if err != nil {
+		return err
+	}
+	svc, err := client.CoreV1().Services(namespace).Get(vaultService, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "getting the vault service: %s", vaultService)
+	}
+	if svc.Annotations == nil {
+		svc.Annotations = map[string]string{}
+	}
+	if svc.Annotations[kube.AnnotationExpose] == "" {
+		svc.Annotations[kube.AnnotationExpose] = "true"
+		svc.Annotations[kube.AnnotationExposePort] = exposedVaultPort
+		svc, err = client.CoreV1().Services(namespace).Update(svc)
+		if err != nil {
+			return errors.Wrapf(err, "updating %s service annotations", vaultService)
+		}
+	}
+
+	upgradeIngOpts := &upgrade.UpgradeIngressOptions{
+		CommonOptions:       options.CommonOptions,
+		Namespaces:          []string{namespace},
+		Services:            []string{vaultService},
+		IngressConfig:       *ic,
+		SkipResourcesUpdate: true,
+		WaitForCerts:        true,
+	}
+	return upgradeIngOpts.Run()
 }
 
 func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
