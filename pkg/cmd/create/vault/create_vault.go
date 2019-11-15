@@ -2,45 +2,29 @@ package vault
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/jenkins-x/jx/pkg/cmd/create/options"
-
-	uuid "github.com/satori/go.uuid"
-
-	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
-
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
-	"k8s.io/client-go/kubernetes"
-
-	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
-	"github.com/jenkins-x/jx/pkg/kube/services"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/pkg/vault/create"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
 	exposedVaultPort = "8200"
-)
-
-const (
-	autoCreateTableName = "vault-data"
 )
 
 var (
@@ -148,38 +132,28 @@ func AwsCreateVaultOptions(cmd *cobra.Command, options *kubevault.AWSConfig) {
 
 // Run implements the command
 func (o *CreateVaultOptions) Run() error {
-	var vaultName string
-	if len(o.Args) == 1 {
-		vaultName = o.Args[0]
-	} else if o.BatchMode {
-		return fmt.Errorf("Missing vault name")
-	} else {
-		// Prompt the user for the vault name
-		vaultName, _ = util.PickValue(
-			"Vault name:", "", true,
-			"The name of the vault that will be created", o.GetIOFileHandles())
-	}
-	teamSettings, err := o.TeamSettings()
+	vaultName, err := o.vaultName()
 	if err != nil {
-		return errors.Wrap(err, "retrieving the team settings")
+		return err
 	}
 
-	if teamSettings.KubeProvider != cloud.GKE && teamSettings.KubeProvider != cloud.AWS && teamSettings.KubeProvider != cloud.EKS {
-		return errors.Wrapf(err, "this command only supports the '%s' kubernetes provider", cloud.GKE)
-	}
-
-	kubeClient, team, err := o.KubeClientAndNamespace()
+	kubeClient, currentNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
 
 	if o.Namespace == "" {
-		o.Namespace = team
+		o.Namespace = currentNamespace
 	}
 
-	err = kube.EnsureNamespaceCreated(kubeClient, o.Namespace, nil, nil)
+	kubeProvider, err := o.kubeProvider(kubeClient, currentNamespace)
 	if err != nil {
-		return errors.Wrapf(err, "failed to ensure that provided namespace '%s' is created", o.Namespace)
+		return err
+	}
+
+	clusterName, err := o.clusterName()
+	if err != nil {
+		return err
 	}
 
 	vaultOperatorClient, err := o.VaultOperatorClient()
@@ -187,62 +161,76 @@ func (o *CreateVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	return o.CreateVault(vaultOperatorClient, vaultName, teamSettings.KubeProvider)
-}
-
-// CreateVault creates a vault in the existing namespace.
-// If the vault already exists, it will error
-func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface, vaultName string, kubeProvider string) error {
 	// Checks if the vault already exists
 	found := kubevault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if found {
-		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
+		return fmt.Errorf("vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
 	}
 
-	kubeClient, _, err := o.KubeClientAndNamespace()
+	err = kube.EnsureNamespaceCreated(kubeClient, o.Namespace, nil, nil)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to ensure that provided namespace '%s' is created", o.Namespace)
 	}
 
-	var clusterName string
-	if o.ClusterName == "" {
-		clusterName, err = cluster.ShortName(o.Kube())
-		if err != nil {
-			return err
-		}
-	} else {
-		clusterName = o.ClusterName
-	}
-
-	if clusterName == "" {
-		return errors.Wrap(err, "unable to determine the cluster name")
-	}
-
-	log.Logger().Debugf("cluster short name for vault naming: '%s'", util.ColorInfo(clusterName))
-
-	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.ServiceAccountName, o.Namespace)
+	resolver, err := o.CreateVersionResolver("", "")
 	if err != nil {
-		return errors.Wrap(err, "creating Vault authentication service account")
+		return errors.Wrap(err, "creating the docker image version resolver")
 	}
-	log.Logger().Debugf("Created service account '%s' for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
+
+	vaultCreateParam := create.VaultCreationParam{
+		VaultName:            vaultName,
+		Namespace:            o.Namespace,
+		ClusterName:          clusterName,
+		ServiceAccountName:   o.ServiceAccountName,
+		SecretsPathPrefix:    o.SecretsPathPrefix,
+		KubeProvider:         kubeProvider,
+		KubeClient:           kubeClient,
+		VaultOperatorClient:  vaultOperatorClient,
+		VersionResolver:      *resolver,
+		FileHandles:          o.GetIOFileHandles(),
+		CreateCloudResources: true,
+		Boot:                 false,
+		BatchMode:            o.BatchMode,
+	}
+
 	if kubeProvider == cloud.GKE {
-		err = o.createVaultGKE(vaultOperatorClient, vaultName, o.BucketName, o.KeyringName, o.KeyName, kubeClient, clusterName, vaultAuthServiceAccount)
-	}
-	if kubeProvider == cloud.AWS || kubeProvider == cloud.EKS {
-		err = o.createVaultAWS(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
-	}
-	if err != nil {
-		return errors.Wrap(err, "creating vault")
+		gkeParam := &create.GKEParam{
+			ProjectID:      gkevault.GetGoogleProjectID(kubeClient, currentNamespace),
+			Zone:           gkevault.GetGoogleZone(kubeClient, currentNamespace),
+			BucketName:     o.BucketName,
+			KeyringName:    o.KeyringName,
+			KeyName:        o.KeyName,
+			RecreateBucket: o.RecreateVaultBucket,
+		}
+		vaultCreateParam.GKE = gkeParam
 	}
 
-	// wait for vault service to become ready before finishing the provisioning
-	err = services.WaitForService(kubeClient, vaultName, o.Namespace, 1*time.Minute)
+	if kubeProvider == cloud.AWS {
+		awsParam := &create.AWSParam{
+			IAMUsername:     o.ProvidedIAMUsername,
+			S3Bucket:        o.S3Bucket,
+			S3Region:        o.S3Region,
+			S3Prefix:        o.S3Prefix,
+			TemplatesDir:    o.AWSTemplatesDir,
+			DynamoDBTable:   o.DynamoDBTable,
+			DynamoDBRegion:  o.DynamoDBRegion,
+			KMSKeyID:        o.KMSKeyID,
+			KMSRegion:       o.KMSRegion,
+			AccessKeyID:     o.AccessKeyID,
+			SecretAccessKey: o.SecretAccessKey,
+			AutoCreate:      o.AutoCreate,
+		}
+		vaultCreateParam.AWS = awsParam
+	}
+
+	vaultCreator := create.NewVaultCreator()
+	err = vaultCreator.CreateOrUpdateVault(vaultCreateParam)
 	if err != nil {
-		return errors.Wrap(err, "waiting for vault service")
+		return errors.Wrap(err, "unable to create/update Vault")
 	}
 
 	if o.NoExposeVault {
-		log.Logger().Infof("not exposing vault '%s' exposed", vaultName)
+		log.Logger().Debugf("Not exposing vault '%s' since --no-expose=%t", vaultName, o.NoExposeVault)
 		return nil
 	}
 	log.Logger().Infof("Exposing Vault...")
@@ -254,226 +242,43 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 	return nil
 }
 
-func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
-	images := map[string]string{
-		kubevault.BankVaultsImage: "",
-		kubevault.VaultImage:      "",
-	}
-
-	resolver, err := o.CreateVersionResolver("", "")
-	if err != nil {
-		return images, errors.Wrap(err, "creating the docker image version resolver")
-	}
-	for image := range images {
-		version, err := resolver.ResolveDockerImage(image)
-		if err != nil {
-			return images, errors.Wrapf(err, "resolving docker image %q", image)
-		}
-		images[image] = version
-	}
-	return images, nil
-}
-
-func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, bucketName string,
-	keyringName string, keyName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
-	err := o.GCloud().Login("", true)
-	if err != nil {
-		return errors.Wrap(err, "login into GCP")
-	}
-
-	if o.GKEProjectID == "" {
-		if kubeClient, ns, err := o.KubeClientAndDevNamespace(); err == nil {
-			if data, err := kube.ReadInstallValues(kubeClient, ns); err == nil && data != nil {
-				o.GKEProjectID = data[kube.ProjectID]
-				if o.GKEZone == "" {
-					o.GKEZone = data[kube.Zone]
-				}
-			}
-		}
-	}
-
-	if o.GKEProjectID == "" {
-		o.GKEProjectID, err = o.GetGoogleProjectID("")
-		if err != nil {
-			return err
-		}
-	}
-
-	err = o.CreateOptions.CommonOptions.RunCommandVerbose(
-		"gcloud", "config", "set", "project", o.GKEProjectID)
-	if err != nil {
-		return err
-	}
-
-	if o.GKEZone == "" {
-		defaultZone := ""
-		if cluster, err := cluster.Name(o.Kube()); err == nil && cluster != "" {
-			if clusterZone, err := o.GCloud().ClusterZone(cluster); err == nil {
-				defaultZone = clusterZone
-			}
-		}
-
-		zone, err := o.GetGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
-		if err != nil {
-			return err
-		}
-		o.GKEZone = zone
-	}
-
-	log.Logger().Debugf("Ensure KMS API is enabled")
-	err = o.GCloud().EnableAPIs(o.GKEProjectID, "cloudkms")
-	if err != nil {
-		return errors.Wrap(err, "unable to enable 'cloudkms' API")
-	}
-
-	log.Logger().Debugf("Creating GCP service account for Vault backend")
-	gcpServiceAccountSecretName, err := gkevault.CreateVaultGCPServiceAccount(o.GCloud(), kubeClient, vaultName, o.Namespace, clusterName, o.GKEProjectID)
-	if err != nil {
-		return errors.Wrap(err, "creating GCP service account")
-	}
-	log.Logger().Debugf("'%s' service account created", util.ColorInfo(gcpServiceAccountSecretName))
-
-	log.Logger().Debugf("Setting up GCP KMS configuration")
-	kmsConfig, err := gkevault.CreateKmsConfig(o.GCloud(), vaultName, keyringName, keyName, o.GKEProjectID)
-	if err != nil {
-		return errors.Wrap(err, "creating KMS configuration")
-	}
-	log.Logger().Debugf("KMS Key '%s' created in keying '%s'", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
-
-	vaultBucket, err := gkevault.CreateBucket(o.GCloud(), vaultName, bucketName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.GetIOFileHandles())
-	if err != nil {
-		return errors.Wrap(err, "creating Vault GCS data bucket")
-	}
-	log.Logger().Infof("GCS bucket '%s' was created for Vault backend", util.ColorInfo(vaultBucket))
-
-	log.Logger().Infof("Creating Vault...")
-	gcpConfig := &kubevault.GCPConfig{
-		ProjectId:   o.GKEProjectID,
-		KmsKeyring:  kmsConfig.Keyring,
-		KmsKey:      kmsConfig.Key,
-		KmsLocation: kmsConfig.Location,
-		GcsBucket:   vaultBucket,
-	}
-	images, err := o.dockerImages()
-	if err != nil {
-		return errors.Wrap(err, "loading docker images from versions repository")
-	}
-	err = kubevault.CreateGKEVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, images, gcpServiceAccountSecretName,
-		gcpConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
-	if err != nil {
-		return errors.Wrap(err, "creating vault")
-	}
-	log.Logger().Infof("Vault '%s' created in cluster '%s'", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
-	return nil
-}
-
-func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interface, vaultName string,
-	kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
-
-	if o.AutoCreate {
-		_, clusterRegion, err := amazon.GetCurrentlyConnectedRegionAndClusterName()
-		if err != nil {
-			return errors.Wrap(err, "finding default AWS region")
-		}
-
-		if err := o.ApplyDefaultRegionIfEmpty(clusterRegion); err != nil {
-			return errors.Wrap(err, "setting the default region")
-		}
-
-		domain := "jenkins-x-domain"
-		username := o.ProvidedIAMUsername
-		if username == "" {
-			username = "vault_" + clusterRegion
-		}
-
-		bucketName := o.S3Bucket
-		if bucketName == "" {
-			bucketName = "vault-unseal." + o.S3Region + "." + domain
-		}
-
-		valueUUID, err := uuid.NewV4()
-		if err != nil {
-			return errors.Wrapf(err, "Generating UUID failed")
-		}
-
-		// Create suffix to apply to resources
-		suffixString := valueUUID.String()[:7]
-		var kmsID, s3Name, tableName, accessID, secretKey *string
-		if o.Boot {
-			accessID, secretKey, kmsID, s3Name, tableName, err = awsvault.CreateVaultResourcesBoot(awsvault.ResourceCreationOpts{
-				Region:          clusterRegion,
-				Domain:          domain,
-				Username:        username,
-				BucketName:      bucketName,
-				TableName:       autoCreateTableName,
-				AWSTemplatesDir: o.AWSTemplatesDir,
-				UniqueSuffix:    suffixString,
-			})
-		} else {
-			// left for non-boot clusters until deprecation
-			accessID, secretKey, kmsID, s3Name, tableName, err = awsvault.CreateVaultResources(awsvault.ResourceCreationOpts{
-				Region:     clusterRegion,
-				Domain:     domain,
-				Username:   username,
-				BucketName: bucketName,
-				TableName:  autoCreateTableName,
-			})
-		}
-
-		if err != nil {
-			return errors.Wrap(err, "an error occurred while creating the vault resources")
-		}
-		if s3Name != nil {
-			o.S3Bucket = *s3Name
-		}
-		if kmsID != nil {
-			o.KMSKeyID = *kmsID
-		}
-		if tableName != nil {
-			o.DynamoDBTable = *tableName
-		}
-		if accessID != nil {
-			o.AccessKeyID = *accessID
-		}
-		if secretKey != nil {
-			o.SecretAccessKey = *secretKey
-		}
-
+func (o *CreateVaultOptions) vaultName() (string, error) {
+	var vaultName string
+	if len(o.Args) == 1 {
+		vaultName = o.Args[0]
+	} else if o.BatchMode {
+		return "", fmt.Errorf("missing vault name")
 	} else {
-		if o.S3Bucket == "" {
-			return fmt.Errorf("missing S3 bucket flag")
-		}
-		if o.KMSKeyID == "" {
-			return fmt.Errorf("missing AWS KMS key id flag")
-		}
-		if o.AccessKeyID == "" {
-			return fmt.Errorf("missing AWS access key id flag")
-		}
-		if o.SecretAccessKey == "" {
-			return fmt.Errorf("missing AWS secret access key flag")
-		}
+		// Prompt the user for the vault name
+		vaultName, _ = util.PickValue("Vault name:", "", true, "The name of the vault that will be created", o.GetIOFileHandles())
+	}
+	return vaultName, nil
+}
 
-		if err := o.ApplyDefaultRegionIfEmpty(""); err != nil {
-			return errors.Wrap(err, "setting the default region")
-		}
+func (o *CreateVaultOptions) kubeProvider(kubeClient kubernetes.Interface, currentNamespace string) (string, error) {
+	devNamespace, _, err := kube.GetDevNamespace(kubeClient, currentNamespace)
+	data, err := kube.ReadInstallValues(kubeClient, devNamespace)
+	kubeProvider := data[kube.KubeProvider]
+	if kubeProvider == "" {
+		return "", errors.New("unable to determine Kube provider")
 	}
 
-	awsServiceAccountSecretName, err := awsvault.StoreAWSCredentialsIntoSecret(kubeClient, o.AccessKeyID, o.SecretAccessKey, vaultName, o.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "storing the service account credentials into a secret")
+	if kubeProvider != cloud.GKE && kubeProvider != cloud.AWS && kubeProvider != cloud.EKS {
+		return "", errors.Wrapf(err, "this command only supports the Kubernetes providers %s, %s and %s", cloud.GKE, cloud.AWS, cloud.EKS)
 	}
-	images, err := o.dockerImages()
-	if err != nil {
-		return errors.Wrap(err, "loading docker images from versions repository")
-	}
-	err = kubevault.CreateAWSVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, images,
-		awsServiceAccountSecretName, &o.AWSConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
-	if err != nil {
-		return errors.Wrap(err, "creating vault")
-	}
-	log.Logger().Infof("Vault '%s' created in cluster '%s'", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
+	return kubeProvider, nil
+}
 
-	return nil
+func (o *CreateVaultOptions) clusterName() (string, error) {
+	var err error
+	clusterName := o.ClusterName
+	if clusterName == "" {
+		clusterName, err = cluster.ShortName(o.Kube())
+		if err != nil {
+			return "", errors.Wrap(err, "unable to determine the cluster name")
+		}
+	}
+	return clusterName, nil
 }
 
 func (o *CreateVaultOptions) exposeVault(vaultService string) error {
@@ -506,51 +311,4 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 		WaitForCerts:        true,
 	}
 	return upgradeIngOpts.Run()
-}
-
-// CreateAuthServiceAccount creates a Serivce Account for the Auth service for vault
-func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, serviceAccountName string, namespace string) (string, error) {
-	if serviceAccountName == "" {
-		serviceAccountName = AuthServiceAccountName(vaultName)
-	}
-
-	_, err := serviceaccount.CreateServiceAccount(client, namespace, serviceAccountName)
-	if err != nil {
-		return "", errors.Wrap(err, "creating vault auth service account")
-	}
-	return serviceAccountName, nil
-}
-
-// AuthServiceAccountName creates a service account name for a given vault and cluster name
-func AuthServiceAccountName(vaultName string) string {
-	return fmt.Sprintf("%s-%s", vaultName, "auth-sa")
-}
-
-// ApplyDefaultRegionIfEmpty applies the default region to all AWS resources
-func (o *CreateVaultOptions) ApplyDefaultRegionIfEmpty(enforcedDefault string) error {
-	if o.DynamoDBRegion == "" || o.KMSRegion == "" || o.S3Region == "" {
-		var defaultRegion string
-		var err error
-		if enforcedDefault == "" {
-			_, defaultRegion, err = amazon.GetCurrentlyConnectedRegionAndClusterName()
-			if err != nil {
-				return errors.Wrap(err, "finding default AWS region")
-			}
-		} else {
-			defaultRegion = enforcedDefault
-		}
-
-		log.Logger().Infof("Region not specified, defaulting to %s", util.ColorInfo(defaultRegion))
-		if o.DynamoDBRegion == "" {
-			o.DynamoDBRegion = defaultRegion
-		}
-		if o.KMSRegion == "" {
-			o.KMSRegion = defaultRegion
-		}
-		if o.S3Region == "" {
-			o.S3Region = defaultRegion
-		}
-
-	}
-	return nil
 }
