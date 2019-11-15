@@ -90,7 +90,7 @@ func (o *StepBootVaultOptions) Run() error {
 
 	info := util.ColorInfo
 	if requirements.SecretStorage != config.SecretStorageTypeVault {
-		log.Logger().Infof("not attempting to boot Vault as using secret storage: %s\n", info(string(requirements.SecretStorage)))
+		log.Logger().Infof("Not attempting to boot Vault as using secret storage: %s\n", info(string(requirements.SecretStorage)))
 		return nil
 	}
 
@@ -123,7 +123,7 @@ func (o *StepBootVaultOptions) Run() error {
 	// TODO: do we need to wait for certificates to be available via the secret
 	noExposeVault = true
 
-	cvo := &create.CreateVaultOptions{
+	createVaultOptions := &create.CreateVaultOptions{
 		CreateOptions: create.CreateOptions{
 			CommonOptions: &copyOptions,
 		},
@@ -141,7 +141,7 @@ func (o *StepBootVaultOptions) Run() error {
 	if requirements.Cluster.Provider == cloud.EKS {
 		if requirements.Vault.AWSConfig != nil {
 			awsConfig := requirements.Vault.AWSConfig
-			cvo.AWSCreateVaultOptions = create.AWSCreateVaultOptions{}
+			createVaultOptions.AWSCreateVaultOptions = create.AWSCreateVaultOptions{}
 			secretAccessKey := os.Getenv("VAULT_AWS_SECRET_ACCESS_KEY")
 			accessKeyId := os.Getenv("VAULT_AWS_ACCESS_KEY_ID")
 			if !awsConfig.AutoCreate && (checkRequiredResource("dynamoDBTable", awsConfig.DynamoDBTable) ||
@@ -153,8 +153,8 @@ func (o *StepBootVaultOptions) Run() error {
 				log.Logger().Info("Some of the required provided values are empty - We will create all resources")
 				awsConfig.AutoCreate = true
 			}
-			cvo.Boot = true
-			cvo.AWSConfig = kubevault.AWSConfig{
+			createVaultOptions.Boot = true
+			createVaultOptions.AWSConfig = kubevault.AWSConfig{
 				AWSUnsealConfig: v1alpha1.AWSUnsealConfig{
 					KMSKeyID:  awsConfig.KMSKeyID,
 					KMSRegion: awsConfig.KMSRegion,
@@ -171,41 +171,41 @@ func (o *StepBootVaultOptions) Run() error {
 			}
 		}
 
-		cvo.AWSTemplatesDir = filepath.Join(o.Dir, o.ProviderValuesDir, cloud.EKS, "templates")
+		createVaultOptions.AWSTemplatesDir = filepath.Join(o.Dir, o.ProviderValuesDir, cloud.EKS, "templates")
 
 	}
 	// first argument is the vault name
-	cvo.Args = []string{requirements.Vault.Name}
-	cvo.SetDevNamespace(ns)
+	createVaultOptions.Args = []string{requirements.Vault.Name}
+	createVaultOptions.SetDevNamespace(ns)
 
 	provider := requirements.Cluster.Provider
 	if provider == cloud.GKE {
-		if cvo.GKEProjectID == "" {
-			cvo.GKEProjectID = requirements.Cluster.ProjectID
+		if createVaultOptions.GKEProjectID == "" {
+			createVaultOptions.GKEProjectID = requirements.Cluster.ProjectID
 		}
-		if cvo.GKEProjectID == "" {
+		if createVaultOptions.GKEProjectID == "" {
 			return config.MissingRequirement("project", requirementsFile)
 		}
 
-		if cvo.GKEZone == "" {
-			cvo.GKEZone = requirements.Cluster.Zone
+		if createVaultOptions.GKEZone == "" {
+			createVaultOptions.GKEZone = requirements.Cluster.Zone
 		}
-		if cvo.GKEZone == "" {
+		if createVaultOptions.GKEZone == "" {
 			return config.MissingRequirement("zone", requirementsFile)
 		}
 	} else if provider == cloud.AWS || provider == cloud.EKS {
 		defaultRegion := requirements.Cluster.Region
-		if cvo.DynamoDBRegion == "" {
-			cvo.DynamoDBRegion = defaultRegion
+		if createVaultOptions.DynamoDBRegion == "" {
+			createVaultOptions.DynamoDBRegion = defaultRegion
 			log.Logger().Infof("Region not specified for DynamoDB, defaulting to %s", util.ColorInfo(defaultRegion))
 		}
-		if cvo.KMSRegion == "" {
-			cvo.KMSRegion = defaultRegion
+		if createVaultOptions.KMSRegion == "" {
+			createVaultOptions.KMSRegion = defaultRegion
 			log.Logger().Infof("Region not specified for KMS, defaulting to %s", util.ColorInfo(defaultRegion))
 
 		}
-		if cvo.S3Region == "" {
-			cvo.S3Region = defaultRegion
+		if createVaultOptions.S3Region == "" {
+			createVaultOptions.S3Region = defaultRegion
 			log.Logger().Infof("Region not specified for S3, defaulting to %s", util.ColorInfo(defaultRegion))
 		}
 		if defaultRegion == "" {
@@ -217,23 +217,23 @@ func (o *StepBootVaultOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	opts := o.CommonOptions
+	commonOptions := o.CommonOptions
 	values := []string{
 		"image.repository=" + kubevault.VaultOperatorImage,
 		"image.tag=" + tag,
 	}
-	opts.SetValues = strings.Join(values, ",")
+	commonOptions.SetValues = strings.Join(values, ",")
 
-	log.Logger().Infof("installing vault operator with helm values:  %s", util.ColorInfo(opts.SetValues))
-	err = create.InstallVaultOperator(opts, ns, &requirements.VersionStream)
+	log.Logger().Infof("Installing vault operator with helm values:  %s", util.ColorInfo(commonOptions.SetValues))
+	err = create.InstallVaultOperator(commonOptions, ns, &requirements.VersionStream)
 	if err != nil {
 		return errors.Wrap(err, "unable to install vault operator")
 	}
 
-	log.Logger().Infof("vault operator installed in namespace %s", ns)
+	log.Logger().Infof("Vault operator installed in namespace %s", ns)
 
 	// Create a new System vault
-	vaultOperatorClient, err := cvo.VaultOperatorClient()
+	vaultOperatorClient, err := createVaultOptions.VaultOperatorClient()
 	if err != nil {
 		return err
 	}
@@ -249,19 +249,17 @@ func (o *StepBootVaultOptions) Run() error {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
 	}
 
-	log.Logger().Infof("finding vault '%s' in namespace %s", requirements.Vault.Name, ns)
+	log.Logger().Infof("Finding vault '%s' in namespace %s", requirements.Vault.Name, ns)
 
 	if kubevault.FindVault(vaultOperatorClient, requirements.Vault.Name, ns) {
-		log.Logger().Infof("System vault named %s in namespace %s already exists",
-			util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
+		log.Logger().Infof("System vault named %s in namespace %s already exists", util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
 	} else {
 		log.Logger().Info("Creating new system vault")
-		err = cvo.CreateVault(vaultOperatorClient, requirements.Vault.Name, provider)
+		err = createVaultOptions.CreateVault(vaultOperatorClient, requirements.Vault.Name, provider)
 		if err != nil {
 			return err
 		}
-		log.Logger().Infof("System vault created named %s in namespace %s.",
-			util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
+		log.Logger().Infof("System vault created named %s in namespace %s.", util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
 	}
 	return nil
 }
