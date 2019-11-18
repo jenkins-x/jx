@@ -1,9 +1,11 @@
 package vault
 
 import (
+	"bytes"
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util/json"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
@@ -13,9 +15,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -180,15 +185,12 @@ func SystemVaultNameForCluster(clusterName string) string {
 	return naming.ToValidNameTruncated(fullName, 22)
 }
 
-// CreateGKEVault creates a new vault backed by GCP KMS and storage
-func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
-	images map[string]string, gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
-	authServiceAccountNamespace string, secretsPathPrefix string) error {
-
-	vault, err := initializeVault(kubeClient, name, ns, images,
+// PrepareGKEVaultCRD creates a new vault backed by GCP KMS and storage
+func PrepareGKEVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images map[string]string, gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
+	vault, err := initializeVaultCRD(kubeClient, name, ns, images,
 		authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	vault.Spec.Config["storage"] = Storage{
@@ -221,18 +223,14 @@ func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 		SecretName: gcpServiceAccountSecretName,
 	}
 
-	_, err = vaultOperatorClient.VaultV1alpha1().Vaults(ns).Create(vault)
-	return err
+	return vault, err
 }
 
-// CreateAWSVault creates a new vault backed by AWS KMS and DynamoDB storage
-func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
-	images map[string]string, awsServiceAccountSecretName string, awsConfig *AWSConfig, authServiceAccount string,
-	authServiceAccountNamespace string, secretsPathPrefix string) error {
-
-	vault, err := initializeVault(kubeClient, name, ns, images, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
+// PrepareAWSVaultCRD creates a new vault backed by AWS KMS and DynamoDB storage
+func PrepareAWSVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images map[string]string, awsServiceAccountSecretName string, awsConfig *AWSConfig, authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
+	vault, err := initializeVaultCRD(kubeClient, name, ns, images, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	vault.Spec.Config["storage"] = Storage{
@@ -261,12 +259,11 @@ func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 		SecretName: awsServiceAccountSecretName,
 	}
 
-	_, err = vaultOperatorClient.VaultV1alpha1().Vaults(ns).Create(vault)
-	return err
+	return vault, err
 }
 
-// initializeVault intializes and returns vault struct
-func initializeVault(kubeClient kubernetes.Interface, name string, ns string, images map[string]string,
+// initializeVaultCRD intializes and returns vault struct
+func initializeVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images map[string]string,
 	authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
 
 	err := createVaultServiceAccount(kubeClient, ns, name)
@@ -420,7 +417,7 @@ func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) 
 
 // GetVault gets a specific vault
 func GetVault(vaultOperatorClient versioned.Interface, name string, ns string) (*v1alpha1.Vault, error) {
-	return vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
+	return vaultOperatorClient.VaultV1alpha1().Vaults(ns).Get(name, metav1.GetOptions{})
 }
 
 // GetVaults returns all vaults available in a given namespaces
@@ -472,4 +469,45 @@ func GetAuthSaName(vault v1alpha1.Vault) string {
 	name := roleObject.(map[string]interface{})["name"]
 
 	return name.(string)
+}
+
+// CreateOrUpdateVault creates the specified Vault CRD if it does not exist or updates it otherwise.
+func CreateOrUpdateVault(vault *v1alpha1.Vault, vaultOperatorClient versioned.Interface, ns string) error {
+	vaultExists := false
+	existingVault, err := GetVault(vaultOperatorClient, vault.Name, ns)
+	if err == nil {
+		vaultExists = true
+	} else {
+		statusError, ok := err.(*apierrors.StatusError)
+		if ok && statusError.ErrStatus.Code == 404 {
+			vaultExists = false
+		} else {
+			return errors.Wrapf(err, "unable to check for existence of vault '%s' in namespace '%s'", vault.Name, ns)
+		}
+	}
+
+	if vaultExists {
+		vaultName := existingVault.ObjectMeta.Name
+		patch, err := json.CreatePatch(existingVault, vault)
+		if err != nil {
+			return errors.Wrapf(err, "unable to create path for update of of vault '%s' in namespace '%s'", vault.Name, ns)
+		}
+		if bytes.Equal(patch, []byte("[]")) {
+			return nil
+		}
+		_, err = vaultOperatorClient.VaultV1alpha1().Vaults(ns).Patch(vaultName, types.JSONPatchType, patch)
+	} else {
+		_, err = vaultOperatorClient.VaultV1alpha1().Vaults(ns).Create(vault)
+	}
+
+	op := "create"
+	if vaultExists {
+		op = "update"
+	}
+	if err != nil {
+		return errors.Wrapf(err, "unable to %s vault '%s' in namespace '%s'", op, vault.Name, ns)
+	}
+	log.Logger().Infof("Vault '%s' in namespace '%s'  %sd ", util.ColorInfo(vault.Name), util.ColorInfo(ns), op)
+
+	return nil
 }

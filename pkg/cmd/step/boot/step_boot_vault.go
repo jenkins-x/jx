@@ -249,17 +249,10 @@ func (o *StepBootVaultOptions) Run() error {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
 	}
 
-	log.Logger().Infof("Finding vault '%s' in namespace %s", requirements.Vault.Name, ns)
-
-	if kubevault.FindVault(vaultOperatorClient, requirements.Vault.Name, ns) {
-		log.Logger().Infof("System vault named %s in namespace %s already exists", util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
-	} else {
-		log.Logger().Info("Creating new system vault")
-		err = createVaultOptions.CreateVault(vaultOperatorClient, requirements.Vault.Name, provider)
-		if err != nil {
-			return err
-		}
-		log.Logger().Infof("System vault created named %s in namespace %s.", util.ColorInfo(requirements.Vault.Name), util.ColorInfo(ns))
+	log.Logger().Info("Creating or updating system vault")
+	err = createVaultOptions.CreateOrUpdateVault(vaultOperatorClient, requirements.Vault.Name, provider)
+	if err != nil {
+		return err
 	}
 	return nil
 }
