@@ -341,7 +341,7 @@ func (o *ControllerOptions) LoadProwOAuthConfig(ns string) (string, error) {
 	options := *o
 	options.SetDevNamespace(ns)
 	options.SkipAuthSecretsMerge = false
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return "", err
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -19,11 +18,6 @@ import (
 // ImportProject imports a MultiBranchProject into Jenkins for the given git URL
 func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService, isEnvironment bool, batchMode bool) error {
 	jenk, err := o.JenkinsClient()
-	if err != nil {
-		return err
-	}
-
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
 	if err != nil {
 		return err
 	}
@@ -67,75 +61,6 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 	}
 
-	createCredential := true
-	if credentials == "" {
-		// lets try find the credentials from the secrets
-		credentials = kube.FindGitCredentials(gitProvider, secrets)
-		if credentials != "" {
-			createCredential = false
-		}
-	}
-	if credentials == "" {
-		// TODO lets prompt the user to add a new credential for the Git provider...
-		config := authConfigSvc.Config()
-		u := gitInfo.HostURL()
-		server := config.GetOrCreateServer(u)
-		if len(server.Users) == 0 {
-			// lets check if the host was used in `~/.jx/gitAuth.yaml` instead of URL
-			s2 := config.GetOrCreateServer(gitInfo.Host)
-			if s2 != nil && len(s2.Users) > 0 {
-				server = s2
-				u = gitInfo.Host
-			}
-		}
-		user, err := o.PickPipelineUserAuth(config, server)
-		if err != nil {
-			return err
-		}
-		if user.Username == "" {
-			return fmt.Errorf("Could not find a username for Git server %s", u)
-		}
-
-		credentials, err = o.UpdatePipelineGitCredentialsSecret(server, user)
-		if err != nil {
-			return err
-		}
-
-		if credentials == "" {
-			return fmt.Errorf("Failed to find the created pipeline secret for the server %s", server.URL)
-		} else {
-			createCredential = false
-		}
-	}
-	if createCredential {
-		_, err = jenk.GetCredential(credentials)
-		if err != nil {
-			config := authConfigSvc.Config()
-			u := gitInfo.HostURL()
-			server := config.GetOrCreateServer(u)
-			if len(server.Users) == 0 {
-				// lets check if the host was used in `~/.jx/gitAuth.yaml` instead of URL
-				s2 := config.GetOrCreateServer(gitInfo.Host)
-				if s2 != nil && len(s2.Users) > 0 {
-					server = s2
-					u = gitInfo.Host
-				}
-			}
-			user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode, "", o.GetIOFileHandles())
-			if err != nil {
-				return err
-			}
-			if user.Username == "" {
-				return fmt.Errorf("Could not find a username for Git server %s", u)
-			}
-			err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
-
-			if err != nil {
-				return fmt.Errorf("error creating Jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
-			}
-			log.Logger().Infof("Created credential %s for host %s user %s", util.ColorInfo(credentials), util.ColorInfo(u), util.ColorInfo(user.Username))
-		}
-	}
 	org := gitInfo.Organisation
 	err = o.Retry(10, time.Second*10, func() error {
 		folder, err := jenk.GetJob(org)

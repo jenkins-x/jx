@@ -193,7 +193,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	// avoid needing a dev cluster
 	o.EnableRemoteKubeCluster()
 
-	authSvc, err := o.CreateGitAuthConfigService()
+	authSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

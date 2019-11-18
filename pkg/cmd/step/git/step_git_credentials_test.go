@@ -1,15 +1,17 @@
 package git_test
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/testkube"
-	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStepGitCredentials(t *testing.T) {
@@ -29,28 +31,58 @@ func TestStepGitCredentials(t *testing.T) {
 	expected := createGitCredentialLine(scheme1, host1, user1, pwd1) +
 		createGitCredentialLine(scheme2, host2, user2, pwd2)
 
-	secretList := &corev1.SecretList{
-		Items: []corev1.Secret{
-			testkube.CreateTestPipelineGitSecret(kind1, "foo", scheme1+host1, user1, pwd1),
-			testkube.CreateTestPipelineGitSecret(kind2, "bar", scheme2+host2, user2, pwd2),
-		},
+	tmpDir, err := ioutil.TempDir("", "gitcredentials")
+	if err != nil {
+		require.NoError(t, err, "should create a temporary dir")
+	}
+	defer os.RemoveAll(tmpDir)
+	outFile := filepath.Join(tmpDir, "credentials")
+	options := &git.StepGitCredentialsOptions{
+		OutputFile: outFile,
 	}
 
-	options := &git.StepGitCredentialsOptions{}
+	authSvc := auth.NewMemoryAuthConfigService()
+	cfg := auth.AuthConfig{
+		Servers: []*auth.AuthServer{
+			{
+				URL: scheme1 + host1,
+				Users: []*auth.UserAuth{
+					{
+						Username: user1,
+						ApiToken: pwd1,
+					},
+				},
+				Name:        kind1,
+				Kind:        kind1,
+				CurrentUser: user1,
+			},
+			{
+				URL: scheme2 + host2,
+				Users: []*auth.UserAuth{
+					{
+						Username: user2,
+						ApiToken: pwd2,
+					},
+				},
+				Name:        kind2,
+				Kind:        kind2,
+				CurrentUser: user2,
+			},
+		},
+	}
+	authSvc.SetConfig(&cfg)
 
-	data := options.CreateGitCredentialsFromSecrets(secretList)
-	actual := string(data)
+	err = options.CreateGitCredentialsFile(outFile, authSvc)
+	assert.NoError(t, err, "should create the git credentials file without error")
 
-	assert.Equal(t, expected, actual, "generated git credentials file")
-
-	tests.Debugf("Generated git credentials: %s\n", actual)
+	actual, err := ioutil.ReadFile(outFile)
+	assert.NoError(t, err, "should read the git credentials from file")
+	assert.EqualValues(t, expected, string(actual), "generated git credentials file")
 }
 
 func createGitCredentialLine(scheme string, host string, user string, pwd string) string {
 	answer := scheme + user + ":" + pwd + "@" + host + "\n"
-	if scheme == "https://" {
-		scheme = "http://"
-	} else {
+	if scheme == "http://" {
 		scheme = "https://"
 	}
 	answer += scheme + user + ":" + pwd + "@" + host + "\n"

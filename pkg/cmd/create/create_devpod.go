@@ -845,11 +845,14 @@ func (o *CreateDevPodOptions) Run() error {
 		// Only add git secrets to the Theia container when sync flag is missing (otherwise Theia container won't exist)
 		if !o.Sync {
 			// Add Git Secrets to Theia container
-			secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
+			gitAuthSvc, err := o.GitAuthConfigService()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "creating git auth config service")
 			}
-			gitCredentials := o.GitCredentials.CreateGitCredentialsFromSecrets(secrets)
+			gitCredentials, err := o.GitCredentials.CreateGitCredentials(gitAuthSvc)
+			if err != nil {
+				return errors.Wrap(err, "creating git credentials")
+			}
 			theiaRshExec := []string{
 				fmt.Sprintf("echo \"%s\" >> ~/.git-credentials", string(gitCredentials)),
 				"git config --global credential.helper store",

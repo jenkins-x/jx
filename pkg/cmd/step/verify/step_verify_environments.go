@@ -269,9 +269,9 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requi
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s and %s", gitURL, message)
 	}
-	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating git auth config service")
 	}
 	return o.createEnvironmentRepository(name, requirements, authConfigSvc, environment, gitURL, envGitInfo)
 }

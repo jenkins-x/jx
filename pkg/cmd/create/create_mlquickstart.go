@@ -127,7 +127,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		log.Logger().Debugf("In batch mode.")
 	}
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

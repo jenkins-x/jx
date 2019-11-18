@@ -72,7 +72,7 @@ func (o *StepPRCommentOptions) Run() error {
 		return fmt.Errorf("no comment provided")
 	}
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

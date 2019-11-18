@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -174,30 +175,33 @@ func (o *StepPostBuildOptions) addImageToAnchore() (string, error) {
 
 func (o *StepPostBuildOptions) getAnchoreDetails() (anchoreDetails, error) {
 	var a anchoreDetails
-	secretsList, err := o.LoadPipelineSecrets(kube.ValueKindAddon, kube.ValueKindCVE)
+	anchoreAuthSvc, err := o.AddonAuthConfigService(kube.ValueKindCVE)
 	if err != nil {
-		return a, err
+		return a, errors.Wrap(err, "creating the auth config service for anchore")
 	}
 
-	if secretsList == nil || len(secretsList.Items) == 0 {
-		return a, fmt.Errorf("no addon secrets found for kind cve")
+	cfg := anchoreAuthSvc.Config()
+	if cfg == nil {
+		return a, errors.New("no auth config found anchore")
+	}
+	server := cfg.CurrentAuthServer()
+	if server == nil {
+		return a, errors.New("no server auth config found for anchore")
 	}
 
-	if len(secretsList.Items) > 1 {
-		return a, fmt.Errorf("multiple addon secrets found for kind cve, please clean up and leave only one")
+	auth := server.CurrentAuth()
+	if auth == nil {
+		return a, fmt.Errorf("no auth configuration found for server %q", server.URL)
 	}
-
-	s := secretsList.Items[0]
-
-	a.URL = s.Annotations[kube.AnnotationURL]
-
-	if a.URL != "" && s.Data != nil {
-		a.Username = string(s.Data[kube.SecretDataUsername])
-		a.Password = string(s.Data[kube.SecretDataPassword])
-	} else {
-		return a, fmt.Errorf("secret %s is missing URL or data", s.Name)
+	a.URL = server.URL
+	a.Username = auth.Username
+	a.Password = auth.Password
+	if a.Password == "" {
+		a.Password = auth.ApiToken
 	}
-
+	if a.Password == "" {
+		a.Password = auth.BearerToken
+	}
 	return a, nil
 }
 

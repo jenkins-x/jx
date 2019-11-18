@@ -61,7 +61,7 @@ func NewCmdGetChat(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetChatOptions) Run() error {
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService(o.Kind)
 	if err != nil {
 		return err
 	}

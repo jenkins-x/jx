@@ -182,6 +182,9 @@ const (
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
 
+	// ValueKindChartmuseum a chartmuseum auth secret/credentials
+	ValueKindChartmuseum = "chartmuseum"
+
 	// ValueKindJenkins an Jenkins App secret/credentials
 	ValueKindJenkins = "jenkins"
 

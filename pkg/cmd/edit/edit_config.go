@@ -83,11 +83,11 @@ func (o *EditConfigOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.IssuesAuthConfigSvc, err = o.CreateIssueTrackerAuthConfigService()
+	o.IssuesAuthConfigSvc, err = o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}
-	o.ChatAuthConfigSvc, err = o.CreateChatAuthConfigService()
+	o.ChatAuthConfigSvc, err = o.CreateChatAuthConfigService("")
 	if err != nil {
 		return err
 	}

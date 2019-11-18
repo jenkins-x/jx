@@ -315,7 +315,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	o.State.Tracker = tracker
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

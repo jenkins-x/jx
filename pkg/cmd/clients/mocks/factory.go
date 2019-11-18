@@ -26,7 +26,6 @@ import (
 	versioned3 "github.com/knative/serving/pkg/client/clientset/versioned"
 	pegomock "github.com/petergtz/pegomock"
 	versioned4 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
@@ -48,22 +47,7 @@ func NewMockFactory(options ...pegomock.Option) *MockFactory {
 func (mock *MockFactory) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
 func (mock *MockFactory) FailHandler() pegomock.FailHandler      { return mock.fail }
 
-func (mock *MockFactory) AuthMergePipelineSecrets(_param0 *auth.AuthConfig, _param1 *v1.SecretList, _param2 string, _param3 bool) error {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockFactory().")
-	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("AuthMergePipelineSecrets", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(error)
-		}
-	}
-	return ret0
-}
-
-func (mock *MockFactory) CreateAddonAuthConfigService(_param0 string, _param1 *v1.SecretList) (auth.ConfigService, error) {
+func (mock *MockFactory) CreateAddonAuthConfigService(_param0 string, _param1 string) (auth.ConfigService, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
@@ -101,11 +85,11 @@ func (mock *MockFactory) CreateApiExtensionsClient() (clientset.Interface, error
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateAuthConfigService(_param0 string, _param1 string, _param2 bool) (auth.ConfigService, error) {
+func (mock *MockFactory) CreateAuthConfigService(_param0 string, _param1 string, _param2 string, _param3 string) (auth.ConfigService, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateAuthConfigService", params, []reflect.Type{reflect.TypeOf((*auth.ConfigService)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 auth.ConfigService
 	var ret1 error
@@ -139,11 +123,11 @@ func (mock *MockFactory) CreateCertManagerClient() (versioned1.Interface, error)
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateChartmuseumAuthConfigService(_param0 string) (auth.ConfigService, error) {
+func (mock *MockFactory) CreateChartmuseumAuthConfigService(_param0 string, _param1 string) (auth.ConfigService, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0}
+	params := []pegomock.Param{_param0, _param1}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateChartmuseumAuthConfigService", params, []reflect.Type{reflect.TypeOf((*auth.ConfigService)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 auth.ConfigService
 	var ret1 error
@@ -158,7 +142,7 @@ func (mock *MockFactory) CreateChartmuseumAuthConfigService(_param0 string) (aut
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateChatAuthConfigService(_param0 string, _param1 *v1.SecretList) (auth.ConfigService, error) {
+func (mock *MockFactory) CreateChatAuthConfigService(_param0 string, _param1 string) (auth.ConfigService, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
@@ -238,11 +222,30 @@ func (mock *MockFactory) CreateDynamicClient() (*dynamic.APIHelper, string, erro
 	return ret0, ret1, ret2
 }
 
-func (mock *MockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 string, _param5 bool, _param6 gits.Gitter, _param7 util.IOFileHandles) (gits.GitProvider, error) {
+func (mock *MockFactory) CreateGitAuthConfigService(_param0 string, _param1 string) (auth.ConfigService, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7}
+	params := []pegomock.Param{_param0, _param1}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateGitAuthConfigService", params, []reflect.Type{reflect.TypeOf((*auth.ConfigService)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 auth.ConfigService
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(auth.ConfigService)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
+func (mock *MockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 util.IOFileHandles) (gits.GitProvider, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateGitProvider", params, []reflect.Type{reflect.TypeOf((*gits.GitProvider)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 gits.GitProvider
 	var ret1 error
@@ -272,7 +275,7 @@ func (mock *MockFactory) CreateHelm(_param0 bool, _param1 string, _param2 bool, 
 	return ret0
 }
 
-func (mock *MockFactory) CreateIssueTrackerAuthConfigService(_param0 string, _param1 *v1.SecretList) (auth.ConfigService, error) {
+func (mock *MockFactory) CreateIssueTrackerAuthConfigService(_param0 string, _param1 string) (auth.ConfigService, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
@@ -314,11 +317,11 @@ func (mock *MockFactory) CreateJXClient() (versioned0.Interface, string, error) 
 	return ret0, ret1, ret2
 }
 
-func (mock *MockFactory) CreateJenkinsAuthConfigService(_param0 kubernetes.Interface, _param1 string, _param2 string) (auth.ConfigService, error) {
+func (mock *MockFactory) CreateJenkinsAuthConfigService(_param0 string, _param1 string) (auth.ConfigService, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2}
+	params := []pegomock.Param{_param0, _param1}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateJenkinsAuthConfigService", params, []reflect.Type{reflect.TypeOf((*auth.ConfigService)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 auth.ConfigService
 	var ret1 error
@@ -440,17 +443,17 @@ func (mock *MockFactory) CreateKubeConfig() (*rest.Config, error) {
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateMetricsClient() (*versioned5.Clientset, error) {
+func (mock *MockFactory) CreateMetricsClient() (versioned5.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateMetricsClient", params, []reflect.Type{reflect.TypeOf((**versioned5.Clientset)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *versioned5.Clientset
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateMetricsClient", params, []reflect.Type{reflect.TypeOf((*versioned5.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned5.Interface
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(*versioned5.Clientset)
+			ret0 = result[0].(versioned5.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -728,46 +731,7 @@ type VerifierMockFactory struct {
 	timeout                time.Duration
 }
 
-func (verifier *VerifierMockFactory) AuthMergePipelineSecrets(_param0 *auth.AuthConfig, _param1 *v1.SecretList, _param2 string, _param3 bool) *MockFactory_AuthMergePipelineSecrets_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AuthMergePipelineSecrets", params, verifier.timeout)
-	return &MockFactory_AuthMergePipelineSecrets_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockFactory_AuthMergePipelineSecrets_OngoingVerification struct {
-	mock              *MockFactory
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockFactory_AuthMergePipelineSecrets_OngoingVerification) GetCapturedArguments() (*auth.AuthConfig, *v1.SecretList, string, bool) {
-	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
-}
-
-func (c *MockFactory_AuthMergePipelineSecrets_OngoingVerification) GetAllCapturedArguments() (_param0 []*auth.AuthConfig, _param1 []*v1.SecretList, _param2 []string, _param3 []bool) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]*auth.AuthConfig, len(c.methodInvocations))
-		for u, param := range params[0] {
-			_param0[u] = param.(*auth.AuthConfig)
-		}
-		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
-		for u, param := range params[1] {
-			_param1[u] = param.(*v1.SecretList)
-		}
-		_param2 = make([]string, len(c.methodInvocations))
-		for u, param := range params[2] {
-			_param2[u] = param.(string)
-		}
-		_param3 = make([]bool, len(c.methodInvocations))
-		for u, param := range params[3] {
-			_param3[u] = param.(bool)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockFactory) CreateAddonAuthConfigService(_param0 string, _param1 *v1.SecretList) *MockFactory_CreateAddonAuthConfigService_OngoingVerification {
+func (verifier *VerifierMockFactory) CreateAddonAuthConfigService(_param0 string, _param1 string) *MockFactory_CreateAddonAuthConfigService_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateAddonAuthConfigService", params, verifier.timeout)
 	return &MockFactory_CreateAddonAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -778,21 +742,21 @@ type MockFactory_CreateAddonAuthConfigService_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateAddonAuthConfigService_OngoingVerification) GetCapturedArguments() (string, *v1.SecretList) {
+func (c *MockFactory_CreateAddonAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MockFactory_CreateAddonAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*v1.SecretList) {
+func (c *MockFactory_CreateAddonAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
-			_param1[u] = param.(*v1.SecretList)
+			_param1[u] = param.(string)
 		}
 	}
 	return
@@ -815,8 +779,8 @@ func (c *MockFactory_CreateApiExtensionsClient_OngoingVerification) GetCapturedA
 func (c *MockFactory_CreateApiExtensionsClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockFactory) CreateAuthConfigService(_param0 string, _param1 string, _param2 bool) *MockFactory_CreateAuthConfigService_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2}
+func (verifier *VerifierMockFactory) CreateAuthConfigService(_param0 string, _param1 string, _param2 string, _param3 string) *MockFactory_CreateAuthConfigService_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateAuthConfigService", params, verifier.timeout)
 	return &MockFactory_CreateAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -826,12 +790,12 @@ type MockFactory_CreateAuthConfigService_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string, bool) {
-	_param0, _param1, _param2 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+func (c *MockFactory_CreateAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string, string, string) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *MockFactory_CreateAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool) {
+func (c *MockFactory_CreateAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
@@ -842,9 +806,13 @@ func (c *MockFactory_CreateAuthConfigService_OngoingVerification) GetAllCaptured
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]bool, len(c.methodInvocations))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
-			_param2[u] = param.(bool)
+			_param2[u] = param.(string)
+		}
+		_param3 = make([]string, len(c.methodInvocations))
+		for u, param := range params[3] {
+			_param3[u] = param.(string)
 		}
 	}
 	return
@@ -867,8 +835,8 @@ func (c *MockFactory_CreateCertManagerClient_OngoingVerification) GetCapturedArg
 func (c *MockFactory_CreateCertManagerClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockFactory) CreateChartmuseumAuthConfigService(_param0 string) *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification {
-	params := []pegomock.Param{_param0}
+func (verifier *VerifierMockFactory) CreateChartmuseumAuthConfigService(_param0 string, _param1 string) *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateChartmuseumAuthConfigService", params, verifier.timeout)
 	return &MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -878,23 +846,27 @@ type MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
+func (c *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockFactory_CreateChartmuseumAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
+		_param1 = make([]string, len(c.methodInvocations))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
 	}
 	return
 }
 
-func (verifier *VerifierMockFactory) CreateChatAuthConfigService(_param0 string, _param1 *v1.SecretList) *MockFactory_CreateChatAuthConfigService_OngoingVerification {
+func (verifier *VerifierMockFactory) CreateChatAuthConfigService(_param0 string, _param1 string) *MockFactory_CreateChatAuthConfigService_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateChatAuthConfigService", params, verifier.timeout)
 	return &MockFactory_CreateChatAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -905,21 +877,21 @@ type MockFactory_CreateChatAuthConfigService_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateChatAuthConfigService_OngoingVerification) GetCapturedArguments() (string, *v1.SecretList) {
+func (c *MockFactory_CreateChatAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MockFactory_CreateChatAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*v1.SecretList) {
+func (c *MockFactory_CreateChatAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
-			_param1[u] = param.(*v1.SecretList)
+			_param1[u] = param.(string)
 		}
 	}
 	return
@@ -998,8 +970,39 @@ func (c *MockFactory_CreateDynamicClient_OngoingVerification) GetCapturedArgumen
 func (c *MockFactory_CreateDynamicClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 string, _param5 bool, _param6 gits.Gitter, _param7 util.IOFileHandles) *MockFactory_CreateGitProvider_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7}
+func (verifier *VerifierMockFactory) CreateGitAuthConfigService(_param0 string, _param1 string) *MockFactory_CreateGitAuthConfigService_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateGitAuthConfigService", params, verifier.timeout)
+	return &MockFactory_CreateGitAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockFactory_CreateGitAuthConfigService_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockFactory_CreateGitAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *MockFactory_CreateGitAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(c.methodInvocations))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(c.methodInvocations))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 util.IOFileHandles) *MockFactory_CreateGitProvider_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateGitProvider", params, verifier.timeout)
 	return &MockFactory_CreateGitProvider_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1009,12 +1012,12 @@ type MockFactory_CreateGitProvider_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateGitProvider_OngoingVerification) GetCapturedArguments() (string, string, auth.ConfigService, string, string, bool, gits.Gitter, util.IOFileHandles) {
-	_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1], _param7[len(_param7)-1]
+func (c *MockFactory_CreateGitProvider_OngoingVerification) GetCapturedArguments() (string, string, auth.ConfigService, string, bool, gits.Gitter, util.IOFileHandles) {
+	_param0, _param1, _param2, _param3, _param4, _param5, _param6 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1]
 }
 
-func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []auth.ConfigService, _param3 []string, _param4 []string, _param5 []bool, _param6 []gits.Gitter, _param7 []util.IOFileHandles) {
+func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []auth.ConfigService, _param3 []string, _param4 []bool, _param5 []gits.Gitter, _param6 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
@@ -1033,21 +1036,17 @@ func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArgume
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
-		_param4 = make([]string, len(c.methodInvocations))
+		_param4 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[4] {
-			_param4[u] = param.(string)
+			_param4[u] = param.(bool)
 		}
-		_param5 = make([]bool, len(c.methodInvocations))
+		_param5 = make([]gits.Gitter, len(c.methodInvocations))
 		for u, param := range params[5] {
-			_param5[u] = param.(bool)
+			_param5[u] = param.(gits.Gitter)
 		}
-		_param6 = make([]gits.Gitter, len(c.methodInvocations))
+		_param6 = make([]util.IOFileHandles, len(c.methodInvocations))
 		for u, param := range params[6] {
-			_param6[u] = param.(gits.Gitter)
-		}
-		_param7 = make([]util.IOFileHandles, len(c.methodInvocations))
-		for u, param := range params[7] {
-			_param7[u] = param.(util.IOFileHandles)
+			_param6[u] = param.(util.IOFileHandles)
 		}
 	}
 	return
@@ -1092,7 +1091,7 @@ func (c *MockFactory_CreateHelm_OngoingVerification) GetAllCapturedArguments() (
 	return
 }
 
-func (verifier *VerifierMockFactory) CreateIssueTrackerAuthConfigService(_param0 string, _param1 *v1.SecretList) *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification {
+func (verifier *VerifierMockFactory) CreateIssueTrackerAuthConfigService(_param0 string, _param1 string) *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateIssueTrackerAuthConfigService", params, verifier.timeout)
 	return &MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -1103,21 +1102,21 @@ type MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification struct 
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification) GetCapturedArguments() (string, *v1.SecretList) {
+func (c *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*v1.SecretList) {
+func (c *MockFactory_CreateIssueTrackerAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*v1.SecretList, len(c.methodInvocations))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
-			_param1[u] = param.(*v1.SecretList)
+			_param1[u] = param.(string)
 		}
 	}
 	return
@@ -1140,8 +1139,8 @@ func (c *MockFactory_CreateJXClient_OngoingVerification) GetCapturedArguments() 
 func (c *MockFactory_CreateJXClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockFactory) CreateJenkinsAuthConfigService(_param0 kubernetes.Interface, _param1 string, _param2 string) *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2}
+func (verifier *VerifierMockFactory) CreateJenkinsAuthConfigService(_param0 string, _param1 string) *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateJenkinsAuthConfigService", params, verifier.timeout)
 	return &MockFactory_CreateJenkinsAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1151,25 +1150,21 @@ type MockFactory_CreateJenkinsAuthConfigService_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification) GetCapturedArguments() (kubernetes.Interface, string, string) {
-	_param0, _param1, _param2 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+func (c *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification) GetCapturedArguments() (string, string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []kubernetes.Interface, _param1 []string, _param2 []string) {
+func (c *MockFactory_CreateJenkinsAuthConfigService_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]kubernetes.Interface, len(c.methodInvocations))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
-			_param0[u] = param.(kubernetes.Interface)
+			_param0[u] = param.(string)
 		}
 		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
-		}
-		_param2 = make([]string, len(c.methodInvocations))
-		for u, param := range params[2] {
-			_param2[u] = param.(string)
 		}
 	}
 	return

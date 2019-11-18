@@ -145,7 +145,7 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 	}
 
 	if gitProvider == nil {
-		authConfigSvc, err = o.CreateGitAuthConfigService()
+		authConfigSvc, err = o.GitAuthConfigService()
 		if err != nil {
 			return err
 		}
@@ -349,7 +349,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 		if user.Username == "" {
 			return fmt.Errorf("Could not find a username for git server %s", u)
 		}
-		_, err = o.UpdatePipelineGitCredentialsSecret(server, user)
+		err = authConfigSvc.SaveConfig()
 		if err != nil {
 			return err
 		}

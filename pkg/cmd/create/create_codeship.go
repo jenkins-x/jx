@@ -202,7 +202,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		return err
 	}
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

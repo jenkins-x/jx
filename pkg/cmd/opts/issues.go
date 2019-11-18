@@ -9,21 +9,15 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // CreateIssueTrackerAuthConfigService creates auth config service for issue tracker
-func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.ConfigService, error) {
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindIssue, "")
-	if err != nil {
-		log.Logger().Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
-	}
+func (o *CommonOptions) CreateIssueTrackerAuthConfigService(kind string) (auth.ConfigService, error) {
 	_, namespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to find development namespace")
 	}
-	return o.factory.CreateIssueTrackerAuthConfigService(namespace, secrets)
+	return o.factory.CreateIssueTrackerAuthConfigService(namespace, "")
 }
 
 // CreateIssueProvider creates a issues provider
@@ -46,7 +40,7 @@ func (o *CommonOptions) CreateIssueProvider(dir string) (issues.IssueProvider, e
 		it := pc.IssueTracker
 		if it != nil {
 			if it.URL != "" && it.Kind != "" {
-				authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+				authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(it.Kind)
 				if err != nil {
 					return nil, err
 				}

@@ -1017,7 +1017,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	}
 
 	if o.OAUTHToken == "" {
-		authConfigSvc, err := o.CreateGitAuthConfigService()
+		authConfigSvc, err := o.GitAuthConfigService()
 		if err != nil {
 			return errors.Wrap(err, "creating git auth config svc")
 		}
