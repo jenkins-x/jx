@@ -102,8 +102,12 @@ func (o *StepBootVaultOptions) Run() error {
 	if requirements.Vault.Name == "" {
 		requirements.Vault.Name = kubevault.SystemVaultNameForCluster(requirements.Cluster.ClusterName)
 	}
-
 	log.Logger().Debugf("Using vault name '%s'", requirements.Vault.Name)
+
+	err = o.installOperator(requirements, ns)
+	if err != nil {
+		return errors.Wrapf(err, "unable to install Vault operator")
+	}
 
 	noExposeVault, err := o.verifyVaultIngress(requirements, kubeClient, ns, requirements.Vault.Name)
 	if err != nil {
@@ -213,25 +217,6 @@ func (o *StepBootVaultOptions) Run() error {
 		}
 	}
 
-	tag, err := o.vaultOperatorImageTag(&requirements.VersionStream)
-	if err != nil {
-		return err
-	}
-	commonOptions := o.CommonOptions
-	values := []string{
-		"image.repository=" + kubevault.VaultOperatorImage,
-		"image.tag=" + tag,
-	}
-	commonOptions.SetValues = strings.Join(values, ",")
-
-	log.Logger().Infof("Installing vault operator with helm values:  %s", util.ColorInfo(commonOptions.SetValues))
-	err = create.InstallVaultOperator(commonOptions, ns, &requirements.VersionStream)
-	if err != nil {
-		return errors.Wrap(err, "unable to install vault operator")
-	}
-
-	log.Logger().Infof("Vault operator installed in namespace %s", ns)
-
 	// Create a new System vault
 	vaultOperatorClient, err := createVaultOptions.VaultOperatorClient()
 	if err != nil {
@@ -254,6 +239,28 @@ func (o *StepBootVaultOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (o *StepBootVaultOptions) installOperator(requirements *config.RequirementsConfig, ns string) error {
+	tag, err := o.vaultOperatorImageTag(&requirements.VersionStream)
+	if err != nil {
+		return err
+	}
+	commonOptions := o.CommonOptions
+	values := []string{
+		"image.repository=" + kubevault.VaultOperatorImage,
+		"image.tag=" + tag,
+	}
+	commonOptions.SetValues = strings.Join(values, ",")
+
+	log.Logger().Infof("Installing vault operator with helm values:  %s", util.ColorInfo(commonOptions.SetValues))
+	err = create.InstallVaultOperator(commonOptions, ns, &requirements.VersionStream)
+	if err != nil {
+		return errors.Wrap(err, "unable to install vault operator")
+	}
+
+	log.Logger().Infof("Vault operator installed in namespace %s", ns)
 	return nil
 }
 
