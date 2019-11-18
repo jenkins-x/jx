@@ -88,7 +88,7 @@ func (o *CreateGitTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -142,13 +142,6 @@ func (o *CreateGitTokenOptions) Run() error {
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return err
-	}
-
-	if config.PipeLineUsername == userAuth.Username {
-		_, err = o.UpdatePipelineGitCredentialsSecret(server, userAuth)
-		if err != nil {
-			log.Logger().Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v", err)
-		}
 	}
 
 	log.Logger().Infof("Created user %s API Token for Git server %s at %s",

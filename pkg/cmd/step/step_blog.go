@@ -627,7 +627,7 @@ func (o *StepBlogOptions) CreateChatProvider(chatConfig *config.ChatConfig) (cha
 	if u == "" {
 		return nil, nil
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService("")
 	if err != nil {
 		return nil, err
 	}

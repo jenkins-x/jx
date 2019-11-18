@@ -111,7 +111,7 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

@@ -83,11 +83,6 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
 	kind := o.Kind
 	if kind == "" {
 		kind = o.ServerFlags.ServerName
@@ -95,7 +90,11 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if kind == "" {
 		kind = "addon"
 	}
-
+	authConfigSvc, err := o.AddonAuthConfigService(kind)
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
 	var server *auth.AuthServer
 	server, err = o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {

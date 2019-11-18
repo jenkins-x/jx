@@ -102,7 +102,7 @@ func (o *CreateGitServerOptions) Run() error {
 		return util.MissingOption("url")
 	}
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "failed to create CreateGitAuthConfigService")
 	}

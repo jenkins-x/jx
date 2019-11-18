@@ -59,7 +59,7 @@ func (o *DeleteChatServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chat server name argument")
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService("")
 	if err != nil {
 		return err
 	}

@@ -308,7 +308,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		return err
 	}
 
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

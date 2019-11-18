@@ -65,12 +65,6 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing addon user name")
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
-
 	kind := o.Kind
 	if kind == "" {
 		kind = o.ServerFlags.ServerName
@@ -78,6 +72,12 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if kind == "" {
 		kind = "addon"
 	}
+	authConfigSvc, err := o.AddonAuthConfigService(kind)
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
+
 	server, err := o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
 		return err

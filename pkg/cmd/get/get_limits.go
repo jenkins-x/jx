@@ -77,7 +77,7 @@ func NewCmdGetLimits(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetLimitsOptions) Run() error {
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

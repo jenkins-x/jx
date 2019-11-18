@@ -85,7 +85,7 @@ func NewCmdDeleteBranch(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements the command
 func (o *DeleteBranchOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

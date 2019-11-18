@@ -1350,7 +1350,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 	}
 
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "creating the git auth config service")
 	}
@@ -1496,7 +1496,7 @@ func (options *InstallOptions) configureGitAuth() error {
 }
 
 func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits.GitRepositoryOptions, error) {
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Git authentication config service")
 	}
@@ -1724,7 +1724,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 		log.Logger().Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n", util.ColorInfo("jx step env apply"))
 
 		if !options.Flags.NoGitOpsEnvRepo {
-			authConfigSvc, err := options.CreateGitAuthConfigService()
+			authConfigSvc, err := options.GitAuthConfigService()
 			if err != nil {
 				return "", errors.Wrap(err, "creating git auth config service")
 			}
@@ -3128,7 +3128,7 @@ func (options *InstallOptions) installAddon(name string) error {
 }
 
 func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig) error {
-	gitAuthCfg, err := options.CreateGitAuthConfigService()
+	gitAuthCfg, err := options.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the git auth config service")
 	}

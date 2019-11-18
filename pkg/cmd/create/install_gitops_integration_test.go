@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	fake_clients "github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/platform"
@@ -73,6 +74,7 @@ func TestInstallGitOps(t *testing.T) {
 		Err: os.Stderr,
 	}
 	o := create.CreateInstallOptions(&co)
+	o.SetFactory(fake_clients.NewFakeFactory())
 
 	gitter := gits.NewGitFake()
 	helmer := helm_test.NewMockHelmer()

@@ -591,7 +591,7 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 		CommonOptions: o.CommonOptions,
 	}
 
-	authConfigService, err := o.CreateGitAuthConfigService()
+	authConfigService, err := o.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "failed to create git auth service")
 	}

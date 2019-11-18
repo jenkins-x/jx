@@ -16,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/table"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -51,22 +50,25 @@ type Factory interface {
 	//
 
 	// CreateAuthConfigService creates a new authentication configuration service
-	CreateAuthConfigService(fileName string, namespace string, useGitCredentialsFile bool) (auth.ConfigService, error)
+	CreateAuthConfigService(fileName string, namespace string, serverKind string, serviceKind string) (auth.ConfigService, error)
+
+	// CreateGitAuthConfigService creates a new git authentication configuration service
+	CreateGitAuthConfigService(namespace string, serviceKind string) (auth.ConfigService, error)
 
 	// CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
-	CreateJenkinsAuthConfigService(kubernetes.Interface, string, string) (auth.ConfigService, error)
+	CreateJenkinsAuthConfigService(namespace string, jenkinsService string) (auth.ConfigService, error)
 
 	// CreateChartmuseumAuthConfigService creates a new Chartmuseum authentication configuration service
-	CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error)
+	CreateChartmuseumAuthConfigService(namespace string, serviceKind string) (auth.ConfigService, error)
 
 	// CreateIssueTrackerAuthConfigService creates a new issuer tracker configuration service
-	CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateIssueTrackerAuthConfigService(namespace string, serviceKind string) (auth.ConfigService, error)
 
 	// CreateChatAuthConfigService creates a new chat configuration service
-	CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateChatAuthConfigService(namespace string, serviceKind string) (auth.ConfigService, error)
 
 	// CreateAddonAuthConfigService creates a new addon auth configuration service
-	CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateAddonAuthConfigService(namespace string, serviceKind string) (auth.ConfigService, error)
 
 	//
 	// Generic clients
@@ -79,7 +81,7 @@ type Factory interface {
 	CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, handles util.IOFileHandles) (gojenkins.JenkinsClient, error)
 
 	// CreateGitProvider creates a new Git provider
-	CreateGitProvider(string, string, auth.ConfigService, string, string, bool, gits.Gitter, util.IOFileHandles) (gits.GitProvider, error)
+	CreateGitProvider(string, string, auth.ConfigService, string, bool, gits.Gitter, util.IOFileHandles) (gits.GitProvider, error)
 
 	// CreateComplianceClient creates a new compliance client
 	CreateComplianceClient() (*client.SonobuoyClient, error)
@@ -113,7 +115,7 @@ type Factory interface {
 	CreateDynamicClient() (*dynamic.APIHelper, string, error)
 
 	// CreateMetricsClient creates a new Kubernetes metrics client
-	CreateMetricsClient() (*metricsclient.Clientset, error)
+	CreateMetricsClient() (metricsclient.Interface, error)
 
 	// CreateTektonClient create a new Kubernetes client for Tekton resources
 	CreateTektonClient() (tektonclient.Interface, string, error)
@@ -151,9 +153,6 @@ type Factory interface {
 
 	// IsInCDPipeline indicates if the execution takes place within a CD pipeline
 	IsInCDPipeline() bool
-
-	// AuthMergePipelineSecrets merges the current config with the pipeline secrets provided in k8s secrets
-	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
 
 	// SecretsLocation inidcates the location of the secrets
 	SecretsLocation() secrets.SecretsLocationKind

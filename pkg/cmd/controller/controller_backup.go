@@ -264,7 +264,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 		return "", err
 	}
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return "", err
 	}

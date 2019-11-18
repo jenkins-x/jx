@@ -481,14 +481,15 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 }
 
 func (o *UpgradeBootOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
 	}
-	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
-	if userAuth == nil {
-		return nil, nil, fmt.Errorf("pipeline user auth could not be found in current namespace")
+	cfg := authConfigSvc.Config()
+	if cfg == nil {
+		return nil, nil, errors.Wrap(err, "git auth config is empty")
 	}
+	server, userAuth := cfg.GetPipelineAuth()
 	return server, userAuth, nil
 }
 

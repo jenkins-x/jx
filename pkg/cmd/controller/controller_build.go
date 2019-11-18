@@ -419,13 +419,8 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		return nil
 	}
 
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "github")
-	if err != nil {
-		return err
-	}
-
 	// get a git API client
-	provider, err := o.getGithubProvider(secrets, gitInfo)
+	provider, err := o.getGithubProvider(gitInfo)
 	if err != nil {
 		return err
 	}
@@ -468,7 +463,7 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 	return nil
 }
 
-func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+func (o *ControllerBuildOptions) getGithubProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
 	// this internal provider is only used during tests
 	if o.gitHubProvider != nil {
 		return o.gitHubProvider, nil

@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -62,11 +61,14 @@ func (o *DeleteGitServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing Git server name argument")
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
+	if config == nil {
+		return fmt.Errorf("empty git auth config")
+	}
 
 	serverNames := config.GetServerNames()
 	for _, arg := range args {
@@ -98,26 +100,6 @@ func (o *DeleteGitServerOptions) deleteServerResources(server *auth.AuthServer) 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
-	}
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, server.Kind)
-	if err != nil {
-		return err
-	}
-	for _, secret := range secrets.Items {
-		ann := secret.Annotations
-		if ann != nil && ann[kube.AnnotationURL] == server.URL {
-			name := secret.Name
-			log.Logger().Infof("Deleting Secret %s", util.ColorInfo(name))
-
-			err = kubeClient.CoreV1().Secrets(ns).Delete(name, nil)
-			if err != nil {
-				return err
-			}
-		}
 	}
 	gitServiceResources := jxClient.JenkinsV1().GitServices(ns)
 	gitServices, err := gitServiceResources.List(metav1.ListOptions{})

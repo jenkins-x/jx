@@ -59,7 +59,7 @@ func (o *DeleteTrackerServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing issue tracker server name argument")
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}

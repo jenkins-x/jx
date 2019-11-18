@@ -61,7 +61,7 @@ func NewCmdGetTracker(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetTrackerOptions) Run() error {
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}

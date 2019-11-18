@@ -52,7 +52,7 @@ func NewCmdGetGit(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetGitOptions) Run() error {
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

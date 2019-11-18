@@ -65,7 +65,7 @@ func (o *DeleteTrackerTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing issue tracker user name")
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}

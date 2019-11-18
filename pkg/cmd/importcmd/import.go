@@ -237,7 +237,7 @@ func (options *ImportOptions) Run() error {
 
 	var userAuth *auth.UserAuth
 	if options.GitProvider == nil {
-		authConfigSvc, err := options.CreateGitAuthConfigServiceDryRun(options.DryRun)
+		authConfigSvc, err := options.GitAuthConfigService()
 		if err != nil {
 			return err
 		}
@@ -637,7 +637,7 @@ func (options *ImportOptions) GetOrganisation() string {
 
 // CreateNewRemoteRepository creates a new remote repository
 func (options *ImportOptions) CreateNewRemoteRepository() error {
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -917,7 +917,7 @@ func (options *ImportOptions) doImport() error {
 		gitProvider = p
 	}
 
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -1580,7 +1580,7 @@ func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, e
 	if err != nil {
 		return nil, err
 	}
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}

@@ -65,7 +65,7 @@ func (o *DeleteGitTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing Git user name")
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

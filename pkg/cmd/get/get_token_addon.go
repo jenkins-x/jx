@@ -56,7 +56,7 @@ func NewCmdGetTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetTokenAddonOptions) Run() error {
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	authConfigSvc, err := o.AddonAuthConfigService("")
 	if err != nil {
 		return err
 	}

@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	v12 "k8s.io/api/core/v1"
-
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -162,22 +160,4 @@ func getServiceKindFromGitServices(jxClient versioned.Interface, ns string, gitS
 
 func gitUrlsEqual(url1 string, url2 string) bool {
 	return url1 == url2 || strings.TrimSuffix(url1, "/") == strings.TrimSuffix(url2, "/")
-}
-
-// FindGitCredentials finds the credential name from the pipeline git Secrets
-func FindGitCredentials(gitProvider gits.GitProvider, secrets *v12.SecretList) string {
-	if secrets == nil {
-		return ""
-	}
-	u := gitProvider.ServerURL()
-	for _, secret := range secrets.Items {
-		annotations := secret.Annotations
-		if annotations != nil {
-			gitUrl := annotations[AnnotationURL]
-			if u == gitUrl {
-				return secret.Name
-			}
-		}
-	}
-	return ""
 }

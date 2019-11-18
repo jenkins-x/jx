@@ -80,7 +80,7 @@ func (o *CreateChatTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService("")
 	if err != nil {
 		return err
 	}

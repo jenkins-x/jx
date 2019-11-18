@@ -89,7 +89,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingTrackerArguments()
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(kind)
 	if err != nil {
 		return err
 	}

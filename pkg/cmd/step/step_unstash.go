@@ -97,7 +97,7 @@ func (o *StepUnstashOptions) Run() error {
 		}
 	}
 
-	authSvc, err := o.CreateGitAuthConfigService()
+	authSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

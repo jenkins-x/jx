@@ -65,7 +65,7 @@ func (o *DeleteChatTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chat server user name")
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService("")
 	if err != nil {
 		return err
 	}
