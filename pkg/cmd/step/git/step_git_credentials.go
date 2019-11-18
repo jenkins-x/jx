@@ -151,7 +151,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentials(authConfigSvc auth.Conf
 		}
 		u.User = url.UserPassword(auth.Username, auth.ApiToken)
 		buffer.WriteString(u.String() + "\n")
-		// Write the https protocal in case only https is set for completness
+		// Write the https protocol in case only https is set for completeness
 		if u.Scheme == "http" {
 			u.Scheme = "https"
 		}
