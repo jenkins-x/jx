@@ -8,14 +8,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	orig  *jenkinsv1.Plugin
-	clone *jenkinsv1.Plugin
-)
-
 func TestCreatePatch(t *testing.T) {
 	t.Parallel()
-	setUp(t)
+	orig, clone := setUp(t)
 
 	clone.Spec.Name = "foo"
 	patch, err := CreatePatch(orig, clone)
@@ -27,7 +22,7 @@ func TestCreatePatch(t *testing.T) {
 
 func TestCreatePatchNil(t *testing.T) {
 	t.Parallel()
-	setUp(t)
+	orig, clone := setUp(t)
 
 	_, err := CreatePatch(nil, clone)
 	assert.Error(t, err, "nil should not be allowed")
@@ -40,7 +35,7 @@ func TestCreatePatchNil(t *testing.T) {
 
 func TestCreatePatchNoDiff(t *testing.T) {
 	t.Parallel()
-	setUp(t)
+	orig, clone := setUp(t)
 
 	patch, err := CreatePatch(orig, clone)
 
@@ -48,13 +43,13 @@ func TestCreatePatchNoDiff(t *testing.T) {
 	assert.Equal(t, "[]", string(patch), "the patch should have been empty")
 }
 
-func setUp(t *testing.T) {
-	orig = &jenkinsv1.Plugin{
+func setUp(t *testing.T) (*jenkinsv1.Plugin, *jenkinsv1.Plugin) {
+	orig := &jenkinsv1.Plugin{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-plugin",
 		},
 		Spec: jenkinsv1.PluginSpec{},
 	}
 
-	clone = orig.DeepCopy()
+	return orig, orig.DeepCopy()
 }
