@@ -2367,7 +2367,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
 			log.Logger().Info("Creating new system vault")
-			err = cvo.CreateVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
+			err = cvo.CreateOrUpdateVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
 			if err != nil {
 				return err
 			}

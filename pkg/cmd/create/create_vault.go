@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	vaultoperator "github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
+
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/upgrade"
@@ -185,18 +187,11 @@ func (o *CreateVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	return o.CreateVault(vaultOperatorClient, vaultName, teamSettings.KubeProvider)
+	return o.CreateOrUpdateVault(vaultOperatorClient, vaultName, teamSettings.KubeProvider)
 }
 
-// CreateVault creates a vault in the existing namespace.
-// If the vault already exists, it will error
-func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface, vaultName string, kubeProvider string) error {
-	// Checks if the vault already exists
-	found := kubevault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
-	if found {
-		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
-	}
-
+// CreateOrUpdateVault creates or updates a Vault in the specified namespace.
+func (o *CreateVaultOptions) CreateOrUpdateVault(vaultOperatorClient versioned.Interface, vaultName string, kubeProvider string) error {
 	kubeClient, _, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
@@ -223,12 +218,19 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
 	log.Logger().Debugf("Created service account '%s' for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
+
+	var vaultCRD *vaultoperator.Vault
 	if kubeProvider == cloud.GKE {
-		err = o.createVaultGKE(vaultOperatorClient, vaultName, o.BucketName, o.KeyringName, o.KeyName, kubeClient, clusterName, vaultAuthServiceAccount)
+		vaultCRD, err = o.createVaultGKE(vaultOperatorClient, vaultName, o.BucketName, o.KeyringName, o.KeyName, kubeClient, clusterName, vaultAuthServiceAccount)
 	}
 	if kubeProvider == cloud.AWS || kubeProvider == cloud.EKS {
-		err = o.createVaultAWS(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
+		vaultCRD, err = o.createVaultAWS(vaultOperatorClient, vaultName, kubeClient, clusterName, vaultAuthServiceAccount)
 	}
+	if err != nil {
+		return err
+	}
+
+	err = kubevault.CreateOrUpdateVault(vaultCRD, vaultOperatorClient, o.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}
@@ -240,7 +242,7 @@ func (o *CreateVaultOptions) CreateVault(vaultOperatorClient versioned.Interface
 	}
 
 	if o.NoExposeVault {
-		log.Logger().Infof("not exposing vault '%s' exposed", vaultName)
+		log.Logger().Infof("Not exposing vault '%s' since --no-expose=%t", vaultName, o.NoExposeVault)
 		return nil
 	}
 	log.Logger().Infof("Exposing Vault...")
@@ -273,10 +275,10 @@ func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
 }
 
 func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, bucketName string,
-	keyringName string, keyName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
+	keyringName string, keyName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) (*vaultoperator.Vault, error) {
 	err := o.GCloud().Login("", true)
 	if err != nil {
-		return errors.Wrap(err, "login into GCP")
+		return nil, errors.Wrap(err, "login into GCP")
 	}
 
 	if o.GKEProjectID == "" {
@@ -293,14 +295,14 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	if o.GKEProjectID == "" {
 		o.GKEProjectID, err = o.GetGoogleProjectID("")
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	err = o.CreateOptions.CommonOptions.RunCommandVerbose(
 		"gcloud", "config", "set", "project", o.GKEProjectID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if o.GKEZone == "" {
@@ -313,7 +315,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 
 		zone, err := o.GetGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		o.GKEZone = zone
 	}
@@ -321,30 +323,29 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	log.Logger().Debugf("Ensure KMS API is enabled")
 	err = o.GCloud().EnableAPIs(o.GKEProjectID, "cloudkms")
 	if err != nil {
-		return errors.Wrap(err, "unable to enable 'cloudkms' API")
+		return nil, errors.Wrap(err, "unable to enable 'cloudkms' API")
 	}
 
 	log.Logger().Debugf("Creating GCP service account for Vault backend")
 	gcpServiceAccountSecretName, err := gkevault.CreateVaultGCPServiceAccount(o.GCloud(), kubeClient, vaultName, o.Namespace, clusterName, o.GKEProjectID)
 	if err != nil {
-		return errors.Wrap(err, "creating GCP service account")
+		return nil, errors.Wrap(err, "creating GCP service account")
 	}
 	log.Logger().Debugf("'%s' service account created", util.ColorInfo(gcpServiceAccountSecretName))
 
 	log.Logger().Debugf("Setting up GCP KMS configuration")
 	kmsConfig, err := gkevault.CreateKmsConfig(o.GCloud(), vaultName, keyringName, keyName, o.GKEProjectID)
 	if err != nil {
-		return errors.Wrap(err, "creating KMS configuration")
+		return nil, errors.Wrap(err, "creating KMS configuration")
 	}
 	log.Logger().Debugf("KMS Key '%s' created in keying '%s'", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
 	vaultBucket, err := gkevault.CreateBucket(o.GCloud(), vaultName, bucketName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
-		return errors.Wrap(err, "creating Vault GCS data bucket")
+		return nil, errors.Wrap(err, "creating Vault GCS data bucket")
 	}
 	log.Logger().Infof("GCS bucket '%s' was created for Vault backend", util.ColorInfo(vaultBucket))
 
-	log.Logger().Infof("Creating Vault...")
 	gcpConfig := &kubevault.GCPConfig{
 		ProjectId:   o.GKEProjectID,
 		KmsKeyring:  kmsConfig.Keyring,
@@ -354,28 +355,25 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	}
 	images, err := o.dockerImages()
 	if err != nil {
-		return errors.Wrap(err, "loading docker images from versions repository")
+		return nil, errors.Wrap(err, "loading docker images from versions repository")
 	}
-	err = kubevault.CreateGKEVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, images, gcpServiceAccountSecretName,
+	vaultCRD, err := kubevault.PrepareGKEVaultCRD(kubeClient, vaultName, o.Namespace, images, gcpServiceAccountSecretName,
 		gcpConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
-		return errors.Wrap(err, "creating vault")
+		return nil, errors.Wrap(err, "creating vault")
 	}
-	log.Logger().Infof("Vault '%s' created in cluster '%s'", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
-	return nil
+	return vaultCRD, nil
 }
 
-func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interface, vaultName string,
-	kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
-
+func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interface, vaultName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) (*vaultoperator.Vault, error) {
 	if o.AutoCreate {
 		_, clusterRegion, err := amazon.GetCurrentlyConnectedRegionAndClusterName()
 		if err != nil {
-			return errors.Wrap(err, "finding default AWS region")
+			return nil, errors.Wrap(err, "finding default AWS region")
 		}
 
 		if err := o.ApplyDefaultRegionIfEmpty(clusterRegion); err != nil {
-			return errors.Wrap(err, "setting the default region")
+			return nil, errors.Wrap(err, "setting the default region")
 		}
 
 		domain := "jenkins-x-domain"
@@ -391,7 +389,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 
 		valueUUID, err := uuid.NewV4()
 		if err != nil {
-			return errors.Wrapf(err, "Generating UUID failed")
+			return nil, errors.Wrapf(err, "Generating UUID failed")
 		}
 
 		// Create suffix to apply to resources
@@ -419,7 +417,7 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 		}
 
 		if err != nil {
-			return errors.Wrap(err, "an error occurred while creating the vault resources")
+			return nil, errors.Wrap(err, "an error occurred while creating the vault resources")
 		}
 		if s3Name != nil {
 			o.S3Bucket = *s3Name
@@ -439,39 +437,37 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 
 	} else {
 		if o.S3Bucket == "" {
-			return fmt.Errorf("missing S3 bucket flag")
+			return nil, fmt.Errorf("missing S3 bucket flag")
 		}
 		if o.KMSKeyID == "" {
-			return fmt.Errorf("missing AWS KMS key id flag")
+			return nil, fmt.Errorf("missing AWS KMS key id flag")
 		}
 		if o.AccessKeyID == "" {
-			return fmt.Errorf("missing AWS access key id flag")
+			return nil, fmt.Errorf("missing AWS access key id flag")
 		}
 		if o.SecretAccessKey == "" {
-			return fmt.Errorf("missing AWS secret access key flag")
+			return nil, fmt.Errorf("missing AWS secret access key flag")
 		}
 
 		if err := o.ApplyDefaultRegionIfEmpty(""); err != nil {
-			return errors.Wrap(err, "setting the default region")
+			return nil, errors.Wrap(err, "setting the default region")
 		}
 	}
 
 	awsServiceAccountSecretName, err := awsvault.StoreAWSCredentialsIntoSecret(kubeClient, o.AccessKeyID, o.SecretAccessKey, vaultName, o.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "storing the service account credentials into a secret")
+		return nil, errors.Wrap(err, "storing the service account credentials into a secret")
 	}
 	images, err := o.dockerImages()
 	if err != nil {
-		return errors.Wrap(err, "loading docker images from versions repository")
+		return nil, errors.Wrap(err, "loading docker images from versions repository")
 	}
-	err = kubevault.CreateAWSVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, images,
+	vaultCRD, err := kubevault.PrepareAWSVaultCRD(kubeClient, vaultName, o.Namespace, images,
 		awsServiceAccountSecretName, &o.AWSConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
-		return errors.Wrap(err, "creating vault")
+		return nil, errors.Wrap(err, "creating vault")
 	}
-	log.Logger().Infof("Vault '%s' created in cluster '%s'", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
-
-	return nil
+	return vaultCRD, nil
 }
 
 func (o *CreateVaultOptions) exposeVault(vaultService string) error {

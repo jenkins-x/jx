@@ -5,7 +5,6 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 
-	fakevaultclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,9 +22,7 @@ type VaultTestCase struct {
 }
 
 func TestCreateGKEVault(t *testing.T) {
-
 	client := k8sfake.NewSimpleClientset()
-	vaultclient := fakevaultclient.NewSimpleClientset()
 
 	tests := map[string]struct {
 		VaultTestCase
@@ -56,18 +53,16 @@ func TestCreateGKEVault(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := vault.CreateGKEVault(client, vaultclient, tc.name, tc.namespace, tc.images, tc.secretName,
+			vaultCRD, err := vault.PrepareGKEVaultCRD(client, tc.name, tc.namespace, tc.images, tc.secretName,
 				tc.gcpConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 
-			validateVault(err, vaultclient, &tc.VaultTestCase, t, client)
+			validateVault(err, vaultCRD, &tc.VaultTestCase, t, client)
 		})
 	}
 }
 
 func TestCreateAWSVault(t *testing.T) {
-
 	client := k8sfake.NewSimpleClientset()
-	vaultclient := fakevaultclient.NewSimpleClientset()
 
 	tc := VaultTestCase{
 		name:      "test-vault",
@@ -97,21 +92,14 @@ func TestCreateAWSVault(t *testing.T) {
 	}
 
 	t.Run("create vault in AWS", func(t *testing.T) {
-		err := vault.CreateAWSVault(client, vaultclient, tc.name, tc.namespace, tc.images, tc.secretName,
+		vaultCRD, err := vault.PrepareAWSVaultCRD(client, tc.name, tc.namespace, tc.images, tc.secretName,
 			awsConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 
-		validateVault(err, vaultclient, &tc, t, client)
+		validateVault(err, vaultCRD, &tc, t, client)
 	})
 }
 
-func validateVault(err error, vaultclient *fakevaultclient.Clientset, tc *VaultTestCase, t *testing.T, client *k8sfake.Clientset) {
-	if tc.err {
-		assert.Error(t, err, "should create vault with an error")
-	} else {
-		assert.NoError(t, err, "should create vault without an error")
-	}
-
-	vaultCRD, err := vaultclient.Vault().Vaults(tc.namespace).Get(tc.name, metav1.GetOptions{})
+func validateVault(err error, vaultCRD *v1alpha1.Vault, tc *VaultTestCase, t *testing.T, client *k8sfake.Clientset) {
 	assert.NoError(t, err, "should retrieve created vault without an error")
 	assert.NotNil(t, vaultCRD, "created vault should not be nil")
 	sa, err := client.CoreV1().ServiceAccounts(tc.namespace).Get(tc.name, metav1.GetOptions{})
