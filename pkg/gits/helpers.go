@@ -917,3 +917,17 @@ func GetGitInfoFromDirectory(dir string, gitter Gitter) (string, string, error) 
 
 	return g.HttpsURL(), currentBranch, nil
 }
+
+// RefIsBranch looks for remove branches in ORIGIN for the provided directory and returns true if ref is found
+func RefIsBranch(dir string, ref string, gitter Gitter) (bool, error) {
+	remoteBranches, err := gitter.RemoteBranches(dir)
+	if err != nil {
+		return false, errors.Wrapf(err, "error getting remote branches to find provided ref %s", ref)
+	}
+	for _, b := range remoteBranches {
+		if strings.Contains(b, ref) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
