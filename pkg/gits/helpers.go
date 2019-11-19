@@ -695,7 +695,7 @@ func IsUnadvertisedObjectError(err error) bool {
 
 // IsCouldntFindRemoteRefError returns true if the error is due to the remote ref not being found
 func IsCouldntFindRemoteRefError(err error, ref string) bool {
-	return strings.Contains(strings.ToLower(err.Error()), fmt.Sprintf("couldn't find remote ref %s", ref))
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(fmt.Sprintf("couldn't find remote ref %s", ref)))
 }
 
 // IsCouldNotPopTheStashError returns true if the error is due to the stash not being able to be popped, often because
