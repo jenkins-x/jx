@@ -339,10 +339,10 @@ func (c *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUse
 
 	if batchMode {
 		if auth.Username == "" {
-			return fmt.Errorf("Running in batch mode and no default Git username found")
+			return fmt.Errorf("running in batch mode and no default Git username found")
 		}
 		if auth.ApiToken == "" {
-			return fmt.Errorf("Running in batch mode and no default API token found")
+			return fmt.Errorf("running in batch mode and no default API token found")
 		}
 		return nil
 	}

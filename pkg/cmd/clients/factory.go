@@ -339,8 +339,8 @@ func (f *factory) createAuthConfigServiceKube(namespace string, serverKind strin
 	return authService, nil
 }
 
-func (f *factory) createAuthConfigServiceFile(fileName string) (auth.ConfigService, error) {
-	authService, err := auth.NewFileAuthConfigService(fileName)
+func (f *factory) createAuthConfigServiceFile(fileName string, serverKind string) (auth.ConfigService, error) {
+	authService, err := auth.NewFileAuthConfigService(fileName, serverKind)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating the auth config service from file %s", fileName)
 	}
@@ -370,7 +370,7 @@ func (f *factory) CreateAuthConfigService(fileName string, namespace string,
 			serverKind, serviceKind, fileName)
 	}
 
-	if authService, err := f.createAuthConfigServiceFile(fileName); err == nil {
+	if authService, err := f.createAuthConfigServiceFile(fileName, serverKind); err == nil {
 		return authService, nil
 	}
 	log.Logger().Warnf("No auth config found in file %s", fileName)
@@ -627,12 +627,12 @@ func (f *factory) CreateKubeClient() (kubernetes.Interface, string, error) {
 	return client, ns, nil
 }
 
-func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, handles util.IOFileHandles) (gits.GitProvider, error) {
+func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, ghOwner string, batchMode bool, gitter gits.Gitter, handles util.IOFileHandles) (gits.GitProvider, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, handles)
+	return gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, ghOwner, gitter, batchMode, handles)
 }
 
 func (f *factory) CreateKubeConfig() (*rest.Config, error) {

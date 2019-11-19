@@ -314,8 +314,9 @@ func (f *FakeFactory) CreateMetricsClient() (metricsclient.Interface, error) {
 }
 
 // CreateGitProvider creates a new Git provider
-func (f *FakeFactory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, handles util.IOFileHandles) (gits.GitProvider, error) {
-	return f.GetDelegateFactory().CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, handles)
+func (f *FakeFactory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService,
+	gitKind string, ghOwner string, batchMode bool, gitter gits.Gitter, handles util.IOFileHandles) (gits.GitProvider, error) {
+	return f.GetDelegateFactory().CreateGitProvider(gitURL, message, authConfigSvc, gitKind, ghOwner, batchMode, gitter, handles)
 }
 
 // CreateKubeConfig creates the kubernetes configuration
