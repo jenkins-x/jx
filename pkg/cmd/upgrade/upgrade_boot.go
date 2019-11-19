@@ -487,6 +487,9 @@ func (o *UpgradeBootOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAut
 		return nil, nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
 	}
 	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
+	if userAuth == nil {
+		return nil, nil, fmt.Errorf("pipeline user auth could not be found in current namespace")
+	}
 	return server, userAuth, nil
 }
 
