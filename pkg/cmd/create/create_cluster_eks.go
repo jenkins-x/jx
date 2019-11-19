@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -108,6 +110,7 @@ func NewCmdCreateClusterEKS(commonOpts *opts.CommonOptions) *cobra.Command {
 // Runs the command logic (including installing required binaries, parsing options and aggregating eksctl command)
 func (o *CreateClusterEKSOptions) Run() error {
 	var deps []string
+
 	d := packages.BinaryShouldBeInstalled("eksctl")
 	if d != "" {
 		deps = append(deps, d)
@@ -140,7 +143,11 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if flags.ClusterName != "" {
 		args = append(args, "--name", flags.ClusterName)
 
-		clusterExists, err := amazon.EksClusterExists(flags.ClusterName, flags.Profile, flags.Region)
+		eksOptions, err := amazon.NewEKSClusterOptions()
+		if err != nil {
+			return errors.Wrap(err, "error obtaining the EKS cluster commands")
+		}
+		clusterExists, err := eksOptions.EksClusterExists(flags.ClusterName, flags.Profile, flags.Region)
 		if err != nil {
 			return err
 		}
@@ -148,7 +155,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 			log.Logger().Infof("EKS cluster %s already exists.", util.ColorInfo(flags.ClusterName))
 			return nil
 		} else {
-			stackExists, err := amazon.EksClusterObsoleteStackExists(flags.ClusterName, flags.Profile, flags.Region)
+			stackExists, err := eksOptions.EksClusterObsoleteStackExists(flags.ClusterName, flags.Profile, flags.Region)
 			if err != nil {
 				return err
 			}
@@ -158,7 +165,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 time there is no EKS cluster associated with it. This usually happens when there was an error during 
 cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 					util.ColorInfo(amazon.EksctlStackName(flags.ClusterName)), util.ColorInfo(amazon.EksctlStackName(flags.ClusterName)))
-				err = amazon.CleanUpObsoleteEksClusterStack(flags.ClusterName, flags.Profile, flags.Region)
+				err = eksOptions.CleanUpObsoleteEksClusterStack(flags.ClusterName, flags.Profile, flags.Region)
 				if err != nil {
 					return err
 				}
