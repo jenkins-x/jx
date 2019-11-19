@@ -234,7 +234,6 @@ func (o *StepBootVaultOptions) Run() error {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
 	}
 
-	log.Logger().Info("Creating or updating system vault")
 	err = createVaultOptions.CreateOrUpdateVault(vaultOperatorClient, requirements.Vault.Name, provider)
 	if err != nil {
 		return err
@@ -247,15 +246,26 @@ func (o *StepBootVaultOptions) installOperator(requirements *config.Requirements
 	if err != nil {
 		return err
 	}
-	commonOptions := o.CommonOptions
+
+	releaseName := o.ReleaseName
+	if releaseName == "" {
+		releaseName = kube.DefaultVaultOperatorReleaseName
+	}
+
 	values := []string{
 		"image.repository=" + kubevault.VaultOperatorImage,
 		"image.tag=" + tag,
 	}
-	commonOptions.SetValues = strings.Join(values, ",")
+	log.Logger().Infof("Installing %s operator with helm values: %v", util.ColorInfo(releaseName), util.ColorInfo(values))
 
-	log.Logger().Infof("Installing vault operator with helm values:  %s", util.ColorInfo(commonOptions.SetValues))
-	err = create.InstallVaultOperator(commonOptions, ns, &requirements.VersionStream)
+	helmOptions := helm.InstallChartOptions{
+		Chart:       kube.ChartVaultOperator,
+		ReleaseName: releaseName,
+		Version:     o.Version,
+		Ns:          ns,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return errors.Wrap(err, "unable to install vault operator")
 	}
@@ -292,7 +302,7 @@ func (o *StepBootVaultOptions) verifyVaultIngress(requirements *config.Requireme
 		return true, errors.Wrapf(err, "failed to load vault ingress template file %s", fileName)
 	}
 
-	log.Logger().Infof("applying vault ingress in namespace %s for vault name %s\n", util.ColorInfo(ns), util.ColorInfo(systemVaultName))
+	log.Logger().Infof("Applying vault ingress in namespace %s for vault name %s\n", util.ColorInfo(ns), util.ColorInfo(systemVaultName))
 
 	tmpFile, err := ioutil.TempFile("", "vault-ingress-")
 	if err != nil {

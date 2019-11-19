@@ -242,7 +242,7 @@ func (o *CreateVaultOptions) CreateOrUpdateVault(vaultOperatorClient versioned.I
 	}
 
 	if o.NoExposeVault {
-		log.Logger().Infof("Not exposing vault '%s' since --no-expose=%t", vaultName, o.NoExposeVault)
+		log.Logger().Debugf("Not exposing vault '%s' since --no-expose=%t", vaultName, o.NoExposeVault)
 		return nil
 	}
 	log.Logger().Infof("Exposing Vault...")
