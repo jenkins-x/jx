@@ -13,6 +13,7 @@ import (
 // ServerKind indicates the server kind used to load the auth config from file
 type ServerKind string
 
+// GitServerKind indicate the server kind for git
 const GitServerKind ServerKind = "git"
 
 // NewFileAuthConfigService creates a new file config service
