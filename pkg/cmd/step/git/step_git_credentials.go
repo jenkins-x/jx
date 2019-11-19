@@ -108,6 +108,7 @@ func (o *StepGitCredentialsOptions) Run() error {
 	return o.CreateGitCredentialsFile(outFile, gitAuthSvc)
 }
 
+// CreateGitCredentialsFile creates the git credentials into file using the provided auth config service
 func (o *StepGitCredentialsOptions) CreateGitCredentialsFile(fileName string, configSvc auth.ConfigService) error {
 	data, err := o.CreateGitCredentials(configSvc)
 	if err != nil {
@@ -120,6 +121,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFile(fileName string, co
 	return nil
 }
 
+// CreateGitCredentials creates the git credentials using the auth config service
 func (o *StepGitCredentialsOptions) CreateGitCredentials(authConfigSvc auth.ConfigService) ([]byte, error) {
 	cfg := authConfigSvc.Config()
 	if cfg == nil {
