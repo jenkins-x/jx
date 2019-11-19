@@ -20,6 +20,8 @@ const (
 	labelCreatedBy = "jenkins.io/created-by"
 	// labelCredentialsType the kind of jenkins credential for a secret
 	labelCredentialsType = "jenkins.io/credentials-type"
+	// labelGithubAppOwner the label to indicate the owner of a repository for github app token secrets
+	labelGithubAppOwner = "jenkins.io/githubapp-owner"
 	// valueCreatedByJX for resources created by the Jenkins X CLI
 	valueCreatedByJX = "jx"
 	// valueCredentialTypeUsernamePassword for user password credential secrets
@@ -60,6 +62,7 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 				if err != nil {
 					continue
 				}
+				user.GithubAppOwner = labels[labelGithubAppOwner]
 				server := AuthServer{
 					URL:  url,
 					Name: name,
@@ -117,6 +120,12 @@ func (k *KubeAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 			secret.Data[passwordKey] = []byte(user.ApiToken)
 		} else {
 			secret.Data[passwordKey] = []byte(user.Password)
+		}
+		if user.GithubAppOwner != "" {
+			labels := map[string]string{
+				labelGithubAppOwner: user.GithubAppOwner,
+			}
+			secret.Labels = util.MergeMaps(secret.Labels, labels)
 		}
 		if create {
 			if _, err := k.client.CoreV1().Secrets(k.namespace).Create(secret); err != nil {
