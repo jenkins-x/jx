@@ -515,7 +515,7 @@ func CreateOrUpdateVault(vault *v1alpha1.Vault, vaultOperatorClient versioned.In
 	if err != nil {
 		return errors.Wrapf(err, "unable to %s vault '%s' in namespace '%s'", op, vault.Name, ns)
 	}
-	log.Logger().Infof("Vault '%s' in namespace '%s'  %sd ", util.ColorInfo(vault.Name), util.ColorInfo(ns), op)
+	log.Logger().Infof("Vault '%s' in namespace '%s' %sd ", util.ColorInfo(vault.Name), util.ColorInfo(ns), op)
 
 	return nil
 }
