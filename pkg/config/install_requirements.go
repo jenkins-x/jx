@@ -542,6 +542,9 @@ func LoadActiveInstallProfile() string {
 // GetParentDir returns the parent directory without a trailing separator
 func GetParentDir(path string) string {
 	subDir, _ := filepath.Split(path)
+	if subDir == "" {
+		return ""
+	}
 	i := len(subDir) - 1
 	if os.IsPathSeparator(subDir[i]) {
 		subDir = subDir[0:i]
