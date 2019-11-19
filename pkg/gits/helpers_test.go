@@ -2394,3 +2394,9 @@ func commitCount(t *testing.T, repoDir string) int {
 	assert.NoError(t, err)
 	return count
 }
+
+func TestIsCouldntFindRemoteRefErrorHandlesUppercaseRef(t *testing.T) {
+	error := errors.New(" fatal: couldn't find remote ref add-app-your-app-0.0.0-SNAPSHOT-PR-1234-1:")
+	ref := "add-app-your-app-0.0.0-SNAPSHOT-PR-1234-1"
+	assert.True(t, gits.IsCouldntFindRemoteRefError(error, ref))
+}
