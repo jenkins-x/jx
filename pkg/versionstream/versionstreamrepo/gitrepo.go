@@ -95,9 +95,13 @@ func cloneJXVersionsRepo(versionRepository string, versionRef string, settings *
 				}
 				return dir, versionRef, nil
 			}
-			// TODO: It might be good to do the same behavior for any branch - just the checkout approach works for
-			// tags and commit-ishs, but not branches. I'm not sure how we can tell if it's a branch vs a tag, though.
-			if versionRef == config.DefaultVersionsRef {
+
+			isBranch, err := gits.RefIsBranch(wrkDir, versionRef, gitter)
+			if err != nil {
+				return "", "", err
+			}
+
+			if versionRef == config.DefaultVersionsRef || isBranch {
 				err = gitter.Checkout(wrkDir, versionRef)
 				if err != nil {
 					dir, err := deleteAndReClone(wrkDir, versionRepository, versionRef, gitter)
@@ -175,6 +179,17 @@ func clone(wrkDir string, versionRepository string, referenceName string, gitter
 		_, err = cmd.RunWithoutRetry()
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to git fetch origin %s for repo: %s in dir %s", referenceName, versionRepository, wrkDir)
+		}
+		isBranch, err := gits.RefIsBranch(wrkDir, referenceName, gitter)
+		if err != nil {
+			return "", err
+		}
+		if isBranch {
+			err = gitter.Checkout(wrkDir, referenceName)
+			if err != nil {
+				return "", errors.Wrapf(err, "failed to checkout %s of repo: %s in dir %s", referenceName, versionRepository, wrkDir)
+			}
+			return "", nil
 		}
 		err = gitter.Checkout(wrkDir, "FETCH_HEAD")
 		if err != nil {
