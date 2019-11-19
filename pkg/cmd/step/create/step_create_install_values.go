@@ -28,13 +28,13 @@ import (
 
 var (
 	createInstallValuesLong = templates.LongDesc(`
-		Creates any missing cluster values into the cluster/values.yaml file 
+		Creates any missing cluster values into the cluster/values.yaml file
 `)
 
 	createInstallValuesExample = templates.Examples(`
 		# populate the cluster/values.yaml file
 		jx step create install values
-	
+
 			`)
 )
 
@@ -133,44 +133,50 @@ func (o *StepCreateInstallValuesOptions) Run() error {
 	}
 
 	// if we're using GKE and folks have provided a domain, i.e. we're  not using the Jenkins X default nip.io
-	// then let's enable external dns automatically.
 	if requirements.Ingress.Domain != "" && !requirements.Ingress.IsAutoDNSDomain() && requirements.Cluster.Provider == cloud.GKE {
-		log.Logger().Info("using a custom domain and GKE so enabling external dns, you can also now enable TLS")
-		requirements.Ingress.ExternalDNS = true
-		log.Logger().Infof("validating the external-dns secret in namespace %s\n", info(ns))
-
-		kubeClient, err := o.KubeClient()
-		if err != nil {
-			return errors.Wrap(err, "creating kubernetes client")
+		// then it may be a good idea to enable external dns and TLS
+		if !requirements.Ingress.ExternalDNS {
+			log.Logger().Info("using a custom domain and GKE, you can enable external dns and TLS")
+		} else if !requirements.Ingress.TLS.Enabled {
+			log.Logger().Info("using GKE with external dns, you can also now enable TLS")
 		}
 
-		cloudDNSSecretName := requirements.Ingress.CloudDNSSecretName
-		if cloudDNSSecretName == "" {
-			cloudDNSSecretName = gke.GcpServiceAccountSecretName(kube.DefaultExternalDNSReleaseName)
-			requirements.Ingress.CloudDNSSecretName = cloudDNSSecretName
-		}
+		if requirements.Ingress.ExternalDNS {
+			log.Logger().Infof("validating the external-dns secret in namespace %s\n", info(ns))
 
-		err = kube.ValidateSecret(kubeClient, cloudDNSSecretName, externaldns.ServiceAccountSecretKey, ns)
-		if err != nil {
-			if o.LazyCreate {
-				log.Logger().Infof("attempting to lazily create the external-dns secret %s\n", info(ns))
-
-				_, err = externaldns.CreateExternalDNSGCPServiceAccount(o.GCloud(), kubeClient, kube.DefaultExternalDNSReleaseName, ns,
-					requirements.Cluster.ClusterName, requirements.Cluster.ProjectID)
-				if err != nil {
-					return errors.Wrap(err, "creating the ExternalDNS GCP Service Account")
-				}
-				// lets rerun the verify step to ensure its all sorted now
-				err = kube.ValidateSecret(kubeClient, cloudDNSSecretName, externaldns.ServiceAccountSecretKey, ns)
+			kubeClient, err := o.KubeClient()
+			if err != nil {
+				return errors.Wrap(err, "creating kubernetes client")
 			}
-		}
-		if err != nil {
-			return errors.Wrap(err, "validating external-dns secret")
-		}
 
-		err = o.GCloud().EnableAPIs(requirements.Cluster.ProjectID, "dns")
-		if err != nil {
-			return errors.Wrap(err, "unable to enable 'dns' api")
+			cloudDNSSecretName := requirements.Ingress.CloudDNSSecretName
+			if cloudDNSSecretName == "" {
+				cloudDNSSecretName = gke.GcpServiceAccountSecretName(kube.DefaultExternalDNSReleaseName)
+				requirements.Ingress.CloudDNSSecretName = cloudDNSSecretName
+			}
+
+			err = kube.ValidateSecret(kubeClient, cloudDNSSecretName, externaldns.ServiceAccountSecretKey, ns)
+			if err != nil {
+				if o.LazyCreate {
+					log.Logger().Infof("attempting to lazily create the external-dns secret %s\n", info(ns))
+
+					_, err = externaldns.CreateExternalDNSGCPServiceAccount(o.GCloud(), kubeClient, kube.DefaultExternalDNSReleaseName, ns,
+						requirements.Cluster.ClusterName, requirements.Cluster.ProjectID)
+					if err != nil {
+						return errors.Wrap(err, "creating the ExternalDNS GCP Service Account")
+					}
+					// lets rerun the verify step to ensure its all sorted now
+					err = kube.ValidateSecret(kubeClient, cloudDNSSecretName, externaldns.ServiceAccountSecretKey, ns)
+				}
+			}
+			if err != nil {
+				return errors.Wrap(err, "validating external-dns secret")
+			}
+
+			err = o.GCloud().EnableAPIs(requirements.Cluster.ProjectID, "dns")
+			if err != nil {
+				return errors.Wrap(err, "unable to enable 'dns' api")
+			}
 		}
 	}
 
