@@ -44,8 +44,8 @@ type AuthConfigService struct {
 
 // FileAuthConfigHandler is a config handlerthat loads/saves the auth config from/to the local filesystem
 type FileAuthConfigHandler struct {
-	fileName              string
-	useGitCredentialsFile bool
+	fileName   string
+	serverKind string
 }
 
 // VaultAuthConfigHandler is a config handler that loads/saves the auth configs from/to Vault

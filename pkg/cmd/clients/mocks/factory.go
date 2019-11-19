@@ -241,11 +241,11 @@ func (mock *MockFactory) CreateGitAuthConfigService(_param0 string, _param1 stri
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 util.IOFileHandles) (gits.GitProvider, error) {
+func (mock *MockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 string, _param5 bool, _param6 gits.Gitter, _param7 util.IOFileHandles) (gits.GitProvider, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateGitProvider", params, []reflect.Type{reflect.TypeOf((*gits.GitProvider)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 gits.GitProvider
 	var ret1 error
@@ -1001,8 +1001,8 @@ func (c *MockFactory_CreateGitAuthConfigService_OngoingVerification) GetAllCaptu
 	return
 }
 
-func (verifier *VerifierMockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 bool, _param5 gits.Gitter, _param6 util.IOFileHandles) *MockFactory_CreateGitProvider_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
+func (verifier *VerifierMockFactory) CreateGitProvider(_param0 string, _param1 string, _param2 auth.ConfigService, _param3 string, _param4 string, _param5 bool, _param6 gits.Gitter, _param7 util.IOFileHandles) *MockFactory_CreateGitProvider_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateGitProvider", params, verifier.timeout)
 	return &MockFactory_CreateGitProvider_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1012,12 +1012,12 @@ type MockFactory_CreateGitProvider_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockFactory_CreateGitProvider_OngoingVerification) GetCapturedArguments() (string, string, auth.ConfigService, string, bool, gits.Gitter, util.IOFileHandles) {
-	_param0, _param1, _param2, _param3, _param4, _param5, _param6 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1]
+func (c *MockFactory_CreateGitProvider_OngoingVerification) GetCapturedArguments() (string, string, auth.ConfigService, string, string, bool, gits.Gitter, util.IOFileHandles) {
+	_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1], _param7[len(_param7)-1]
 }
 
-func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []auth.ConfigService, _param3 []string, _param4 []bool, _param5 []gits.Gitter, _param6 []util.IOFileHandles) {
+func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []auth.ConfigService, _param3 []string, _param4 []string, _param5 []bool, _param6 []gits.Gitter, _param7 []util.IOFileHandles) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
@@ -1036,17 +1036,21 @@ func (c *MockFactory_CreateGitProvider_OngoingVerification) GetAllCapturedArgume
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
-		_param4 = make([]bool, len(c.methodInvocations))
+		_param4 = make([]string, len(c.methodInvocations))
 		for u, param := range params[4] {
-			_param4[u] = param.(bool)
+			_param4[u] = param.(string)
 		}
-		_param5 = make([]gits.Gitter, len(c.methodInvocations))
+		_param5 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[5] {
-			_param5[u] = param.(gits.Gitter)
+			_param5[u] = param.(bool)
 		}
-		_param6 = make([]util.IOFileHandles, len(c.methodInvocations))
+		_param6 = make([]gits.Gitter, len(c.methodInvocations))
 		for u, param := range params[6] {
-			_param6[u] = param.(util.IOFileHandles)
+			_param6[u] = param.(gits.Gitter)
+		}
+		_param7 = make([]util.IOFileHandles, len(c.methodInvocations))
+		for u, param := range params[7] {
+			_param7[u] = param.(util.IOFileHandles)
 		}
 	}
 	return

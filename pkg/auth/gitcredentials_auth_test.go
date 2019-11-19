@@ -1,17 +1,16 @@
-package auth_test
+package auth
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLoadGitCredentials(t *testing.T) {
 	fileName := filepath.Join("test_data", "git", "credentials")
-	config, err := auth.LoadGitCredentialsAuthFile(fileName)
+	config, err := loadGitCredentialsAuthFile(fileName)
 	require.NoError(t, err, "should not have failed to load file %s", fileName)
 	assert.NotNil(t, config, "should have returned not nil config for file %s", fileName)
 
@@ -24,12 +23,12 @@ func TestLoadGitCredentials(t *testing.T) {
 	assertServerUserPassword(t, config, serverURL, username, password)
 
 	// now lets test merging
-	gitAuthConfig := &auth.AuthConfig{
-		Servers: []*auth.AuthServer{
+	gitAuthConfig := &AuthConfig{
+		Servers: []*AuthServer{
 			{
 				URL:  serverURL,
 				Kind: gitKind,
-				Users: []*auth.UserAuth{
+				Users: []*UserAuth{
 					{
 						Username: username,
 						Password: "oldPassword",
@@ -49,7 +48,7 @@ func TestLoadGitCredentials(t *testing.T) {
 
 }
 
-func assertServerUserPassword(t *testing.T, config *auth.AuthConfig, serverURL string, username string, password string) *auth.AuthServer {
+func assertServerUserPassword(t *testing.T, config *AuthConfig, serverURL string, username string, password string) *AuthServer {
 	server := config.GetServer(serverURL)
 	require.NotNil(t, server, "no server found for URL %s", serverURL)
 
@@ -65,7 +64,7 @@ func assertServerUserPassword(t *testing.T, config *auth.AuthConfig, serverURL s
 }
 
 func TestLoadGitCredentialsFileDoesNotExist(t *testing.T) {
-	config, err := auth.LoadGitCredentialsAuthFile("test_data/does/not/exist")
+	config, err := loadGitCredentialsAuthFile("test_data/does/not/exist")
 	require.NoError(t, err, "should not have failed to load non existing git creds file")
 	assert.Nil(t, config, "should have returned nil config")
 }

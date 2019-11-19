@@ -10,15 +10,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// LoadGitCredentialsAuth loads the git credentials from the `git/credentials` file
+// loadGitCredentialsAuth loads the git credentials from the `git/credentials` file
 // in `$XDG_CONFIG_HOME/git/credentials` or in the `~/git/credentials` directory
-func LoadGitCredentialsAuth() (*AuthConfig, error) {
+func loadGitCredentialsAuth() (*AuthConfig, error) {
 	fileName := util.GitCredentialsFile()
-	return LoadGitCredentialsAuthFile(fileName)
+	return loadGitCredentialsAuthFile(fileName)
 }
 
-// LoadGitCredentialsAuthFile loads the git credentials file
-func LoadGitCredentialsAuthFile(fileName string) (*AuthConfig, error) {
+// loadGitCredentialsAuthFile loads the git credentials file
+func loadGitCredentialsAuthFile(fileName string) (*AuthConfig, error) {
 	exists, err := util.FileExists(fileName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to check if git credentials file exists %s", fileName)
@@ -39,7 +39,6 @@ func LoadGitCredentialsAuthFile(fileName string) (*AuthConfig, error) {
 			continue
 		}
 
-		// now lets parse the git credential line
 		u, err := url.Parse(line)
 		if err != nil {
 			log.Logger().Warnf("ignoring invalid line in git credentials file: %s error: %s", fileName, err.Error())
