@@ -77,14 +77,22 @@ func (v *client) Write(secretName string, data map[string]interface{}) (map[stri
 // Read reads a named secret to the vault
 func (v *client) Read(secretName string) (map[string]interface{}, error) {
 	secret, err := v.client.Logical().Read(secretPath(secretName))
-	if secret != nil && secret.Data != nil {
+	if err != nil {
+		return nil, errors.Wrapf(err, "reading secret %q from vault", secretName)
+	}
+
+	if secret == nil {
+		return nil, fmt.Errorf("no secret %q not found in vault", secretName)
+	}
+
+	if secret.Data != nil {
 		data, ok := secret.Data["data"].(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("invalid secret data type")
+			return nil, fmt.Errorf("invalid data type for secret %q", secretName)
 		}
-		return data, err
+		return data, nil
 	}
-	return nil, err
+	return nil, fmt.Errorf("no data found on secret %q", secretName)
 }
 
 // WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
