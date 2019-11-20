@@ -37,16 +37,17 @@ import (
 // PullRequestOperation provides a way to execute a PullRequest operation using Git
 type PullRequestOperation struct {
 	*opts.CommonOptions
-	GitURLs     []string
-	SrcGitURL   string
-	Base        string
-	Component   string
-	BranchName  string
-	Version     string
-	DryRun      bool
-	SkipCommit  bool
-	AuthorName  string
-	AuthorEmail string
+	GitURLs       []string
+	SrcGitURL     string
+	Base          string
+	Component     string
+	BranchName    string
+	Version       string
+	DryRun        bool
+	SkipCommit    bool
+	AuthorName    string
+	AuthorEmail   string
+	SkipAutoMerge bool
 }
 
 // ChangeFilesFn is the function called to create the pull request
@@ -80,7 +81,10 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update ChangeFiles
 			return nil, errors.WithStack(err)
 		}
 
-		labels := []string{"updatebot"}
+		labels := []string{}
+		if !o.SkipAutoMerge {
+			labels = append(labels, "updatebot")
+		}
 		filter := &gits.PullRequestFilter{
 			Labels: labels,
 		}
