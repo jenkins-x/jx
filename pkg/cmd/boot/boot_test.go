@@ -67,7 +67,7 @@ func TestDetermineGitRef_GitURLNotInVersionStream(t *testing.T) {
 	assert.Equal(t, "master", gitRef, "determineGitRef")
 }
 
-func TestConeDevEnvironment(t *testing.T) {
+func TestCloneDevEnvironment(t *testing.T) {
 
 	url := "https://github.com/jenkins-x/jenkins-x-boot-config"
 	o := TestBootOptions{}
