@@ -802,26 +802,53 @@ func (g *GitCLI) GetRemoteUrl(config *gitcfg.Config, name string) string {
 	return ""
 }
 
-// RemoteBranches returns all remote branches with the given prefix
-func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) {
+// RemoteBranchNames returns all remote branches with the given remoteRefPrefix
+func (g *GitCLI) RemoteBranchNames(dir string, remoteRefPrefix string) ([]string, error) {
+	return g.remoteBranchNames(dir, remoteRefPrefix, false)
+}
+
+// RemoteMergedBranchNames returns all remote branches that were merged with the given remoteRefPrefix
+func (g *GitCLI) RemoteMergedBranchNames(dir string, remoteRefPrefix string) ([]string, error) {
+	return g.remoteBranchNames(dir, remoteRefPrefix, true)
+}
+
+func (g *GitCLI) remoteBranchNames(dir string, remoteRefPrefix string, merged bool) ([]string, error) {
 	answer := []string{}
-	text, err := g.gitCmdWithOutput(dir, "branch", "-a")
+	args := []string{"branch", "-a"}
+	if merged {
+		args = append(args, "--merged")
+	}
+
+	text, err := g.gitCmdWithOutput(dir, args...)
+
 	if err != nil {
 		return answer, err
 	}
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(strings.TrimPrefix(line, "* "))
-		if prefix != "" {
-			if strings.HasPrefix(line, prefix) {
-				line = strings.TrimPrefix(line, prefix)
+		if remoteRefPrefix != "" {
+			if strings.HasPrefix(line, remoteRefPrefix) {
+				line = strings.TrimPrefix(line, remoteRefPrefix)
 				answer = append(answer, line)
 			}
 		} else {
 			answer = append(answer, line)
 		}
-
 	}
+
+	if merged {
+		filtered := []string{}
+
+		for _, name := range answer {
+			if name != "master" {
+				filtered = append(filtered, name)
+			}
+		}
+
+		return filtered, nil
+	}
+
 	return answer, nil
 }
 
