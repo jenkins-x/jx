@@ -279,11 +279,11 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requi
 func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string, requirements *config.RequirementsConfig, authConfigSvc auth.ConfigService, environment *v1.Environment, gitURL string, envGitInfo *gits.GitRepository) error {
 	envDir, err := ioutil.TempDir("", "jx-env-repo-")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating temp dir for environment repository")
 	}
 	gha, err := o.IsGitHubAppMode()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "checking the GitHub app mode")
 	}
 
 	gitOwner := envGitInfo.Organisation
@@ -319,7 +319,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 
 	helmValues, err := o.createEnvironmentHelmValues(requirements, environment)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating environment helm values")
 	}
 	batchMode := o.BatchMode
 	forkGitURL := kube.DefaultEnvironmentGitRepoURL
@@ -349,7 +349,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 			}
 			err = o.handleDevEnvironmentRepository(envGitInfo, public, provider, gitter, requirements)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "handle dev environment repository")
 			}
 		}
 	} else {
