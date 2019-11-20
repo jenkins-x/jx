@@ -949,8 +949,14 @@ func (options *ImportOptions) doImport() error {
 	if err != nil {
 		return err
 	}
+
+	githubAppMode, err := options.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
 	if isProw {
-		if !options.DisableWebhooks {
+		if !options.DisableWebhooks && !githubAppMode {
 			// register the webhook
 			err = options.CreateWebhookProw(gitURL, gitProvider)
 			if err != nil {
