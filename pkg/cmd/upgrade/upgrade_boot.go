@@ -45,8 +45,7 @@ var (
 )
 
 const (
-	defaultUpgradeVersionStreamRef = "master"
-	builderImage                   = "gcr.io/jenkinsxio/builder-go"
+	builderImage = "gcr.io/jenkinsxio/builder-go"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -67,7 +66,7 @@ func NewCmdUpgradeBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the Jenkins X Pipeline and requirements")
-	cmd.Flags().StringVarP(&options.UpgradeVersionStreamRef, "upgrade-version-stream-ref", "", defaultUpgradeVersionStreamRef, "a version stream ref to use to upgrade to")
+	cmd.Flags().StringVarP(&options.UpgradeVersionStreamRef, "upgrade-version-stream-ref", "", config.DefaultVersionsRef, "a version stream ref to use to upgrade to")
 
 	return cmd
 }
