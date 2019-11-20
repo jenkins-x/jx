@@ -47,6 +47,8 @@ type BootOptions struct {
 
 	// RequirementsFile provided by the user to override the default requirements file from repository
 	RequirementsFile string
+
+	EnvironmentRepo string
 }
 
 var (
@@ -98,6 +100,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.EndStep, "end-step", "e", "", "the step in the pipeline to end at")
 	cmd.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
 	cmd.Flags().StringVarP(&options.RequirementsFile, "requirements", "r", "", "requirements file which will overwrite the default requirements file")
+	cmd.Flags().StringVarP(&options.EnvironmentRepo, "environment-repository-url", "n", "", "the  dev environment url repository to boot from")
 
 	return cmd
 }
@@ -112,6 +115,13 @@ func (o *BootOptions) Run() error {
 	}
 
 	o.overrideSteps()
+
+	if o.EnvironmentRepo != "" {
+		err = o.cloneDevEnvironment()
+		if err != nil {
+			return err
+		}
+	}
 
 	projectConfig, pipelineFile, err := config.LoadProjectConfig(o.Dir)
 	if err != nil {
@@ -342,6 +352,34 @@ func (o *BootOptions) Run() error {
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{requirements.Cluster.Namespace}
 	return no.Run()
+}
+
+func (o *BootOptions) cloneDevEnvironment() error {
+	log.Logger().Infof("dev environment url specified %s ", o.EnvironmentRepo)
+	gitURL := o.EnvironmentRepo
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
+	}
+
+	repo := gitInfo.Name
+	cloneDir := filepath.Join(o.Dir, repo)
+
+	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create directory: %s", cloneDir)
+	}
+
+	err = o.Git().Clone(gitURL, cloneDir)
+	if err != nil {
+		log.Logger().Errorf("error %v", err)
+		return errors.Wrapf(err, "failed to clone git URL %s to directory: %s", gitURL, cloneDir)
+	}
+	err = os.Chdir(cloneDir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to change into new directory: %s", cloneDir)
+	}
+	return nil
 }
 
 func (o *BootOptions) updateBootCloneIfOutOfDate(gitRef string) error {

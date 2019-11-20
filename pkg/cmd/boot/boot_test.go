@@ -67,6 +67,42 @@ func TestDetermineGitRef_GitURLNotInVersionStream(t *testing.T) {
 	assert.Equal(t, "master", gitRef, "determineGitRef")
 }
 
+func TestConeDevEnvironment(t *testing.T) {
+
+	url := "https://github.com/jenkins-x/jenkins-x-boot-config"
+	o := TestBootOptions{}
+	o.setup(defaultBootRequirements)
+	o.EnvironmentRepo = url
+
+	dirBefore, err := os.Getwd()
+	assert.Nil(t, err, "error should not be nil")
+	assert.NotNil(t, dirBefore, "current directory should not be nil")
+
+	err = o.cloneDevEnvironment()
+	assert.Nil(t, err, "error should not be nil")
+	dirAfter, err := os.Getwd()
+
+	assert.NotEqual(t, dirBefore, dirAfter, "working directory should have been changed")
+
+	assert.Equal(t, dirAfter, filepath.Join(dirBefore, "jenkins-x-boot-config"), "working directory should have jenkins-x-boot-config appended")
+
+	//finally switch back the working dir
+	err = os.Chdir(dirBefore)
+	assert.Nil(t, err, "error should not be nil")
+}
+
+func TestCloneDevEnvironmentIncorrectParam(t *testing.T) {
+	t.Parallel()
+
+	o := TestBootOptions{}
+	o.setup(defaultBootRequirements)
+	o.EnvironmentRepo = "not-a-url"
+
+	err := o.cloneDevEnvironment()
+
+	assert.NotNil(t, err, "error should not be nil")
+}
+
 func (o *TestBootOptions) createTmpRequirements(t *testing.T) string {
 	from, err := os.Open(o.RequirementsFile)
 	require.NoError(t, err, "unable to open test jx-requirements")
