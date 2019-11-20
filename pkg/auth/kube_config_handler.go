@@ -77,6 +77,9 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 				}
 				config.Servers = append(config.Servers, &server)
 				config.CurrentServer = server.URL
+				config.PipeLineServer = server.URL
+				config.PipeLineUsername = user.Username
+				config.DefaultUsername = user.Username
 			}
 		}
 	}
