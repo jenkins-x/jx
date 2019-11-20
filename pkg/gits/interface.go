@@ -223,6 +223,7 @@ type Gitter interface {
 	DiscoverUpstreamGitURL(gitConf string) (string, error)
 	RemoteBranches(dir string) ([]string, error)
 	RemoteBranchNames(dir string, prefix string) ([]string, error)
+	RemoteMergedBranchNames(dir string, prefix string) ([]string, error)
 	GetRemoteUrl(config *gitcfg.Config, name string) string
 	RemoteUpdate(dir string) error
 	LocalBranches(dir string) ([]string, error)

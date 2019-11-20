@@ -293,6 +293,11 @@ func (g *GitLocal) RemoteBranchNames(dir string, prefix string) ([]string, error
 	return g.GitCLI.RemoteBranchNames(dir, prefix)
 }
 
+// RemoteMergedBranchNames returns all remote branch names with the given prefix
+func (g *GitLocal) RemoteMergedBranchNames(dir string, prefix string) ([]string, error) {
+	return g.GitCLI.RemoteMergedBranchNames(dir, prefix)
+}
+
 // GetCommitPointedToByPreviousTag returns the previous git tag from the repository at the given directory
 func (g *GitLocal) GetCommitPointedToByPreviousTag(dir string) (string, string, error) {
 	return g.GitCLI.GetCommitPointedToByPreviousTag(dir)
