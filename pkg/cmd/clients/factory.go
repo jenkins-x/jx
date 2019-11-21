@@ -358,7 +358,7 @@ func (f *factory) CreateAuthConfigService(fileName string, namespace string,
 		if authService, err := f.createAuthConfigServiceVault(fileName, namespace); err == nil {
 			return authService, nil
 		}
-		log.Logger().Warnf("No auth config found in vault for %s. Trying to load it from Kubernetes secrets.", fileName)
+		log.Logger().Debugf("No auth config found in vault for %s. Trying to load it from Kubernetes secrets.", fileName)
 	}
 
 	if authService, err := f.createAuthConfigServiceKube(namespace, serverKind, serviceKind); err == nil {
@@ -366,14 +366,14 @@ func (f *factory) CreateAuthConfigService(fileName string, namespace string,
 	}
 
 	if cluster.IsInCluster() {
-		log.Logger().Warnf("No auth config found in Kubernetes secrets %s/%s. Trying to load it from file %s.",
+		log.Logger().Debugf("No auth config found in Kubernetes secrets %s/%s. Trying to load it from file %s.",
 			serverKind, serviceKind, fileName)
 	}
 
 	if authService, err := f.createAuthConfigServiceFile(fileName, serverKind); err == nil {
 		return authService, nil
 	}
-	log.Logger().Warnf("No auth config found in file %s", fileName)
+	log.Logger().Debugf("No auth config found in file %s", fileName)
 
 	return nil, fmt.Errorf("no auth config found for secret %q", fileName)
 }
