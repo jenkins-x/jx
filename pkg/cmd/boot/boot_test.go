@@ -75,10 +75,9 @@ func TestCloneDevEnvironment(t *testing.T) {
 
 	cloned, dir, err := o.cloneDevEnvironment(url)
 	assert.Nil(t, err, "error should not be nil")
-	cwd, err := os.Getwd()
 
 	assert.True(t, cloned)
-	assert.Equal(t, filepath.Join(cwd, "/jenkins-x-boot-config"), dir, "cloned dir is ")
+	assert.Equal(t, "jenkins-x-boot-config", dir, "cloned dir is incorrect")
 }
 
 func TestCloneDevEnvironmentIncorrectParam(t *testing.T) {
