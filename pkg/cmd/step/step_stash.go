@@ -70,10 +70,10 @@ var (
 		jx step stash -c coverage -p "build/coverage/*" --bucket-url s3://my-aws-bucket
 
 		# lets collect some files to a specific cloud storage bucket
-		jx step stash -c tests -p "target/test-reports/*" ---bucket-url gs://my-gcp-bucket
+		jx step stash -c tests -p "target/test-reports/*" --bucket-url gs://my-gcp-bucket
 
 		# lets collect some files to a specific cloud storage bucket and specify the path to store them inside
-		jx step stash -c tests -p "target/test-reports/*" ---bucket-url gs://my-gcp-bucket --to-path tests/mystuff
+		jx step stash -c tests -p "target/test-reports/*" --bucket-url gs://my-gcp-bucket --to-path tests/mystuff
 
 `)
 )
