@@ -67,6 +67,7 @@ func NewCmdStepBootVault(commonOpts *opts.CommonOptions) *cobra.Command {
 			err := o.Run()
 			helper.CheckErr(err)
 		},
+		Hidden: true,
 	}
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", fmt.Sprintf("the directory to look for the requirements file: %s", config.RequirementsConfigFileName))
 	cmd.Flags().StringVarP(&o.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific files")
