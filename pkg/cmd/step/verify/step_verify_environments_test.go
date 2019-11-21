@@ -115,29 +115,6 @@ func TestStepVerifyEnvironmentsOptions_StoreRequirementsConfigMapWithModificatio
 		"VerifyRequirementsInTeamSettings should be present in the retrieved configuration")
 }
 
-func Test_IsJXBoot(t *testing.T) {
-	orig, found := os.LookupEnv(jxInterpretPipelineEnvKey)
-	defer func() {
-		if found {
-			_ = os.Setenv(jxInterpretPipelineEnvKey, orig)
-		}
-	}()
-
-	o := StepVerifyEnvironmentsOptions{}
-
-	err := os.Setenv(jxInterpretPipelineEnvKey, "")
-	assert.NoError(t, err)
-	assert.False(t, o.isJXBoot(), "we should not be in boot mode")
-
-	err = os.Setenv(jxInterpretPipelineEnvKey, "false")
-	assert.NoError(t, err)
-	assert.False(t, o.isJXBoot(), "we should not be in boot mode")
-
-	err = os.Setenv(jxInterpretPipelineEnvKey, "true")
-	assert.NoError(t, err)
-	assert.True(t, o.isJXBoot(), "we should be in boot mode")
-}
-
 func Test_ReadEnvironment(t *testing.T) {
 	origConfigRepoURL, foundConfigRepoURLEnvKey := os.LookupEnv(boot.ConfigRepoURLEnvVarName)
 	origConfigRepoRef, foundConfigRepoRefEnvKey := os.LookupEnv(boot.ConfigBaseRefEnvVarName)

@@ -169,6 +169,14 @@ type AWSSealConig struct {
 	Endpoint  string `json:"endpoint,omitempty"`
 }
 
+// CloudProviderConfig is a wrapper around the cloud provider specific elements of the Vault CRD configuration
+type CloudProviderConfig struct {
+	Storage           Storage
+	Seal              Seal
+	UnsealConfig      v1alpha1.UnsealConfig
+	CredentialsConfig v1alpha1.CredentialsConfig
+}
+
 // SystemVaultName returns the name of the system vault based on the cluster name
 func SystemVaultName(kuber kube.Kuber) (string, error) {
 	clusterName, err := cluster.ShortName(kuber)
@@ -186,20 +194,14 @@ func SystemVaultNameForCluster(clusterName string) string {
 }
 
 // PrepareGKEVaultCRD creates a new vault backed by GCP KMS and storage
-func PrepareGKEVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images map[string]string, gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
-	vault, err := initializeVaultCRD(kubeClient, name, ns, images,
-		authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
-	if err != nil {
-		return nil, err
-	}
-
-	vault.Spec.Config["storage"] = Storage{
+func PrepareGKEVaultCRD(gcpServiceAccountSecretName string, gcpConfig *GCPConfig) CloudProviderConfig {
+	storage := Storage{
 		GCS: &GCSConfig{
 			Bucket:    gcpConfig.GcsBucket,
 			HaEnabled: "true",
 		},
 	}
-	vault.Spec.Config["seal"] = Seal{
+	seal := Seal{
 		GcpCkms: &GCPSealConfig{
 			Credentials: gcpServiceAccountPath,
 			Project:     gcpConfig.ProjectId,
@@ -208,7 +210,7 @@ func PrepareGKEVaultCRD(kubeClient kubernetes.Interface, name string, ns string,
 			CryptoKey:   gcpConfig.KmsKey,
 		},
 	}
-	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
+	unsealConfig := v1alpha1.UnsealConfig{
 		Google: &v1alpha1.GoogleUnsealConfig{
 			KMSKeyRing:    gcpConfig.KmsKeyring,
 			KMSCryptoKey:  gcpConfig.KmsKey,
@@ -217,23 +219,17 @@ func PrepareGKEVaultCRD(kubeClient kubernetes.Interface, name string, ns string,
 			StorageBucket: gcpConfig.GcsBucket,
 		},
 	}
-	vault.Spec.CredentialsConfig = v1alpha1.CredentialsConfig{
+	credentialsConfig := v1alpha1.CredentialsConfig{
 		Env:        gcpServiceAccountEnv,
 		Path:       gcpServiceAccountPath,
 		SecretName: gcpServiceAccountSecretName,
 	}
-
-	return vault, err
+	return CloudProviderConfig{storage, seal, unsealConfig, credentialsConfig}
 }
 
 // PrepareAWSVaultCRD creates a new vault backed by AWS KMS and DynamoDB storage
-func PrepareAWSVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images map[string]string, awsServiceAccountSecretName string, awsConfig *AWSConfig, authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
-	vault, err := initializeVaultCRD(kubeClient, name, ns, images, authServiceAccount, authServiceAccountNamespace, secretsPathPrefix)
-	if err != nil {
-		return nil, err
-	}
-
-	vault.Spec.Config["storage"] = Storage{
+func PrepareAWSVaultCRD(awsServiceAccountSecretName string, awsConfig *AWSConfig) CloudProviderConfig {
+	storage := Storage{
 		DynamoDB: &DynamoDBConfig{
 			HaEnabled:       "true",
 			Region:          awsConfig.DynamoDBRegion,
@@ -242,7 +238,7 @@ func PrepareAWSVaultCRD(kubeClient kubernetes.Interface, name string, ns string,
 			SecretAccessKey: awsConfig.SecretAccessKey,
 		},
 	}
-	vault.Spec.Config["seal"] = Seal{
+	seal := Seal{
 		AWSKms: &AWSSealConig{
 			Region:    awsConfig.KMSRegion,
 			AccessKey: awsConfig.AccessKeyID,
@@ -250,20 +246,19 @@ func PrepareAWSVaultCRD(kubeClient kubernetes.Interface, name string, ns string,
 			KmsKeyID:  awsConfig.KMSKeyID,
 		},
 	}
-	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
+	unsealConfig := v1alpha1.UnsealConfig{
 		AWS: &awsConfig.AWSUnsealConfig,
 	}
-	vault.Spec.CredentialsConfig = v1alpha1.CredentialsConfig{
+	credentialsConfig := v1alpha1.CredentialsConfig{
 		Env:        awsServiceAccountEnv,
 		Path:       awsServiceAccountPath,
 		SecretName: awsServiceAccountSecretName,
 	}
-
-	return vault, err
+	return CloudProviderConfig{storage, seal, unsealConfig, credentialsConfig}
 }
 
-// initializeVaultCRD intializes and returns vault struct
-func initializeVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images map[string]string,
+// NewVaultCRD creates and initializes a new Vault instance.
+func NewVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images map[string]string,
 	authServiceAccount string, authServiceAccountNamespace string, secretsPathPrefix string) (*v1alpha1.Vault, error) {
 
 	err := createVaultServiceAccount(kubeClient, ns, name)

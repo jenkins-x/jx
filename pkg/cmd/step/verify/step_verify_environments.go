@@ -27,11 +27,10 @@ import (
 )
 
 const (
-	jxInterpretPipelineEnvKey = "JX_INTERPRET_PIPELINE"
-	gitAuthorNameEnvKey       = "GIT_AUTHOR_NAME"
-	gitAuthorEmailEnvKey      = "GIT_AUTHOR_EMAIL"
-	gitCommitterNameEnvKey    = "GIT_COMMITTER_NAME"
-	gitCommitterEmailEnvKey   = "GIT_COMMITTER_EMAIL"
+	gitAuthorNameEnvKey     = "GIT_AUTHOR_NAME"
+	gitAuthorEmailEnvKey    = "GIT_AUTHOR_EMAIL"
+	gitCommitterNameEnvKey  = "GIT_COMMITTER_NAME"
+	gitCommitterEmailEnvKey = "GIT_COMMITTER_EMAIL"
 )
 
 // StepVerifyEnvironmentsOptions contains the command line flags
@@ -159,14 +158,6 @@ func (o *StepVerifyEnvironmentsOptions) storeRequirementsInTeamSettings(requirem
 		return errors.Wrap(err, "there was a problem saving the current state of the requirements.yaml file in TeamSettings in the dev environment")
 	}
 	return nil
-}
-
-// isJXBoot returns true if this code is executed as part of jx boot, false otherwise.
-func (o *StepVerifyEnvironmentsOptions) isJXBoot() bool {
-	// sort of a hack to determine that `jx boot` is executed opposed to running as a pipeline build
-	// see step_create_task where JX_INTERPRET_PIPELINE is set when the pipeline is executed in interpret mode
-	// which in turn is set by `jx boot` (HF)
-	return os.Getenv(jxInterpretPipelineEnvKey) == "true"
 }
 
 // readEnvironment returns the repository URL as well as the git ref for original boot config repo.
@@ -342,7 +333,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		if o.isJXBoot() && requirements.GitOps {
+		if o.IsJXBoot() && requirements.GitOps {
 			provider, err := envGitInfo.CreateProviderForUser(server, userAuth, gitKind, gitter)
 			if err != nil {
 				return errors.Wrap(err, "unable to create git provider")

@@ -236,7 +236,7 @@ func (o *StepBootVaultOptions) Run() error {
 
 	err = createVaultOptions.CreateOrUpdateVault(vaultOperatorClient, requirements.Vault.Name, provider)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to create or update vault '%s'", requirements.Vault.Name)
 	}
 	return nil
 }
@@ -244,7 +244,7 @@ func (o *StepBootVaultOptions) Run() error {
 func (o *StepBootVaultOptions) installOperator(requirements *config.RequirementsConfig, ns string) error {
 	tag, err := o.vaultOperatorImageTag(&requirements.VersionStream)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to determine Vault operator version")
 	}
 
 	releaseName := o.ReleaseName
