@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/boot"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -48,7 +48,7 @@ type BootOptions struct {
 	// RequirementsFile provided by the user to override the default requirements file from repository
 	RequirementsFile string
 
-	EnvironmentRepo bool
+	AttemptRestore bool
 }
 
 var (
@@ -100,7 +100,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.EndStep, "end-step", "e", "", "the step in the pipeline to end at")
 	cmd.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
 	cmd.Flags().StringVarP(&options.RequirementsFile, "requirements", "r", "", "requirements file which will overwrite the default requirements file")
-	cmd.Flags().BoolVarP(&options.EnvironmentRepo, "dev-env-repo", "", false, "attempt to boot from the dev environment repository")
+	cmd.Flags().BoolVarP(&options.AttemptRestore, "attempt-restore", "a", false, "attempt to boot from an existing dev environment repository")
 
 	return cmd
 }
@@ -116,8 +116,8 @@ func (o *BootOptions) Run() error {
 
 	o.overrideSteps()
 
-	if o.EnvironmentRepo {
-		err := o.bootFromDevEnvRepo()
+	if o.AttemptRestore {
+		err := o.restoreFromDevEnvRepo()
 		if err != nil {
 			return err
 		}
@@ -354,7 +354,7 @@ func (o *BootOptions) Run() error {
 	return no.Run()
 }
 
-func (o *BootOptions) bootFromDevEnvRepo() error {
+func (o *BootOptions) restoreFromDevEnvRepo() error {
 	url := o.determineDevEnvironmentUrl()
 	if url != "" {
 		cloned, dir, err := o.cloneDevEnvironment(url)
@@ -376,7 +376,6 @@ func (o *BootOptions) bootFromDevEnvRepo() error {
 }
 
 func (o *BootOptions) determineDevEnvironmentUrl() string {
-
 	gitProvider := os.Getenv("JX_VALUE_GITPROVIDER")
 	gitOwner := os.Getenv(config.RequirementEnvGitOwner)
 	clusterName := os.Getenv(config.RequirementClusterName)
@@ -391,7 +390,7 @@ func (o *BootOptions) determineDevEnvironmentUrl() string {
 }
 
 func (o *BootOptions) cloneDevEnvironment(gitURL string) (bool, string, error) {
-	log.Logger().Infof("dev environment url specified %t ", o.EnvironmentRepo)
+	log.Logger().Infof("dev environment url specified %t ", o.AttemptRestore)
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return false, "", errors.Wrapf(err, "failed to parse git URL %s", gitURL)
