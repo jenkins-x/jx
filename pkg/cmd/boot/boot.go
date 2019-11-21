@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/boot"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -48,7 +48,7 @@ type BootOptions struct {
 	// RequirementsFile provided by the user to override the default requirements file from repository
 	RequirementsFile string
 
-	EnvironmentRepo string
+	EnvironmentRepo bool
 }
 
 var (
@@ -100,7 +100,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.EndStep, "end-step", "e", "", "the step in the pipeline to end at")
 	cmd.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
 	cmd.Flags().StringVarP(&options.RequirementsFile, "requirements", "r", "", "requirements file which will overwrite the default requirements file")
-	cmd.Flags().StringVarP(&options.EnvironmentRepo, "environment-repository-url", "n", "", "the  dev environment url repository to boot from")
+	cmd.Flags().BoolVarP(&options.EnvironmentRepo, "dev-env-repo", "", false, "attempt to boot from the dev environment repository")
 
 	return cmd
 }
@@ -116,8 +116,8 @@ func (o *BootOptions) Run() error {
 
 	o.overrideSteps()
 
-	if o.EnvironmentRepo != "" {
-		err = o.cloneDevEnvironment()
+	if o.EnvironmentRepo {
+		err := o.bootFromDevEnvRepo()
 		if err != nil {
 			return err
 		}
@@ -354,12 +354,47 @@ func (o *BootOptions) Run() error {
 	return no.Run()
 }
 
-func (o *BootOptions) cloneDevEnvironment() error {
-	log.Logger().Infof("dev environment url specified %s ", o.EnvironmentRepo)
-	gitURL := o.EnvironmentRepo
+func (o *BootOptions) bootFromDevEnvRepo() error {
+	url := o.determineDevEnvironmentUrl()
+	if url != "" {
+		cloned, dir, err := o.cloneDevEnvironment(url)
+		if err != nil {
+			return err
+		}
+		if cloned {
+			err = os.Chdir(dir)
+			if err != nil {
+				return errors.Wrapf(err, "failed to change into new directory: %s", dir)
+			}
+		} else {
+			log.Logger().Infof("failed to clone dev environment booting from %s", o.GitURL)
+		}
+	} else {
+		log.Logger().Infof("cannot determine dev environment url booting from %s", o.GitURL)
+	}
+	return nil
+}
+
+func (o *BootOptions) determineDevEnvironmentUrl() string {
+
+	gitProvider := os.Getenv("JX_VALUE_GITPROVIDER")
+	gitOwner := os.Getenv(config.RequirementEnvGitOwner)
+	clusterName := os.Getenv(config.RequirementClusterName)
+	if gitProvider != "" && gitOwner != "" && clusterName != "" {
+		repo := fmt.Sprintf("environment-%s-dev", clusterName)
+		repoName := o.Git().RepoName(gitOwner, repo)
+		url := fmt.Sprintf("https://%s.com/%s", gitProvider, repoName)
+		log.Logger().Infof("dev environment url is %s", url)
+		return url
+	}
+	return ""
+}
+
+func (o *BootOptions) cloneDevEnvironment(gitURL string) (bool, string, error) {
+	log.Logger().Infof("dev environment url specified %t ", o.EnvironmentRepo)
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
+		return false, "", errors.Wrapf(err, "failed to parse git URL %s", gitURL)
 	}
 
 	repo := gitInfo.Name
@@ -367,19 +402,20 @@ func (o *BootOptions) cloneDevEnvironment() error {
 
 	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create directory: %s", cloneDir)
+		return false, "", errors.Wrapf(err, "failed to create directory: %s", cloneDir)
 	}
 
 	err = o.Git().Clone(gitURL, cloneDir)
 	if err != nil {
-		log.Logger().Errorf("error %v", err)
-		return errors.Wrapf(err, "failed to clone git URL %s to directory: %s", gitURL, cloneDir)
+		log.Logger().Infof("failed to clone git URL %s to directory: %s", gitURL, cloneDir)
+		rmErr := os.RemoveAll(cloneDir)
+		if rmErr != nil {
+			log.Logger().Warnf("Unable to remove dev env directory")
+		}
+		return false, "", nil
 	}
-	err = os.Chdir(cloneDir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to change into new directory: %s", cloneDir)
-	}
-	return nil
+
+	return true, cloneDir, nil
 }
 
 func (o *BootOptions) updateBootCloneIfOutOfDate(gitRef string) error {
