@@ -727,7 +727,7 @@ func DecorateWithCredentials(repo string, username string, password string, secr
 	if repo != "" && secretURLClient != nil {
 		creds := HelmRepoCredentials{}
 		if err := secretURLClient.ReadObject(RepoVaultPath, &creds); err != nil {
-			return "", "", errors.Wrapf(err, "reading repo credentials from vault %s", RepoVaultPath)
+			log.Logger().Warnf("No secrets found on %q due: %s", RepoVaultPath, err)
 		}
 		var existingCred, cred HelmRepoCredential
 		if c, ok := creds[repo]; ok {
