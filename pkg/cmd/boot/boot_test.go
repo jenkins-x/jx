@@ -24,10 +24,11 @@ const (
 	defaultBootRequirements = "test_data/requirements/jx-requirements.yml"
 )
 
-func (o *TestBootOptions) setup(bootRequirements string) {
+func (o *TestBootOptions) setup(bootRequirements string, dir string) {
 	o.BootOptions = BootOptions{
 		CommonOptions:    &opts.CommonOptions{},
 		RequirementsFile: bootRequirements,
+		Dir:              dir,
 	}
 }
 
@@ -35,9 +36,13 @@ func TestDetermineGitRef_DefaultGitUrl(t *testing.T) {
 	t.Parallel()
 
 	o := TestBootOptions{}
-	o.setup(defaultBootRequirements)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(bootDir)
+	o.setup(defaultBootRequirements, bootDir)
 
 	dir := o.createTmpRequirements(t)
+	defer os.RemoveAll(dir)
 	requirements, _, err := config.LoadRequirementsConfig(dir)
 	require.NoError(t, err, "unable to load tmp jx-requirements")
 	resolver := &versionstream.VersionResolver{
@@ -53,9 +58,13 @@ func TestDetermineGitRef_GitURLNotInVersionStream(t *testing.T) {
 	t.Parallel()
 
 	o := TestBootOptions{}
-	o.setup(defaultBootRequirements)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(bootDir)
+	o.setup(defaultBootRequirements, bootDir)
 
 	dir := o.createTmpRequirements(t)
+	defer os.RemoveAll(dir)
 	requirements, _, err := config.LoadRequirementsConfig(dir)
 	require.NoError(t, err, "unable to load tmp jx-requirements")
 	resolver := &versionstream.VersionResolver{
@@ -71,20 +80,26 @@ func TestCloneDevEnvironment(t *testing.T) {
 
 	url := "https://github.com/jenkins-x/jenkins-x-boot-config"
 	o := TestBootOptions{}
-	o.setup(defaultBootRequirements)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(bootDir)
+	o.setup(defaultBootRequirements, bootDir)
 
 	cloned, dir, err := o.cloneDevEnvironment(url)
 	assert.Nil(t, err, "error should not be nil")
 
 	assert.True(t, cloned)
-	assert.Equal(t, "jenkins-x-boot-config", dir, "cloned dir is incorrect")
+	assert.Equal(t, "jenkins-x-boot-config", filepath.Base(dir), "cloned dir is incorrect")
 }
 
 func TestCloneDevEnvironmentIncorrectParam(t *testing.T) {
 	t.Parallel()
 
 	o := TestBootOptions{}
-	o.setup(defaultBootRequirements)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(bootDir)
+	o.setup(defaultBootRequirements, bootDir)
 	url := "not-a-url"
 
 	cloned, dir, err := o.cloneDevEnvironment(url)
