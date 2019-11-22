@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"time"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -16,117 +17,142 @@ import (
 )
 
 // ImportProject imports a MultiBranchProject into Jenkins for the given git URL
-func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService, isEnvironment bool, batchMode bool) error {
-	jenk, err := o.JenkinsClient()
+func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile string, branchPattern, credentials string,
+	failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService, isEnvironment bool, batchMode bool) error {
+	jc, err := o.JenkinsClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating Jenkins client")
 	}
 
 	if gitURL == "" {
-		return fmt.Errorf("No Git repository URL found!")
+		return fmt.Errorf("no Git repository URL provided")
 	}
 
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return fmt.Errorf("Failed to parse Git URL %s due to: %s", gitURL, err)
+		return errors.Wrapf(err, "parsing git URL %q", gitURL)
 	}
 
 	if branchPattern == "" {
-		patterns, err := o.TeamBranchPatterns()
+		branchPattern, err = o.getBranchPattern(gitProvider, dir)
 		if err != nil {
-			return err
-		}
-		branchPattern = patterns.DefaultBranchPattern
-	}
-	if branchPattern == "" {
-		log.Logger().Infof("Querying if the repo is a fork at %s with kind %s", gitProvider.ServerURL(), gitProvider.Kind())
-		fork, err := o.Git().IsFork(dir)
-		if err != nil {
-			return fmt.Errorf("No branch pattern specified and could not determine if the Git repository is a fork: %s", err)
-		}
-		if fork {
-			// lets figure out which branches to enable for a fork
-			branch, err := o.Git().Branch(dir)
-			if err != nil {
-				return fmt.Errorf("Failed to get current branch in dir %s: %s", dir, err)
-			}
-			if branch == "" {
-				return fmt.Errorf("Failed to get current branch in dir %s", dir)
-			}
-			// TODO do we need to scape any wacky characters to make it a valid branch pattern?
-			branchPattern = branch
-			log.Logger().Infof("No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI/CD on to: %s", branchPattern)
-		} else {
-			branchPattern = jenkins.BranchPattern(gitProvider.Kind())
+			return errors.Wrapf(err, "getting branch pattern in dir %q", dir)
 		}
 	}
 
-	org := gitInfo.Organisation
-	err = o.Retry(10, time.Second*10, func() error {
-		folder, err := jenk.GetJob(org)
+	credentials, err = o.updateJenkinsCredentials(credentials, jc, gitProvider)
+	if err != nil {
+		return errors.Wrapf(err, "updating credentils %q in Jenkins", credentials)
+	}
+
+	if err := o.createJenkinsJob(jc, gitInfo.Organisation); err != nil {
+		return errors.Wrap(err, "creating Jenkins job")
+	}
+
+	opts := &JenkinsProjectOptions{
+		GitInfo:       gitInfo,
+		GitProvider:   gitProvider,
+		Credentials:   credentials,
+		BranchPattern: branchPattern,
+		Jenkinsfile:   jenkinsfile,
+	}
+	if err := o.createJenkinsProject(opts, jc, gitInfo.Organisation, failIfExists, isEnvironment); err != nil {
+		return errors.Wrap(err, "creating Jenkins project")
+	}
+
+	if err := o.registerJenkinsWebhook(jc, gitProvider, gitInfo, gitURL); err != nil {
+		return errors.Wrap(err, "registering Jenkins webhook")
+	}
+
+	return nil
+}
+
+func (o *CommonOptions) createJenkinsJob(jc gojenkins.JenkinsClient, organisation string) error {
+	return o.Retry(10, time.Second*10, func() error {
+		folder, err := jc.GetJob(organisation)
 		if err != nil {
 			// could not find folder so lets try create it
-			jobUrl := util.UrlJoin(jenk.BaseURL(), jenk.GetJobURLPath(org))
-			folderXML := jenkins.CreateFolderXML(jobUrl, org)
-			err = jenk.CreateJobWithXML(folderXML, org)
+			jobUrl := util.UrlJoin(jc.BaseURL(), jc.GetJobURLPath(organisation))
+			folderXML := jenkins.CreateFolderXML(jobUrl, organisation)
+			err = jc.CreateJobWithXML(folderXML, organisation)
 			if err != nil {
-				return fmt.Errorf("Failed to create the %s folder in Jenkins: %s", org, err)
+				return errors.Wrapf(err, "creting the %q folder in Jenkins", organisation)
 			}
 		} else {
 			c := folder.Class
 			if c != "com.cloudbees.hudson.plugins.folder.Folder" {
-				log.Logger().Warnf("Warning the folder %s is of class %s", org, c)
+				log.Logger().Warnf("The folder %s is of class %s", organisation, c)
 			}
 		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
+}
 
-	err = o.Retry(10, time.Second*10, func() error {
-		projectXml := jenkins.CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, branchPattern, jenkinsfile)
-		jobName := gitInfo.Name
-		job, err := jenk.GetJobByPath(org, jobName)
-		if err == nil {
-			if failIfExists {
-				return fmt.Errorf("Job already exists in Jenkins at %s", job.Url)
-			} else {
-				log.Logger().Infof("Job already exists in Jenkins at %s", job.Url)
-			}
-		} else {
-			err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
+// JenkinsProjectOptions store the required options to create a Jenkins project
+type JenkinsProjectOptions struct {
+	GitInfo       *gits.GitRepository
+	GitProvider   gits.GitProvider
+	Credentials   string
+	BranchPattern string
+	Jenkinsfile   string
+}
+
+func (o *CommonOptions) createJenkinsProject(opts *JenkinsProjectOptions, jc gojenkins.JenkinsClient,
+	organisation string, failIfExists bool, isEnvironment bool) error {
+	return o.Retry(10, time.Second*10, func() error {
+		projectXml := jenkins.CreateMultiBranchProjectXml(
+			opts.GitInfo,
+			opts.GitProvider,
+			opts.Credentials,
+			opts.BranchPattern,
+			opts.Jenkinsfile)
+		jobName := opts.GitInfo.Name
+		job, err := jc.GetJobByPath(organisation, jobName)
+		if err != nil {
+			err = jc.CreateFolderJobWithXML(projectXml, organisation, jobName)
 			if err != nil {
-				return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+				return errors.Wrapf(err, "creating MultiBranchProject job %q in folder %q",
+					jobName, organisation)
 			}
-			job, err = jenk.GetJobByPath(org, jobName)
+			job, err = jc.GetJobByPath(organisation, jobName)
 			if err != nil {
-				return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+				return errors.Wrapf(err, "checking the MultiBranchProject job %q in folder %q exists",
+					jobName, organisation)
 			}
 			log.Logger().Infof("Created Jenkins Project: %s", util.ColorInfo(job.Url))
-			o.LogImportedProject(isEnvironment, gitInfo)
+
+			o.LogImportedProject(isEnvironment, opts.GitInfo)
 
 			params := url.Values{}
-			err = jenk.Build(job, params)
+			err = jc.Build(job, params)
 			if err != nil {
-				return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
+				return errors.Wrapf(err, "triggering the job %q", job.Url)
 			}
+			log.Logger().Infof("Triggered Jenkins job:  %s", job.Url)
+
+			return nil
 		}
+
+		if failIfExists {
+			return fmt.Errorf("job already exists in Jenkins at %s", job.Url)
+		} else {
+			log.Logger().Infof("Job already exists in Jenkins at %s", job.Url)
+		}
+
 		return nil
 	})
-	if err != nil {
-		return err
-	}
+}
 
-	// register the webhook
+func (o *CommonOptions) registerJenkinsWebhook(jc gojenkins.JenkinsClient, gitProvider gits.GitProvider,
+	gitInfo *gits.GitRepository, gitURL string) error {
 	suffix := gitProvider.JenkinsWebHookPath(gitURL, "")
 	jenkBaseURL := o.ExternalJenkinsBaseURL
 	if jenkBaseURL == "" {
-		jenkBaseURL = jenk.BaseURL()
+		jenkBaseURL = jc.BaseURL()
 	}
 	isInsecureSSL, err := o.IsInsecureSSLWebhooks()
 	if err != nil {
-		return errors.Wrapf(err, "failed to check if we need to setup insecure SSL webhook")
+		return errors.Wrapf(err, "checking if we need to setup insecure SSL webhook")
 	}
 
 	webhookUrl := util.UrlJoin(jenkBaseURL, suffix)
@@ -137,6 +163,63 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		InsecureSSL: isInsecureSSL,
 	}
 	return gitProvider.CreateWebHook(webhook)
+}
+
+func (o *CommonOptions) getBranchPattern(gitProvider gits.GitProvider, dir string) (string, error) {
+	var branchPattern string
+	patterns, err := o.TeamBranchPatterns()
+	if err != nil {
+		return branchPattern, errors.Wrap(err, "getting branch pattern from team settings")
+	}
+	branchPattern = patterns.DefaultBranchPattern
+	if branchPattern != "" {
+		return branchPattern, nil
+	}
+
+	log.Logger().Debugf("Checking if the repository is a fork at %s with kind %s", gitProvider.ServerURL(), gitProvider.Kind())
+	fork, err := o.Git().IsFork(dir)
+	if err != nil {
+		return branchPattern, errors.Wrap(err, "checking git repository is a fork")
+	}
+	if fork {
+		branch, err := o.Git().Branch(dir)
+		if err != nil {
+			return branchPattern, errors.Wrapf(err, "getting the current branch in dir %q", dir)
+		}
+		if branch == "" {
+			return branchPattern, fmt.Errorf("no branch found in dir %q", dir)
+		}
+		branchPattern = branch
+	} else {
+		branchPattern = jenkins.BranchPattern(gitProvider.Kind())
+	}
+	log.Logger().Debugf("Using branch pattern: %s", branchPattern)
+	return branchPattern, nil
+}
+
+func (o *CommonOptions) updateJenkinsCredentials(credentials string, jc gojenkins.JenkinsClient, gitProvider gits.GitProvider) (string, error) {
+	if credentials == "" {
+		credentials = gitProvider.ServerURL()
+	}
+	if credentials == "" {
+		return credentials, fmt.Errorf("no server configured in the git provider")
+	}
+
+	_, err := jc.GetCredential(credentials)
+	if err == nil {
+		return credentials, nil
+	}
+
+	auth := gitProvider.UserAuth()
+	if auth.IsInvalid() {
+		return credentials, fmt.Errorf("invalid user auth for git server %q", gitProvider.ServerURL())
+	}
+
+	if err := jc.CreateCredential(credentials, auth.Username, auth.ApiToken); err != nil {
+		return credentials, errors.Wrapf(err, "creating credentials %q in Jenkins", credentials)
+	}
+
+	return credentials, nil
 }
 
 // GenerateProwConfig regenerates the Prow configurations after we have created a SourceRepository
