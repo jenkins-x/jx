@@ -211,10 +211,6 @@ func (o *CommonOptions) updateJenkinsCredentials(credentials string, jc gojenkin
 	}
 
 	auth := gitProvider.UserAuth()
-	if auth.IsValid() {
-		return credentials, fmt.Errorf("invalid user auth for git server %q", gitProvider.ServerURL())
-	}
-
 	if err := jc.CreateCredential(credentials, auth.Username, auth.ApiToken); err != nil {
 		return credentials, errors.Wrapf(err, "creating credentials %q in Jenkins", credentials)
 	}
