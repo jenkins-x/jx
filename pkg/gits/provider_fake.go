@@ -912,11 +912,17 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 	provider := &FakeProvider{
 		Repositories:       map[string][]*FakeRepository{},
 		ForkedRepositories: map[string][]*FakeRepository{},
+		Server: auth.AuthServer{
+			URL: FakeGitURL,
+		},
 	}
 	for _, repo := range repositories {
 		owner := repo.Owner
 		if provider.User.Username == "" {
 			provider.User.Username = owner
+		}
+		if provider.User.ApiToken == "" {
+			provider.User.ApiToken = "fake"
 		}
 		if owner == "" {
 			log.Logger().Warnf("Missing owner for Repository %s", repo.Name())

@@ -211,7 +211,7 @@ func (o *CommonOptions) updateJenkinsCredentials(credentials string, jc gojenkin
 	}
 
 	auth := gitProvider.UserAuth()
-	if auth.IsInvalid() {
+	if auth.IsValid() {
 		return credentials, fmt.Errorf("invalid user auth for git server %q", gitProvider.ServerURL())
 	}
 
