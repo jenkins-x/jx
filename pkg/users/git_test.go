@@ -279,6 +279,23 @@ func TestFindUserWithNoEmailButSameGitLogin(t *testing.T) {
 	assert.Len(t, users.Items, 2)
 }
 
+func TestResolve(t *testing.T) {
+	t.Run("Unable to resolve on niled pointer receiver", func(t *testing.T) {
+		var resolver *users.GitUserResolver
+
+		_, err := resolver.Resolve(&gits.GitUser{})
+		assert.Error(t, err)
+	})
+
+	t.Run("Unable to resolve when user is niled", func(t *testing.T) {
+		resolver, _, err := prepare(t)
+		assert.NoError(t, err)
+
+		_, err = resolver.Resolve(nil)
+		assert.Error(t, err)
+	})
+}
+
 func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"

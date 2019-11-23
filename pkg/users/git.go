@@ -60,8 +60,11 @@ func (r *GitUserResolver) GitUserSliceAsUserDetailsSlice(users []gits.GitUser) (
 // * making a call to the gitProvider
 // as often user info is not complete in a git response
 func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
-	if r == nil || user == nil {
-		return nil, nil
+	if r == nil {
+		return nil, errors.New("unable to resolve user on nil receiver")
+	}
+	if user == nil {
+		return nil, errors.New("unable to resolve when user is nil")
 	}
 	selectUsers := func(id string, users []jenkinsv1.User) (string, []jenkinsv1.User,
 		*jenkinsv1.User, error) {
