@@ -80,7 +80,7 @@ func (data *StableVersion) VerifyPackage(name string, currentVersion string, wor
 	}
 	version := convertToVersion(data.Version)
 	if version == "" {
-		log.Logger().Warnf("could not find a stable package version for %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/", name, workDir)
+		log.Logger().Warnf("could not find a stable package version for %s from %s\nFor background see: https://jenkins-x.io/docs/concepts/version-stream/", name, workDir)
 		log.Logger().Infof("Please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create pr versions -k package -n %s", name)))
 		return nil
 	}
@@ -208,7 +208,7 @@ func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (stri
 		if kind == KindChart && name == "." {
 			return version, err
 		}
-		log.Logger().Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/", string(kind), name, wrkDir)
+		log.Logger().Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/docs/concepts/version-stream/", string(kind), name, wrkDir)
 		log.Logger().Infof("Please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create pr versions -k %s -n %s", string(kind), name)))
 	}
 	return version, err
@@ -265,7 +265,7 @@ func ResolveDockerImage(versionsDir, image string) (string, error) {
 	}
 	if info.Version == "" {
 		log.Logger().Warnf("could not find a stable version for Docker image: %s in %s", image, versionsDir)
-		log.Logger().Warn("for background see: https://jenkins-x.io/architecture/version-stream/")
+		log.Logger().Warn("for background see: https://jenkins-x.io/docs/concepts/version-stream/")
 		log.Logger().Infof("please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create pr versions -k docker -n %s -v 1.2.3", image)))
 		return image, nil
 	}
