@@ -20,7 +20,7 @@ var (
 
 		The exact version used for the version stream is stored in the Team Settings on the 'dev' Environment CRD.
 
-		For more information on Version Streams see: [https://jenkins-x.io/architecture/version-stream/](https://jenkins-x.io/architecture/version-stream/)
+		For more information on Version Streams see: [https://jenkins-x.io/docs/concepts/version-stream/](https://jenkins-x.io/docs/concepts/version-stream/)
 `)
 
 	upgradeCLIExample = templates.Examples(`
