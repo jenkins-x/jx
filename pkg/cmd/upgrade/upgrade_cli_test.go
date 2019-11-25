@@ -2,8 +2,9 @@ package upgrade
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/brew"
 
