@@ -82,6 +82,8 @@ const (
 	LogWarning LogLevel = "WARN"
 	// LogError error level logging
 	LogError LogLevel = "ERROR"
+
+	jxInterpretPipelineEnvKey = "JX_INTERPRET_PIPELINE"
 )
 
 var (
@@ -1177,6 +1179,14 @@ func (o *CommonOptions) CertManagerClient() (certmngclient.Interface, error) {
 // InCluster return true if the command execution takes place in k8s cluster
 func (o *CommonOptions) InCluster() bool {
 	return cluster.IsInCluster()
+}
+
+// IsJXBoot returns true if this code is executed as part of jx boot, false otherwise.
+func (o *CommonOptions) IsJXBoot() bool {
+	// sort of a hack to determine that `jx boot` is executed opposed to running as a pipeline build
+	// see step_create_task where JX_INTERPRET_PIPELINE is set when the pipeline is executed in interpret mode
+	// which in turn is set by `jx boot` (HF)
+	return os.Getenv(jxInterpretPipelineEnvKey) == "true"
 }
 
 // InCDPipeline return true if the command execution takes place in the CD pipeline

@@ -174,6 +174,29 @@ func Test_configNotExists(t *testing.T) {
 	assert.False(t, configExists("children", "son"))
 }
 
+func Test_IsJXBoot(t *testing.T) {
+	orig, found := os.LookupEnv(jxInterpretPipelineEnvKey)
+	defer func() {
+		if found {
+			_ = os.Setenv(jxInterpretPipelineEnvKey, orig)
+		}
+	}()
+
+	o := CommonOptions{}
+
+	err := os.Setenv(jxInterpretPipelineEnvKey, "")
+	assert.NoError(t, err)
+	assert.False(t, o.IsJXBoot(), "we should not be in boot mode")
+
+	err = os.Setenv(jxInterpretPipelineEnvKey, "false")
+	assert.NoError(t, err)
+	assert.False(t, o.IsJXBoot(), "we should not be in boot mode")
+
+	err = os.Setenv(jxInterpretPipelineEnvKey, "true")
+	assert.NoError(t, err)
+	assert.True(t, o.IsJXBoot(), "we should be in boot mode")
+}
+
 func setupTestConfig(t *testing.T, config string) (string, func(string)) {
 	setupTestCommand()
 
