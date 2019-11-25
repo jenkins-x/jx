@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -377,6 +379,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 
 	gitter := gits.NewGitCLI()
 	commonOpts := &opts.CommonOptions{}
+	commonOpts.SetFactory(fake.NewFakeFactory())
 
 	err := testhelpers.CreateTestEnvironmentDir(commonOpts)
 	assert.NoError(t, err)

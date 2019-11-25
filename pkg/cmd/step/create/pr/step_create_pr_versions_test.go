@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
@@ -29,6 +31,8 @@ import (
 
 func TestCreatePullRequestUpdateVersionFilesFn(t *testing.T) {
 	commonOpts := &opts.CommonOptions{}
+	commonOpts.SetFactory(fake.NewFakeFactory())
+
 	gitter := gits.NewGitCLI()
 	roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
 		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
