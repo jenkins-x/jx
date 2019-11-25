@@ -1,11 +1,13 @@
 package util
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 )
 
 func HomeDir() string {
@@ -104,17 +106,14 @@ func CacheDir() (string, error) {
 	return path, nil
 }
 
+// EnvironmentsDir to more easily handle multiple clusters and minimise issues around
+// using old clones of environment git repositories lets use temporary directories for environment dirs
 func EnvironmentsDir() (string, error) {
-	h, err := ConfigDir()
+	dir, err := ioutil.TempDir("", "jx-env-")
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "could not create temporary directory for environment source")
 	}
-	path := filepath.Join(h, "environments")
-	err = os.MkdirAll(path, DefaultWritePermissions)
-	if err != nil {
-		return "", err
-	}
-	return path, nil
+	return dir, nil
 }
 
 func OrganisationsDir() (string, error) {
