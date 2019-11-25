@@ -2,7 +2,7 @@ package upgrade
 
 import (
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/pkg/errors"
 
@@ -31,7 +31,7 @@ var (
 
 // UpgradeCLIOptions the options for the create spring command
 type UpgradeCLIOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	Version string
 }
@@ -39,7 +39,7 @@ type UpgradeCLIOptions struct {
 // NewCmdUpgradeCLI defines the command
 func NewCmdUpgradeCLI(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

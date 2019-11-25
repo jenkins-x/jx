@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -36,7 +36,7 @@ var (
 
 // DeleteBranchOptions the options for the create spring command
 type DeleteBranchOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	Organisation      string
 	Repositories      []string
@@ -52,7 +52,7 @@ type DeleteBranchOptions struct {
 // NewCmdDeleteBranch creates a command object for the "delete repo" command
 func NewCmdDeleteBranch(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteBranchOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

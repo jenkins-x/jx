@@ -3,10 +3,11 @@ package upgrade
 import (
 	"io/ioutil"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -27,12 +28,12 @@ var (
 )
 
 type UpgradeBinariesOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 }
 
 func NewCmdUpgradeBinaries(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeBinariesOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

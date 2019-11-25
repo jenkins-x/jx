@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/blang/semver"
@@ -63,7 +65,7 @@ type CreateAddonIstioOptions struct {
 func NewCmdCreateAddonIstio(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonIstioOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

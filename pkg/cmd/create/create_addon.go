@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -18,7 +20,7 @@ import (
 
 // CreateAddonOptions the options for the create spring command
 type CreateAddonOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Namespace   string
 	Version     string
@@ -31,7 +33,7 @@ type CreateAddonOptions struct {
 // NewCmdCreateAddon creates a command object for the "create" command
 func NewCmdCreateAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

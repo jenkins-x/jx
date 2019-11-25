@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/config"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -46,7 +47,7 @@ type CreateAddonVaultOptions struct {
 func NewCmdCreateAddonVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonVaultOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

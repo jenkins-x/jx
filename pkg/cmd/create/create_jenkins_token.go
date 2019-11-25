@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/blang/semver"
@@ -54,7 +56,7 @@ var (
 
 // CreateJenkinsUserOptions the command line options for the command
 type CreateJenkinsUserOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags     opts.ServerFlags
 	JenkinsSelector opts.JenkinsSelectorOptions
@@ -72,7 +74,7 @@ type CreateJenkinsUserOptions struct {
 // NewCmdCreateJenkinsUser creates a command
 func NewCmdCreateJenkinsUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateJenkinsUserOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

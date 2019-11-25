@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/spf13/cobra"
 
@@ -21,7 +22,7 @@ const (
 
 // DomainOptions the options for the create spring command
 type DomainOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	SkipMessages bool
 }
@@ -29,7 +30,7 @@ type DomainOptions struct {
 // NewCmdCreateDomain creates a command object for the "create" command
 func NewCmdCreateDomain(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DomainOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
