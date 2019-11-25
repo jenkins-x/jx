@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -28,7 +28,7 @@ var (
 
 // DeleteTokenAddonOptions the options for the create spring command
 type DeleteTokenAddonOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Kind        string
@@ -37,7 +37,7 @@ type DeleteTokenAddonOptions struct {
 // NewCmdDeleteTokenAddon defines the command
 func NewCmdDeleteTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTokenAddonOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

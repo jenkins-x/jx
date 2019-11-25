@@ -4,7 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -27,13 +28,13 @@ var (
 
 // GetPostPreviewJobOptions the options for the create spring command
 type GetPostPreviewJobOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 }
 
 // NewCmdGetPostPreviewJob creates a command object for the "create" command
 func NewCmdGetPostPreviewJob(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetPostPreviewJobOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

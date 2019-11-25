@@ -3,14 +3,14 @@ package create
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/chats"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -34,7 +34,7 @@ var (
 
 // CreateChatTokenOptions the command line options for the command
 type CreateChatTokenOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Username    string
@@ -46,7 +46,7 @@ type CreateChatTokenOptions struct {
 // NewCmdCreateChatToken creates a command
 func NewCmdCreateChatToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateChatTokenOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

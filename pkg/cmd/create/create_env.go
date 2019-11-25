@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -52,7 +54,7 @@ var (
 
 // CreateEnvOptions the options for the create env command
 type CreateEnvOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Options                v1.Environment
 	HelmValuesConfig       config.HelmValuesConfig
@@ -77,7 +79,7 @@ func NewCmdCreateEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"context"
@@ -41,7 +43,7 @@ type CreateCodeshipFlags struct {
 
 // CreateCodeshipOptions the options for the create spring command
 type CreateCodeshipOptions struct {
-	CreateOptions
+	options.CreateOptions
 	CreateTerraformOptions
 	CreateGkeServiceAccountOptions
 	Flags                CreateCodeshipFlags
@@ -61,17 +63,17 @@ var (
 // NewCmdCreateCodeship creates a command object for the "create" command
 func NewCmdCreateCodeship(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateCodeshipOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 		CreateTerraformOptions: CreateTerraformOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 			InstallOptions: CreateInstallOptions(commonOpts),
 		},
 		CreateGkeServiceAccountOptions: CreateGkeServiceAccountOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

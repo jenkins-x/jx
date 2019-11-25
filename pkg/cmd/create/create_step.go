@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -63,7 +65,7 @@ func (s *NewStepDetails) AddToPipeline(projectConfig *config.ProjectConfig) erro
 
 // CreateStepOptions the options for the create spring command
 type CreateStepOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Dir            string
 	NewStepDetails NewStepDetails
@@ -72,7 +74,7 @@ type CreateStepOptions struct {
 // NewCmdCreateStep creates a command object for the "create" command
 func NewCmdCreateStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateStepOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

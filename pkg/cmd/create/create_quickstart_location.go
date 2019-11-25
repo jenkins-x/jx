@@ -2,6 +2,7 @@ package create
 
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -42,7 +43,7 @@ var (
 
 // CreateQuickstartLocationOptions the options for the create spring command
 type CreateQuickstartLocationOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	GitUrl   string
 	GitKind  string
@@ -54,7 +55,7 @@ type CreateQuickstartLocationOptions struct {
 // NewCmdCreateQuickstartLocation creates a command object for the "create" command
 func NewCmdCreateQuickstartLocation(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateQuickstartLocationOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

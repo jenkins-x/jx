@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/features"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -260,7 +262,7 @@ func NewCmdCreateTerraformGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &TerraformGKEOptions{
 		CreateClusterGKEOptions: CreateClusterGKEOptions{
 			CreateClusterOptions: CreateClusterOptions{
-				CreateOptions: CreateOptions{
+				CreateOptions: options.CreateOptions{
 					CommonOptions: commonOpts,
 				},
 				InstallOptions: CreateInstallOptions(commonOpts),

@@ -4,6 +4,8 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -41,7 +43,7 @@ var (
 
 // CreateDockerAuthOptions the options for the create Docker auth command
 type CreateDockerAuthOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Host   string
 	User   string
@@ -52,7 +54,7 @@ type CreateDockerAuthOptions struct {
 // NewCmdCreateDockerAuth creates a command object for the "create" command
 func NewCmdCreateDockerAuth(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateDockerAuthOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -6,6 +6,8 @@ import (
 	"path"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -61,7 +63,7 @@ func TestCreateStep(t *testing.T) {
 			assert.NoError(t, err)
 
 			createStep := &create.CreateStepOptions{
-				CreateOptions: create.CreateOptions{
+				CreateOptions: options.CreateOptions{
 					CommonOptions: &opts.CommonOptions{
 						BatchMode: true,
 					},

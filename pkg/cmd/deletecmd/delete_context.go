@@ -5,10 +5,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -35,7 +35,7 @@ var (
 
 // DeleteContextOptions the options for the create spring command
 type DeleteContextOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	SelectAll      bool
 	SelectFilter   string
@@ -46,7 +46,7 @@ type DeleteContextOptions struct {
 // NewCmdDeleteContext creates a command object for the "delete repo" command
 func NewCmdDeleteContext(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteContextOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

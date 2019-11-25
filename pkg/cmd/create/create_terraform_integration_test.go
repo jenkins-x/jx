@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
@@ -51,7 +53,7 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 	}
 
 	o := create.CreateTerraformOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &opts.CommonOptions{
 				BatchMode: true,
 				In:        os.Stdin,

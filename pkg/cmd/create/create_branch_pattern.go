@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -32,7 +34,7 @@ var (
 
 // CreateBranchPatternOptions the options for the create spring command
 type CreateBranchPatternOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	BranchPattern string
 }
@@ -40,7 +42,7 @@ type CreateBranchPatternOptions struct {
 // NewCmdCreateBranchPattern creates a command object for the "create" command
 func NewCmdCreateBranchPattern(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateBranchPatternOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

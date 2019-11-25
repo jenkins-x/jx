@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -61,7 +63,7 @@ type CreateAddonAnchoreOptions struct {
 func NewCmdCreateAddonAnchore(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonAnchoreOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -156,7 +158,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 			ServerName: anchoreDeploymentName,
 		},
 		Kind: kube.ValueKindCVE,
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: o.CommonOptions,
 		},
 	}

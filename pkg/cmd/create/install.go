@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	createoptions "github.com/jenkins-x/jx/pkg/cmd/create/options"
+	cmdvault "github.com/jenkins-x/jx/pkg/cmd/create/vault"
+
 	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -304,7 +307,7 @@ func NewCmdInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+cloud.KubernetesProviderOptions())
 
 	cmd.AddCommand(NewCmdInstallDependencies(commonOpts))
-	awsCreateVaultOptions(cmd, &options.AWSConfig)
+	cmdvault.AwsCreateVaultOptions(cmd, &options.AWSConfig)
 
 	return cmd
 }
@@ -316,7 +319,7 @@ func CreateInstallOptions(commonOpts *opts.CommonOptions) InstallOptions {
 	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
-			CreateOptions: CreateOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -340,7 +343,7 @@ func CreateInstallOptions(commonOpts *opts.CommonOptions) InstallOptions {
 			},
 			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
 			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
-			CreateOptions: CreateOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: &commonOptsBatch,
 			},
 		},
@@ -1901,7 +1904,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 
 		errs := []error{}
 		createEnvOpts := CreateEnvOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
 			Prefix: options.Flags.DefaultEnvironmentPrefix,
@@ -2304,12 +2307,12 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		}
 
 		// Create a new System vault
-		cvo := &CreateVaultOptions{
-			CreateOptions: CreateOptions{
+		cvo := &cmdvault.CreateVaultOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
-			GKECreateVaultOptions: GKECreateVaultOptions{},
-			AWSCreateVaultOptions: AWSCreateVaultOptions{
+			GKECreateVaultOptions: cmdvault.GKECreateVaultOptions{},
+			AWSCreateVaultOptions: cmdvault.AWSCreateVaultOptions{
 				AWSConfig: options.AWSConfig,
 			},
 		}
@@ -3111,7 +3114,7 @@ func (options *InstallOptions) installAddon(name string) error {
 	log.Logger().Infof("Installing addon %s", util.ColorInfo(name))
 
 	opts := &CreateAddonOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: createoptions.CreateOptions{
 			CommonOptions: options.CommonOptions,
 		},
 		HelmUpdate: true,

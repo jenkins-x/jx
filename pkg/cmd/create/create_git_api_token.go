@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -41,7 +43,7 @@ var (
 
 // CreateGitTokenOptions the command line options for the command
 type CreateGitTokenOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Username    string
@@ -53,7 +55,7 @@ type CreateGitTokenOptions struct {
 // NewCmdCreateGitToken creates a command
 func NewCmdCreateGitToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateGitTokenOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

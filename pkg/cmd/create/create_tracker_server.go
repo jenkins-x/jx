@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -29,7 +31,7 @@ var (
 
 // CreateTrackerServerOptions the options for the create spring command
 type CreateTrackerServerOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Name string
 }
@@ -37,7 +39,7 @@ type CreateTrackerServerOptions struct {
 // NewCmdCreateTrackerServer creates a command object for the "create" command
 func NewCmdCreateTrackerServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTrackerServerOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

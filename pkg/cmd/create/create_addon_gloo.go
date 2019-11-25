@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/edit"
 	"github.com/jenkins-x/jx/pkg/packages"
 
@@ -52,7 +54,7 @@ type CreateAddonGlooOptions struct {
 func NewCmdCreateAddonGloo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonGlooOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

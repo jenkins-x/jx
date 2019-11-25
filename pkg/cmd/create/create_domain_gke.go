@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,7 +41,7 @@ type DomainGKEOptions struct {
 func NewCmdCreateDomainGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DomainGKEOptions{
 		DomainOptions: DomainOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
