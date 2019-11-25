@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/features"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -64,7 +66,7 @@ type Flags struct {
 
 // CreateTerraformOptions the options for the create spring command
 type CreateTerraformOptions struct {
-	CreateOptions
+	options.CreateOptions
 	InstallOptions InstallOptions
 	Flags          Flags
 	Clusters       []Cluster
@@ -83,7 +85,7 @@ var (
 // NewCmdCreateTerraform creates a command object for the "create" command
 func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTerraformOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 		InstallOptions: CreateInstallOptions(commonOpts),

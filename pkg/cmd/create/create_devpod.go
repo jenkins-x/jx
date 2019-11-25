@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/rsh"
@@ -72,7 +74,7 @@ type CreateDevPodResults struct {
 
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
-	CreateOptions
+	options.CreateOptions
 	opts.CommonDevPodOptions
 
 	Label           string
@@ -103,7 +105,7 @@ type CreateDevPodOptions struct {
 // NewCmdCreateDevPod creates a command object for the "create" command
 func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateDevPodOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 		GitCredentials: git.StepGitCredentialsOptions{

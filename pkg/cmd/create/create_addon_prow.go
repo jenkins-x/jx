@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/spf13/cobra"
 
@@ -42,7 +43,7 @@ type CreateAddonProwOptions struct {
 func NewCmdCreateAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonProwOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

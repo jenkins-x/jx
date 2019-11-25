@@ -3,9 +3,10 @@ package upgrade
 import (
 	"fmt"
 
-	version "github.com/hashicorp/go-version"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
+	"github.com/hashicorp/go-version"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -47,7 +48,7 @@ type UpgradeAddonProwOptions struct {
 func NewCmdUpgradeAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeAddonProwOptions{
 		UpgradeAddonsOptions: UpgradeAddonsOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

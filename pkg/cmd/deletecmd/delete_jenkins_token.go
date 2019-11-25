@@ -3,7 +3,7 @@ package deletecmd
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -30,7 +30,7 @@ var (
 
 // DeleteJenkinsTokenOptions the options for the create spring command
 type DeleteJenkinsTokenOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	JenkinsSelector opts.JenkinsSelectorOptions
 
@@ -40,7 +40,7 @@ type DeleteJenkinsTokenOptions struct {
 // NewCmdDeleteJenkinsToken defines the command
 func NewCmdDeleteJenkinsToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteJenkinsTokenOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

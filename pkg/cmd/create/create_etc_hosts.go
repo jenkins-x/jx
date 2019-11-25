@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -34,7 +36,7 @@ var (
 
 // CreateEtcHostsOptions the options for the create spring command
 type CreateEtcHostsOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Name string
 	IP   string
@@ -43,7 +45,7 @@ type CreateEtcHostsOptions struct {
 // NewCmdCreateEtcHosts creates a command object for the "create" command
 func NewCmdCreateEtcHosts(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateEtcHostsOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

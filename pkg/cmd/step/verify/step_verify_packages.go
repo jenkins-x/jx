@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -143,7 +144,7 @@ func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver *versionstream.Vers
 		message := fmt.Sprintf("Would you like to upgrade to the %s version?", info("jx"))
 		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles()) {
 			options := &upgrade.UpgradeCLIOptions{
-				CreateOptions: create.CreateOptions{
+				CreateOptions: options.CreateOptions{
 					CommonOptions: o.CommonOptions,
 				},
 			}

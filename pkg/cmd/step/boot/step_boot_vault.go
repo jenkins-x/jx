@@ -9,10 +9,12 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/create/vault"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -127,8 +129,8 @@ func (o *StepBootVaultOptions) Run() error {
 	// TODO: do we need to wait for certificates to be available via the secret
 	noExposeVault = true
 
-	createVaultOptions := &create.CreateVaultOptions{
-		CreateOptions: create.CreateOptions{
+	createVaultOptions := &vault.CreateVaultOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &copyOptions,
 		},
 
@@ -145,7 +147,7 @@ func (o *StepBootVaultOptions) Run() error {
 	if requirements.Cluster.Provider == cloud.EKS {
 		if requirements.Vault.AWSConfig != nil {
 			awsConfig := requirements.Vault.AWSConfig
-			createVaultOptions.AWSCreateVaultOptions = create.AWSCreateVaultOptions{}
+			createVaultOptions.AWSCreateVaultOptions = vault.AWSCreateVaultOptions{}
 			secretAccessKey := os.Getenv("VAULT_AWS_SECRET_ACCESS_KEY")
 			accessKeyId := os.Getenv("VAULT_AWS_ACCESS_KEY_ID")
 			if !awsConfig.AutoCreate && (checkRequiredResource("dynamoDBTable", awsConfig.DynamoDBTable) ||

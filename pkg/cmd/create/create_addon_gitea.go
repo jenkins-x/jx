@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -54,7 +56,7 @@ type CreateAddonGiteaOptions struct {
 func NewCmdCreateAddonGitea(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonGiteaOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

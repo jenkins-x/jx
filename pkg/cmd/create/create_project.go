@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 
@@ -45,13 +47,13 @@ var (
 
 // CreateProjectWizardOptions the options for the command
 type CreateProjectWizardOptions struct {
-	CreateOptions
+	options.CreateOptions
 }
 
 // NewCmdCreateProject creates a command object for the "create" command
 func NewCmdCreateProject(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateProjectWizardOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

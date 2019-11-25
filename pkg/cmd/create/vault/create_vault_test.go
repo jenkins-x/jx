@@ -1,8 +1,9 @@
-package create
+package vault
 
 import (
-	"github.com/jenkins-x/jx/pkg/util/maps"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/util/maps"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"

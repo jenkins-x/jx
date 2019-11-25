@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/util/maps"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -36,7 +38,7 @@ var (
 
 // CreateChatTokenOptions the command line options for the command
 type CreateChatTokenOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Username    string
@@ -48,7 +50,7 @@ type CreateChatTokenOptions struct {
 // NewCmdCreateChatToken creates a command
 func NewCmdCreateChatToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateChatTokenOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

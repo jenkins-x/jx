@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/pkg/errors"
@@ -44,7 +46,7 @@ var (
 
 // CreatePullRequestOptions the options for the create spring command
 type CreatePullRequestOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Dir    string
 	Title  string
@@ -60,7 +62,7 @@ type CreatePullRequestOptions struct {
 // NewCmdCreatePullRequest creates a command object for the "create" command
 func NewCmdCreatePullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreatePullRequestOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

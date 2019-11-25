@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/util/maps"
 
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
@@ -45,7 +47,7 @@ type CreateAddonIngressControllerOptions struct {
 func NewCmdCreateAddonIngressController(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonIngressControllerOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

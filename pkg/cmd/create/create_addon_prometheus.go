@@ -6,6 +6,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -22,7 +24,7 @@ import (
 )
 
 type CreateAddonPrometheusOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Namespace   string
 	Version     string
@@ -34,7 +36,7 @@ type CreateAddonPrometheusOptions struct {
 
 func NewCmdCreateAddonPrometheus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonPrometheusOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

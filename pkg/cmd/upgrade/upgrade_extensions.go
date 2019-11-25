@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -55,14 +55,14 @@ var (
 )
 
 type UpgradeExtensionsOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 	Filter                   string
 	ExtensionsRepositoryFile string
 }
 
 func NewCmdUpgradeExtensions(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

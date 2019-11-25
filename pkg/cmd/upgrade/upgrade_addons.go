@@ -3,6 +3,8 @@ package upgrade
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -34,7 +36,7 @@ var (
 
 // UpgradeAddonsOptions the options for the create spring command
 type UpgradeAddonsOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	Namespace   string
 	Set         string
@@ -46,7 +48,7 @@ type UpgradeAddonsOptions struct {
 // NewCmdUpgradeAddons defines the command
 func NewCmdUpgradeAddons(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeAddonsOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

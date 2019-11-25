@@ -2,6 +2,7 @@ package create
 
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -33,7 +34,7 @@ var (
 
 // CreatePostPreviewJobOptions the options for the create spring command
 type CreatePostPreviewJobOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Name         string
 	Image        string
@@ -44,7 +45,7 @@ type CreatePostPreviewJobOptions struct {
 // NewCmdCreatePostPreviewJob creates a command object for the "create" command
 func NewCmdCreatePostPreviewJob(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreatePostPreviewJobOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

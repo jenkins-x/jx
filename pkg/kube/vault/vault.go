@@ -3,6 +3,7 @@ package vault
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/util/maps"
 
 	"github.com/jenkins-x/jx/pkg/util/json"

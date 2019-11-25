@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -28,7 +30,7 @@ var (
 
 // CreateTeamOptions the options for the create spring command
 type CreateTeamOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Name    string
 	Members []string
@@ -37,7 +39,7 @@ type CreateTeamOptions struct {
 // NewCmdCreateTeam creates a command object for the "create" command
 func NewCmdCreateTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTeamOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

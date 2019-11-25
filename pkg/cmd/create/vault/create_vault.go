@@ -1,8 +1,10 @@
-package create
+package vault
 
 import (
 	"fmt"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	uuid "github.com/satori/go.uuid"
 
@@ -60,7 +62,7 @@ var (
 
 // CreateVaultOptions the options for the create vault command
 type CreateVaultOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	GKECreateVaultOptions
 	AWSCreateVaultOptions
@@ -93,7 +95,7 @@ type AWSCreateVaultOptions struct {
 // NewCmdCreateVault  creates a command object for the "create" command
 func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateVaultOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 		IngressConfig: kube.IngressConfig{},
@@ -116,7 +118,7 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for Vault backend")
 	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where Vault will store the encrypted data")
 
-	awsCreateVaultOptions(cmd, &options.AWSConfig)
+	AwsCreateVaultOptions(cmd, &options.AWSConfig)
 
 	cmd.Flags().StringVarP(&options.ClusterName, "cluster-name", "", "", "Name of the cluster to install vault")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
@@ -131,7 +133,7 @@ func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func awsCreateVaultOptions(cmd *cobra.Command, options *kubevault.AWSConfig) {
+func AwsCreateVaultOptions(cmd *cobra.Command, options *kubevault.AWSConfig) {
 	// AWS flags
 	cmd.Flags().BoolVarP(&options.AutoCreate, "aws-auto-create", "", false, "Whether to skip creating resource prerequisites automatically")
 	cmd.Flags().StringVarP(&options.DynamoDBRegion, "aws-dynamodb-region", "", "", "The region to use for storing values in AWS DynamoDB")

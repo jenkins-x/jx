@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
@@ -28,7 +30,7 @@ func TestCreateUser(t *testing.T) {
 	r1 := rand.New(s1)
 	login := r1.Int()
 	o := create.CreateUserOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &commonOpts,
 		},
 		UserSpec: v1.UserDetails{
