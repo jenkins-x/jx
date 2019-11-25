@@ -30,6 +30,7 @@ type UpgradeBootOptions struct {
 	*opts.CommonOptions
 	Dir                     string
 	UpgradeVersionStreamRef string
+	LatestRelease           bool
 }
 
 var (
@@ -67,6 +68,7 @@ func NewCmdUpgradeBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the Jenkins X Pipeline and requirements")
 	cmd.Flags().StringVarP(&options.UpgradeVersionStreamRef, "upgrade-version-stream-ref", "", config.DefaultVersionsRef, "a version stream ref to use to upgrade to")
+	cmd.Flags().BoolVarP(&options.LatestRelease, "latest-release", "", false, "upgrade to latest release tag")
 
 	return cmd
 }
@@ -90,11 +92,11 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
 	}
 	reqsVersionStream := requirements.VersionStream
-	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, o.UpgradeVersionStreamRef)
+	upgradeVersionRef, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, o.UpgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to get check for available update")
 	}
-	if upgradeVersionSha == "" {
+	if upgradeVersionRef == "" {
 		return nil
 	}
 
@@ -108,12 +110,12 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrap(err, "failed to determine boot configuration URL")
 	}
 
-	err = o.updateBootConfig(reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL, upgradeVersionSha)
+	err = o.updateBootConfig(reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL, upgradeVersionRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to update boot configuration")
 	}
 
-	err = o.updateVersionStreamRef(upgradeVersionSha)
+	err = o.updateVersionStreamRef(upgradeVersionRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to update version stream ref")
 	}
@@ -204,17 +206,28 @@ func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionSt
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone versions repo %s", versionStreamURL)
 	}
-	upgradeVersionSha, err := o.Git().GetCommitPointedToByTag(versionsDir, upgradeRef)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to get commit pointed to by %s", upgradeRef)
+
+	if o.LatestRelease {
+		_, upgradeRef, err = o.Git().GetCommitPointedToByLatestTag(versionsDir)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to get latest tag at %s", o.Dir)
+		}
 	}
 
-	if versionStreamRef == upgradeVersionSha {
-		log.Logger().Infof(util.ColorInfo("No upgrade available"))
+	// if version stream is currently need to sha compare sha's
+	if len(versionStreamRef) == 40 {
+		upgradeRef, err = o.Git().GetCommitPointedToByTag(versionsDir, upgradeRef)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to get commit pointed to by %s", upgradeRef)
+		}
+	}
+
+	if versionStreamRef == upgradeRef {
+		log.Logger().Infof(util.ColorInfo("No version stream upgrade available"))
 		return "", nil
 	}
-	log.Logger().Infof(util.ColorInfo("Upgrade available"))
-	return upgradeVersionSha, nil
+	log.Logger().Infof(util.ColorInfo("Version stream upgrade available"))
+	return upgradeRef, nil
 }
 
 func (o *UpgradeBootOptions) checkoutNewBranch() (string, error) {
@@ -255,7 +268,7 @@ func (o *UpgradeBootOptions) updateVersionStreamRef(upgradeRef string) error {
 	return nil
 }
 
-func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionStreamRef string, bootConfigURL string, upgradeVersionSha string) error {
+func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionStreamRef string, bootConfigURL string, upgradeVersionRef string) error {
 	configCloneDir, err := o.cloneBootConfig(bootConfigURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone boot config repo %s", bootConfigURL)
@@ -272,9 +285,9 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 		return errors.Wrapf(err, "failed to get boot config ref for version stream: %s", versionStreamRef)
 	}
 
-	upgradeSha, upgradeVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, upgradeVersionSha, bootConfigURL)
+	upgradeSha, upgradeVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, upgradeVersionRef, bootConfigURL)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get boot config ref for version stream ref: %s", upgradeVersionSha)
+		return errors.Wrapf(err, "failed to get boot config ref for version stream ref: %s", upgradeVersionRef)
 	}
 
 	// check if boot config upgrade available
@@ -539,7 +552,6 @@ func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.
 	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade pipeline builder images", matches)
 	if err != nil {
 		log.Logger().Info("Skipping builder image update as no changes were detected")
-
 	}
 	return nil
 }
@@ -562,7 +574,6 @@ func (o *UpgradeBootOptions) updateTemplateBuilderImage(resolver *versionstream.
 	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade template builder images", []string{templateFile})
 	if err != nil {
 		log.Logger().Info("Skipping template builder image update as no changes were detected")
-
 	}
 	return nil
 }
