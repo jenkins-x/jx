@@ -163,10 +163,16 @@ func (o *UpgradeBootOptions) Run() error {
 }
 
 func (o UpgradeBootOptions) createCommitForRequirements(requirementsFileName string) error {
-	err := o.Git().AddCommitFiles(o.Dir, "Merge jx-requirements.yml", []string{requirementsFileName})
+	changedFiles, err := o.Git().ListChangedFilesFromBranch(o.Dir, requirementsFileName)
 	if err != nil {
-		return errors.Wrapf(err, "error creating a commit with the merged jx-requirements.yml file from dir %s",
-			requirementsFileName)
+		return errors.Wrap(err, "failed to list changed files")
+	}
+	if strings.Contains(changedFiles, requirementsFileName) {
+		err := o.Git().AddCommitFiles(o.Dir, "Merge jx-requirements.yml", []string{requirementsFileName})
+		if err != nil {
+			return errors.Wrapf(err, "error creating a commit with the merged jx-requirements.yml file from dir %s",
+				requirementsFileName)
+		}
 	}
 	return nil
 }
