@@ -91,45 +91,45 @@ func GetServiceURLFromMap(services map[string]*v1.Service, name string) string {
 }
 
 func FindServiceURL(client kubernetes.Interface, namespace string, name string) (string, error) {
-	log.Logger().Debugf("finding service url for %s in namespace %s", name, namespace)
+	log.Logger().Debugf("Finding service url for %s in namespace %s", name, namespace)
 	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrapf(err, "finding the service %s in namespace %s", name, namespace)
 	}
 	answer := GetServiceURL(svc)
 	if answer != "" {
-		log.Logger().Debugf("found service url %s", answer)
+		log.Logger().Debugf("Found service url %s", answer)
 		return answer, nil
 	}
 
-	log.Logger().Debugf("couldn't find service url, attempting to look up via ingress")
+	log.Logger().Debugf("Couldn't find service url, attempting to look up via ingress")
 
 	// lets try find the service via Ingress
 	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
-		log.Logger().Debugf("unable to finding ingress for %s in namespace %s - err %s", name, namespace, err)
+		log.Logger().Debugf("Unable to finding ingress for %s in namespace %s - err %s", name, namespace, err)
 		return "", errors.Wrapf(err, "getting ingress for service %q in namespace %s", name, namespace)
 	}
 
 	url := IngressURL(ing)
 	if url == "" {
-		log.Logger().Debugf("unable to find service url via ingress for %s in namespace %s", name, namespace)
+		log.Logger().Debugf("Unable to find service url via ingress for %s in namespace %s", name, namespace)
 	}
 	return url, nil
 }
 
 func FindIngressURL(client kubernetes.Interface, namespace string, name string) (string, error) {
-	log.Logger().Debugf("finding ingress url for %s in namespace %s", name, namespace)
+	log.Logger().Debugf("Finding ingress url for %s in namespace %s", name, namespace)
 	// lets try find the service via Ingress
 	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
-		log.Logger().Errorf("error finding ingress for %s in namespace %s - err %s", name, namespace, err)
+		log.Logger().Debugf("Error finding ingress for %s in namespace %s - err %s", name, namespace, err)
 		return "", nil
 	}
 
 	url := IngressURL(ing)
 	if url == "" {
-		log.Logger().Debugf("unable to find url via ingress for %s in namespace %s", name, namespace)
+		log.Logger().Debugf("Unable to find url via ingress for %s in namespace %s", name, namespace)
 	}
 	return url, nil
 }
