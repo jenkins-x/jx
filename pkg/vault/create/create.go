@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
@@ -295,7 +296,7 @@ func (v *defaultVaultCreator) vaultGKEConfig(vaultCRD *v1alpha1.Vault, param Vau
 }
 
 func (v *defaultVaultCreator) vaultAWSConfig(vaultCRD *v1alpha1.Vault, param VaultCreationParam) (vault.CloudProviderConfig, error) {
-	_, clusterRegion, err := amazon.GetCurrentlyConnectedRegionAndClusterName()
+	_, clusterRegion, err := session.GetCurrentlyConnectedRegionAndClusterName()
 	if err != nil {
 		return vault.CloudProviderConfig{}, errors.Wrap(err, "finding default AWS region")
 	}

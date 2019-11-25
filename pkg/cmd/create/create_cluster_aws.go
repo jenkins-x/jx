@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/packages"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+
+	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -106,7 +108,7 @@ func NewCmdCreateClusterAWS(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.addCreateClusterFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "", "", "AWS profile to use.")
-	cmd.Flags().StringVarP(&options.Flags.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)
+	cmd.Flags().StringVarP(&options.Flags.Region, "region", "", "", "AWS region to use. Default: "+session.DefaultRegion)
 	cmd.Flags().BoolVarP(&options.Flags.UseRBAC, "rbac", "r", true, "whether to enable RBAC on the Kubernetes cluster")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "aws1", "The name of this cluster.")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, optionNodes, "o", "", "node count")
@@ -332,7 +334,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	log.Logger().Info("State of kops cluster: OK")
 	log.Blank()
 
-	region, err := amazon.ResolveRegion(o.Flags.Profile, o.Flags.Region)
+	region, err := session.ResolveRegion(o.Flags.Profile, o.Flags.Region)
 	if err != nil {
 		return err
 	}

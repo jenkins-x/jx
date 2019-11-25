@@ -4,9 +4,10 @@ import (
 	"strings"
 	"time"
 
+	session2 "github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -50,7 +51,7 @@ func NewCmdDeleteAws(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *DeleteAwsOptions) Run() error {
 	vpcid := o.VpcId
 
-	session, err := amazon.NewAwsSession(o.Profile, o.Region)
+	session, err := session2.NewAwsSession(o.Profile, o.Region)
 	if err != nil {
 		return err
 	}

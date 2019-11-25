@@ -8,13 +8,14 @@ import (
 	"net/url"
 	"strings"
 
+	session2 "github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -36,7 +37,7 @@ func (b AmazonBucketProvider) createAWSSession() (*session.Session, error) {
 	if region == "" {
 		return nil, errors.New("requirements do not specify a cluster region")
 	}
-	sess, err := amazon.NewAwsSession("", region)
+	sess, err := session2.NewAwsSession("", region)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create AWS session")
 	}

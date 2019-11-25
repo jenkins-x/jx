@@ -47,6 +47,16 @@ func (c *Client) Get(name string) (*cluster.Cluster, error) {
 	return cluster.GetCluster(c, name)
 }
 
+// Delete should delete the cluster from the clusters list
+func (c *Client) Delete(cluster *cluster.Cluster) error {
+	for i, v := range c.Clusters {
+		if v.Name == cluster.Name {
+			c.Clusters = append(c.Clusters[:i], c.Clusters[i+1:]...)
+		}
+	}
+	return nil
+}
+
 // SetClusterLabels labels the given cluster
 func (c *Client) SetClusterLabels(cluster *cluster.Cluster, labels map[string]string) error {
 	cluster.Labels = labels

@@ -3,57 +3,31 @@ package eks
 import (
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/eks"
-	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/stretchr/testify/assert"
+
+	eksctltest "github.com/jenkins-x/jx/pkg/cloud/amazon/eksctl/mocks"
+
+	"github.com/jenkins-x/jx/pkg/cluster"
+
+	"github.com/petergtz/pegomock"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/testutils"
 )
 
-type mockedEKS struct {
-	eksiface.EKSAPI
-	ListClustersResponses    []interface{}
-	DescribeClusterResponses map[string]*eks.Cluster
-}
-
-func (m mockedEKS) ListClusters(input *eks.ListClustersInput) (*eks.ListClustersOutput, error) {
-	clusters := m.ListClustersResponses[0].([]*string)
-	var nextToken *string
-	if m.ListClustersResponses[1] != nil {
-		nextToken = m.ListClustersResponses[1].(*string)
-	}
-	return &eks.ListClustersOutput{
-		Clusters:  clusters,
-		NextToken: nextToken,
-	}, nil
-}
-
-func (m mockedEKS) DescribeCluster(input *eks.DescribeClusterInput) (*eks.DescribeClusterOutput, error) {
-	return &eks.DescribeClusterOutput{
-		Cluster: m.DescribeClusterResponses[*input.Name],
-	}, nil
-}
-
 func TestAWSClusterClient_List(t *testing.T) {
-	commands, err := amazon.NewEKSClusterOptions(mockedEKS{
-		ListClustersResponses: []interface{}{aws.StringSlice([]string{"cluster-1"}), nil},
-		DescribeClusterResponses: map[string]*eks.Cluster{
-			"cluster-1": {
-				Arn:      aws.String("fake:arn:for:cluster"),
-				Endpoint: aws.String("this.is.an/endpoint"),
-				Name:     aws.String("cluster-1"),
-				Status:   aws.String("ACTIVE"),
-				Tags: aws.StringMap(map[string]string{
-					"tag1": "value1",
-				}),
+	p := testutils.NewMockProvider("", "")
+	pegomock.When(p.EKS().ListClusters()).ThenReturn([]*cluster.Cluster{
+		{
+			Name:   "cluster-1",
+			Status: "ACTIVE",
+			Labels: map[string]string{
+				"tag1": "value1",
 			},
+			Location: "this.is.an/endpoint",
 		},
-	})
-	assert.NoError(t, err)
-
-	c := AWSClusterClient{
-		awsClusterClient: &amazon.AWSCli{},
-		awsEKSAPI:        commands,
+	}, nil)
+	c := awsClusterClient{
+		Provider: p,
 	}
 
 	clusters, err := c.List()
@@ -72,24 +46,20 @@ func TestAWSClusterClient_List(t *testing.T) {
 }
 
 func TestAWSClusterClient_Get(t *testing.T) {
-	commands, err := amazon.NewEKSClusterOptions(mockedEKS{
-		DescribeClusterResponses: map[string]*eks.Cluster{
-			"cluster-1": {
-				Arn:      aws.String("fake:arn:for:cluster"),
-				Endpoint: aws.String("this.is.an/endpoint"),
-				Name:     aws.String("cluster-1"),
-				Status:   aws.String("ACTIVE"),
-				Tags: aws.StringMap(map[string]string{
-					"tag1": "value1",
-				}),
+	p := testutils.NewMockProvider("", "")
+	pegomock.When(p.EKS().DescribeCluster(pegomock.EqString("cluster-1"))).ThenReturn(
+		&cluster.Cluster{
+			Name: "cluster-1",
+			Labels: map[string]string{
+				"tag1": "value1",
 			},
-		},
-	})
-	assert.NoError(t, err)
+			Status:   "ACTIVE",
+			Location: "this.is.an/endpoint",
+		}, "", nil,
+	)
 
-	c := AWSClusterClient{
-		awsClusterClient: &amazon.AWSCli{},
-		awsEKSAPI:        commands,
+	c := awsClusterClient{
+		Provider: p,
 	}
 
 	obtainedCluster, err := c.Get("cluster-1")
@@ -104,43 +74,34 @@ func TestAWSClusterClient_Get(t *testing.T) {
 }
 
 func TestAWSClusterClient_ListFilter(t *testing.T) {
-	commands, err := amazon.NewEKSClusterOptions(mockedEKS{
-		ListClustersResponses: []interface{}{aws.StringSlice([]string{"cluster-1", "cluster-2", "cluster-3"}), nil},
-		DescribeClusterResponses: map[string]*eks.Cluster{
-			"cluster-1": {
-				Arn:      aws.String("fake:arn:for:cluster"),
-				Endpoint: aws.String("this.is.an/endpoint"),
-				Name:     aws.String("cluster-1"),
-				Status:   aws.String("ACTIVE"),
-				Tags: aws.StringMap(map[string]string{
-					"tag1": "value1",
-				}),
+	p := testutils.NewMockProvider("", "")
+	pegomock.When(p.EKS().ListClusters()).ThenReturn([]*cluster.Cluster{
+		{
+			Name: "cluster-1",
+			Labels: map[string]string{
+				"tag1": "value1",
 			},
-			"cluster-2": {
-				Arn:      aws.String("fake:arn:for:cluster"),
-				Endpoint: aws.String("this.is.an/endpoint"),
-				Name:     aws.String("cluster-2"),
-				Status:   aws.String("ACTIVE"),
-				Tags: aws.StringMap(map[string]string{
-					"IWANT": "THIS_CLUSTER",
-				}),
-			},
-			"cluster-3": {
-				Arn:      aws.String("fake:arn:for:cluster"),
-				Endpoint: aws.String("this.is.an/endpoint"),
-				Name:     aws.String("cluster-3"),
-				Status:   aws.String("ACTIVE"),
-				Tags: aws.StringMap(map[string]string{
-					"tag1": "value1",
-				}),
-			},
+			Status:   "ACTIVE",
+			Location: "this.is.an/endpoint",
 		},
-	})
-	assert.NoError(t, err)
+		{
+			Name: "cluster-2",
+			Labels: map[string]string{
+				"IWANT": "THIS_CLUSTER",
+			},
+			Status:   "ACTIVE",
+			Location: "this.is.an/endpoint",
+		},
+		{
+			Name:     "cluster-3",
+			Labels:   map[string]string{},
+			Status:   "ACTIVE",
+			Location: "this.is.an/endpoint",
+		},
+	}, nil)
 
-	c := AWSClusterClient{
-		awsClusterClient: &amazon.AWSCli{},
-		awsEKSAPI:        commands,
+	c := awsClusterClient{
+		Provider: p,
 	}
 
 	clusters, err := c.ListFilter(map[string]string{
@@ -153,4 +114,19 @@ func TestAWSClusterClient_ListFilter(t *testing.T) {
 		obtainedCluster := clusters[0]
 		assert.Equal(t, "cluster-2", obtainedCluster.Name)
 	}
+}
+
+func TestAWSClusterClient_Delete(t *testing.T) {
+	pegomock.RegisterMockTestingT(t)
+	p := testutils.NewMockProvider("", "")
+
+	c := awsClusterClient{
+		Provider: p,
+	}
+	cl := &cluster.Cluster{
+		Name: "cluster1",
+	}
+	err := c.Delete(cl)
+	assert.NoError(t, err)
+	p.EKSCtl().(*eksctltest.MockEKSCtl).VerifyWasCalledOnce().DeleteCluster(cl)
 }

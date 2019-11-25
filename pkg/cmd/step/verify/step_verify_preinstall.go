@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -565,7 +567,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		var currentRegion, currentClusterName string
 		var autoAcceptDefaults bool
 		if requirements.Cluster.Region == "" || requirements.Cluster.ClusterName == "" {
-			currentClusterName, currentRegion, err = amazon.GetCurrentlyConnectedRegionAndClusterName()
+			currentClusterName, currentRegion, err = session.GetCurrentlyConnectedRegionAndClusterName()
 			if err != nil {
 				return requirements, errors.Wrap(err, "there was a problem obtaining the current cluster name and region")
 			}

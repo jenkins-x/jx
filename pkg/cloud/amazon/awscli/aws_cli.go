@@ -1,15 +1,20 @@
-package amazon
+package awscli
 
 import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
 
-// AWSCli is an abstraction over the AWS CLI operations
-type AWSCli struct{}
+// awsClient is an abstraction over the AWS CLI operations
+type awsClient struct{}
+
+// NewAWSCli returns an AWS CLI abstraction client
+func NewAWSCli() awsClient {
+	return awsClient{}
+}
 
 // ConnectToClusterWithAWSCLI will modify the kube-config file to add the provided cluster and change context to it
-func (AWSCli) ConnectToClusterWithAWSCLI(clusterName string) error {
+func (awsClient) ConnectToClusterWithAWSCLI(clusterName string) error {
 	args := []string{"eks", "update-kubeconfig", "--name", clusterName}
 
 	cmd := util.Command{

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"text/template"
 
+	session2 "github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/google/uuid"
@@ -76,7 +78,7 @@ func CreateIRSAManagedServiceAccounts(requirements *config.RequirementsConfig, k
 // the returned map so it can be used as parameters for the Go Template irsa.tmpl.yaml
 func createPoliciesStack(requirements *config.RequirementsConfig, kubeProvidersDir string) (map[string]interface{}, error) {
 	eksKubeProviderDir := filepath.Join(kubeProvidersDir, cloud.EKS, ConfigTemplatesFolder)
-	session, err := NewAwsSession("", requirements.Cluster.Region)
+	session, err := session2.NewAwsSession("", requirements.Cluster.Region)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating a new AWS Session")
 	}
