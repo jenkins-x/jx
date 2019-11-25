@@ -112,3 +112,59 @@ func TestSetVersionChart(t *testing.T) {
 
 	assert.Equal(t, string(testFile), string(updatedFile), "replaced version")
 }
+
+func TestRunChartsDir(t *testing.T) {
+	originalJxHome, tempJxHome, err := testhelpers.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := testhelpers.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
+	f, err := ioutil.TempDir("", "test-run-chartsdir")
+	assert.NoError(t, err)
+
+	testData := path.Join("test_data", "next_version", "charts")
+	_, err = os.Stat(testData)
+	assert.NoError(t, err)
+
+	err = util.CopyDir(testData, f, true)
+	assert.NoError(t, err)
+
+	git := gits.NewGitCLI()
+	err = git.Init(f)
+	assert.NoError(t, err)
+
+	o := step.StepNextVersionOptions{
+		StepOptions: step2.StepOptions{
+			CommonOptions: &opts.CommonOptions{},
+		},
+	}
+	o.Out = tests.Output()
+	o.Dir = f
+	o.NewVersion = "1.2.3"
+	o.Tag = true
+	o.ChartsDir = path.Join(f, "charts", "foo")
+	o.SetGit(&gits.GitFake{})
+
+	defer os.Remove("VERSION")
+
+	err = o.Run()
+	assert.NoError(t, err)
+
+	// Check explicit chart has been updated
+	updatedChart, err := util.LoadBytes(o.Dir, "charts/foo/Chart.yaml")
+	expectedUpdatedChart, err := util.LoadBytes(testData, "charts/foo/expected_Chart.yaml")
+	assert.Equal(t, string(updatedChart), string(expectedUpdatedChart), "replaced version")
+
+	// And check no other chart was updated
+	bystanderChart, err := util.LoadBytes(o.Dir, "charts/bar/Chart.yaml")
+	expectedBystanderChart, err := util.LoadBytes(testData, "charts/bar/expected_Chart.yaml")
+	assert.Equal(t, string(bystanderChart), string(expectedBystanderChart), "no version replaced")
+}
