@@ -76,6 +76,11 @@ func (c *gcloud) Get(name string) (*cluster.Cluster, error) {
 	return cluster.GetCluster(c, name)
 }
 
+// Delete should delete the cluster from GKE
+func (c *gcloud) Delete(cluster *cluster.Cluster) error {
+	return fmt.Errorf("not implemented")
+}
+
 // SetClusterLabels labels the given cluster
 func (c *gcloud) SetClusterLabels(cluster *cluster.Cluster, labelMap map[string]string) error {
 	labels := util.MapToKeyValues(labelMap)

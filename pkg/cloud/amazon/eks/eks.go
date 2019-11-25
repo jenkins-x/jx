@@ -1,9 +1,13 @@
-package amazon
+package eks
 
 import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/aws/client"
+
+	session2 "github.com/jenkins-x/jx/pkg/cloud/amazon/session"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -13,34 +17,30 @@ import (
 	"github.com/pkg/errors"
 )
 
-// EksClusterOptions contains some functions to interact with EKS
-type EksClusterOptions struct {
+// eksAPIHandler contains some functions to interact with and serves as an abstraction of the EKS API
+type eksAPIHandler struct {
 	eks eksiface.EKSAPI
 }
 
-// NewEKSClusterOptions will return an EksClusterOptions value and configure credentials
-func NewEKSClusterOptions(eksapi ...eksiface.EKSAPI) (*EksClusterOptions, error) {
+// NewEKSAPIHandler will return an eksAPIHandler with configured credentials
+func NewEKSAPIHandler(awsSession client.ConfigProvider, eksapi ...eksiface.EKSAPI) (*eksAPIHandler, error) {
 	if len(eksapi) == 1 {
-		return &EksClusterOptions{
+		return &eksAPIHandler{
 			eks: eksapi[0],
 		}, nil
 	}
-	session, err := NewAwsSession("", "")
-	if err != nil {
-		return nil, errors.Wrap(err, "there was a problem ensuring the initialization of the EKS API")
-	}
-	return &EksClusterOptions{
-		eks: eks.New(session),
+	return &eksAPIHandler{
+		eks: eks.New(awsSession),
 	}, nil
 }
 
 // EksClusterExists checks if EKS cluster with given name exists in given region.
-func (e *EksClusterOptions) EksClusterExists(clusterName string, profile string, region string) (bool, error) {
-	region, err := ResolveRegion(profile, region)
+func (e *eksAPIHandler) EksClusterExists(clusterName string, profile string, region string) (bool, error) {
+	region, err := session2.ResolveRegion(profile, region)
 	if err != nil {
 		return false, err
 	}
-	cmd := exec.Command("eksctl", "get", "cluster", "--region", region)
+	cmd := exec.Command("eksctl", "get", "cluster", "--region", region) //nolint:gosec
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return false, err
@@ -58,7 +58,7 @@ func (e *EksClusterOptions) EksClusterExists(clusterName string, profile string,
 }
 
 // DescribeCluster will attempt to describe the given cluster and return a simplified cluster.Cluster struct
-func (e *EksClusterOptions) DescribeCluster(clusterName string) (*cluster.Cluster, string, error) {
+func (e *eksAPIHandler) DescribeCluster(clusterName string) (*cluster.Cluster, string, error) {
 	output, err := e.eks.DescribeCluster(&eks.DescribeClusterInput{
 		Name: aws.String(clusterName),
 	})
@@ -74,7 +74,7 @@ func (e *EksClusterOptions) DescribeCluster(clusterName string) (*cluster.Cluste
 }
 
 // ListClusters will list all clusters existing in configured region and describe each one to return enhanced data
-func (e *EksClusterOptions) ListClusters() ([]*cluster.Cluster, error) {
+func (e *eksAPIHandler) ListClusters() ([]*cluster.Cluster, error) {
 	var nextToken *string = nil
 	var clusters []*cluster.Cluster
 	for {
@@ -103,8 +103,18 @@ func (e *EksClusterOptions) ListClusters() ([]*cluster.Cluster, error) {
 	}
 }
 
+func (e eksAPIHandler) GetClusterAsEKSCluster(clusterName string) (*eks.Cluster, error) {
+	output, err := e.eks.DescribeCluster(&eks.DescribeClusterInput{
+		Name: aws.String(clusterName),
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "error describing EKS cluster %s", clusterName)
+	}
+	return output.Cluster, nil
+}
+
 // AddTagsToCluster adds tags to an EKS cluster
-func (e *EksClusterOptions) AddTagsToCluster(clusterName string, tags map[string]*string) error {
+func (e *eksAPIHandler) AddTagsToCluster(clusterName string, tags map[string]*string) error {
 	_, clusterARN, err := e.DescribeCluster(clusterName)
 	if err != nil {
 		return err
@@ -124,8 +134,8 @@ func (e *EksClusterOptions) AddTagsToCluster(clusterName string, tags map[string
 // If EKS cluster creation process is interrupted, there will be CloudFormation stack in ROLLBACK_COMPLETE state left.
 // Such dead stack prevents eksctl from creating cluster with the same name. This is common activity then to remove stacks
 // like this and this function performs this action.
-func (e *EksClusterOptions) EksClusterObsoleteStackExists(clusterName string, profile string, region string) (bool, error) {
-	session, err := NewAwsSession(profile, region)
+func (e *eksAPIHandler) EksClusterObsoleteStackExists(clusterName string, profile string, region string) (bool, error) {
+	session, err := session2.NewAwsSession(profile, region)
 	if err != nil {
 		return false, err
 	}
@@ -146,8 +156,8 @@ func (e *EksClusterOptions) EksClusterObsoleteStackExists(clusterName string, pr
 }
 
 // CleanUpObsoleteEksClusterStack removes dead eksctl CloudFormation stack associated with given EKS cluster name.
-func (e *EksClusterOptions) CleanUpObsoleteEksClusterStack(clusterName string, profile string, region string) error {
-	session, err := NewAwsSession(profile, region)
+func (e *eksAPIHandler) CleanUpObsoleteEksClusterStack(clusterName string, profile string, region string) error {
+	session, err := session2.NewAwsSession(profile, region)
 	if err != nil {
 		return err
 	}

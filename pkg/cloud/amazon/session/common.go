@@ -1,13 +1,11 @@
-package amazon
+package session
 
 import (
 	"os"
-	"path"
 	"regexp"
 	"runtime"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -21,13 +19,6 @@ func NewAwsSession(profileOption string, regionOption string) (*session.Session,
 	if regionOption != "" {
 		config.Region = aws.String(regionOption)
 	}
-	if _, err := os.Stat(path.Join(UserHomeDir(), ".aws", "credentials")); !os.IsNotExist(err) {
-		config.Credentials = credentials.NewChainCredentials(
-			[]credentials.Provider{
-				&credentials.EnvProvider{},
-				&credentials.SharedCredentialsProvider{Filename: "", Profile: profileOption},
-			})
-	}
 
 	sessionOptions := session.Options{
 		SharedConfigState: session.SharedConfigEnable,
@@ -39,14 +30,14 @@ func NewAwsSession(profileOption string, regionOption string) (*session.Session,
 	}
 
 	awsSession, err := session.NewSessionWithOptions(sessionOptions)
+	if err != nil {
+		return nil, err
+	}
 
 	if *awsSession.Config.Region == "" {
 		awsSession.Config.Region = aws.String(DefaultRegion)
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	return awsSession, nil
 }
 

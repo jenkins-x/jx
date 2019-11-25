@@ -4,13 +4,14 @@ import (
 	"os"
 	"os/exec"
 
+	session2 "github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
@@ -62,7 +63,7 @@ func NewCmdGetEks(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Profile, "profile", "", "", "AWS profile to use.")
-	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)
+	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use. Default: "+session2.DefaultRegion)
 
 	options.AddGetFlags(cmd)
 	return cmd
@@ -85,7 +86,7 @@ func (o *GetEksOptions) Run() error {
 			os.Exit(-1)
 		}
 
-		region, err := amazon.ResolveRegion(o.Profile, o.Region)
+		region, err := session2.ResolveRegion(o.Profile, o.Region)
 		if err != nil {
 			return err
 		}
@@ -98,7 +99,7 @@ func (o *GetEksOptions) Run() error {
 		return nil
 	} else {
 		cluster := o.Args[0]
-		session, err := amazon.NewAwsSession(o.Profile, o.Region)
+		session, err := session2.NewAwsSession(o.Profile, o.Region)
 		if err != nil {
 			return err
 		}
