@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
@@ -242,8 +244,8 @@ func Test_ModifyPipelineGitEnvVars(t *testing.T) {
 	parameterValues, err := helm.LoadParametersValuesFile(dir)
 	assert.NoError(t, err)
 
-	expectedUsername := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.username")
-	expectedEmail := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.email")
+	expectedUsername := maps.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.username")
+	expectedEmail := maps.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.email")
 	assert.NotEqual(t, "", expectedUsername, "should not have empty expected username")
 	assert.NotEqual(t, "", expectedEmail, "should not have empty expected email")
 

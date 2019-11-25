@@ -3,6 +3,8 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	clusters "github.com/jenkins-x/jx/pkg/cluster"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -81,6 +83,6 @@ func (o *StepClusterUnlockOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("unlocked cluster %s so now has labels %s", util.ColorInfo(cluster.Name), util.ColorInfo(util.MapToString(resultLabels)))
+	log.Logger().Infof("unlocked cluster %s so now has labels %s", util.ColorInfo(cluster.Name), util.ColorInfo(maps.MapToString(resultLabels)))
 	return err
 }

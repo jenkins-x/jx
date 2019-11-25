@@ -3,7 +3,7 @@ package syntax_helpers_test
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/util/maps"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/test/builder"
 	corev1 "k8s.io/api/core/v1"
@@ -204,7 +204,7 @@ func PipelineTolerations(tolerations []corev1.Toleration) PipelineOptionsOp {
 // PipelinePodLabels sets the optional pod labels for the pipeline
 func PipelinePodLabels(labels map[string]string) PipelineOptionsOp {
 	return func(options *syntax.RootOptions) {
-		options.PodLabels = util.MergeMaps(options.PodLabels, labels)
+		options.PodLabels = maps.MergeMaps(options.PodLabels, labels)
 	}
 }
 

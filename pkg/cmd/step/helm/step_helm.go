@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/ghodss/yaml"
@@ -382,7 +384,7 @@ func (o *StepHelmOptions) overwriteProviderValues(requirements *config.Requireme
 		return valuesData, errors.Wrapf(err, "failed to unmarshal the default helm values")
 	}
 
-	util.CombineMapTrees(values, overrides)
+	maps.CombineMapTrees(values, overrides)
 
 	data, err := yaml.Marshal(values)
 	return data, err

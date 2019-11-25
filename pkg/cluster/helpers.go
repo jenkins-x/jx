@@ -3,7 +3,7 @@ package cluster
 import (
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/util/maps"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
@@ -28,7 +28,7 @@ func LockCluster(client Client, lockLabels map[string]string, filterLabels map[s
 	for _, c := range clusters {
 		if !HasAnyKey(c.Labels, lockLabels) {
 			// lets try to update label
-			allLabels := util.MergeMaps(map[string]string{}, c.Labels, lockLabels)
+			allLabels := maps.MergeMaps(map[string]string{}, c.Labels, lockLabels)
 			err = client.SetClusterLabels(c, allLabels)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to label cluster %s with label %#v", c.Name, lockLabels)

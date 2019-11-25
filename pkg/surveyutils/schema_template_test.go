@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/require"
@@ -75,19 +77,19 @@ func TestTemplateSchemaFile(t *testing.T) {
 		err = json.Unmarshal(data, &m)
 		require.NoError(t, err, "failed to parse schema file %s", schemaFile)
 
-		actual := util.GetMapValueAsStringViaPath(m, "properties.pipelineUser.properties.token.description")
+		actual := maps.GetMapValueAsStringViaPath(m, "properties.pipelineUser.properties.token.description")
 		t.Logf("git token for git kind %s and server %s has description %s\n", tc.GitKind, tc.GitServer, actual)
 		assert.Equal(t, tc.ExpectedTokenDescription, actual, "properties.pipelineUser.properties.token.description in generated schema for git kind %s and server %s", tc.GitKind, tc.GitServer)
 
-		pattern := util.GetMapValueAsStringViaPath(m, "properties.pipelineUser.properties.token.pattern")
+		pattern := maps.GetMapValueAsStringViaPath(m, "properties.pipelineUser.properties.token.pattern")
 		t.Logf("git token for git kind %s and server %s has pattern: %s\n", tc.GitKind, tc.GitServer, pattern)
 		assert.Equal(t, tc.ExpectedPattern, pattern, "properties.pipelineUser.properties.token.pattern in generated schema for git kind %s and server %s", tc.GitKind, tc.GitServer)
 
-		min := util.GetMapValueAsIntViaPath(m, "properties.pipelineUser.properties.token.minLength")
+		min := maps.GetMapValueAsIntViaPath(m, "properties.pipelineUser.properties.token.minLength")
 		t.Logf("git token for git kind %s and server %s has minLength %d\n", tc.GitKind, tc.GitServer, min)
 		assert.Equal(t, tc.ExpectedMin, min, "properties.pipelineUser.properties.token.minLength in generated schema for git kind %s and server %s", tc.GitKind, tc.GitServer)
 
-		max := util.GetMapValueAsIntViaPath(m, "properties.pipelineUser.properties.token.maxLength")
+		max := maps.GetMapValueAsIntViaPath(m, "properties.pipelineUser.properties.token.maxLength")
 		t.Logf("git token for git kind %s and server %s has maxLength %d\n", tc.GitKind, tc.GitServer, max)
 		assert.Equal(t, tc.ExpectedMax, max, "properties.pipelineUser.properties.token.maxLength in generated schema for git kind %s and server %s", tc.GitKind, tc.GitServer)
 	}

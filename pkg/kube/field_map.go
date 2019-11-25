@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // FieldMap is a map of field:value. It implements fields.Fields.
 type fieldMap map[string]interface{}
 
 func newFieldMap(pipelineActivity v1.PipelineActivity) (fieldMap, error) {
-	return util.ToObjectMap(pipelineActivity)
+	return maps.ToObjectMap(pipelineActivity)
 }
 
 // Has returns whether the provided field exists in the map.

@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -231,7 +233,7 @@ func (o *StepReportChartOptions) processTemplate(info *ChartData, text string) e
 		return errors.Wrapf(err, "failed to parse template for chart %s/%s for template: %s", info.Prefix, info.Name, text)
 	}
 
-	if util.GetMapValueAsStringViaPath(data, "kind") == "Deployment" {
+	if maps.GetMapValueAsStringViaPath(data, "kind") == "Deployment" {
 		d := v1beta1.Deployment{}
 		err := yaml.Unmarshal([]byte(text), &d)
 		if err != nil {

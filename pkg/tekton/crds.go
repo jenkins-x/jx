@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -90,7 +92,7 @@ func (crds *CRDWrapper) Resources() []*pipelineapi.PipelineResource {
 // AddLabels merges the specified labels into the PipelineRun labels.
 func (crds *CRDWrapper) AddLabels(labels map[string]string) {
 	// only include labels on PipelineRuns because they're unique, Task and pipeline are static resources so we'd overwrite existing labels if applied to them too
-	util.MergeMaps(crds.pipelineRun.Labels, labels)
+	maps.MergeMaps(crds.pipelineRun.Labels, labels)
 }
 
 // ObjectReferences creates the generic Kube resource metadata.

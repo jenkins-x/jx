@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -391,7 +393,7 @@ func buildLabels(params CRDCreationParameters) (map[string]string, error) {
 	labels[tekton.LabelBuild] = params.BuildNumber
 	labels[tekton.LabelType] = tekton.MetaPipeline.String()
 
-	return util.MergeMaps(labels, params.Labels), nil
+	return maps.MergeMaps(labels, params.Labels), nil
 }
 
 func buildEnvVars(customEnvVars map[string]string) []corev1.EnvVar {

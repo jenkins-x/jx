@@ -3,6 +3,8 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	clusters "github.com/jenkins-x/jx/pkg/cluster"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -80,7 +82,7 @@ func (o *StepClusterLockOptions) Run() error {
 	if o.TestName != "" {
 		lockLabels[o.TestLabel] = o.TestName
 	}
-	filterLabels := util.KeyValuesToMap(o.Filters)
+	filterLabels := maps.KeyValuesToMap(o.Filters)
 	cluster, err := clusters.LockCluster(client, lockLabels, filterLabels)
 	if err != nil {
 		return errors.Wrapf(err, "failed to lock cluster with label %s and filters %#v", lockLabels, filterLabels)

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 
 	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
@@ -76,7 +78,7 @@ func assertCombineMapTrees(t *testing.T, expected map[string]interface{}, destin
 		actual[k] = v
 	}
 
-	util.CombineMapTrees(actual, input)
+	maps.CombineMapTrees(actual, input)
 
 	assert.Equal(t, actual, expected, "when combine map trees", mapToString(destination), mapToString(input))
 }

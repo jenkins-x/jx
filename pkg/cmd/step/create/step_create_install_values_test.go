@@ -175,8 +175,3 @@ func getBaseRequirements() *config.RequirementsConfig {
 	requirements.Cluster.Zone = "test-zone"
 	return requirements
 }
-
-func AssertMapPathValueAsString(t *testing.T, values map[string]interface{}, path string, expected string) {
-	actual := util.GetMapValueAsStringViaPath(values, path)
-	assert.Equal(t, expected, actual, "invalid helm value for path %s", path)
-}

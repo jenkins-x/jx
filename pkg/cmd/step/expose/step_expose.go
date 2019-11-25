@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -231,7 +233,7 @@ func readYamlTemplate(templateFile string, requirements *config.RequirementsConf
 }
 
 func createServiceMap(service *corev1.Service) (map[string]interface{}, error) {
-	m, err := util.ToObjectMap(service)
+	m, err := maps.ToObjectMap(service)
 	if err != nil {
 		return m, err
 	}
@@ -326,11 +328,11 @@ func (o *StepExposeOptions) loadExposeControllerConfigFromValuesYAML(requirement
 	}
 	ic := &requirements.Ingress
 	if ic.Domain == "" {
-		ic.Domain = util.GetMapValueAsStringViaPath(values, "expose.config.domain")
+		ic.Domain = maps.GetMapValueAsStringViaPath(values, "expose.config.domain")
 	}
 
 	// lets detect TLS
-	if util.GetMapValueAsStringViaPath(values, "expose.config.tlsacme") == "true" || util.GetMapValueAsStringViaPath(values, "expose.config.http") == "false" {
+	if maps.GetMapValueAsStringViaPath(values, "expose.config.tlsacme") == "true" || maps.GetMapValueAsStringViaPath(values, "expose.config.http") == "false" {
 		ic.TLS.Enabled = true
 	}
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	gcp "github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cluster"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -78,6 +80,6 @@ func (c *gcloud) Get(name string) (*cluster.Cluster, error) {
 
 // SetClusterLabels labels the given cluster
 func (c *gcloud) SetClusterLabels(cluster *cluster.Cluster, labelMap map[string]string) error {
-	labels := util.MapToKeyValues(labelMap)
+	labels := maps.MapToKeyValues(labelMap)
 	return c.gcloud.UpdateGkeClusterLabels(cluster.Location, c.project, cluster.Name, labels)
 }

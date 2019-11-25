@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 
 	"github.com/ghodss/yaml"
@@ -693,7 +695,7 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 
 	if sourceMap != nil {
 		// now lets merge together the 2 blobs of YAML
-		util.CombineMapTrees(sourceMap, overrideMap)
+		maps.CombineMapTrees(sourceMap, overrideMap)
 	} else {
 		sourceMap = overrideMap
 	}

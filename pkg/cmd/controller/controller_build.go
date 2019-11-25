@@ -9,6 +9,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -1329,7 +1331,7 @@ type ReportParams struct {
 
 // CreateReportTargetURL creates the target URL for pipeline results/logs from a template
 func CreateReportTargetURL(templateText string, params ReportParams) string {
-	templateData, err := util.ToObjectMap(params)
+	templateData, err := maps.ToObjectMap(params)
 	if err != nil {
 		log.Logger().WithError(err).Warnf("failed to convert git ReportParams to a map for %#v", params)
 		return ""

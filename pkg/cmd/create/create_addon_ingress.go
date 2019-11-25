@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -140,7 +142,7 @@ func (o *CreateAddonIngressControllerOptions) modifyDomainInValuesFiles(dir stri
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse helm values file %s", fileName)
 	}
-	util.SetMapValueViaPath(values, "expose.config.domain", domain)
+	maps.SetMapValueViaPath(values, "expose.config.domain", domain)
 
 	err = helm.SaveFile(fileName, values)
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	v1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -110,8 +112,8 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 	}
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Annotations, answer.Annotations) || !reflect.DeepEqual(created.Labels, answer.Labels) {
 		answer.Spec = created.Spec
-		answer.Labels = util.MergeMaps(answer.Labels, created.Labels)
-		answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
+		answer.Labels = maps.MergeMaps(answer.Labels, created.Labels)
+		answer.Annotations = maps.MergeMaps(answer.Annotations, created.Annotations)
 		answer, err = resourceInterface.Update(answer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to update PipelineResource %s", resourceName)
@@ -310,7 +312,7 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: util.MergeMaps(labels),
+			Labels: maps.MergeMaps(labels),
 		},
 		Spec: pipelineapi.PipelineRunSpec{
 			ServiceAccount: serviceAccount,
@@ -358,7 +360,7 @@ func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, crea
 	}
 
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Labels, answer.Labels) {
-		answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
+		answer.Annotations = maps.MergeMaps(answer.Annotations, created.Annotations)
 		answer.Spec = created.Spec
 		answer, err = resourceInterface.Update(answer)
 		if err != nil {

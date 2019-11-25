@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"sigs.k8s.io/yaml"
@@ -199,8 +201,8 @@ func (o *StepVerifyEnvironmentsOptions) modifyPipelineGitEnvVars(dir string) err
 	if err != nil {
 		return errors.Wrap(err, "failed to load parameters values file")
 	}
-	username := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.username")
-	email := util.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.email")
+	username := maps.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.username")
+	email := maps.GetMapValueAsStringViaPath(parameterValues, "pipelineUser.email")
 
 	if username != "" && email != "" {
 		fileName := filepath.Join(dir, config.ProjectConfigFileName)

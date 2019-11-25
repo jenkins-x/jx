@@ -3,6 +3,8 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -78,12 +80,12 @@ func (o *StepClusterLabelOptions) Run() error {
 		return fmt.Errorf("there is no cluster called %s using client %s", clusterName, client.String())
 	}
 
-	labels := util.MergeMaps(map[string]string{}, cluster.Labels, util.KeyValuesToMap(o.Labels))
+	labels := maps.MergeMaps(map[string]string{}, cluster.Labels, maps.KeyValuesToMap(o.Labels))
 	err = client.SetClusterLabels(cluster, labels)
 	if err != nil {
-		return errors.Wrapf(err, "failed to set cluster %s labels %s with client %s", clusterName, util.MapToString(labels), client.String())
+		return errors.Wrapf(err, "failed to set cluster %s labels %s with client %s", clusterName, maps.MapToString(labels), client.String())
 	}
 
-	log.Logger().Infof("the cluster %s now has labels %s", util.ColorInfo(cluster.Name), util.ColorInfo(util.MapToString(labels)))
+	log.Logger().Infof("the cluster %s now has labels %s", util.ColorInfo(cluster.Name), util.ColorInfo(maps.MapToString(labels)))
 	return err
 }

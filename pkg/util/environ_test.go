@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -61,7 +63,7 @@ func TestGetAndCleanEnviron(t *testing.T) {
 				err := os.Setenv(key, value)
 				assert.NoErrorf(t, err, "should set env variable '%s'='%s'", key, value)
 			}
-			envNames := append(tc.unsetEnvs, util.MapKeys(tc.setEnvs)...)
+			envNames := append(tc.unsetEnvs, maps.MapKeys(tc.setEnvs)...)
 			envs, err := util.GetAndCleanEnviron(envNames)
 			if tc.wantErr {
 				assert.Error(t, err, "should return an error")

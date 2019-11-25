@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -439,7 +441,7 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 			return errors.Wrapf(err, "Failed to read helm values YAML file %s", input)
 		}
 		sourceMap := answer.AsMap()
-		util.CombineMapTrees(sourceMap, values.AsMap())
+		maps.CombineMapTrees(sourceMap, values.AsMap())
 		answer = chartutil.Values(sourceMap)
 	}
 	m := answer.AsMap()
@@ -818,10 +820,10 @@ func SetValuesToMap(setValues []string) map[string]interface{} {
 
 			// lets assume false is a boolean
 			if value == "false" {
-				util.SetMapValueViaPath(answer, path, false)
+				maps.SetMapValueViaPath(answer, path, false)
 
 			} else {
-				util.SetMapValueViaPath(answer, path, value)
+				maps.SetMapValueViaPath(answer, path, value)
 			}
 		}
 	}

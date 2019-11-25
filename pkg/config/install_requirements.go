@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/imdario/mergo"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
@@ -682,7 +684,7 @@ func (c *RequirementsConfig) EnvironmentMap() map[string]interface{} {
 			log.Logger().Warnf("missing 'key' for Environment requirements %#v", env)
 			continue
 		}
-		m, err := util.ToObjectMap(&env)
+		m, err := maps.ToObjectMap(&env)
 		if err == nil {
 			ensureHasFields(m, "owner", "repository", "gitServer", "gitKind")
 			answer[k] = m
@@ -705,7 +707,7 @@ func (c *RequirementsConfig) Environment(name string) (*EnvironmentConfig, error
 
 // ToMap converts this object to a map of maps for use in helm templating
 func (c *RequirementsConfig) ToMap() (map[string]interface{}, error) {
-	m, err := util.ToObjectMap(c)
+	m, err := maps.ToObjectMap(c)
 	if m != nil {
 		ensureHasFields(m, "provider", "project", "environmentGitOwner", "gitops", "webhook")
 	}

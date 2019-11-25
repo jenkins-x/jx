@@ -2,7 +2,7 @@ package get
 
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/util/maps"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -60,14 +60,14 @@ func (o *GetClusterOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	filterLabels := util.KeyValuesToMap(o.Filters)
+	filterLabels := maps.KeyValuesToMap(o.Filters)
 	clusters, err := client.ListFilter(filterLabels)
 
 	table := o.CreateTable()
 	table.AddRow("NAME", "LOCATION", "LABELS", "STATUS")
 
 	for _, cluster := range clusters {
-		table.AddRow(cluster.Name, cluster.Location, util.MapToString(cluster.Labels), cluster.Status)
+		table.AddRow(cluster.Name, cluster.Location, maps.MapToString(cluster.Labels), cluster.Status)
 	}
 
 	table.Render()

@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -105,8 +106,8 @@ func (k *KubeAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 				Data: map[string][]byte{},
 			}
 		} else {
-			secret.Labels = util.MergeMaps(secret.Labels, labels)
-			secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
+			secret.Labels = maps.MergeMaps(secret.Labels, labels)
+			secret.Annotations = maps.MergeMaps(secret.Annotations, annotations)
 		}
 		user := server.CurrentAuth()
 		if user == nil {
@@ -128,7 +129,7 @@ func (k *KubeAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 			labels := map[string]string{
 				labelGithubAppOwner: user.GithubAppOwner,
 			}
-			secret.Labels = util.MergeMaps(secret.Labels, labels)
+			secret.Labels = maps.MergeMaps(secret.Labels, labels)
 		}
 		if create {
 			if _, err := k.client.CoreV1().Secrets(k.namespace).Create(secret); err != nil {

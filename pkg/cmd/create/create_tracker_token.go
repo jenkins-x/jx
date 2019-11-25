@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
@@ -175,8 +177,8 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 			Data: map[string][]byte{},
 		}
 	} else {
-		secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
-		secret.Labels = util.MergeMaps(secret.Labels, labels)
+		secret.Annotations = maps.MergeMaps(secret.Annotations, annotations)
+		secret.Labels = maps.MergeMaps(secret.Labels, labels)
 	}
 	if userAuth.Username != "" {
 		secret.Data["username"] = []byte(userAuth.Username)

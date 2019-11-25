@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -665,7 +667,7 @@ func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *confi
 			return nil, errors.Wrapf(err, "parsing of pipeline timeout failed")
 		}
 	}
-	prLabels := util.MergeMaps(o.labels, effectivePipeline.GetPodLabels())
+	prLabels := maps.MergeMaps(o.labels, effectivePipeline.GetPodLabels())
 	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, prLabels, o.ServiceAccount, o.pipelineParams, timeout, effectivePipeline.GetPossibleAffinityPolicy(pipeline.Name), effectivePipeline.GetTolerations())
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
@@ -845,7 +847,7 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 	if err != nil {
 		return err
 	}
-	o.labels = util.MergeMaps(labels, customLabels)
+	o.labels = maps.MergeMaps(labels, customLabels)
 	return nil
 }
 

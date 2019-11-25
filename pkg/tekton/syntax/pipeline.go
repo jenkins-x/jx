@@ -13,12 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/util/maps"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -1012,7 +1014,7 @@ func (j *ParsedPipeline) GetPossibleAffinityPolicy(name string) *corev1.Affinity
 
 		antiAffinityLabels := make(map[string]string)
 		if len(j.Options.PodLabels) > 0 {
-			antiAffinityLabels = util.MergeMaps(j.GetPodLabels())
+			antiAffinityLabels = maps.MergeMaps(j.GetPodLabels())
 		} else {
 			antiAffinityLabels[pipeline.GroupName+pipeline.PipelineRunLabelKey] = name
 		}
@@ -1275,7 +1277,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: params.parentParams.Namespace,
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", params.parentParams.PipelineIdentifier, params.stage.Name), params.parentParams.BuildIdentifier),
-				Labels:    util.MergeMaps(params.parentParams.Labels, map[string]string{LabelStageName: params.stage.stageLabelName()}),
+				Labels:    maps.MergeMaps(params.parentParams.Labels, map[string]string{LabelStageName: params.stage.stageLabelName()}),
 			},
 		}
 		// Only add the default git merge step if this is the first actual step stage - including if the stage is one of
@@ -1685,8 +1687,8 @@ func (j *ParsedPipeline) GenerateCRDs(params CRDsFromPipelineParams) (*tektonv1a
 	}
 
 	if len(params.Labels) > 0 {
-		p.Labels = util.MergeMaps(params.Labels)
-		structure.Labels = util.MergeMaps(params.Labels)
+		p.Labels = maps.MergeMaps(params.Labels)
+		structure.Labels = maps.MergeMaps(params.Labels)
 	}
 
 	var previousStage *transformedStage

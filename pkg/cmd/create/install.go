@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -1099,7 +1101,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		if err != nil {
 			return err
 		}
-		util.CombineMapTrees(extraValues, currentValues)
+		maps.CombineMapTrees(extraValues, currentValues)
 	}
 
 	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, platform.JenkinsXPlatformChartName, extraValues)

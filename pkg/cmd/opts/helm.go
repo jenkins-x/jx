@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util/maps"
+
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -534,7 +536,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 	}
 	if chartRepos != nil {
 		for _, url := range chartRepos {
-			if !util.StringMapHasValue(installedChartRepos, url) {
+			if !maps.StringMapHasValue(installedChartRepos, url) {
 				_, err = o.AddHelmBinaryRepoIfMissing(url, "", "", "")
 				if err != nil {
 					return errors.Wrapf(err, "failed to add the Helm repository with URL '%s'", url)
@@ -567,7 +569,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 			}
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") && !strings.HasPrefix(repo, "@") {
+				if repo != "" && !maps.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") && !strings.HasPrefix(repo, "@") {
 					name, err := o.AddHelmBinaryRepoIfMissing(repo, "", "", "")
 					if err != nil {
 						return errors.Wrapf(err, "failed to add Helm repository '%s'", repo)
