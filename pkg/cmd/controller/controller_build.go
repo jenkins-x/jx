@@ -372,7 +372,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 						return nil
 					})
 					if err != nil {
-						log.Logger().Warnf("Failed to update PipelineActivities%s: %s", name, err)
+						log.Logger().Warnf("Failed to update PipelineActivities %s: %s", name, err)
 					}
 				}
 			} else {
