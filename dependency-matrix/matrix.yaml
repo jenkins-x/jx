@@ -1,0 +1,7 @@
+dependencies:
+- host: github.com
+  owner: cloudbees
+  repo: cloudbees-jenkins-x-distro
+  url: https://github.com/cloudbees/cloudbees-jenkins-x-distro.git
+  version: 2.0.1011
+  versionURL: ""
