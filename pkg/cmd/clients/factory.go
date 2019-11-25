@@ -494,40 +494,57 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vault client")
 	}
-	// if there's an issue loading a requirements yaml lets just default to automatic
-	useIngressURL := false
-	requirements, _, _ := config.LoadRequirementsConfig("")
-	jxClient, _, err := f.CreateJXClient()
+	useIngressURL, err := f.useVaultIngress(devNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating the JX client")
+		return nil, errors.Wrapf(err, "checking if vault ingress should be used in namespace %q", devNamespace)
 	}
-	teamSettings, err := kube.GetDevEnvTeamSettings(jxClient, devNamespace)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getting team settings from namespace %s", devNamespace)
-	}
-	reqsFromTeamSettings, _ := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 
-	// allows us to override using the default lookup URL for vault and ensure we always use the ingress. Used in CI.
-	if requirements.Vault.DisableURLDiscovery || (reqsFromTeamSettings != nil && reqsFromTeamSettings.Vault.DisableURLDiscovery) {
-		useIngressURL = true
-	} else {
-		useIngressURL = !cluster.IsInCluster()
-	}
-	certmngClient, err := f.CreateCertManagerClient()
+	insecureSSLWebhook, err := f.useVaultInsecureSSL(namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating the cert-manager client")
-	}
-	// lets lookup certmanager certificate and check if one exists, it's a selfsigned cert so we need to use insecure SSL
-	// when creating the vault client
-	// NOTE: insecureSSLWebhook should only ever be used with test clusters as it is insecure
-	insecureSSLWebhook, err := kube.IsStagingCertificate(certmngClient, namespace)
-	if err != nil {
-		// if there's an issue assume we don't need insecure webhooks to keep existing secure behavior
+		// use secure SSL by default if cannot determine if it's insecure
 		insecureSSLWebhook = false
 	}
 
 	vaultClient, err := clientFactory.NewVaultClient(name, namespace, useIngressURL, insecureSSLWebhook)
 	return vault.NewVaultClient(vaultClient), err
+}
+
+func (f *factory) useVaultInsecureSSL(namespace string) (bool, error) {
+	certmngClient, err := f.CreateCertManagerClient()
+	if err != nil {
+		return false, errors.Wrap(err, "creating the cert-manager client")
+	}
+
+	// lets lookup certmanager certificate and check if one exists, it's a selfsigned cert so we need to use insecure SSL
+	// when creating the vault client
+	// NOTE: insecureSSL should only ever be used with test clusters as it is insecure
+	IsStagingCertificate, err := kube.IsStagingCertificate(certmngClient, namespace)
+	if err != nil {
+		return false, nil
+	}
+	return IsStagingCertificate, nil
+}
+
+func (f *factory) useVaultIngress(devNamespace string) (bool, error) {
+	requirements, _, err := config.LoadRequirementsConfig("")
+	if err == nil && requirements != nil && requirements.Vault.DisableURLDiscovery {
+		log.Logger().Debugf("Using vault ingress because the Vault.DisableURLDiscovery is set in requirements file")
+		return true, nil
+	}
+	jxClient, _, err := f.CreateJXClient()
+	if err != nil {
+		return false, errors.Wrap(err, "creating the JX client")
+	}
+	teamSettings, err := kube.GetDevEnvTeamSettings(jxClient, devNamespace)
+	if err != nil {
+		return false, errors.Wrapf(err, "getting team settings from namespace %s", devNamespace)
+	}
+	reqsFromTeamSettings, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err == nil && reqsFromTeamSettings != nil && reqsFromTeamSettings.Vault.DisableURLDiscovery {
+		log.Logger().Debugf("Using vault ingress because the requirements.Vault.DisableURLDiscovery is set in team settings")
+		return true, nil
+	}
+	return !cluster.IsInCluster(), nil
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
