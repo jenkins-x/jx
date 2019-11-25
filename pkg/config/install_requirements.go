@@ -58,6 +58,8 @@ const (
 	RequirementVaultName = "JX_REQUIREMENT_VAULT_NAME"
 	// RequirementVaultServiceAccountName the service account name for vault
 	RequirementVaultServiceAccountName = "JX_REQUIREMENT_VAULT_SA_NAME"
+	// RequirementVeleroServiceAccountName the service account name for velero
+	RequirementVeleroServiceAccountName = "JX_REQUIREMENT_VELERO_SA_NAME"
 	// RequirementVaultKeyringName the keyring name for vault
 	RequirementVaultKeyringName = "JX_REQUIREMENT_VAULT_KEYRING_NAME"
 	// RequirementVaultKeyName the key name for vault
@@ -866,6 +868,9 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func()
 		} else {
 			c.Vault.RecreateBucket = false
 		}
+	}
+	if "" != os.Getenv(RequirementVeleroServiceAccountName) {
+		c.Velero.ServiceAccount = os.Getenv(RequirementVeleroServiceAccountName)
 	}
 	if "" != os.Getenv(RequirementVaultDisableURLDiscovery) {
 		disable := os.Getenv(RequirementVaultDisableURLDiscovery)
