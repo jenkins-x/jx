@@ -435,22 +435,14 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 		vaultName := v.Name
 		vaultAuthSaName := GetAuthSaName(v)
 
-		// default to using internal kubernetes service dns name
+		// default to using internal kubernetes service dns name for vault endpoint
 		vaultURL := fmt.Sprintf(defaultInternalVaultURL, vaultName)
-
-		// lookup the Ingress URL from the service if default behavior is overridden
 		if useIngressURL {
-			vaultURL, err = services.FindServiceURL(client, ns, vaultName)
-			if err != nil {
-				log.Logger().Warnf("error finding vault service url setting to empty string, err: %s", err)
-				vaultURL = ""
-			}
-			if vaultURL == "" {
-				vaultURL, err = services.FindIngressURL(client, ns, vaultName)
-				if err != nil {
-					log.Logger().Warnf("error finding vault ingress url setting to empty string, err: %s", err)
-					vaultURL = ""
-				}
+			vaultURL, err = services.FindIngressURL(client, ns, vaultName)
+			if err != nil || vaultURL == "" {
+				log.Logger().Debugf("Cannot finding the vault ingress url for vault %s", vaultName)
+				// skip this vault since cannot be used without the ingress
+				continue
 			}
 		}
 
