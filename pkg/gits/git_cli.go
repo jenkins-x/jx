@@ -32,11 +32,15 @@ var (
 )
 
 // GitCLI implements common git actions based on git CLI
-type GitCLI struct{}
+type GitCLI struct {
+	Env map[string]string
+}
 
 // NewGitCLI creates a new GitCLI instance
 func NewGitCLI() *GitCLI {
-	return &GitCLI{}
+	return &GitCLI{
+		Env: map[string]string{},
+	}
 }
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -529,6 +533,7 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Dir:  dir,
 		Name: "git",
 		Args: args,
+		Env:  g.Env,
 	}
 	// Ensure that error output is in English so parsing work
 	cmd.Env = map[string]string{"LC_ALL": "C"}
