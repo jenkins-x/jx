@@ -220,7 +220,7 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceURL string, gitKind
 	if o.fakeGitProvider != nil {
 		return o.fakeGitProvider, nil
 	}
-	authConfigSvc, err := o.GitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigServiceGitHubMode(ghOwner != "", gitKind)
 	if err != nil {
 		return nil, err
 	}
