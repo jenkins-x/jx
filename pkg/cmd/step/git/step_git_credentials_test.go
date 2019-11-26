@@ -80,6 +80,71 @@ func TestStepGitCredentials(t *testing.T) {
 	assert.EqualValues(t, expected, string(actual), "generated git credentials file")
 }
 
+func TestStepGitCredentialsForGitHubAppSecrets(t *testing.T) {
+	t.Parallel()
+	kind := gits.KindGitHub
+	scheme := "https://"
+	host := "github.com"
+	botUser := "jenkins-x-bot"
+
+	owner1 := "rawlingsj"
+	pwd1 := "lovelyLager"
+	owner2 := "jstrachan"
+	pwd2 := "glassOfNice"
+	owner3 := "abayer"
+	pwd3 := "edam"
+
+	expected := createGitCredentialLine(scheme, host, botUser, pwd2)
+
+	tmpDir, err := ioutil.TempDir("", "gitcredentials")
+	if err != nil {
+		require.NoError(t, err, "should create a temporary dir")
+	}
+	defer os.RemoveAll(tmpDir)
+	outFile := filepath.Join(tmpDir, "credentials")
+	options := &git.StepGitCredentialsOptions{
+		OutputFile:     outFile,
+		GitHubAppOwner: owner2,
+		GitKind:        kind,
+	}
+
+	authSvc := auth.NewMemoryAuthConfigService()
+	cfg := auth.AuthConfig{
+		Servers: []*auth.AuthServer{
+			{
+				URL: scheme + host,
+				Users: []*auth.UserAuth{
+					{
+						GithubAppOwner: owner1,
+						Username:       botUser,
+						ApiToken:       pwd1,
+					},
+					{
+						GithubAppOwner: owner2,
+						Username:       botUser,
+						ApiToken:       pwd2,
+					},
+					{
+						GithubAppOwner: owner3,
+						Username:       botUser,
+						ApiToken:       pwd3,
+					},
+				},
+				Name: "gh",
+				Kind: kind,
+			},
+		},
+	}
+	authSvc.SetConfig(&cfg)
+
+	err = options.CreateGitCredentialsFile(outFile, authSvc)
+	assert.NoError(t, err, "should create the git credentials file without error")
+
+	actual, err := ioutil.ReadFile(outFile)
+	assert.NoError(t, err, "should read the git credentials from file")
+	assert.EqualValues(t, expected, string(actual), "generated git credentials file")
+}
+
 func createGitCredentialLine(scheme string, host string, user string, pwd string) string {
 	answer := scheme + user + ":" + pwd + "@" + host + "\n"
 	if scheme == "http://" {
