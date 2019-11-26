@@ -443,6 +443,25 @@ func (mock *MockFactory) CreateKubeConfig() (*rest.Config, error) {
 	return ret0, ret1
 }
 
+func (mock *MockFactory) CreateLocalGitAuthConfigService() (auth.ConfigService, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateLocalGitAuthConfigService", params, []reflect.Type{reflect.TypeOf((*auth.ConfigService)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 auth.ConfigService
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(auth.ConfigService)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockFactory) CreateMetricsClient() (versioned5.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
@@ -1275,6 +1294,23 @@ func (c *MockFactory_CreateKubeConfig_OngoingVerification) GetCapturedArguments(
 }
 
 func (c *MockFactory_CreateKubeConfig_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierMockFactory) CreateLocalGitAuthConfigService() *MockFactory_CreateLocalGitAuthConfigService_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateLocalGitAuthConfigService", params, verifier.timeout)
+	return &MockFactory_CreateLocalGitAuthConfigService_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockFactory_CreateLocalGitAuthConfigService_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockFactory_CreateLocalGitAuthConfigService_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockFactory_CreateLocalGitAuthConfigService_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockFactory) CreateMetricsClient() *MockFactory_CreateMetricsClient_OngoingVerification {
