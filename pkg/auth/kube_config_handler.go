@@ -47,7 +47,7 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 		return nil, errors.Wrap(err, "retrieving config from k8s secrets")
 	}
 	if secrets == nil {
-		return nil, fmt.Errorf("no secrets found for server kind %q and service kind %q", k.serverKind, k.serviceKind)
+		return nil, fmt.Errorf("no secrets found for server kind %q and service kind %q", k.kind, k.serviceKind)
 	}
 	config := &AuthConfig{}
 	for _, secret := range secrets.Items {
@@ -146,9 +146,9 @@ func (k *KubeAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 // secretName builds the secret name
 func (k *KubeAuthConfigHandler) secretName(server *AuthServer) string {
 	secretName := secretPrefix
-	serverKind := strings.ToLower(k.serverKind)
-	if serverKind != "" {
-		secretName += "-" + serverKind
+	kind := strings.ToLower(k.kind)
+	if kind != "" {
+		secretName += "-" + kind
 	}
 	serviceKind := strings.ToLower(server.Kind)
 	if serviceKind != "" {
@@ -165,7 +165,7 @@ func (k *KubeAuthConfigHandler) labels(server *AuthServer) map[string]string {
 	return map[string]string{
 		labelCredentialsType: valueCredentialTypeUsernamePassword,
 		labelCreatedBy:       valueCreatedByJX,
-		labelKind:            k.serverKind,
+		labelKind:            k.kind,
 		labelServiceKind:     server.Kind,
 	}
 }
@@ -179,7 +179,7 @@ func (k *KubeAuthConfigHandler) annotations(server *AuthServer) map[string]strin
 }
 
 func (k *KubeAuthConfigHandler) secrets() (*corev1.SecretList, error) {
-	selector := labelKind + "=" + k.serverKind
+	selector := labelKind + "=" + k.kind
 	if k.serviceKind != "" {
 		selector = labelServiceKind + "=" + k.serviceKind
 	}
@@ -210,17 +210,17 @@ func (k *KubeAuthConfigHandler) userFromSecret(secret corev1.Secret) (UserAuth, 
 }
 
 // NewKubeAuthConfigHandler creates a handler which loads/stores the auth config from/into Kubernetes secrets
-func NewKubeAuthConfigHandler(client kubernetes.Interface, namespace string, serverKind string, serviceKind string) KubeAuthConfigHandler {
+func NewKubeAuthConfigHandler(client kubernetes.Interface, namespace string, kind string, serviceKind string) KubeAuthConfigHandler {
 	return KubeAuthConfigHandler{
 		client:      client,
 		namespace:   namespace,
-		serverKind:  serverKind,
+		kind:        kind,
 		serviceKind: serviceKind,
 	}
 }
 
 // NewKubeAuthConfigService creates a config services that loads/stores the auth config from a Kubernetes secret
-func NewKubeAuthConfigService(client kubernetes.Interface, namespace string, serverKind string, serviceKind string) ConfigService {
-	handler := NewKubeAuthConfigHandler(client, namespace, serverKind, serviceKind)
+func NewKubeAuthConfigService(client kubernetes.Interface, namespace string, kind string, serviceKind string) ConfigService {
+	handler := NewKubeAuthConfigHandler(client, namespace, kind, serviceKind)
 	return NewAuthConfigService(&handler)
 }

@@ -70,6 +70,6 @@ type ConfigMapVaultConfigHandler struct {
 type KubeAuthConfigHandler struct {
 	client      kubernetes.Interface
 	namespace   string
-	serverKind  string
+	kind        string
 	serviceKind string
 }
