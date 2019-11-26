@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -516,11 +517,15 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 	if !userAuthVar.IsInvalid() {
 		return CreateProvider(server, &userAuthVar, git)
 	}
-	userAuth, err := createUserForServer(batchMode, &userAuthVar, authConfigSvc, server, git, handles)
+
+	userAuth, err := createUserForServer(batchMode, &auth.UserAuth{}, authConfigSvc, server, git, handles)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "creating user for server %q", server.URL)
 	}
-	return CreateProvider(server, userAuth, git)
+	if !userAuth.IsInvalid() {
+		return CreateProvider(server, userAuth, git)
+	}
+	return nil, fmt.Errorf("no valid user found for server %q", server.URL)
 }
 
 func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.AuthServer,
@@ -536,8 +541,6 @@ func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc 
 	if err != nil {
 		return userAuth, err
 	}
-
-	// TODO lets verify the auth works
 
 	err = authConfigSvc.SaveUserAuth(server.URL, userAuth)
 	if err != nil {
