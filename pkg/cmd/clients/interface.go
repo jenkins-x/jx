@@ -55,6 +55,9 @@ type Factory interface {
 	// CreateGitAuthConfigService creates a new git authentication configuration service
 	CreateGitAuthConfigService(namespace string, serviceKind string) (auth.ConfigService, error)
 
+	// CreateLocalAuthConfigService creates a new service which loads/saves the auth config from/to a local file.
+	CreateLocalGitAuthConfigService() (auth.ConfigService, error)
+
 	// CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
 	CreateJenkinsAuthConfigService(namespace string, jenkinsService string) (auth.ConfigService, error)
 
