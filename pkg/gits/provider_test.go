@@ -150,7 +150,9 @@ func restoreEnviron(t assert.TestingT, environ map[string]string) {
 }
 
 func TestCreateGitProviderFromURL(t *testing.T) {
-	t.Parallel()
+	// This test is setting some environment variable which is causing other tests creating the git
+	// provider to fail when executed in parallel.
+	// t.Parallel()
 	utiltests.SkipForWindows(t, "go-expect does not work on Windows")
 
 	git := mocks.NewMockGitter()

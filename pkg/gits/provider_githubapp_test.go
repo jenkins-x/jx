@@ -13,7 +13,10 @@ import (
 )
 
 func TestCreateGitProviderFromURLForGitHubApp(t *testing.T) {
-	t.Parallel()
+	// The git provider construct seems to also lookup the user auth into the
+	// environment variables, which is causing this test to fail when executed
+	// in parallel with other tests which set these environment variables.
+	// t.Parallel()
 	utiltests.SkipForWindows(t, "go-expect does not work on Windows")
 
 	testData := []struct {
