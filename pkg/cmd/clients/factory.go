@@ -386,6 +386,17 @@ func (f *factory) CreateAuthConfigService(fileName string, namespace string,
 	return nil, fmt.Errorf("no auth config found for secret %q", fileName)
 }
 
+// CreateLocalGitAuthConfigService creates a new service which loads/saves the auth config from/to a local file.
+func (f *factory) CreateLocalGitAuthConfigService() (auth.ConfigService, error) {
+
+	if authService, err := f.createAuthConfigServiceFile(auth.GitAuthConfigFile, kube.ValueKindGit); err == nil {
+		return authService, nil
+	}
+	log.Logger().Debugf("No auth config found in file %s", auth.GitAuthConfigFile)
+
+	return nil, fmt.Errorf("no auth config found for secret %q", auth.GitAuthConfigFile)
+}
+
 // SecretsLocation indicates the location where the secrets are stored
 func (f *factory) SecretsLocation() secrets.SecretsLocationKind {
 	client, namespace, err := f.CreateKubeClient()

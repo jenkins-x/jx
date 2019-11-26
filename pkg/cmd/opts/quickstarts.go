@@ -16,7 +16,7 @@ import (
 
 // LoadQuickStartsModel Load all quickstarts
 func (o *CommonOptions) LoadQuickStartsModel(gitHubOrganisations []string, ignoreTeam bool) (*quickstarts.QuickstartModel, error) {
-	authConfigSvc, err := o.GitAuthConfigService()
+	authConfigSvc, err := o.GitLocalAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
