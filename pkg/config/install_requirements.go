@@ -189,7 +189,7 @@ var (
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
 	BinaryDownloadBaseURL = "https://github.com/jenkins-x/jx/releases/download/v"
 	// TLSDocURL the URL presented by `jx step verify preinstall` for documentation on configuring TLS
-	TLSDocURL = "https://jenkins-x.io/architecture/tls"
+	TLSDocURL = "https://jenkins-x.io/docs/getting-started/setup/boot/#ingress"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments
