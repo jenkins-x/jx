@@ -297,6 +297,7 @@ func (p *GitHubProvider) CreateRepository(owner string, name string, private boo
 	}
 
 	org := owner
+
 	if org == p.Username {
 		log.Logger().Debugf("repository owner for %s is the authenticated user %s, setting org to the empty string '%s'", name, p.Username, org)
 		org = ""
