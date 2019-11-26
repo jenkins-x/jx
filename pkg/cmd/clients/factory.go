@@ -72,6 +72,14 @@ func NewFactory() Factory {
 	return f
 }
 
+// NewUsingFactory creates a factory with the given underlying factory.
+// Used by downstream repos that reuse jx
+func NewUsingFactory(jxf jxfactory.Factory) Factory {
+	f := &factory{}
+	f.jxFactory = jxf
+	return f
+}
+
 func (f *factory) SetBatch(batch bool) {
 	f.Batch = batch
 }
