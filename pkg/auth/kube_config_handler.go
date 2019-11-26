@@ -63,23 +63,42 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 					continue
 				}
 				user.GithubAppOwner = labels[labelGithubAppOwner]
-				server := AuthServer{
-					URL:  url,
-					Name: name,
-					Kind: serviceKind,
-					Users: []*UserAuth{
-						&user,
-					},
-					CurrentUser: user.Username,
+				var server *AuthServer
+
+				// for github app mode lets share the same server and have multiple users
+				if user.GithubAppOwner != "" {
+					for _, s := range config.Servers {
+						if s.URL == url {
+							server = s
+							break
+						}
+					}
 				}
-				if config.Servers == nil {
-					config.Servers = []*AuthServer{}
+				if server != nil {
+					server.Users = append(server.Users, &user)
+				} else {
+					server = &AuthServer{
+						URL:  url,
+						Name: name,
+						Kind: serviceKind,
+						Users: []*UserAuth{
+							&user,
+						},
+					}
+					if user.GithubAppOwner == "" {
+						server.CurrentUser = user.Username
+					}
+					if config.Servers == nil {
+						config.Servers = []*AuthServer{}
+					}
+					config.Servers = append(config.Servers, server)
 				}
-				config.Servers = append(config.Servers, &server)
 				config.CurrentServer = server.URL
 				config.PipeLineServer = server.URL
-				config.PipeLineUsername = user.Username
-				config.DefaultUsername = user.Username
+				if user.GithubAppOwner == "" {
+					config.PipeLineUsername = user.Username
+					config.DefaultUsername = user.Username
+				}
 			}
 		}
 	}
