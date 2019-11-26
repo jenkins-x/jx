@@ -528,7 +528,7 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 	if userAuth != nil && !userAuth.IsInvalid() {
 		return CreateProvider(server, userAuth, git)
 	}
-	return nil, fmt.Errorf("no valid git user foundfor kind %s host %s %s", gitKind, hostURL, ghOwner)
+	return nil, fmt.Errorf("no valid git user found for kind %s host %s %s", gitKind, hostURL, ghOwner)
 }
 
 func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.AuthServer,
