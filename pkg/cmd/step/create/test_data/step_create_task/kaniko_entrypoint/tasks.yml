@@ -163,15 +163,10 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - --dockerfile=/workspace/source/Dockerfile
-      - --destination=docker.io/jenkinsxio/jx:A_VERSION
-      - --context=/workspace/source
-      - --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
-      - --cache=true
-      - --cache-dir=/workspace
-      - --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile --destination=docker.io/jenkinsxio/jx:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
-      - /kaniko/executor
+      - /busybox/sh
+      - -c
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
@@ -204,7 +199,7 @@ items:
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
-      image: rawlingsj/executor:dev40
+      image: rawlingsj/executor:debug-dev40
       name: build-and-push-image
       resources: {}
       volumeMounts:
@@ -213,15 +208,10 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - --dockerfile=/workspace/source/Dockerfile.builder-nodejs
-      - --destination=docker.io/jenkinsxio/builder-nodejs:A_VERSION
-      - --context=/workspace/source
-      - --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
-      - --cache=true
-      - --cache-dir=/workspace
-      - --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-nodejs --destination=docker.io/jenkinsxio/builder-nodejs:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
-      - /kaniko/executor
+      - /busybox/sh
+      - -c
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
@@ -254,7 +244,7 @@ items:
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
-      image: rawlingsj/executor:dev40
+      image: rawlingsj/executor:debug-dev40
       name: build-and-push-nodejs
       resources: {}
       volumeMounts:
@@ -263,15 +253,10 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - --dockerfile=/workspace/source/Dockerfile.builder-maven
-      - --destination=docker.io/jenkinsxio/builder-maven:A_VERSION
-      - --context=/workspace/source
-      - --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
-      - --cache=true
-      - --cache-dir=/workspace
-      - --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-maven --destination=docker.io/jenkinsxio/builder-maven:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
-      - /kaniko/executor
+      - /busybox/sh
+      - -c
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
@@ -304,7 +289,7 @@ items:
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
-      image: rawlingsj/executor:dev40
+      image: rawlingsj/executor:debug-dev40
       name: build-and-push-maven
       resources: {}
       volumeMounts:
@@ -313,15 +298,10 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - --dockerfile=/workspace/source/Dockerfile.builder-go
-      - --destination=docker.io/jenkinsxio/builder-go:A_VERSION
-      - --context=/workspace/source
-      - --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
-      - --cache=true
-      - --cache-dir=/workspace
-      - --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-go --destination=docker.io/jenkinsxio/builder-go:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
-      - /kaniko/executor
+      - /busybox/sh
+      - -c
       env:
       - name: BASE_WORKSPACE
         value: /workspace/source
@@ -354,7 +334,7 @@ items:
         value: ${inputs.params.version}
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
-      image: rawlingsj/executor:dev40
+      image: rawlingsj/executor:debug-dev40
       name: build-and-push-go
       resources: {}
       volumeMounts:
