@@ -174,6 +174,8 @@ func (o *CommonOptions) GitAuthConfigServiceGitHubMode(gha bool, serviceKind str
 		return nil, errors.Wrap(err, "loading auth config from kubernetes secrets")
 	}
 	return authService, nil
+}
+
 // GitLocalAuthConfigService create a git auth config service using the local gitAuth.yaml file method only
 func (o *CommonOptions) GitLocalAuthConfigService() (auth.ConfigService, error) {
 	if o.factory == nil {

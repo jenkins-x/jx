@@ -379,8 +379,7 @@ func (f *FakeFactory) CreateCertManagerClient() (certmngclient.Interface, error)
 	return fake_certmngclient.NewSimpleClientset(), nil
 }
 
-
 // CreateLocalGitAuthConfigService creates a new service which loads/saves the auth config from/to a local file.
 func (f *FakeFactory) CreateLocalGitAuthConfigService() (auth.ConfigService, error) {
-	return  f.GetDelegateFactory().CreateLocalGitAuthConfigService()
+	return f.GetDelegateFactory().CreateLocalGitAuthConfigService()
 }
