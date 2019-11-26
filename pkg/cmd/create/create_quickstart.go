@@ -169,7 +169,6 @@ func (o *CreateQuickstartOptions) Run() error {
 			return err
 		}
 	}
-
 	genDir, err := o.createQuickstart(q, dir)
 	if err != nil {
 		return err

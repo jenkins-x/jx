@@ -1024,8 +1024,13 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 			return errors.Wrapf(err, "failed to get the git URL for SourceRepository %s", sr.Name)
 		}
 
+		gha, err := options.IsGitHubAppMode()
+		if err != nil {
+			return err
+		}
+
 		devGitURL := devEnv.Spec.Source.URL
-		if devGitURL != "" {
+		if devGitURL != "" && !gha {
 			// lets generate a PR
 			base := devEnv.Spec.Source.Ref
 			if base == "" {
