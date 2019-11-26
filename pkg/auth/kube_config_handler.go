@@ -47,7 +47,7 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 		return nil, errors.Wrap(err, "retrieving config from k8s secrets")
 	}
 	if secrets == nil {
-		return nil, fmt.Errorf("no secrets found for server kind %q and service kind %q", k.serverKind, k.serviceKind)
+		return nil, fmt.Errorf("no secrets found for server kind %q and service kind %q", k.serviceKind, k.kind)
 	}
 	config := &AuthConfig{}
 	for _, secret := range secrets.Items {
@@ -146,7 +146,7 @@ func (k *KubeAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 // secretName builds the secret name
 func (k *KubeAuthConfigHandler) secretName(server *AuthServer) string {
 	secretName := secretPrefix
-	serverKind := strings.ToLower(k.serverKind)
+	serverKind := strings.ToLower(k.serviceKind)
 	if serverKind != "" {
 		secretName += "-" + serverKind
 	}
@@ -165,7 +165,7 @@ func (k *KubeAuthConfigHandler) labels(server *AuthServer) map[string]string {
 	return map[string]string{
 		labelCredentialsType: valueCredentialTypeUsernamePassword,
 		labelCreatedBy:       valueCreatedByJX,
-		labelKind:            k.serverKind,
+		labelKind:            k.kind,
 		labelServiceKind:     server.Kind,
 	}
 }
@@ -179,7 +179,7 @@ func (k *KubeAuthConfigHandler) annotations(server *AuthServer) map[string]strin
 }
 
 func (k *KubeAuthConfigHandler) secrets() (*corev1.SecretList, error) {
-	selector := labelKind + "=" + k.serverKind
+	selector := labelKind + "=" + k.kind
 	if k.serviceKind != "" {
 		selector = labelServiceKind + "=" + k.serviceKind
 	}
@@ -214,8 +214,8 @@ func NewKubeAuthConfigHandler(client kubernetes.Interface, namespace string, ser
 	return KubeAuthConfigHandler{
 		client:      client,
 		namespace:   namespace,
-		serverKind:  serverKind,
-		serviceKind: serviceKind,
+		serviceKind: serverKind,
+		kind:        serviceKind,
 	}
 }
 
