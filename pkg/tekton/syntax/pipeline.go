@@ -1546,12 +1546,16 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 		} else {
 			c.Image = resolvedImage
 		}
-		// Special-casing for commands starting with /kaniko
-		// TODO: Should this be more general?
-		if strings.HasPrefix(params.step.GetCommand(), "/kaniko") {
+		// Special-casing for commands starting with /kaniko/warmer, which doesn't have sh at all
+		if strings.HasPrefix(params.step.GetCommand(), "/kaniko/warmer") {
 			c.Command = append(targetDirPrefix, params.step.GetCommand())
 			c.Args = params.step.Arguments
 		} else {
+			// If it's /kaniko/executor, use /busybox/sh instead of /bin/sh, and use the debug image
+			if strings.HasPrefix(params.step.GetCommand(), "/kaniko/executor") {
+				c.Image = strings.Replace(c.Image, "/executor:", "/executor:debug-", 1)
+				c.Command = []string{"/busybox/sh", "-c"}
+			}
 			cmdStr := params.step.GetCommand()
 			if len(params.step.Arguments) > 0 {
 				cmdStr += " " + strings.Join(params.step.Arguments, " ")
