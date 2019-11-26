@@ -1546,21 +1546,14 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 		} else {
 			c.Image = resolvedImage
 		}
-		// Special-casing for commands starting with /kaniko
-		// TODO: Should this be more general?
-		if strings.HasPrefix(params.step.GetCommand(), "/kaniko") {
-			c.Command = append(targetDirPrefix, params.step.GetCommand())
-			c.Args = params.step.Arguments
-		} else {
-			cmdStr := params.step.GetCommand()
-			if len(params.step.Arguments) > 0 {
-				cmdStr += " " + strings.Join(params.step.Arguments, " ")
-			}
-			if len(targetDirPrefix) > 0 {
-				cmdStr = strings.Join(targetDirPrefix, " ") + " " + cmdStr
-			}
-			c.Args = []string{cmdStr}
+		cmdStr := params.step.GetCommand()
+		if len(params.step.Arguments) > 0 {
+			cmdStr += " " + strings.Join(params.step.Arguments, " ")
 		}
+		if len(targetDirPrefix) > 0 {
+			cmdStr = strings.Join(targetDirPrefix, " ") + " " + cmdStr
+		}
+		c.Args = []string{cmdStr}
 		if params.stageParams.parentParams.InterpretMode {
 			c.WorkingDir = targetDir
 		} else {
