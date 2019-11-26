@@ -509,23 +509,26 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitK
 		return CreateProvider(server, userAuth, git)
 	}
 
-	kind := server.Kind
-	if kind == "" {
-		kind = "GIT"
-	}
-	userAuthVar := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
-	if !userAuthVar.IsInvalid() {
-		return CreateProvider(server, &userAuthVar, git)
-	}
+	if ghOwner == "" {
+		kind := server.Kind
+		if kind == "" {
+			kind = "GIT"
+		}
+		userAuthVar := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
+		if !userAuthVar.IsInvalid() {
+			return CreateProvider(server, &userAuthVar, git)
+		}
 
-	userAuth, err := createUserForServer(batchMode, &auth.UserAuth{}, authConfigSvc, server, git, handles)
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating user for server %q", server.URL)
+		var err error
+		userAuth, err = createUserForServer(batchMode, &auth.UserAuth{}, authConfigSvc, server, git, handles)
+		if err != nil {
+			return nil, errors.Wrapf(err, "creating user for server %q", server.URL)
+		}
 	}
-	if !userAuth.IsInvalid() {
+	if userAuth != nil && !userAuth.IsInvalid() {
 		return CreateProvider(server, userAuth, git)
 	}
-	return nil, fmt.Errorf("no valid user found for server %q", server.URL)
+	return nil, fmt.Errorf("no valid git user foundfor kind %s host %s %s", gitKind, hostURL, ghOwner)
 }
 
 func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.AuthServer,
