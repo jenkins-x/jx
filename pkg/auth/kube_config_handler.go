@@ -47,7 +47,7 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 		return nil, errors.Wrap(err, "retrieving config from k8s secrets")
 	}
 	if secrets == nil {
-		return nil, fmt.Errorf("no secrets found for server kind %q and service kind %q", k.serviceKind, k.kind)
+		return nil, fmt.Errorf("no secrets found for service kind %q and kind %q", k.serviceKind, k.kind)
 	}
 	config := &AuthConfig{}
 	for _, secret := range secrets.Items {
