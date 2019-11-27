@@ -194,6 +194,11 @@ func (g *GitLocal) HasChanges(dir string) (bool, error) {
 	return g.GitCLI.HasChanges(dir)
 }
 
+// HasFileChanged returns true if file has changes in git
+func (g *GitLocal) HasFileChanged(dir string, fileName string) (bool, error) {
+	return g.GitCLI.HasFileChanged(dir, fileName)
+}
+
 // CommitIfChanges does a commit if there are any changes in the repository at the given directory
 func (g *GitLocal) CommitIfChanges(dir string, message string) error {
 	return g.GitCLI.CommitIfChanges(dir, message)

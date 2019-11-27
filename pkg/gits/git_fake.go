@@ -445,6 +445,11 @@ func (g *GitFake) HasChanges(dir string) (bool, error) {
 	return g.Changes, nil
 }
 
+// HasFileChanged returns true if file has changes in git
+func (g *GitFake) HasFileChanged(dir string, fileName string) (bool, error) {
+	return g.Changes, nil
+}
+
 // GetCommitPointedToByPreviousTag returns the previous git tag SHA
 func (g *GitFake) GetCommitPointedToByPreviousTag(dir string) (string, string, error) {
 	len := len(g.Commits)

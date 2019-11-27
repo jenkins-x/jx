@@ -456,6 +456,16 @@ func (g *GitCLI) HasChanges(dir string) (bool, error) {
 	return len(text) > 0, nil
 }
 
+// HasFileChanged indicates if there are any changes to a file in the repository from the given directory
+func (g *GitCLI) HasFileChanged(dir string, fileName string) (bool, error) {
+	text, err := g.gitCmdWithOutput(dir, "status", "-s", fileName)
+	if err != nil {
+		return false, err
+	}
+	text = strings.TrimSpace(text)
+	return len(text) > 0, nil
+}
+
 // CommiIfChanges does a commit if there are any changes in the repository at the given directory
 func (g *GitCLI) CommitIfChanges(dir string, message string) error {
 	changed, err := g.HasChanges(dir)
