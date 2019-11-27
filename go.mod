@@ -62,6 +62,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/vault v1.1.2
 	github.com/heptio/sonobuoy v0.16.0
+	github.com/heptio/velero v1.2.0 // indirect
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/hpcloud/tail v1.0.0
 	github.com/iancoleman/orderedmap v0.0.0-20181121102841-22c6ecc9fe13
@@ -118,6 +119,7 @@ require (
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d // indirect
+	github.com/vmware-tanzu/velero v1.1.0
 	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb
 	github.com/xanzy/go-gitlab v0.22.1
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
