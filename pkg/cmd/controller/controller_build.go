@@ -45,10 +45,11 @@ import (
 type ControllerBuildOptions struct {
 	ControllerOptions
 
-	Namespace          string
-	InitGitCredentials bool
-	GitReporting       bool
-	TargetURLTemplate  string
+	Namespace           string
+	InitGitCredentials  bool
+	GitReporting        bool
+	TargetURLTemplate   string
+	FailIfNoGitProvider bool
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
 
@@ -123,6 +124,7 @@ func NewCmdControllerBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
+	cmd.Flags().BoolVarP(&options.FailIfNoGitProvider, "fail-on-git-provider-error", "", false, "If enable then lets terminate quickly if we cannot create a git provider")
 
 	// optional git reporting flags
 	cmd.Flags().StringVarP(&options.TargetURLTemplate, "target-url-template", "", "", "The Go template for generating the target URL of pipeline logs/views if git reporting is enabled")
@@ -422,6 +424,9 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 	// get a git API client
 	provider, err := o.getGithubProvider(gitInfo)
 	if err != nil {
+		if o.FailIfNoGitProvider {
+			log.Logger().Fatalf("could not create git provider: %s", err.Error())
+		}
 		return err
 	}
 
@@ -481,6 +486,9 @@ func (o *ControllerBuildOptions) getGithubProvider(gitInfo *gits.GitRepository) 
 	}
 	if server == nil {
 		return nil, fmt.Errorf("no pipeline git auth could be found")
+	}
+	if userAuth == nil || userAuth.IsInvalid() {
+		return nil, fmt.Errorf("no pipeline git user auth could be found")
 	}
 	gitProvider, err := gits.CreateProvider(server, userAuth, nil)
 	if err != nil {
