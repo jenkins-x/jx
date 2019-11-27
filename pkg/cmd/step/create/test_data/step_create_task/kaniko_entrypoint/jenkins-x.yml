@@ -22,15 +22,15 @@ pipelineConfig:
                 args: ['--help']
 
               - name: build-and-push-image
-                image: rawlingsj/executor:dev40
+                image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/source/Dockerfile','--destination=docker.io/jenkinsxio/jx:A_VERSION','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
               - name: build-and-push-nodejs
-                image: rawlingsj/executor:dev40
+                image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-nodejs','--destination=docker.io/jenkinsxio/builder-nodejs:A_VERSION','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
               - name: build-and-push-maven
-                image: rawlingsj/executor:dev40
+                image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-maven','--destination=docker.io/jenkinsxio/builder-maven:A_VERSION','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
               - name: build-and-push-go
