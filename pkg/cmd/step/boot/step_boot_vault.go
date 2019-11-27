@@ -145,7 +145,6 @@ func (o *StepBootVaultOptions) Run() error {
 			secretAccessKey := os.Getenv("VAULT_AWS_SECRET_ACCESS_KEY")
 			accessKeyId := os.Getenv("VAULT_AWS_ACCESS_KEY_ID")
 			if !awsConfig.AutoCreate && (checkRequiredResource("dynamoDBTable", awsConfig.DynamoDBTable) ||
-				checkRequiredResource("providedIAMUsername", awsConfig.ProvidedIAMUsername) ||
 				checkRequiredResource("secretAccessKey", secretAccessKey) ||
 				checkRequiredResource("accessKeyId", accessKeyId) ||
 				checkRequiredResource("kmsKeyId", awsConfig.KMSKeyID) ||
@@ -165,8 +164,8 @@ func (o *StepBootVaultOptions) Run() error {
 				AutoCreate:          awsConfig.AutoCreate,
 				DynamoDBTable:       awsConfig.DynamoDBTable,
 				DynamoDBRegion:      awsConfig.DynamoDBRegion,
-				AccessKeyID:         secretAccessKey,
-				SecretAccessKey:     accessKeyId,
+				AccessKeyID:         accessKeyId,
+				SecretAccessKey:     secretAccessKey,
 				ProvidedIAMUsername: awsConfig.ProvidedIAMUsername,
 			}
 		}

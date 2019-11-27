@@ -503,7 +503,7 @@ func defineAppsChartOverridingError(chartName string, err error) error {
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
 	log.Logger().Debugf("Fetching secrets from vault into directory %q", dir)
 	files := []string{}
-	client, err := o.SystemVaultClient(kube.DefaultNamespace)
+	client, err := o.SystemVaultClient("")
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}
