@@ -397,6 +397,8 @@ github.com/hashicorp/vault v1.1.2 h1:NDaWEwrTwjg3VKrKQmQykuiq4UqMUlbqloRvIX5fhns
 github.com/hashicorp/vault v1.1.2/go.mod h1:KfSyffbKxoVyspOdlaGVjIuwLobi07qD1bAbosPMpP0=
 github.com/heptio/sonobuoy v0.16.0 h1:r+dafrnKgMbAJ0gWu8kvy24TqT9molgx/Csw91WbB3w=
 github.com/heptio/sonobuoy v0.16.0/go.mod h1:DPj7YJRqCVgPYfQMMNBmTna+oI3vHs2oo3vbqWcl1ck=
+github.com/heptio/velero v1.2.0 h1:jqE0YnKsZIbOiFeWHrGlqvIJdMkBAz4HPU8ePbUGbOU=
+github.com/heptio/velero v1.2.0/go.mod h1:Q8aj4N9pmvDNp2hWmqWJ1Z1ybUjEI+iQOP3C9hx2njQ=
 github.com/hinshun/vt10x v0.0.0-20180616224451-1954e6464174/go.mod h1:DqJ97dSdRW1W22yXSB90986pcOyQ7r45iio1KN2ez1A=
 github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c h1:kp3AxgXgDOmIJFR7bIwqFhwJ2qWar8tEQSE5XXhCfVk=
 github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c/go.mod h1:DqJ97dSdRW1W22yXSB90986pcOyQ7r45iio1KN2ez1A=
@@ -736,6 +738,8 @@ github.com/ulikunitz/xz v0.5.6/go.mod h1:2bypXElzHzzJZwzH67Y6wb67pO62Rzfn7BSiF4A
 github.com/urfave/cli v1.18.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
 github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d h1:Z8Bp/K+wf1+IUvu5Vk2Ml/mMI7fmZTT7rQjkLC8pAmQ=
 github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d/go.mod h1:8uo3DXfN526YN7JjAp4JkOMm4foTW4vPzPHaAzb4xiY=
+github.com/vmware-tanzu/velero v1.1.0 h1:PMjRssxJpc86zPJ5svfeMSuSR+Kdw6Yf07w9WGEhC9k=
+github.com/vmware-tanzu/velero v1.1.0/go.mod h1:s+8IqUKWcprcMVOfZKNC+jFY3tr/ElJfaMCcAfhThts=
 github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb h1:KrmaSo+FHWBt1H652w/uerwzKvQqh4H7Jgyxm4hz2BQ=
 github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb/go.mod h1:Z91j2jYBApRjJ0zlXDCxPrrZR8ohkkd4g0n+Hqs1w0Q=
 github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936 h1:sW9o8nzZskZn9WSsSzuXN2PJHOlSLkS4sAgz2VWF3Nc=
