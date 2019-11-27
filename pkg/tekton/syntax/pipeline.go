@@ -1552,8 +1552,10 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 			c.Args = params.step.Arguments
 		} else {
 			// If it's /kaniko/executor, use /busybox/sh instead of /bin/sh, and use the debug image
-			if strings.HasPrefix(params.step.GetCommand(), "/kaniko/executor") {
-				c.Image = strings.Replace(c.Image, "/executor:", "/executor:debug-", 1)
+			if strings.HasPrefix(params.step.GetCommand(), "/kaniko/executor") && strings.Contains(c.Image, "gcr.io/kaniko-project") {
+				if !strings.Contains(c.Image, "debug") {
+					c.Image = strings.Replace(c.Image, "/executor:", "/executor:debug-", 1)
+				}
 				c.Command = []string{"/busybox/sh", "-c"}
 			}
 			cmdStr := params.step.GetCommand()
