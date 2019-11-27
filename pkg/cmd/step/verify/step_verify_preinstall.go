@@ -403,7 +403,7 @@ func (o *StepVerifyPreInstallOptions) configureVelero(requirements *config.Requi
 
 	serviceAccountName := requirements.Velero.ServiceAccount
 	if serviceAccountName == "" {
-		serviceAccountName = naming.ToValidNameTruncated(fmt.Sprintf("%s-velero", clusterName), 30)
+		serviceAccountName = naming.ToValidNameTruncated(fmt.Sprintf("%s-vo", clusterName), 30)
 		requirements.Velero.ServiceAccount = serviceAccountName
 	}
 	log.Logger().Infof("Configuring Velero service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
