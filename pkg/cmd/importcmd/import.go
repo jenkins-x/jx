@@ -988,6 +988,11 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		return err
 	}
 
+	gha, err := options.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
 	if settings.IsSchedulerMode() {
 		jxClient, _, err := options.JXClient()
 		if err != nil {
@@ -1022,11 +1027,6 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		sourceGitURL, err := kube.GetRepositoryGitURL(sr)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get the git URL for SourceRepository %s", sr.Name)
-		}
-
-		gha, err := options.IsGitHubAppMode()
-		if err != nil {
-			return err
 		}
 
 		devGitURL := devEnv.Spec.Source.URL
@@ -1072,14 +1072,17 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		}
 	}
 
-	startBuildOptions := start.StartPipelineOptions{
-		CommonOptions: options.CommonOptions,
+	if !gha {
+		startBuildOptions := start.StartPipelineOptions{
+			CommonOptions: options.CommonOptions,
+		}
+		startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
+		err = startBuildOptions.Run()
+		if err != nil {
+			return fmt.Errorf("failed to start pipeline build")
+		}
 	}
-	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
-	err = startBuildOptions.Run()
-	if err != nil {
-		return fmt.Errorf("failed to start pipeline build")
-	}
+
 	options.LogImportedProject(false, gitInfo)
 
 	return nil
