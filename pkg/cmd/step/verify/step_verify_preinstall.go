@@ -442,6 +442,7 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.Cluster.ClusterName)
 			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
 			modifyMapIfNotBlank(configMap.Data, kube.Region, requirements.Cluster.Region)
+			modifyMapIfNotBlank(configMap.Data, kube.Zone, requirements.Cluster.Zone)
 			return nil
 		}, nil)
 	if err != nil {
