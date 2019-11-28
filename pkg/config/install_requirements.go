@@ -893,8 +893,14 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func()
 		useProduction := os.Getenv(RequirementIngressTLSProduction)
 		if envVarBoolean(useProduction) {
 			c.Ingress.TLS.Production = true
+			for _, e := range c.Environments {
+				e.Ingress.TLS.Production = true
+			}
 		} else {
 			c.Ingress.TLS.Production = false
+			for _, e := range c.Environments {
+				e.Ingress.TLS.Production = false
+			}
 		}
 	}
 	if "" != os.Getenv(RequirementKaniko) {
