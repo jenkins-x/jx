@@ -19,7 +19,7 @@ import (
 
 var (
 	upgradeAppsLong = templates.LongDesc(`
-		Upgrades Apps to newer releases
+		Upgrades Apps to newer releases (an app is similar to an addon)
 `)
 
 	upgradeAppsExample = templates.Examples(`
@@ -72,7 +72,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "apps",
-		Short:   "Upgrades any Apps to the latest release",
+		Short:   "Upgrades any Apps to the latest release (an app is similar to an addon)",
 		Aliases: []string{"app"},
 		Long:    upgradeAppsLong,
 		Example: upgradeAppsExample,
