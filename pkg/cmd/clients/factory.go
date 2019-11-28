@@ -763,7 +763,7 @@ func checkHelmCompatibility(helm *helm.HelmCLI) {
 		return
 	}
 	if v.Major > 2 {
-		log.Logger().Fatalf("You current helm version v3 is not supported. Please downgrade to helm v2.")
+		log.Logger().Fatalf("Your current helm version v3 is not supported. Please downgrade to helm v2.")
 	}
 }
 
