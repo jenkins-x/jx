@@ -16,7 +16,7 @@ import (
 
 var (
 	deleteAppLong = templates.LongDesc(`
-		Deletes one or more Apps
+		Deletes one or more Apps (an app is similar to an addon)
 
 `)
 
@@ -55,7 +55,7 @@ func NewCmdDeleteApp(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "app",
-		Short:   "Deletes one or more apps from Jenkins X",
+		Short:   "Deletes one or more apps from Jenkins X (an app is similar to an addon)",
 		Long:    deleteAppLong,
 		Example: deleteAppExample,
 		Run: func(cmd *cobra.Command, args []string) {

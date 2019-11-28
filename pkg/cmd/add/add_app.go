@@ -52,7 +52,7 @@ const (
 
 var (
 	add_app_long = templates.LongDesc(`
-		Adds an app to Jenkins X.
+		Adds an App to Jenkins X (an app is similar to an addon),
 `)
 	add_app_example = templates.Examples(`
 		# Add an app
@@ -72,7 +72,7 @@ func NewCmdAddApp(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "app",
-		Short:   "Adds an app",
+		Short:   "Adds an App (an app is similar to an addon)",
 		Long:    add_app_long,
 		Example: add_app_example,
 		Run: func(cmd *cobra.Command, args []string) {
