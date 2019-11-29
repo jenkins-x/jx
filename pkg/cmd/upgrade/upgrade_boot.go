@@ -426,12 +426,7 @@ func (o *UpgradeBootOptions) excludeFiles(commit string) error {
 }
 
 func (o *UpgradeBootOptions) raisePR() error {
-	gitInfo, err := o.Git().Info(o.Dir)
-	if err != nil {
-		return errors.Wrap(err, "failed to get git info")
-	}
-
-	provider, err := o.gitProvider(gitInfo)
+	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to get git provider")
 	}
@@ -491,7 +486,10 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to give write perms to tmp dir to clone dev env repo")
 	}
-	_, userAuth, err := o.pipelineUserAuth()
+
+	gitInfo, err := gits.ParseGitURL(devEnvURL)
+
+	_, userAuth, err := o.pipelineUserAuth(gitInfo)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pipeline user auth")
 	}
@@ -509,35 +507,12 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	return nil
 }
 
-func (o *UpgradeBootOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.GitAuthConfigService()
+func (o *UpgradeBootOptions) pipelineUserAuth(gitInfo *gits.GitRepository) (*auth.AuthServer, *auth.UserAuth, error) {
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
+		return nil, nil, err
 	}
-	cfg := authConfigSvc.Config()
-	if cfg == nil {
-		return nil, nil, errors.Wrap(err, "git auth config is empty")
-	}
-	server, userAuth := cfg.GetPipelineAuth()
-	return server, userAuth, nil
-}
-
-func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
-	server, userAuth, err := o.pipelineUserAuth()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get pipeline user auth")
-	}
-
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get git kind")
-	}
-
-	provider, err := gitInfo.CreateProviderForUser(server, userAuth, gitKind, o.Git())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create provider for user")
-	}
-	return provider, nil
+	return o.GetPipelineGitAuth(ghOwner)
 }
 
 func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.VersionResolver) error {
