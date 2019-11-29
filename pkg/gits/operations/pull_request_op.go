@@ -228,8 +228,10 @@ func AddDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsse
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
 	}
-	err = yaml.Unmarshal(b.Bytes(), &upstreamUpdates)
+	bytes := b.Bytes()
+	err = yaml.Unmarshal(bytes, &upstreamUpdates)
 	if err != nil {
+		log.Logger().Errorf("unable to unmarshall from %s", string(bytes))
 		return nil, errors.Wrapf(err, "unmarshaling dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
 	}
 	for _, d := range upstreamUpdates.Updates {
