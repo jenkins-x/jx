@@ -623,6 +623,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 
 		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
 		if spec.BuildLogsURL == "" || !strings.Contains(spec.BuildLogsURL, pod.Name) {
+			log.Logger().Debugf("Storing build logs for %s", activity.Name)
 			podInterface := kubeClient.CoreV1().Pods(ns)
 
 			envName := kube.LabelValueDevEnvironment
@@ -1057,6 +1058,7 @@ func toYamlString(resource interface{}) string {
 // generates the build log URL and returns the URL
 func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
+	log.Logger().Debugf("Collecting logs for %s to location %s", activity.Name, location.Description())
 	coll, err := collector.NewCollector(location, o.Git())
 	if err != nil {
 		return "", errors.Wrapf(err, "could not create Collector for pod %s in namespace %s with settings %#v", pod.Name, ns, settings)
@@ -1102,6 +1104,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		LogWriter:    logWriter,
 	}
 
+	log.Logger().Debugf("Capturing running build logs for %s", activity.Name)
 	err = tektonLogger.GetRunningBuildLogs(activity, buildName, false)
 	if err != nil {
 		return "", errors.Wrapf(err, "there was a problem getting logs for build %s", buildName)
@@ -1119,6 +1122,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		}
 	}
 
+	log.Logger().Debugf("Actually saving captured build logs for %s to %s", activity.Name, location.Description())
 	return coll.CollectData(w.data, fileName)
 }
 
