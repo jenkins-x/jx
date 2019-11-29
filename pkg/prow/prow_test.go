@@ -1,3 +1,5 @@
+// +build unit
+
 package prow_test
 
 import (

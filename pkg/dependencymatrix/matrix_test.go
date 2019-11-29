@@ -1,3 +1,5 @@
+// +build unit
+
 package dependencymatrix_test
 
 import (

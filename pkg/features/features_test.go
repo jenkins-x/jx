@@ -1,3 +1,5 @@
+// +build unit
+
 package features_test
 
 import (

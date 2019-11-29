@@ -1,3 +1,5 @@
+// +build unit
+
 package requirements_test
 
 import (

@@ -1,3 +1,5 @@
+// +build unit
+
 package promote_test
 
 import (

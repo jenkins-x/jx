@@ -1,3 +1,5 @@
+// +build unit
+
 package scheduler_test
 
 import (

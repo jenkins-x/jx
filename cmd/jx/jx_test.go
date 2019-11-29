@@ -1,3 +1,5 @@
+// +build unit
+
 // +build covered_binary
 
 package main

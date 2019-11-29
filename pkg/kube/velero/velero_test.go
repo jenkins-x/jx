@@ -1,3 +1,5 @@
+// +build unit
+
 package velero
 
 import (
@@ -9,7 +11,6 @@ import (
 )
 
 func TestDoesVeleroBackupScheduleExist(t *testing.T) {
-
 	apiextensionsInterface := apiextentions_mocks.NewSimpleClientset()
 	type args struct {
 		apiClient clientset.Interface

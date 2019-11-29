@@ -1,3 +1,5 @@
+// +build unit
+
 package verify_test
 
 import (
@@ -103,7 +105,7 @@ func TestExternalDNSDisabledDomainNotOwned(t *testing.T) {
 
 	o.Dir = dir
 	file := filepath.Join(o.Dir, config.RequirementsConfigFileName)
-	requirements := getBaseRequirements()
+	requirements := getRequirements()
 
 	// using nip.io on gke should disable the use of external dns as we cannot transfer domain ownership to google dns
 	requirements.Ingress.Domain = "34.76.24.247.nip.io"
@@ -144,7 +146,7 @@ func TestExternalDNSDisabledNotGKE(t *testing.T) {
 
 	o.Dir = dir
 	file := filepath.Join(o.Dir, config.RequirementsConfigFileName)
-	requirements := getBaseRequirements()
+	requirements := getRequirements()
 
 	// using nip.io on gke should disable the use of external dns as we cannot transfer domain ownership to google dns
 	requirements.Ingress.Domain = "foobar.com"
@@ -166,6 +168,15 @@ func TestExternalDNSDisabledNotGKE(t *testing.T) {
 
 	assert.Equal(t, false, requirements.Ingress.ExternalDNS, "requirements.Ingress.ExternalDNS")
 
+}
+
+func getRequirements() *config.RequirementsConfig {
+	requirements := config.NewRequirementsConfig()
+	requirements.Cluster.ProjectID = "test-project"
+	requirements.Cluster.ClusterName = "test-cluster"
+	requirements.Cluster.EnvironmentGitOwner = "test-org"
+	requirements.Cluster.Zone = "test-zone"
+	return requirements
 }
 
 func AssertMapPathValueAsString(t *testing.T, values map[string]interface{}, path string, expected string) {

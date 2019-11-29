@@ -1,3 +1,5 @@
+// +build unit
+
 package versionstream_test
 
 import (

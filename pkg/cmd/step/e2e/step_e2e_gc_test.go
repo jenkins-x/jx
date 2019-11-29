@@ -1,3 +1,5 @@
+// +build unit
+
 package e2e_test
 
 import (

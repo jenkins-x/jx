@@ -1,3 +1,5 @@
+// +build unit
+
 package jenkins_test
 
 import (
