@@ -294,6 +294,7 @@ type PullRequestDetails struct {
 	Message    string
 	BranchName string
 	Title      string
+	Labels     []string
 }
 
 func (p *PullRequestDetails) String() string {
