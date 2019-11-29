@@ -1,3 +1,5 @@
+// +build unit
+
 package helm_test
 
 import (

@@ -41,27 +41,12 @@ pipelineConfig:
                 command: jx
                 args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
 
-              - name: init-helm
-                image: alpine/helm:2.12.3
-                command: helm
-                args: ['init','--client-only']
-
               - name: build
-                #image: docker.io/golang:1.11.5
-                # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.639
+                image: docker.io/golang:1.12.13
                 command: make
                 args: ['build']
 
-              - name: integration-test
-                #image: docker.io/golang:1.11.5
-                # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.639
+              - name: unit-test
+                image: docker.io/golang:1.12.13
                 command: make
-                args: ['test-slow-integration']
-
-              - name: stash-test-results
-                image: gcr.io/jenkinsxio/builder-jx:0.1.639
-                command: jx
-                # TODO force it to use the gs bucket until we sort out why the team setting gets wiped
-                args: ['step', 'stash', '-c', 'integration-tests', '-p', 'build/reports/*.junit.xml', '--bucket-url', 'gs://jx-prod-logs']
+                args: ['test']

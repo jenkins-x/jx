@@ -1,3 +1,5 @@
+// +build unit
+
 package cluster_test
 
 import (

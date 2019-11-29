@@ -1,3 +1,5 @@
+// +build unit
+
 package secreturl_test
 
 import (

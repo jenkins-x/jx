@@ -1,3 +1,5 @@
+// +build unit
+
 // +build soak
 
 package buildnum

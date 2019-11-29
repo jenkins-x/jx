@@ -14,14 +14,12 @@ if ! [ -x "$(command -v golangci-lint)" ]; then
 	${DIR}/install_golint.sh -b $GOPATH/bin v1.20.0
 fi
 
-golangci-lint run \
+GO111MODULE=on golangci-lint run \
 	--no-config \
     --disable-all \
 	-E misspell \
 	-E unconvert \
-    -E deadcode \
     -E unconvert \
-    -E gosec \
     -E gofmt \
     -E goimports \
     -E structcheck \
@@ -29,7 +27,8 @@ golangci-lint run \
     -E typecheck \
     --skip-dirs vendor \
     --deadline 15m0s \
-    --verbose 
+    --verbose \
+    --build-tags build
 
 # -E errcheck \
 # -E varcheck \

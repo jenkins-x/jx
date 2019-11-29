@@ -1,3 +1,5 @@
+// +build unit
+
 package gc_test
 
 import (

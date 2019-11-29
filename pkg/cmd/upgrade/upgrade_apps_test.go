@@ -1,3 +1,5 @@
+// +build unit
+
 package upgrade_test
 
 import (
