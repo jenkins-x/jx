@@ -1,3 +1,5 @@
+// +build unit
+
 package verify_test
 
 import (

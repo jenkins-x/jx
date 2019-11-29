@@ -17,20 +17,21 @@ fi
 export GO111MODULE=on
 golangci-lint run \
 	--no-config \
-    --disable-all \
+  --disable-all \
 	-E misspell \
 	-E unconvert \
-    -E deadcode \
-    -E unconvert \
-    -E gosec \
-    -E gofmt \
-    -E goimports \
-    -E structcheck \
-    -E interfacer \
-    -E typecheck \
-    --skip-dirs vendor \
-    --deadline 15m0s \
-    --verbose 
+  -E deadcode \
+  -E unconvert \
+  -E gosec \
+  -E gofmt \
+  -E goimports \
+  -E structcheck \
+  -E interfacer \
+  -E typecheck \
+  --skip-dirs vendor \
+  --deadline 15m0s \
+  --verbose \
+  --build-tags build
 
 # -E errcheck \
 # -E varcheck \

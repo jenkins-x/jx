@@ -1,3 +1,5 @@
+// +build unit
+
 package users_test
 
 import (

@@ -1,3 +1,5 @@
+// +build unit
+
 // +build integration
 
 // TODO these are not supposed to be integration tests but there was a mistaken mis-usage of go-git which means they

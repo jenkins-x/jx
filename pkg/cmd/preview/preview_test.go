@@ -1,3 +1,5 @@
+// +build unit
+
 package preview_test
 
 import (

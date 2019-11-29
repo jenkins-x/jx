@@ -1,3 +1,5 @@
+// +build unit
+
 package buckets_test
 
 import (

@@ -1,3 +1,5 @@
+// +build unit
+
 package vault_test
 
 import (

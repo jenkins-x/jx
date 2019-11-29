@@ -24,7 +24,6 @@ MAIN_SRC_FILE=cmd/jx/jx.go
 GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
-REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 ORG := jenkins-x
 ORG_REPO := $(ORG)/$(NAME)
 RELEASE_ORG_REPO := $(ORG_REPO)
@@ -136,7 +135,7 @@ make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
 test: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(COVERFLAGS) -failfast -short ./... $(TEST_BUILDFLAGS)
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) --tags=unit $(COVERFLAGS) -failfast -short ./... $(TEST_BUILDFLAGS)
 
 test-cloud-gke: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./pkg/cloud/gke -failfast -short ./pkg/cloud/gke $(TEST_BUILDFLAGS)

@@ -1,3 +1,5 @@
+// +build unit
+
 package step_test
 
 import (

@@ -1,3 +1,5 @@
+// +build unit
+
 package opts_test
 
 import (

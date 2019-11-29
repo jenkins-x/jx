@@ -1,3 +1,5 @@
+// +build unit
+
 package ec2
 
 import (
