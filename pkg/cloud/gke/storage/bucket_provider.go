@@ -85,7 +85,7 @@ func (b *GKEBucketProvider) UploadFileToBucket(reader io.Reader, key string, buc
 		return "", err
 	}
 
-	log.Logger().Debugf("Uploading data %s to bucket %s with key %s", string(data), bucketURL, key)
+	log.Logger().Debugf("Uploading %d bytes to bucket %s with key %s", len(data), bucketURL, key)
 	err = buckets.WriteBucket(bucketURL, key, data, defaultBucketWriteTimeout)
 	return bucketURL + "/" + key, err
 }
