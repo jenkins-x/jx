@@ -237,6 +237,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		Title:         prDetails.Title,
 		Body:          prDetails.Message,
 		Base:          base,
+		Labels:        prDetails.Labels,
 	}
 	var existingPr *GitPullRequest
 
