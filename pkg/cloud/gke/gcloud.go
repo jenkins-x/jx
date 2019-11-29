@@ -400,15 +400,6 @@ func StreamTransferFileFromBucket(fullBucketURL string) (*bufio.Scanner, error) 
 	return scanner, err
 }
 
-func pipeBytes(in io.WriteCloser, bytes []byte) error {
-	defer in.Close()
-	_, err := in.Write(bytes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // DeleteBucket deletes a Google storage bucket
 func (g *GCloud) DeleteBucket(bucketName string) error {
 	found := g.FindBucket(bucketName)
