@@ -5,9 +5,7 @@ import (
 	"io"
 	"net/url"
 	"os"
-	"strings"
 
-	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
@@ -734,8 +732,7 @@ func (f *factory) CreateHelm(verbose bool,
 	if verbose {
 		log.Logger().Debugf("Using helmBinary %s with feature flag: %s", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
 	}
-	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
-	checkHelmCompatibility(helmCLI)
+	helmCLI := helm.NewHelmCLIWithCompatibilityCheck(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI
 	if helmTemplate {
 		kubeClient, ns, _ := f.CreateKubeClient()
@@ -748,23 +745,6 @@ func (f *factory) CreateHelm(verbose bool,
 		helm.StartLocalTillerIfNotRunning()
 	}
 	return h
-}
-
-func checkHelmCompatibility(helm *helm.HelmCLI) {
-	version, err := helm.VersionWithArgs(false, "--client")
-	version = strings.TrimPrefix(version, "Client: ")
-	if err != nil {
-		log.Logger().Warnf("Unable to detect the current helm version due to: %s", err)
-		return
-	}
-	v, err := semver.ParseTolerant(version)
-	if err != nil {
-		log.Logger().Warnf("Unable to parse the current helm version: %s", version)
-		return
-	}
-	if v.Major > 2 {
-		log.Logger().Fatalf("Your current helm version v3 is not supported. Please downgrade to helm v2.")
-	}
 }
 
 // CreateCertManagerClient creates a new Kuberntes client for cert-manager resources
