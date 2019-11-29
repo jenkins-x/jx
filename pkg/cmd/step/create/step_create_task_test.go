@@ -51,7 +51,7 @@ type testCase struct {
 	kind                  string
 	generateError         error
 	effectiveProjectError error
-	useKaniko             bool
+	noKaniko              bool
 	pipelineUserName      string
 	pipelineUserEmail     string
 	branchAsRevision      bool
@@ -89,7 +89,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "build-pack",
 			kind:         "release",
-			useKaniko:    true,
 		},
 		{
 			name:         "maven_build_pack",
@@ -98,7 +97,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "from_yaml",
@@ -158,7 +157,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "override_block_step",
@@ -175,7 +174,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "containeroptions-on-pipelineconfig",
@@ -184,7 +183,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "default-in-jenkins-x-yml",
@@ -276,7 +275,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "replace-stage-steps-in-jenkins-x-yml",
@@ -326,7 +325,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "volume-in-overrides",
@@ -444,7 +443,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				Branch:              tt.branch,
 				UseBranchAsRevision: tt.branchAsRevision,
 				PipelineKind:        tt.kind,
-				NoKaniko:            !tt.useKaniko,
+				NoKaniko:            tt.noKaniko,
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
 						ServiceAccount: "tekton-bot",
