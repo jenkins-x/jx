@@ -402,7 +402,7 @@ func StreamTransferFileFromBucket(fullBucketURL string) (*bufio.Scanner, error) 
 
 // UploadFileToBucket will perform a stream transfer with the provided bytes to the GCS bucket with the target key name
 func UploadFileToBucket(data []byte, key string, fullBucketURL string) (string, error) {
-	log.Logger().Debugf("Uploading data %s to bucket %s with key %s", string(data), fullBucketURL, key)
+	log.Logger().Debugf("Uploading data to bucket %s with key %s", fullBucketURL, key)
 	args := []string{"cp", "-", fullBucketURL + "/" + key}
 	cmd := exec.Command("gsutil", args...)
 	inPipe, err := cmd.StdinPipe()
