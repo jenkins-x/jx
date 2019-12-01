@@ -72,7 +72,7 @@ func (o *StepVerifyGitOptions) Run() error {
 					userAuth.Username, server.URL)
 			}
 
-			if provider.CurrentUsername() == "jenkins-x[bot]" {
+			if strings.HasSuffix(provider.CurrentUsername(), "[bot]") {
 				pipeUserValid = true
 				continue
 			}
