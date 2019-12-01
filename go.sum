@@ -124,6 +124,8 @@ github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QH
 github.com/census-instrumentation/opencensus-proto v0.0.2-0.20180913191712-f303ae3f8d6a/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/census-instrumentation/opencensus-proto v0.1.0 h1:VwZ9smxzX8u14/125wHIX7ARV+YhR+L4JADswwxWK0Y=
 github.com/census-instrumentation/opencensus-proto v0.1.0/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
+github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 h1:HD4PLRzjuCVW79mQ0/pdsalOLHJ+FaEoqJLxfltpb2U=
+github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1/go.mod h1:/iP1qXHoty45bqomnu2LM+VVyAEdWN+vtSHGlQgyxbw=
 github.com/chromedp/cdproto v0.0.0-20180703215205-c125a34ea3b3/go.mod h1:C2GPAraqdt1KfZU7aSmx1XUgarNq/3JmxevQkmCjOVs=
 github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d h1:u/5pA/xuVl0+OEeEgPgRa9AwxQ/0lbMBa8ZACmjzbAQ=
 github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d/go.mod h1:C2GPAraqdt1KfZU7aSmx1XUgarNq/3JmxevQkmCjOVs=

@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/i18n"
 
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
 	"github.com/spf13/viper"
@@ -77,7 +78,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	configureViper()
 	rootCommand := &cobra.Command{
 		Use:              "jx",
-		Short:            "jx is a command line tool for working with Jenkins X",
+		Short:            i18n.T("jx is a command line tool for working with Jenkins X"),
 		PersistentPreRun: setLoggingLevel,
 		Run:              runHelp,
 	}

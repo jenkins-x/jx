@@ -256,6 +256,10 @@ fmt: ## Format the code
       		echo "Fixed formatting for: $(FORMATTED)"; \
       	fi
 
+JX_FILES="pkg/cmd/*.go"
+gettext:
+	go-xgettext -k=i18n.T "${JX_FILES}" > pkg/i18n/jx.pot
+
 .PHONY: lint
 lint: ## Lint the code
 	./hack/run-all-checks.sh
