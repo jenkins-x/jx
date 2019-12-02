@@ -112,7 +112,7 @@ func CallWithExponentialBackOff(url string, auth string, httpMethod string, reqB
 		exponentialBackOff.Reset()
 		err := backoff.Retry(f, exponentialBackOff)
 		if err != nil {
-			return []byte{}, errors.Wrapf(err, "error getting tenant sub-domain via %s", url)
+			return []byte{}, errors.Wrapf(err, "error performing request via %s", url)
 		}
 	}
 	return respBody, nil

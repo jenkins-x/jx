@@ -29,8 +29,6 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/jenkins-x/jx/pkg/tenant"
-
 	"github.com/jenkins-x/jx/pkg/cmd/step/env"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -148,8 +146,6 @@ type InstallFlags struct {
 	StaticJenkins               bool
 	LongTermStorage             bool   `mapstructure:"long-term-storage"`
 	LongTermStorageBucketName   string `mapstructure:"lts-bucket"`
-	CloudBeesDomain             string
-	CloudBeesAuth               string
 }
 
 // Secrets struct for secrets
@@ -393,8 +389,6 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, staticJenkinsFlagName, "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, ltsBucketFlagName, "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
-	cmd.Flags().StringVarP(&options.Flags.CloudBeesDomain, "cloudbees-domain", "", "", "When setting up a letter/tenant cluster, this creates a tenant cluster on the cloudbees domain which is retrieved via the required URL")
-	cmd.Flags().StringVarP(&options.Flags.CloudBeesAuth, "cloudbees-auth", "", "", "Auth used when setting up a letter/tenant cluster, format: 'username:password'")
 	cmd.Flags().StringVar(&options.ConfigFile, "config-file", "", "Configuration file used for installation")
 	cmd.Flags().BoolVar(&options.NoBrew, opts.OptionNoBrew, false, "Disables brew package manager on MacOS when installing binary dependencies")
 	cmd.Flags().BoolVar(&options.InstallDependencies, opts.OptionInstallDeps, false, "Enables automatic dependencies installation when required")
@@ -498,9 +492,6 @@ func (options *InstallOptions) CheckFlags() error {
 			initFlags.NoTiller = true
 		}
 	}
-	if flags.CloudBeesDomain != "" {
-		options.InitOptions.Flags.ExternalDNS = true
-	}
 
 	// If we're using external-dns then remove the namespace subdomain from the URLTemplate
 	if options.InitOptions.Flags.ExternalDNS {
@@ -570,16 +561,6 @@ func (options *InstallOptions) Run() error {
 	err = options.CheckFlags()
 	if err != nil {
 		return errors.Wrap(err, "checking the provided flags")
-	}
-
-	if options.Flags.CloudBeesDomain != "" {
-		cloudbeesDomain := util.StripTrailingSlash(options.Flags.CloudBeesDomain)
-		cloudbeesAuth := options.Flags.CloudBeesAuth
-		domain, err := options.enableTenantCluster(cloudbeesDomain, cloudbeesAuth)
-		if err != nil {
-			return errors.Wrap(err, "while configuring the tenant cluster")
-		}
-		options.Flags.Domain = domain
 	}
 
 	configStore := configio.NewFileStore()
@@ -3344,30 +3325,6 @@ func validateClusterName(clustername string) error {
 		return err
 	}
 	return nil
-}
-
-// enableTenantCluster creates a managed zone which is a sub-domain
-// of a parent domain.
-func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tenantServiceAuth string) (string, error) {
-	projectID := options.installValues[kube.ProjectID]
-	if projectID == "" {
-		var err error
-		projectID, err = gke.GetCurrentProject()
-		if err != nil {
-			return "", errors.Wrap(err, "Unable to retrieve project id")
-		}
-	}
-
-	log.Logger().Infof("Configuring CloudBees Domain for %s project", projectID)
-	// Create a TenantClient
-	tCli := tenant.NewTenantClient()
-	var err error
-	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, "", options.GCloud())
-	if err != nil {
-		return "", errors.Wrap(err, "getting domain from tenant service")
-	}
-
-	return domain, nil
 }
 
 func installConfigKey(key string) string {
