@@ -322,16 +322,20 @@ func UnTargzAll(tarball, target string) error {
 }
 
 // UnTarFile extracts one file from the tar, or creates a directory
-func UnTarFile(header *tar.Header, path string, tarReader io.Reader) error {
+func UnTarFile(header *tar.Header, target string, tarReader io.Reader) error {
 	info := header.FileInfo()
 	if info.IsDir() {
-		if err := os.MkdirAll(path, info.Mode()); err != nil {
+		if err := os.MkdirAll(target, info.Mode()); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+	if err := os.MkdirAll(path.Dir(target), os.ModePerm); err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
 	if err != nil {
 		return err
 	}
