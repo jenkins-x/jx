@@ -457,7 +457,7 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 	}
 
 	for k, v := range activity.Labels {
-		activity.Labels[naming.ToValidName(k)] = naming.ToValidName(v)
+		activity.Labels[naming.ToValidName(k)] = naming.ToValidValue(v)
 	}
 }
 
