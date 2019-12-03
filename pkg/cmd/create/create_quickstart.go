@@ -152,10 +152,11 @@ func (o *CreateQuickstartOptions) Run() error {
 			Factory: o.GetFactory(),
 		}
 
-		err := githubApp.Install(details.Organisation, details.RepoName, o.GetIOFileHandles(), true)
+		installed, err := githubApp.Install(details.Organisation, details.RepoName, o.GetIOFileHandles(), true)
 		if err != nil {
 			return err
 		}
+		o.GithubAppInstalled = installed
 	}
 
 	// Prevent accidental attempts to use ML Project Sets in create quickstart

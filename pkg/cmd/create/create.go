@@ -15,8 +15,9 @@ import (
 type CreateProjectOptions struct {
 	importcmd.ImportOptions
 
-	DisableImport bool
-	OutDir        string
+	DisableImport      bool
+	OutDir             string
+	GithubAppInstalled bool
 }
 
 var (
@@ -101,6 +102,7 @@ func (o *CreateProjectOptions) ImportCreatedProject(outDir string) error {
 	importOptions := &o.ImportOptions
 	importOptions.Dir = outDir
 	importOptions.DisableDotGitSearch = true
+	importOptions.GithubAppInstalled = o.GithubAppInstalled
 	return importOptions.Run()
 }
 
