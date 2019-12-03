@@ -474,13 +474,8 @@ func (o *ControllerBuildOptions) getGithubProvider(gitInfo *gits.GitRepository) 
 		return o.gitHubProvider, nil
 	}
 
-	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
-	if err != nil {
-		return nil, err
-	}
-
 	// production code always goes this way
-	server, userAuth, err := o.GetPipelineGitAuth(ghOwner)
+	server, userAuth, err := o.GetPipelineGitAuthForRepo(gitInfo)
 	if err != nil {
 		return nil, err
 	}
