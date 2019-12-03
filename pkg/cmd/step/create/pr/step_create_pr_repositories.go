@@ -75,7 +75,7 @@ func (o *StepCreatePullRequestRepositoriesOptions) ValidateRepositoriesOptions()
 		}
 		o.GitURLs = []string{devEnv.Spec.Source.URL}
 	}
-	if err := o.ValidateOptions(false); err != nil {
+	if err := o.ValidateOptions(true); err != nil {
 		return errors.WithStack(err)
 	}
 
