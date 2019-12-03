@@ -100,6 +100,10 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	"create etc-host": {
 		date: "01-02-2020",
 	},
+	"create codeship": {
+		date: "01-02-2020",
+		info: "No longer needed",
+	},
 	"upgrade platform": {
 		replacement: "upgrade boot",
 		date:        "01-02-2020",
