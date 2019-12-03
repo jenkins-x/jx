@@ -86,6 +86,7 @@ type ImportOptions struct {
 	PipelineServer        string
 	ImportMode            string
 	UseDefaultGit         bool
+	GithubAppInstalled    bool
 }
 
 const (
@@ -430,19 +431,22 @@ func (options *ImportOptions) Run() error {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}
 
-	githubAppMode, err := options.IsGitHubAppMode()
-	if err != nil {
-		return err
-	}
-
-	if githubAppMode {
-		githubApp := &github.GithubApp{
-			Factory: options.GetFactory(),
-		}
-
-		err := githubApp.Install(options.Organisation, options.Repository, options.GetIOFileHandles(), false)
+	if !options.GithubAppInstalled {
+		githubAppMode, err := options.IsGitHubAppMode()
 		if err != nil {
 			return err
+		}
+
+		if githubAppMode {
+			githubApp := &github.GithubApp{
+				Factory: options.GetFactory(),
+			}
+
+			installed, err := githubApp.Install(options.Organisation, options.Repository, options.GetIOFileHandles(), false)
+			if err != nil {
+				return err
+			}
+			options.GithubAppInstalled = installed
 		}
 	}
 

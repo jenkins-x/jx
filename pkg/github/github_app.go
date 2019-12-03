@@ -36,13 +36,13 @@ func (gh *GithubApp) isGithubAppEnabled() (bool, error) {
 }
 
 // Install - confirms that the github app is installed and if it isn't then prints out a url for the user to install
-func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileHandles, newRepo bool) error {
+func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileHandles, newRepo bool) (bool, error) {
 	installed, accessToRepo, url, err := gh.isInstalled(owner, repo)
 	if installed {
 		fmt.Println("Github App installed")
 		if newRepo {
 			// if this is a new repo we can't confirm if it has access at this stage
-			return nil
+			return false, nil
 		}
 		if !accessToRepo {
 			fmt.Fprintf(fileHandles.Out, "Please confirm Jenkins X GithubApp App access to repository %s. Click this url \n%s\n\n", repo, util.ColorInfo(url))
@@ -55,9 +55,9 @@ func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileH
 			"install github app into your organisation and grant access to repositories", fileHandles)
 	}
 	if !accessToRepo {
-		return errors.New("Please install Jenkins X github app")
+		return false, errors.New("Please install Jenkins X github app")
 	}
-	return err
+	return accessToRepo, err
 }
 
 func (gh *GithubApp) isInstalled(owner string, repo string) (bool, bool, string, error) {
