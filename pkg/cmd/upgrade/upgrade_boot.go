@@ -9,7 +9,6 @@ import (
 
 	"github.com/blang/semver"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -488,8 +487,7 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	}
 
 	gitInfo, err := gits.ParseGitURL(devEnvURL)
-
-	_, userAuth, err := o.pipelineUserAuth(gitInfo)
+	_, userAuth, err := o.GetPipelineGitAuthForRepo(gitInfo)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pipeline user auth")
 	}
@@ -505,14 +503,6 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 
 	o.Dir = cloneDir
 	return nil
-}
-
-func (o *UpgradeBootOptions) pipelineUserAuth(gitInfo *gits.GitRepository) (*auth.AuthServer, *auth.UserAuth, error) {
-	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
-	if err != nil {
-		return nil, nil, err
-	}
-	return o.GetPipelineGitAuth(ghOwner)
 }
 
 func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.VersionResolver) error {

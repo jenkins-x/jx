@@ -303,15 +303,33 @@ func (o *CommonOptions) InitGitConfigAndUser() error {
 	return nil
 }
 
-// GetPipelineGitAuth returns the pipeline git authentication credentials
-func (o *CommonOptions) GetPipelineGitAuth(ghOwner string) (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *CommonOptions) getAuthConfig() (*auth.AuthConfig, error) {
 	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
+		return nil, errors.Wrap(err, "failed to create the git auth config service")
 	}
 	authConfig := authConfigSvc.Config()
 	if authConfig == nil {
-		return nil, nil, errors.New("empty Git config")
+		return nil, errors.New("empty Git config")
+	}
+	return authConfig, nil
+}
+
+// GetPipelineGitAuth returns the pipeline git authentication credentials
+func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfig, err := o.getAuthConfig()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get auth config")
+	}
+	server, user := authConfig.GetPipelineAuth()
+	return server, user, nil
+}
+
+// GetPipelineGitHubAppAuth returns the pipeline git authentication credentials
+func (o *CommonOptions) GetPipelineGitHubAppAuth(ghOwner string) (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfig, err := o.getAuthConfig()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get auth config")
 	}
 	server, user := authConfig.GetPipelineAuth()
 	if ghOwner != "" {
@@ -336,6 +354,18 @@ func (o *CommonOptions) GetPipelineGitAuth(ghOwner string) (*auth.AuthServer, *a
 		}
 	}
 	return server, user, nil
+}
+
+// GetPipelineGitAuthForRepo returns the pipeline git authentication credentials for a repo
+func (o *CommonOptions) GetPipelineGitAuthForRepo(gitInfo *gits.GitRepository) (*auth.AuthServer, *auth.UserAuth, error) {
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+	if ghOwner != "" {
+		return o.GetPipelineGitHubAppAuth(ghOwner)
+	}
+	return o.GetPipelineGitAuth()
 }
 
 // DisableFeatures iterates over all the repositories in org (except those that match excludes) and disables issue
