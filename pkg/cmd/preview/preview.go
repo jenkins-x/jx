@@ -953,10 +953,23 @@ func writePreviewURL(o *PreviewOptions, url string) {
 	}
 }
 
-func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
+func (o *PreviewOptions) getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
 	registry := ""
 	if projectConfig != nil {
 		registry = projectConfig.DockerRegistryHost
+	}
+	if registry == "" {
+		teamSettings, err := o.TeamSettings()
+		if err != nil {
+			log.Logger().Errorf("could not load team settings: %s", err.Error())
+		} else {
+			requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+			if err != nil {
+				log.Logger().Errorf("could not get requirements from team settings: %s", err.Error())
+			} else if requirements != nil {
+				registry = requirements.Cluster.Registry
+			}
+		}
 	}
 	if registry == "" {
 		registry = os.Getenv(DOCKER_REGISTRY)
@@ -978,7 +991,7 @@ func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
 }
 
 func (o *PreviewOptions) getImageName(projectConfig *config.ProjectConfig) (string, error) {
-	containerRegistry, err := getContainerRegistry(projectConfig)
+	containerRegistry, err := o.getContainerRegistry(projectConfig)
 	if err != nil {
 		return "", err
 	}
