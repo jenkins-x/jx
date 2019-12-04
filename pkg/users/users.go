@@ -135,7 +135,7 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 			if found.Labels == nil {
 				found.Labels = make(map[string]string)
 			}
-			found.Labels[providerKey] = id
+			found.Labels[providerKey] = naming.ToValidValue(id)
 			found, err := jxClient.JenkinsV1().Users(namespace).Update(found)
 			if err != nil {
 				return nil, err
