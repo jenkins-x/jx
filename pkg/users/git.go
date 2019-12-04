@@ -98,6 +98,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		new.Name = naming.ToValidName(id)
 		return id, possibles, new, nil
 	}
+	user.Login = naming.ToValidValue(user.Login)
 	return Resolve(user.Login, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
 }
 
