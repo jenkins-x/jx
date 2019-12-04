@@ -405,6 +405,8 @@ func DestroyFile(filename string) error {
 	size := fileInfo.Size()
 	// Overwrite the file with random data. Doing this multiple times is probably more secure
 	randomBytes := make([]byte, size)
+	// Avoid false positive G404 of gosec module - https://github.com/securego/gosec/issues/291
+	/* #nosec */
 	_, _ = rand.Read(randomBytes)
 	err = ioutil.WriteFile(filename, randomBytes, DefaultWritePermissions)
 	if err != nil {
