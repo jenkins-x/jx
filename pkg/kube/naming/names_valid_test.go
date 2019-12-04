@@ -23,13 +23,15 @@ func TestToValidValue(t *testing.T) {
 	t.Parallel()
 	assertToValidValue(t, "1", "1")
 	assertToValidValue(t, "1.2.3", "1.2.3")
+	assertToValidValue(t, "foo/bar", "foo/bar")
+	assertToValidValue(t, "Foo/Bar", "Foo/Bar")
 	assertToValidValue(t, "foo", "foo")
 	assertToValidValue(t, "foo[bot]", "foo-bot")
 	assertToValidValue(t, "foo-bar", "foo-bar")
 	assertToValidValue(t, "foo-bar-", "foo-bar")
 	assertToValidValue(t, "foo-bar-0.1.0", "foo-bar-0.1.0")
 	assertToValidValue(t, "---foo-bar-", "-foo-bar")
-	assertToValidValue(t, "foo/bar_*123", "foo-bar-123")
+	assertToValidValue(t, "foo/bar_*123", "foo/bar-123")
 	assertToValidValue(t, "", "")
 }
 
