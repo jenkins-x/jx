@@ -954,22 +954,27 @@ func writePreviewURL(o *PreviewOptions, url string) {
 }
 
 func (o *PreviewOptions) getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return "", errors.Wrap(err, "could not load team")
+	}
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return "", errors.Wrap(err, "could not get requirements from team setting")
+	}
+	if requirements != nil {
+		registryHost := requirements.Cluster.Registry
+		if registryHost != "" {
+			return registryHost, nil
+		}
+	}
+
+	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	registry := ""
 	if projectConfig != nil {
 		registry = projectConfig.DockerRegistryHost
 	}
-	if registry == "" {
-		teamSettings, err := o.TeamSettings()
-		if err != nil {
-			log.Logger().Errorf("could not load team settings: %s", err.Error())
-		} else {
-			requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
-			if err != nil {
-				log.Logger().Errorf("could not get requirements from team settings: %s", err.Error())
-			} else if requirements != nil {
-				registry = requirements.Cluster.Registry
-			}
-		}
+	if registryHost == "" {
 	}
 	if registry == "" {
 		registry = os.Getenv(DOCKER_REGISTRY)
@@ -978,7 +983,6 @@ func (o *PreviewOptions) getContainerRegistry(projectConfig *config.ProjectConfi
 		return registry, nil
 	}
 
-	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	if registryHost == "" {
 		return "", fmt.Errorf("no %s environment variable found", JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	}
