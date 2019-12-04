@@ -106,7 +106,7 @@ var (
 
 	    You can specify the git URL as an argument.
 	    
-		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
+		For more documentation see: [https://jenkins-x.io/docs/using-jx/creating/import/](https://jenkins-x.io/docs/using-jx/creating/import/)
 	    
 ` + helper.SeeAlsoText("jx create project"))
 
