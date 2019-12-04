@@ -2,6 +2,8 @@ package operations_test
 
 import (
 	"fmt"
+	"github.com/acarl005/stripansi"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -80,14 +82,19 @@ func TestCreatePullRequest(t *testing.T) {
 
 	pegomock.When(gitter.HasChanges(pegomock.AnyString())).ThenReturn(true, nil)
 
-	results, err := o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
-		return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
-	})
-	assert.NoError(t, err)
-	assert.NotNil(t, results)
+	var results *gits.PullRequestInfo
 
-	assert.Contains(t, results.PullRequestArguments.Labels, "updatebot",
+	logOutput := log.CaptureOutput(func() {
+		results, err := o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, results)
+	})
+
+	assert.Contains(t, logOutput, "Added label updatebot to Pull Request https://fake.git/testowner/testrepo/pulls/1",
 		"Updatebot label should be added to the PR")
+
 	assert.NotNil(t, results, "we must have results coming out of the PR creation")
 	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0, 2.0.0 and v1.0.1 to 3.0.0",
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
@@ -199,14 +206,19 @@ func TestCreatePullRequestWithMatrixUpdatePaths(t *testing.T) {
 
 	pegomock.When(gitter.HasChanges(pegomock.AnyString())).ThenReturn(true, nil)
 
-	results, err := o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
-		return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
-	})
-	assert.NoError(t, err)
-	assert.NotNil(t, results)
+	var results *gits.PullRequestInfo
 
-	assert.Contains(t, results.PullRequestArguments.Labels, "updatebot",
+	logOutput := log.CaptureOutput(func() {
+		results, err := o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, results)
+	})
+
+	assert.Contains(t, stripansi.Strip(logOutput), "Added label updatebot to Pull Request https://fake.git/testowner/testrepo/pulls/1",
 		"Updatebot label should be added to the PR")
+
 	assert.NotNil(t, results, "we must have results coming out of the PR creation")
 	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0, 2.0.0 and v1.0.1 to 3.0.0",
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
