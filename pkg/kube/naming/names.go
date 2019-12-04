@@ -96,8 +96,7 @@ func ToValidValue(name string) string {
 	var buffer bytes.Buffer
 	lastCharDash := false
 	for _, ch := range name {
-		ch = unicode.ToLower(ch)
-		if !(ch >= 'a' && ch <= 'z') && !(ch >= '0' && ch <= '9') && ch != '-' && ch != '.' {
+		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '-' && ch != '.' && ch != '/' {
 			ch = '-'
 		}
 
