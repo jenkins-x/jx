@@ -288,8 +288,11 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 
 	gitOwner := envGitInfo.Organisation
 
-	// TODO - this is hard coded to GitHub and needs to be extended to support other git providers (HF)
-	gitKind := gits.KindGitHub
+	gitKind := requirements.Cluster.GitKind
+	if gitKind == "" {
+		gitKind = gits.KindGitHub
+	}
+
 	public := requirements.Cluster.EnvironmentGitPublic
 	prefix := ""
 
