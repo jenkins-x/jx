@@ -38,10 +38,10 @@ type List struct {
 
 // Environments loops through all applications in a list and returns a map with
 // all the unique environments
-func (al List) Environments() map[string]v1.Environment {
+func (l List) Environments() map[string]v1.Environment {
 	envs := make(map[string]v1.Environment)
 
-	for _, a := range al.Items {
+	for _, a := range l.Items {
 		for name, env := range a.Environments {
 			if _, ok := envs[name]; !ok {
 				envs[name] = env.Environment
@@ -140,16 +140,32 @@ func GetApplications(factory clients.Factory) (List, error) {
 		}
 	}
 
-	// fetch deployment app name and match it against application names
-	for _, app := range list.Items {
-		for envName, env := range permanentEnvsMap {
-			for _, dep := range deployments[envName] {
-				labels, err := metav1.LabelSelectorAsMap(dep.Spec.Selector)
-				if err != nil {
-					return list, err
-				}
+	err = list.appendMatchingDeployments(permanentEnvsMap, deployments)
+	if err != nil {
+		return list, err
+	}
 
-				depAppName := kube.GetAppName(labels["app"], env.Spec.Namespace)
+	return list, nil
+}
+
+func getDeploymentAppNameInEnvironment(d v1beta1.Deployment, e *v1.Environment) (string, error) {
+	labels, err := metav1.LabelSelectorAsMap(d.Spec.Selector)
+	if err != nil {
+		return "", err
+	}
+
+	name := kube.GetAppName(labels["app"], e.Spec.Namespace)
+	return name, nil
+}
+
+func (l List) appendMatchingDeployments(envs map[string]*v1.Environment, deps map[string]map[string]v1beta1.Deployment) error {
+	for _, app := range l.Items {
+		for envName, env := range envs {
+			for _, dep := range deps[envName] {
+				depAppName, err := getDeploymentAppNameInEnvironment(dep, env)
+				if err != nil {
+					return errors.Wrap(err, "getting app name")
+				}
 				if depAppName == app.SourceRepository.Spec.Repo && !flagger.IsCanaryAuxiliaryDeployment(dep) {
 					depCopy := dep
 					app.Environments[env.Name] = Environment{
@@ -161,5 +177,5 @@ func GetApplications(factory clients.Factory) (List, error) {
 		}
 	}
 
-	return list, nil
+	return nil
 }
