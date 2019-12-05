@@ -33,17 +33,17 @@ var (
 
 	stepSplitMonorepoExample = templates.Examples(`
 		# Split the current folder up into separate Git repositories 
-		jx step split monorepo -o mygithuborg
+		jx step split -o mygithuborg
 			`)
 )
 
 // StepSplitMonorepoOptions contains the command line flags
 type StepSplitMonorepoOptions struct {
 	step.StepOptions
+	gits.GitRepositoryOptions
 
 	Glob          string
 	Organisation  string
-	RepoName      string
 	Dir           string
 	OutputDir     string
 	KubernetesDir string
@@ -59,7 +59,7 @@ func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:     "split monorepo",
+		Use:     "split",
 		Short:   "Mirrors the code from a monorepo into separate microservice style Git repositories so its easier to do finer grained releases",
 		Long:    stepSplitMonorepoLong,
 		Example: stepSplitMonorepoExample,
@@ -75,29 +75,33 @@ func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "source-dir", "s", "", "The source directory to look inside for the folders to move into separate Git repositories")
 	cmd.Flags().StringVarP(&options.OutputDir, opts.OptionOutputDir, "d", "generated", "The output directory where new projects are created")
 	cmd.Flags().StringVarP(&options.KubernetesDir, "kubernetes-folder", "", defaultKubernetesDir, "The folder containing all the Kubernetes YAML for each app")
-	cmd.Flags().BoolVarP(&options.NoGit, "no-git", "", false, "If enabled then don't create and push to new repositories at github")
+	cmd.Flags().BoolVarP(&options.NoGit, "no-git", "", false, "If enabled then don't create and push to new repositories at remote git provider")
+
+	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+
 	return cmd
 }
 
 // Run implements this command
-func (o *StepSplitMonorepoOptions) Run() error {
-	organisation := o.Organisation
-	if organisation == "" {
+func (options *StepSplitMonorepoOptions) Run() error {
+	err := options.DefaultsFromTeamSettings()
+	if err != nil {
+		return err
+	}
+	if options.Organisation == "" {
 		return util.MissingOption(optionOrganisation)
 	}
-	outputDir := o.OutputDir
-	if outputDir == "" {
+	if options.OutputDir == "" {
 		return util.MissingOption(opts.OptionOutputDir)
 	}
-	var err error
-	dir := o.Dir
+	dir := options.Dir
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
 			return err
 		}
 	}
-	glob := o.Glob
+	glob := options.Glob
 
 	fullGlob := filepath.Join(dir, glob)
 	log.Logger().Debugf("Searching in monorepo at: %s", fullGlob)
@@ -105,26 +109,19 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeDir := o.KubernetesDir
+	kubeDir := options.KubernetesDir
 	if kubeDir == "" {
 		kubeDir = defaultKubernetesDir
 	}
-	var gitProvider gits.GitProvider
-	if !o.NoGit {
-		gitProvider, err = o.GitProviderForGitServerURL(gits.GitHubURL, gits.KindGitHub, "")
-		if err != nil {
-			return err
-		}
-	}
-	gitDir, err := o.Git().RevParse(dir, "--show-toplevel")
+	gitDir, err := options.Git().RevParse(dir, "--show-toplevel")
 	if err != nil {
 		return err
 	}
-	currentBranch, err := o.Git().Branch(gitDir)
+	currentBranch, err := options.Git().Branch(gitDir)
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(outputDir, util.DefaultWritePermissions)
+	err = os.MkdirAll(options.OutputDir, util.DefaultWritePermissions)
 	if err != nil {
 		return err
 	}
@@ -138,8 +135,8 @@ func (o *StepSplitMonorepoOptions) Run() error {
 			switch mode := fi.Mode(); {
 			case mode.IsDir():
 				log.Logger().Debugf("Found match: %s", path)
-				outPath := filepath.Join(outputDir, name)
-				err = o.Git().LocalClone(gitDir, outputDir, name, currentBranch)
+				outPath := filepath.Join(options.OutputDir, name)
+				err = options.Git().LocalClone(gitDir, options.OutputDir, name, currentBranch)
 				if err != nil {
 					return err
 				}
@@ -148,7 +145,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					return err
 				}
 				pathInRepo := strings.TrimPrefix(strings.TrimPrefix(absPath, gitDir), string(filepath.Separator))
-				err = o.Git().FilterBranch(outPath, pathInRepo, currentBranch) // Use current branch
+				err = options.Git().FilterBranch(outPath, pathInRepo, currentBranch) // Use current branch
 				if err != nil {
 					return err
 				}
@@ -170,35 +167,45 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						o.Git().Add(outPath, ".gitignore")
+						options.Git().Add(outPath, ".gitignore")
 					}
 				}
 
-				if !o.NoGit {
-					repo, err := gitProvider.CreateRepository(organisation, name, false)
+				if !options.NoGit {
+					authConfigSvc, err := options.GitLocalAuthConfigService()
 					if err != nil {
 						return err
 					}
+					options.GitRepositoryOptions.Owner = options.Organisation
+					options.GitRepositoryOptions.RepoName = name
+					details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
+						"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.GetIOFileHandles())
+					if err != nil {
+						return err
+					}
+					repo, err := details.CreateRepository()
+					if err != nil {
+						return err
+					}
+
 					log.Logger().Infof("Created Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
+					gitURL, err := options.Git().CreateAuthenticatedURL(repo.CloneURL, details.User)
 
-					userAuth := gitProvider.UserAuth()
-					gitURL, err := o.Git().CreateAuthenticatedURL(repo.CloneURL, &userAuth)
-
-					err = o.Git().Init(outPath)
+					err = options.Git().Init(outPath)
 					if err != nil {
 						return err
 					}
-					err = o.Git().AddRemote(outPath, "origin", gitURL)
+					err = options.Git().AddRemote(outPath, "origin", gitURL)
 					if err != nil {
 						return err
 					}
 
 					message := "generated by: jx step split monorepo"
-					err = o.Git().CommitIfChanges(outPath, message)
+					err = options.Git().CommitIfChanges(outPath, message)
 					if err != nil {
 						return err
 					}
-					err = o.Git().PushMaster(outPath)
+					err = options.Git().PushMaster(outPath)
 					if err != nil {
 						return err
 					}
@@ -218,7 +225,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 			_, name := filepath.Split(path)
 			if strings.HasSuffix(name, ".yaml") {
 				appName := strings.TrimSuffix(name, ".yaml")
-				outPath := filepath.Join(outputDir, appName)
+				outPath := filepath.Join(options.OutputDir, appName)
 				exists, err := util.FileExists(outPath)
 				if err != nil {
 					return err
@@ -226,7 +233,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 				if !exists && strings.HasSuffix(appName, "-deployment") {
 					// lets try strip "-deployment" from the file name
 					appName = strings.TrimSuffix(appName, "-deployment")
-					outPath = filepath.Join(outputDir, appName)
+					outPath = filepath.Join(options.OutputDir, appName)
 					exists, err = util.FileExists(outPath)
 					if err != nil {
 						return err
@@ -307,5 +314,21 @@ func generateFileIfMissing(path string, text string) error {
 	if !exists {
 		return ioutil.WriteFile(path, []byte(text), util.DefaultWritePermissions)
 	}
+	return nil
+}
+
+// DefaultsFromTeamSettings fills in options for team settings
+func (options *StepSplitMonorepoOptions) DefaultsFromTeamSettings() error {
+	settings, err := options.TeamSettings()
+	if err != nil {
+		return err
+	}
+	if options.Organisation == "" {
+		options.Organisation = settings.Organisation
+	}
+	if options.GitRepositoryOptions.ServerURL == "" {
+		options.GitRepositoryOptions.ServerURL = settings.GitServer
+	}
+	options.GitRepositoryOptions.Public = settings.GitPublic || options.GitRepositoryOptions.Public
 	return nil
 }

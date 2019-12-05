@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step"
 
@@ -32,6 +33,7 @@ func TestStepSplitMonorepo(t *testing.T) {
 		OutputDir:    tempDir,
 		NoGit:        true,
 	}
+	testhelpers.ConfigureTestOptions(options.CommonOptions, nil, nil)
 
 	err = options.Run()
 	assert.NoError(t, err, "Failed to run split monorepo on source %s output %s", testData, tempDir)
@@ -46,4 +48,3 @@ func TestStepSplitMonorepo(t *testing.T) {
 		filepath.Join(tempDir, "bar", "charts", "bar", "Chart.yaml"),
 		filepath.Join(tempDir, "bar", "charts", "bar", "templates", "deployment.yaml"))
 }
-
