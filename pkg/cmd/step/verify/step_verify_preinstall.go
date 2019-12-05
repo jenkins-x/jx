@@ -243,7 +243,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	if requirements.Cluster.Provider == cloud.EKS && o.LazyCreate {
-		if !cluster.IsInCluster() {
+		if !cluster.IsInCluster() || os.Getenv("OVERRIDE_IRSA_IN_CLUSTER") == "true" {
 			log.Logger().Info("Attempting to lazily create the IAM Role for Service Accounts permissions")
 			err = amazon.EnableIRSASupportInCluster(requirements)
 			if err != nil {

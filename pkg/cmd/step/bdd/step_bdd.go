@@ -662,11 +662,20 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 		}
 	}
 
+	log.Logger().Info("Adding labels")
 	if !cluster.NoLabels {
 		cluster.Labels = create.AddLabel(cluster.Labels, "cluster", baseClusterName)
 		cluster.Labels = create.AddLabel(cluster.Labels, "branch", branch)
-
-		args = append(args, "--labels", cluster.Labels)
+		provider, err := o.getProvider(requirements, cluster)
+		if err != nil {
+			log.Logger().Warn(err, "error determining running provider, falling back to default provider GKE - %s", err.Error())
+			provider = cloud.GKE
+		}
+		if provider == cloud.GKE {
+			args = append(args, "--labels", cluster.Labels)
+		} else if provider == cloud.EKS {
+			args = append(args, "--tags", cluster.Labels)
+		}
 	}
 
 	if o.Flags.BaseDomain != "" {
@@ -847,4 +856,16 @@ func (o *StepBDDOptions) getVersion() (string, error) {
 	}
 	log.Logger().Infof("loaded version %s from Makefile in directory %s\n", util.ColorInfo(version), util.ColorInfo(dir))
 	return version, nil
+}
+
+func (o *StepBDDOptions) getProvider(requirements *config.RequirementsConfig, cluster *CreateCluster) (string, error) {
+	if requirements != nil && requirements.Cluster.Provider != "" {
+		log.Logger().Infof("Determined that provider is %s from requirements file", requirements.Cluster.Provider)
+		return requirements.Cluster.Provider, nil
+	}
+	if cluster != nil && len(cluster.Args) > 2 {
+		log.Logger().Infof("Determined that provider is %s from requirements file", cluster.Args[2])
+		return cluster.Args[2], nil
+	}
+	return "", fmt.Errorf("could not get provider from neither requirements nor cluster configuration yaml")
 }

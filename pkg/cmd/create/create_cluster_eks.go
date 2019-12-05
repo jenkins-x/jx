@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon/eks"
 
 	"github.com/pkg/errors"
@@ -138,6 +139,11 @@ func (o *CreateClusterEKSOptions) Run() error {
 	}
 	flags := &o.Flags
 
+	provider, err := amazon.NewProvider(flags.Region, flags.Profile)
+	if err != nil {
+		return errors.Wrap(err, "error obtaining the AWS cluster provider")
+	}
+
 	zones := flags.Zones
 	if zones == "" {
 		zones = os.Getenv("EKS_AVAILABILITY_ZONES")
@@ -146,11 +152,6 @@ func (o *CreateClusterEKSOptions) Run() error {
 	args := []string{"create", "cluster", "--full-ecr-access"}
 	if flags.ClusterName != "" {
 		args = append(args, "--name", flags.ClusterName)
-
-		provider, err := amazon.NewProvider(flags.Profile, flags.Region)
-		if err != nil {
-			return errors.Wrap(err, "error obtaining the AWS provider")
-		}
 		clusterExists, err := provider.EKS().EksClusterExists(flags.ClusterName, flags.Profile, flags.Region)
 		if err != nil {
 			return err
@@ -224,10 +225,43 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	}
 	log.Blank()
 
+	if flags.ClusterName == "" {
+		flags.ClusterName, _, err = session.GetCurrentlyConnectedRegionAndClusterName()
+		if err != nil {
+			return errors.Wrap(err, "there was a problem obtaining the current connected cluster name")
+		}
+	}
+
+	err = o.addTagsToCluster(provider)
+	if err != nil {
+		return errors.Wrap(err, "there was a problem adding flags to the cluster")
+	}
+
 	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Region: region,
 	})
 
 	log.Logger().Info("Initialising cluster ...")
 	return o.initAndInstall(cloud.EKS)
+}
+
+func (o *CreateClusterEKSOptions) addTagsToCluster(awsProvider amazon.Provider) error {
+	timeText := time.Now().Format("Mon-Jan-2-2006-15:04:05")
+	o.Flags.Tags = AddLabel(o.Flags.Tags, "create-time", timeText)
+
+	tags := make(map[string]*string)
+	for _, t := range strings.Split(o.Flags.Tags, ",") {
+		if strings.Contains(t, "=") {
+			tag := strings.Split(t, "=")
+			if len(tag) == 2 {
+				tags[tag[0]] = aws.String(tag[1])
+			}
+		}
+	}
+
+	err := awsProvider.EKS().AddTagsToCluster(o.Flags.ClusterName, tags)
+	if err != nil {
+		return errors.Wrapf(err, "error adding tags %s to cluster %s", o.Flags.Tags, o.Flags.ClusterName)
+	}
+	return nil
 }

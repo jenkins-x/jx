@@ -331,6 +331,8 @@ func (v *defaultVaultCreator) vaultAWSConfig(vaultCRD *v1alpha1.Vault, param Vau
 				BucketName:      bucketName,
 				TableName:       autoCreateTableName,
 				AWSTemplatesDir: param.AWS.TemplatesDir,
+				AccessKeyID:     param.AWS.AccessKeyID,
+				SecretAccessKey: param.AWS.SecretAccessKey,
 				UniqueSuffix:    suffixString,
 			})
 		} else {

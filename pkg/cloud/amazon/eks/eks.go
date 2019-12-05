@@ -65,12 +65,17 @@ func (e *eksAPIHandler) DescribeCluster(clusterName string) (*cluster.Cluster, s
 	if err != nil {
 		return nil, "", err
 	}
-	return &cluster.Cluster{
-		Name:     *output.Cluster.Name,
-		Labels:   aws.StringValueMap(output.Cluster.Tags),
-		Status:   *output.Cluster.Status,
-		Location: *output.Cluster.Endpoint,
-	}, *output.Cluster.Arn, err
+	cl := &cluster.Cluster{
+		Name:   *output.Cluster.Name,
+		Labels: aws.StringValueMap(output.Cluster.Tags),
+		Status: *output.Cluster.Status,
+	}
+
+	if output.Cluster.Endpoint != nil {
+		cl.Location = *output.Cluster.Endpoint
+	}
+
+	return cl, *output.Cluster.Arn, err
 }
 
 // ListClusters will list all clusters existing in configured region and describe each one to return enhanced data
