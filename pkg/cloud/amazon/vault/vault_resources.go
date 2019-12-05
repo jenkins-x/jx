@@ -50,6 +50,8 @@ type ResourceCreationOpts struct {
 	BucketName      string
 	AWSTemplatesDir string
 	UniqueSuffix    string
+	AccessKeyID     string
+	SecretAccessKey string
 }
 
 // StackOutputs the CloudFormation stack outputs for Vault
@@ -186,12 +188,17 @@ func CreateVaultResourcesBoot(vaultParams ResourceCreationOpts) (*string, *strin
 		return nil, nil, nil, nil, nil, err
 	}
 
-	accessKey, keySecret, err := createAccessKey(vaultParams.Username)
-	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating the vault CloudFormation template failed")
+	if vaultParams.AccessKeyID == "" || vaultParams.SecretAccessKey == "" {
+		log.Logger().Info("Creating secret access keys")
+		accessKey, keySecret, err := createAccessKey(vaultParams.Username)
+		if err != nil {
+			return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating the vault CloudFormation template failed")
+		}
+		vaultParams.AccessKeyID = *accessKey
+		vaultParams.SecretAccessKey = *keySecret
 	}
 
-	return accessKey, keySecret, vaultStackOutputs.KMSKeyARN, vaultStackOutputs.S3BucketARN, vaultStackOutputs.DynamoDBTableARN, nil
+	return aws.String(vaultParams.AccessKeyID), aws.String(vaultParams.SecretAccessKey), vaultStackOutputs.KMSKeyARN, vaultStackOutputs.S3BucketARN, vaultStackOutputs.DynamoDBTableARN, nil
 }
 
 /*
