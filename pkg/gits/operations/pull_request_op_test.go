@@ -2,8 +2,6 @@ package operations_test
 
 import (
 	"fmt"
-	"github.com/acarl005/stripansi"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/acarl005/stripansi"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -85,7 +86,7 @@ func TestCreatePullRequest(t *testing.T) {
 	var results *gits.PullRequestInfo
 
 	logOutput := log.CaptureOutput(func() {
-		results, err := o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
 			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
 		})
 		assert.NoError(t, err)
@@ -209,7 +210,7 @@ func TestCreatePullRequestWithMatrixUpdatePaths(t *testing.T) {
 	var results *gits.PullRequestInfo
 
 	logOutput := log.CaptureOutput(func() {
-		results, err := o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
 			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
 		})
 		assert.NoError(t, err)
