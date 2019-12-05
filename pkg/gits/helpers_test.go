@@ -2090,10 +2090,9 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 						BranchName: "other",
 						Title:      fmt.Sprintf("Initial Commit!"),
 						Message:    fmt.Sprintf("Initial Commit!"),
+						Labels:     []string{"updatebot"},
 					}
-					prInfo, err := gits.PushRepoAndCreatePullRequest(tmpDir, acmeRepo.GitRepo, personalRepo, "master", &prDetails, nil, true, "Initial Commit", true, false, args.gitter, args.provider)
-					assert.NoError(t, err)
-					err = gits.AddLabelsToPullRequest(prInfo, []string{"updatebot"})
+					_, err = gits.PushRepoAndCreatePullRequest(tmpDir, acmeRepo.GitRepo, personalRepo, "master", &prDetails, nil, true, "Initial Commit", true, false, args.gitter, args.provider)
 					assert.NoError(t, err)
 					// Let's clone the repo to dir and write a file
 					args.dir, err = ioutil.TempDir("", "")
@@ -2164,6 +2163,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				BranchName: tt.args.branch,
 				Title:      fmt.Sprintf("chore: bump %s", uuid.String()),
 				Message:    fmt.Sprintf("bump %s", uuid.String()),
+				Labels:     tt.args.labels,
 			}
 			if tt.wantBranch == "" {
 				tt.wantBranch = tt.args.branch
@@ -2184,11 +2184,6 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				assert.Error(t, err)
 				return
 			}
-			assert.NoError(t, err)
-			if err != nil {
-				return
-			}
-			err = gits.AddLabelsToPullRequest(prInfo, tt.args.labels)
 			assert.NoError(t, err)
 			if err != nil {
 				return

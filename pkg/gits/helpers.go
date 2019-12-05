@@ -373,6 +373,18 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		}
 		log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	}
+
+	prInfo := &PullRequestInfo{
+		GitProvider:          provider,
+		PullRequest:          pr,
+		PullRequestArguments: gha,
+	}
+
+	err = addLabelsToPullRequest(prInfo, prDetails.Labels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to add labels %+v to PR %s", prDetails.Labels, prInfo.PullRequest.URL)
+	}
+
 	return &PullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,
@@ -380,8 +392,9 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 	}, nil
 }
 
-// AddLabelsToPullRequest adds the provided labels, if not already present, to the provided pull request
-func AddLabelsToPullRequest(prInfo *PullRequestInfo, labels []string) error {
+// addLabelsToPullRequest adds the provided labels, if not already present, to the provided pull request
+// Labels are applied after PR creation as they use the GitHub issues API instead of the PR one.
+func addLabelsToPullRequest(prInfo *PullRequestInfo, labels []string) error {
 	if prInfo == nil {
 		return errors.New("pull request to label cannot be nil")
 	}

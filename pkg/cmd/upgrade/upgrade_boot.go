@@ -435,26 +435,33 @@ func (o *UpgradeBootOptions) raisePR() error {
 		return errors.Wrapf(err, "getting repository %s/%s", gitInfo.Organisation, gitInfo.Name)
 	}
 
+	details, filter, err := prDetailsAndFilter()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get PR details and filter")
+	}
+
+	_, err = gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
+	}
+	return nil
+}
+
+func prDetailsAndFilter() (gits.PullRequestDetails, gits.PullRequestFilter, error) {
 	details := gits.PullRequestDetails{
 		BranchName: fmt.Sprintf("jx_boot_upgrade"),
 		Title:      "feat(config): upgrade configuration",
 		Message:    "Upgrade configuration",
 	}
-
+	labels := []string{}
 	filter := gits.PullRequestFilter{
 		Labels: []string{
 			boot.PullRequestLabel,
 		},
 	}
-	prInfo, err := gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
-	}
-	err = gits.AddLabelsToPullRequest(prInfo, []string{boot.PullRequestLabel})
-	if err != nil {
-		return errors.Wrapf(err, "failed to add label %s to PR %s", boot.PullRequestLabel, prInfo.PullRequest.URL)
-	}
-	return nil
+	details.Labels = labels
+
+	return details, filter, nil
 }
 
 func (o *UpgradeBootOptions) deleteLocalBranch(branch string) error {
