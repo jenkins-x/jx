@@ -142,6 +142,11 @@ func (g *GitFake) ShallowClone(dir string, url string, commitish string, pullReq
 	return nil
 }
 
+// LocalClone will create a clone for a specific branch from a local git repository
+func (g *GitFake) LocalClone(origindir string, parentdir string, name string, branch string) error {
+	return nil
+}
+
 // Push performs a git push
 func (g *GitFake) Push(dir string, remote string, force bool, refspec ...string) error {
 	return nil
@@ -531,6 +536,11 @@ func (g *GitFake) Tags(dir string) ([]string, error) {
 // FilterTags returns all tags from the repository at the given directory that match the filter
 func (g *GitFake) FilterTags(dir string, filter string) ([]string, error) {
 	return make([]string, 0), nil
+}
+
+// FilterBranch clears the repository from anything not matching filterdir and branch
+func (g *GitFake) FilterBranch(dir string, filterdir string, branch string) error {
+	return nil
 }
 
 // CreateTag creates a tag

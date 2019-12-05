@@ -195,9 +195,6 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 		date: "01-04-2020",
 		info: "This replaced by Tekton's mounted secrets",
 	},
-	"step split monorepo": {
-		date: "01-02-2020",
-	},
 	"step nexus drop": {
 		date: "01-02-2020",
 	},

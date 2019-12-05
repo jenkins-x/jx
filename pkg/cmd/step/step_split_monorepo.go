@@ -72,11 +72,10 @@ func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.Glob, "glob", "g", "*", "The glob pattern to find folders to mirror to separate repositories")
 	cmd.Flags().StringVarP(&options.Organisation, optionOrganisation, "o", "", "The GitHub organisation to split the repositories into")
-	cmd.Flags().StringVarP(&options.RepoName, "reponame", "n", "", "The GitHub monorepo to be split")
 	cmd.Flags().StringVarP(&options.Dir, "source-dir", "s", "", "The source directory to look inside for the folders to move into separate Git repositories")
 	cmd.Flags().StringVarP(&options.OutputDir, opts.OptionOutputDir, "d", "generated", "The output directory where new projects are created")
 	cmd.Flags().StringVarP(&options.KubernetesDir, "kubernetes-folder", "", defaultKubernetesDir, "The folder containing all the Kubernetes YAML for each app")
-	cmd.Flags().BoolVarP(&options.NoGit, "no-git", "", false, "If enabled then don't try to clone/create the separate repositories in github")
+	cmd.Flags().BoolVarP(&options.NoGit, "no-git", "", false, "If enabled then don't create and push to new repositories at github")
 	return cmd
 }
 
@@ -86,7 +85,6 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	if organisation == "" {
 		return util.MissingOption(optionOrganisation)
 	}
-	reponame := o.RepoName
 	outputDir := o.OutputDir
 	if outputDir == "" {
 		return util.MissingOption(opts.OptionOutputDir)
@@ -118,7 +116,18 @@ func (o *StepSplitMonorepoOptions) Run() error {
 			return err
 		}
 	}
-
+	gitDir, err := o.Git().RevParse(dir, "--show-toplevel")
+	if err != nil {
+		return err
+	}
+	currentBranch, err := o.Git().Branch(gitDir)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(outputDir, util.DefaultWritePermissions)
+	if err != nil {
+		return err
+	}
 	for _, path := range matches {
 		_, name := filepath.Split(path)
 		if !strings.HasPrefix(name, ".") && name != kubeDir {
@@ -130,38 +139,16 @@ func (o *StepSplitMonorepoOptions) Run() error {
 			case mode.IsDir():
 				log.Logger().Debugf("Found match: %s", path)
 				outPath := filepath.Join(outputDir, name)
-
-				var gitUrl string
-				var repo *gits.GitRepository
-				createRepo := true
-				if !o.NoGit {
-					// lets clone the project if it exists
-					repo, err = gitProvider.GetRepository(organisation, name)
-					if repo != nil && err == nil {
-						err = os.MkdirAll(outPath, util.DefaultWritePermissions)
-						if err != nil {
-							return err
-						}
-						createRepo = false
-						userAuth := gitProvider.UserAuth()
-						gitUrl, err = o.Git().CreateAuthenticatedURL(repo.CloneURL, &userAuth)
-						if err != nil {
-							return err
-						}
-						log.Logger().Infof("Cloning %s into directory %s", util.ColorInfo(repo.CloneURL), util.ColorInfo(outPath))
-						err = o.Git().CloneOrPull(gitUrl, outPath)
-						if err != nil {
-							return err
-						}
-					}
-				}
-
-				err = util.DeleteDirContentsExcept(outPath, ".git")
+				err = o.Git().LocalClone(gitDir, outputDir, name, currentBranch)
 				if err != nil {
 					return err
 				}
-
-				err = util.CopyDirOverwrite(path, outPath)
+				absPath, err := filepath.Abs(path)
+				if err != nil {
+					return err
+				}
+				pathInRepo := strings.TrimPrefix(strings.TrimPrefix(absPath, gitDir), string(filepath.Separator))
+				err = o.Git().FilterBranch(outPath, pathInRepo, currentBranch) // Use current branch
 				if err != nil {
 					return err
 				}
@@ -173,7 +160,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					return err
 				}
 				if !exists {
-					rootGitIgnore := filepath.Join(dir, ".gitignore")
+					rootGitIgnore := filepath.Join(gitDir, ".gitignore")
 					exists, err = util.FileExists(rootGitIgnore)
 					if err != nil {
 						return err
@@ -183,50 +170,30 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
+						o.Git().Add(outPath, ".gitignore")
 					}
 				}
 
 				if !o.NoGit {
-					if createRepo {
-						repo, err = gitProvider.CreateRepository(organisation, name, false)
-						if err != nil {
-							return err
-						}
-						log.Logger().Infof("Created Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
-
-						userAuth := gitProvider.UserAuth()
-						gitUrl, err = o.Git().CreateAuthenticatedURL(repo.CloneURL, &userAuth)
-
-						err := o.Git().Init(outPath)
-						if err != nil {
-							return err
-						}
-						err = o.Git().AddRemote(outPath, "origin", gitUrl)
-						if err != nil {
-							return err
-						}
+					repo, err := gitProvider.CreateRepository(organisation, name, false)
+					if err != nil {
+						return err
 					}
-					// ignore errors as probably already added
-					o.Git().Add(outPath, ".gitignore")
-					o.Git().Add(outPath, "src", "charts", "*")
+					log.Logger().Infof("Created Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
+
+					userAuth := gitProvider.UserAuth()
+					gitURL, err := o.Git().CreateAuthenticatedURL(repo.CloneURL, &userAuth)
+
+					err = o.Git().Init(outPath)
+					if err != nil {
+						return err
+					}
+					err = o.Git().AddRemote(outPath, "origin", gitURL)
+					if err != nil {
+						return err
+					}
 
 					message := "generated by: jx step split monorepo"
-					if reponame != "" {
-						opt := &gits.ListCommitsArguments{
-							Path:    name,
-							Page:    1,
-							PerPage: 1,
-						}
-						commits, err := gitProvider.ListCommits(organisation, reponame, opt)
-						if err != nil {
-							return err
-						}
-						if len(commits) == 1 {
-							message = commits[0].Message + " - " + commits[0].SHA
-						}
-
-					}
-
 					err = o.Git().CommitIfChanges(outPath, message)
 					if err != nil {
 						return err

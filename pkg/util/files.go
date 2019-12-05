@@ -431,23 +431,6 @@ func DeleteDirContents(dir string) error {
 	return nil
 }
 
-func DeleteDirContentsExcept(dir string, exceptDir string) error {
-	files, err := filepath.Glob(filepath.Join(dir, "*"))
-	if err != nil {
-		return err
-	}
-	for _, file := range files {
-		// lets ignore the top level dir
-		if dir != file && !strings.HasSuffix(file, exceptDir) {
-			err = os.RemoveAll(file)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // DeleteDirContents removes all the contents of the given directory
 func RecreateDirs(dirs ...string) error {
 	for _, dir := range dirs {

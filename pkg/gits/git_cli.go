@@ -949,6 +949,11 @@ func (g *GitCLI) FilterTags(dir string, filter string) ([]string, error) {
 	return split, nil
 }
 
+// FilterBranch clears the repository from anything not matching filterdir and branch
+func (g *GitCLI) FilterBranch(dir string, filterdir string, branch string) error {
+	return g.gitCmd(dir, "filter-branch", "--prune-empty", "--subdirectory-filter", filterdir, branch)
+}
+
 // CreateTag creates a tag with the given name and message in the repository at the given directory
 func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
 	return g.gitCmd(dir, "tag", "-fa", tag, "-m", msg)
@@ -1186,6 +1191,15 @@ func (g *GitCLI) CloneBare(dir string, url string) error {
 	err := g.gitCmd(dir, "clone", "--bare", url, dir)
 	if err != nil {
 		return errors.Wrapf(err, "running git clone --bare %s", url)
+	}
+	return nil
+}
+
+// LocalClone will create a clone for a specific branch from a local git repository
+func (g *GitCLI) LocalClone(origindir string, parentdir string, name string, branch string) error {
+	err := g.gitCmd(parentdir, "clone", "-b", branch, "--single-branch", "-q", origindir, name)
+	if err != nil {
+		return errors.Wrapf(err, "running git clone %s", origindir)
 	}
 	return nil
 }

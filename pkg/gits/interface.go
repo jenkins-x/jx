@@ -195,6 +195,7 @@ type Gitter interface {
 	Init(dir string) error
 	Clone(url string, directory string) error
 	CloneBare(dir string, url string) error
+	LocalClone(origindir string, parentdir string, name string, branch string) error
 	PushMirror(dir string, url string) error
 
 	// ShallowCloneBranch TODO not sure if this method works any more - consider using ShallowClone(dir, url, branch, "")
@@ -273,6 +274,7 @@ type Gitter interface {
 	FetchRemoteTags(dir string, repo string) error
 	Tags(dir string) ([]string, error)
 	FilterTags(dir string, filter string) ([]string, error)
+	FilterBranch(dir string, filterdir string, branch string) error
 	CreateTag(dir string, tag string, msg string) error
 	GetLatestCommitSha(dir string) (string, error)
 	GetFirstCommitSha(dir string) (string, error)
