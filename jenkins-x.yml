@@ -82,7 +82,7 @@ pipelineConfig:
               - name: release
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: gcr.io/jenkinsxio/builder-go:0.1.639
+                image: gcr.io/jenkinsxio/builder-go
                 command: make
                 args: ['release']
 
@@ -93,20 +93,60 @@ pipelineConfig:
                 args: ['--dockerfile=/workspace/source/Dockerfile','--destination=gcr.io/jenkinsxio/jx:${inputs.params.version}','--destination=gcr.io/jenkinsxio/jx:latest','--context=/workspace/source','--cache-dir=/workspace']
 
               - name: release-charts
-                image: gcr.io/jenkinsxio/builder-go:0.1.639
+                image: gcr.io/jenkinsxio/builder-go
                 command: make
                 args:
                 - "release"
                 - -f
                 - /workspace/source/charts/jx/Makefile
 
-              - name: update-bot
-                image: gcr.io/jenkinsxio/builder-go:0.1.734
-                command: ./jx/scripts/update-bot.sh
+              - name: update-builders
+                image: gcr.io/jenkinsxio/builder-go
+                command: jx
+                args:
+                - step
+                - create
+                - pr
+                - docker
+                - --name
+                - JX_VERSION
+                - --version
+                - $VERSION
+                - --repo
+                - https://github.com/jenkins-x/jenkins-x-builders.git
+                - --repo
+                - https://github.com/jenkins-x/jenkins-x-builders-ml.git
 
-              #- name: distro
-                #image: docker.io/golang:1.11.5
-                # needs helm in the image for install_gitops_integration_test.go
-              #  image: gcr.io/jenkinsxio/builder-go:0.1.537
-              #  command: make
-              #  args: ['release-distro']
+              - name: update-lighthouse
+                image: gcr.io/jenkinsxio/builder-go
+                command: jx
+                args:
+                - step
+                - create
+                - pr
+                - go
+                - --name
+                - github.com/jenkins-x/jx
+                - --version
+                - $VERSION
+                - --build
+                - "make mod"
+                - --repo
+                - https://github.com/jenkins-x/lighthouse.git
+
+              - name: update-jxui-backend
+                image: gcr.io/jenkinsxio/builder-go
+                command: jx
+                args:
+                - step
+                - create
+                - pr
+                - go
+                - --name
+                - github.com/jenkins-x/jx
+                - --version
+                - $VERSION
+                - --build
+                - "make build"
+                - --repo
+                - https://github.com/cloudbees/jxui-backend.git

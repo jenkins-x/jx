@@ -2,11 +2,12 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"path"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/stretchr/testify/assert"
 )
 
 var (

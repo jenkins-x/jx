@@ -3,7 +3,6 @@ package upgrade
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -54,14 +55,14 @@ var (
 )
 
 type UpgradeExtensionsOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 	Filter                   string
 	ExtensionsRepositoryFile string
 }
 
 func NewCmdUpgradeExtensions(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

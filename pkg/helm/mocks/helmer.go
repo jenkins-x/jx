@@ -4,10 +4,11 @@
 package helm_test
 
 import (
-	helm "github.com/jenkins-x/jx/pkg/helm"
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	helm "github.com/jenkins-x/jx/pkg/helm"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockHelmer struct {
@@ -505,19 +506,19 @@ func (c *MockHelmer_AddRepo_OngoingVerification) GetCapturedArguments() (string,
 func (c *MockHelmer_AddRepo_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]string, len(params[3]))
+		_param3 = make([]string, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
@@ -561,7 +562,7 @@ func (c *MockHelmer_DecryptSecrets_OngoingVerification) GetCapturedArguments() s
 func (c *MockHelmer_DecryptSecrets_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -588,15 +589,15 @@ func (c *MockHelmer_DeleteRelease_OngoingVerification) GetCapturedArguments() (s
 func (c *MockHelmer_DeleteRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]bool, len(params[2]))
+		_param2 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(bool)
 		}
@@ -640,31 +641,31 @@ func (c *MockHelmer_FetchChart_OngoingVerification) GetCapturedArguments() (stri
 func (c *MockHelmer_FetchChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []string, _param4 []string, _param5 []string, _param6 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]bool, len(params[2]))
+		_param2 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(bool)
 		}
-		_param3 = make([]string, len(params[3]))
+		_param3 = make([]string, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
-		_param4 = make([]string, len(params[4]))
+		_param4 = make([]string, len(c.methodInvocations))
 		for u, param := range params[4] {
 			_param4[u] = param.(string)
 		}
-		_param5 = make([]string, len(params[5]))
+		_param5 = make([]string, len(c.methodInvocations))
 		for u, param := range params[5] {
 			_param5[u] = param.(string)
 		}
-		_param6 = make([]string, len(params[6]))
+		_param6 = make([]string, len(c.methodInvocations))
 		for u, param := range params[6] {
 			_param6[u] = param.(string)
 		}
@@ -725,19 +726,19 @@ func (c *MockHelmer_Init_OngoingVerification) GetCapturedArguments() (bool, stri
 func (c *MockHelmer_Init_OngoingVerification) GetAllCapturedArguments() (_param0 []bool, _param1 []string, _param2 []string, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]bool, len(params[0]))
+		_param0 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(bool)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]bool, len(params[3]))
+		_param3 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(bool)
 		}
@@ -764,43 +765,43 @@ func (c *MockHelmer_InstallChart_OngoingVerification) GetCapturedArguments() (st
 func (c *MockHelmer_InstallChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []int, _param5 [][]string, _param6 [][]string, _param7 []string, _param8 []string, _param9 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]string, len(params[3]))
+		_param3 = make([]string, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
-		_param4 = make([]int, len(params[4]))
+		_param4 = make([]int, len(c.methodInvocations))
 		for u, param := range params[4] {
 			_param4[u] = param.(int)
 		}
-		_param5 = make([][]string, len(params[5]))
+		_param5 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[5] {
 			_param5[u] = param.([]string)
 		}
-		_param6 = make([][]string, len(params[6]))
+		_param6 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[6] {
 			_param6[u] = param.([]string)
 		}
-		_param7 = make([]string, len(params[7]))
+		_param7 = make([]string, len(c.methodInvocations))
 		for u, param := range params[7] {
 			_param7[u] = param.(string)
 		}
-		_param8 = make([]string, len(params[8]))
+		_param8 = make([]string, len(c.methodInvocations))
 		for u, param := range params[8] {
 			_param8[u] = param.(string)
 		}
-		_param9 = make([]string, len(params[9]))
+		_param9 = make([]string, len(c.methodInvocations))
 		for u, param := range params[9] {
 			_param9[u] = param.(string)
 		}
@@ -827,7 +828,7 @@ func (c *MockHelmer_IsRepoMissing_OngoingVerification) GetCapturedArguments() st
 func (c *MockHelmer_IsRepoMissing_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -854,7 +855,7 @@ func (c *MockHelmer_Lint_OngoingVerification) GetCapturedArguments() []string {
 func (c *MockHelmer_Lint_OngoingVerification) GetAllCapturedArguments() (_param0 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([][]string, len(params[0]))
+		_param0 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.([]string)
 		}
@@ -881,7 +882,7 @@ func (c *MockHelmer_ListReleases_OngoingVerification) GetCapturedArguments() str
 func (c *MockHelmer_ListReleases_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -942,7 +943,7 @@ func (c *MockHelmer_RemoveRepo_OngoingVerification) GetCapturedArguments() strin
 func (c *MockHelmer_RemoveRepo_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -986,11 +987,11 @@ func (c *MockHelmer_SearchCharts_OngoingVerification) GetCapturedArguments() (st
 func (c *MockHelmer_SearchCharts_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]bool, len(params[1]))
+		_param1 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(bool)
 		}
@@ -1017,7 +1018,7 @@ func (c *MockHelmer_SetCWD_OngoingVerification) GetCapturedArguments() string {
 func (c *MockHelmer_SetCWD_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -1044,7 +1045,7 @@ func (c *MockHelmer_SetHelmBinary_OngoingVerification) GetCapturedArguments() st
 func (c *MockHelmer_SetHelmBinary_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -1071,7 +1072,7 @@ func (c *MockHelmer_SetHost_OngoingVerification) GetCapturedArguments() string {
 func (c *MockHelmer_SetHost_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -1098,11 +1099,11 @@ func (c *MockHelmer_StatusRelease_OngoingVerification) GetCapturedArguments() (s
 func (c *MockHelmer_StatusRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
@@ -1129,15 +1130,15 @@ func (c *MockHelmer_StatusReleaseWithOutput_OngoingVerification) GetCapturedArgu
 func (c *MockHelmer_StatusReleaseWithOutput_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
@@ -1164,31 +1165,31 @@ func (c *MockHelmer_Template_OngoingVerification) GetCapturedArguments() (string
 func (c *MockHelmer_Template_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 [][]string, _param6 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]string, len(params[3]))
+		_param3 = make([]string, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
-		_param4 = make([]bool, len(params[4]))
+		_param4 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[4] {
 			_param4[u] = param.(bool)
 		}
-		_param5 = make([][]string, len(params[5]))
+		_param5 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[5] {
 			_param5[u] = param.([]string)
 		}
-		_param6 = make([][]string, len(params[6]))
+		_param6 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[6] {
 			_param6[u] = param.([]string)
 		}
@@ -1232,55 +1233,55 @@ func (c *MockHelmer_UpgradeChart_OngoingVerification) GetCapturedArguments() (st
 func (c *MockHelmer_UpgradeChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 []int, _param6 []bool, _param7 []bool, _param8 [][]string, _param9 [][]string, _param10 []string, _param11 []string, _param12 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([]string, len(params[2]))
+		_param2 = make([]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
 		}
-		_param3 = make([]string, len(params[3]))
+		_param3 = make([]string, len(c.methodInvocations))
 		for u, param := range params[3] {
 			_param3[u] = param.(string)
 		}
-		_param4 = make([]bool, len(params[4]))
+		_param4 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[4] {
 			_param4[u] = param.(bool)
 		}
-		_param5 = make([]int, len(params[5]))
+		_param5 = make([]int, len(c.methodInvocations))
 		for u, param := range params[5] {
 			_param5[u] = param.(int)
 		}
-		_param6 = make([]bool, len(params[6]))
+		_param6 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[6] {
 			_param6[u] = param.(bool)
 		}
-		_param7 = make([]bool, len(params[7]))
+		_param7 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[7] {
 			_param7[u] = param.(bool)
 		}
-		_param8 = make([][]string, len(params[8]))
+		_param8 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[8] {
 			_param8[u] = param.([]string)
 		}
-		_param9 = make([][]string, len(params[9]))
+		_param9 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[9] {
 			_param9[u] = param.([]string)
 		}
-		_param10 = make([]string, len(params[10]))
+		_param10 = make([]string, len(c.methodInvocations))
 		for u, param := range params[10] {
 			_param10[u] = param.(string)
 		}
-		_param11 = make([]string, len(params[11]))
+		_param11 = make([]string, len(c.methodInvocations))
 		for u, param := range params[11] {
 			_param11[u] = param.(string)
 		}
-		_param12 = make([]string, len(params[12]))
+		_param12 = make([]string, len(c.methodInvocations))
 		for u, param := range params[12] {
 			_param12[u] = param.(string)
 		}
@@ -1307,7 +1308,7 @@ func (c *MockHelmer_Version_OngoingVerification) GetCapturedArguments() bool {
 func (c *MockHelmer_Version_OngoingVerification) GetAllCapturedArguments() (_param0 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]bool, len(params[0]))
+		_param0 = make([]bool, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(bool)
 		}

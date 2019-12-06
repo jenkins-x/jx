@@ -2,9 +2,10 @@ package controller_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/cmd/controller"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/stretchr/testify/require"

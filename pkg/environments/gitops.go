@@ -42,6 +42,7 @@ type EnvironmentPullRequestOptions struct {
 	Gitter        gits.Gitter
 	GitProvider   gits.GitProvider
 	ModifyChartFn ModifyChartFn
+	Labels        []string
 }
 
 // Create a pull request against the environment repository for env.
@@ -67,10 +68,17 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 		return nil, err
 	}
 	labels := make([]string, 0)
+	labels = append(labels, pullRequestDetails.Labels...)
+	labels = append(labels, o.Labels...)
 	if autoMerge {
 		labels = append(labels, gits.LabelUpdatebot)
 	}
-	return gits.PushRepoAndCreatePullRequest(dir, upstreamRepo, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, false, o.Gitter, o.GitProvider, labels)
+	pullRequestDetails.Labels = labels
+	prInfo, err := gits.PushRepoAndCreatePullRequest(dir, upstreamRepo, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, false, o.Gitter, o.GitProvider)
+	if err != nil {
+		return nil, err
+	}
+	return prInfo, nil
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function
@@ -508,11 +516,10 @@ func AddAppMetaData(chartDir string, app *jenkinsv1.App, repository string) erro
 		app.Annotations = make(map[string]string)
 	}
 	app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
-	repoURL, err := url.Parse(repository)
-	if err != nil {
+	if _, err = url.Parse(repository); err != nil {
 		return errors.Wrap(err, "Invalid repository url")
 	}
-	app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
+	app.Annotations[helm.AnnotationAppRepository] = util.SanitizeURL(repository)
 	if app.Labels == nil {
 		app.Labels = make(map[string]string)
 	}

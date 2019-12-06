@@ -2,7 +2,8 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -28,7 +29,7 @@ var (
 
 // DeleteTrackerTokenOptions the options for the create spring command
 type DeleteTrackerTokenOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 }
@@ -36,7 +37,7 @@ type DeleteTrackerTokenOptions struct {
 // NewCmdDeleteTrackerToken defines the command
 func NewCmdDeleteTrackerToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTrackerTokenOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -64,7 +65,7 @@ func (o *DeleteTrackerTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing issue tracker user name")
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}

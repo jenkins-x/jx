@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/jenkins-x/jx/pkg/cmd/edit/requirements"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -60,6 +61,7 @@ func NewCmdEdit(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdEditDeployKind(commonOpts))
 	cmd.AddCommand(NewCmdEditEnv(commonOpts))
 	cmd.AddCommand(NewCmdEditHelmBin(commonOpts))
+	cmd.AddCommand(requirements.NewCmdEditRequirements(commonOpts))
 	cmd.AddCommand(NewCmdEditStorage(commonOpts))
 	cmd.AddCommand(NewCmdEditUserRole(commonOpts))
 	cmd.AddCommand(NewCmdEditExtensionsRepository(commonOpts))
@@ -108,9 +110,9 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOption
 				} else if !options.BatchMode {
 					var err error
 					if structField.Type.String() == "string" {
-						value, err = util.PickValue(commandUsage+":", field.String(), true, "", options.In, options.Out, options.Err)
+						value, err = util.PickValue(commandUsage+":", field.String(), true, "", options.GetIOFileHandles())
 					} else if structField.Type.String() == "bool" {
-						value = util.Confirm(commandUsage+":", field.Bool(), "", options.In, options.Out, options.Err)
+						value = util.Confirm(commandUsage+":", field.Bool(), "", options.GetIOFileHandles())
 					}
 					helper.CheckErr(err)
 				} else {

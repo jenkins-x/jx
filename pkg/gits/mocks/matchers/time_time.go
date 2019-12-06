@@ -2,9 +2,10 @@
 package matchers
 
 import (
-	"github.com/petergtz/pegomock"
 	"reflect"
 	time "time"
+
+	"github.com/petergtz/pegomock"
 )
 
 func AnyTimeTime() time.Time {

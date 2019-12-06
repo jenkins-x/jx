@@ -5,27 +5,48 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/pkg/errors"
 )
+
+// AddonAuthConfigService creates the addon auth config service
+func (o *CommonOptions) AddonAuthConfigService(kind string) (auth.ConfigService, error) {
+	if o.factory == nil {
+		return nil, errors.New("command factory is not initialized")
+	}
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateAddonAuthConfigService(namespace, kind)
+}
 
 // GetAddonAuth returns the server and user auth for the given addon service URL
 func (o *CommonOptions) GetAddonAuth(serviceURL string) (*auth.AuthServer, *auth.UserAuth, error) {
 	if serviceURL == "" {
 		return nil, nil, nil
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	authConfigSvc, err := o.factory.CreateAddonAuthConfigService(namespace, "")
 	if err != nil {
 		return nil, nil, err
 	}
 	config := authConfigSvc.Config()
 
 	server := config.GetOrCreateServer(serviceURL)
-	userAuth, err := config.PickServerUserAuth(server, "user to access the addon service at "+serviceURL, o.BatchMode, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "user to access the addon service at "+serviceURL, o.BatchMode, "", o.GetIOFileHandles())
 	return server, userAuth, err
 }
 
 // GetAddonAuth returns the server and user auth for the given addon service URL. Returns null values if there is no server
 func (o *CommonOptions) GetAddonAuthByKind(kind, serverURL string) (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	authConfigSvc, err := o.factory.CreateAddonAuthConfigService(namespace, kind)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -42,7 +63,7 @@ func (o *CommonOptions) GetAddonAuthByKind(kind, serverURL string) (*auth.AuthSe
 		return nil, nil, fmt.Errorf("no server found for kind %s", kind)
 	}
 	message := "user to access the " + kind + " addon service at " + server.URL
-	userAuth, err := config.PickServerUserAuth(server, message, true, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, message, true, "", o.GetIOFileHandles())
 	return server, userAuth, err
 }
 

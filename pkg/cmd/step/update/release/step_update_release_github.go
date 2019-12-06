@@ -92,7 +92,7 @@ func (o *StepUpdateReleaseGitHubOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,15 @@ func (o *StepUpdateReleaseGitHubOptions) Run() error {
 	o.State.GitInfo = gitInfo
 
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), false, o.In, o.Out, o.Err)
+	if err != nil {
+		return err
+	}
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return err
+	}
+
+	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, ghOwner, o.Git(), false, o.GetIOFileHandles())
 	if err != nil {
 		return errors.Wrap(err, "Could not create GitProvider, unable to update the release state %s")
 	}

@@ -3,15 +3,16 @@ package buckets
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/url"
+	"strings"
+	"time"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gocloud.dev/blob"
-	"io/ioutil"
-	"net/url"
-	"strings"
-	"time"
 )
 
 // CreateBucketURL creates a go-cloud URL to a bucket
@@ -100,6 +101,28 @@ func ReadBucketURL(u *url.URL, timeout time.Duration) ([]byte, error) {
 		return data, errors.Wrapf(err, "failed to read key %s in bucket %s", key, bucketURL)
 	}
 	return data, nil
+}
+
+// WriteBucketURL writes the data to a bucket URL of the for 's3://bucketName/foo/bar/whatnot.txt?param=123'
+// with the given timeout
+func WriteBucketURL(u *url.URL, data []byte, timeout time.Duration) error {
+	bucketURL, key := SplitBucketURL(u)
+	return WriteBucket(bucketURL, key, data, timeout)
+}
+
+// WriteBucket writes the data to a bucket URL and key of the for 's3://bucketName' and key 'foo/bar/whatnot.txt'
+// with the given timeout
+func WriteBucket(bucketURL string, key string, data []byte, timeout time.Duration) error {
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	bucket, err := blob.Open(ctx, bucketURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to open bucket %s", bucketURL)
+	}
+	err = bucket.WriteAll(ctx, key, data, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write key %s in bucket %s", key, bucketURL)
+	}
+	return nil
 }
 
 // SplitBucketURL splits the full bucket URL into the URL to open the bucket and the file name to refer to

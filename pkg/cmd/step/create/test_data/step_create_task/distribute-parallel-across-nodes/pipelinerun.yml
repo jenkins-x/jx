@@ -12,13 +12,11 @@ metadata:
 spec:
   affinity:
     podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - podAffinityTerm:
-          labelSelector:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
             matchLabels:
               tekton.dev/pipelineRun: abayer-js-test-repo-really-long-1
-          topologyKey: failure-domain.beta.kubernetes.io/zone
-        weight: 100
+          topologyKey: kubernetes.io/hostname
   params:
   - name: version
     value: 0.0.1

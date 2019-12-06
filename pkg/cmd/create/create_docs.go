@@ -2,14 +2,17 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/spf13/cobra/doc"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra/doc"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -40,7 +43,7 @@ var (
 
 // CreateDocsOptions the options for the create spring command
 type CreateDocsOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Dir string
 }
@@ -48,7 +51,7 @@ type CreateDocsOptions struct {
 // NewCmdCreateDocs creates a command object for the "create" command
 func NewCmdCreateDocs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateDocsOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -2,16 +2,19 @@ package builds
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -54,6 +57,7 @@ type BuildPodInfoFilter struct {
 	Pod        string
 	Pending    bool
 	Context    string
+	GitURL     string
 }
 
 // CreateBuildPodInfo creates a BuildPodInfo from a Pod
@@ -103,7 +107,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			if v.Name == "PULL_BASE_SHA" {
 				pullBaseSha = v.Value
 			}
-			if v.Name == "BRANCH_NAME" {
+			if v.Name == util.EnvVarBranchName {
 				branch = v.Value
 			}
 			if v.Name == "REPO_OWNER" {
@@ -210,6 +214,9 @@ func (o *BuildPodInfoFilter) LabelSelectorsForActivity() []string {
 	if o.Context != "" {
 		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelContext, o.Context))
 	}
+	if o.Build != "" {
+		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelBuild, o.Build))
+	}
 	return labelSelectors
 }
 
@@ -229,6 +236,41 @@ func (o *BuildPodInfoFilter) LabelSelectorsForBuild() []string {
 		labelSelectors = append(labelSelectors, fmt.Sprintf("%s=%s", v1.LabelBranch, o.Branch))
 	}
 	return labelSelectors
+}
+
+// Validate validates the build filter
+func (o *BuildPodInfoFilter) Validate() error {
+	u := o.GitURL
+	if u != "" && (o.Owner == "" || o.Repository == "" || o.Branch == "") {
+		branch := ""
+		u2, err := url.Parse(u)
+		if err == nil {
+			paths := strings.Split(u2.Path, "/")
+			l := len(paths)
+			if l > 3 {
+				if paths[l-2] == "pull" || paths[l-2] == "pulls" {
+					branch = "PR-" + paths[l-1]
+
+					// lets remove the pulls path
+					if paths[0] == "" {
+						paths[0] = "/"
+					}
+					u2.Path = util.UrlJoin(paths[0:3]...)
+					u = u2.String()
+				}
+			}
+		}
+		gitInfo, err := gits.ParseGitURL(u)
+		if err != nil {
+			return errors.Wrapf(err, "could not parse GitURL: %s", u)
+		}
+		o.Owner = gitInfo.Organisation
+		o.Repository = gitInfo.Name
+		if branch != "" {
+			o.Branch = branch
+		}
+	}
+	return nil
 }
 
 // BuildMatches returns true if the build info matches the filter

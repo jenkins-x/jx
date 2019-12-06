@@ -1,6 +1,8 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/create/vault"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"github.com/spf13/cobra"
@@ -9,20 +11,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 )
 
-// CreateOptions contains the command line options
-type CreateOptions struct {
-	*opts.CommonOptions
-
-	DisableImport bool
-	OutDir        string
-}
-
 // CreateProjectOptions contains the command line options
 type CreateProjectOptions struct {
 	importcmd.ImportOptions
 
-	DisableImport bool
-	OutDir        string
+	DisableImport      bool
+	OutDir             string
+	GithubAppInstalled bool
 }
 
 var (
@@ -44,7 +39,7 @@ var (
 
 // NewCmdCreate creates a command object for the "create" command
 func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &CreateOptions{
+	options := &options.CreateOptions{
 		CommonOptions: commonOpts,
 	}
 
@@ -93,15 +88,10 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateToken(commonOpts))
 	cmd.AddCommand(NewCmdCreateTracker(commonOpts))
 	cmd.AddCommand(NewCmdCreateUser(commonOpts))
-	cmd.AddCommand(NewCmdCreateVault(commonOpts))
+	cmd.AddCommand(vault.NewCmdCreateVault(commonOpts))
 	cmd.AddCommand(NewCmdCreateVariable(commonOpts))
 
 	return cmd
-}
-
-// Run implements this command
-func (o *CreateOptions) Run() error {
-	return o.Cmd.Help()
 }
 
 // DoImport imports the project created at the given directory
@@ -112,6 +102,7 @@ func (o *CreateProjectOptions) ImportCreatedProject(outDir string) error {
 	importOptions := &o.ImportOptions
 	importOptions.Dir = outDir
 	importOptions.DisableDotGitSearch = true
+	importOptions.GithubAppInstalled = o.GithubAppInstalled
 	return importOptions.Run()
 }
 

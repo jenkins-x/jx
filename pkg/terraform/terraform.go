@@ -2,15 +2,17 @@ package terraform
 
 import (
 	"fmt"
-	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
+
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // MinTerraformVersion defines the minimum terraform version we support

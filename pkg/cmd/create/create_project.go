@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 
@@ -45,13 +47,13 @@ var (
 
 // CreateProjectWizardOptions the options for the command
 type CreateProjectWizardOptions struct {
-	CreateOptions
+	options.CreateOptions
 }
 
 // NewCmdCreateProject creates a command object for the "create" command
 func NewCmdCreateProject(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateProjectWizardOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -76,7 +78,7 @@ func NewCmdCreateProject(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *CreateProjectWizardOptions) Run() error {
 	name, err := util.PickName(createProjectNames, "Which kind of project you want to create: ",
 		"Jenkins X supports a number of diffferent wizards for creating or importing new projects.",
-		o.In, o.Out, o.Err)
+		o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -122,7 +124,7 @@ func (o *CreateProjectWizardOptions) importDir() error {
 		return err
 	}
 	dir, err := util.PickValue("Which directory contains the source code: ", wd, true,
-		"Please specify the directory which contains the source code you want to use for your new project", o.In, o.Out, o.Err)
+		"Please specify the directory which contains the source code you want to use for your new project", o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -134,8 +136,8 @@ func (o *CreateProjectWizardOptions) importDir() error {
 }
 
 func (o *CreateProjectWizardOptions) importGit() error {
-	repoUrl, err := util.PickValue("Which git repository URL to inmport: ", "", true,
-		"Please specify the git URL which contains the source code you want to use for your new project", o.In, o.Out, o.Err)
+	repoUrl, err := util.PickValue("Which git repository URL to import: ", "", true,
+		"Please specify the git URL which contains the source code you want to use for your new project", o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}

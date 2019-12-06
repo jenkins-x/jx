@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -41,7 +43,7 @@ var (
 
 // CreateGitTokenOptions the command line options for the command
 type CreateGitTokenOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Username    string
@@ -53,7 +55,7 @@ type CreateGitTokenOptions struct {
 // NewCmdCreateGitToken creates a command
 func NewCmdCreateGitToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateGitTokenOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -88,7 +90,7 @@ func (o *CreateGitTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -129,7 +131,7 @@ func (o *CreateGitTokenOptions) Run() error {
 			return nil
 		}
 
-		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
+		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -142,13 +144,6 @@ func (o *CreateGitTokenOptions) Run() error {
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return err
-	}
-
-	if config.PipeLineUsername == userAuth.Username {
-		_, err = o.UpdatePipelineGitCredentialsSecret(server, userAuth)
-		if err != nil {
-			log.Logger().Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v", err)
-		}
 	}
 
 	log.Logger().Infof("Created user %s API Token for Git server %s at %s",
@@ -218,9 +213,9 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	log.Logger().Info("Generating new token")
 
 	tokenId := "jx-" + string(uuid.NewUUID())
-	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
+	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']" // #nosec
 
-	tokenResultDivSelector := "//div[@class='ui info message']/p"
+	tokenResultDivSelector := "//div[@class='ui info message']/p" // #nosec
 	err = c.Run(ctxt, chromedp.Tasks{
 		chromedp.WaitVisible(generateNewTokenButtonSelector),
 		chromedp.Click(generateNewTokenButtonSelector),

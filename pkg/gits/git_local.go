@@ -162,8 +162,8 @@ func (g *GitLocal) Branch(dir string) (string, error) {
 
 // Push pushes the changes from the repository at the given directory
 // Faked out
-func (g *GitLocal) Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error {
-	return g.GitFake.Push(dir, "origin", false, false)
+func (g *GitLocal) Push(dir string, remote string, force bool, refspec ...string) error {
+	return g.GitFake.Push(dir, "origin", false)
 }
 
 // ForcePushBranch does a force push of the local branch into the remote branch of the repository at the given directory
@@ -192,6 +192,11 @@ func (g *GitLocal) Add(dir string, args ...string) error {
 // HasChanges indicates if there are any changes in the repository from the given directory
 func (g *GitLocal) HasChanges(dir string) (bool, error) {
 	return g.GitCLI.HasChanges(dir)
+}
+
+// HasFileChanged returns true if file has changes in git
+func (g *GitLocal) HasFileChanged(dir string, fileName string) (bool, error) {
+	return g.GitCLI.HasFileChanged(dir, fileName)
 }
 
 // CommitIfChanges does a commit if there are any changes in the repository at the given directory
@@ -288,6 +293,11 @@ func (g *GitLocal) RemoteBranchNames(dir string, prefix string) ([]string, error
 	return g.GitCLI.RemoteBranchNames(dir, prefix)
 }
 
+// RemoteMergedBranchNames returns all remote branch names with the given prefix
+func (g *GitLocal) RemoteMergedBranchNames(dir string, prefix string) ([]string, error) {
+	return g.GitCLI.RemoteMergedBranchNames(dir, prefix)
+}
+
 // GetCommitPointedToByPreviousTag returns the previous git tag from the repository at the given directory
 func (g *GitLocal) GetCommitPointedToByPreviousTag(dir string) (string, string, error) {
 	return g.GitCLI.GetCommitPointedToByPreviousTag(dir)
@@ -322,6 +332,12 @@ func (g *GitLocal) GetLatestCommitMessage(dir string) (string, error) {
 // Faked out
 func (g *GitLocal) FetchTags(dir string) error {
 	return g.GitFake.FetchTags(dir)
+}
+
+// FetchRemoteTags fetches all the tags from a remote repository
+// Faked out
+func (g *GitLocal) FetchRemoteTags(dir string, repo string) error {
+	return g.GitFake.FetchRemoteTags(dir, repo)
 }
 
 // Tags returns all tags from the repository at the given directory
@@ -428,6 +444,11 @@ func (g *GitLocal) GetLatestCommitSha(dir string) (string, error) {
 	return g.GitCLI.GetLatestCommitSha(dir)
 }
 
+// GetFirstCommitSha gets the first commit sha
+func (g *GitLocal) GetFirstCommitSha(dir string) (string, error) {
+	return g.GitCLI.GetFirstCommitSha(dir)
+}
+
 // Reset performs a git reset --hard back to the commitish specified
 func (g *GitLocal) Reset(dir string, commitish string, hard bool) error {
 	return g.GitCLI.Reset(dir, commitish, true)
@@ -502,4 +523,14 @@ func (g *GitLocal) CherryPick(dir string, commit string) error {
 // CherryPickTheirs does a git cherry-pick of commit
 func (g *GitLocal) CherryPickTheirs(dir string, commit string) error {
 	return g.GitCLI.CherryPickTheirs(dir, commit)
+}
+
+// Describe does a git describe of commitish, optionally adding the abbrev arg if not empty
+func (g *GitLocal) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
+	return g.GitCLI.Describe(dir, false, commitish, abbrev, fallback)
+}
+
+// IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
+func (g *GitLocal) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
+	return g.GitCLI.IsAncestor(dir, possibleAncestor, commitish)
 }

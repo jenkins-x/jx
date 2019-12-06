@@ -1,9 +1,10 @@
 package util_test
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestJenkinsfileWriter(t *testing.T) {

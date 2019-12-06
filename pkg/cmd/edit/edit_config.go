@@ -83,18 +83,18 @@ func (o *EditConfigOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.IssuesAuthConfigSvc, err = o.CreateIssueTrackerAuthConfigService()
+	o.IssuesAuthConfigSvc, err = o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}
-	o.ChatAuthConfigSvc, err = o.CreateChatAuthConfigService()
+	o.ChatAuthConfigSvc, err = o.CreateChatAuthConfigService("")
 	if err != nil {
 		return err
 	}
 
 	kind := o.Kind
 	if kind == "" && !o.BatchMode {
-		kind, err = util.PickRequiredNameWithDefault(configKinds, "Which configuration do you want to edit", issueKind, "", o.In, o.Out, o.Err)
+		kind, err = util.PickRequiredNameWithDefault(configKinds, "Which configuration do you want to edit", issueKind, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 	if len(config.Servers) == 0 {
 		return answer, fmt.Errorf("No issue tracker servers available. Please add one via: jx create tracker server")
 	}
-	server, err := config.PickServer("Issue tracker service", o.BatchMode, o.In, o.Out, o.Err)
+	server, err := config.PickServer("Issue tracker service", o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		return answer, err
 	}
@@ -152,7 +152,7 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 	}
 	answer = true
 
-	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true, "", o.In, o.Out, o.Err)
+	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true, "", o.GetIOFileHandles())
 	if err != nil {
 		return answer, err
 	}
@@ -171,7 +171,7 @@ func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
 	if len(config.Servers) == 0 {
 		return answer, fmt.Errorf("No chat servers available. Please add one via: jx create chat server")
 	}
-	server, err := config.PickServer("Chat service", o.BatchMode, o.In, o.Out, o.Err)
+	server, err := config.PickServer("Chat service", o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		return answer, err
 	}
@@ -184,11 +184,11 @@ func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
 	}
 	answer = true
 
-	it.DeveloperChannel, err = util.PickValue("Developer channel: ", it.DeveloperChannel, false, "", o.In, o.Out, o.Err)
+	it.DeveloperChannel, err = util.PickValue("Developer channel: ", it.DeveloperChannel, false, "", o.GetIOFileHandles())
 	if err != nil {
 		return answer, err
 	}
-	it.UserChannel, err = util.PickValue("User channel: ", it.UserChannel, false, "", o.In, o.Out, o.Err)
+	it.UserChannel, err = util.PickValue("User channel: ", it.UserChannel, false, "", o.GetIOFileHandles())
 	if err != nil {
 		return answer, err
 	}

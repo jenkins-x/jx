@@ -2,6 +2,7 @@ package gc
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/cmd/preview"
 
@@ -92,7 +93,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 			// we need pull request info to include
-			authConfigSvc, err := o.CreateGitAuthConfigService()
+			authConfigSvc, err := o.GitAuthConfigService()
 			if err != nil {
 				return err
 			}
@@ -102,7 +103,11 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 
-			gitProvider, err := gitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+			ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+			if err != nil {
+				return err
+			}
+			gitProvider, err := gitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

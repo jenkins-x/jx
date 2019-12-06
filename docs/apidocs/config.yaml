@@ -32,6 +32,40 @@ resource_categories:
         version: v1
         group: jenkins_io
         description_warning: ""
+  - name: "Pipelines & Environments"
+    include: "pipelines"
+    resources:
+      - name: Environment
+        version: v1
+        group: jenkins_io
+        description_warning: ""
+      - name: PipelineActivity
+        version: v1
+        group: jenkins_io
+        description_warning: ""
+      - name: Release
+        version: v1
+        group: jenkins_io
+        description_warning: ""
+      - name: Scheduler
+        version: v1
+        group: jenkins_io
+      - name: SourceRepository
+        version: v1
+        group: jenkins_io
+        description_warning: ""
+      - name: SourceRepositoryGroup
+        version: v1
+        group: jenkins_io
+        description_warning: ""
+  - name: "Pipelines Extensions"
+    resources:
+      - name: CommitStatus
+        version: v1
+        group: jenkins_io
+      - name: Fact
+        version: v1
+        group: jenkins_io
   - name: "User Management"
     include: "user_management"
     resources:
@@ -43,28 +77,3 @@ resource_categories:
         version: v1
         group: jenkins_io
         description_warning: ""
-  - name: "Pipelines & Environments"
-    include: "pipelines"
-    resources:
-      - name: PipelineActivity
-        version: v1
-        group: jenkins_io
-        description_warning: ""
-      - name: Environment
-        version: v1
-        group: jenkins_io
-        description_warning: ""
-      - name: SourceRepository
-        version: v1
-        group: jenkins_io
-        description_warning: ""
-      - name: Release
-        version: v1
-        group: jenkins_io
-        description_warning: ""
-      - name: CommitStatus
-        version: v1
-        group: jenkins_io
-      - name: Fact
-        version: v1
-        group: jenkins_io

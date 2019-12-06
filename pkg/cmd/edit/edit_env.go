@@ -20,7 +20,7 @@ var (
 	editEnvLong = templates.LongDesc(`
     Edits a new Environment
 
-	An Environment maps to a Kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continous Delivery.
+	An Environment maps to a Kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continuous Delivery.
 
 	You can optionally use GitOps to manage the configuration of an Environment by storing all configuration in a Git repository and then only changing it via Pull Requests and CI/CD.
 
@@ -111,7 +111,7 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (o *EditEnvOptions) Run() error {
 	} else {
 		name = o.Options.Name
 		if name == "" {
-			name, err = kube.PickEnvironment(envNames, currentEnv, o.In, o.Out, o.Err)
+			name, err = kube.PickEnvironment(envNames, currentEnv, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -155,7 +155,7 @@ func (o *EditEnvOptions) Run() error {
 	}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
 	gitProvider, err := kube.CreateEnvironmentSurvey(o.BatchMode, authConfigSvc, devEnv, env, &o.Options, true, o.ForkEnvironmentGitRepo,
-		ns, jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
+		ns, jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.ResolveChartMuseumURL, o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}

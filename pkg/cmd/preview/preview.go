@@ -72,6 +72,7 @@ const (
 
 	optionPostPreviewJobTimeout  = "post-preview-job-timeout"
 	optionPostPreviewJobPollTime = "post-preview-poll-time"
+	optionPreviewHealthTimeout   = "preview-health-timeout"
 )
 
 // PreviewOptions the options for viewing running PRs
@@ -90,6 +91,7 @@ type PreviewOptions struct {
 	Dir                    string
 	PostPreviewJobTimeout  string
 	PostPreviewJobPollTime string
+	PreviewHealthTimeout   string
 
 	PullRequestName string
 	GitConfDir      string
@@ -100,6 +102,7 @@ type PreviewOptions struct {
 	// calculated fields
 	PostPreviewJobTimeoutDuration time.Duration
 	PostPreviewJobPollDuration    time.Duration
+	PreviewHealthTimeoutDuration  time.Duration
 
 	HelmValuesConfig config.HelmValuesConfig
 }
@@ -154,6 +157,7 @@ func (o *PreviewOptions) AddPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
 	cmd.Flags().StringVarP(&o.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
 	cmd.Flags().StringVarP(&o.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
+	cmd.Flags().StringVarP(&o.PreviewHealthTimeout, optionPreviewHealthTimeout, "", "5m", "The amount of time to wait for the preview application to become healthy")
 	cmd.Flags().BoolVarP(&o.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
 }
 
@@ -170,6 +174,12 @@ func (o *PreviewOptions) Run() error {
 		o.PostPreviewJobTimeoutDuration, err = time.ParseDuration(o.Timeout)
 		if err != nil {
 			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionPostPreviewJobTimeout, err)
+		}
+	}
+	if o.PreviewHealthTimeout != "" {
+		o.PreviewHealthTimeoutDuration, err = time.ParseDuration(o.PreviewHealthTimeout)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionPreviewHealthTimeout, err)
 		}
 	}
 
@@ -237,7 +247,7 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	// we need pull request info to include
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -260,7 +270,11 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.NewGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git())
+		ghOwner, err := o.GetGitHubAppOwner(o.GitInfo)
+		if err != nil {
+			return err
+		}
+		gitProvider, err := o.NewGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, ghOwner, o.BatchMode, o.Git())
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
@@ -571,7 +585,7 @@ func (o *PreviewOptions) Run() error {
 	if url != "" {
 		// Wait for a 200 range status code, 401 or 404 to make sure that the DNS has propagated
 		f := func() error {
-			resp, err := http.Get(url)
+			resp, err := http.Get(url) // #nosec
 			if err != nil {
 				return errors.Errorf("preview application %s not available, error was %v", url, err)
 			}
@@ -591,7 +605,7 @@ func (o *PreviewOptions) Run() error {
 		exponentialBackOff := backoff.NewExponentialBackOff()
 		exponentialBackOff.InitialInterval = 1 * time.Second
 		exponentialBackOff.MaxInterval = 1 * time.Minute
-		exponentialBackOff.MaxElapsedTime = 5 * time.Minute
+		exponentialBackOff.MaxElapsedTime = o.PreviewHealthTimeoutDuration
 		exponentialBackOff.Reset()
 		err := backoff.RetryNotify(f, exponentialBackOff, notify)
 		if err != nil {
@@ -842,7 +856,7 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 	}
 
 	if o.PullRequest == "" {
-		o.PullRequest = os.Getenv("BRANCH_NAME")
+		o.PullRequest = os.Getenv(util.EnvVarBranchName)
 	}
 
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
@@ -939,10 +953,28 @@ func writePreviewURL(o *PreviewOptions, url string) {
 	}
 }
 
-func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
+func (o *PreviewOptions) getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return "", errors.Wrap(err, "could not load team")
+	}
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return "", errors.Wrap(err, "could not get requirements from team setting")
+	}
+	if requirements != nil {
+		registryHost := requirements.Cluster.Registry
+		if registryHost != "" {
+			return registryHost, nil
+		}
+	}
+
+	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	registry := ""
 	if projectConfig != nil {
 		registry = projectConfig.DockerRegistryHost
+	}
+	if registryHost == "" {
 	}
 	if registry == "" {
 		registry = os.Getenv(DOCKER_REGISTRY)
@@ -951,7 +983,6 @@ func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
 		return registry, nil
 	}
 
-	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	if registryHost == "" {
 		return "", fmt.Errorf("no %s environment variable found", JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	}
@@ -964,7 +995,7 @@ func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
 }
 
 func (o *PreviewOptions) getImageName(projectConfig *config.ProjectConfig) (string, error) {
-	containerRegistry, err := getContainerRegistry(projectConfig)
+	containerRegistry, err := o.getContainerRegistry(projectConfig)
 	if err != nil {
 		return "", err
 	}

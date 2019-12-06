@@ -1,10 +1,11 @@
 package builds_test
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestGetBuildNumberFromLabelsFileData(t *testing.T) {

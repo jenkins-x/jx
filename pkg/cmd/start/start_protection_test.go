@@ -2,9 +2,10 @@ package start_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/cmd/start"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 

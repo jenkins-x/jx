@@ -1,13 +1,14 @@
 package collector
 
 import (
-	"context"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"gocloud.dev/blob"
+	"bytes"
 	"io/ioutil"
 	"path/filepath"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cloud/buckets"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 // BucketCollector stores the state for the git collector
@@ -15,26 +16,23 @@ type BucketCollector struct {
 	Timeout time.Duration
 
 	bucketURL  string
-	bucket     *blob.Bucket
 	classifier string
+	provider   buckets.Provider
 }
 
 // NewBucketCollector creates a new git based collector
-func NewBucketCollector(bucketURL string, bucket *blob.Bucket, classifier string) (Collector, error) {
+func NewBucketCollector(bucketURL string, classifier string, provider buckets.Provider) (Collector, error) {
 	return &BucketCollector{
 		Timeout:    time.Second * 20,
-		bucketURL:  bucketURL,
-		bucket:     bucket,
 		classifier: classifier,
+		provider:   provider,
+		bucketURL:  bucketURL,
 	}, nil
 }
 
 // CollectFiles collects files and returns the URLs
 func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, basedir string) ([]string, error) {
 	urls := []string{}
-	bucket := c.bucket
-
-	ctx := c.createContext()
 	for _, p := range patterns {
 		fn := func(name string) error {
 			var err error
@@ -52,19 +50,11 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 			if err != nil {
 				return errors.Wrapf(err, "failed to read file %s", name)
 			}
-			opts := &blob.WriterOptions{
-				ContentType: util.ContentTypeForFileName(name),
-				Metadata: map[string]string{
-					"classification": c.classifier,
-				},
-			}
-			err = bucket.WriteAll(ctx, toName, data, opts)
+			url, err := c.provider.UploadFileToBucket(bytes.NewReader(data), toName, c.bucketURL)
 			if err != nil {
-				return errors.Wrapf(err, "failed to write to bucket %s", toName)
+				return err
 			}
-
-			u := util.UrlJoin(c.bucketURL, toName)
-			urls = append(urls, u)
+			urls = append(urls, url)
 			return nil
 		}
 
@@ -76,27 +66,11 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 	return urls, nil
 }
 
-// CollectData collects the data storing it at the given output path and returning the URL
-// to access it
+// CollectData collects the data storing it at the given output path and returning the URL to access it
 func (c *BucketCollector) CollectData(data []byte, outputName string) (string, error) {
-	opts := &blob.WriterOptions{
-		ContentType: util.ContentTypeForFileName(outputName),
-		Metadata: map[string]string{
-			"classification": c.classifier,
-		},
-	}
-	u := ""
-	ctx := c.createContext()
-	err := c.bucket.WriteAll(ctx, outputName, data, opts)
+	url, err := c.provider.UploadFileToBucket(bytes.NewReader(data), outputName, c.bucketURL)
 	if err != nil {
-		return u, errors.Wrapf(err, "failed to write to bucket %s", outputName)
+		return "", err
 	}
-
-	u = util.UrlJoin(c.bucketURL, outputName)
-	return u, nil
-}
-
-func (c *BucketCollector) createContext() context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), c.Timeout)
-	return ctx
+	return url, nil
 }

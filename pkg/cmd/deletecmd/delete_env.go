@@ -99,7 +99,7 @@ func (o *DeleteEnvOptions) Run() error {
 			}
 		}
 	} else {
-		name, err = kube.PickEnvironment(envNames, currentEnv, o.In, o.Out, o.Err)
+		name, err = kube.PickEnvironment(envNames, currentEnv, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

@@ -23,7 +23,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -38,8 +37,8 @@ type ResolveChartMuseumURLFn func() (string, error)
 // from the CLI
 func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment,
 	config *v1.Environment, update bool, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
-	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
-	surveyOpts := survey.WithStdio(in, out, errOut)
+	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, handles util.IOFileHandles) (gits.GitProvider, error) {
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	name := data.Name
 	createMode := name == ""
 	if createMode {
@@ -169,7 +168,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 	data.Spec.RemoteCluster = config.Spec.RemoteCluster
 	if !batchMode {
 		data.Spec.RemoteCluster = util.Confirm("Environment in separate cluster to Dev Environment:",
-			data.Spec.RemoteCluster, " Is this Environment going to be in a different cluster to the Development environment. For help on Multi Cluster support see: https://jenkins-x.io/getting-started/multi-cluster/", in, out, errOut)
+			data.Spec.RemoteCluster, " Is this Environment going to be in a different cluster to the Development environment. For help on Multi Cluster support see: https://jenkins-x.io/getting-started/multi-cluster/", handles)
 	}
 	if config.Spec.Cluster != "" {
 		data.Spec.Cluster = config.Spec.Cluster
@@ -264,15 +263,15 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		}
 		log.Logger().Infof("Using %s environment git owner in batch mode.", util.ColorInfo(gitRepoOptions.Owner))
 	}
-	_, gitProvider, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, in, out, errOut)
+	_, gitProvider, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, handles)
 	return gitProvider, err
 }
 
 // CreateEnvGitRepository creates the git repository for the given Environment
-func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
+func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, handles util.IOFileHandles) (*gits.GitRepository, gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	var repo *gits.GitRepository
-	surveyOpts := survey.WithStdio(in, out, errOut)
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	createRepo := false
 	if config.Spec.Source.URL != "" {
 		data.Spec.Source.URL = config.Spec.Source.URL
@@ -310,7 +309,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, de
 				if createRepo {
 					showURLEdit = false
 					var err error
-					repo, gitProvider, err = DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, in, out, errOut)
+					repo, gitProvider, err = DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, handles)
 					if err != nil {
 						return repo, gitProvider, errors.Wrap(err, "creating environment git repository")
 					}
@@ -361,9 +360,9 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, de
 // DoCreateEnvironmentGitRepo actually creates the git repository for the environment
 func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, env *v1.Environment, forkEnvGitURL string,
 	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string,
-	git gits.Gitter, chartMuseumFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
+	git gits.Gitter, chartMuseumFn ResolveChartMuseumURLFn, handles util.IOFileHandles) (*gits.GitRepository, gits.GitProvider, error) {
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
-	details, err := gits.PickNewGitRepository(batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git, in, out, outErr)
+	details, err := gits.PickNewGitRepository(batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git, handles)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "picking new git repository for environment")
 	}
@@ -393,11 +392,11 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "cloning environment from %q into %q", pushGitURL, dir)
 		}
-		err = ModifyNamespace(out, dir, env, git, chartMuseumFn)
+		err = ModifyNamespace(handles.Out, dir, env, git, chartMuseumFn)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "modifying environment namespace")
 		}
-		err = addValues(out, dir, helmValues, git)
+		err = addValues(handles.Out, dir, helmValues, git)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "adding helm values to the environment")
 		}
@@ -448,15 +447,15 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 				if err != nil {
 					return nil, nil, errors.Wrap(err, "pulling upstream of forked environment repository")
 				}
-				err = ModifyNamespace(out, dir, env, git, chartMuseumFn)
+				err = ModifyNamespace(handles.Out, dir, env, git, chartMuseumFn)
 				if err != nil {
 					return nil, nil, errors.Wrap(err, "modifying namespace of forked environment")
 				}
-				err = addValues(out, dir, helmValues, git)
+				err = addValues(handles.Out, dir, helmValues, git)
 				if err != nil {
 					return nil, nil, errors.Wrap(err, "adding helm values to the forked environment repo")
 				}
-				err = git.Push(dir, "origin", false, false, "HEAD")
+				err = git.Push(dir, "origin", false, "HEAD")
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "pushing forked environment dir %q", dir)
 				}
@@ -492,11 +491,11 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "updating remote %q", pushGitURL)
 			}
-			err = ModifyNamespace(out, dir, env, git, chartMuseumFn)
+			err = ModifyNamespace(handles.Out, dir, env, git, chartMuseumFn)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "modifying dev environment namespace")
 			}
-			err = addValues(out, dir, helmValues, git)
+			err = addValues(handles.Out, dir, helmValues, git)
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "adding helm values into environment git repository")
 			}
@@ -508,6 +507,19 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 		}
 	}
 	return repo, provider, nil
+}
+
+// GetDevEnvTeamSettings gets the team settings from the specified namespace.
+func GetDevEnvTeamSettings(jxClient versioned.Interface, ns string) (*v1.TeamSettings, error) {
+	devEnv, err := GetDevEnvironment(jxClient, ns)
+	if err != nil {
+		log.Logger().Errorf("Error loading team settings. %v", err)
+		return nil, err
+	}
+	if devEnv != nil {
+		return &devEnv.Spec.TeamSettings, nil
+	}
+	return nil, fmt.Errorf("unable to find development environment in %s to get team settings", ns)
 }
 
 // GetDevEnvGitOwner gets the default GitHub owner/organisation to use for Environment repos. This takes the setting
@@ -916,8 +928,8 @@ func GetTeams(kubeClient kubernetes.Interface) ([]*corev1.Namespace, []string, e
 	return answer, names, nil
 }
 
-func PickEnvironment(envNames []string, defaultEnv string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
-	surveyOpts := survey.WithStdio(in, out, errOut)
+func PickEnvironment(envNames []string, defaultEnv string, handles util.IOFileHandles) (string, error) {
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	name := ""
 	if len(envNames) == 0 {
 		return "", nil
@@ -954,6 +966,31 @@ func (a ByOrder) Less(i, j int) bool {
 
 func SortEnvironments(environments []v1.Environment) {
 	sort.Sort(ByOrder(environments))
+}
+
+// ByTimestamp is used to fileter a list of PipelineActivities by their given timestamp
+type ByTimestamp []v1.PipelineActivity
+
+func (a ByTimestamp) Len() int      { return len(a) }
+func (a ByTimestamp) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByTimestamp) Less(i, j int) bool {
+	act1 := a[i]
+	act2 := a[j]
+	t1 := act1.Spec.StartedTimestamp
+	if t1 == nil {
+		return false
+	}
+	t2 := act2.Spec.StartedTimestamp
+	if t2 == nil {
+		return true
+	}
+
+	return t1.Before(t2)
+}
+
+// SortActivities sorts a list of PipelineActivities
+func SortActivities(activities []v1.PipelineActivity) {
+	sort.Sort(ByTimestamp(activities))
 }
 
 // NewPermanentEnvironment creates a new permanent environment for testing

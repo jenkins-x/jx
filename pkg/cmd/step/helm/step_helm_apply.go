@@ -192,7 +192,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		return fmt.Errorf("could not find the relative name of the directory %s", dir)
 	}
 	tmpDir := filepath.Join(rootTmpDir, name)
-	log.Logger().Infof("Copying the helm source directory %s to a temporary location for building and applying %s\n", info(dir), info(tmpDir))
+	log.Logger().Debugf("Copying the helm source directory %s to a temporary location for building and applying %s\n", info(dir), info(tmpDir))
 
 	err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
 	if err != nil {
@@ -203,7 +203,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrapf(err, "failed to copy helm dir %s to temporary dir %s", dir, tmpDir)
 	}
 	dir = tmpDir
-	log.Logger().Infof("Applying helm chart at %s as release name %s to namespace %s", info(dir), info(releaseName), info(ns))
+	log.Logger().Debugf("Applying helm chart at %s as release name %s to namespace %s", info(dir), info(releaseName), info(ns))
 
 	o.Helm().SetCWD(dir)
 
@@ -229,7 +229,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 		for _, sf := range secretsFiles {
 			if util.StringArrayIndex(valueFiles, sf) < 0 {
-				log.Logger().Infof("adding secret file %s", sf)
+				log.Logger().Debugf("adding secret file %s", sf)
 				valueFiles = append(valueFiles, sf)
 			}
 		}
@@ -276,13 +276,13 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "writing values.yaml for tree to %s", chartValuesFile)
 	}
-	log.Logger().Infof("Wrote chart values.yaml %s generated from directory tree", chartValuesFile)
+	log.Logger().Debugf("Wrote chart values.yaml %s generated from directory tree", chartValuesFile)
 
 	data, err := ioutil.ReadFile(chartValuesFile)
 	if err != nil {
 		log.Logger().Warnf("failed to load file %s: %s", chartValuesFile, err.Error())
 	} else {
-		log.Logger().Infof("generated helm %s", chartValuesFile)
+		log.Logger().Debugf("generated helm %s", chartValuesFile)
 
 		valuesText := string(data)
 		if !o.NoMasking {
@@ -290,10 +290,10 @@ func (o *StepHelmApplyOptions) Run() error {
 			valuesText = masker.MaskLog(valuesText)
 		}
 
-		log.Logger().Infof("\n%s\n", util.ColorStatus(valuesText))
+		log.Logger().Debugf("\n%s\n", util.ColorStatus(valuesText))
 	}
 
-	log.Logger().Infof("Using values files: %s", strings.Join(valueFiles, ", "))
+	log.Logger().Debugf("Using values files: %s", strings.Join(valueFiles, ", "))
 
 	if o.Boot {
 		err = o.replaceMissingVersionsFromVersionStream(requirements, dir)
@@ -364,6 +364,11 @@ func (o *StepHelmApplyOptions) Run() error {
 		ValueFiles:  valueFiles,
 		Dir:         dir,
 	}
+	if o.Boot {
+		helmOptions.VersionsGitURL = requirements.VersionStream.URL
+		helmOptions.VersionsGitRef = requirements.VersionStream.Ref
+	}
+
 	if o.Wait {
 		helmOptions.Wait = true
 		err = o.InstallChartWithOptionsAndTimeout(helmOptions, "600")
@@ -413,7 +418,7 @@ func DefaultEnvironments(c *config.RequirementsConfig, devGitInfo *gits.GitRepos
 }
 
 func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
-	log.Logger().Infof("Applying chart overrides")
+	log.Logger().Debugf("Applying chart overrides")
 	templateOverrides, err := filepath.Glob(chartName + "/../*/templates/*.yaml")
 	for _, overrideSrc := range templateOverrides {
 		if !strings.Contains(overrideSrc, "/env/") {
@@ -432,14 +437,14 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
 					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 					if len(chartArchives) == 1 {
-						log.Logger().Infof("Exploding chart %s", chartArchives[0])
+						log.Logger().Debugf("Exploding chart %s", chartArchives[0])
 						archiver.Unarchive(chartArchives[0], depChartsDir)
 						// Remove the unexploded chart
 						os.Remove(chartArchives[0])
 					}
 				}
 				overrideDst := filepath.Join(depChartDir, "templates", templateName)
-				log.Logger().Infof("Copying chart override %s", overrideSrc)
+				log.Logger().Debugf("Copying chart override %s", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
 					log.Logger().Warnf("Error copying template %s to %s %v", overrideSrc, overrideDst, err)
@@ -452,7 +457,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 }
 
 func (o *StepHelmApplyOptions) applyAppsTemplateOverrides(chartName string) error {
-	log.Logger().Infof("Applying Apps chart overrides")
+	log.Logger().Debugf("Applying Apps chart overrides")
 	templateOverrides, err := filepath.Glob(chartName + "/../*/*/templates/app.yaml")
 	for _, overrideSrc := range templateOverrides {
 		data, err := ioutil.ReadFile(overrideSrc)
@@ -465,13 +470,13 @@ func (o *StepHelmApplyOptions) applyAppsTemplateOverrides(chartName string) erro
 			chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 			if len(chartArchives) == 1 {
 				uuid, _ := uuid.NewUUID()
-				log.Logger().Infof("Exploding App chart %s", chartArchives[0])
+				log.Logger().Debugf("Exploding App chart %s", chartArchives[0])
 				explodedChartTempDir := filepath.Join(os.TempDir(), uuid.String())
 				if err = archiver.Unarchive(chartArchives[0], explodedChartTempDir); err != nil {
 					return defineAppsChartOverridingError(chartName, err)
 				}
 				overrideDst := filepath.Join(explodedChartTempDir, depChartName, "templates", templateName)
-				log.Logger().Infof("Copying chart override %s", overrideSrc)
+				log.Logger().Debugf("Copying chart override %s", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
 					log.Logger().Warnf("Error copying template %s to %s %v", overrideSrc, overrideDst, err)
@@ -496,9 +501,9 @@ func defineAppsChartOverridingError(chartName string, err error) error {
 }
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
-	log.Logger().Infof("Fetching secrets from vault into directory %q", dir)
+	log.Logger().Debugf("Fetching secrets from vault into directory %q", dir)
 	files := []string{}
-	client, err := o.SystemVaultClient(kube.DefaultNamespace)
+	client, err := o.SystemVaultClient("")
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}
@@ -536,7 +541,7 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 		if err != nil {
 			return files, errors.Wrapf(err, "saving the secret file %q", secretFile)
 		}
-		log.Logger().Infof("Saved secrets file %s", util.ColorInfo(secretFile))
+		log.Logger().Debugf("Saved secrets file %s", util.ColorInfo(secretFile))
 		files = append(files, secretFile)
 	}
 	return files, nil

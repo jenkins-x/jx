@@ -115,7 +115,7 @@ func (o *StopPipelineOptions) stopJenkinsJob() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to stop: ", defaultName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to stop: ", defaultName, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -173,6 +173,7 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 			repo := labels[tekton.LabelRepo]
 			branch := labels[tekton.LabelBranch]
 			context := labels[tekton.LabelContext]
+			buildNumber := labels[tekton.LabelBuild]
 
 			if owner == "" {
 				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelOwner, pr.Name, labels)
@@ -187,7 +188,8 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 				continue
 			}
 
-			name := fmt.Sprintf("%s/%s/%s", owner, repo, branch)
+			name := fmt.Sprintf("%s/%s/%s #%s", owner, repo, branch, buildNumber)
+
 			if context != "" {
 				name = fmt.Sprintf("%s-%s", name, context)
 			}
@@ -204,12 +206,12 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 
 	args := o.Args
 	if len(args) == 0 {
-		name, err := util.PickName(names, "Which pipeline do you want to stop: ", "select a pipeline to cancel", o.In, o.Out, o.Err)
+		name, err := util.PickName(names, "Which pipeline do you want to stop: ", "select a pipeline to cancel", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
 
-		if !util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.In, o.Out, o.Err) {
+		if !util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.GetIOFileHandles()) {
 			return nil
 		}
 		args = []string{name}

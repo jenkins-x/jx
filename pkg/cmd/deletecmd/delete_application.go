@@ -2,10 +2,11 @@ package deletecmd
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/fields"
 	"os/user"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/fields"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -138,6 +139,28 @@ func (o *DeleteApplicationOptions) Run() error {
 	return nil
 }
 
+func matchesWithAnyEnvironmentURL(s string, environments map[string]*v1.Environment) bool {
+	for _, environment := range environments {
+		if strings.Contains(environment.Spec.Source.URL, s) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func removeEnvironments(jobs []string, environments map[string]*v1.Environment) []string {
+	var applications []string
+
+	for _, job := range jobs {
+		if !matchesWithAnyEnvironmentURL(job, environments) {
+			applications = append(applications, job)
+		}
+	}
+
+	return applications
+}
+
 func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.SourceRepositoryInterface) (deletedApplications []string, err error) {
 	jxClient, _, err := o.JXClient()
 	if err != nil {
@@ -159,11 +182,12 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 		NS:           ns,
 		IgnoreBranch: true,
 	}
-	names, err := prowOptions.GetReleaseJobs()
+	jobs, err := prowOptions.GetReleaseJobs()
 	if err != nil {
 		return deletedApplications, fmt.Errorf("Failed to get ProwJobs")
 	}
 
+	names := removeEnvironments(jobs, envMap)
 	if len(names) == 0 {
 		return deletedApplications, fmt.Errorf("There are no Applications in Jenkins")
 	}
@@ -174,7 +198,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 	}
 
 	if len(o.Args) == 0 {
-		o.Args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Prow:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+		o.Args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Prow:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return deletedApplications, err
 		}
@@ -295,7 +319,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 	}
 
 	if len(args) == 0 {
-		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return deletedApplications, err
 		}
@@ -312,7 +336,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 	deleteMessage := strings.Join(args, ", ")
 
 	if !o.BatchMode {
-		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.In, o.Out, o.Err) {
+		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.GetIOFileHandles()) {
 			return deletedApplications, err
 		}
 	}
@@ -436,12 +460,27 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 					log.Logger().Warnf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 				} else {
 					if status == "success" {
-						if !o.NoMergePullRequest {
-							err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+						if !(o.NoMergePullRequest) {
+							tideMerge := false
+							// Now check if tide is running or not
+							commitStatues, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, pr.LastCommitSha)
 							if err != nil {
-								if !logMergeFailure {
-									logMergeFailure = true
-									log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+								log.Logger().Warnf("unable to get commit statuses for %s", pr.URL)
+							} else {
+								for _, s := range commitStatues {
+									if s.State == "tide" {
+										tideMerge = true
+										break
+									}
+								}
+							}
+							if !tideMerge {
+								err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+								if err != nil {
+									if !logMergeFailure {
+										logMergeFailure = true
+										log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+									}
 								}
 							}
 						}

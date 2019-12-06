@@ -64,6 +64,14 @@ type Cluster struct {
 	Location       string            `json:"location,omitempty"`
 }
 
+type recordSet struct {
+	Kind    string   `json:"kind"`
+	Name    string   `json:"name"`
+	Rrdatas []string `json:"rrdatas"`
+	TTL     int      `json:"ttl"`
+	Type    string   `json:"type"`
+}
+
 // generateManagedZoneName constructs and returns a managed zone name using the domain value
 func generateManagedZoneName(domain string) string {
 
@@ -150,7 +158,7 @@ func (g *GCloud) CreateManagedZone(projectID string, domain string) error {
 	return nil
 }
 
-// CreateDNSZone creates the tenants DNS zone if it doesn't exist
+// CreateDNSZone creates the DNS zone if it doesn't exist
 // and returns the list of name servers for the given domain and project
 func (g *GCloud) CreateDNSZone(projectID string, domain string) (string, []string, error) {
 	var managedZone, nameServers = "", []string{}
@@ -162,6 +170,19 @@ func (g *GCloud) CreateDNSZone(projectID string, domain string) (string, []strin
 	if err != nil {
 		return "", []string{}, errors.Wrap(err, "while trying to retrieve the managed zone name servers")
 	}
+
+	// Update TTL to 60 for managed zone NS record
+	err = updateManagedZoneRecordTTL(projectID, domain, managedZone, "NS", 60)
+	if err != nil {
+		return "", []string{}, errors.Wrap(err, "when trying to update the managed zone NS record-set")
+	}
+
+	// Update TTL to 60 for managed zone SOA record
+	err = updateManagedZoneRecordTTL(projectID, domain, managedZone, "SOA", 60)
+	if err != nil {
+		return "", []string{}, errors.Wrap(err, "when trying to update the managed zone SOA record-set")
+	}
+
 	return managedZone, nameServers, nil
 }
 
@@ -208,6 +229,156 @@ func (g *GCloud) GetManagedZoneNameServers(projectID string, domain string) (str
 		log.Logger().Infof("Managed Zone doesn't exist for %s domain.", domain)
 	}
 	return managedZoneName, nameServers, nil
+}
+
+func getManagedZoneRecordSet(parentProject string, parentZone string, mzRecordSet recordSet) (recordSet, error) {
+	var googleRecordSet recordSet
+
+	args := []string{"dns",
+		"record-sets",
+		fmt.Sprintf("--project=%s", parentProject),
+		"list",
+		fmt.Sprintf("--name=%s", mzRecordSet.Name),
+		fmt.Sprintf("--zone=%s", parentZone),
+		fmt.Sprintf("--filter=type:%s", mzRecordSet.Type),
+		"--format=json",
+	}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+
+	output, err := cmd.Run()
+	if err != nil {
+		return googleRecordSet, errors.Wrap(err, "executing gcloud dns managed-zones list command")
+	}
+	var recordSets []recordSet
+	err = yaml.Unmarshal([]byte(output), &recordSets)
+	if err != nil {
+		return googleRecordSet, errors.Wrap(err, "unmarshalling gcloud response")
+	}
+
+	if len(recordSets) == 1 {
+		log.Logger().Infof("google dns record-set contains - domain: %s, with nameServers: %s\n", recordSets[0].Name, strings.Join(recordSets[0].Rrdatas, " "))
+		googleRecordSet = recordSets[0]
+	} else {
+		log.Logger().Debugf("No record-set or more than one record-set found for %s in %s", mzRecordSet.Name, parentZone)
+	}
+
+	return googleRecordSet, nil
+}
+
+func applyManagedZoneRecordTTL(parentProject string, parentZone string, googleRecordSet recordSet, ttl int) error {
+
+	if googleRecordSet.Name != "" {
+		// transaction start
+		startArgs := []string{"dns",
+			"record-sets",
+			fmt.Sprintf("--project=%s", parentProject),
+			"transaction",
+			"start",
+			fmt.Sprintf("--zone=%s", parentZone),
+			"--format=json",
+		}
+		startCmd := util.Command{
+			Name: "gcloud",
+			Args: startArgs,
+		}
+
+		_, err := startCmd.RunWithoutRetry()
+		if err != nil {
+			return errors.Wrap(err, "executing gcloud dns record-sets transaction start command")
+		}
+
+		// remove the previous record as it needs to be updated
+		removeArgs1 := []string{"dns",
+			"record-sets",
+			fmt.Sprintf("--project=%s", parentProject),
+			"transaction",
+			"remove",
+		}
+		removeArgs2 := []string{fmt.Sprintf("--name=%s", googleRecordSet.Name),
+			fmt.Sprintf("--ttl=%d", googleRecordSet.TTL),
+			fmt.Sprintf("--type=%s", googleRecordSet.Type),
+			fmt.Sprintf("--zone=%s", parentZone),
+			"--format=json",
+		}
+		removeArgs := append(removeArgs1, googleRecordSet.Rrdatas...)
+		removeArgs = append(removeArgs, removeArgs2...)
+
+		removeCmd := util.Command{
+			Name: "gcloud",
+			Args: removeArgs,
+		}
+
+		_, err = removeCmd.RunWithoutRetry()
+		if err != nil {
+			return errors.Wrap(err, "executing gcloud dns record-sets transaction remove command")
+		}
+
+		// transaction add
+		addArgs1 := []string{"dns",
+			"record-sets",
+			fmt.Sprintf("--project=%s", parentProject),
+			"transaction",
+			"add",
+		}
+		addArgs2 := []string{fmt.Sprintf("--name=%s", googleRecordSet.Name),
+			fmt.Sprintf("--ttl=%d", ttl),
+			fmt.Sprintf("--type=%s", googleRecordSet.Type),
+			fmt.Sprintf("--zone=%s", parentZone),
+			"--format=json",
+		}
+		addArgs := append(addArgs1, googleRecordSet.Rrdatas...)
+		addArgs = append(addArgs, addArgs2...)
+
+		addCmd := util.Command{
+			Name: "gcloud",
+			Args: addArgs,
+		}
+
+		_, err = addCmd.RunWithoutRetry()
+		if err != nil {
+			return errors.Wrap(err, "executing gcloud dns record-sets transaction add command")
+		}
+
+		// transaction execute
+		executeArgs := []string{"dns",
+			"record-sets",
+			fmt.Sprintf("--project=%s", parentProject),
+			"transaction",
+			"execute",
+			fmt.Sprintf("--zone=%s", parentZone),
+			"--format=json",
+		}
+		executeCmd := util.Command{
+			Name: "gcloud",
+			Args: executeArgs,
+		}
+
+		_, err = executeCmd.RunWithoutRetry()
+		if err != nil {
+			return errors.Wrap(err, "executing gcloud dns record-sets transaction start command")
+		}
+	}
+	return nil
+}
+
+func updateManagedZoneRecordTTL(projectID string, domain string, managedZone string, dnsType string, ttl int) error {
+	var managedZoneRecord recordSet
+	managedZoneRecord.Name = addDomainSuffix(domain)
+	managedZoneRecord.Type = dnsType
+	managedZoneRecord.TTL = ttl
+	managedZoneRecordSet, err := getManagedZoneRecordSet(projectID, managedZone, managedZoneRecord)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("when retrieving the '%s' record-set of type '%s'", domain, dnsType))
+	}
+
+	err = applyManagedZoneRecordTTL(projectID, managedZone, managedZoneRecordSet, 60)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("when updating the '%s' record-set of type '%s'", domain, dnsType))
+	}
+	return nil
 }
 
 // ClusterZone retrives the zone of GKE cluster description
@@ -276,7 +447,7 @@ func (g *GCloud) BucketExists(projectID string, bucketName string) (bool, error)
 		Name: "gsutil",
 		Args: args,
 	}
-	output, err := cmd.RunWithoutRetry()
+	output, err := cmd.Run()
 	if err != nil {
 		log.Logger().Infof("Error checking bucket exists: %s, %s", output, err)
 		return false, err
@@ -1247,4 +1418,41 @@ func (g *GCloud) CurrentProject() (string, error) {
 		return text, errors.Wrap(err, "failed to detect the current GCP project")
 	}
 	return strings.TrimSpace(text), nil
+}
+
+func (g *GCloud) GetProjectNumber(projectID string) (string, error) {
+	args := []string{
+		"projects",
+		"describe",
+		projectID,
+		"--format=json",
+	}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+
+	log.Logger().Infof("running: gcloud %s", strings.Join(args, " "))
+	output, err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	var project project
+	err = json.Unmarshal([]byte(output), &project)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to unmarshal %s", output)
+	}
+	return project.ProjectNumber, nil
+}
+
+type project struct {
+	ProjectNumber string `json:"projectNumber"`
+}
+
+func addDomainSuffix(domain string) string {
+	if domain[len(domain)-1:] != "." {
+		return fmt.Sprintf("%s.", domain)
+	}
+	return domain
 }

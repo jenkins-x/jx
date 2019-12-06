@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
+	"github.com/imdario/mergo"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+
 	"github.com/ghodss/yaml"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
@@ -26,8 +29,6 @@ var (
 		".xip.io",
 		".beesdns.com",
 	}
-
-	semanticVersionRegex = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$`)
 )
 
 const (
@@ -49,12 +50,16 @@ const (
 	RequirementEnvGitOwner = "JX_REQUIREMENT_ENV_GIT_OWNER"
 	// RequirementEnvGitPublic sets the visibility of the environment repositories as private (subscription required for GitHub Organisations)
 	RequirementEnvGitPublic = "JX_REQUIREMENT_ENV_GIT_PUBLIC"
+	// RequirementGitPublic sets the visibility of the application repositories as private (subscription required for GitHub Organisations)
+	RequirementGitPublic = "JX_REQUIREMENT_GIT_PUBLIC"
 	// RequirementExternalDNSServiceAccountName the service account name for external dns
 	RequirementExternalDNSServiceAccountName = "JX_REQUIREMENT_EXTERNALDNS_SA_NAME"
 	// RequirementVaultName the name for vault
 	RequirementVaultName = "JX_REQUIREMENT_VAULT_NAME"
 	// RequirementVaultServiceAccountName the service account name for vault
 	RequirementVaultServiceAccountName = "JX_REQUIREMENT_VAULT_SA_NAME"
+	// RequirementVeleroServiceAccountName the service account name for velero
+	RequirementVeleroServiceAccountName = "JX_REQUIREMENT_VELERO_SA_NAME"
 	// RequirementVaultKeyringName the keyring name for vault
 	RequirementVaultKeyringName = "JX_REQUIREMENT_VAULT_KEYRING_NAME"
 	// RequirementVaultKeyName the key name for vault
@@ -73,6 +78,12 @@ const (
 	RequirementKaniko = "JX_REQUIREMENT_KANIKO"
 	// RequirementIngressTLSProduction use the lets encrypt production server
 	RequirementIngressTLSProduction = "JX_REQUIREMENT_INGRESS_TLS_PRODUCTION"
+	// RequirementChartRepository the helm chart repository for jx
+	RequirementChartRepository = "JX_REQUIREMENT_CHART_REPOSITORY"
+	// RequirementRegistry the container registry for jx
+	RequirementRegistry = "JX_REQUIREMENT_REGISTRY"
+	// RequirementRepository the artifact repository for jx
+	RequirementRepository = "JX_REQUIREMENT_REPOSITORY"
 	// RequirementWebhook the webhook handler for jx
 	RequirementWebhook = "JX_REQUIREMENT_WEBHOOK"
 	// RequirementStorageBackupEnabled if backup storage is required
@@ -91,6 +102,17 @@ const (
 	RequirementStorageRepositoryEnabled = "JX_REQUIREMENT_STORAGE_REPOSITORY_ENABLED"
 	// RequirementStorageRepositoryURL repository storage url
 	RequirementStorageRepositoryURL = "JX_REQUIREMENT_STORAGE_REPOSITORY_URL"
+	// RequirementGkeProjectNumber is the gke project number
+	RequirementGkeProjectNumber = "JX_REQUIREMENT_GKE_PROJECT_NUMBER"
+	// RequirementGitAppEnabled if the github app should be used for access tokens
+	RequirementGitAppEnabled = "JX_REQUIREMENT_GITHUB_APP_ENABLED"
+	// RequirementGitAppURL contains the URL to the github app
+	RequirementGitAppURL = "JX_REQUIREMENT_GITHUB_APP_URL"
+)
+
+const (
+	// BootDeployNamespace environment variable for deployment namespace
+	BootDeployNamespace = "DEPLOY_NAMESPACE"
 )
 
 // SecretStorageType is the type of storage used for secrets
@@ -103,6 +125,9 @@ const (
 	// `~/.jx/localSecrets` to store secrets
 	SecretStorageTypeLocal SecretStorageType = "local"
 )
+
+// SecretStorageTypeValues the string values for the secret storage
+var SecretStorageTypeValues = []string{"local", "vault"}
 
 // WebhookType is the type of a webhook strategy
 type WebhookType string
@@ -118,24 +143,53 @@ const (
 	WebhookTypeLighthouse WebhookType = "lighthouse"
 	// WebhookTypeJenkins specifies that we use jenkins webhooks
 	WebhookTypeJenkins WebhookType = "jenkins"
-	// DefaultVersionsURL default version stream url
-	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
-	// DefaultVersionsRef default version stream ref
-	DefaultVersionsRef = "master"
+)
+
+// WebhookTypeValues the string values for the webhook types
+var WebhookTypeValues = []string{"jenkins", "lighthouse", "prow"}
+
+// RepositoryType is the type of a repository we use to store artifacts (jars, tarballs, npm packages etc)
+type RepositoryType string
+
+const (
+	// RepositoryTypeUnknown if we have yet to configure a repository
+	RepositoryTypeUnknown RepositoryType = ""
+	// RepositoryTypeArtifactory if you wish to use Artifactory as the artifact repository
+	RepositoryTypeArtifactory RepositoryType = "artifactory"
+	// RepositoryTypeBucketRepo if you wish to use bucketrepo as the artifact repository. see https://github.com/jenkins-x/bucketrepo
+	RepositoryTypeBucketRepo RepositoryType = "bucketrepo"
+	// RepositoryTypeNone if you do not wish to install an artifact repository
+	RepositoryTypeNone RepositoryType = "none"
+	// RepositoryTypeNexus if you wish to use Sonatype Nexus as the artifact repository
+	RepositoryTypeNexus RepositoryType = "nexus"
+)
+
+// RepositoryTypeValues the string values for the repository types
+var RepositoryTypeValues = []string{"none", "bucketrepo", "nexus", "artifactory"}
+
+const (
 	// DefaultProfileFile location of profle config
 	DefaultProfileFile = "profile.yaml"
 	// OpenSourceProfile constant for OSS profile
 	OpenSourceProfile = "oss"
 	// CloudBeesProfile constant for CloudBees profile
 	CloudBeesProfile = "cloudbees"
+)
+
+// Overrideable at build time - see Makefile
+var (
+	// DefaultVersionsURL default version stream url
+	DefaultVersionsURL = "https://github.com/jenkins-x/jenkins-x-versions.git"
+	// DefaultVersionsRef default version stream ref
+	DefaultVersionsRef = "master"
 	// DefaultBootRepository default git repo for boot
 	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
-	// DefaultCloudBeesBootRepository boot git repo to use when using cloudbees profile
-	DefaultCloudBeesBootRepository = "https://github.com/cloudbees/cloudbees-jenkins-x-boot-config.git"
-	// DefaultCloudBeesVersionsURL default version stream url for cloudbees jenkins x distribution
-	DefaultCloudBeesVersionsURL = "https://github.com/cloudbees/cloudbees-jenkins-x-versions.git"
-	// DefaultCloudBeesVersionsRef default version stream ref for cloudbees jenkins x distribution
-	DefaultCloudBeesVersionsRef = "master"
+	// LatestVersionStringsBucket optional bucket name to search in for latest version strings
+	LatestVersionStringsBucket = ""
+	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
+	BinaryDownloadBaseURL = "https://github.com/jenkins-x/jx/releases/download/v"
+	// TLSDocURL the URL presented by `jx step verify preinstall` for documentation on configuring TLS
+	TLSDocURL = "https://jenkins-x.io/docs/getting-started/setup/boot/#ingress"
 )
 
 // EnvironmentConfig configures the organisation and repository name of the git repositories for environments
@@ -152,6 +206,8 @@ type EnvironmentConfig struct {
 	GitKind string `json:"gitKind,omitempty"`
 	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress,omitempty"`
+	// RemoteCluster specifies this environment runs on a remote cluster to the development cluster
+	RemoteCluster bool `json:"remoteCluster,omitempty"`
 }
 
 // IngressConfig contains dns specific requirements
@@ -163,6 +219,12 @@ type IngressConfig struct {
 	CloudDNSSecretName string `json:"cloud_dns_secret_name,omitempty"`
 	// Domain to expose ingress endpoints
 	Domain string `json:"domain"`
+	// IgnoreLoadBalancer if the nginx-controller LoadBalancer service should not be used to detect and update the
+	// domain if you are using a dynamic domain resolver like `.nip.io` rather than a real DNS configuration.
+	// With this flag enabled the `Domain` value will be used and never re-created based on the current LoadBalancer IP address.
+	IgnoreLoadBalancer bool `json:"ignoreLoadBalancer,omitempty"`
+	// Exposer the exposer used to expose ingress endpoints. Defaults to "Ingress"
+	Exposer string `json:"exposer,omitempty"`
 	// NamespaceSubDomain the sub domain expression to expose ingress. Defaults to ".jx."
 	NamespaceSubDomain string `json:"namespaceSubDomain"`
 	// TLS enable automated TLS using certmanager
@@ -180,6 +242,8 @@ type TLSConfig struct {
 	// Production false uses self-signed certificates from the LetsEncrypt staging server, true enables the production
 	// server which incurs higher rate limiting https://letsencrypt.org/docs/rate-limits/
 	Production bool `json:"production"`
+	// SecretName the name of the secret which contains the TLS certificate
+	SecretName string `json:"secretName,omitempty"`
 }
 
 // JxInstallProfile contains the jx profile info
@@ -208,12 +272,33 @@ type StorageConfig struct {
 	Backup StorageEntryConfig `json:"backup"`
 }
 
+// AzureConfig contains Azure specific requirements
+type AzureConfig struct {
+	// RegistrySubscription the registry subscription for defaulting the container registry.
+	// Not used if you specify a Registry explicitly
+	RegistrySubscription string `json:"registrySubscription,omitempty"`
+}
+
+// GKEConfig contains GKE specific requirements
+type GKEConfig struct {
+	// ProjectNumber the unique project number GKE assigns to a project (required for workload identity).
+	ProjectNumber string `json:"projectNumber,omitempty"`
+}
+
 // ClusterConfig contains cluster specific requirements
 type ClusterConfig struct {
+	// AzureConfig the azure specific configuration
+	AzureConfig *AzureConfig `json:"azure,omitempty"`
+	// ChartRepository the repository URL to deploy charts to
+	ChartRepository string `json:"chartRepository,omitempty"`
+	// GKEConfig the gke specific configuration
+	GKEConfig *GKEConfig `json:"gke,omitempty"`
 	// EnvironmentGitOwner the default git owner for environment repositories if none is specified explicitly
 	EnvironmentGitOwner string `json:"environmentGitOwner,omitempty"`
 	// EnvironmentGitPublic determines whether jx boot create public or private git repos for the environments
 	EnvironmentGitPublic bool `json:"environmentGitPublic,omitempty"`
+	// GitPublic determines whether jx boot create public or private git repos for the applications
+	GitPublic bool `json:"gitPublic,omitempty"`
 	// Provider the kubernetes provider (e.g. gke)
 	Provider string `json:"provider,omitempty"`
 	// Namespace the namespace to install the dev environment
@@ -237,6 +322,8 @@ type ClusterConfig struct {
 	GitServer string `json:"gitServer,omitempty"`
 	// ExternalDNSSAName the service account name for external dns
 	ExternalDNSSAName string `json:"externalDNSSAName,omitempty"`
+	// Registry the host name of the container registry
+	Registry string `json:"registry,omitempty"`
 	// VaultSAName the service account name for vault
 	// Deprecated
 	VaultSAName string `json:"vaultSAName,omitempty"`
@@ -246,8 +333,9 @@ type ClusterConfig struct {
 	HelmMajorVersion string `json:"helmMajorVersion,omitempty"`
 }
 
+// VaultConfig contains Vault configuration for boot
 type VaultConfig struct {
-	// Name the name of the vault if using vault for secretts
+	// Name the name of the vault if using vault for secrets
 	Name           string `json:"name,omitempty"`
 	Bucket         string `json:"bucket,omitempty"`
 	Keyring        string `json:"keyring,omitempty"`
@@ -255,7 +343,26 @@ type VaultConfig struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	RecreateBucket bool   `json:"recreateBucket,omitempty"`
 	// Optionally allow us to override the default lookup of the Vault URL, could be incluster service or external ingress
-	DisableURLDiscovery bool `json:"disableURLDiscovery,omitempty"`
+	DisableURLDiscovery bool            `json:"disableURLDiscovery,omitempty"`
+	AWSConfig           *VaultAWSConfig `json:"aws,omitempty"`
+}
+
+// VaultAWSConfig contains all the Vault configuration needed by Vault to be deployed in AWS
+type VaultAWSConfig struct {
+	VaultAWSUnsealConfig
+	AutoCreate          bool   `json:"autoCreate,omitempty"`
+	DynamoDBTable       string `json:"dynamoDBTable,omitempty"`
+	DynamoDBRegion      string `json:"dynamoDBRegion,omitempty"`
+	ProvidedIAMUsername string `json:"iamUserName,omitempty"`
+}
+
+// VaultAWSUnsealConfig contains references to existing AWS resources that can be used to install Vault
+type VaultAWSUnsealConfig struct {
+	KMSKeyID  string `json:"kmsKeyId,omitempty"`
+	KMSRegion string `json:"kmsRegion,omitempty"`
+	S3Bucket  string `json:"s3Bucket,omitempty"`
+	S3Prefix  string `json:"s3Prefix,omitempty"`
+	S3Region  string `json:"s3Region,omitempty"`
 }
 
 // UnmarshalJSON method handles the rename of EnvironmentGitPrivate to EnvironmentGitPublic.
@@ -286,7 +393,7 @@ func (t *ClusterConfig) UnmarshalJSON(data []byte) error {
 	}
 
 	if gitPrivateSet {
-		log.Logger().Warn("EnvironmentGitPrivate specified in ClusterConfig. EnvironmentGitPrivate is deprecated use EnvironmentGitPublic instead.")
+		log.Logger().Warn("EnvironmentGitPrivate specified in Cluster EnvironmentGitPrivate is deprecated use EnvironmentGitPublic instead.")
 		privateString := string(private)
 		if privateString == "true" {
 			t.EnvironmentGitPublic = false
@@ -321,37 +428,52 @@ type AutoUpdateConfig struct {
 	Schedule string `json:"schedule"`
 }
 
-// RequirementsConfig contains the logical installation requirements
+// GithubAppConfig contains github app config
+type GithubAppConfig struct {
+	// Enabled this determines whether this install should use the jenkins x github app for access tokens
+	Enabled bool `json:"enabled"`
+	// Schedule cron of the github app token refresher
+	Schedule string `json:"schedule,omitempty"`
+	// URL contains a URL to the github app
+	URL string `json:"url,omitempty"`
+}
+
+// RequirementsConfig contains the logical installation requirements in the `jx-requirements.yml` file when
+// installing, configuring or upgrading Jenkins X via `jx boot`
 type RequirementsConfig struct {
+	// AutoUpdate contains auto update config
+	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
+	// BootConfigURL contains the url to which the dev environment is associated with
+	BootConfigURL string `json:"bootConfigURL,omitempty"`
 	// Cluster contains cluster specific requirements
 	Cluster ClusterConfig `json:"cluster"`
-	// Kaniko whether to enable kaniko for building docker images
-	Kaniko bool `json:"kaniko,omitempty"`
-	// Velero the configuration for running velero for backing up the cluster resources
-	Velero VeleroConfig `json:"velero,omitempty"`
+	// Environments the requirements for the environments
+	Environments []EnvironmentConfig `json:"environments,omitempty"`
+	// GithubApp contains github app config
+	GithubApp *GithubAppConfig `json:"githubApp,omitempty"`
 	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
 	// re-run 'jx boot' when changes merge to the master branch
 	GitOps bool `json:"gitops,omitempty"`
-	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
-	Terraform bool `json:"terraform,omitempty"`
-	// SecretStorage how should we store secrets for the cluster
-	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
-	// Webhook specifies what engine we should use for webhooks
-	Webhook WebhookType `json:"webhook,omitempty"`
-	// Environments the requirements for the environments
-	Environments []EnvironmentConfig `json:"environments,omitempty"`
+	// Kaniko whether to enable kaniko for building docker images
+	Kaniko bool `json:"kaniko,omitempty"`
 	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress"`
+	// Repository specifies what kind of artifact repository you wish to use for storing artifacts (jars, tarballs, npm modules etc)
+	Repository RepositoryType `json:"repository,omitempty"`
+	// SecretStorage how should we store secrets for the cluster
+	SecretStorage SecretStorageType `json:"secretStorage,omitempty"`
 	// Storage contains storage requirements
 	Storage StorageConfig `json:"storage"`
-	// VersionStream contains version stream info
-	VersionStream VersionStreamConfig `json:"versionStream"`
-	// AutoUpdate contains auto update config
-	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
+	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
+	Terraform bool `json:"terraform,omitempty"`
 	// Vault the configuration for vault
 	Vault VaultConfig `json:"vault,omitempty"`
-	// BootConfigURL contains the url to which the dev environment is associated with
-	BootConfigURL string `json:"bootConfigURL,omitempty"`
+	// Velero the configuration for running velero for backing up the cluster resources
+	Velero VeleroConfig `json:"velero,omitempty"`
+	// VersionStream contains version stream info
+	VersionStream VersionStreamConfig `json:"versionStream"`
+	// Webhook specifies what engine we should use for webhooks
+	Webhook WebhookType `json:"webhook,omitempty"`
 }
 
 // NewRequirementsConfig creates a default configuration file
@@ -422,6 +544,9 @@ func LoadActiveInstallProfile() string {
 // GetParentDir returns the parent directory without a trailing separator
 func GetParentDir(path string) string {
 	subDir, _ := filepath.Split(path)
+	if subDir == "" {
+		return ""
+	}
 	i := len(subDir) - 1
 	if os.IsPathSeparator(subDir[i]) {
 		subDir = subDir[0:i]
@@ -456,6 +581,32 @@ func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
 	return config, nil
 }
 
+// GetRequirementsConfigFromTeamSettings reads the BootRequirements string from TeamSettings and unmarshals it
+func GetRequirementsConfigFromTeamSettings(settings *v1.TeamSettings) (*RequirementsConfig, error) {
+	if settings == nil {
+		return nil, nil
+	}
+	// TeamSettings does not have a real value for BootRequirements, so this is probably not a boot cluster.
+	if settings.BootRequirements == "" {
+		return nil, nil
+	}
+
+	config := &RequirementsConfig{}
+	data := []byte(settings.BootRequirements)
+	validationErrors, err := util.ValidateYaml(config, data)
+	if err != nil {
+		return config, fmt.Errorf("failed to validate requirements from team settings due to %s", err)
+	}
+	if len(validationErrors) > 0 {
+		return config, fmt.Errorf("validation failures in requirements from team settings:\n%s", strings.Join(validationErrors, "\n"))
+	}
+	err = yaml.Unmarshal(data, config)
+	if err != nil {
+		return config, fmt.Errorf("failed to unmarshal requirements from team settings due to %s", err)
+	}
+	return config, nil
+}
+
 // IsEmpty returns true if this configuration is empty
 func (c *RequirementsConfig) IsEmpty() bool {
 	empty := &RequirementsConfig{}
@@ -472,6 +623,51 @@ func (c *RequirementsConfig) SaveConfig(fileName string) error {
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save file %s", fileName)
+	}
+	return nil
+}
+
+type environmentsSliceTransformer struct{}
+
+// environmentsSliceTransformer.Transformer is handling the correct merge of two EnvironmentConfig slices
+// so we can both append extra items and merge existing ones so we don't lose any data
+func (t environmentsSliceTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
+	if typ == reflect.TypeOf([]EnvironmentConfig{}) {
+		return func(dst, src reflect.Value) error {
+			d := dst.Interface().([]EnvironmentConfig)
+			s := src.Interface().([]EnvironmentConfig)
+			if dst.CanSet() {
+				for i, v := range s {
+					if i > len(d)-1 {
+						d = append(d, v)
+					} else {
+						err := mergo.Merge(&d[i], &v, mergo.WithOverride)
+						if err != nil {
+							return errors.Wrap(err, "error merging EnvironmentConfig slices")
+						}
+					}
+				}
+				dst.Set(reflect.ValueOf(d))
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+// MergeSave attempts to merge the provided RequirementsConfig with the caller's data.
+// It does so overriding values in the source struct with non-zero values from the provided struct
+// it defines non-zero per property and not for a while embedded struct, meaning that nested properties
+// in embedded structs should also be merged correctly.
+// if a slice is added a transformer will be needed to handle correctly merging the contained values
+func (c *RequirementsConfig) MergeSave(src *RequirementsConfig, requirementsFileName string) error {
+	err := mergo.Merge(c, src, mergo.WithOverride, mergo.WithTransformers(environmentsSliceTransformer{}))
+	if err != nil {
+		return errors.Wrap(err, "error merging jx-requirements.yml files")
+	}
+	err = c.SaveConfig(requirementsFileName)
+	if err != nil {
+		return errors.Wrapf(err, "error saving the merged jx-requirements.yml files to %s", requirementsFileName)
 	}
 	return nil
 }
@@ -581,6 +777,9 @@ func (c *RequirementsConfig) addDefaults() {
 			// c.Webhook = WebhookTypeLighthouse
 		}
 	}
+	if c.Repository == "" {
+		c.Repository = "nexus"
+	}
 }
 
 func (c *RequirementsConfig) handleDeprecation() {
@@ -606,4 +805,192 @@ func (i *IngressConfig) IsAutoDNSDomain() bool {
 		}
 	}
 	return false
+}
+
+// OverrideRequirementsFromEnvironment allows properties to be overridden with environment variables
+func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func() gke.GClouder) {
+	if "" != os.Getenv(RequirementClusterName) {
+		c.Cluster.ClusterName = os.Getenv(RequirementClusterName)
+	}
+	if "" != os.Getenv(RequirementProject) {
+		c.Cluster.ProjectID = os.Getenv(RequirementProject)
+	}
+	if "" != os.Getenv(RequirementZone) {
+		c.Cluster.Zone = os.Getenv(RequirementZone)
+	}
+	if "" != os.Getenv(RequirementChartRepository) {
+		c.Cluster.ChartRepository = os.Getenv(RequirementChartRepository)
+	}
+	if "" != os.Getenv(RequirementRegistry) {
+		c.Cluster.Registry = os.Getenv(RequirementRegistry)
+	}
+	if "" != os.Getenv(RequirementEnvGitOwner) {
+		c.Cluster.EnvironmentGitOwner = os.Getenv(RequirementEnvGitOwner)
+	}
+	publicEnvRepo, found := os.LookupEnv(RequirementEnvGitPublic)
+	if found {
+		if envVarBoolean(publicEnvRepo) {
+			c.Cluster.EnvironmentGitPublic = true
+		} else {
+			c.Cluster.EnvironmentGitPublic = false
+		}
+	}
+	publicAppRepo, found := os.LookupEnv(RequirementGitPublic)
+	if found {
+		if envVarBoolean(publicAppRepo) {
+			c.Cluster.GitPublic = true
+		} else {
+			c.Cluster.GitPublic = false
+		}
+	}
+	if "" != os.Getenv(RequirementExternalDNSServiceAccountName) {
+		c.Cluster.ExternalDNSSAName = os.Getenv(RequirementExternalDNSServiceAccountName)
+	}
+	if "" != os.Getenv(RequirementVaultName) {
+		c.Vault.Name = os.Getenv(RequirementVaultName)
+	}
+	if "" != os.Getenv(RequirementVaultServiceAccountName) {
+		c.Vault.ServiceAccount = os.Getenv(RequirementVaultServiceAccountName)
+	}
+	if "" != os.Getenv(RequirementVaultKeyringName) {
+		c.Vault.Keyring = os.Getenv(RequirementVaultKeyringName)
+	}
+	if "" != os.Getenv(RequirementVaultKeyName) {
+		c.Vault.Key = os.Getenv(RequirementVaultKeyName)
+	}
+	if "" != os.Getenv(RequirementVaultBucketName) {
+		c.Vault.Bucket = os.Getenv(RequirementVaultBucketName)
+	}
+	if "" != os.Getenv(RequirementVaultRecreateBucket) {
+		recreate := os.Getenv(RequirementVaultRecreateBucket)
+		if envVarBoolean(recreate) {
+			c.Vault.RecreateBucket = true
+		} else {
+			c.Vault.RecreateBucket = false
+		}
+	}
+	if "" != os.Getenv(RequirementVeleroServiceAccountName) {
+		c.Velero.ServiceAccount = os.Getenv(RequirementVeleroServiceAccountName)
+	}
+	if "" != os.Getenv(RequirementVaultDisableURLDiscovery) {
+		disable := os.Getenv(RequirementVaultDisableURLDiscovery)
+		if envVarBoolean(disable) {
+			c.Vault.DisableURLDiscovery = true
+		} else {
+			c.Vault.DisableURLDiscovery = false
+		}
+	}
+	if "" != os.Getenv(RequirementSecretStorageType) {
+		c.SecretStorage = SecretStorageType(os.Getenv(RequirementSecretStorageType))
+	}
+	if "" != os.Getenv(RequirementKanikoServiceAccountName) {
+		c.Cluster.KanikoSAName = os.Getenv(RequirementKanikoServiceAccountName)
+	}
+	if "" != os.Getenv(RequirementDomainIssuerURL) {
+		c.Ingress.DomainIssuerURL = os.Getenv(RequirementDomainIssuerURL)
+	}
+	if "" != os.Getenv(RequirementIngressTLSProduction) {
+		useProduction := os.Getenv(RequirementIngressTLSProduction)
+		if envVarBoolean(useProduction) {
+			c.Ingress.TLS.Production = true
+			for _, e := range c.Environments {
+				e.Ingress.TLS.Production = true
+			}
+		} else {
+			c.Ingress.TLS.Production = false
+			for _, e := range c.Environments {
+				e.Ingress.TLS.Production = false
+			}
+		}
+	}
+	if "" != os.Getenv(RequirementKaniko) {
+		kaniko := os.Getenv(RequirementKaniko)
+		if envVarBoolean(kaniko) {
+			c.Kaniko = true
+		}
+	}
+	if "" != os.Getenv(RequirementRepository) {
+		repositoryString := os.Getenv(RequirementRepository)
+		c.Repository = RepositoryType(repositoryString)
+	}
+	if "" != os.Getenv(RequirementWebhook) {
+		webhookString := os.Getenv(RequirementWebhook)
+		c.Webhook = WebhookType(webhookString)
+	}
+	if "" != os.Getenv(RequirementStorageBackupEnabled) {
+		storageBackup := os.Getenv(RequirementStorageBackupEnabled)
+		if envVarBoolean(storageBackup) && "" != os.Getenv(RequirementStorageBackupURL) {
+			c.Storage.Backup.Enabled = true
+			c.Storage.Backup.URL = os.Getenv(RequirementStorageBackupURL)
+		}
+	}
+	if "" != os.Getenv(RequirementStorageLogsEnabled) {
+		storageLogs := os.Getenv(RequirementStorageLogsEnabled)
+		if envVarBoolean(storageLogs) && "" != os.Getenv(RequirementStorageLogsURL) {
+			c.Storage.Logs.Enabled = true
+			c.Storage.Logs.URL = os.Getenv(RequirementStorageLogsURL)
+		}
+	}
+	if "" != os.Getenv(RequirementStorageReportsEnabled) {
+		storageReports := os.Getenv(RequirementStorageReportsEnabled)
+		if envVarBoolean(storageReports) && "" != os.Getenv(RequirementStorageReportsURL) {
+			c.Storage.Reports.Enabled = true
+			c.Storage.Reports.URL = os.Getenv(RequirementStorageReportsURL)
+		}
+	}
+	if "" != os.Getenv(RequirementStorageRepositoryEnabled) {
+		storageRepository := os.Getenv(RequirementStorageRepositoryEnabled)
+		if envVarBoolean(storageRepository) && "" != os.Getenv(RequirementStorageRepositoryURL) {
+			c.Storage.Repository.Enabled = true
+			c.Storage.Repository.URL = os.Getenv(RequirementStorageRepositoryURL)
+		}
+	}
+	// GKE specific c
+	if "" != os.Getenv(RequirementGkeProjectNumber) {
+		if c.Cluster.GKEConfig == nil {
+			c.Cluster.GKEConfig = &GKEConfig{}
+		}
+
+		c.Cluster.GKEConfig.ProjectNumber = os.Getenv(RequirementGkeProjectNumber)
+	}
+	githubApp, found := os.LookupEnv(RequirementGitAppEnabled)
+	if found {
+		if c.GithubApp == nil {
+			c.GithubApp = &GithubAppConfig{}
+		}
+		if envVarBoolean(githubApp) {
+			c.GithubApp.Enabled = true
+		} else {
+			c.GithubApp.Enabled = false
+		}
+	}
+	if "" != os.Getenv(RequirementGitAppURL) {
+		if c.GithubApp == nil {
+			c.GithubApp = &GithubAppConfig{}
+		}
+		c.GithubApp.URL = os.Getenv(RequirementGitAppURL)
+	}
+	// set this if its not currently configured
+	if c.Cluster.Provider == "gke" {
+		if c.Cluster.GKEConfig == nil {
+			c.Cluster.GKEConfig = &GKEConfig{}
+		}
+
+		if c.Cluster.GKEConfig.ProjectNumber == "" {
+			if gcloudFn != nil {
+				gcloud := gcloudFn()
+				if gcloud != nil {
+					projectNumber, err := gcloud.GetProjectNumber(c.Cluster.ProjectID)
+					if err != nil {
+						log.Logger().Warnf("unable to determine gke project number - %s", err)
+					}
+					c.Cluster.GKEConfig.ProjectNumber = projectNumber
+				}
+			}
+		}
+	}
+}
+
+func envVarBoolean(value string) bool {
+	return value == "true" || value == "yes"
 }

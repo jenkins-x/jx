@@ -2,25 +2,20 @@ package verify
 
 import (
 	"fmt"
-	"github.com/acarl005/stripansi"
-	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/sanathkr/go-yaml"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	v12 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/acarl005/stripansi"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var timeout = 1 * time.Second
@@ -221,99 +216,40 @@ func Test_abort_private_repos_with_github_provider(t *testing.T) {
 	assert.Equal(t, "cannot continue without completed git requirements", err.Error())
 }
 
-func TestStepVerifyPreInstallOptions_VerifyRequirementsConfigMap(t *testing.T) {
-	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
-	options := &commonOpts
-	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
+func TestGatherRequirements_SetsDefaults(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "test-step-verify-preinstall-")
+	require.NoError(t, err)
 
-	kubeClient, err := options.KubeClient()
-	assert.NoError(t, err, "There shouldn't be any error getting the fake Kube Client")
+	requirementsFileName := filepath.Join(tempDir, "jx-requirements.yaml")
+
+	testConfig := &config.RequirementsConfig{}
+	testConfig.Cluster.Provider = "gke"
+	testConfig.Cluster.EnvironmentGitOwner = "acme"
+	testConfig.Cluster.ProjectID = "test"
+	testConfig.Cluster.Zone = "exzone"
+	testConfig.Cluster.ClusterName = "acme"
 
 	testOptions := &StepVerifyPreInstallOptions{
+		WorkloadIdentity: true,
 		StepVerifyOptions: StepVerifyOptions{
 			StepOptions: step.StepOptions{
-				CommonOptions: options,
+				CommonOptions: &opts.CommonOptions{
+					BatchMode: true,
+				},
 			},
 		},
 	}
 
-	requirementsYamlFile := path.Join("test_data", "preinstall", "no_tls", "jx-requirements.yml")
-	exists, err := util.FileExists(requirementsYamlFile)
-	assert.NoError(t, err)
-	assert.True(t, exists)
-
-	bytes, err := ioutil.ReadFile(requirementsYamlFile)
-	assert.NoError(t, err)
-	requirements := &config.RequirementsConfig{}
-	err = yaml.Unmarshal(bytes, requirements)
+	_, err = testOptions.gatherRequirements(testConfig, requirementsFileName)
 	assert.NoError(t, err)
 
-	err = testOptions.VerifyRequirementsConfigMap(kubeClient, "jx", requirements)
-	assert.NoError(t, err, "there shouldn't be any error creating the ConfigMap")
-
-	requirementsCm, err := kubeClient.CoreV1().ConfigMaps("jx").Get(kube.ConfigMapNameRequirementsYaml, v1.GetOptions{})
-	assert.NoError(t, err, "the jx-requirements-config ConfigMap should be present")
-
-	mapRequirements := &config.RequirementsConfig{}
-	err = yaml.Unmarshal([]byte(requirementsCm.Data["requirementsFile"]), mapRequirements)
+	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName)
 	assert.NoError(t, err)
 
-	assert.Equal(t, requirements, mapRequirements)
-}
-
-func TestStepVerifyPreInstallOptions_VerifyRequirementsConfigMapWithModification(t *testing.T) {
-	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
-	options := &commonOpts
-	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
-
-	requirementsYamlFile := path.Join("test_data", "preinstall", "no_tls", "jx-requirements.yml")
-	exists, err := util.FileExists(requirementsYamlFile)
-	assert.NoError(t, err)
-	assert.True(t, exists)
-
-	bytes, err := ioutil.ReadFile(requirementsYamlFile)
-	assert.NoError(t, err)
-	requirements := &config.RequirementsConfig{}
-	err = yaml.Unmarshal(bytes, requirements)
-	assert.NoError(t, err)
-
-	kubeClient, err := options.KubeClient()
-	assert.NoError(t, err, "There shouldn't be any error getting the fake Kube Client")
-
-	_, err = kubeClient.CoreV1().ConfigMaps("jx").Create(&v12.ConfigMap{
-		ObjectMeta: v1.ObjectMeta{
-			Name: kube.ConfigMapNameRequirementsYaml,
-		},
-		Data: map[string]string{
-			"requirementsFile": string(bytes),
-		},
-	})
-	assert.NoError(t, err)
-
-	// We make a modification to the requirements and we should see it when we retrieve the ConfigMap later
-	requirements.Storage.Logs = config.StorageEntryConfig{
-		Enabled: true,
-		URL:     "gs://randombucket",
-	}
-
-	testOptions := &StepVerifyPreInstallOptions{
-		StepVerifyOptions: StepVerifyOptions{
-			StepOptions: step.StepOptions{
-				CommonOptions: options,
-			},
-		},
-	}
-
-	err = testOptions.VerifyRequirementsConfigMap(kubeClient, "jx", requirements)
-	assert.NoError(t, err, "there shouldn't be any error creating the ConfigMap")
-
-	requirementsCm, err := kubeClient.CoreV1().ConfigMaps("jx").Get(kube.ConfigMapNameRequirementsYaml, v1.GetOptions{})
-	assert.NoError(t, err, "the jx-requirements-config ConfigMap should be present")
-
-	mapRequirements := &config.RequirementsConfig{}
-	err = yaml.Unmarshal([]byte(requirementsCm.Data["requirementsFile"]), mapRequirements)
-	assert.NoError(t, err)
-
-	assert.Equal(t, requirements.Storage.Logs, mapRequirements.Storage.Logs, "the change done before calling"+
-		"VerifyRequirementsConfigMap should be present in the retrieved configuration")
+	assert.Equal(t, "jx", requirementsWithDefaults.Cluster.Namespace)
+	assert.Equal(t, "https://github.com", requirementsWithDefaults.Cluster.GitServer)
+	assert.Equal(t, "github", requirementsWithDefaults.Cluster.GitKind)
+	assert.Equal(t, "github", requirementsWithDefaults.Cluster.GitName)
+	assert.Equal(t, "-jx.", requirementsWithDefaults.Ingress.NamespaceSubDomain)
+	assert.Equal(t, config.RepositoryTypeNexus, requirementsWithDefaults.Repository)
 }

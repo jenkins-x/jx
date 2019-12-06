@@ -4,6 +4,9 @@
 package jxfactory_test
 
 import (
+	"reflect"
+	"time"
+
 	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxfactory "github.com/jenkins-x/jx/pkg/jxfactory"
 	kube "github.com/jenkins-x/jx/pkg/kube"
@@ -11,8 +14,6 @@ import (
 	versioned0 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
-	"reflect"
-	"time"
 )
 
 type MockFactory struct {
@@ -287,7 +288,7 @@ func (c *MockFactory_ImpersonateUser_OngoingVerification) GetCapturedArguments()
 func (c *MockFactory_ImpersonateUser_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -331,7 +332,7 @@ func (c *MockFactory_WithBearerToken_OngoingVerification) GetCapturedArguments()
 func (c *MockFactory_WithBearerToken_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}

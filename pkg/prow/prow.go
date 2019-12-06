@@ -2,10 +2,11 @@ package prow
 
 import (
 	"encoding/json"
+	"io/ioutil"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"io/ioutil"
 
 	//"encoding/json"
 	"fmt"

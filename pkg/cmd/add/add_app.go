@@ -52,7 +52,7 @@ const (
 
 var (
 	add_app_long = templates.LongDesc(`
-		Adds an app to Jenkins X.
+		Adds an App to Jenkins X (an app is similar to an addon),
 `)
 	add_app_example = templates.Examples(`
 		# Add an app
@@ -72,7 +72,7 @@ func NewCmdAddApp(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "app",
-		Short:   "Adds an app",
+		Short:   "Adds an App (an app is similar to an addon)",
 		Long:    add_app_long,
 		Example: add_app_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -133,11 +133,9 @@ func (o *AddAppOptions) Run() error {
 		o.Namespace = ns
 	}
 	installOpts := apps.InstallOptions{
-		In:            o.In,
+		IOFileHandles: o.GetIOFileHandles(),
 		DevEnv:        o.DevEnv,
 		Verbose:       o.Verbose,
-		Err:           o.Err,
-		Out:           o.Out,
 		GitOps:        o.GitOps,
 		BatchMode:     o.BatchMode,
 		AutoMerge:     o.AutoMerge,
@@ -164,9 +162,6 @@ func (o *AddAppOptions) Run() error {
 		if len(o.ValuesFiles) > 1 {
 			return util.InvalidOptionf(optionValues, o.SetValues,
 				"no more than one --%s can be specified when using GitOps for your dev environment", optionValues)
-		}
-		if o.GetSecretsLocation() != secrets.VaultLocationKind {
-			return fmt.Errorf("cannot install apps without a vault when using GitOps for your dev environment")
 		}
 		environmentsDir, err := o.EnvironmentsDir()
 		if err != nil {

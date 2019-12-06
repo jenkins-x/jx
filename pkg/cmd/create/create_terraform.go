@@ -1,8 +1,11 @@
 package create
 
 import (
-	"github.com/jenkins-x/jx/pkg/features"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
+	"github.com/jenkins-x/jx/pkg/features"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -63,7 +66,7 @@ type Flags struct {
 
 // CreateTerraformOptions the options for the create spring command
 type CreateTerraformOptions struct {
-	CreateOptions
+	options.CreateOptions
 	InstallOptions InstallOptions
 	Flags          Flags
 	Clusters       []Cluster
@@ -82,7 +85,7 @@ var (
 // NewCmdCreateTerraform creates a command object for the "create" command
 func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTerraformOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 		InstallOptions: CreateInstallOptions(commonOpts),
@@ -307,7 +310,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		return err
 	}
 
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -332,7 +335,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		}
 	} else {
 		details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
-			defaultRepoName, &options.InstallOptions.GitRepositoryOptions, nil, nil, options.Git(), true, options.In, options.Out, options.Err)
+			defaultRepoName, &options.InstallOptions.GitRepositoryOptions, nil, nil, options.Git(), true, options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

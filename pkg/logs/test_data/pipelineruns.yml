@@ -46,6 +46,11 @@ items:
           status: "True"
           type: Succeeded
       startTime: "2019-09-10T17:07:08Z"
+      taskRuns:
+        meta-fakeowner-fakerepo-build-1-app-extension-kvvp6:
+          pipelineTaskName: app-extension
+          status:
+            podName: meta-fakewoenr-fakerepo-build-1-app-extension-kvvp6-pod-fcf1fe
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
@@ -92,3 +97,8 @@ items:
           status: "True"
           type: Succeeded
       startTime: "2019-09-10T17:07:08Z"
+      taskRuns:
+        fakeowner-fakerepo-fakebranch-1-from-fakebranch-rbw8t:
+          pipelineTaskName: from-fakebranch
+          status:
+            podName: fakeowner-fakerepo-fakebranch-1-from-fakebranch-rbw8t-pod-1682b0

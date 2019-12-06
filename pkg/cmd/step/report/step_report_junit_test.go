@@ -3,19 +3,20 @@ package report
 import (
 	"encoding/xml"
 	"errors"
-	"github.com/acarl005/stripansi"
-	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	log2 "github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/reportingtools/mocks"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/petergtz/pegomock"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/acarl005/stripansi"
+	"github.com/google/uuid"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	log2 "github.com/jenkins-x/jx/pkg/log"
+	reportingtools_test "github.com/jenkins-x/jx/pkg/reportingtools/mocks"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/petergtz/pegomock"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReportFromSingleFile(t *testing.T) {
@@ -30,6 +31,42 @@ func TestReportFromSingleFile(t *testing.T) {
 		XUnitClient:      mock,
 		ReportsDir:       filepath.Join("test_data", "junit", "single_report"),
 		TargetReport:     "import_applications.junit.xml",
+		DeleteReportFn:   func(reportName string) (err error) { return },
+		OutputReportName: reportName,
+		StepReportOptions: StepReportOptions{
+			OutputDir: dirName,
+		},
+	}
+
+	err = o.Run()
+	assert.NoError(t, err)
+
+	mock.VerifyWasCalledOnce().EnsureXUnitViewer(AnyCommonOptions())
+	_, _, targetFileName := mock.VerifyWasCalledOnce().CreateHTMLReport(pegomock.EqString(filepath.Join(dirName,
+		reportName)), pegomock.EqString(""), pegomock.AnyString()).GetCapturedArguments()
+	defer util.DeleteFile(targetFileName)
+
+	resultingReportBytes, err := ioutil.ReadFile(targetFileName)
+	assert.NoError(t, err)
+
+	initialReportBytes, err := ioutil.ReadFile(filepath.Join(o.ReportsDir, o.TargetReport))
+	assert.NoError(t, err)
+
+	assert.Equal(t, initialReportBytes, resultingReportBytes)
+}
+
+func TestReportFromTestSuites(t *testing.T) {
+	mock := reportingtools_test.NewMockXUnitClient(pegomock.WithT(t))
+
+	dirName, err := ioutil.TempDir("", uuid.New().String())
+	defer os.Remove(dirName)
+	assert.NoError(t, err, "there shouldn't be any problem creating a temp dir")
+
+	reportName := uuid.New().String() + ".html"
+	o := StepReportJUnitOptions{
+		XUnitClient:      mock,
+		ReportsDir:       filepath.Join("test_data", "junit", "testsuites_report"),
+		TargetReport:     "ui_smoke.junit.xml",
 		DeleteReportFn:   func(reportName string) (err error) { return },
 		OutputReportName: reportName,
 		StepReportOptions: StepReportOptions{
@@ -87,13 +124,19 @@ func TestReportWithMultipleFiles(t *testing.T) {
 	err = xml.Unmarshal(reportBytes, &testSuites)
 	assert.NoError(t, err, "There shouldn't be an error Unmarshalling the resulting merged report")
 
-	assert.Len(t, testSuites.TestSuites, 2, "there should be two suites in the merged report")
+	assert.Len(t, testSuites.TestSuites, 4, "there should be two suites in the merged report")
 	knownSuitesNamesFound := 0
 	for _, v := range testSuites.TestSuites {
 		if v.Name == "Jenkins X E2E tests: create_quickstarts" {
 			knownSuitesNamesFound++
 		}
 		if v.Name == "Jenkins X E2E tests: import_applications" {
+			knownSuitesNamesFound++
+		}
+		if v.Name == "Jenkins X E2E tests: ui_smoke_can_list_projects" {
+			knownSuitesNamesFound++
+		}
+		if v.Name == "Jenkins X E2E tests: ui_smoke_can_list_builds" {
 			knownSuitesNamesFound++
 		}
 	}

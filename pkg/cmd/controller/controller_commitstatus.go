@@ -468,7 +468,7 @@ func (o *ControllerCommitStatusOptions) getGitProvider(url string) (gits.GitProv
 	if err != nil {
 		return nil, nil, err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}

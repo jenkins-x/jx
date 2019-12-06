@@ -36,8 +36,6 @@ type RshOptions struct {
 	DevPod      bool
 	Username    string
 	Environment string
-
-	stopCh chan struct{}
 }
 
 var (
@@ -143,7 +141,7 @@ func (o *RshOptions) Run() error {
 	name := o.Pod
 	if len(args) == 0 {
 		if util.StringArrayIndex(names, name) < 0 {
-			n, err := util.PickName(names, "Pick Pod:", "", o.In, o.Out, o.Err)
+			n, err := util.PickName(names, "Pick Pod:", "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -159,7 +157,7 @@ func (o *RshOptions) Run() error {
 					filteredNames = append(filteredNames, n)
 				}
 			}
-			n, err := util.PickName(filteredNames, "Pick Pod:", "", o.In, o.Out, o.Err)
+			n, err := util.PickName(filteredNames, "Pick Pod:", "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

@@ -2,29 +2,26 @@ package verify
 
 import (
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/gits"
-
 	"github.com/jenkins-x/jx/pkg/boot"
-
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/factory"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -44,6 +41,7 @@ type StepVerifyPreInstallOptions struct {
 	DisableVerifyHelm    bool
 	LazyCreateFlag       string
 	Namespace            string
+	ProviderValuesDir    string
 	TestKanikoSecretData string
 	TestVeleroSecretData string
 	WorkloadIdentity     bool
@@ -75,6 +73,7 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the install requirements file")
 	cmd.Flags().StringVarP(&options.LazyCreateFlag, "lazy-create", "", "", fmt.Sprintf("Specify true/false as to whether to lazily create missing resources. If not specified it is enabled if Terraform is not specified in the %s file", config.RequirementsConfigFileName))
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
+	cmd.Flags().StringVarP(&options.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific files")
 	cmd.Flags().BoolVarP(&options.WorkloadIdentity, "workload-identity", "", false, "Enable this if using GKE Workload Identity to avoid reconnecting to the Cluster.")
 
 	return cmd
@@ -120,18 +119,17 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	o.SetDevNamespace(ns)
 
-	log.Logger().Infof("verifying the kubernetes cluster before we try to boot Jenkins X in namespace: %s", info(ns))
+	log.Logger().Infof("Verifying the kubernetes cluster before we try to boot Jenkins X in namespace: %s", info(ns))
 	if o.LazyCreate {
-		log.Logger().Infof("we will try to lazily create any missing resources to get the current cluster ready to boot Jenkins X")
+		log.Logger().Infof("Trying to lazily create any missing resources to get the current cluster ready to boot Jenkins X")
 	} else {
-		log.Logger().Warn("lazy create of cloud resources is disabled")
-
+		log.Logger().Warn("Lazy create of cloud resources is disabled")
 	}
 
 	err = o.verifyDevNamespace(kubeClient, ns)
 	if err != nil {
 		if o.LazyCreate {
-			log.Logger().Infof("attempting to lazily create the deploy namespace %s", info(ns))
+			log.Logger().Infof("Attempting to lazily create the deploy namespace %s", info(ns))
 
 			err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
 			if err != nil {
@@ -153,11 +151,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	no := &namespace.NamespaceOptions{}
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{ns}
-	log.Logger().Infof("setting the local kubernetes context to the deploy namespace %s", info(ns))
 	err = no.Run()
 	if err != nil {
 		return err
 	}
+	log.Logger().Info("\n")
 
 	po := &StepVerifyPackagesOptions{}
 	po.CommonOptions = o.CommonOptions
@@ -166,6 +164,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	log.Logger().Info("\n")
 
 	err = o.VerifyInstallConfig(kubeClient, ns, requirements, requirementsFileName)
 	if err != nil {
@@ -176,6 +175,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	log.Logger().Info("\n")
 
 	if !o.DisableVerifyHelm {
 		err = o.verifyHelm(ns)
@@ -186,7 +186,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 	if requirements.Kaniko {
 		if requirements.Cluster.Provider == cloud.GKE {
-			log.Logger().Infof("validating the kaniko secret in namespace %s", info(ns))
+			log.Logger().Infof("Validating Kaniko secret in namespace %s", info(ns))
 
 			err = o.validateKaniko(ns)
 			if err != nil {
@@ -204,17 +204,18 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			log.Logger().Info("\n")
 		}
 	}
 
 	if vns := requirements.Velero.Namespace; vns != "" {
 		if requirements.Cluster.Provider == cloud.GKE {
-			log.Logger().Infof("validating the velero secret in namespace %s", info(vns))
+			log.Logger().Infof("Validating the velero secret in namespace %s", info(vns))
 
 			err = o.validateVelero(vns)
 			if err != nil {
 				if o.LazyCreate {
-					log.Logger().Infof("attempting to lazily create the deploy namespace %s", info(vns))
+					log.Logger().Infof("Attempting to lazily create the deploy namespace %s", info(vns))
 
 					err = o.lazyCreateVeleroSecret(requirements, vns)
 					if err != nil {
@@ -227,6 +228,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			log.Logger().Info("\n")
 		}
 	}
 
@@ -238,12 +240,25 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
-	err = o.VerifyRequirementsConfigMap(kubeClient, ns, requirements)
-	if err != nil {
-		return err
+	if requirements.Cluster.Provider == cloud.EKS && o.LazyCreate {
+		if !cluster.IsInCluster() {
+			log.Logger().Info("Attempting to lazily create the IAM Role for Service Accounts permissions")
+			err = amazon.EnableIRSASupportInCluster(requirements)
+			if err != nil {
+				return errors.Wrap(err, "error enabling IRSA in cluster")
+			}
+			err = amazon.CreateIRSAManagedServiceAccounts(requirements, o.ProviderValuesDir)
+			if err != nil {
+				return errors.Wrap(err, "error creating the IRSA managed Service Accounts")
+			}
+		} else {
+			log.Logger().Info("Running in cluster, not recreating permissions")
+		}
 	}
 
-	log.Logger().Infof("the cluster looks good, you are ready to '%s' now!", info("jx boot"))
+	// Lets update the TeamSettings with the VersionStream data from the jx-requirements.yaml file so we make sure
+	// we are upgrading with the latest versions
+	log.Logger().Infof("Cluster looks good, you are ready to '%s' now!", info("jx boot"))
 	fmt.Println()
 	return nil
 }
@@ -273,14 +288,14 @@ func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
 	if err != nil {
 		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
 	}
-	log.Logger().Infof("helm client is setup")
 
 	o.EnableRemoteKubeCluster()
+
 	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, kube.DefaultChartMuseumJxRepoName, "", "")
 	if err != nil {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
 	}
-	log.Logger().Infof("ensure we have the helm repository %s", kube.DefaultChartMuseumURL)
+	log.Logger().Infof("Ensuring Helm chart repository %s is configured\n", kube.DefaultChartMuseumURL)
 
 	return nil
 }
@@ -292,10 +307,10 @@ func (o *StepVerifyPreInstallOptions) verifyDevNamespace(kubeClient kubernetes.I
 		return err
 	}
 	if ns == "" {
-		return fmt.Errorf("No dev namespace name found")
+		return fmt.Errorf("no dev namespace name found")
 	}
 	if envName == "" {
-		return fmt.Errorf("Namespace %s has no team label", ns)
+		return fmt.Errorf("namespace %s has no team label", ns)
 	}
 	return nil
 }
@@ -388,7 +403,7 @@ func (o *StepVerifyPreInstallOptions) configureVelero(requirements *config.Requi
 
 	serviceAccountName := requirements.Velero.ServiceAccount
 	if serviceAccountName == "" {
-		serviceAccountName = naming.ToValidNameTruncated(fmt.Sprintf("%s-velero", clusterName), 30)
+		serviceAccountName = naming.ToValidNameTruncated(fmt.Sprintf("%s-vo", clusterName), 30)
 		requirements.Velero.ServiceAccount = serviceAccountName
 	}
 	log.Logger().Infof("Configuring Velero service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
@@ -427,28 +442,11 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.Cluster.ClusterName)
 			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
 			modifyMapIfNotBlank(configMap.Data, kube.Region, requirements.Cluster.Region)
+			modifyMapIfNotBlank(configMap.Data, kube.Zone, requirements.Cluster.Zone)
 			return nil
 		}, nil)
 	if err != nil {
 		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
-	}
-	return nil
-}
-
-// VerifyRequirementsConfigMap saves the current requirements.yaml state in a ConfigMap so we can use it in places of the code where we can't read the requirements.yaml mfile
-func (o *StepVerifyPreInstallOptions) VerifyRequirementsConfigMap(kubeClient kubernetes.Interface, ns string, requirements *config.RequirementsConfig) error {
-	log.Logger().Debugf("Verifying the Requirements ConfigMap...")
-	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameRequirementsYaml, func(configMap *corev1.ConfigMap) error {
-		log.Logger().Debugf("Updating the %s ConfigMap with: %+v", kube.ConfigMapNameRequirementsYaml, requirements)
-		reqBytes, err := yaml.Marshal(requirements)
-		if err != nil {
-			return errors.Wrap(err, "there was a problem marshalling the requirements file to include it in the ConfigMap")
-		}
-		modifyMapIfNotBlank(configMap.Data, "requirementsFile", string(reqBytes))
-		return nil
-	}, nil)
-	if err != nil {
-		return errors.Wrapf(err, "there was a problem saving the current state of the requiremens.yaml file in ConfigMap %s in namespace %s", kube.ConfigMapNameRequirementsYaml, ns)
 	}
 	return nil
 }
@@ -483,7 +481,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 	}
 	var err error
 	if requirements.Cluster.Provider == "" {
-		requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.In, o.Out, o.Err)
+		requirements.Cluster.Provider, err = util.PickName(cloud.KubernetesProviders, "Select Kubernetes provider", "the type of Kubernetes installation", o.GetIOFileHandles())
 		if err != nil {
 			return nil, errors.Wrap(err, "selecting Kubernetes provider")
 		}
@@ -510,9 +508,8 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				return nil, errors.Wrapf(err, "")
 			}
 			if currentClusterName != "" && currentProject != "" && currentZone != "" {
-				log.Logger().Infof("")
 				log.Logger().Infof("Currently connected cluster is %s in %s in project %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentZone), util.ColorInfo(currentProject))
-				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
+				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
 			} else {
 				log.Logger().Infof("Enter the cluster you want to jx boot")
 			}
@@ -543,12 +540,14 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				requirements.Cluster.ClusterName = currentClusterName
 			} else {
 				requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
-					"The name for your cluster", o.In, o.Out, o.Err)
+					"The name for your cluster", o.GetIOFileHandles())
 				if err != nil {
 					return nil, errors.Wrap(err, "getting cluster name")
 				}
+				if requirements.Cluster.ClusterName == "" {
+					return nil, errors.Errorf("no cluster name provided")
+				}
 			}
-
 		}
 		if !autoAcceptDefaults {
 			if !o.WorkloadIdentity && !o.InCluster() {
@@ -566,16 +565,14 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		var currentRegion, currentClusterName string
 		var autoAcceptDefaults bool
 		if requirements.Cluster.Region == "" || requirements.Cluster.ClusterName == "" {
-			kubeConfig, _, err := o.Kube().LoadConfig()
+			currentClusterName, currentRegion, err = amazon.GetCurrentlyConnectedRegionAndClusterName()
 			if err != nil {
-				return nil, errors.Wrapf(err, "loading kubeconfig")
+				return requirements, errors.Wrap(err, "there was a problem obtaining the current cluster name and region")
 			}
-			context := kube.Cluster(kubeConfig)
-			currentClusterName, currentRegion, err = amazon.ParseContext(context)
 			if currentClusterName != "" && currentRegion != "" {
 				log.Logger().Infof("")
 				log.Logger().Infof("Currently connected cluster is %s in region %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentRegion))
-				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.In, o.Out, o.Err)
+				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
 			} else {
 				log.Logger().Infof("Enter the cluster you want to jx boot")
 			}
@@ -591,11 +588,22 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				requirements.Cluster.ClusterName = currentClusterName
 			} else {
 				requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", currentClusterName, true,
-					"The name for your cluster", o.In, o.Out, o.Err)
+					"The name for your cluster", o.GetIOFileHandles())
 				if err != nil {
 					return nil, errors.Wrap(err, "getting cluster name")
 				}
 			}
+		}
+	}
+
+	if requirements.Cluster.ClusterName == "" && !o.BatchMode {
+		requirements.Cluster.ClusterName, err = util.PickValue("Cluster name", "", true,
+			"The name for your cluster", o.GetIOFileHandles())
+		if err != nil {
+			return nil, errors.Wrap(err, "getting cluster name")
+		}
+		if requirements.Cluster.ClusterName == "" {
+			return nil, errors.Errorf("no cluster name provided")
 		}
 	}
 
@@ -608,6 +616,24 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 	err = o.gatherGitRequirements(requirements)
 	if err != nil {
 		return nil, errors.Wrap(err, "error gathering git requirements")
+	}
+
+	// Lock the version stream to a tag
+	if requirements.VersionStream.Ref == "" {
+		requirements.VersionStream.Ref = os.Getenv(boot.VersionsRepoBaseRefEnvVarName)
+	}
+	if requirements.VersionStream.URL == "" {
+		requirements.VersionStream.URL = os.Getenv(boot.VersionsRepoURLEnvVarName)
+	}
+
+	// attempt to resolve the version stream ref to a tag
+	_, ref, err := o.CloneJXVersionsRepo(requirements.VersionStream.URL, requirements.VersionStream.Ref)
+	if err != nil {
+		return nil, errors.Wrapf(err, "resolving version stream ref")
+	}
+	if ref != "" && ref != requirements.VersionStream.Ref {
+		log.Logger().Infof("Locking version stream %s to release %s. Jenkins X will use this release rather than %s to resolve all versions from now on.", util.ColorInfo(requirements.VersionStream.URL), util.ColorInfo(ref), requirements.VersionStream.Ref)
+		requirements.VersionStream.Ref = ref
 	}
 
 	err = requirements.SaveConfig(requirementsFileName)
@@ -637,7 +663,7 @@ func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config
 			"Jenkins X leverages GitOps to track and control what gets deployed into environments.  "+
 				"This requires a Git repository per environment. "+
 				"This question is asking for the Git Owner where these repositories will live.",
-			o.In, o.Out, o.Err)
+			o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrap(err, "error configuring git owner for env repositories")
 		}
@@ -664,7 +690,7 @@ func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.Re
 	if requirements.Cluster.GitKind == "github" {
 		message := fmt.Sprintf("If '%s' is an GitHub organisation it needs to have a paid subscription to create private repos. Do you wish to continue?", requirements.Cluster.EnvironmentGitOwner)
 		help := fmt.Sprint("GitHub organisation on a free plan cannot create private repositories. You either need to upgrade, use a GitHub user instead or use public repositories.")
-		confirmed := util.Confirm(message, false, help, o.In, o.Out, o.Err)
+		confirmed := util.Confirm(message, false, help, o.GetIOFileHandles())
 		if !confirmed {
 			return errors.New("cannot continue without completed git requirements")
 		}
@@ -674,7 +700,7 @@ func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.Re
 
 // verifyStorage verifies the associated buckets exist or if enabled lazily create them
 func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.RequirementsConfig, requirementsFileName string) error {
-	log.Logger().Debug("Verifying Storage...")
+	log.Logger().Info("Verifying Storage...")
 	storage := &requirements.Storage
 	err := o.verifyStorageEntry(requirements, requirementsFileName, &storage.Logs, "logs", "Long term log storage")
 	if err != nil {
@@ -692,33 +718,19 @@ func (o *StepVerifyPreInstallOptions) verifyStorage(requirements *config.Require
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("the storage looks good")
+	log.Logger().Infof("Storage configuration looks good\n")
 	return nil
 }
 
 func (o *StepVerifyPreInstallOptions) verifyTLS(requirements *config.RequirementsConfig) error {
 	if !requirements.Ingress.TLS.Enabled {
-		profile := config.LoadActiveInstallProfile()
-		// silently ignore errors as they most likely because team settings aren't available
-		teamSettings, err := o.TeamSettings()
-		if err == nil {
-			// then team settings are available
-			if teamSettings.Profile != "" {
-				profile = teamSettings.Profile
-			}
-		}
-
-		url := "https://jenkins-x.io/architecture/tls"
-		if profile == config.CloudBeesProfile {
-			url = "https://go.cloudbees.com/docs/cloudbees-jenkins-x-distribution/tls/"
-		}
 		confirm := false
 		if requirements.SecretStorage == config.SecretStorageTypeVault {
-			log.Logger().Warnf("Vault is enabled and TLS is not enabled. This means your secrets will be sent to and from your cluster in the clear. See %s for more information", url)
+			log.Logger().Warnf("Vault is enabled and TLS is not enabled. This means your secrets will be sent to and from your cluster in the clear. See %s for more information", config.TLSDocURL)
 			confirm = true
 		}
 		if requirements.Webhook != config.WebhookTypeNone {
-			log.Logger().Warnf("TLS is not enabled so your webhooks will be called using HTTP. This means your webhook secret will be sent to your cluster in the clear. See %s for more information", url)
+			log.Logger().Warnf("TLS is not enabled so your webhooks will be called using HTTP. This means your webhook secret will be sent to your cluster in the clear. See %s for more information", config.TLSDocURL)
 			confirm = true
 		}
 		if os.Getenv(boot.OverrideTLSWarningEnvVarName) == "true" {
@@ -728,7 +740,7 @@ func (o *StepVerifyPreInstallOptions) verifyTLS(requirements *config.Requirement
 
 			message := fmt.Sprintf("Do you wish to continue?")
 			help := fmt.Sprintf("Jenkins X needs TLS enabled to send secrets securely. We strongly recommend enabling TLS.")
-			value := util.Confirm(message, false, help, o.In, o.Out, o.Err)
+			value := util.Confirm(message, false, help, o.GetIOFileHandles())
 			if !value {
 				return errors.Errorf("cannot continue because TLS is not enabled.")
 			}
@@ -761,7 +773,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 		}
 		message := fmt.Sprintf("%s bucket URL. Press enter to create and use a new bucket", text)
 		help := fmt.Sprintf("please enter the URL of the bucket to use for storage using the format %s://<bucket-name>", scheme)
-		value, err := util.PickValue(message, "", false, help, o.In, o.Out, o.Err)
+		value, err := util.PickValue(message, "", false, help, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "failed to pick storage bucket for %s", name)
 		}
@@ -863,16 +875,17 @@ func (o *StepVerifyPreInstallOptions) verifyConfigMapExists(kubeClient kubernete
 }
 
 func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.RequirementsConfig, requirementsFileName string) error {
-	log.Logger().Debug("Verifying Ingress...")
+	log.Logger().Info("Verifying Ingress...")
 	domain := requirements.Ingress.Domain
-	if requirements.Ingress.IsAutoDNSDomain() {
-		log.Logger().Infof("clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated", util.ColorInfo(domain))
+	if requirements.Ingress.IsAutoDNSDomain() && !requirements.Ingress.IgnoreLoadBalancer {
+		log.Logger().Infof("Clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated", util.ColorInfo(domain))
 		requirements.Ingress.Domain = ""
 		err := requirements.SaveConfig(requirementsFileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
 		}
 	}
+	log.Logger().Info("\n")
 	return nil
 }
 
@@ -883,6 +896,13 @@ func (o *StepVerifyPreInstallOptions) ValidateRequirements(requirements *config.
 		server := requirements.Cluster.GitServer
 		if (kind != "" && kind != "github") || (server != "" && !gits.IsGitHubServerURL(server)) {
 			return fmt.Errorf("invalid requirements in file %s cannot use prow as a webhook for git kind: %s server: %s. Please try using lighthouse instead", fileName, kind, server)
+		}
+	}
+	if requirements.Repository == config.RepositoryTypeBucketRepo && requirements.Cluster.ChartRepository == "" {
+		requirements.Cluster.ChartRepository = "http://bucketrepo/bucketrepo/charts/"
+		err := requirements.SaveConfig(fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save changes to file: %s", fileName)
 		}
 	}
 	return nil
@@ -904,7 +924,7 @@ func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() bool {
 	log.Logger().Info("jx boot has only been validated on GKE, we'd love feedback and contributions for other Kubernetes providers")
 	if !o.BatchMode {
 		return util.Confirm("Continue execution anyway?",
-			true, "", o.In, o.Out, o.Err)
+			true, "", o.GetIOFileHandles())
 	}
 	log.Logger().Info("Running in Batch Mode, execution will continue")
 	return true

@@ -2,9 +2,10 @@
 package matchers
 
 import (
+	"reflect"
+
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/petergtz/pegomock"
-	"reflect"
 )
 
 func AnyAuthUserAuth() auth.UserAuth {

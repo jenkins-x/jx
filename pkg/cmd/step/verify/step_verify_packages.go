@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -78,8 +79,6 @@ func NewCmdStepVerifyPackages(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StepVerifyPackagesOptions) Run() error {
-	log.Logger().Infof("verifying the CLI packages\n")
-
 	packages, table := o.GetPackageVersions(o.Namespace, o.HelmTLS)
 
 	verifyMap := map[string]string{}
@@ -94,7 +93,7 @@ func (o *StepVerifyPackagesOptions) Run() error {
 	vs := requirements.VersionStream
 	u := vs.URL
 	ref := vs.Ref
-	log.Logger().Infof("verifying the CLI package using version stream URL: %s and git ref: %s\n", u, vs.Ref)
+	log.Logger().Infof("Verifying the CLI packages using version stream URL: %s and git ref: %s\n", u, vs.Ref)
 
 	resolver, err := o.CreateVersionResolver(u, ref)
 	if err != nil {
@@ -113,9 +112,7 @@ func (o *StepVerifyPackagesOptions) Run() error {
 		return err
 	}
 
-	log.Logger().Infof("the CLI packages seem to be setup correctly %s\n", util.ColorInfo(strings.Join(o.Packages, ", ")))
-	log.Logger().Infof("\n")
-
+	log.Logger().Infof("CLI packages %s seem to be setup correctly", util.ColorInfo(strings.Join(o.Packages, ", ")))
 	table.Render()
 
 	return nil
@@ -145,9 +142,9 @@ func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver *versionstream.Vers
 	} else {
 		log.Logger().Info("\n")
 		message := fmt.Sprintf("Would you like to upgrade to the %s version?", info("jx"))
-		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
+		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles()) {
 			options := &upgrade.UpgradeCLIOptions{
-				CreateOptions: create.CreateOptions{
+				CreateOptions: options.CreateOptions{
 					CommonOptions: o.CommonOptions,
 				},
 			}

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -84,7 +85,7 @@ func (o *StepPRLabelsOptions) Run() error {
 	}
 
 	if o.PullRequest == "" {
-		o.PullRequest = strings.TrimPrefix(os.Getenv("BRANCH_NAME"), "PR-")
+		o.PullRequest = strings.TrimPrefix(os.Getenv(util.EnvVarBranchName), "PR-")
 	}
 
 	if o.Prefix == "" {

@@ -116,24 +116,3 @@ func Test_get_gopath_bin(t *testing.T) {
 	goPathBin := GoPathBin(tmpGoDir)
 	assert.Equal(t, filepath.Join(tmpGoDir, "bin"), goPathBin)
 }
-
-func Test_go_get(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping Test_go_get - long running and needs access to net")
-		return
-	}
-
-	tmpGoDir, err := ioutil.TempDir("", "jx-codegen-tests")
-	if err != nil {
-		assert.Fail(t, "unable to create test directory")
-	}
-	defer os.RemoveAll(tmpGoDir)
-	err = os.Setenv(gopath, tmpGoDir)
-	if err != nil {
-		assert.Fail(t, "unable to set env variable")
-	}
-
-	err = GoGet("golang.org/x/lint/golint", "", tmpGoDir, false, false, false)
-	assert.NoError(t, err, "go get should be successful")
-	assert.FileExists(t, filepath.Join(tmpGoDir, "bin", "golint"))
-}

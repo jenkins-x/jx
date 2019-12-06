@@ -2,8 +2,9 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -27,7 +28,7 @@ var (
 
 // DeleteTokenAddonOptions the options for the create spring command
 type DeleteTokenAddonOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Kind        string
@@ -36,7 +37,7 @@ type DeleteTokenAddonOptions struct {
 // NewCmdDeleteTokenAddon defines the command
 func NewCmdDeleteTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTokenAddonOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -64,12 +65,6 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing addon user name")
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
-
 	kind := o.Kind
 	if kind == "" {
 		kind = o.ServerFlags.ServerName
@@ -77,6 +72,12 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if kind == "" {
 		kind = "addon"
 	}
+	authConfigSvc, err := o.AddonAuthConfigService(kind)
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
+
 	server, err := o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
 		return err

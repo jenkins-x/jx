@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/blang/semver"
@@ -54,7 +56,7 @@ var (
 
 // CreateJenkinsUserOptions the command line options for the command
 type CreateJenkinsUserOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags     opts.ServerFlags
 	JenkinsSelector opts.JenkinsSelectorOptions
@@ -72,7 +74,7 @@ type CreateJenkinsUserOptions struct {
 // NewCmdCreateJenkinsUser creates a command
 func NewCmdCreateJenkinsUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateJenkinsUserOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -120,7 +122,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		ns = o.Namespace
 	}
 
-	authConfigSvc, err := o.JenkinsAuthConfigService(kubeClient, ns, &o.JenkinsSelector)
+	authConfigSvc, err := o.JenkinsAuthConfigService(ns, &o.JenkinsSelector)
 	if err != nil {
 		return errors.Wrap(err, "creating Jenkins Auth configuration")
 	}
@@ -195,7 +197,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 			return nil
 		}
 
-		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
+		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "updating the Jenkins auth configuration for user %q", o.Username)
 		}

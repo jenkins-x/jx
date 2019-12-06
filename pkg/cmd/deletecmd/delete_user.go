@@ -62,7 +62,7 @@ func NewCmdDeleteUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched users for deletion")
-	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Fitlers the list of users you can pick from")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of users you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
 	return cmd
 }
@@ -90,7 +90,7 @@ func (o *DeleteUserOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing user login name argument")
 		}
-		names, err = util.SelectNamesWithFilter(userNames, "Which users do you want to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+		names, err = util.SelectNamesWithFilter(userNames, "Which users do you want to delete: ", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

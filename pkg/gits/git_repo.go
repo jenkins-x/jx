@@ -2,14 +2,12 @@ package gits
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type CreateRepoData struct {
@@ -44,7 +42,7 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 }
 
 func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
-	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*CreateRepoData, error) {
+	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, handles util.IOFileHandles) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
 
 	var err error
@@ -68,7 +66,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 					}
 				}
 			} else {
-				server, err = config.PickServer("Which Git service?", batchMode, in, out, errOut)
+				server, err = config.PickServer("Which Git service?", batchMode, handles)
 				if err != nil {
 					return nil, err
 				}
@@ -98,7 +96,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 				}
 				userAuth = ua
 			} else {
-				userAuth, err = config.PickServerUserAuth(server, "Git user name?", batchMode, "", in, out, errOut)
+				userAuth, err = config.PickServerUserAuth(server, "Git user name?", batchMode, "", handles)
 				if err != nil {
 					return nil, err
 				}
@@ -112,13 +110,13 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			git.PrintCreateRepositoryGenerateAccessToken(server, username, out)
+			git.PrintCreateRepositoryGenerateAccessToken(server, username, handles.Out)
 			return nil
 		}
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, true, batchMode, f, in, out, errOut)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, true, batchMode, f, handles)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +142,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 
 	owner := repoOptions.Owner
 	if owner == "" {
-		owner, err = GetOwner(batchMode, provider, gitUsername, in, out, errOut)
+		owner, err = GetOwner(batchMode, provider, gitUsername, handles)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +152,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 
 	repoName := repoOptions.RepoName
 	if repoName == "" {
-		repoName, err = GetRepoName(batchMode, allowExistingRepo, provider, defaultRepoName, owner, in, out, errOut)
+		repoName, err = GetRepoName(batchMode, allowExistingRepo, provider, defaultRepoName, owner, handles)
 		if err != nil {
 			return nil, err
 		}
@@ -182,8 +180,8 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 	}, err
 }
 
-func GetRepoName(batchMode, allowExistingRepo bool, provider GitProvider, defaultRepoName, owner string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
-	surveyOpts := survey.WithStdio(in, out, errOut)
+func GetRepoName(batchMode, allowExistingRepo bool, provider GitProvider, defaultRepoName, owner string, handles util.IOFileHandles) (string, error) {
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	repoName := ""
 	if batchMode {
 		repoName = defaultRepoName
@@ -219,12 +217,12 @@ func GetRepoName(batchMode, allowExistingRepo bool, provider GitProvider, defaul
 	return repoName, nil
 }
 
-func GetOwner(batchMode bool, provider GitProvider, gitUsername string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+func GetOwner(batchMode bool, provider OrganisationLister, gitUsername string, handles util.IOFileHandles) (string, error) {
 	owner := ""
 	if batchMode {
 		owner = gitUsername
 	} else {
-		org, err := PickOwner(provider, gitUsername, in, out, errOut)
+		org, err := PickOwner(provider, gitUsername, handles)
 		if err != nil {
 			return "", err
 		}
@@ -237,6 +235,6 @@ func GetOwner(batchMode bool, provider GitProvider, gitUsername string, in termi
 }
 
 func PickNewGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
-	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*CreateRepoData, error) {
-	return PickNewOrExistingGitRepository(batchMode, authConfigSvc, defaultRepoName, repoOptions, server, userAuth, git, false, in, out, outErr)
+	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, handles util.IOFileHandles) (*CreateRepoData, error) {
+	return PickNewOrExistingGitRepository(batchMode, authConfigSvc, defaultRepoName, repoOptions, server, userAuth, git, false, handles)
 }

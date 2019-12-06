@@ -4,10 +4,11 @@
 package util_test
 
 import (
-	backoff "github.com/cenkalti/backoff"
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	backoff "github.com/cenkalti/backoff"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockCommander struct {
@@ -433,7 +434,7 @@ func (c *MockCommander_SetArgs_OngoingVerification) GetCapturedArguments() []str
 func (c *MockCommander_SetArgs_OngoingVerification) GetAllCapturedArguments() (_param0 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([][]string, len(params[0]))
+		_param0 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.([]string)
 		}
@@ -460,7 +461,7 @@ func (c *MockCommander_SetDir_OngoingVerification) GetCapturedArguments() string
 func (c *MockCommander_SetDir_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -487,7 +488,7 @@ func (c *MockCommander_SetEnv_OngoingVerification) GetCapturedArguments() map[st
 func (c *MockCommander_SetEnv_OngoingVerification) GetAllCapturedArguments() (_param0 []map[string]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]map[string]string, len(params[0]))
+		_param0 = make([]map[string]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(map[string]string)
 		}
@@ -514,11 +515,11 @@ func (c *MockCommander_SetEnvVariable_OngoingVerification) GetCapturedArguments(
 func (c *MockCommander_SetEnvVariable_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
@@ -545,7 +546,7 @@ func (c *MockCommander_SetExponentialBackOff_OngoingVerification) GetCapturedArg
 func (c *MockCommander_SetExponentialBackOff_OngoingVerification) GetAllCapturedArguments() (_param0 []*backoff.ExponentialBackOff) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]*backoff.ExponentialBackOff, len(params[0]))
+		_param0 = make([]*backoff.ExponentialBackOff, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(*backoff.ExponentialBackOff)
 		}
@@ -572,7 +573,7 @@ func (c *MockCommander_SetName_OngoingVerification) GetCapturedArguments() strin
 func (c *MockCommander_SetName_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -599,7 +600,7 @@ func (c *MockCommander_SetTimeout_OngoingVerification) GetCapturedArguments() ti
 func (c *MockCommander_SetTimeout_OngoingVerification) GetAllCapturedArguments() (_param0 []time.Duration) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]time.Duration, len(params[0]))
+		_param0 = make([]time.Duration, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(time.Duration)
 		}

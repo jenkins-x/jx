@@ -3,6 +3,8 @@ package create
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -30,7 +32,7 @@ const (
 
 var (
 	env_description = `		
-	An Environment maps to a Kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continous Delivery.
+	An Environment maps to a Kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continuous Delivery.
 
 	You can optionally use GitOps to manage the configuration of an Environment by storing all configuration in a Git repository and then only changing it via Pull Requests and CI/CD.
 
@@ -52,7 +54,7 @@ var (
 
 // CreateEnvOptions the options for the create env command
 type CreateEnvOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Options                v1.Environment
 	HelmValuesConfig       config.HelmValuesConfig
@@ -77,7 +79,7 @@ func NewCmdCreateEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -145,7 +147,7 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -189,7 +191,7 @@ func (o *CreateEnvOptions) Run() error {
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
 	gitProvider, err := kube.CreateEnvironmentSurvey(o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.Update, o.ForkEnvironmentGitRepo, ns,
-		jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.ResolveChartMuseumURL, o.In, o.Out, o.Err)
+		jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.ResolveChartMuseumURL, o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -279,7 +281,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 	}
 
 	if gitProvider == nil {
-		authConfigSvc, err = o.CreateGitAuthConfigService()
+		authConfigSvc, err = o.GitAuthConfigService()
 		if err != nil {
 			return err
 		}
@@ -289,7 +291,11 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 		}
 		message := "user name to create the Git repository"
 		commonOpts := o.CreateOptions.CommonOptions
-		p, err := commonOpts.NewGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git())
+		ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+		if err != nil {
+			return err
+		}
+		p, err := commonOpts.NewGitProvider(gitURL, message, authConfigSvc, gitKind, ghOwner, o.BatchMode, o.Git())
 		if err != nil {
 			return err
 		}
@@ -345,7 +351,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 		if user.Username == "" {
 			return fmt.Errorf("Could not find a username for git server %s", u)
 		}
-		_, err = o.UpdatePipelineGitCredentialsSecret(server, user)
+		err = authConfigSvc.SaveConfig()
 		if err != nil {
 			return err
 		}

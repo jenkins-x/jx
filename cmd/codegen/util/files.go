@@ -2,13 +2,14 @@ package util
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // DeleteDirContents removes all the contents of the given directory

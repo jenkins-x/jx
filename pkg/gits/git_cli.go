@@ -27,15 +27,20 @@ const (
 )
 
 var (
-	numberRegex = regexp.MustCompile("[0-9]")
+	numberRegex        = regexp.MustCompile("[0-9]")
+	splitDescribeRegex = regexp.MustCompile(`(?:~|\^|-g)`)
 )
 
 // GitCLI implements common git actions based on git CLI
-type GitCLI struct{}
+type GitCLI struct {
+	Env map[string]string
+}
 
 // NewGitCLI creates a new GitCLI instance
 func NewGitCLI() *GitCLI {
-	return &GitCLI{}
+	return &GitCLI{
+		Env: map[string]string{},
+	}
 }
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -265,7 +270,14 @@ func (g *GitCLI) ResetToUpstream(dir string, branch string) error {
 
 // AddRemote adds a remote repository at the given URL and with the given name
 func (g *GitCLI) AddRemote(dir string, name string, url string) error {
-	return g.gitCmd(dir, "remote", "add", name, url)
+	err := g.gitCmd(dir, "remote", "add", name, url)
+	if err != nil {
+		err = g.gitCmd(dir, "remote", "set-url", name, url)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // UpdateRemote updates the URL of the remote repository
@@ -404,7 +416,7 @@ func (g *GitCLI) WriteOperation(dir string, args ...string) error {
 }
 
 // Push pushes the changes from the repository at the given directory
-func (g *GitCLI) Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error {
+func (g *GitCLI) Push(dir string, remote string, force bool, refspec ...string) error {
 	args := []string{"push", remote}
 	if force {
 		args = append(args, "--force")
@@ -415,17 +427,17 @@ func (g *GitCLI) Push(dir string, remote string, force bool, setUpstream bool, r
 
 // ForcePushBranch does a force push of the local branch into the remote branch of the repository at the given directory
 func (g *GitCLI) ForcePushBranch(dir string, localBranch string, remoteBranch string) error {
-	return g.Push(dir, "origin", true, false, fmt.Sprintf("%s:%s", localBranch, remoteBranch))
+	return g.Push(dir, "origin", true, fmt.Sprintf("%s:%s", localBranch, remoteBranch))
 }
 
 // PushMaster pushes the master branch into the origin, setting the upstream
 func (g *GitCLI) PushMaster(dir string) error {
-	return g.Push(dir, "origin", false, true, "master")
+	return g.Push(dir, "origin", false, "master")
 }
 
 // Pushtag pushes the given tag into the origin
 func (g *GitCLI) PushTag(dir string, tag string) error {
-	return g.Push(dir, "origin", false, false, tag)
+	return g.Push(dir, "origin", false, tag)
 }
 
 // Add does a git add for all the given arguments
@@ -437,6 +449,16 @@ func (g *GitCLI) Add(dir string, args ...string) error {
 // HasChanges indicates if there are any changes in the repository from the given directory
 func (g *GitCLI) HasChanges(dir string) (bool, error) {
 	text, err := g.gitCmdWithOutput(dir, "status", "-s")
+	if err != nil {
+		return false, err
+	}
+	text = strings.TrimSpace(text)
+	return len(text) > 0, nil
+}
+
+// HasFileChanged indicates if there are any changes to a file in the repository from the given directory
+func (g *GitCLI) HasFileChanged(dir string, fileName string) (bool, error) {
+	text, err := g.gitCmdWithOutput(dir, "status", "-s", fileName)
 	if err != nil {
 		return false, err
 	}
@@ -512,8 +534,13 @@ func (g *GitCLI) AddCommit(dir string, msg string) error {
 
 // AddCommitFiles perform an add and commit selected files from the repository at the given directory with the given messages
 func (g *GitCLI) AddCommitFiles(dir string, msg string, files []string) error {
-	fileString := strings.Trim(fmt.Sprintf("%v", files), "[]")
-	return g.gitCmd(dir, "commit", "-m", strconv.Quote(msg), "--", fileString)
+	for _, file := range files {
+		err := g.Add(dir, file)
+		if err != nil {
+			return err
+		}
+	}
+	return g.gitCmd(dir, "commit", "-m", msg)
 }
 
 func (g *GitCLI) gitCmd(dir string, args ...string) error {
@@ -521,7 +548,10 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Dir:  dir,
 		Name: "git",
 		Args: args,
+		Env:  g.Env,
 	}
+	// Ensure that error output is in English so parsing work
+	cmd.Env = map[string]string{"LC_ALL": "C"}
 	output, err := cmd.RunWithoutRetry()
 	return errors.Wrapf(err, "git output: %s", output)
 }
@@ -532,6 +562,8 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 		Name: "git",
 		Args: args,
 	}
+	// Ensure that error output is in English so parsing work
+	cmd.Env = map[string]string{"LC_ALL": "C"}
 	return cmd.RunWithoutRetry()
 }
 
@@ -770,26 +802,53 @@ func (g *GitCLI) GetRemoteUrl(config *gitcfg.Config, name string) string {
 	return ""
 }
 
-// RemoteBranches returns all remote branches with the given prefix
-func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) {
+// RemoteBranchNames returns all remote branches with the given remoteRefPrefix
+func (g *GitCLI) RemoteBranchNames(dir string, remoteRefPrefix string) ([]string, error) {
+	return g.remoteBranchNames(dir, remoteRefPrefix, false)
+}
+
+// RemoteMergedBranchNames returns all remote branches that were merged with the given remoteRefPrefix
+func (g *GitCLI) RemoteMergedBranchNames(dir string, remoteRefPrefix string) ([]string, error) {
+	return g.remoteBranchNames(dir, remoteRefPrefix, true)
+}
+
+func (g *GitCLI) remoteBranchNames(dir string, remoteRefPrefix string, merged bool) ([]string, error) {
 	answer := []string{}
-	text, err := g.gitCmdWithOutput(dir, "branch", "-a")
+	args := []string{"branch", "-a"}
+	if merged {
+		args = append(args, "--merged")
+	}
+
+	text, err := g.gitCmdWithOutput(dir, args...)
+
 	if err != nil {
 		return answer, err
 	}
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(strings.TrimPrefix(line, "* "))
-		if prefix != "" {
-			if strings.HasPrefix(line, prefix) {
-				line = strings.TrimPrefix(line, prefix)
+		if remoteRefPrefix != "" {
+			if strings.HasPrefix(line, remoteRefPrefix) {
+				line = strings.TrimPrefix(line, remoteRefPrefix)
 				answer = append(answer, line)
 			}
 		} else {
 			answer = append(answer, line)
 		}
-
 	}
+
+	if merged {
+		filtered := []string{}
+
+		for _, name := range answer {
+			if name != "master" {
+				filtered = append(filtered, name)
+			}
+		}
+
+		return filtered, nil
+	}
+
 	return answer, nil
 }
 
@@ -859,6 +918,11 @@ func (g *GitCLI) GetLatestCommitMessage(dir string) (string, error) {
 // FetchTags fetches all the tags
 func (g *GitCLI) FetchTags(dir string) error {
 	return g.gitCmd(dir, "fetch", "--tags")
+}
+
+// FetchRemoteTags fetches all the tags from a remote repository
+func (g *GitCLI) FetchRemoteTags(dir string, repo string) error {
+	return g.gitCmd(dir, "fetch", repo, "--tags")
 }
 
 // Tags returns all tags from the repository at the given directory
@@ -1022,6 +1086,11 @@ func (g *GitCLI) GetLatestCommitSha(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", "HEAD")
 }
 
+// GetFirstCommitSha returns the sha of the first commit
+func (g *GitCLI) GetFirstCommitSha(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "rev-list", "--max-parents=0", "HEAD")
+}
+
 // Reset performs a git reset --hard back to the commitish specified
 func (g *GitCLI) Reset(dir string, commitish string, hard bool) error {
 	args := []string{"reset"}
@@ -1138,4 +1207,45 @@ func (g *GitCLI) CherryPick(dir string, commitish string) error {
 // CherryPickTheirs does a git cherry-pick of commit
 func (g *GitCLI) CherryPickTheirs(dir string, commitish string) error {
 	return g.gitCmd(dir, "cherry-pick", commitish, "--strategy=recursive", "-X", "theirs")
+}
+
+// Describe does a git describe of commitish, optionally adding the abbrev arg if not empty, falling back to just the commit ref if it's untagged
+func (g *GitCLI) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
+	args := []string{"describe", commitish}
+	if abbrev != "" {
+		args = append(args, fmt.Sprintf("--abbrev=%s", abbrev))
+	}
+	if contains {
+		args = append(args, "--contains")
+	}
+	out, err := g.gitCmdWithOutput(dir, args...)
+	if err != nil {
+		if fallback {
+			// If the commit-ish is untagged, it'll fail with "fatal: cannot describe '<commit-ish>'". In those cases, just return
+			// the original commit-ish.
+			if strings.Contains(err.Error(), "fatal: cannot describe") {
+				return commitish, "", nil
+			}
+		}
+		log.Logger().Warnf("err: %s", err.Error())
+		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
+	}
+	trimmed := strings.TrimSpace(strings.Trim(out, "\n"))
+	parts := splitDescribeRegex.Split(trimmed, -1)
+	if len(parts) == 2 {
+		return parts[0], parts[1], nil
+	}
+	return parts[0], "", nil
+}
+
+// IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
+func (g *GitCLI) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
+	args := []string{"merge-base", "--is-ancestor", possibleAncestor, commitish}
+	_, err := g.gitCmdWithOutput(dir, args...)
+	if err != nil {
+		// Treat any error as meaning that it's not an ancestor. Switch this to use ExitError.ExitCode() when we move to go >=1.12
+		return false, err
+	}
+	// Default case is that this is an ancestor, since there's no error from the merge-base call.
+	return true, nil
 }

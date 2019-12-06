@@ -110,7 +110,7 @@ func (o *EditUserRoleOptions) Run() error {
 		if o.BatchMode {
 			return util.MissingOption(optionLogin)
 		}
-		name, err = util.PickName(names, "Pick the user to edit", "", o.In, o.Out, o.Err)
+		name, err = util.PickName(names, "Pick the user to edit", "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -141,7 +141,7 @@ func (o *EditUserRoleOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		userRoles, err = util.PickNamesWithDefaults(roleNames, currentRoles, "Roles for user: "+name, "", o.In, o.Out, o.Err)
+		userRoles, err = util.PickNamesWithDefaults(roleNames, currentRoles, "Roles for user: "+name, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

@@ -2,9 +2,10 @@ package kube
 
 import (
 	"fmt"
+	"strings"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
-	"strings"
 )
 
 // FieldMap is a map of field:value. It implements fields.Fields.

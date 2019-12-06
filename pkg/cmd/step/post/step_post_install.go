@@ -105,7 +105,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 	if err != nil {
 		return errors.Wrapf(err, "cannot find the environments git clone local directory")
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrapf(err, "cannot create the git auth config service")
 	}
@@ -161,9 +161,9 @@ func (o *StepPostInstallOptions) Run() (err error) {
 				return err
 			}
 			if user.Username == "" {
-				return fmt.Errorf("Could not find a username for git server %s", u)
+				return fmt.Errorf("could not find a username for git server %s", u)
 			}
-			_, err = o.UpdatePipelineGitCredentialsSecret(server, user)
+			err = authConfigSvc.SaveConfig()
 			if err != nil {
 				return err
 			}

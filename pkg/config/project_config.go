@@ -2,10 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
@@ -22,6 +22,9 @@ const (
 	ProjectConfigFileName = "jenkins-x.yml"
 )
 
+// +exported
+
+// ProjectConfig defines Jenkins X Pipelines usually stored inside the `jenkins-x.yml` file in projects
 type ProjectConfig struct {
 	// List of global environment variables to add to each branch build and each step
 	Env []corev1.EnvVar `json:"env,omitempty"`

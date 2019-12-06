@@ -39,4 +39,5 @@ type GClouder interface {
 	ConnectToCluster(projectID, zone, clusterName string) error
 	ConnectToRegionCluster(projectID, region, clusterName string) error
 	ConfigureBucketRoles(projectID string, serviceAccount string, bucketURL string, roles []string) error
+	GetProjectNumber(projectID string) (string, error)
 }

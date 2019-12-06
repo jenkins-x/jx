@@ -80,9 +80,9 @@ func CreateAuthConfigService() auth.ConfigService {
 		PipeLineUsername: "jx-pipeline-user",
 		PipeLineServer:   "https://github.com",
 	}
-	saver := auth_test.NewMockConfigSaver()
-	pegomock.When(saver.LoadConfig()).ThenReturn(&authConfig, nil)
-	authConfigSvc := auth.NewAuthConfigService(saver)
+	handler := auth_test.NewMockConfigHandler()
+	pegomock.When(handler.LoadConfig()).ThenReturn(&authConfig, nil)
+	authConfigSvc := auth.NewAuthConfigService(handler)
 	authConfigSvc.SetConfig(&authConfig)
 	return authConfigSvc
 }

@@ -4,8 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/create/vault"
+
+	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
@@ -29,8 +36,9 @@ import (
 // StepBootVaultOptions contains the command line flags
 type StepBootVaultOptions struct {
 	*opts.CommonOptions
-	Dir       string
-	Namespace string
+	Dir               string
+	ProviderValuesDir string
+	Namespace         string
 }
 
 var (
@@ -64,6 +72,7 @@ func NewCmdStepBootVault(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", fmt.Sprintf("the directory to look for the requirements file: %s", config.RequirementsConfigFileName))
+	cmd.Flags().StringVarP(&o.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific files")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
 
 	return cmd
@@ -117,8 +126,8 @@ func (o *StepBootVaultOptions) Run() error {
 	// TODO: do we need to wait for certificates to be available via the secret
 	noExposeVault = true
 
-	cvo := &create.CreateVaultOptions{
-		CreateOptions: create.CreateOptions{
+	cvo := &vault.CreateVaultOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &copyOptions,
 		},
 
@@ -131,8 +140,41 @@ func (o *StepBootVaultOptions) Run() error {
 		KeyName:             requirements.Vault.Key,
 		ServiceAccountName:  requirements.Vault.ServiceAccount,
 		ClusterName:         requirements.Cluster.ClusterName,
-		// TODO - load from a local yaml file if available?
-		// AWSConfig:           o.AWSConfig,
+	}
+	if requirements.Cluster.Provider == cloud.EKS {
+		if requirements.Vault.AWSConfig != nil {
+			awsConfig := requirements.Vault.AWSConfig
+			cvo.AWSCreateVaultOptions = vault.AWSCreateVaultOptions{}
+			secretAccessKey := os.Getenv("VAULT_AWS_SECRET_ACCESS_KEY")
+			accessKeyId := os.Getenv("VAULT_AWS_ACCESS_KEY_ID")
+			if !awsConfig.AutoCreate && (checkRequiredResource("dynamoDBTable", awsConfig.DynamoDBTable) ||
+				checkRequiredResource("secretAccessKey", secretAccessKey) ||
+				checkRequiredResource("accessKeyId", accessKeyId) ||
+				checkRequiredResource("kmsKeyId", awsConfig.KMSKeyID) ||
+				checkRequiredResource("s3Bucket", awsConfig.S3Bucket)) {
+				log.Logger().Info("Some of the required provided values are empty - We will create all resources")
+				awsConfig.AutoCreate = true
+			}
+			cvo.Boot = true
+			cvo.AWSConfig = kubevault.AWSConfig{
+				AWSUnsealConfig: v1alpha1.AWSUnsealConfig{
+					KMSKeyID:  awsConfig.KMSKeyID,
+					KMSRegion: awsConfig.KMSRegion,
+					S3Bucket:  awsConfig.S3Bucket,
+					S3Prefix:  awsConfig.S3Prefix,
+					S3Region:  awsConfig.S3Region,
+				},
+				AutoCreate:          awsConfig.AutoCreate,
+				DynamoDBTable:       awsConfig.DynamoDBTable,
+				DynamoDBRegion:      awsConfig.DynamoDBRegion,
+				AccessKeyID:         accessKeyId,
+				SecretAccessKey:     secretAccessKey,
+				ProvidedIAMUsername: awsConfig.ProvidedIAMUsername,
+			}
+		}
+
+		cvo.AWSTemplatesDir = filepath.Join(o.Dir, o.ProviderValuesDir, cloud.EKS, "templates")
+
 	}
 	// first argument is the vault name
 	cvo.Args = []string{requirements.Vault.Name}
@@ -173,7 +215,19 @@ func (o *StepBootVaultOptions) Run() error {
 		}
 	}
 
-	err = create.InstallVaultOperator(o.CommonOptions, ns)
+	tag, err := o.vaultOperatorImageTag(&requirements.VersionStream)
+	if err != nil {
+		return err
+	}
+	opts := o.CommonOptions
+	values := []string{
+		"image.repository=" + kubevault.VaultOperatorImage,
+		"image.tag=" + tag,
+	}
+	opts.SetValues = strings.Join(values, ",")
+
+	log.Logger().Infof("installing vault operator with helm values:  %s", util.ColorInfo(opts.SetValues))
+	err = create.InstallVaultOperator(opts, ns, &requirements.VersionStream)
 	if err != nil {
 		return errors.Wrap(err, "unable to install vault operator")
 	}
@@ -263,6 +317,24 @@ func (o *StepBootVaultOptions) verifyVaultIngress(requirements *config.Requireme
 	return true, nil
 }
 
+// vaultOperatorImageTag lookups the vault operator image tag in the version stream
+func (o *StepBootVaultOptions) vaultOperatorImageTag(versionStream *config.VersionStreamConfig) (string, error) {
+	resolver, err := o.CreateVersionResolver(versionStream.URL, versionStream.Ref)
+	if err != nil {
+		return "", errors.Wrap(err, "creating the vault-operator docker image version resolver")
+	}
+	fullImage, err := resolver.ResolveDockerImage(kubevault.VaultOperatorImage)
+	if err != nil {
+		return "", errors.Wrapf(err, "looking up the vault-operator %q image into the version stream",
+			kubevault.VaultOperatorImage)
+	}
+	parts := strings.Split(fullImage, ":")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("no tag found for image %q in version stream", kubevault.VaultOperatorImage)
+	}
+	return parts[1], nil
+}
+
 // readYamlTemplate evaluates the given go template file and returns the output data
 func readYamlTemplate(templateFile string, requirements *config.RequirementsConfig) ([]byte, error) {
 	_, name := filepath.Split(templateFile)
@@ -288,4 +360,12 @@ func readYamlTemplate(templateFile string, requirements *config.RequirementsConf
 	}
 	data := buf.Bytes()
 	return data, nil
+}
+
+func checkRequiredResource(resourceName string, value string) bool {
+	if value == "" {
+		log.Logger().Warnf("Vault.AutoCreate is false but required property %s is missing", resourceName)
+		return true
+	}
+	return false
 }

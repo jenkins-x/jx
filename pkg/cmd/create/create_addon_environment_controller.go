@@ -2,12 +2,13 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	config2 "github.com/jenkins-x/jx/pkg/config"
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -69,7 +70,7 @@ type CreateAddonEnvironmentControllerOptions struct {
 func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonEnvironmentControllerOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -122,7 +123,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 
 	// validate the git URL
 	if o.GitSourceURL == "" && !o.BatchMode {
-		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
+		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -139,7 +140,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		o.GitKind = gits.SaasGitKind(serverURL)
 	}
 	if o.GitKind == "" && !o.BatchMode {
-		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
+		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -194,7 +195,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	// avoid needing a dev cluster
 	o.EnableRemoteKubeCluster()
 
-	authSvc, err := o.CreateGitAuthConfigService()
+	authSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -267,14 +268,13 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 
 	log.Logger().Infof("installing the Environment Controller with values: %s", util.ColorInfo(strings.Join(setValues, ",")))
 	helmOptions := helm.InstallChartOptions{
-		Chart:          "environment-controller",
-		ReleaseName:    o.ReleaseName,
-		Version:        o.Version,
-		Ns:             o.Namespace,
-		SetValues:      setValues,
-		HelmUpdate:     true,
-		Repository:     kube.DefaultChartMuseumURL,
-		VersionsGitURL: config2.DefaultVersionsURL,
+		Chart:       "environment-controller",
+		ReleaseName: o.ReleaseName,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   setValues,
+		HelmUpdate:  true,
+		Repository:  kube.DefaultChartMuseumURL,
 	}
 	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {

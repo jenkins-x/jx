@@ -2,7 +2,7 @@
 
 set -e -o pipefail
 
-if [ $DISABLE_LINTER == "true" ]
+if [ "$DISABLE_LINTER" == "true" ]
 then
   exit 0
 fi
@@ -11,7 +11,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if ! [ -x "$(command -v golangci-lint)" ]; then
 	echo "Installing GolangCI-Lint"
-	${DIR}/install_golint.sh -b $GOPATH/bin v1.16.0
+	${DIR}/install_golint.sh -b $GOPATH/bin v1.20.0
 fi
 
 golangci-lint run \
@@ -21,23 +21,23 @@ golangci-lint run \
 	-E unconvert \
     -E deadcode \
     -E unconvert \
-    -E errcheck \
     -E gosec \
     -E gofmt \
+    -E goimports \
+    -E structcheck \
+    -E interfacer \
+    -E typecheck \
     --skip-dirs vendor \
-    --deadline 5m0s \
-    --verbose
+    --deadline 15m0s \
+    --verbose 
 
-# -E structcheck \
+# -E errcheck \
 # -E varcheck \
 # -E govet \
-# -E interfacer \
 # -E unparam \
 # -E megacheck \
 # -E goconst \
-# -E typecheck \
 # -E ineffassign \
-# -E goimports \
 # -E golint
 # -E unparam
 # -E gocritic

@@ -16,7 +16,7 @@ var (
 	getBranchPatternLong = templates.LongDesc(`
 		Display the git branch patterns for the current Team used on creating and importing projects
 
-		For more documentation see: [https://jenkins-x.io/developing/import/#branch-patterns](https://jenkins-x.io/developing/import/#branch-patterns)
+		For more documentation see: [https://jenkins-x.io/docs/using-jx/creating/import/#branch-patterns](https://jenkins-x.io/docs/using-jx/creating/import/#branch-patterns)
 `)
 
 	getBranchPatternExample = templates.Examples(`

@@ -53,6 +53,7 @@ type TestSuites struct {
 
 // TestSuite is the representation of a <testsuite> of a *.junit.xml xml file
 type TestSuite struct {
+	XMLName  xml.Name   `xml:"testsuite"`
 	Text     string     `xml:",chardata"`
 	Name     string     `xml:"name,attr"`
 	Tests    string     `xml:"tests,attr"`
@@ -64,6 +65,7 @@ type TestSuite struct {
 
 // TestCase is the representation of an individual test case within a TestSuite in a *.junit.xml xml file
 type TestCase struct {
+	XMLName   xml.Name `xml:"testcase"`
 	Text      string   `xml:",chardata"`
 	Name      string   `xml:"name,attr"`
 	Classname string   `xml:"classname,attr"`
@@ -206,21 +208,32 @@ func (o *StepReportJUnitOptions) prepareSingleFileForParsing(resultFileName stri
 func (o *StepReportJUnitOptions) mergeJUnitReportFiles(jUnitReportFiles []string, resultFileName string) error {
 	log.Logger().Infof(util.ColorInfo("Performing merge of *.junit.xml files in %s"), o.ReportsDir)
 
-	testSuites := TestSuites{}
+	aggregatedTestSuites := TestSuites{}
 	for _, v := range jUnitReportFiles {
 		bytes, err := ioutil.ReadFile(v)
 		if err != nil {
 			return err
 		}
-		var testSuite TestSuite
-		err = xml.Unmarshal(bytes, &testSuite)
+
+		// trying to parse <testsuites></testsuites>
+		var testSuites TestSuites
+		err = xml.Unmarshal(bytes, &testSuites)
 		if err != nil {
-			return err
+			// If no <testsuites></testsuites>, trying to parse <testsuite></testsuite>
+			var testSuite TestSuite
+			err = xml.Unmarshal(bytes, &testSuite)
+			if err != nil {
+				return err
+			}
+			aggregatedTestSuites.TestSuites = append(aggregatedTestSuites.TestSuites, testSuite)
+		} else {
+			for _, testSuite := range testSuites.TestSuites {
+				aggregatedTestSuites.TestSuites = append(aggregatedTestSuites.TestSuites, testSuite)
+			}
 		}
-		testSuites.TestSuites = append(testSuites.TestSuites, testSuite)
 	}
 
-	suitesBytes, err := xml.Marshal(testSuites)
+	suitesBytes, err := xml.Marshal(aggregatedTestSuites)
 	if err != nil {
 		return err
 	}

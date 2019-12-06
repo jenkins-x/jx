@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/pkg/util"
 	v1 "k8s.io/api/core/v1"
 
 	git_mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
@@ -213,6 +214,11 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 	}
 	prefix := ""
 	gitter := git_mocks.NewMockGitter()
+	handles := util.IOFileHandles{
+		Err: console.Err,
+		In:  console.In,
+		Out: console.Out,
+	}
 
 	_, err := kube.CreateEnvironmentSurvey(
 		batchMode,
@@ -231,9 +237,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		prefix,
 		gitter,
 		nil,
-		console.In,
-		console.Out,
-		console.Err,
+		handles,
 	)
 	assert.NoError(t, err, "Should not error")
 

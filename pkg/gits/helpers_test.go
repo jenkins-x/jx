@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -198,7 +199,6 @@ type forkAndPullTestArgs struct {
 	dir        string
 	baseRef    string
 	branchName string
-	duplicate  bool
 	provider   *gits.FakeProvider
 	gitter     gits.Gitter
 	initFn     func(args *forkAndPullTestArgs) error // initFn allows us to run some code at the start of the forkAndPullTest
@@ -501,7 +501,7 @@ func TestExistingForkAndNewDir(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -600,7 +600,7 @@ func TestExistingForkAndExistingDir(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -698,7 +698,7 @@ func TestExistingForkAndExistingCheckout(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -904,7 +904,7 @@ func TestExistingForkAndExistingCheckoutWithLocalModifications(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1011,7 +1011,7 @@ func TestExistingForkAndExistingCheckoutWithNonConflictingLocalModifications(t *
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1118,7 +1118,7 @@ func TestExistingForkAndExistingCheckoutWithExistingLocalCommits(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1231,7 +1231,7 @@ func TestExistingForkAndChangesToOriginAndExistingCheckoutWithExistingLocalCommi
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(dir, "Second commit")
 				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, false, "HEAD")
+				err = args.gitter.Push(dir, "origin", false, "HEAD")
 				assert.NoError(t, err)
 
 				// Set the provider username to wile in order to use the fork
@@ -1264,7 +1264,7 @@ func TestExistingForkAndChangesToOriginAndExistingCheckoutWithExistingLocalCommi
 				assert.NoError(t, err)
 				err = args.gitter.CommitDir(origindir, "commit cheese")
 				assert.NoError(t, err)
-				err = args.gitter.Push(origindir, "origin", false, false, "HEAD:master")
+				err = args.gitter.Push(origindir, "origin", false, "HEAD:master")
 				assert.NoError(t, err)
 
 				return nil
@@ -1366,7 +1366,7 @@ func runForkAndPullTestCase(t *testing.T, tt forkAndPullTest) {
 	tt.args.cleanFn(&tt.args)
 }
 
-func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
+func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	gitter := gits.NewGitCLI()
 	originalRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
 		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
@@ -1397,7 +1397,7 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 	err = gitter.CommitDir(dir, "add license")
 	assert.NoError(t, err)
 
-	err = gitter.Push(dir, "origin", false, false, "HEAD")
+	err = gitter.Push(dir, "origin", false, "HEAD")
 	assert.NoError(t, err)
 
 	err = gitter.CreateBranch(dir, "release")
@@ -1418,7 +1418,7 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 	err = gitter.CreateTag(dir, "v1.0.0", "1.0.0")
 	assert.NoError(t, err)
 
-	err = gitter.Push(dir, "origin", false, false, "HEAD")
+	err = gitter.Push(dir, "origin", false, "HEAD")
 	assert.NoError(t, err)
 
 	err = gitter.PushTag(dir, "v1.0.0")
@@ -1678,6 +1678,35 @@ func TestDuplicateGitRepoFromCommitsh(t *testing.T) {
 	}
 }
 
+func Test_DuplicateGitRepoFromCommitish_returns_error_if_target_repo_exists(t *testing.T) {
+	gitter := gits.NewGitCLI()
+	originalRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+		if err != nil {
+			return errors.Wrapf(err, "writing README")
+		}
+		return nil
+	}, gitter)
+	assert.NoError(t, err)
+
+	targetRepo, err := gits.NewFakeRepository("acme", "coyote", func(dir string) error {
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("World!"), 0655)
+		if err != nil {
+			return errors.Wrapf(err, "writing README")
+		}
+		return nil
+	}, gitter)
+	assert.NoError(t, err)
+
+	provider := gits.NewFakeProvider(originalRepo, targetRepo)
+	provider.Gitter = gitter
+
+	repo, err := gits.DuplicateGitRepoFromCommitish(targetRepo.GitRepo.Organisation, targetRepo.GitRepo.Name, originalRepo.GitRepo.CloneURL, "origin/foo", "bar", false, provider, gitter)
+	assert.Error(t, err)
+	assert.Equal(t, "repository acme/coyote already exists", err.Error())
+	assert.Nil(t, repo)
+}
+
 func TestPushRepoAndCreatePullRequest(t *testing.T) {
 	type args struct {
 		gitURL     string
@@ -1699,7 +1728,6 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 	type test struct {
 		name         string
 		args         args
-		dir          string
 		wantErr      bool
 		wantBranch   string
 		wantPRNumber int
@@ -1837,7 +1865,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(args.dir, "commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(args.dir, "origin", false, false, "HEAD")
+					err = args.gitter.Push(args.dir, "origin", false, "HEAD")
 					assert.NoError(t, err)
 					return nil
 				},
@@ -1998,7 +2026,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.CommitDir(args.dir, "commit")
 					assert.NoError(t, err)
-					err = args.gitter.Push(args.dir, "origin", false, false, "HEAD")
+					err = args.gitter.Push(args.dir, "origin", false, "HEAD")
 					assert.NoError(t, err)
 					return nil
 				},
@@ -2062,8 +2090,9 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 						BranchName: "other",
 						Title:      fmt.Sprintf("Initial Commit!"),
 						Message:    fmt.Sprintf("Initial Commit!"),
+						Labels:     []string{"updatebot"},
 					}
-					_, err = gits.PushRepoAndCreatePullRequest(tmpDir, acmeRepo.GitRepo, personalRepo, "master", &prDetails, nil, true, "Initial Commit", true, false, args.gitter, args.provider, []string{"updatebot"})
+					_, err = gits.PushRepoAndCreatePullRequest(tmpDir, acmeRepo.GitRepo, personalRepo, "master", &prDetails, nil, true, "Initial Commit", true, false, args.gitter, args.provider)
 					assert.NoError(t, err)
 					// Let's clone the repo to dir and write a file
 					args.dir, err = ioutil.TempDir("", "")
@@ -2134,6 +2163,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				BranchName: tt.args.branch,
 				Title:      fmt.Sprintf("chore: bump %s", uuid.String()),
 				Message:    fmt.Sprintf("bump %s", uuid.String()),
+				Labels:     tt.args.labels,
 			}
 			if tt.wantBranch == "" {
 				tt.wantBranch = tt.args.branch
@@ -2146,7 +2176,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				commitMsg = tt.args.commitMsg
 			}
 
-			prInfo, err := gits.PushRepoAndCreatePullRequest(tt.args.dir, upstreamRepo, forkRepo, "master", &prDetails, tt.args.filter, tt.args.commit, commitMsg, tt.args.push, tt.args.dryRun, tt.args.gitter, tt.args.provider, tt.args.labels)
+			prInfo, err := gits.PushRepoAndCreatePullRequest(tt.args.dir, upstreamRepo, forkRepo, "master", &prDetails, tt.args.filter, tt.args.commit, commitMsg, tt.args.push, tt.args.dryRun, tt.args.gitter, tt.args.provider)
 			err2 := tt.postFn(&tt.args, &tt)
 			assert.NoError(t, err2)
 
@@ -2158,7 +2188,6 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 			if err != nil {
 				return
 			}
-
 			//validate the returned data
 			assert.Equal(t, prDetails.Title, prInfo.PullRequest.Title)
 			assert.Equal(t, prDetails.Message, prInfo.PullRequest.Body)
@@ -2258,4 +2287,111 @@ func TestGetGitInfoFromDirectoryNoGit(t *testing.T) {
 	assert.Error(t, err)
 
 	assert.Equal(t, fmt.Sprintf("there was a problem obtaining the remote Git URL of directory %s: failed to unmarshal  due to no GitConfDir defined", dir), err.Error())
+}
+
+func Test_SquashIntoSingleCommit_success(t *testing.T) {
+	gitDir, err := ioutil.TempDir("", "test-repo")
+	assert.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(gitDir)
+	}()
+
+	gitter := gits.NewGitCLI()
+
+	err = gitter.Init(gitDir)
+	assert.NoError(t, err)
+
+	readmePath := filepath.Join(gitDir, readme)
+	err = ioutil.WriteFile(readmePath, []byte("readme"), 0600)
+	assert.NoError(t, err)
+	err = gitter.Add(gitDir, readme)
+	assert.NoError(t, err)
+	err = gitter.CommitDir(gitDir, "adding readme")
+	assert.NoError(t, err)
+
+	contributingPath := filepath.Join(gitDir, contributing)
+	err = ioutil.WriteFile(contributingPath, []byte("contribute"), 0600)
+	assert.NoError(t, err)
+	err = gitter.Add(gitDir, contributing)
+	assert.NoError(t, err)
+	err = gitter.CommitDir(gitDir, "adding contribute")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, commitCount(t, gitDir))
+
+	err = gits.SquashIntoSingleCommit(gitDir, "squashed", gitter)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, commitCount(t, gitDir))
+	assert.FileExists(t, filepath.Join(gitDir, readme))
+	assert.FileExists(t, filepath.Join(gitDir, contributing))
+}
+
+func Test_SquashIntoSingleCommit_with_only_one_commit(t *testing.T) {
+	gitDir, err := ioutil.TempDir("", "test-repo")
+	assert.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(gitDir)
+	}()
+
+	gitter := gits.NewGitCLI()
+
+	err = gitter.Init(gitDir)
+	assert.NoError(t, err)
+
+	readmePath := filepath.Join(gitDir, readme)
+	err = ioutil.WriteFile(readmePath, []byte("readme"), 0600)
+	assert.NoError(t, err)
+	err = gitter.Add(gitDir, readme)
+	assert.NoError(t, err)
+	err = gitter.CommitDir(gitDir, "adding readme")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, commitCount(t, gitDir))
+
+	err = gits.SquashIntoSingleCommit(gitDir, "squashed", gitter)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, commitCount(t, gitDir))
+	assert.FileExists(t, filepath.Join(gitDir, readme))
+	msg, err := gitter.GetLatestCommitMessage(gitDir)
+	assert.NoError(t, err)
+	assert.Equal(t, "squashed", msg)
+}
+
+func Test_SquashIntoSingleCommit_with_no_git_dir_returns_error(t *testing.T) {
+	gitDir, err := ioutil.TempDir("", "test-repo")
+	assert.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(gitDir)
+	}()
+
+	gitter := gits.NewGitCLI()
+
+	err = gits.SquashIntoSingleCommit(gitDir, "squashed", gitter)
+	assert.Error(t, err)
+
+	err = gits.SquashIntoSingleCommit("", "squashed", gitter)
+	assert.Error(t, err)
+}
+
+func commitCount(t *testing.T, repoDir string) int {
+	args := []string{"rev-list", "--count", "HEAD"}
+	cmd := util.Command{
+		Dir:  repoDir,
+		Name: "git",
+		Args: args,
+	}
+	out, err := cmd.RunWithoutRetry()
+	assert.NoError(t, err)
+
+	count, err := strconv.Atoi(out)
+	assert.NoError(t, err)
+	return count
+}
+
+func TestIsCouldntFindRemoteRefErrorHandlesUppercaseRef(t *testing.T) {
+	error := errors.New(" fatal: couldn't find remote ref add-app-your-app-0.0.0-SNAPSHOT-PR-1234-1:")
+	ref := "add-app-your-app-0.0.0-SNAPSHOT-PR-1234-1"
+	assert.True(t, gits.IsCouldntFindRemoteRefError(error, ref))
 }

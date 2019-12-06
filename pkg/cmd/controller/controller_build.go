@@ -26,7 +26,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -45,10 +45,11 @@ import (
 type ControllerBuildOptions struct {
 	ControllerOptions
 
-	Namespace          string
-	InitGitCredentials bool
-	GitReporting       bool
-	TargetURLTemplate  string
+	Namespace           string
+	InitGitCredentials  bool
+	GitReporting        bool
+	TargetURLTemplate   string
+	FailIfNoGitProvider bool
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
 
@@ -123,6 +124,7 @@ func NewCmdControllerBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
+	cmd.Flags().BoolVarP(&options.FailIfNoGitProvider, "fail-on-git-provider-error", "", false, "If enable then lets terminate quickly if we cannot create a git provider")
 
 	// optional git reporting flags
 	cmd.Flags().StringVarP(&options.TargetURLTemplate, "target-url-template", "", "", "The Go template for generating the target URL of pipeline logs/views if git reporting is enabled")
@@ -188,12 +190,12 @@ func (o *ControllerBuildOptions) Run() error {
 
 	err = o.ensureSourceRepositoryHasLabels(jxClient, ns)
 	if err != nil {
-		return errors.Wrap(err, "failed to label the PipelineActivity resources")
+		log.Logger().Warnf("failed to label the legacy SourceRepository resources: %s", err)
 	}
 
 	err = o.ensurePipelineActivityHasLabels(jxClient, ns)
 	if err != nil {
-		return errors.Wrap(err, "failed to label the PipelineActivity resources")
+		log.Logger().Warnf("failed to label the legacy PipelineActivity resources: %s", err)
 	}
 
 	if tektonEnabled {
@@ -372,7 +374,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 						return nil
 					})
 					if err != nil {
-						log.Logger().Warnf("Failed to update PipelineActivities%s: %s", name, err)
+						log.Logger().Warnf("Failed to update PipelineActivities %s: %s", name, err)
 					}
 				}
 			} else {
@@ -419,14 +421,12 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		return nil
 	}
 
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "github")
-	if err != nil {
-		return err
-	}
-
 	// get a git API client
-	provider, err := o.getGithubProvider(secrets, gitInfo)
+	provider, err := o.getGithubProvider(gitInfo)
 	if err != nil {
+		if o.FailIfNoGitProvider {
+			log.Logger().Fatalf("could not create git provider: %s", err.Error())
+		}
 		return err
 	}
 
@@ -468,19 +468,22 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 	return nil
 }
 
-func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+func (o *ControllerBuildOptions) getGithubProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
 	// this internal provider is only used during tests
 	if o.gitHubProvider != nil {
 		return o.gitHubProvider, nil
 	}
 
 	// production code always goes this way
-	server, userAuth, err := o.GetPipelineGitAuth()
+	server, userAuth, err := o.GetPipelineGitAuthForRepo(gitInfo)
 	if err != nil {
 		return nil, err
 	}
 	if server == nil {
 		return nil, fmt.Errorf("no pipeline git auth could be found")
+	}
+	if userAuth == nil || userAuth.IsInvalid() {
+		return nil, fmt.Errorf("no pipeline git user auth could be found")
 	}
 	gitProvider, err := gits.CreateProvider(server, userAuth, nil)
 	if err != nil {
@@ -615,6 +618,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 
 		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
 		if spec.BuildLogsURL == "" || !strings.Contains(spec.BuildLogsURL, pod.Name) {
+			log.Logger().Debugf("Storing build logs for %s", activity.Name)
 			podInterface := kubeClient.CoreV1().Pods(ns)
 
 			envName := kube.LabelValueDevEnvironment
@@ -675,7 +679,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 	allStagesCompleted := true
 	failed := false
-	running := true
+	running := false
 	for i := range spec.Steps {
 		step := &spec.Steps[i]
 		stage := step.Stage
@@ -712,9 +716,22 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 	}
 
-	if allStagesCompleted {
+	// allStagesCompleted means all stages ran and completed. !running && failed means there are no currently running
+	// stages (i.e., they're all either successful, failed, or pending), and at least one of them failed. This is the
+	// best way we've got to determine that an earlier stage has failed and later stages never actually launched.
+	if allStagesCompleted || (!running && failed) {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
+			// Mark any Pending stages as not executed
+			for i := range spec.Steps {
+				step := &spec.Steps[i]
+				stage := step.Stage
+				if stage != nil {
+					if stage.Status == v1.ActivityStatusTypePending {
+						stage.Status = v1.ActivityStatusTypeNotExecuted
+					}
+				}
+			}
 		} else if len(spec.Steps) == 1 && spec.Steps[0].Stage.Name == strings.NewReplacer("-", " ").Replace(metapipeline.MetaPipelineStageName) {
 			// If there's one stage, it's passed, and it's the metapipeline, assume we're still running.
 			spec.Status = v1.ActivityStatusTypeRunning
@@ -823,12 +840,16 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 
 			if terminated != nil {
 				if terminated.ExitCode == 0 {
-					step.Status = v1.ActivityStatusTypeSucceeded
+					if didPreviousStepFail(i, stageSteps) {
+						step.Status = v1.ActivityStatusTypeNotExecuted
+					} else {
+						step.Status = v1.ActivityStatusTypeSucceeded
+					}
 				} else {
 					step.Status = v1.ActivityStatusTypeFailed
 				}
 			} else {
-				if running != nil {
+				if running != nil && isStepRunning(i, stageSteps) {
 					step.Status = v1.ActivityStatusTypeRunning
 				} else {
 					step.Status = v1.ActivityStatusTypePending
@@ -971,6 +992,27 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 	}
 }
 
+// didPreviousStepFail checks if the step before the given index failed. This is used to mark not-actually-executed steps
+// correctly.
+func didPreviousStepFail(index int, stageSteps []v1.CoreActivityStep) bool {
+	if len(stageSteps) > 0 {
+		previousStep := stageSteps[index-1]
+		return previousStep.CompletedTimestamp != nil && previousStep.Status != v1.ActivityStatusTypeSucceeded
+	}
+	return false
+}
+
+// isStepRunning checks if the step at the given index is actually running its command, not just waiting for the previous
+// step to finish. The step is running if either there are no steps yet in the stageSteps slice, meaning this is the first
+// step we're adding, or if the step before it in stageSteps has completed.
+func isStepRunning(index int, stageSteps []v1.CoreActivityStep) bool {
+	if len(stageSteps) > 0 {
+		previousStep := stageSteps[index-1]
+		return previousStep.CompletedTimestamp != nil
+	}
+	return true
+}
+
 // determineStepStartTime checks to see if there's a step before this one. If so, it returns the time at which that step
 // finished. Otherwise, it checks to see if the current step is running or finished and returns the appropriate start time.
 // This is to work around the fact that Tekton steps all have the same start time, since all containers in the pod start
@@ -1011,7 +1053,8 @@ func toYamlString(resource interface{}) string {
 // generates the build log URL and returns the URL
 func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
-	coll, err := collector.NewCollector(location, settings, o.Git())
+	log.Logger().Debugf("Collecting logs for %s to location %s", activity.Name, location.Description())
+	coll, err := collector.NewCollector(location, o.Git())
 	if err != nil {
 		return "", errors.Wrapf(err, "could not create Collector for pod %s in namespace %s with settings %#v", pod.Name, ns, settings)
 	}
@@ -1056,7 +1099,8 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		LogWriter:    logWriter,
 	}
 
-	err = tektonLogger.GetRunningBuildLogs(activity, buildName)
+	log.Logger().Debugf("Capturing running build logs for %s", activity.Name)
+	err = tektonLogger.GetRunningBuildLogs(activity, buildName, false)
 	if err != nil {
 		return "", errors.Wrapf(err, "there was a problem getting logs for build %s", buildName)
 	}
@@ -1073,7 +1117,14 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		}
 	}
 
-	return coll.CollectData(w.data, fileName)
+	log.Logger().Infof("storing logs for activity %s into storage at %s", activity.Name, fileName)
+	answer, err := coll.CollectData(w.data, fileName)
+	if err != nil {
+		log.Logger().Errorf("failed to store logs for activity %s into storage at %s: %s", activity.Name, fileName, err.Error())
+		return answer, err
+	}
+	log.Logger().Infof("stored logs for activity %s into storage at %s", activity.Name, fileName)
+	return answer, nil
 }
 
 // ensurePipelineActivityHasLabels older versions of controller build did not add labels properly

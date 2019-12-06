@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
 	"github.com/jenkins-x/jx/pkg/maven"
 
 	"github.com/cenkalti/backoff"
@@ -22,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/start"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/github"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -83,6 +86,7 @@ type ImportOptions struct {
 	PipelineServer        string
 	ImportMode            string
 	UseDefaultGit         bool
+	GithubAppInstalled    bool
 }
 
 const (
@@ -102,7 +106,7 @@ var (
 
 	    You can specify the git URL as an argument.
 	    
-		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
+		For more documentation see: [https://jenkins-x.io/docs/using-jx/creating/import/](https://jenkins-x.io/docs/using-jx/creating/import/)
 	    
 ` + helper.SeeAlsoText("jx create project"))
 
@@ -127,6 +131,8 @@ var (
 		`)
 
 	deployKinds = []string{DeployKindKnative, DeployKindDefault}
+
+	removeSourceRepositoryAnnotations = []string{"kubectl.kubernetes.io/last-applied-configuration", "jenkins.io/chart"}
 )
 
 // NewCmdImport the cobra command for jx import
@@ -232,7 +238,7 @@ func (options *ImportOptions) Run() error {
 
 	var userAuth *auth.UserAuth
 	if options.GitProvider == nil {
-		authConfigSvc, err := options.CreateGitAuthConfigServiceDryRun(options.DryRun)
+		authConfigSvc, err := options.GitLocalAuthConfigService()
 		if err != nil {
 			return err
 		}
@@ -246,7 +252,7 @@ func (options *ImportOptions) Run() error {
 			serverURL := gitInfo.HostURLWithoutUser()
 			server = config.GetOrCreateServer(serverURL)
 		} else {
-			server, err = config.PickOrCreateServer(gits.GitHubURL, options.GitRepositoryOptions.ServerURL, "Which Git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
+			server, err = config.PickOrCreateServer(gits.GitHubURL, options.GitRepositoryOptions.ServerURL, "Which Git service do you wish to use", options.BatchMode, options.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -260,7 +266,7 @@ func (options *ImportOptions) Run() error {
 		} else {
 			// Get the org in case there is more than one user auth on the server and batchMode is true
 			org := options.getOrganisationOrCurrentUser()
-			userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
+			userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -279,7 +285,7 @@ func (options *ImportOptions) Run() error {
 			if options.GitRepositoryOptions.ApiToken != "" {
 				userAuth.ApiToken = options.GitRepositoryOptions.ApiToken
 			}
-			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, false, options.BatchMode, f, options.In, options.Out, options.Err)
+			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, false, options.BatchMode, f, options.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -358,6 +364,7 @@ func (options *ImportOptions) Run() error {
 			if err != nil {
 				log.Logger().Warnf("Failed to parse git URL %s : %s", options.RepoURL, err)
 			} else {
+				options.Organisation = info.Organisation
 				options.AppName = info.Name
 			}
 		}
@@ -400,7 +407,7 @@ func (options *ImportOptions) Run() error {
 		}
 	} else {
 		if shouldClone {
-			err = options.Git().Push(options.Dir, "origin", false, false, "HEAD")
+			err = options.Git().Push(options.Dir, "origin", false, "HEAD")
 			if err != nil {
 				return err
 			}
@@ -424,12 +431,31 @@ func (options *ImportOptions) Run() error {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}
 
+	if !options.GithubAppInstalled {
+		githubAppMode, err := options.IsGitHubAppMode()
+		if err != nil {
+			return err
+		}
+
+		if githubAppMode {
+			githubApp := &github.GithubApp{
+				Factory: options.GetFactory(),
+			}
+
+			installed, err := githubApp.Install(options.Organisation, options.Repository, options.GetIOFileHandles(), false)
+			if err != nil {
+				return err
+			}
+			options.GithubAppInstalled = installed
+		}
+	}
+
 	return options.doImport()
 }
 
 // ImportProjectsFromGitHub import projects from github
 func (options *ImportOptions) ImportProjectsFromGitHub() error {
-	repos, err := gits.PickRepositories(options.GitProvider, options.Organisation, "Which repositories do you want to import", options.SelectAll, options.SelectFilter, options.In, options.Out, options.Err)
+	repos, err := gits.PickRepositories(options.GitProvider, options.Organisation, "Which repositories do you want to import", options.SelectAll, options.SelectFilter, options.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -519,7 +545,7 @@ func (options *ImportOptions) DraftCreate() error {
 	options.Organisation = options.GetOrganisation()
 	if options.Organisation == "" {
 		gitUsername := options.GitUserAuth.Username
-		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.In, options.Out, options.Err)
+		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -529,7 +555,7 @@ func (options *ImportOptions) DraftCreate() error {
 		dir := options.Dir
 		_, defaultRepoName := filepath.Split(dir)
 
-		options.AppName, err = gits.GetRepoName(options.BatchMode, false, options.GitProvider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
+		options.AppName, err = gits.GetRepoName(options.BatchMode, false, options.GitProvider, defaultRepoName, options.Organisation, options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -615,7 +641,7 @@ func (options *ImportOptions) GetOrganisation() string {
 
 // CreateNewRemoteRepository creates a new remote repository
 func (options *ImportOptions) CreateNewRemoteRepository() error {
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitLocalAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -627,7 +653,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	details := &options.GitDetails
 	if details.RepoName == "" {
 		details, err = gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
-			options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
+			options.GitServer, options.GitUserAuth, options.Git(), options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -654,58 +680,66 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	}
 	log.Logger().Infof("Pushed Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
 
-	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
-	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer != nil && options.GitServer.URL == options.PipelineServer {
-		// Make the invitation
-		err := options.GitProvider.AddCollaborator(options.PipelineUserName, details.Organisation, details.RepoName)
-		if err != nil {
-			return err
-		}
+	githubAppMode, err := options.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
 
-		// If repo is put in an organisation that the pipeline user is not part of an invitation needs to be accepted.
-		// Create a new provider for the pipeline user
-		authConfig := authConfigSvc.Config()
-		if err != nil {
-			return err
-		}
-		pipelineUserAuth := authConfig.FindUserAuth(options.GitServer.URL, options.PipelineUserName)
-		if pipelineUserAuth == nil {
-			log.Logger().Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate"+
-				"on %s if %s is not part of %s.\n",
-				options.PipelineUserName, details.RepoName, options.PipelineUserName, details.Organisation)
-		} else {
-			pipelineServerAuth := authConfig.GetServer(authConfig.CurrentServer)
-			pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
+	if !githubAppMode {
+
+		// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
+		if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer != nil && options.GitServer.URL == options.PipelineServer {
+			// Make the invitation
+			err := options.GitProvider.AddCollaborator(options.PipelineUserName, details.Organisation, details.RepoName)
 			if err != nil {
 				return err
 			}
 
-			// Get all invitations for the pipeline user
-			// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
-			f := func() error {
-				invites, _, err := pipelineUserProvider.ListInvitations()
+			// If repo is put in an organisation that the pipeline user is not part of an invitation needs to be accepted.
+			// Create a new provider for the pipeline user
+			authConfig := authConfigSvc.Config()
+			if err != nil {
+				return err
+			}
+			pipelineUserAuth := authConfig.FindUserAuth(options.GitServer.URL, options.PipelineUserName)
+			if pipelineUserAuth == nil {
+				log.Logger().Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate"+
+					"on %s if %s is not part of %s.\n",
+					options.PipelineUserName, details.RepoName, options.PipelineUserName, details.Organisation)
+			} else {
+				pipelineServerAuth := authConfig.GetServer(authConfig.CurrentServer)
+				pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
 				if err != nil {
 					return err
 				}
-				for _, x := range invites {
-					// Accept all invitations for the pipeline user
-					_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+
+				// Get all invitations for the pipeline user
+				// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
+				f := func() error {
+					invites, _, err := pipelineUserProvider.ListInvitations()
 					if err != nil {
 						return err
 					}
+					for _, x := range invites {
+						// Accept all invitations for the pipeline user
+						_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+						if err != nil {
+							return err
+						}
+					}
+					return nil
 				}
-				return nil
+				exponentialBackOff := backoff.NewExponentialBackOff()
+				timeout := 20 * time.Second
+				exponentialBackOff.MaxElapsedTime = timeout
+				exponentialBackOff.Reset()
+				err = backoff.Retry(f, exponentialBackOff)
+				if err != nil {
+					return err
+				}
 			}
-			exponentialBackOff := backoff.NewExponentialBackOff()
-			timeout := 20 * time.Second
-			exponentialBackOff.MaxElapsedTime = timeout
-			exponentialBackOff.Reset()
-			err = backoff.Retry(f, exponentialBackOff)
-			if err != nil {
-				return err
-			}
-		}
 
+		}
 	}
 
 	return nil
@@ -887,7 +921,7 @@ func (options *ImportOptions) doImport() error {
 		gitProvider = p
 	}
 
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitLocalAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -919,8 +953,14 @@ func (options *ImportOptions) doImport() error {
 	if err != nil {
 		return err
 	}
+
+	githubAppMode, err := options.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
 	if isProw {
-		if !options.DisableWebhooks {
+		if !options.DisableWebhooks && !githubAppMode {
 			// register the webhook
 			err = options.CreateWebhookProw(gitURL, gitProvider)
 			if err != nil {
@@ -948,6 +988,11 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		return err
 	}
 	_, currentNamespace, err := options.KubeClientAndNamespace()
+	if err != nil {
+		return err
+	}
+
+	gha, err := options.IsGitHubAppMode()
 	if err != nil {
 		return err
 	}
@@ -983,6 +1028,43 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 			}
 		}
 
+		sourceGitURL, err := kube.GetRepositoryGitURL(sr)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get the git URL for SourceRepository %s", sr.Name)
+		}
+
+		devGitURL := devEnv.Spec.Source.URL
+		if devGitURL != "" && !gha {
+			// lets generate a PR
+			base := devEnv.Spec.Source.Ref
+			if base == "" {
+				base = "master"
+			}
+			pro := &pr.StepCreatePrOptions{
+				SrcGitURL:  sourceGitURL,
+				GitURLs:    []string{devGitURL},
+				Base:       base,
+				Fork:       true,
+				BranchName: sr.Name,
+			}
+			pro.CommonOptions = options.CommonOptions
+
+			changeFn := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+				return nil, writeSourceRepoToYaml(dir, sr)
+			}
+
+			err := pro.CreatePullRequest("resource", changeFn)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create Pull Request on the development environment git repository %s", devGitURL)
+			}
+			info := util.ColorInfo
+			prURL := ""
+			if pro.Results != nil && pro.Results.PullRequest != nil {
+				prURL = pro.Results.PullRequest.URL
+			}
+			log.Logger().Infof("created pull request %s on the development git repository %s", info(prURL), info(devGitURL))
+		}
+
 		err = options.GenerateProwConfig(currentNamespace, devEnv)
 		if err != nil {
 			return err
@@ -994,17 +1076,64 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		}
 	}
 
-	startBuildOptions := start.StartPipelineOptions{
-		CommonOptions: options.CommonOptions,
+	if !gha {
+		startBuildOptions := start.StartPipelineOptions{
+			CommonOptions: options.CommonOptions,
+		}
+		startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
+		err = startBuildOptions.Run()
+		if err != nil {
+			return fmt.Errorf("failed to start pipeline build")
+		}
 	}
-	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
-	err = startBuildOptions.Run()
-	if err != nil {
-		return fmt.Errorf("failed to start pipeline build")
-	}
+
 	options.LogImportedProject(false, gitInfo)
 
 	return nil
+}
+
+// writeSourceRepoToYaml marshals a SourceRepository to the given directory, making sure it can be loaded by boot.
+func writeSourceRepoToYaml(dir string, sr *v1.SourceRepository) error {
+	outDir := filepath.Join(dir, "repositories", "templates")
+	err := os.MkdirAll(outDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to make directories %s", outDir)
+	}
+
+	fileName := filepath.Join(outDir, sr.Name+"-sr.yaml")
+	// lets clear the fields we don't need to save
+	clearSourceRepositoryMetadata(&sr.ObjectMeta)
+	// Ensure it has the type information it needs
+	sr.APIVersion = jenkinsio.GroupAndVersion
+	sr.Kind = "SourceRepository"
+
+	data, err := yaml.Marshal(&sr)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal SourceRepository %s to yaml", sr.Name)
+	}
+
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save SourceRepository file %s", fileName)
+	}
+	return nil
+}
+
+// clearSourceRepositoryMetadata clears unnecessary data
+func clearSourceRepositoryMetadata(meta *metav1.ObjectMeta) {
+	meta.CreationTimestamp.Time = time.Time{}
+	meta.Namespace = ""
+	meta.OwnerReferences = nil
+	meta.Finalizers = nil
+	meta.Generation = 0
+	meta.GenerateName = ""
+	meta.SelfLink = ""
+	meta.UID = ""
+	meta.ResourceVersion = ""
+
+	for _, k := range removeSourceRepositoryAnnotations {
+		delete(meta.Annotations, k)
+	}
 }
 
 // ensureDockerRepositoryExists for some kinds of container registry we need to pre-initialise its use such as for ECR
@@ -1469,7 +1598,7 @@ func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, e
 	if err != nil {
 		return nil, err
 	}
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitLocalAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -1477,7 +1606,7 @@ func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, e
 	options.GitRepositoryOptions.Owner = options.Organisation
 	options.GitRepositoryOptions.RepoName = options.Repository
 	details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
-		"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.In, options.Out, options.Err)
+		"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.GetIOFileHandles())
 	if err != nil {
 		return nil, err
 	}

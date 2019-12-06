@@ -2,8 +2,8 @@ package uninstall
 
 import (
 	"fmt"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/pkg/errors"
@@ -88,7 +88,7 @@ func (o *UninstallOptions) Run() error {
 			}
 
 			uninstall := util.Confirm("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?", false,
-				help, o.In, o.Out, o.Err)
+				help, o.GetIOFileHandles())
 			if !uninstall {
 				return nil
 			}
@@ -99,7 +99,7 @@ func (o *UninstallOptions) Run() error {
 			msg := fmt.Sprintf("This action will permanently delete Jenkins X from the Kubernetes context %s. "+
 				"Please type in the name of the context to confirm:", util.ColorInfo(currentContext))
 			helpMsg := "To prevent accidental uninstallation from the wrong cluster, you must enter the current Kubernetes context."
-			targetContext, err = util.PickValue(msg, "", true, helpMsg, o.In, o.Out, o.Err)
+			targetContext, err = util.PickValue(msg, "", true, helpMsg, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -110,11 +110,6 @@ func (o *UninstallOptions) Run() error {
 	}
 
 	log.Logger().Infof("Removing installation of Jenkins X in team namespace %s", util.ColorInfo(namespace))
-
-	err = o.cleanupConfig()
-	if err != nil {
-		return err
-	}
 
 	envMap, envNames, err := kube.GetEnvironments(jxClient, namespace)
 	if err != nil {
@@ -233,25 +228,6 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 		return errors.Wrapf(err, "deleting the namespace '%s' from Kubernetes cluster", namespace)
 	}
 	return nil
-}
-
-func (o *UninstallOptions) cleanupConfig() error {
-	authConfigSvc, err := o.AuthConfigService(auth.JenkinsAuthConfigFile)
-	if err != nil || authConfigSvc == nil {
-		return nil
-	}
-	server := authConfigSvc.Config().CurrentServer
-	err = authConfigSvc.DeleteServer(server)
-	if err != nil {
-		return err
-	}
-
-	chartConfigSvc, err := o.ChartmuseumAuthConfigService()
-	if err != nil {
-		return err
-	}
-	server = chartConfigSvc.Config().CurrentServer
-	return chartConfigSvc.DeleteServer(server)
 }
 
 // DeleteReleaseIfPresent deletes the given chart in the given namespace and adds any erro to the passed errors slice

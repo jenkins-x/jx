@@ -143,46 +143,115 @@ func NewCmdPromote(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func (options *PromoteOptions) AddPromoteOptions(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Application, opts.OptionApplication, "a", "", "The Application to promote")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "The search filter to find charts to promote")
-	cmd.Flags().StringVarP(&options.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
-	cmd.Flags().StringVarP(&options.Pipeline, "pipeline", "", "", "The Pipeline string in the form 'folderName/repoName/branch' which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
-	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
-	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
-	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.InClusterHelmRepositoryURL, "The Helm Repository URL to use for the App")
-	cmd.Flags().StringVarP(&options.ReleaseName, "release", "", "", "The name of the helm release")
-	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
-	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
-	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
-	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
-	cmd.Flags().BoolVarP(&options.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
-	cmd.Flags().BoolVarP(&options.NoWaitAfterMerge, "no-wait", "", false, "Disables waiting for completing promotion after the Pull request is merged")
-	cmd.Flags().BoolVarP(&options.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the Git repository")
+// AddPromoteOptions adds command level options to `promote`
+func (o *PromoteOptions) AddPromoteOptions(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Application, opts.OptionApplication, "a", "", "The Application to promote")
+	cmd.Flags().StringVarP(&o.Filter, "filter", "f", "", "The search filter to find charts to promote")
+	cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
+	cmd.Flags().StringVarP(&o.Pipeline, "pipeline", "", "", "The Pipeline string in the form 'folderName/repoName/branch' which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
+	cmd.Flags().StringVarP(&o.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
+	cmd.Flags().StringVarP(&o.Version, "version", "v", "", "The Version to promote")
+	cmd.Flags().StringVarP(&o.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
+	cmd.Flags().StringVarP(&o.HelmRepositoryURL, "helm-repo-url", "u", "", "The Helm Repository URL to use for the App")
+	cmd.Flags().StringVarP(&o.ReleaseName, "release", "", "", "The name of the helm release")
+	cmd.Flags().StringVarP(&o.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
+	cmd.Flags().StringVarP(&o.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
+	cmd.Flags().BoolVarP(&o.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
+	cmd.Flags().BoolVarP(&o.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
+	cmd.Flags().BoolVarP(&o.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
+	cmd.Flags().BoolVarP(&o.NoWaitAfterMerge, "no-wait", "", false, "Disables waiting for completing promotion after the Pull request is merged")
+	cmd.Flags().BoolVarP(&o.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the Git repository")
+}
+
+func (o *PromoteOptions) hasApplicationFlag() bool {
+	return o.Application != ""
+}
+
+func (o *PromoteOptions) hasArgs() bool {
+	return len(o.Args) > 0
+}
+
+func (o *PromoteOptions) setApplicationNameFromArgs() {
+	o.Application = o.Args[0]
+}
+
+func (o *PromoteOptions) hasFilterFlag() bool {
+	return o.Filter != ""
+}
+
+type searchForChartFn func(filter string) (string, error)
+
+func (o *PromoteOptions) setApplicationNameFromFilter(searchForChart searchForChartFn) error {
+	app, err := searchForChart(o.Filter)
+	if err != nil {
+		return errors.Wrap(err, "searching app name in chart failed")
+	}
+
+	o.Application = app
+
+	return nil
+}
+
+type discoverAppNameFn func() (string, error)
+
+func (o *PromoteOptions) setApplicationNameFromDiscoveredAppName(discoverAppName discoverAppNameFn) error {
+	app, err := discoverAppName()
+	if err != nil {
+		return errors.Wrap(err, "discovering app name failed")
+	}
+
+	if !o.BatchMode {
+		var continueWithAppName bool
+
+		question := fmt.Sprintf("Are you sure you want to promote the application named: %s?", app)
+
+		prompt := &survey.Confirm{
+			Message: question,
+			Default: true,
+		}
+		surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+		err = survey.AskOne(prompt, &continueWithAppName, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
+
+		if !continueWithAppName {
+			return errors.New("user canceled execution")
+		}
+	}
+
+	o.Application = app
+
+	return nil
+}
+
+// EnsureApplicationNameIsDefined validates if an application name flag was provided by the user. If missing it will
+// try to set it up or return an error
+func (o *PromoteOptions) EnsureApplicationNameIsDefined(sf searchForChartFn, df discoverAppNameFn) error {
+	if !o.hasApplicationFlag() && o.hasArgs() {
+		o.setApplicationNameFromArgs()
+	}
+
+	if !o.hasApplicationFlag() && o.hasFilterFlag() {
+		err := o.setApplicationNameFromFilter(sf)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !o.hasApplicationFlag() {
+		return o.setApplicationNameFromDiscoveredAppName(df)
+	}
+
+	return nil
 }
 
 // Run implements this command
 func (o *PromoteOptions) Run() error {
-	app := o.Application
-	if app == "" {
-		args := o.Args
-		if len(args) == 0 {
-			search := o.Filter
-			var err error
-			if search != "" {
-				app, err = o.SearchForChart(search)
-			} else {
-				app, err = o.DiscoverAppName()
-			}
-			if err != nil {
-				return err
-			}
-		} else {
-			app = args[0]
-		}
+	err := o.EnsureApplicationNameIsDefined(o.SearchForChart, o.DiscoverAppName)
+	if err != nil {
+		return err
 	}
-	o.Application = app
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
@@ -203,6 +272,9 @@ func (o *PromoteOptions) Run() error {
 		o.NoWaitForUpdatePipeline = true
 	}
 
+	if o.HelmRepositoryURL == "" {
+		o.HelmRepositoryURL = o.DefaultChartRepositoryURL()
+	}
 	if o.Environment == "" && !o.BatchMode {
 		names := []string{}
 		m, allEnvNames, err := kube.GetOrderedEnvironments(jxClient, ns)
@@ -215,7 +287,7 @@ func (o *PromoteOptions) Run() error {
 				names = append(names, n)
 			}
 		}
-		o.Environment, err = kube.PickEnvironment(names, "", o.In, o.Out, o.Err)
+		o.Environment, err = kube.PickEnvironment(names, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -245,7 +317,7 @@ func (o *PromoteOptions) Run() error {
 
 	releaseName := o.ReleaseName
 	if releaseName == "" {
-		releaseName = targetNS + "-" + app
+		releaseName = targetNS + "-" + o.Application
 		o.ReleaseName = releaseName
 	}
 
@@ -377,6 +449,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if err != nil {
 		return releaseInfo, err
 	}
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return releaseInfo, err
+	}
 	promoteKey := o.CreatePromoteKey(env)
 	if env != nil {
 		source := &env.Spec.Source
@@ -394,7 +470,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 					}
 					return nil
 				}
-				err = promoteKey.OnPromotePullRequest(jxClient, o.Namespace, startPromotePR)
+				err = promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, startPromotePR)
 				if err != nil {
 					log.Logger().Warnf("Failed to update PipelineActivity: %s", err)
 				}
@@ -426,7 +502,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 		return nil
 	}
-	promoteKey.OnPromoteUpdate(jxClient, o.Namespace, startPromote)
+	promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, startPromote)
 
 	helmOptions := helm.InstallChartOptions{
 		Chart:       fullAppName,
@@ -442,9 +518,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		if err != nil {
 			log.Logger().Warnf("Failed to comment on issues for release %s: %s", releaseName, err)
 		}
-		err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.CompletePromotionUpdate)
 	} else {
-		err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.FailedPromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.FailedPromotionUpdate)
 	}
 	return releaseInfo, err
 }
@@ -493,7 +569,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	if releaseInfo.PullRequestInfo != nil && releaseInfo.PullRequestInfo.PullRequest != nil {
 		filter.Number = releaseInfo.PullRequestInfo.PullRequest.Number
 	}
-	info, err := options.Create(env, environmentsDir, &details, filter, "", false)
+	info, err := options.Create(env, environmentsDir, &details, filter, "", true)
 	releaseInfo.PullRequestInfo = info
 	return err
 }
@@ -561,6 +637,10 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	if err != nil {
 		return errors.Wrap(err, "Getting jx client")
 	}
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "Getting kube client")
+	}
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	if pullRequestInfo != nil {
 		promoteKey := o.CreatePromoteKey(env)
@@ -568,7 +648,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo, end, duration, promoteKey)
 		if err != nil {
 			// TODO based on if the PR completed or not fail the PR or the Promote?
-			promoteKey.OnPromotePullRequest(jxClient, o.Namespace, kube.FailedPromotionPullRequest)
+			promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, kube.FailedPromotionPullRequest)
 			return err
 		}
 	}
@@ -589,6 +669,10 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return errors.Wrap(err, "Getting jx client")
+	}
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrapf(err, "Getting kube client")
 	}
 
 	if pullRequestInfo != nil {
@@ -616,7 +700,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 								p.MergeCommitSHA = mergeSha
 								return nil
 							}
-							promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
+							promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, mergedPR)
 
 							if o.NoWaitAfterMerge {
 								log.Logger().Infof("Pull requests are merged, No wait on promotion to complete")
@@ -624,13 +708,13 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							}
 						}
 
-						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
+						promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
 							log.Logger().Info("Pull Request merged but we are not waiting for the update pipeline to complete!")
 							err = o.CommentOnIssues(ns, env, promoteKey)
 							if err == nil {
-								err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
+								err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.CompletePromotionUpdate)
 							}
 							return err
 						}
@@ -683,7 +767,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(jxClient, o.Namespace, updateStatuses)
+								promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -695,7 +779,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									log.Logger().Info("Merge status checks all passed so the promotion worked!")
 									err = o.CommentOnIssues(ns, env, promoteKey)
 									if err == nil {
-										err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
+										err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									}
 									return err
 								}
@@ -717,17 +801,34 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						log.Logger().Info("The build for the Pull Request last commit is currently in progress.")
 					} else {
 						if status == "success" {
-							if !o.NoMergePullRequest {
-								err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+							if !(o.NoMergePullRequest) {
+								tideMerge := false
+								// Now check if tide is running or not
+								commitStatues, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, pr.LastCommitSha)
 								if err != nil {
-									if !logMergeFailure {
-										logMergeFailure = true
-										log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+									log.Logger().Warnf("unable to get commit statuses for %s", pr.URL)
+								} else {
+									for _, s := range commitStatues {
+										if s.State == "tide" {
+											tideMerge = true
+											break
+										}
+									}
+								}
+								if !tideMerge {
+									err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+									if err != nil {
+										if !logMergeFailure {
+											logMergeFailure = true
+											log.Logger().Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?", pr.URL, err)
+										}
 									}
 								}
 							}
 						} else if status == "error" || status == "failure" {
 							return fmt.Errorf("Pull request %s last commit has status %s for ref %s", pr.URL, status, pr.LastCommitSha)
+						} else {
+							log.Logger().Infof("got git provider status %s from PR %s", status, pr.URL)
 						}
 					}
 				}
@@ -924,7 +1025,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		log.Logger().Warnf("No GitInfo discovered so cannot comment on issues that they are now in %s", envName)
 		return nil
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -933,7 +1034,11 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, gha, o.Git(), o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -1038,7 +1143,7 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 		names = append(names, text)
 		m[text] = &charts[i]
 	}
-	name, err := util.PickName(names, "Pick chart to promote: ", "", o.In, o.Out, o.Err)
+	name, err := util.PickName(names, "Pick chart to promote: ", "", o.GetIOFileHandles())
 	if err != nil {
 		return answer, err
 	}

@@ -2,7 +2,8 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -28,7 +29,7 @@ var (
 
 // DeleteChatTokenOptions the options for the create spring command
 type DeleteChatTokenOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 }
@@ -36,7 +37,7 @@ type DeleteChatTokenOptions struct {
 // NewCmdDeleteChatToken defines the command
 func NewCmdDeleteChatToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteChatTokenOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -64,7 +65,7 @@ func (o *DeleteChatTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chat server user name")
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService("")
 	if err != nil {
 		return err
 	}

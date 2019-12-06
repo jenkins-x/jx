@@ -11,21 +11,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/step"
-	"github.com/jenkins-x/jx/pkg/util"
-
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/tekton"
-
 	"github.com/fatih/color"
+	"github.com/google/uuid"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cloud/factory"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/util"
 	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	tektonapis "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -47,6 +47,7 @@ type TektonLogger struct {
 	logsChannel       chan LogLine
 	errorsChannel     chan error
 	wg                *sync.WaitGroup
+	FailIfPodFails    bool
 }
 
 // LogWriter is an interface that can be implemented to define different ways to stream / write logs
@@ -102,6 +103,13 @@ func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []str
 	prMap := make(map[string][]*tektonapis.PipelineRun)
 	for _, pr := range tektonPRs.Items {
 		p := pr
+		prStatus := p.Status.GetCondition(knativeapis.ConditionSucceeded)
+		// Don't include any pipeline runs that failed due to Tekton race conditions and were auto-restarted by Prow
+		if prStatus != nil && prStatus.IsFalse() &&
+			(strings.Contains(prStatus.Message, "can't be found:pipeline.tekton.dev") ||
+				strings.Contains(prStatus.Message, "it contains Tasks that don't exist")) {
+			continue
+		}
 		prBuildNumber := p.Labels[v1.LabelBuild]
 		if prBuildNumber == "" {
 			prBuildNumber = findLegacyPipelineRunBuildNumber(&p)
@@ -134,14 +142,6 @@ func (t TektonLogger) GetTektonPipelinesWithActivePipelineActivity(filters []str
 	return names, paMap, nil
 }
 
-func modifyFilterForPipelineRun(labelsFilter string, context string) string {
-	contextFilter := fmt.Sprintf("context=%s", context)
-	if labelsFilter == "" {
-		return contextFilter
-	}
-	return fmt.Sprintf("%s,%s", labelsFilter, contextFilter)
-}
-
 func createPipelineActivityName(labels map[string]string, buildNumber string) string {
 	repository := labels[v1.LabelRepository]
 	// The label is called "repo" in the PipelineRun CRD and "repository" in the PipelineActivity CRD
@@ -168,7 +168,7 @@ func findLegacyPipelineRunBuildNumber(pipelineRun *tektonapis.PipelineRun) strin
 	return buildNumber
 }
 
-func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) (map[string]*tektonapis.PipelineRun, error) {
+func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclient.Interface) (map[string]tektonapis.PipelineRun, error) {
 	filters := []string{
 		fmt.Sprintf("%s=%s", v1.LabelOwner, pa.Spec.GitOwner),
 		fmt.Sprintf("%s=%s", v1.LabelRepository, pa.Spec.GitRepository),
@@ -195,7 +195,7 @@ func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclie
 		return tektonPRs.Items[i].CreationTimestamp.Before(&tektonPRs.Items[j].CreationTimestamp)
 	})
 
-	runs := make(map[string]*tektonapis.PipelineRun)
+	runs := make(map[string]tektonapis.PipelineRun)
 	for _, pr := range tektonPRs.Items {
 		buildNumber := pr.Labels[tekton.LabelBuild]
 		if buildNumber == "" {
@@ -206,7 +206,7 @@ func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclie
 			pipelineType = tekton.BuildPipeline.String()
 		}
 		if buildNumber == pa.Spec.Build {
-			runs[pipelineType] = &pr
+			runs[pipelineType] = pr
 		}
 	}
 
@@ -214,7 +214,7 @@ func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclie
 }
 
 // GetRunningBuildLogs obtains the logs of the provided PipelineActivity and streams the running build pods' logs using the provided LogWriter
-func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string) error {
+func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName string, noWaitForRuns bool) error {
 	loggedAllRunsForActivity := false
 	foundLogs := false
 
@@ -226,25 +226,24 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 		}
 
 		var runToLog *tektonapis.PipelineRun
-		metaPr := runsByType[tekton.MetaPipeline.String()]
-		buildPr := runsByType[tekton.BuildPipeline.String()]
+		metaPr, hasMetaPr := runsByType[tekton.MetaPipeline.String()]
+		buildPr, hasBuildPr := runsByType[tekton.BuildPipeline.String()]
 		var metaStatus *knativeapis.Condition
-		if metaPr != nil {
+		if hasMetaPr {
 			metaStatus = metaPr.Status.GetCondition(knativeapis.ConditionSucceeded)
 		}
-		// If we don't have a build run yet...
-		if buildPr == nil {
-			// If we have a metapipeline and either the metapipeline is still running or failed, include the metapipeline
-			if metaStatus != nil && metaStatus.Status != corev1.ConditionTrue {
-				runToLog = metaPr
-				// If the metapipeline failed, the pipeline as a whole is complete.
-				if metaStatus.Status == corev1.ConditionFalse {
-					loggedAllRunsForActivity = true
-				}
+		// If we don't have a build run yet, the build run doesn't yet have pods, or none of the build run pods are out
+		// of pending yet, get the logs for the metapipeline.
+		if hasMetaPr && (!hasBuildPr || !tekton.PipelineRunIsNotPending(&buildPr)) {
+			runToLog = &metaPr
+
+			// If we have a metapipeline and the metapipeline is failed, the pipeline as a whole is complete
+			if metaStatus != nil && metaStatus.Status == corev1.ConditionFalse {
+				loggedAllRunsForActivity = true
 			}
-		} else {
+		} else if hasBuildPr {
 			// Log the build pipeline
-			runToLog = buildPr
+			runToLog = &buildPr
 			loggedAllRunsForActivity = true
 		}
 
@@ -256,10 +255,18 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 			}
 
 			allStages := structure.GetAllStagesWithSteps()
+			var stagesToCheckCount int
+			// If the pipeline run is done, we only care about logs from the pods it actually ran.
+			if runToLog.IsDone() || pa.Spec.Status.IsTerminated() {
+				// Add all stages that actually ran while ignoring ones that were never executed, since the run is done.
+				stagesToCheckCount = len(runToLog.Status.TaskRuns)
+			} else {
+				stagesToCheckCount = len(allStages)
+			}
 			stagesSeen := make(map[string]bool)
 
 			// Repeat until we've seen pods for all stages
-			for len(allStages) > len(stagesSeen) {
+			for stagesToCheckCount > len(stagesSeen) {
 				pods, err := builds.GetPipelineRunPods(t.KubeClient, pa.Namespace, runToLog.Name)
 				if err != nil {
 					return errors.Wrapf(err, "failed to get pods for pipeline run %s in namespace %s", runToLog.Name, pa.Namespace)
@@ -289,6 +296,11 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 		}
 		if !foundLogs {
 			break
+		}
+
+		// Flag used for testing - don't loop forever waiting for the build run if it's pending
+		if noWaitForRuns && !tekton.PipelineRunIsNotPending(&buildPr) {
+			loggedAllRunsForActivity = true
 		}
 	}
 	if !foundLogs {
@@ -324,6 +336,9 @@ func (t *TektonLogger) getContainerLogsFromPod(pod *corev1.Pod, pa *v1.PipelineA
 			}, t.logsChannel)
 			if err != nil {
 				return err
+			}
+			if t.FailIfPodFails {
+				return errors.Errorf("Pipeline failed on stage '%s' : container '%s'. The execution of the pipeline has stopped.", stageName, ic.Name)
 			}
 			break
 		}
@@ -426,7 +441,6 @@ func (t TektonLogger) waitForContainerToStart(ns string, pod *corev1.Pod, idx in
 
 // StreamPipelinePersistentLogs reads logs from the provided bucket URL and writes them using the provided LogWriter
 func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.CommonOptions) error {
-	//TODO: This should be changed in the future when other bucket providers are supported
 	t.initializeLoggingRoutine()
 	u, err := url.Parse(logsURL)
 	if err != nil {
@@ -435,14 +449,23 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 	var logBytes []byte
 	switch u.Scheme {
 	case "gs":
-		scanner, err := gke.StreamTransferFileFromBucket(logsURL)
+		scanner, err := performProviderDownload(logsURL)
 		if err != nil {
-			return errors.Wrapf(err, "there was a problem obtaining the log file from the configured bucket URL %s", logsURL)
+			// TODO: This is only here as long as we keep supporting non boot clusters, as GKE are the only ones with LTS supported outside of boot
+			scanner, err2 := gke.StreamTransferFileFromBucket(logsURL)
+			if err2 != nil {
+				return util.CombineErrors(err, err2)
+			}
+			return t.streamPipedLogs(scanner, logsURL)
 		}
 		return t.streamPipedLogs(scanner, logsURL)
-	case "http":
-		fallthrough
-	case "https":
+	case "s3":
+		scanner, err := performProviderDownload(logsURL)
+		if err != nil {
+			return errors.Wrap(err, "there was a problem downloading logs from s3 bucket")
+		}
+		return t.streamPipedLogs(scanner, logsURL)
+	case "http", "https":
 		logBytes, err = downloadLogFile(logsURL, o)
 		if err != nil {
 			return errors.Wrapf(err, "there was a problem obtaining the log file from the github pages URL %s", logsURL)
@@ -465,10 +488,19 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, o *opts.Comm
 
 func (t *TektonLogger) streamPipedLogs(scanner *bufio.Scanner, logsURL string) error {
 	for scanner.Scan() {
-		if err := t.LogWriter.WriteLog(LogLine{
-			Line: scanner.Text(),
-		}, t.logsChannel); err != nil {
+		text := scanner.Text()
+		err := t.LogWriter.WriteLog(LogLine{
+			Line: text,
+		}, t.logsChannel)
+
+		if err != nil {
 			return errors.Wrapf(err, "there was a problem streaming the log file from the GKE bucket %s", logsURL)
+		}
+
+		if t.FailIfPodFails {
+			if strings.Contains(text, "The execution of the pipeline has stopped.") {
+				return errors.New("The execution of the pipeline has stopped.")
+			}
 		}
 	}
 	return nil
@@ -546,4 +578,12 @@ func downloadLogFile(logsURL string, o *opts.CommonOptions) ([]byte, error) {
 		return nil, err
 	}
 	return logBytes, nil
+}
+
+func performProviderDownload(logsURL string) (*bufio.Scanner, error) {
+	provider, err := factory.NewBucketProviderFromTeamSettingsConfiguration(clients.NewFactory())
+	if err != nil {
+		return nil, errors.Wrap(err, "There was a problem obtaining a Bucket provider for bucket scheme gs://")
+	}
+	return provider.DownloadFileFromBucket(logsURL)
 }

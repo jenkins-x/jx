@@ -1,9 +1,13 @@
 package storage
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
@@ -12,6 +16,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
+)
+
+var (
+	defaultBucketWriteTimeout = 20 * time.Second
 )
 
 // GKEBucketProvider the bucket provider for GKE
@@ -68,6 +76,23 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 			bucketName, project)
 	}
 	return nil
+}
+
+// UploadFileToBucket uploads a file to the provided GCS bucket with the provided outputName
+func (b *GKEBucketProvider) UploadFileToBucket(reader io.Reader, key string, bucketURL string) (string, error) {
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+
+	log.Logger().Debugf("Uploading %d bytes to bucket %s with key %s", len(data), bucketURL, key)
+	err = buckets.WriteBucket(bucketURL, key, data, defaultBucketWriteTimeout)
+	return bucketURL + "/" + key, err
+}
+
+// DownloadFileFromBucket downloads a file from GCS from the given bucketURL and server its contents with a bufio.Scanner
+func (b *GKEBucketProvider) DownloadFileFromBucket(bucketURL string) (*bufio.Scanner, error) {
+	return gke.StreamTransferFileFromBucket(bucketURL)
 }
 
 // NewGKEBucketProvider create a new provider for GKE

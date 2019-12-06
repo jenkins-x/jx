@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -257,7 +259,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		// now lets setup the git server
 		createGitServer := &create.CreateGitServerOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			Kind: gitProviderName,
@@ -276,7 +278,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		}
 
 		createGitToken := &create.CreateGitTokenOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			ServerFlags: opts.ServerFlags{
@@ -292,7 +294,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		// now lets create an environment...
 		createEnv := &create.CreateEnvOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			HelmValuesConfig: config.HelmValuesConfig{
@@ -374,7 +376,7 @@ func (o *StepBDDOptions) gitProviderUrl() string {
 // teamNameSuffix returns a team name suffix using the current branch +
 func (o *StepBDDOptions) teamNameSuffix() string {
 	repo := os.Getenv("REPO_NAME")
-	branch := os.Getenv("BRANCH_NAME")
+	branch := os.Getenv(util.EnvVarBranchName)
 	buildNumber := builds.GetBuildNumber()
 	if buildNumber == "" {
 		buildNumber = "1"
@@ -383,6 +385,9 @@ func (o *StepBDDOptions) teamNameSuffix() string {
 }
 
 func (o *StepBDDOptions) runTests(gopath string) error {
+	// clear the CHART_REPOSITORY env repo to avoid passing in a bogus chart repo to manual `jx promote` commands
+	os.Unsetenv("CHART_REPOSITORY")
+
 	gitURL := o.Flags.TestRepoGitCloneUrl
 	gitRepository, err := gits.ParseGitURL(gitURL)
 	if err != nil {
@@ -411,13 +416,18 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 		if pullRequestNumber != "" {
 			err = o.Git().FetchBranch(testDir, "origin", fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branchName))
 			if err != nil {
-				return errors.Wrapf(err, "Failed to fetch Pull request number %s", pullRequestNumber)
+				return errors.Wrapf(err, "failed to fetch Pull request number %s", pullRequestNumber)
+			}
+		} else {
+			err = o.Git().FetchBranch(testDir, "origin", branchName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to fetch branch %s", branchName)
 			}
 		}
 
-		err = o.Git().Checkout(testDir, branchName)
+		err = o.Git().CheckoutRemoteBranch(testDir, branchName)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to checkout branch %s", branchName)
+			return errors.Wrapf(err, "failed to checkout branch %s", branchName)
 		}
 	}
 
@@ -731,7 +741,7 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	}
 
 	for _, c := range cluster.Commands {
-		e := exec.Command(c.Command, c.Args...)
+		e := exec.Command(c.Command, c.Args...) // #nosec
 		e.Stdout = o.Out
 		e.Stderr = o.Err
 		os.Setenv("PATH", util.PathWithBinary())

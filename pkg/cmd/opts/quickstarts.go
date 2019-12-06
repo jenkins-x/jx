@@ -16,7 +16,7 @@ import (
 
 // LoadQuickStartsModel Load all quickstarts
 func (o *CommonOptions) LoadQuickStartsModel(gitHubOrganisations []string, ignoreTeam bool) (*quickstarts.QuickstartModel, error) {
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitLocalAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (o *CommonOptions) LoadQuickStartsFromLocations(locations []v1.QuickStartLo
 			if kind == "" {
 				kind = gits.KindGitHub
 			}
-			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
+			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind, "")
 			if err != nil {
 				return model, err
 			}

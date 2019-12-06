@@ -17,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/workflow"
@@ -358,7 +357,7 @@ func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envNam
 		Version:           version,
 		NoPoll:            true,
 		IgnoreLocalFiles:  true,
-		HelmRepositoryURL: helm.InClusterHelmRepositoryURL,
+		HelmRepositoryURL: o.DefaultChartRepositoryURL(),
 		LocalHelmRepoName: kube.LocalHelmRepoName,
 		Namespace:         o.Namespace,
 	}
@@ -443,7 +442,7 @@ func (o *ControllerWorkflowOptions) ReloadAndPollGitPipelineStatuses(jxClient ve
 
 // pollGitStatusforPipeline polls the pending PipelineActivity resources to see if the
 // PR has merged or the pipeline on master has completed
-func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
+func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityExpansion, environments typev1.EnvironmentInterface, ns string) {
 	if !o.isReleaseBranch(activity.BranchName()) {
 		o.removePipelineActivity(activity, activities)
 		return
@@ -517,8 +516,13 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 							log.Logger().Warnf("Failed to get the jx client: %s", err)
 							return
 						}
-						promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
-						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
+						kubeClient, err := o.KubeClient()
+						if err != nil {
+							log.Logger().Warnf("Failed to get the Kubernetes client: %s", err)
+							return
+						}
+						promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, mergedPR)
+						promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
 							log.Logger().Infof("Pull Request %d merged but we are not waiting for the update pipeline to complete!",
@@ -527,7 +531,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 							if err != nil {
 								log.Logger().Warnf("Failed to comment on issues: %s", err)
 							}
-							err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
+							err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.CompletePromotionUpdate)
 							if err != nil {
 								log.Logger().Warnf("PipelineActivity update failed while completing promotion step. activity=%s",
 									activity.Name)
@@ -572,7 +576,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(jxClient, o.Namespace, updateStatuses)
+								promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -597,7 +601,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 										log.Logger().Warnf("Failed to comment on issues: %s", err)
 										return
 									}
-									err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
+									err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									if err != nil {
 										log.Logger().Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}
@@ -792,12 +796,12 @@ func setActivityAborted(activity *v1.PipelineActivity) bool {
 	return true
 }
 
-func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) {
+func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityExpansion) {
 	o.modifyAndRemovePipelineActivity(activity, activities, noopCallback)
 }
 
 // removePipelineActivityIfNoManual only remove the PipelineActivity if there is not any pending Promote
-func (o *ControllerWorkflowOptions) removePipelineActivityIfNoManual(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) {
+func (o *ControllerWorkflowOptions) removePipelineActivityIfNoManual(activity *v1.PipelineActivity, activities typev1.PipelineActivityExpansion) {
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
 		if promote != nil {
@@ -809,13 +813,13 @@ func (o *ControllerWorkflowOptions) removePipelineActivityIfNoManual(activity *v
 	o.removePipelineActivity(activity, activities)
 }
 
-func (o *ControllerWorkflowOptions) modifyAndRemovePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, callback func(activity *v1.PipelineActivity) bool) error {
+func (o *ControllerWorkflowOptions) modifyAndRemovePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityExpansion, callback func(activity *v1.PipelineActivity) bool) error {
 	err := modifyPipeline(activities, activity, callback)
 	delete(o.pipelineMap, activity.Name)
 	return err
 }
 
-func modifyPipeline(activities typev1.PipelineActivityInterface, activity *v1.PipelineActivity, callback func(activity *v1.PipelineActivity) bool) error {
+func modifyPipeline(activities typev1.PipelineActivityExpansion, activity *v1.PipelineActivity, callback func(activity *v1.PipelineActivity) bool) error {
 	old := activity
 	if callback(activity) {
 		if !reflect.DeepEqual(activity, &old) {
@@ -830,7 +834,7 @@ func modifyPipeline(activities typev1.PipelineActivityInterface, activity *v1.Pi
 }
 
 // isNewestPipeline returns true if this pipeline is the newest pipeline version for a repo
-func (o *ControllerWorkflowOptions) isNewestPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) bool {
+func (o *ControllerWorkflowOptions) isNewestPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityExpansion) bool {
 	newest := true
 	deleteNames := []*v1.PipelineActivity{}
 	for _, act2 := range o.pipelineMap {

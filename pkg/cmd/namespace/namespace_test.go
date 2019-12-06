@@ -2,21 +2,22 @@ package namespace_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"regexp"
+	"testing"
+
 	mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	kuber_mocks "github.com/jenkins-x/jx/pkg/kube/mocks"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"os"
-	"regexp"
-	"testing"
 )
 
 func Test_display_current_namespace(t *testing.T) {

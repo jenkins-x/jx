@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	createoptions "github.com/jenkins-x/jx/pkg/cmd/create/options"
+	cmdvault "github.com/jenkins-x/jx/pkg/cmd/create/vault"
+
 	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -156,7 +159,7 @@ type Secrets struct {
 }
 
 const (
-	JX_GIT_TOKEN = "JX_GIT_TOKEN"
+	JX_GIT_TOKEN = "JX_GIT_TOKEN" // #nosec
 	JX_GIT_USER  = "JX_GIT_USER"
 
 	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekton"
@@ -304,7 +307,7 @@ func NewCmdInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+cloud.KubernetesProviderOptions())
 
 	cmd.AddCommand(NewCmdInstallDependencies(commonOpts))
-	awsCreateVaultOptions(cmd, &options.AWSConfig)
+	cmdvault.AwsCreateVaultOptions(cmd, &options.AWSConfig)
 
 	return cmd
 }
@@ -316,7 +319,7 @@ func CreateInstallOptions(commonOpts *opts.CommonOptions) InstallOptions {
 	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
-			CreateOptions: CreateOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -340,7 +343,7 @@ func CreateInstallOptions(commonOpts *opts.CommonOptions) InstallOptions {
 			},
 			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
 			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
-			CreateOptions: CreateOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: &commonOptsBatch,
 			},
 		},
@@ -676,7 +679,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the docker registry")
 	}
 
-	versionsRepoDir, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository, options.Flags.VersionsGitRef)
+	versionsRepoDir, _, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository, options.Flags.VersionsGitRef)
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx versions repo")
 	}
@@ -912,10 +915,10 @@ func (options *InstallOptions) init() error {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
 			log.Logger().Infof("set exposeController Config PathMode %s", ecConfig.PathMode)
 		}
-		if (ecConfig.UrlTemplate == "" && options.Flags.ExposeControllerURLTemplate != "") ||
+		if (ecConfig.URLTemplate == "" && options.Flags.ExposeControllerURLTemplate != "") ||
 			(options.Flags.ExposeControllerURLTemplate != "" && options.InitOptions.Flags.ExternalDNS) {
-			ecConfig.UrlTemplate = options.Flags.ExposeControllerURLTemplate
-			log.Logger().Infof("set exposeController Config URLTemplate %s", ecConfig.UrlTemplate)
+			ecConfig.URLTemplate = options.Flags.ExposeControllerURLTemplate
+			log.Logger().Infof("set exposeController Config URLTemplate %s", ecConfig.URLTemplate)
 		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
@@ -1208,7 +1211,7 @@ func (options *InstallOptions) selectJenkinsInstallation() error {
 				ServerlessJenkins,
 				StaticMasterJenkins,
 			}
-			jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.In, options.Out, options.Err)
+			jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.GetIOFileHandles())
 			if err != nil {
 				return errors.Wrap(err, "picking Jenkins installation type")
 			}
@@ -1350,7 +1353,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 	}
 
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "creating the git auth config service")
 	}
@@ -1375,14 +1378,14 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 		authServer = authConfig.GetOrCreateServerName(gitServer, "", kind)
 	} else {
-		authServer, err = authConfig.PickServer("Which Git provider:", options.BatchMode, options.In, options.Out, options.Err)
+		authServer, err = authConfig.PickServer("Which Git provider:", options.BatchMode, options.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrap(err, "getting the git provider from user")
 		}
 	}
 
 	message := fmt.Sprintf("local Git user for %s server:", authServer.Label())
-	userAuth, err = authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
+	userAuth, err = authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.GetIOFileHandles())
 	if err != nil {
 		return errors.Wrapf(err, "selecting the local user for git server %s", authServer.Label())
 	}
@@ -1395,7 +1398,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 		defaultUserName := ""
 		err = authConfig.EditUserAuth(authServer.Label(), userAuth, defaultUserName, false, options.BatchMode, f,
-			options.In, options.Out, options.Err)
+			options.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "creating a user authentication for git server %s", authServer.Label())
 		}
@@ -1424,13 +1427,13 @@ func (options *InstallOptions) configureGitAuth() error {
 			pipelineAuthServer = authServer
 		} else {
 			pipelineAuthServerURL, err := util.PickValue("Git Service URL:", gits.GitHubURL, true, "",
-				options.In, options.Out, options.Err)
+				options.GetIOFileHandles())
 			if err != nil {
 				return errors.Wrap(err, "reading the pipelines Git service URL")
 			}
 			pipelineAuthServer, err = authConfig.PickOrCreateServer(gits.GitHubURL, pipelineAuthServerURL,
 				"Which Git Service do you wish to use:",
-				options.BatchMode, options.In, options.Out, options.Err)
+				options.BatchMode, options.GetIOFileHandles())
 			if err != nil {
 				return errors.Wrap(err, "selecting the pipelines Git Service")
 			}
@@ -1456,7 +1459,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 		defaultUserName := ""
 		err = authConfig.EditUserAuth(pipelineAuthServer.Label(), pipelineUserAuth, defaultUserName, false, options.BatchMode,
-			f, options.In, options.Out, options.Err)
+			f, options.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "creating a pipeline user authentication for git server %s", authServer.Label())
 		}
@@ -1496,7 +1499,7 @@ func (options *InstallOptions) configureGitAuth() error {
 }
 
 func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits.GitRepositoryOptions, error) {
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Git authentication config service")
 	}
@@ -1724,7 +1727,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 		log.Logger().Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n", util.ColorInfo("jx step env apply"))
 
 		if !options.Flags.NoGitOpsEnvRepo {
-			authConfigSvc, err := options.CreateGitAuthConfigService()
+			authConfigSvc, err := options.GitAuthConfigService()
 			if err != nil {
 				return "", errors.Wrap(err, "creating git auth config service")
 			}
@@ -1761,7 +1764,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return "", errors.Wrap(err, "building the git repository options for environment")
 			}
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
-				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.ResolveChartMuseumURL, options.In, options.Out, options.Err)
+				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.ResolveChartMuseumURL, options.GetIOFileHandles())
 			if err != nil || repo == nil || gitProvider == nil {
 				return "", errors.Wrap(err, "creating git repository for the dev environment source")
 			}
@@ -1782,7 +1785,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 
 			err = git.Add(dir, ".gitignore")
 			if err != nil {
-				return "", errors.Wrap(err, "adding gitignore to the dev environemnt")
+				return "", errors.Wrap(err, "adding gitignore to the dev environment")
 			}
 			err = git.Add(dir, "*")
 			if err != nil {
@@ -1828,7 +1831,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
 		applyEnv := true
 		if !options.BatchMode {
-			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.In, options.Out, options.Err) {
+			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.GetIOFileHandles()) {
 				applyEnv = false
 			}
 		}
@@ -1901,7 +1904,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 
 		errs := []error{}
 		createEnvOpts := CreateEnvOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
 			Prefix: options.Flags.DefaultEnvironmentPrefix,
@@ -2298,20 +2301,20 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		// Configure the vault flag if only GitOps mode is on
 		options.Flags.Vault = true
 
-		err := InstallVaultOperator(options.CommonOptions, namespace)
+		err := InstallVaultOperator(options.CommonOptions, namespace, nil)
 		if err != nil {
 			return errors.Wrap(err, "unable to install vault operator")
 		}
 
 		// Create a new System vault
-		cvo := &CreateVaultOptions{
-			CreateOptions: CreateOptions{
+		cvo := &cmdvault.CreateVaultOptions{
+			CreateOptions: createoptions.CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
-			IngressConfig:       *ic,
-			Namespace:           namespace,
-			AWSConfig:           options.AWSConfig,
-			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
+			GKECreateVaultOptions: cmdvault.GKECreateVaultOptions{},
+			AWSCreateVaultOptions: cmdvault.AWSCreateVaultOptions{
+				AWSConfig: options.AWSConfig,
+			},
 		}
 
 		if options.installValues != nil {
@@ -2565,7 +2568,7 @@ func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) 
 		Domain:      domain,
 		TLS:         tls,
 		Exposer:     exposeController.Config.Exposer,
-		UrlTemplate: exposeController.Config.UrlTemplate,
+		UrlTemplate: exposeController.Config.URLTemplate,
 	}
 	// save ingress config details to a configmap
 	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
@@ -3019,7 +3022,7 @@ func (options *InstallOptions) CloneJXCloudEnvironmentsRepo() (string, error) {
 	if options.Flags.CloudEnvRepository == "" {
 		options.Flags.CloudEnvRepository = opts.DefaultCloudEnvironmentsURL
 	}
-	log.Logger().Infof("Cloning the Jenkins X cloud environments repo to %s", wrkDir)
+	log.Logger().Debugf("Cloning the Jenkins X cloud environments repo to %s", wrkDir)
 	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           options.Flags.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",
@@ -3111,7 +3114,7 @@ func (options *InstallOptions) installAddon(name string) error {
 	log.Logger().Infof("Installing addon %s", util.ColorInfo(name))
 
 	opts := &CreateAddonOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: createoptions.CreateOptions{
 			CommonOptions: options.CommonOptions,
 		},
 		HelmUpdate: true,
@@ -3128,7 +3131,7 @@ func (options *InstallOptions) installAddon(name string) error {
 }
 
 func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig) error {
-	gitAuthCfg, err := options.CreateGitAuthConfigService()
+	gitAuthCfg, err := options.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the git auth config service")
 	}
@@ -3359,7 +3362,7 @@ func (options *InstallOptions) enableTenantCluster(tenantServiceURL string, tena
 	// Create a TenantClient
 	tCli := tenant.NewTenantClient()
 	var err error
-	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, options.GCloud())
+	domain, err := tCli.GetTenantSubDomain(tenantServiceURL, tenantServiceAuth, projectID, "", options.GCloud())
 	if err != nil {
 		return "", errors.Wrap(err, "getting domain from tenant service")
 	}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -47,9 +48,7 @@ func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...
 	a := []string{}
 	for _, x := range args {
 		y := strings.Split(x, " ")
-		for _, z := range y {
-			a = append(a, z)
-		}
+		a = append(a, y...)
 	}
 	runner := &util.Command{
 		Args: a,
@@ -64,6 +63,35 @@ func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...
 		Debug:      debug,
 	}
 	return cli
+}
+
+// NewHelmCLIWithCompatibilityCheck creates a new HelmCLI and checks the compatibility with
+// the currently installed helm CLI. This will exit the program with a fatal log if the helm CLI
+// is not compatible.
+func NewHelmCLIWithCompatibilityCheck(binary string, version Version, cwd string, debug bool, args ...string) *HelmCLI {
+	cli := NewHelmCLI(binary, version, cwd, debug, args...)
+	cli.checkCompatibility()
+	return cli
+}
+
+// checkCompatibility verifies whether the current helm CLI is compatible. The current
+// implementation only supports helm CLI v2. This function will exit the program if the
+// installed helm cli is not compatible.
+func (h *HelmCLI) checkCompatibility() {
+	version, err := h.VersionWithArgs(false, "--client")
+	version = strings.TrimPrefix(version, "Client: ")
+	if err != nil {
+		log.Logger().Warnf("Unable to detect the current helm version due to: %s", err)
+		return
+	}
+	v, err := semver.ParseTolerant(version)
+	if err != nil {
+		log.Logger().Warnf("Unable to parse the current helm version: %s", version)
+		return
+	}
+	if v.Major > 2 {
+		log.Logger().Fatalf("Your current helm version v%d is not supported. Please downgrade to helm v2.", v.Major)
+	}
 }
 
 // SetHost is used to point at a locally running tiller

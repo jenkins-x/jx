@@ -126,32 +126,30 @@ type CommonOptions struct {
 	Verbose                bool
 	NotifyCallback         func(LogLevel, string)
 
-	apiExtensionsClient    apiextensionsclientset.Interface
-	certManagerClient      certmngclient.Interface
-	complianceClient       *client.SonobuoyClient
-	currentNamespace       string
-	devNamespace           string
-	environmentsDir        string
-	factory                clients.Factory
-	fakeGitProvider        *gits.FakeProvider
-	git                    gits.Gitter
-	helm                   helm.Helmer
-	jenkinsClient          gojenkins.JenkinsClient
-	jxClient               versioned.Interface
-	gcloudClient           gke.GClouder
-	knbClient              buildclient.Interface
-	kserveClient           kserve.Interface
-	kubeClient             kubernetes.Interface
-	kuber                  kube.Kuber
-	modifyDevEnvironmentFn ModifyDevEnvironmentFn
-	modifyEnvironmentFn    ModifyEnvironmentFn
-	resourcesInstaller     resources.Installer
-	systemVaultClient      vault.Client
-	tektonClient           tektonclient.Interface
-	vaultClient            vault.Client
-	secretURLClient        secreturl.Client
-	vaultOperatorClient    vaultoperatorclient.Interface
-	versionResolver        *versionstream.VersionResolver
+	apiExtensionsClient apiextensionsclientset.Interface
+	certManagerClient   certmngclient.Interface
+	complianceClient    *client.SonobuoyClient
+	currentNamespace    string
+	devNamespace        string
+	environmentsDir     string
+	factory             clients.Factory
+	fakeGitProvider     *gits.FakeProvider
+	git                 gits.Gitter
+	helm                helm.Helmer
+	jenkinsClient       gojenkins.JenkinsClient
+	jxClient            versioned.Interface
+	gcloudClient        gke.GClouder
+	knbClient           buildclient.Interface
+	kserveClient        kserve.Interface
+	kubeClient          kubernetes.Interface
+	kuber               kube.Kuber
+	resourcesInstaller  resources.Installer
+	systemVaultClient   vault.Client
+	tektonClient        tektonclient.Interface
+	vaultClient         vault.Client
+	secretURLClient     secreturl.Client
+	vaultOperatorClient vaultoperatorclient.Interface
+	versionResolver     *versionstream.VersionResolver
 }
 
 type ServerFlags struct {
@@ -684,7 +682,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 				defaultServerName = s.Name
 			}
 		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.GetIOFileHandles())
 		if err != nil {
 			return nil, err
 		}
@@ -719,7 +717,7 @@ func (o *CommonOptions) FindService(name string) (string, error) {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.GetIOFileHandles())
 			if err != nil {
 				return "", err
 			}
@@ -784,7 +782,7 @@ func (o *CommonOptions) FindServiceInNamespace(name string, ns string) (string, 
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.GetIOFileHandles())
 			if err != nil {
 				return "", err
 			}
@@ -1191,6 +1189,15 @@ func (o *CommonOptions) SetBatchMode(batchMode bool) {
 	o.factory.SetBatch(batchMode)
 }
 
+// GetIOFileHandles returns In, Out, and Err as an IOFileHandles struct
+func (o *CommonOptions) GetIOFileHandles() util.IOFileHandles {
+	return util.IOFileHandles{
+		Err: o.Err,
+		In:  o.In,
+		Out: o.Out,
+	}
+}
+
 // IstioClient creates a new Kubernetes client for Istio resources
 func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
 	config, err := o.factory.CreateKubeConfig()
@@ -1244,4 +1251,19 @@ func configExists(configPath, configKey string) bool {
 		return true
 	}
 	return viper.InConfig(configKey)
+}
+
+// IsInsecureSSLWebhooks returns true if we should create webhooks with SSL check disabled, used when running BDD tests and should NOT be used for normal installs
+func (o *CommonOptions) IsInsecureSSLWebhooks() (bool, error) {
+	certmngClient, err := o.CertManagerClient()
+	if err != nil {
+		return false, errors.Wrap(err, "creating the cert-manager client")
+	}
+	// lets lookup certmanager certificate and check if one exists, it's a selfsigned cert
+	isStaging, err := kube.IsStagingCertificate(certmngClient, o.devNamespace)
+	if err != nil {
+		// if there's an issue assume we don't need insecure webhooks to keep existing behavior
+		return false, nil
+	}
+	return isStaging, nil
 }

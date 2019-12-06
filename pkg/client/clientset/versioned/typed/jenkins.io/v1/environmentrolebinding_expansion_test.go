@@ -3,12 +3,13 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"net/http"
+	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
-	"testing"
 )
 
 var (
@@ -77,7 +78,7 @@ func TestPatchUpdateEnvironmentRoleBindingWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := environmentRoleBindings.PatchUpdate(testEnvironmentRoleBinding)
+	updated, err := environmentRoleBindings.PatchUpdate(clonedEnvironmentRoleBinding)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testEnvironmentRoleBinding, updated)
 	assert.Equal(t, subject, updated.Spec.Subjects[0].Name)
@@ -122,8 +123,14 @@ func TestPatchUpdateEnvironmentRoleBindingWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := environmentRoleBindings.PatchUpdate(testEnvironmentRoleBinding)
+	subject := "snafu"
+	clonedEnvironmentRoleBinding := testEnvironmentRoleBinding.DeepCopy()
+	clonedEnvironmentRoleBinding.Spec.Subjects = []rbacv1.Subject{
+		{
+			Name: subject,
+		},
+	}
+	updated, err := environmentRoleBindings.PatchUpdate(clonedEnvironmentRoleBinding)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

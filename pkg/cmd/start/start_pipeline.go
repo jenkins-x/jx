@@ -2,12 +2,13 @@ package start
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
-	"github.com/pkg/errors"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -31,7 +32,6 @@ import (
 const (
 	repoOwnerEnv      = "REPO_OWNER"
 	repoNameEnv       = "REPO_NAME"
-	jmbrBranchName    = "BRANCH_NAME"
 	jmbrSourceURL     = "SOURCE_URL"
 	releaseBranchName = "master"
 )
@@ -166,7 +166,7 @@ func (o *StartPipelineOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to start: ", defaultName, "", o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to start: ", defaultName, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -295,7 +295,9 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	}
 	jobSpec.Type = prowjobv1.PostsubmitJob
 
-	//todo needs to change when we add support for multiple git providers with Prow
+	// TODO prow only supports github.com
+	// if you want to use anything but github.com you should use
+	// lighthouse: https://jenkins-x.io/docs/reference/components/lighthouse/
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", org, repo)
 	sourceSpec := &build.SourceSpec{
 		Git: &build.GitSourceSpec{
@@ -309,7 +311,7 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 		env := map[string]string{}
 
 		// enrich with jenkins multi branch plugin env vars
-		env[jmbrBranchName] = branch
+		env[util.EnvVarBranchName] = branch
 		env[jmbrSourceURL] = jobSpec.BuildSpec.Source.Git.Url
 		env[repoOwnerEnv] = org
 		env[repoNameEnv] = repo

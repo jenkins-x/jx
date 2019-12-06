@@ -2,12 +2,13 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -34,7 +35,7 @@ var (
 
 // DeleteContextOptions the options for the create spring command
 type DeleteContextOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	SelectAll      bool
 	SelectFilter   string
@@ -45,7 +46,7 @@ type DeleteContextOptions struct {
 // NewCmdDeleteContext creates a command object for the "delete repo" command
 func NewCmdDeleteContext(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteContextOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -103,7 +104,7 @@ func (o *DeleteContextOptions) Run() error {
 		return util.InvalidArg(args[1], allNames)
 	}
 
-	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}

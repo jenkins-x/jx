@@ -4,24 +4,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"github.com/jenkins-x/jx/pkg/gits/features"
 
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // FindGitInfo parses the git information from the given directory
@@ -42,11 +40,11 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 }
 
 // NewGitProvider creates a new git provider for the given list of argumentes
-func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
+func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, ghOwner string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, o.In, o.Out, o.Err)
+	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, ghOwner, batchMode, gitter, o.GetIOFileHandles())
 }
 
 // CreateGitProvider creates a git from the given directory
@@ -68,12 +66,16 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return gitInfo, nil, nil, err
+	}
+	gitProvider, err := gitInfo.CreateProvider(cluster.IsInCluster(), authConfigSvc, gitKind, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -82,122 +84,6 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 		return gitInfo, gitProvider, tracker, err
 	}
 	return gitInfo, gitProvider, tracker, nil
-}
-
-// UpdatePipelineGitCredentialsSecret updates the pipeline git credentials in a kubernetes secret
-func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
-	client, curNs, err := o.KubeClientAndNamespace()
-	if err != nil {
-		return "", err
-	}
-	ns, _, err := kube.GetDevNamespace(client, curNs)
-	if err != nil {
-		return "", err
-	}
-	options := metav1.GetOptions{}
-	serverName := server.Name
-	name := naming.ToValidName(kube.SecretJenkinsPipelineGitCredentials + server.Kind + "-" + serverName)
-	secrets := client.CoreV1().Secrets(ns)
-	secret, err := secrets.Get(name, options)
-	create := false
-	operation := "update"
-	labels := map[string]string{
-		kube.LabelCredentialsType: kube.ValueCredentialTypeUsernamePassword,
-		kube.LabelCreatedBy:       kube.ValueCreatedByJX,
-		kube.LabelKind:            kube.ValueKindGit,
-		kube.LabelServiceKind:     server.Kind,
-	}
-	annotations := map[string]string{
-		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s Git service inside pipelines", server.URL),
-		kube.AnnotationURL:                    server.URL,
-		kube.AnnotationName:                   serverName,
-	}
-	if err != nil {
-		// lets create a new secret
-		create = true
-		operation = "create"
-		secret = &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        name,
-				Annotations: annotations,
-				Labels:      labels,
-			},
-			Data: map[string][]byte{},
-		}
-	} else {
-		secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
-		secret.Labels = util.MergeMaps(secret.Labels, labels)
-	}
-	if userAuth.Username != "" {
-		secret.Data["username"] = []byte(userAuth.Username)
-	}
-	if userAuth.ApiToken != "" {
-		secret.Data["password"] = []byte(userAuth.ApiToken)
-	}
-	if create {
-		_, err = secrets.Create(secret)
-	}
-	if err != nil {
-		return name, fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)
-	}
-
-	prow, err := o.IsProw()
-	if err != nil {
-		return name, err
-	}
-	if prow {
-		return name, nil
-	}
-
-	// update the Jenkins config
-	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsX, metav1.GetOptions{})
-	if err != nil {
-		return name, fmt.Errorf("Could not load Jenkins ConfigMap: %s", err)
-	}
-
-	updated, err := kube.UpdateJenkinsGitServers(cm, server, userAuth, name)
-	if err != nil {
-		return name, err
-	}
-	if updated {
-		_, err = client.CoreV1().ConfigMaps(ns).Update(cm)
-		if err != nil {
-			return name, fmt.Errorf("Failed to update Jenkins ConfigMap: %s", err)
-		}
-		log.Logger().Infof("Updated the Jenkins ConfigMap %s", kube.ConfigMapJenkinsX)
-
-		// wait a little bit to give k8s chance to sync the ConfigMap to the file system
-		time.Sleep(time.Second * 2)
-
-		// lets ensure that the git server + credential is in the Jenkins server configuration
-		jenk, err := o.JenkinsClient()
-		if err != nil {
-			return name, err
-		}
-		// TODO reload does not seem to reload the plugin content
-		//err = jenk.Reload()
-		err = jenk.SafeRestart()
-		if err != nil {
-			log.Logger().Warnf("Failed to safe restart Jenkins after configuration change %s", err)
-		} else {
-			log.Logger().Info("Safe Restarted Jenkins server")
-
-			// Let's wait 5 minutes for Jenkins to come back up.
-			// This is kinda gross, but it's just polling Jenkins every second for 5 minutes.
-			timeout := time.Duration(5) * time.Minute
-			start := int64(time.Now().Nanosecond())
-			for int64(time.Now().Nanosecond())-start < timeout.Nanoseconds() {
-				_, err := jenk.GetJobs()
-				if err == nil {
-					break
-				}
-				log.Logger().Info("Jenkins returned an error. Waiting for it to recover...")
-				time.Sleep(1 * time.Second)
-			}
-		}
-	}
-
-	return name, nil
 }
 
 // EnsureGitServiceCRD ensure that the GitService CRD is installed
@@ -294,7 +180,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		if o.BatchMode {
 			return "", fmt.Errorf("No Git server kind could be found for URL %s\nPlease try specify it via: jx create git server someKind %s", hostURL, hostURL)
 		}
-		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of Git server is: %s", hostURL), "", o.In, o.Out, o.Err)
+		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of Git server is: %s", hostURL), "", o.GetIOFileHandles())
 		if err != nil {
 			return "", err
 		}
@@ -314,7 +200,7 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -322,19 +208,23 @@ func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
-}
-
-// GitProviderForURL returns a GitProvider for the given Git server URL
-func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
-	if o.fakeGitProvider != nil {
-		return o.fakeGitProvider, nil
-	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	gha, err := o.IsGitHubAppMode()
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, gha, o.Git(), o.GetIOFileHandles())
+}
+
+// GitProviderForGitServerURL returns a GitProvider for the given Git server URL
+func (o *CommonOptions) GitProviderForGitServerURL(gitServiceURL string, gitKind string, ghOwner string) (gits.GitProvider, error) {
+	if o.fakeGitProvider != nil {
+		return o.fakeGitProvider, nil
+	}
+	authConfigSvc, err := o.GitAuthConfigServiceGitHubMode(ghOwner != "", gitKind)
+	if err != nil {
+		return nil, err
+	}
+	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceURL, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 }
 
 // CreateGitProviderForURLWithoutKind creates a git provider from URL wihtout kind
@@ -347,8 +237,52 @@ func (o *CommonOptions) CreateGitProviderForURLWithoutKind(gitURL string) (gits.
 	if err != nil {
 		return nil, gitInfo, err
 	}
-	provider, err := o.GitProviderForGitServerURL(gitInfo.HostURL(), gitKind)
+	gitServer := gitInfo.HostURL()
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	provider, err := o.GitProviderForGitServerURL(gitServer, gitKind, ghOwner)
 	return provider, gitInfo, err
+}
+
+// GetGitHubAppOwner returns the github app owner to filter tokens by if using a GitHub app model
+// which requires a separate token per owner
+func (o *CommonOptions) GetGitHubAppOwner(gitInfo *gits.GitRepository) (string, error) {
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return "", err
+	}
+	if gha {
+		return gitInfo.Organisation, nil
+	}
+	return "", nil
+}
+
+// GetGitHubAppOwnerForRepository returns the github app owner to filter tokens by if using a GitHub app model
+//// which requires a separate token per owner
+func (o *CommonOptions) GetGitHubAppOwnerForRepository(repository *jenkinsv1.SourceRepository) (string, error) {
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return "", err
+	}
+	if gha {
+		return repository.Spec.Org, nil
+	}
+	return "", nil
+}
+
+// IsGitHubAppMode returns true if we have enabled github app mode
+func (o *CommonOptions) IsGitHubAppMode() (bool, error) {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return false, errors.Wrap(err, "error loading TeamSettings to determine if in GitHub app mode")
+	}
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return false, errors.Wrap(err, "error getting Requirements from TeamSettings to determine if in GitHub app mode")
+	}
+	return requirements != nil && requirements.GithubApp != nil && requirements.GithubApp.Enabled, nil
 }
 
 // InitGitConfigAndUser validates we have git setup
@@ -369,18 +303,69 @@ func (o *CommonOptions) InitGitConfigAndUser() error {
 	return nil
 }
 
-// GetPipelineGitAuth returns the pipeline git authentication credentials
-func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+func (o *CommonOptions) getAuthConfig() (*auth.AuthConfig, error) {
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
+		return nil, errors.Wrap(err, "failed to create the git auth config service")
 	}
 	authConfig := authConfigSvc.Config()
 	if authConfig == nil {
-		return nil, nil, errors.New("empty Git config")
+		return nil, errors.New("empty Git config")
+	}
+	return authConfig, nil
+}
+
+// GetPipelineGitAuth returns the pipeline git authentication credentials
+func (o *CommonOptions) GetPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfig, err := o.getAuthConfig()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get auth config")
 	}
 	server, user := authConfig.GetPipelineAuth()
 	return server, user, nil
+}
+
+// GetPipelineGitHubAppAuth returns the pipeline git authentication credentials
+func (o *CommonOptions) GetPipelineGitHubAppAuth(ghOwner string) (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfig, err := o.getAuthConfig()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get auth config")
+	}
+	server, user := authConfig.GetPipelineAuth()
+	if ghOwner != "" {
+		if server != nil {
+			for _, u := range server.Users {
+				if u.GithubAppOwner == ghOwner {
+					user = u
+					break
+				}
+			}
+		} else {
+			for _, server = range authConfig.Servers {
+				if server != nil {
+					for _, u := range server.Users {
+						if u.GithubAppOwner == ghOwner {
+							user = u
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	return server, user, nil
+}
+
+// GetPipelineGitAuthForRepo returns the pipeline git authentication credentials for a repo
+func (o *CommonOptions) GetPipelineGitAuthForRepo(gitInfo *gits.GitRepository) (*auth.AuthServer, *auth.UserAuth, error) {
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+	if ghOwner != "" {
+		return o.GetPipelineGitHubAppAuth(ghOwner)
+	}
+	return o.GetPipelineGitAuth()
 }
 
 // DisableFeatures iterates over all the repositories in org (except those that match excludes) and disables issue
@@ -404,11 +389,15 @@ func (o *CommonOptions) DisableFeatures(orgs []string, includes []string, exclud
 		if err != nil {
 			return errors.Wrapf(err, "determining git provider kind from %s", org)
 		}
-		provider, err := o.GitProviderForGitServerURL(info.HostURL(), kind)
+		ghOwner, err := o.GetGitHubAppOwner(info)
+		if err != nil {
+			return err
+		}
+		provider, err := o.GitProviderForGitServerURL(info.HostURL(), kind, ghOwner)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", org)
 		}
-		err = features.DisableFeaturesForOrg(info.Organisation, includes, excludes, dryRun, o.BatchMode, provider, o.In, o.Out, o.Err)
+		err = features.DisableFeaturesForOrg(info.Organisation, includes, excludes, dryRun, o.BatchMode, provider, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "disabling features for %s", org)
 		}

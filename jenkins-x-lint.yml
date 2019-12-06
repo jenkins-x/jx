@@ -8,6 +8,8 @@ pipelineConfig:
         stages:
           - name: ci
             environment:
+              - name: BASE_WORKSPACE
+                value: /workspace/source
               - name: GOPATH
                 value: /workspace/go
               - name: GOPROXY
@@ -24,22 +26,29 @@ pipelineConfig:
                     cpu: 2
                     memory: 2Gi
             steps:
-              - name: mkdir
-                image: busybox
-                command: mkdir
-                args:
-                  - -p
-                  - /workspace/go/src/github.com/jenkins-x/jx
-
-              - name: copy
-                image: busybox
-                command: cp
-                args:
-                  - -R
-                  - "./"
-                  - /workspace/go/src/github.com/jenkins-x/jx
-
+              - name: fmt
+                image: golang:1.12.10
+                command: ./hack/gofmt.sh
+                dir: /workspace/source
               - name: lint
-                image: golang:1.12.5
-                command: ./hack/run-all-checks.sh
+                image: golang:1.12.10
+                command: ./hack/linter.sh
+                dir: /workspace/source
+              - name: mk-jx-project-dir	
+                image: busybox	
+                command: mkdir	
+                args:	
+                  - -p	
+                  - /workspace/go/src/github.com/jenkins-x/jx
+              - name: copy-jx-project-to-gopath
+                image: busybox	
+                command: cp	
+                args:	
+                  - -Rv	
+                  - "./"
+                  - "/workspace/go/src/github.com/jenkins-x/jx"
+                dir: /workspace/source
+              - name: generate
+                image: golang:1.12.10
+                command: ./hack/generate.sh
                 dir: /workspace/go/src/github.com/jenkins-x/jx

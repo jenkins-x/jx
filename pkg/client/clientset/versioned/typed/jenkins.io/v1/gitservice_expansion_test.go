@@ -3,11 +3,12 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -72,7 +73,7 @@ func TestPatchUpdateGitServiceWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := gitServices.PatchUpdate(testGitService)
+	updated, err := gitServices.PatchUpdate(clonedGitService)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testGitService, updated)
 	assert.Equal(t, name, updated.Spec.Name)
@@ -117,8 +118,10 @@ func TestPatchUpdateGitServiceWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := gitServices.PatchUpdate(testGitService)
+	name := "susfu"
+	clonedGitService := testGitService.DeepCopy()
+	clonedGitService.Spec.Name = name
+	updated, err := gitServices.PatchUpdate(clonedGitService)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

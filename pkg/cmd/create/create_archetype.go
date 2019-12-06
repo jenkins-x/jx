@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -104,7 +105,7 @@ func (o *CreateArchetypeOptions) Run() error {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
 	form := &o.Form
-	err = model.CreateSurvey(&o.Filter, o.PickVersion, form, o.In, o.Out, o.Err)
+	err = model.CreateSurvey(&o.Filter, o.PickVersion, form, o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -141,21 +142,21 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 		newline := false
 		if form.GroupId == "" {
 			newline = true
-			form.GroupId, err = util.PickValue("Group ID of the new application: ", "org.acme.demo", true, "", o.In, o.Out, o.Err)
+			form.GroupId, err = util.PickValue("Group ID of the new application: ", "org.acme.demo", true, "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
 		}
 		if form.ArtifactId == "" {
 			newline = true
-			form.ArtifactId, err = util.PickValue("Artifact ID of the new application: ", "mydemo", true, "", o.In, o.Out, o.Err)
+			form.ArtifactId, err = util.PickValue("Artifact ID of the new application: ", "mydemo", true, "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
 		}
 		if form.Version == "" {
 			newline = true
-			form.Version, err = util.PickValue("Snapshot Version of the new application: ", "1.0-SNAPSHOT", true, "", o.In, o.Out, o.Err)
+			form.Version, err = util.PickValue("Snapshot Version of the new application: ", "1.0-SNAPSHOT", true, "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

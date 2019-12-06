@@ -93,8 +93,8 @@ func NewCmdStepReportImageVersion(commonOpts *opts.CommonOptions) *cobra.Command
 	cmd.Flags().StringVarP(&options.FileName, "name", "n", "", "The name of the file to generate")
 	cmd.Flags().StringVarP(&options.VersionsDir, "dir", "d", "", "The dir of the version stream. If not specified it the version stream is cloned")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the Job")
-	cmd.Flags().StringVarP(&options.UserName, "username", "u", "jenkins-x-bot", "The user if using git storage")
-	cmd.Flags().StringVarP(&options.Email, "email", "e", "jenkins-x@googlegroups.com", "The email if using git storage")
+	cmd.Flags().StringVarP(&options.UserName, "username", "u", util.DefaultGitUserName, "The user if using git storage")
+	cmd.Flags().StringVarP(&options.Email, "email", "e", util.DefaultGitUserEmail, "The email if using git storage")
 	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(1), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
 	cmd.Flags().Int64VarP(&options.ActiveDeadlineSeconds, "active-deadline-seconds", "", int64(60*60*4), "The number of seconds before the Job can be terminated")
 	cmd.Flags().StringVarP(&options.GitURL, "git-url", "", "", "The git URL of the project to store the results")
@@ -264,7 +264,7 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 		}
 		if !o.BatchMode {
 			if !util.Confirm(fmt.Sprintf("are you ready to delete the Job %s", job.Name), true,
-				"we should delete the job when it is finished", o.In, o.Out, o.Err) {
+				"we should delete the job when it is finished", o.GetIOFileHandles()) {
 				return nil
 			}
 		}

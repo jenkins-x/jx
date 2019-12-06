@@ -1,9 +1,10 @@
 package features_test
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCheckTektonEnabledOss(t *testing.T) {

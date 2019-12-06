@@ -56,7 +56,7 @@ func Test_getOrganizations(t *testing.T) {
 }
 
 func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.ConfigService {
-	authConfigSvc, _ := auth.NewFileAuthConfigService(fileName)
+	authConfigSvc, _ := auth.NewFileAuthConfigService(fileName, "")
 	authConfigSvc.SetConfig(authConfig)
 	return &authConfigSvc
 }
@@ -72,13 +72,19 @@ func createAuthConfig(currentServer *auth.AuthServer, piplineServer, pipelineUse
 }
 
 func createAuthServer(url string, name string, kind string, currentUser *auth.UserAuth, users ...*auth.UserAuth) *auth.AuthServer {
-	users = append(users, currentUser)
+	if currentUser != nil {
+		users = append(users, currentUser)
+	}
+	currentUsername := ""
+	if currentUser != nil {
+		currentUsername = currentUser.Username
+	}
 	return &auth.AuthServer{
 		URL:         url,
 		Name:        name,
 		Kind:        kind,
 		Users:       users,
-		CurrentUser: currentUser.Username,
+		CurrentUser: currentUsername,
 	}
 }
 
@@ -144,7 +150,9 @@ func restoreEnviron(t assert.TestingT, environ map[string]string) {
 }
 
 func TestCreateGitProviderFromURL(t *testing.T) {
-	t.Parallel()
+	// This test is setting some environment variable which is causing other tests creating the git
+	// provider to fail when executed in parallel.
+	// t.Parallel()
 	utiltests.SkipForWindows(t, "go-expect does not work on Windows")
 
 	git := mocks.NewMockGitter()
@@ -156,6 +164,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		Name         string
 		providerKind string
 		hostURL      string
+		ghOwner      string
 		git          gits.Gitter
 		numUsers     int
 		currUser     int
@@ -171,7 +180,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"GitHub",
 			gits.KindGitHub,
-			"https://github.com",
+			"https://github.com", "",
 			git,
 			1,
 			0,
@@ -187,7 +196,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"GitHub",
 			gits.KindGitHub,
-			"https://github.com",
+			"https://github.com", "",
 			git,
 			2,
 			1,
@@ -203,7 +212,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"GitHub",
 			gits.KindGitHub,
-			"https://github.com",
+			"https://github.com", "",
 			git,
 			2,
 			1,
@@ -235,7 +244,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"GitHub",
 			gits.KindGitHub,
-			"https://github.com",
+			"https://github.com", "",
 			git,
 			0,
 			0,
@@ -251,7 +260,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"GitHub",
 			gits.KindGitHub,
-			"https://github.com",
+			"https://github.com", "",
 			git,
 			0,
 			0,
@@ -285,7 +294,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"GitHub",
 			gits.KindGitHub,
-			"https://github.com",
+			"https://github.com", "",
 			git,
 			0,
 			0,
@@ -301,7 +310,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"Gitlab",
 			gits.KindGitlab,
-			"https://gitlab.com",
+			"https://github.com", "",
 			git,
 			1,
 			0,
@@ -317,7 +326,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"Gitlab",
 			gits.KindGitHub,
-			"https://gitlab.com",
+			"https://gitlab.com", "",
 			git,
 			2,
 			1,
@@ -348,7 +357,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"Gitlab",
 			gits.KindGitlab,
-			"https://gitlab.com",
+			"https://gitlab.com", "",
 			git,
 			0,
 			0,
@@ -364,7 +373,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"Gitlab",
 			gits.KindGitlab,
-			"https://gitlab.com",
+			"https://gitlab.com", "",
 			git,
 			0,
 			0,
@@ -398,7 +407,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"Gitlab",
 			gits.KindGitlab,
-			"https://gitlab.com",
+			"https://gitlab.com", "",
 			git,
 			0,
 			0,
@@ -414,7 +423,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"Gitea",
 			gits.KindGitea,
-			"https://gitea.com",
+			"https://gitea.com", "",
 			git,
 			1,
 			0,
@@ -430,7 +439,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"Gitea",
 			gits.KindGitea,
-			"https://gitea.com",
+			"https://gitea.com", "",
 			git,
 			2,
 			1,
@@ -461,7 +470,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"Gitea",
 			gits.KindGitea,
-			"https://gitea.com",
+			"https://gitea.com", "",
 			git,
 			0,
 			0,
@@ -477,7 +486,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"Gitea",
 			gits.KindGitea,
-			"https://gitea.com",
+			"https://gitea.com", "",
 			git,
 			0,
 			0,
@@ -511,7 +520,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"Gitea",
 			gits.KindGitea,
-			"https://gitea.com",
+			"https://gitea.com", "",
 			git,
 			0,
 			0,
@@ -527,7 +536,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"BitbucketServer",
 			gits.KindBitBucketServer,
-			"https://bitbucket-server.com",
+			"https://bitbucket-server.com", "",
 			git,
 			1,
 			0,
@@ -543,7 +552,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"BitbucketServer",
 			gits.KindBitBucketServer,
-			"https://bitbucket-server.com",
+			"https://bitbucket-server.com", "",
 			git,
 			2,
 			1,
@@ -574,7 +583,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"BitbucketServer",
 			gits.KindBitBucketServer,
-			"https://bitbucket-server.com",
+			"https://bitbucket-server.com", "",
 			git,
 			0,
 			0,
@@ -590,7 +599,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"BitbucketServer",
 			gits.KindBitBucketServer,
-			"https://bitbucket-server.com",
+			"https://bitbucket-server.com", "",
 			git,
 			0,
 			0,
@@ -624,7 +633,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"BitbucketServer",
 			gits.KindBitBucketServer,
-			"https://bitbucket-server.com",
+			"https://bitbucket-server.com", "",
 			git,
 			0,
 			0,
@@ -640,7 +649,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,
-			"https://bitbucket.org",
+			"https://bitbucket.org", "",
 			git,
 			1,
 			0,
@@ -656,7 +665,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,
-			"https://bitbucket.org",
+			"https://bitbucket.org", "",
 			git,
 			2,
 			1,
@@ -687,7 +696,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,
-			"https://bitbucket.org",
+			"https://bitbucket.org", "",
 			git,
 			0,
 			0,
@@ -703,7 +712,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,
-			"https://bitbucket.org",
+			"https://bitbucket.org", "",
 			git,
 			0,
 			0,
@@ -737,7 +746,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			},
 			"BitbucketCloud",
 			gits.KindBitBucketCloud,
-			"https://bitbucket.org",
+			"https://bitbucket.org", "",
 			git,
 			0,
 			0,
@@ -795,17 +804,19 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 						ApiToken: tc.apiToken,
 					}
 					server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-					s, err := auth.NewFileAuthConfigService(configFile.Name())
+					s, err := auth.NewFileAuthConfigService(configFile.Name(), "")
 					authSvc = &s
 					assert.NoError(r, err)
 				}
 
 				var result gits.GitProvider
+				handles := util.IOFileHandles{}
 				if console != nil {
-					result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, console.In, console.Out, console.Err)
-				} else {
-					result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
+					handles.In = console.In
+					handles.Out = console.Out
+					handles.Err = console.Err
 				}
+				result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.ghOwner, tc.git, tc.batchMode, handles)
 				if tc.wantError {
 					assert.Error(r, err, "should fail to create provider")
 					assert.Nil(r, result, "created provider should be nil")

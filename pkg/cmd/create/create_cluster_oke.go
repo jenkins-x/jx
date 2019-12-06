@@ -263,7 +263,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		nodePoolSubnetIdsArray[i] = "\"" + nodePoolSubnetIdsArray[i] + "\""
 	}
 	nodePoolSubnetIdsTemp := "[" + strings.Join(nodePoolSubnetIdsArray, ",") + "]"
-	err = ioutil.WriteFile("/tmp/oke_pool_config.json", []byte(nodePoolSubnetIdsTemp), 0644)
+	err = ioutil.WriteFile("/tmp/oke_pool_config.json", []byte(nodePoolSubnetIdsTemp), 0644) // #nosec
 	if err != nil {
 		log.Logger().Infof("error write file to /tmp file %v", err)
 	}
@@ -297,7 +297,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 		serviceLbSubnetIdsTemp := "[" + strings.Join(serviceLbSubnetIdsArray, ",") + "]"
 
-		err := ioutil.WriteFile("/tmp/oke_cluster_config.json", []byte(serviceLbSubnetIdsTemp), 0644)
+		err := ioutil.WriteFile("/tmp/oke_cluster_config.json", []byte(serviceLbSubnetIdsTemp), 0644) // #nosec
 		if err != nil {
 			log.Logger().Infof("error write file to /tmp file %v", err)
 		}
@@ -393,7 +393,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		initialNodeLabels := o.Flags.InitialNodeLabels
 		if initialNodeLabels != "" {
 			initialNodeLabelsJson := "[" + initialNodeLabels + "]"
-			err := ioutil.WriteFile("/tmp/oke_pool_labels_config.json", []byte(initialNodeLabelsJson), 0644)
+			err := ioutil.WriteFile("/tmp/oke_pool_labels_config.json", []byte(initialNodeLabelsJson), 0644) // #nosec
 			if err != nil {
 				log.Logger().Infof("error write file to /tmp file %v", err)
 			}

@@ -4,9 +4,10 @@
 package resources_test
 
 import (
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockInstaller struct {
@@ -118,7 +119,7 @@ func (c *MockInstaller_Install_OngoingVerification) GetCapturedArguments() strin
 func (c *MockInstaller_Install_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -145,7 +146,7 @@ func (c *MockInstaller_InstallDir_OngoingVerification) GetCapturedArguments() st
 func (c *MockInstaller_InstallDir_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}

@@ -12,9 +12,6 @@ const (
 	// ChartAnchore the default chart for the Anchore plugin
 	ChartAnchore = "stable/anchore-engine"
 
-	// ChartCloudBees the default name of the CloudBees addon chart
-	ChartCloudBees = "cb/jxui"
-
 	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
 	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
 
@@ -80,16 +77,13 @@ const (
 	SecretKaniko = "kaniko-secret"
 
 	// SecretVelero the name of the secret containing the velero service account
-	SecretVelero = "velero-secret"
+	SecretVelero = "velero-secret" // #nosec
 
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
 	// SecretJenkins is the name of the Jenkins secret
 	SecretJenkins = "jenkins"
-
-	// ServiceCloudBees the service name of the CloudBees UI for Jenkins X
-	ServiceCloudBees = "cb-jxui"
 
 	// ServiceChartMuseum the service name of the Helm ChartMuseum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
@@ -100,6 +94,9 @@ const (
 	// SecretJenkinsChartMuseum the chart museum secret
 	SecretJenkinsChartMuseum = "jenkins-x-chartmuseum"
 
+	// SecretBucketRepo the bucket repo secret if using it as a chart repositoru
+	SecretBucketRepo = "jenkins-x-bucketrepo"
+
 	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
 	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
 
@@ -107,16 +104,16 @@ const (
 	SecretJenkinsPipelinePrefix = "jx-pipeline-"
 
 	// SecretJenkinsPipelineAddonCredentials the chat credentials secret
-	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-"
+	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-" // #nosec
 
 	// SecretJenkinsPipelineChatCredentials the chat credentials secret
 	SecretJenkinsPipelineChatCredentials = "jx-pipeline-chat-"
 
 	// SecretJenkinsPipelineGitCredentials the git credentials secret
-	SecretJenkinsPipelineGitCredentials = "jx-pipeline-git-"
+	SecretJenkinsPipelineGitCredentials = "jx-pipeline-git-" // #nosec
 
 	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
-	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
+	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-" // #nosec
 
 	// ConfigMapExposecontroller the name of the ConfigMap with the Exposecontroller configuration
 	ConfigMapExposecontroller = "exposecontroller"
@@ -138,9 +135,6 @@ const (
 
 	// ConfigMapNameJXInstallConfig is the ConfigMap containing the jx installation's CA and server url. Used by jx login
 	ConfigMapNameJXInstallConfig = "jx-install-config"
-
-	// ConfigMapNameRequirementsYaml is the ConfigMap containing the marshalled and encoded requirements.yaml file for Boot installs
-	ConfigMapNameRequirementsYaml = "jx-requirements-config"
 
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
@@ -188,6 +182,9 @@ const (
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
 
+	// ValueKindChartmuseum a chartmuseum auth secret/credentials
+	ValueKindChartmuseum = "chartmuseum"
+
 	// ValueKindJenkins an Jenkins App secret/credentials
 	ValueKindJenkins = "jenkins"
 
@@ -208,6 +205,9 @@ const (
 
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"
+
+	// LabelGithubAppOwner the label to indicate the owner of a repository for github app token secrets
+	LabelGithubAppOwner = "jenkins.io/githubapp-owner"
 
 	// LabelCreatedBy indicates the service that created this resource
 	LabelCreatedBy = "jenkins.io/created-by"
@@ -298,7 +298,7 @@ const (
 	SecretDataPassword = "password"
 
 	// SecretBasicAuth the name for the Jenkins X basic auth secret
-	SecretBasicAuth = "jx-basic-auth"
+	SecretBasicAuth = "jx-basic-auth" // #nosec
 
 	// JenkinsAdminApiToken the API token
 	JenkinsAdminApiToken = "jenkins-admin-api-token"
@@ -337,7 +337,6 @@ var (
 	AddonCharts = map[string]string{
 		"ambassador":                    ChartAmbassador,
 		"anchore":                       ChartAnchore,
-		"cb":                            ChartCloudBees,
 		DefaultFlaggerReleaseName:       ChartFlagger,
 		"gitea":                         ChartGitea,
 		"istio":                         ChartIstio,

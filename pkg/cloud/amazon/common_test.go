@@ -1,13 +1,14 @@
 package amazon_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/stretchr/testify/assert"
 )
 
 func switchHome() (string, error) {
@@ -132,6 +133,11 @@ func TestParseContext(t *testing.T) {
 			context: "cluster-name-jx.eu-north-4",
 			cluster: "cluster-name-jx",
 			region:  "eu-north-4",
+		},
+		"full cluster name eks arn": {
+			context: "arn:aws:eks:us-east-1:111111111111:cluster/cluster-name-jx",
+			cluster: "cluster-name-jx",
+			region:  "us-east-1",
 		},
 	}
 

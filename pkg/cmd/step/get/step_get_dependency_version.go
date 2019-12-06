@@ -22,8 +22,8 @@ var (
 		# display the version of jx in the version stream
 		jx step get dependency-version --host=github.com --owner=jenkins-x --repo=jx
 
-		# display the version of jx in a local directory containing a "dependency-matrix" subdirectory
-		jx step get dependency-version --host=github.com --owner=jenkins-x --repo=jx --dir=/some/directory
+		# display the version of jx in a local directory containing a "dependency-matrix" subdirectory, only logging the version
+		jx step get dependency-version --host=github.com --owner=jenkins-x --repo=jx --dir=/some/directory --short
 			`)
 )
 
@@ -31,10 +31,11 @@ var (
 type StepGetDependencyVersionOptions struct {
 	step.StepOptions
 
-	Host  string
-	Owner string
-	Repo  string
-	Dir   string
+	Host        string
+	Owner       string
+	Repo        string
+	Dir         string
+	ShortOutput bool
 }
 
 // NewCmdStepGetDependencyVersion Creates a new Command object
@@ -61,6 +62,7 @@ func NewCmdStepGetDependencyVersion(commonOpts *opts.CommonOptions) *cobra.Comma
 	cmd.Flags().StringVarP(&options.Owner, "owner", "", "", "Owner for dependency repo in the matrix")
 	cmd.Flags().StringVarP(&options.Repo, "repo", "", "", "Repo name for dependency repo in the matrix")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "Directory to read dependency matrix from instead of using the version stream")
+	cmd.Flags().BoolVarP(&options.ShortOutput, "short", "", false, "Display the dependency version only")
 	return cmd
 }
 
@@ -97,6 +99,10 @@ func (o *StepGetDependencyVersionOptions) Run() error {
 	version, err := matrix.FindVersionForDependency(o.Host, o.Owner, o.Repo)
 	if err != nil {
 		return err
+	}
+	if o.ShortOutput {
+		fmt.Fprintf(o.Out, "%s\n", version)
+		return nil
 	}
 	fmt.Fprintf(o.Out, "Version for host %s, owner %s, repo %s in matrix at %s is: %s\n", o.Host, o.Owner, o.Repo, o.Dir, version)
 	return nil

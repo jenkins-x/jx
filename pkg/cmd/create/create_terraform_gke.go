@@ -1,8 +1,11 @@
 package create
 
 import (
-	"github.com/jenkins-x/jx/pkg/features"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
+	"github.com/jenkins-x/jx/pkg/features"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -259,7 +262,7 @@ func NewCmdCreateTerraformGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &TerraformGKEOptions{
 		CreateClusterGKEOptions: CreateClusterGKEOptions{
 			CreateClusterOptions: CreateClusterOptions{
-				CreateOptions: CreateOptions{
+				CreateOptions: options.CreateOptions{
 					CommonOptions: commonOpts,
 				},
 				InstallOptions: CreateInstallOptions(commonOpts),
@@ -433,7 +436,7 @@ func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 		return err
 	}
 
-	authConfigSvc, err := options.CreateGitAuthConfigService()
+	authConfigSvc, err := options.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -458,7 +461,7 @@ func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 		}
 	} else {
 		details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
-			defaultRepoName, &options.InstallOptions.GitRepositoryOptions, nil, nil, options.Git(), true, options.In, options.Out, options.Err)
+			defaultRepoName, &options.InstallOptions.GitRepositoryOptions, nil, nil, options.Git(), true, options.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

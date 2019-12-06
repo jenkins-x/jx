@@ -10,6 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/acarl005/stripansi"
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -26,7 +29,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits/operations"
 
-	"github.com/acarl005/stripansi"
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -37,7 +39,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -83,15 +84,18 @@ func TestCreatePullRequest(t *testing.T) {
 	pegomock.When(gitter.HasChanges(pegomock.AnyString())).ThenReturn(true, nil)
 
 	var results *gits.PullRequestInfo
+
 	logOutput := log.CaptureOutput(func() {
 		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
 			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
 		})
 		assert.NoError(t, err)
+		assert.NotNil(t, results)
 	})
 
 	assert.Contains(t, logOutput, "Added label updatebot to Pull Request https://fake.git/testowner/testrepo/pulls/1",
 		"Updatebot label should be added to the PR")
+
 	assert.NotNil(t, results, "we must have results coming out of the PR creation")
 	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0, 2.0.0 and v1.0.1 to 3.0.0",
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
@@ -204,15 +208,18 @@ func TestCreatePullRequestWithMatrixUpdatePaths(t *testing.T) {
 	pegomock.When(gitter.HasChanges(pegomock.AnyString())).ThenReturn(true, nil)
 
 	var results *gits.PullRequestInfo
+
 	logOutput := log.CaptureOutput(func() {
 		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
 			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
 		})
 		assert.NoError(t, err)
+		assert.NotNil(t, results)
 	})
 
 	assert.Contains(t, stripansi.Strip(logOutput), "Added label updatebot to Pull Request https://fake.git/testowner/testrepo/pulls/1",
 		"Updatebot label should be added to the PR")
+
 	assert.NotNil(t, results, "we must have results coming out of the PR creation")
 	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0, 2.0.0 and v1.0.1 to 3.0.0",
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
@@ -583,7 +590,7 @@ func TestCreateChartChangeFilesFn(t *testing.T) {
 		}, helmer)
 		vaultClient := vault_test.NewMockClient()
 		pro := operations.PullRequestOperation{}
-		fn := operations.CreateChartChangeFilesFn("acme/roadrunner", "1.0.1", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		fn := operations.CreateChartChangeFilesFn("acme/roadrunner", "1.0.1", "charts", &pro, helmer, vaultClient, util.IOFileHandles{})
 		dir, err := ioutil.TempDir("", "")
 		defer func() {
 			err := os.RemoveAll(dir)
@@ -611,7 +618,7 @@ func TestCreateChartChangeFilesFn(t *testing.T) {
 		}, helmer)
 		vaultClient := vault_test.NewMockClient()
 		pro := operations.PullRequestOperation{}
-		fn := operations.CreateChartChangeFilesFn("acme/wile", "1.0.1", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		fn := operations.CreateChartChangeFilesFn("acme/wile", "1.0.1", "charts", &pro, helmer, vaultClient, util.IOFileHandles{})
 		dir, err := ioutil.TempDir("", "")
 		defer func() {
 			err := os.RemoveAll(dir)
@@ -654,7 +661,7 @@ func TestCreateChartChangeFilesFn(t *testing.T) {
 		pegomock.When(helmer.IsRepoMissing("https://acme.com/charts")).ThenReturn(pegomock.ReturnValue(false), pegomock.ReturnValue("acme"), pegomock.ReturnValue(nil))
 		vaultClient := vault_test.NewMockClient()
 		pro := operations.PullRequestOperation{}
-		fn := operations.CreateChartChangeFilesFn("acme/wile", "", "charts", &pro, helmer, vaultClient, nil, nil, nil)
+		fn := operations.CreateChartChangeFilesFn("acme/wile", "", "charts", &pro, helmer, vaultClient, util.IOFileHandles{})
 		dir, err := ioutil.TempDir("", "")
 		defer func() {
 			err := os.RemoveAll(dir)
@@ -735,4 +742,23 @@ func TestPullRequestOperation_WrapChangeFilesWithCommitFn(t *testing.T) {
 	msg, err := gitter.GetLatestCommitMessage(dir)
 	assert.NoError(t, err)
 	assert.True(t, strings.HasPrefix(msg, "chore(deps): bump acme/wile from 1.2.2 to 1.2.3"))
+	// Without AuthorName and AuthorEmail, there shouldn't be a Signed-off-by message.
+	assert.False(t, strings.Contains(msg, "Signed-off-by:"))
+
+	// Wrap another commit, but this time with AuthorName and AuthorEmail set.
+	wrappedWithAuthor := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
+		return []string{"1.2.3"}, ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("version: 1.2.4"), 0655)
+	}
+	pro.AuthorEmail = "someone@example.com"
+	pro.AuthorName = "Some Author"
+	pro.Version = "1.2.4"
+	fnWithAuthor := pro.WrapChangeFilesWithCommitFn("charts", wrappedWithAuthor)
+	resultWithAuthor, err := fnWithAuthor(dir, gitInfo)
+	assert.NoError(t, err)
+	assert.Len(t, resultWithAuthor, 0)
+	tests.AssertFileContains(t, filepath.Join(dir, "test.yml"), "1.2.4")
+	msgWithAuthor, err := gitter.GetLatestCommitMessage(dir)
+	assert.NoError(t, err)
+	assert.True(t, strings.HasPrefix(msgWithAuthor, "chore(deps): bump acme/wile from 1.2.3 to 1.2.4"))
+	assert.True(t, strings.HasSuffix(msgWithAuthor, "Signed-off-by: Some Author <someone@example.com>"))
 }

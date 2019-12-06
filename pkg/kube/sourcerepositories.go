@@ -6,7 +6,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -61,6 +62,10 @@ func GetOrCreateSourceRepositoryCallback(jxClient versioned.Interface, ns string
 
 	labels := map[string]string{}
 	sr := &v1.SourceRepository{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SourceRepository",
+			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
 			Labels: labels,
@@ -76,6 +81,7 @@ func GetOrCreateSourceRepositoryCallback(jxClient versioned.Interface, ns string
 	if callback != nil {
 		callback(sr)
 	}
+	sr.Sanitize()
 	answer, err := repositories.Create(sr)
 	if err != nil {
 		// lets see if it already exists
@@ -84,7 +90,7 @@ func GetOrCreateSourceRepositoryCallback(jxClient versioned.Interface, ns string
 			return answer, errors.Wrapf(err, "failed to create SourceRepository %s and cannot get it either: %s", resourceName, err2.Error())
 		}
 		answer = sr
-		copy := *sr.DeepCopy()
+		copy := sr.DeepCopy()
 		copy.Spec.Description = description
 		copy.Spec.Org = organisation
 		copy.Spec.Provider = providerURL
@@ -99,12 +105,13 @@ func GetOrCreateSourceRepositoryCallback(jxClient versioned.Interface, ns string
 		copy.Labels[v1.LabelRepository] = name
 
 		if callback != nil {
-			callback(&copy)
+			callback(copy)
 		}
-		if reflect.DeepEqual(&copy.Spec, sr.Spec) && reflect.DeepEqual(copy.Labels, sr.Labels) {
+		copy.Sanitize()
+		if reflect.DeepEqual(copy.Spec, sr.Spec) && reflect.DeepEqual(copy.Labels, sr.Labels) {
 			return answer, nil
 		}
-		answer, err = repositories.Update(&copy)
+		answer, err = repositories.Update(copy)
 		if err != nil {
 			return answer, errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
 		}
@@ -146,7 +153,11 @@ func CreateSourceRepository(client versioned.Interface, namespace string, name, 
 	// for now lets convert to a safe name using the organisation + repo name
 	resourceName := naming.ToValidName(organisation + "-" + name)
 
-	_, err := client.JenkinsV1().SourceRepositories(namespace).Create(&v1.SourceRepository{
+	repository := &v1.SourceRepository{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SourceRepository",
+			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceName,
 		},
@@ -156,8 +167,9 @@ func CreateSourceRepository(client versioned.Interface, namespace string, name, 
 			Provider:    providerURL,
 			Repo:        name,
 		},
-	})
-	if err != nil {
+	}
+	repository.Sanitize()
+	if _, err := client.JenkinsV1().SourceRepositories(namespace).Create(repository); err != nil {
 		return err
 	}
 
@@ -176,6 +188,22 @@ func IsEnvironmentRepository(environments map[string]*v1.Environment, repository
 		if env.Spec.Kind != v1.EnvironmentKindTypePermanent {
 			continue
 		}
+		if env.Spec.Source.URL == gitURL || env.Spec.Source.URL == u2 {
+			return true
+		}
+	}
+	return false
+}
+
+// IsIncludedInTheGivenEnvs returns true if the given repository is an environment repository
+func IsIncludedInTheGivenEnvs(environments map[string]*v1.Environment, repository *v1.SourceRepository) bool {
+	gitURL, err := GetRepositoryGitURL(repository)
+	if err != nil {
+		return false
+	}
+	u2 := gitURL + ".git"
+
+	for _, env := range environments {
 		if env.Spec.Source.URL == gitURL || env.Spec.Source.URL == u2 {
 			return true
 		}

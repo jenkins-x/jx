@@ -6,8 +6,12 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"path"
+	"path/filepath"
 	"sort"
 	"strings"
+
+	"gopkg.in/src-d/go-git.v4/config"
 
 	uuid "github.com/satori/go.uuid"
 
@@ -38,7 +42,7 @@ func EnsureUserAndEmailSetup(gitter Gitter) (string, string, error) {
 			}
 		}
 		if userName == "" {
-			userName = "jenkins-x-bot"
+			userName = util.DefaultGitUserName
 		}
 		err := gitter.SetUsername("", userName)
 		if err != nil {
@@ -48,7 +52,7 @@ func EnsureUserAndEmailSetup(gitter Gitter) (string, string, error) {
 	if userEmail == "" {
 		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
 		if userEmail == "" {
-			userEmail = "jenkins-x@googlegroups.com"
+			userEmail = util.DefaultGitUserEmail
 		}
 		err := gitter.SetEmail("", userEmail)
 		if err != nil {
@@ -191,7 +195,7 @@ func GitProviderURL(text string) string {
 // It creates a branch called branchName from a base.
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
-func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, dryRun bool, gitter Gitter, provider GitProvider, labels []string) (*PullRequestInfo, error) {
+func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkRepo *GitRepository, base string, prDetails *PullRequestDetails, filter *PullRequestFilter, commit bool, commitMessage string, push bool, dryRun bool, gitter Gitter, provider GitProvider) (*PullRequestInfo, error) {
 	userAuth := provider.UserAuth()
 	if commit {
 		err := gitter.Add(dir, "-A")
@@ -233,6 +237,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		Title:         prDetails.Title,
 		Body:          prDetails.Message,
 		Base:          base,
+		Labels:        prDetails.Labels,
 	}
 	var existingPr *GitPullRequest
 
@@ -317,17 +322,8 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			existingPr = nil
 		}
 	}
-	if dryRun {
-		log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(existingPr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
-		return nil, nil
-	} else if push {
-		err := gitter.Push(dir, forkPushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
-		if err != nil {
-			return nil, errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
-		}
-	}
 	var pr *GitPullRequest
-	if existingPr != nil {
+	if !dryRun && existingPr != nil {
 		gha.Head = headPrefix + remoteBranch
 		// work out the minimal similar title
 		if strings.HasPrefix(existingPr.Title, "chore(deps): bump ") {
@@ -358,7 +354,17 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			return nil, errors.Wrapf(err, "updating pull request %s", existingPr.URL)
 		}
 		log.Logger().Infof("Updated Pull Request: %s", util.ColorInfo(pr.URL))
-	} else {
+	}
+	if dryRun {
+		log.Logger().Infof("Commit created but not pushed; would have updated pull request %s with %s and used commit message %s. Please manually delete %s when you are done", util.ColorInfo(existingPr.URL), prDetails.String(), commitMessage, util.ColorInfo(dir))
+		return nil, nil
+	} else if push {
+		err := gitter.Push(dir, forkPushURL, true, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
+		if err != nil {
+			return nil, errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
+		}
+	}
+	if existingPr == nil {
 		gha.Head = headPrefix + prDetails.BranchName
 
 		pr, err = provider.CreatePullRequest(gha)
@@ -367,20 +373,44 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 		}
 		log.Logger().Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
 	}
-	if len(labels) > 0 {
-		number := *pr.Number
-		var err error
-		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, labels)
-		if err != nil {
-			return nil, err
-		}
-		log.Logger().Infof("Added label %s to Pull Request %s", util.ColorInfo(strings.Join(labels, ", ")), pr.URL)
+
+	prInfo := &PullRequestInfo{
+		GitProvider:          provider,
+		PullRequest:          pr,
+		PullRequestArguments: gha,
 	}
+
+	err = addLabelsToPullRequest(prInfo, prDetails.Labels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to add labels %+v to PR %s", prDetails.Labels, prInfo.PullRequest.URL)
+	}
+
 	return &PullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,
 		PullRequestArguments: gha,
 	}, nil
+}
+
+// addLabelsToPullRequest adds the provided labels, if not already present, to the provided pull request
+// Labels are applied after PR creation as they use the GitHub issues API instead of the PR one.
+func addLabelsToPullRequest(prInfo *PullRequestInfo, labels []string) error {
+	if prInfo == nil {
+		return errors.New("pull request to label cannot be nil")
+	}
+	pr := prInfo.PullRequest
+	provider := prInfo.GitProvider
+
+	if len(labels) > 0 {
+		number := *pr.Number
+		var err error
+		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, labels)
+		if err != nil {
+			return err
+		}
+		log.Logger().Infof("Added label %s to Pull Request %s", util.ColorInfo(strings.Join(labels, ", ")), pr.URL)
+	}
+	return nil
 }
 
 // ForkAndPullRepo pulls the specified gitUrl into dir using gitter, creating a remote fork if needed using the git provider
@@ -597,7 +627,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 					return "", "", nil, nil, errors.Wrapf(err, "running git reset --hard")
 				}
 			} else {
-				log.Logger().Warnf(errors.Wrapf(err, "Unable to cherry-pick %s", util.ColorWarning(c.SHA)).Error())
+				return "", "", nil, nil, errors.Wrapf(err, "Unable to cherry-pick %s", util.ColorWarning(c.SHA))
 			}
 		} else {
 			log.Logger().Infof("  Cherry-picked %s", c.OneLine())
@@ -672,40 +702,14 @@ func FilterOpenPullRequests(provider GitProvider, owner string, repo string, fil
 	return answer, nil
 }
 
-func remoteBranchExists(baseRef string, branchName string, dir string, gitter Gitter, remoteName string) (bool, error) {
-
-	if branchName == "" {
-		branchName = baseRef
-	}
-	validBranchName := gitter.ConvertToValidBranchName(branchName)
-
-	branchNames, err := gitter.RemoteBranchNames(dir, fmt.Sprintf("remotes/%s/", remoteName))
-	if err != nil {
-		return false, errors.Wrapf(err, "Failed to load remote branch names")
-	}
-	if util.StringArrayIndex(branchNames, validBranchName) >= 0 {
-		if err != nil {
-			return false, errors.WithStack(err)
-		}
-		return true, nil
-	}
-	return false, nil
-}
-
 //IsUnadvertisedObjectError returns true if the reason for the error is that the request was for an object that is unadvertised (i.e. doesn't exist)
 func IsUnadvertisedObjectError(err error) bool {
 	return strings.Contains(err.Error(), "Server does not allow request for unadvertised object")
 }
 
-func parseAuthor(l string) (string, string) {
-	open := strings.Index(l, "<")
-	close := strings.Index(l, ">")
-	return strings.TrimSpace(l[:open]), strings.TrimSpace(l[open+1 : close])
-}
-
 // IsCouldntFindRemoteRefError returns true if the error is due to the remote ref not being found
 func IsCouldntFindRemoteRefError(err error, ref string) bool {
-	return strings.Contains(strings.ToLower(err.Error()), fmt.Sprintf("couldn't find remote ref %s", ref))
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(fmt.Sprintf("couldn't find remote ref %s", ref)))
 }
 
 // IsCouldNotPopTheStashError returns true if the error is due to the stash not being able to be popped, often because
@@ -717,6 +721,24 @@ func IsCouldNotPopTheStashError(err error) bool {
 // IsNoStashEntriesError returns true if the error is due to no stash entries found
 func IsNoStashEntriesError(err error) bool {
 	return strings.Contains(err.Error(), "No stash entries found.")
+}
+
+// GetSimpleIndentedStashPopErrorMessage gets the output of a failed git stash pop without duplication or additional content,
+// with each line indented four characters.
+func GetSimpleIndentedStashPopErrorMessage(err error) string {
+	errStr := err.Error()
+	idx := strings.Index(errStr, ": failed to run 'git stash pop'")
+	if idx > -1 {
+		errStr = errStr[:idx]
+	}
+
+	var indentedLines []string
+
+	for _, line := range strings.Split(errStr, "\n") {
+		indentedLines = append(indentedLines, "    "+line)
+	}
+
+	return strings.Join(indentedLines, "\n")
 }
 
 // FindTagForVersion will find a tag for a version number (first fetching the tags, then looking for a tag <version>
@@ -751,67 +773,141 @@ func FindTagForVersion(dir string, version string, gitter Gitter) (string, error
 	return answer, nil
 }
 
-//DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
-// head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo
+// DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
+// head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo.
+// If the repository already exist and error is returned.
 func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, private bool, provider GitProvider, gitter Gitter) (*GitRepository, error) {
-	duplicateInfo, err := provider.GetRepository(toOrg, toName)
+	log.Logger().Debugf("getting repo %s/%s", toOrg, toName)
+	_, err := provider.GetRepository(toOrg, toName)
+	if err == nil {
+		return nil, errors.Errorf("repository %s/%s already exists", toOrg, toName)
+	}
+
 	// If the duplicate doesn't exist create it
+	log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", toOrg, toName).Error())
+	fromInfo, err := ParseGitURL(fromGitURL)
 	if err != nil {
-		log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", toOrg, toName).Error())
-		fromInfo, err := ParseGitURL(fromGitURL)
+		return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
+	}
+	fromInfo, err = provider.GetRepository(fromInfo.Organisation, fromInfo.Name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
+	}
+	duplicateInfo, err := provider.CreateRepository(toOrg, toName, private)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", toOrg, toName)
+	}
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	log.Logger().Debugf("cloning repo from %s", fromInfo.CloneURL)
+	err = gitter.Clone(fromInfo.CloneURL, dir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.CloneURL)
+	}
+	if !strings.Contains(fromCommitish, "/") {
+		// if the commitish looks like a tag, fetch the tags
+		err = gitter.FetchTags(dir)
 		if err != nil {
-			return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
-		}
-		fromInfo, err = provider.GetRepository(fromInfo.Organisation, fromInfo.Name)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
-		}
-		duplicateInfo, err = provider.CreateRepository(toOrg, toName, private)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create GitHub repo %s/%s", toOrg, toName)
-		}
-		dir, err := ioutil.TempDir("", "")
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		err = gitter.Clone(fromInfo.CloneURL, dir)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to clone %s", fromInfo.CloneURL)
-		}
-		if !strings.Contains(fromCommitish, "/") {
-			// if the commitish looks like a tag, fetch the tags
-			err = gitter.FetchTags(dir)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.CloneURL)
-			}
-		} else {
-			parts := strings.Split(fromCommitish, "/")
-			err = gitter.FetchBranch(dir, parts[0], parts[1])
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
-			}
+			return nil, errors.Wrapf(err, "failed to fetch tags fromGitURL %s", fromInfo.CloneURL)
 		}
 		err = gitter.Reset(dir, fromCommitish, true)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
 		}
-		userDetails := provider.UserAuth()
-		duplicatePushURL, err := gitter.CreateAuthenticatedURL(duplicateInfo.CloneURL, &userDetails)
+	} else {
+		parts := strings.Split(fromCommitish, "/")
+		err = gitter.FetchBranch(dir, parts[0], parts[1])
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
+			return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
 		}
-		err = gitter.SetRemoteURL(dir, "origin", duplicateInfo.CloneURL)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to set remote url to %s", duplicateInfo.CloneURL)
+		if len(parts[1]) == 40 {
+			uuid, _ := uuid.NewV4()
+			branchName := fmt.Sprintf("pr-%s", uuid.String())
+
+			err = gitter.CreateBranchFrom(dir, branchName, parts[1])
+			if err != nil {
+				return nil, errors.Wrapf(err, "create branch %s from %s", branchName, parts[1])
+			}
+
+			err = gitter.Checkout(dir, branchName)
+			if err != nil {
+				return nil, errors.Wrapf(err, "checkout branch %s", branchName)
+			}
+		} else {
+			err = gitter.Reset(dir, fromCommitish, true)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to reset to %s", fromCommitish)
+			}
 		}
-		err = gitter.Push(dir, duplicatePushURL, true, false, fmt.Sprintf("%s:%s", "HEAD", toBranch))
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
-		}
-		log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo((fromInfo.HTMLURL)), util.ColorInfo(duplicateInfo.HTMLURL))
-		log.Logger().Infof("Setting upstream to %s\n", util.ColorInfo(duplicateInfo.HTMLURL))
 	}
+
+	err = SquashIntoSingleCommit(dir, fmt.Sprintf("initial config based of %s/%s with ref %s", fromInfo.Organisation, fromInfo.Name, fromCommitish), gitter)
+	if err != nil {
+		return nil, err
+	}
+
+	userDetails := provider.UserAuth()
+	duplicatePushURL, err := gitter.CreateAuthenticatedURL(duplicateInfo.CloneURL, &userDetails)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create push URL for %s", duplicateInfo.CloneURL)
+	}
+	err = gitter.SetRemoteURL(dir, "origin", duplicateInfo.CloneURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to set remote url to %s", duplicateInfo.CloneURL)
+	}
+	err = gitter.Push(dir, duplicatePushURL, true, fmt.Sprintf("%s:%s", "HEAD", toBranch))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to push HEAD to %s", toBranch)
+	}
+	log.Logger().Infof("Duplicated Git repository %s to %s\n", util.ColorInfo(fromInfo.HTMLURL), util.ColorInfo(duplicateInfo.HTMLURL))
+	log.Logger().Infof("Setting upstream to %s\n\n", util.ColorInfo(duplicateInfo.HTMLURL))
+
 	return duplicateInfo, nil
+}
+
+// SquashIntoSingleCommit takes the git repository in the specified directory and squashes all commits into a single
+// one using the specified message.
+func SquashIntoSingleCommit(repoDir string, commitMsg string, gitter Gitter) error {
+	cfg := config.NewConfig()
+	data, err := ioutil.ReadFile(filepath.Join(repoDir, ".git", "config"))
+	if err != nil {
+		return errors.Wrapf(err, "failed to load git config from %s", repoDir)
+	}
+
+	err = cfg.Unmarshal(data)
+	if err != nil {
+		return errors.Wrapf(err, "failed to unmarshal %s", repoDir)
+	}
+
+	err = os.RemoveAll(path.Join(repoDir, ".git"))
+	if err != nil {
+		return errors.Wrap(err, "unable to squash")
+	}
+
+	err = gitter.Init(repoDir)
+	if err != nil {
+		return errors.Wrap(err, "unable to init git")
+	}
+
+	for _, remote := range cfg.Remotes {
+		err = gitter.AddRemote(repoDir, remote.Name, remote.URLs[0])
+		if err != nil {
+			return errors.Wrap(err, "unable to update remote")
+		}
+	}
+
+	err = gitter.Add(repoDir, ".")
+	if err != nil {
+		return errors.Wrap(err, "unable to add stage commit")
+	}
+
+	err = gitter.CommitDir(repoDir, commitMsg)
+	if err != nil {
+		return errors.Wrap(err, "unable to add initial commit")
+	}
+	return nil
 }
 
 // GetGitInfoFromDirectory obtains remote origin HTTPS and current branch of a given directory and fails if it's not a git repository
@@ -834,4 +930,18 @@ func GetGitInfoFromDirectory(dir string, gitter Gitter) (string, string, error) 
 	}
 
 	return g.HttpsURL(), currentBranch, nil
+}
+
+// RefIsBranch looks for remove branches in ORIGIN for the provided directory and returns true if ref is found
+func RefIsBranch(dir string, ref string, gitter Gitter) (bool, error) {
+	remoteBranches, err := gitter.RemoteBranches(dir)
+	if err != nil {
+		return false, errors.Wrapf(err, "error getting remote branches to find provided ref %s", ref)
+	}
+	for _, b := range remoteBranches {
+		if strings.Contains(b, ref) {
+			return true, nil
+		}
+	}
+	return false, nil
 }

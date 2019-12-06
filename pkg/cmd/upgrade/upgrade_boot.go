@@ -2,28 +2,36 @@ package upgrade
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/auth"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/blang/semver"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/gits/operations"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 // UpgradeBootOptions options for the command
 type UpgradeBootOptions struct {
 	*opts.CommonOptions
-	Dir string
+	Dir                     string
+	UpgradeVersionStreamRef string
+	LatestRelease           bool
 }
 
 var (
@@ -36,6 +44,10 @@ var (
 		# create pr for upgrading a jx boot gitOps cluster
 		jx upgrade boot
 `)
+)
+
+const (
+	builderImage = "gcr.io/jenkinsxio/builder-go"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -56,6 +68,9 @@ func NewCmdUpgradeBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the Jenkins X Pipeline and requirements")
+	cmd.Flags().StringVarP(&options.UpgradeVersionStreamRef, "upgrade-version-stream-ref", "", config.DefaultVersionsRef, "a version stream ref to use to upgrade to")
+	cmd.Flags().BoolVarP(&options.LatestRelease, "latest-release", "", false, "upgrade to latest release tag")
+
 	return cmd
 }
 
@@ -73,16 +88,16 @@ func (o *UpgradeBootOptions) Run() error {
 		}
 	}
 
-	reqsVersionStream, err := o.requirementsVersionStream()
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
-		return errors.Wrap(err, "failed to get requirements version stream")
+		return errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
 	}
-
-	upgradeVersionSha, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, "master")
+	reqsVersionStream := requirements.VersionStream
+	upgradeVersionRef, err := o.upgradeAvailable(reqsVersionStream.URL, reqsVersionStream.Ref, o.UpgradeVersionStreamRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to get check for available update")
 	}
-	if upgradeVersionSha == "" {
+	if upgradeVersionRef == "" {
 		return nil
 	}
 
@@ -96,14 +111,44 @@ func (o *UpgradeBootOptions) Run() error {
 		return errors.Wrap(err, "failed to determine boot configuration URL")
 	}
 
-	err = o.updateBootConfig(reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL, upgradeVersionSha)
+	err = o.updateBootConfig(reqsVersionStream.URL, reqsVersionStream.Ref, bootConfigURL, upgradeVersionRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to update boot configuration")
 	}
 
-	err = o.updateVersionStreamRef(upgradeVersionSha)
+	err = o.updateVersionStreamRef(upgradeVersionRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to update version stream ref")
+	}
+	resolver, err := o.CreateVersionResolver(reqsVersionStream.URL, o.UpgradeVersionStreamRef)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create version resolver")
+	}
+
+	err = o.updatePipelineBuilderImage(resolver)
+	if err != nil {
+		return errors.Wrap(err, "failed to update pipeline version stream ref")
+	}
+
+	err = o.updateTemplateBuilderImage(resolver)
+	if err != nil {
+		return errors.Wrap(err, "failed to update template version stream ref")
+	}
+
+	// load modified requirements so we can merge with the base ones
+	modifiedRequirements, modifiedRequirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load requirements config %s", modifiedRequirementsFile)
+	}
+
+	err = requirements.MergeSave(modifiedRequirements, modifiedRequirementsFile)
+	if err != nil {
+		return errors.Wrap(err, "error merging the modified jx-requirements.yml file with the dev environment's one")
+	}
+
+	err = o.createCommitForRequirements(requirementsFile)
+	if err != nil {
+		return errors.Wrap(err, "failed to create a merge commit for jx-requirements.yml")
 	}
 
 	err = o.raisePR()
@@ -118,13 +163,25 @@ func (o *UpgradeBootOptions) Run() error {
 	return nil
 }
 
+func (o UpgradeBootOptions) createCommitForRequirements(requirementsFileName string) error {
+	reqsChanged, err := o.Git().HasFileChanged(o.Dir, requirementsFileName)
+	if err != nil {
+		return errors.Wrap(err, "failed to list changed files")
+	}
+	if reqsChanged {
+		err := o.Git().AddCommitFiles(o.Dir, "Merge jx-requirements.yml", []string{requirementsFileName})
+		if err != nil {
+			return errors.Wrapf(err, "error creating a commit with the merged jx-requirements.yml file from dir %s",
+				requirementsFileName)
+		}
+	}
+	return nil
+}
+
 func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (string, error) {
 	var bootConfigURL string
 	if versionStreamURL == config.DefaultVersionsURL {
 		bootConfigURL = config.DefaultBootRepository
-	}
-	if versionStreamURL == config.DefaultCloudBeesVersionsURL {
-		bootConfigURL = config.DefaultCloudBeesBootRepository
 	}
 
 	if bootConfigURL == "" {
@@ -151,38 +208,41 @@ func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (str
 	return bootConfigURL, nil
 }
 
-func (o *UpgradeBootOptions) requirementsVersionStream() (*config.VersionStreamConfig, error) {
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
-	}
-	exists, err := util.FileExists(requirementsFile)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if file %s exists", requirementsFile)
-	}
-	if !exists {
-		return nil, fmt.Errorf("no requirements file %s ensure you are running this command inside a GitOps clone", requirementsFile)
-	}
-	reqsVersionStream := requirements.VersionStream
-	return &reqsVersionStream, nil
-}
-
 func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionStreamRef string, upgradeRef string) (string, error) {
-	versionsDir, err := o.CloneJXVersionsRepo(versionStreamURL, upgradeRef)
+	versionsDir, _, err := o.CloneJXVersionsRepo(versionStreamURL, upgradeRef)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone versions repo %s", versionStreamURL)
 	}
-	upgradeVersionSha, err := o.Git().GetCommitPointedToByTag(versionsDir, upgradeRef)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to get commit pointed to by %s", upgradeRef)
+
+	if o.LatestRelease {
+		_, upgradeRef, err = o.Git().GetCommitPointedToByLatestTag(versionsDir)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to get latest tag at %s", o.Dir)
+		}
+		// if version stream is currently set to a sha
+	} else if len(versionStreamRef) == 40 {
+		upgradeRef, err = o.Git().GetCommitPointedToByTag(versionsDir, upgradeRef)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to get commit pointed to by %s", upgradeRef)
+		}
+	} else {
+		// if version stream is currently tagged version
+		versionText := strings.TrimPrefix(versionStreamRef, "v")
+		_, err = semver.Parse(versionText)
+		if err == nil {
+			_, upgradeRef, err = o.Git().GetCommitPointedToByLatestTag(versionsDir)
+			if err != nil {
+				return "", errors.Wrapf(err, "failed to get latest tag at %s", o.Dir)
+			}
+		}
 	}
 
-	if versionStreamRef == upgradeVersionSha {
-		log.Logger().Infof(util.ColorInfo("No upgrade available"))
+	if versionStreamRef == upgradeRef {
+		log.Logger().Infof(util.ColorInfo("No version stream upgrade available"))
 		return "", nil
 	}
-	log.Logger().Infof(util.ColorInfo("Upgrade available"))
-	return upgradeVersionSha, nil
+	log.Logger().Infof(util.ColorInfo("Version stream upgrade available"))
+	return upgradeRef, nil
 }
 
 func (o *UpgradeBootOptions) checkoutNewBranch() (string, error) {
@@ -209,7 +269,7 @@ func (o *UpgradeBootOptions) updateVersionStreamRef(upgradeRef string) error {
 	}
 
 	if requirements.VersionStream.Ref != upgradeRef {
-		log.Logger().Infof("Upgrading version stream ref to %s", upgradeRef)
+		log.Logger().Infof("Upgrading version stream ref to %s", util.ColorInfo(upgradeRef))
 		requirements.VersionStream.Ref = upgradeRef
 		err = requirements.SaveConfig(requirementsFile)
 		if err != nil {
@@ -223,7 +283,7 @@ func (o *UpgradeBootOptions) updateVersionStreamRef(upgradeRef string) error {
 	return nil
 }
 
-func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionStreamRef string, bootConfigURL string, upgradeVersionSha string) error {
+func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionStreamRef string, bootConfigURL string, upgradeVersionRef string) error {
 	configCloneDir, err := o.cloneBootConfig(bootConfigURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone boot config repo %s", bootConfigURL)
@@ -239,9 +299,10 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 	if err != nil {
 		return errors.Wrapf(err, "failed to get boot config ref for version stream: %s", versionStreamRef)
 	}
-	upgradeSha, upgradeVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, upgradeVersionSha, bootConfigURL)
+
+	upgradeSha, upgradeVersion, err := o.bootConfigRef(configCloneDir, versionStreamURL, upgradeVersionRef, bootConfigURL)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get boot config ref for version stream ref: %s", upgradeVersionSha)
+		return errors.Wrapf(err, "failed to get boot config ref for version stream ref: %s", upgradeVersionRef)
 	}
 
 	// check if boot config upgrade available
@@ -250,11 +311,18 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 		return nil
 	}
 	log.Logger().Infof(util.ColorInfo("boot config upgrade available"))
-	log.Logger().Infof("Upgrading from v%s to v%s", currentVersion, upgradeVersion)
+	log.Logger().Infof("Upgrading from %s to %s", util.ColorInfo(currentVersion), util.ColorInfo(upgradeVersion))
 
-	err = o.Git().FetchBranch(o.Dir, bootConfigURL, "master")
+	// Fetch the tag we're upgrading from.
+	err = o.Git().FetchBranch(o.Dir, bootConfigURL, currentVersion)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch master of %s", bootConfigURL)
+		return errors.Wrapf(err, "failed to fetch current tag %s from %s", currentVersion, bootConfigURL)
+	}
+
+	// Fetch the tag we're upgrading to.
+	err = o.Git().FetchBranch(o.Dir, bootConfigURL, upgradeVersion)
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch upgrade tag %s from %s", upgradeVersion, bootConfigURL)
 	}
 
 	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha)
@@ -281,7 +349,7 @@ func (o *UpgradeBootOptions) bootConfigRef(dir string, versionStreamURL string, 
 	if err != nil {
 		return "", "", errors.Wrapf(err, "failed to get commit pointed to by %s", cmtSha)
 	}
-	return cmtSha, configVersion, nil
+	return cmtSha, "v" + configVersion, nil
 }
 
 func (o *UpgradeBootOptions) cloneBootConfig(configURL string) (string, error) {
@@ -357,12 +425,7 @@ func (o *UpgradeBootOptions) excludeFiles(commit string) error {
 }
 
 func (o *UpgradeBootOptions) raisePR() error {
-	gitInfo, err := o.Git().Info(o.Dir)
-	if err != nil {
-		return errors.Wrap(err, "failed to get git info")
-	}
-
-	provider, err := o.gitProvider(gitInfo)
+	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to get git provider")
 	}
@@ -372,22 +435,33 @@ func (o *UpgradeBootOptions) raisePR() error {
 		return errors.Wrapf(err, "getting repository %s/%s", gitInfo.Organisation, gitInfo.Name)
 	}
 
+	details, filter, err := prDetailsAndFilter()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get PR details and filter")
+	}
+
+	_, err = gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
+	}
+	return nil
+}
+
+func prDetailsAndFilter() (gits.PullRequestDetails, gits.PullRequestFilter, error) {
 	details := gits.PullRequestDetails{
 		BranchName: fmt.Sprintf("jx_boot_upgrade"),
 		Title:      "feat(config): upgrade configuration",
 		Message:    "Upgrade configuration",
 	}
-
+	labels := []string{}
 	filter := gits.PullRequestFilter{
 		Labels: []string{
 			boot.PullRequestLabel,
 		},
 	}
-	_, err = gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider, []string{boot.PullRequestLabel})
-	if err != nil {
-		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
-	}
-	return nil
+	details.Labels = labels
+
+	return details, filter, nil
 }
 
 func (o *UpgradeBootOptions) deleteLocalBranch(branch string) error {
@@ -418,7 +492,9 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to give write perms to tmp dir to clone dev env repo")
 	}
-	_, userAuth, err := o.pipelineUserAuth()
+
+	gitInfo, err := gits.ParseGitURL(devEnvURL)
+	_, userAuth, err := o.GetPipelineGitAuthForRepo(gitInfo)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pipeline user auth")
 	}
@@ -436,29 +512,56 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	return nil
 }
 
-func (o *UpgradeBootOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.CreatePipelineUserGitAuthConfigService()
+func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.VersionResolver) error {
+	piplineFileGlob := "jenkins-x*.yml"
+	updatedBuilderImage, err := resolver.ResolveDockerImage(builderImage)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
+		return errors.Wrapf(err, "failed to resolve image %s", builderImage)
 	}
-	server, userAuth := authConfigSvc.Config().GetPipelineAuth()
-	return server, userAuth, nil
+	log.Logger().Infof("Updating pipeline agent images to %s", util.ColorInfo(updatedBuilderImage))
+	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*agent:\n\s*image: (gcr.io\/jenkinsxio\/builder-go.*$)`, piplineFileGlob)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = fn(o.Dir, nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	matches, err := filepath.Glob(filepath.Join(o.Dir, piplineFileGlob))
+	if err != nil {
+		return errors.Wrapf(err, "applying glob %s", piplineFileGlob)
+	}
+	for i, match := range matches {
+		matches[i], err = filepath.Rel(o.Dir, match)
+		if err != nil {
+			return errors.Wrapf(err, "failed to build path for pipeline file %s", match)
+		}
+	}
+	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade pipeline builder images", matches)
+	if err != nil {
+		log.Logger().Info("Skipping builder image update as no changes were detected")
+	}
+	return nil
 }
 
-func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
-	server, userAuth, err := o.pipelineUserAuth()
+func (o *UpgradeBootOptions) updateTemplateBuilderImage(resolver *versionstream.VersionResolver) error {
+	templateFile := fmt.Sprintf("env/%s", helm.ValuesTemplateFileName)
+	updatedBuilderImage, err := resolver.ResolveDockerImage(builderImage)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get pipeline user auth")
+		return errors.Wrapf(err, "failed to resolve image %s", builderImage)
 	}
-
-	gitKind, err := o.GitServerKind(gitInfo)
+	log.Logger().Infof("Updating template builder images to %s", util.ColorInfo(updatedBuilderImage))
+	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*builderImage: (gcr.io\/jenkinsxio\/builder-go.*$)`, templateFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get git kind")
+		return errors.WithStack(err)
 	}
-
-	provider, err := gitInfo.CreateProviderForUser(server, userAuth, gitKind, o.Git())
+	_, err = fn(o.Dir, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create provider for user")
+		return errors.WithStack(err)
 	}
-	return provider, nil
+	err = o.Git().AddCommitFiles(o.Dir, "feat: upgrade template builder images", []string{templateFile})
+	if err != nil {
+		log.Logger().Info("Skipping template builder image update as no changes were detected")
+	}
+	return nil
 }

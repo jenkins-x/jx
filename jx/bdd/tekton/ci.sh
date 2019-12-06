@@ -19,7 +19,7 @@ mkdir -p $JX_HOME
 
 # Disable coverage for jx version as we don't validate the output at all
 COVER_JX_BINARY=false jx version
-jx step git credentials
+#jx step git credentials
 
 gcloud auth activate-service-account --key-file $GKE_SA
 
@@ -31,6 +31,9 @@ sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_
 # lets setup git
 git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
+
+# lets avoid the git/credentials causing confusion during the test
+export XDG_CONFIG_HOME=$JX_HOME
 
 echo "running the BDD tests with JX_HOME = $JX_HOME"
 jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
@@ -44,8 +47,7 @@ jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git 
   --no-delete-app \
   --no-delete-repo \
   --tekton \
-  --tests install \
   --tests test-upgrade-ingress \
   --tests test-create-spring \
-  --tests test-quickstart-golang-http \
-  --tests test-import-golang-http-from-jenkins-x-yml
+  --tests test-import-golang-http-from-jenkins-x-yml \
+  --tests test-app-lifecycle

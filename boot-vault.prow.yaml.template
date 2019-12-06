@@ -1,5 +1,9 @@
 # override the pipelinerunner image
 pipelinerunner:
+  args:
+  - controller
+  - pipelinerunner
+  - --meta-pipeline-image=gcr.io/jenkinsxio/builder-maven:$VERSION
   enabled: true
   image:
     repository: gcr.io/jenkinsxio/builder-maven

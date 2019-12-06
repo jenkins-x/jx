@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -57,7 +59,7 @@ type CreateAddonPipelineEventsOptions struct {
 func NewCmdCreateAddonPipelineEvents(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonPipelineEventsOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -177,7 +179,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 			ServerName: esDeploymentName,
 		},
 		Kind: kube.ValueKindPipelineEvent,
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: o.CommonOptions,
 		},
 	}

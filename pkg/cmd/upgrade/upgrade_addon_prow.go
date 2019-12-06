@@ -3,9 +3,10 @@ package upgrade
 import (
 	"fmt"
 
-	version "github.com/hashicorp/go-version"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
+	"github.com/hashicorp/go-version"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -47,7 +48,7 @@ type UpgradeAddonProwOptions struct {
 func NewCmdUpgradeAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeAddonProwOptions{
 		UpgradeAddonsOptions: UpgradeAddonsOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -113,7 +114,7 @@ func (o *UpgradeAddonProwOptions) Run() error {
 					"you like to install the latest Knative Build?\nWARNING: this will remove the previous version and " +
 					"install the latest, any existing builds or custom changes to BuildTemplate resources will be lost"
 
-				if !util.Confirm(message, false, "", o.In, o.Out, o.Err) {
+				if !util.Confirm(message, false, "", o.GetIOFileHandles()) {
 					return nil
 				}
 

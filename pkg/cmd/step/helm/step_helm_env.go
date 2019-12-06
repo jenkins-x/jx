@@ -17,8 +17,6 @@ import (
 // StepHelmEnvOptions contains the command line flags
 type StepHelmEnvOptions struct {
 	StepHelmOptions
-
-	recursive bool
 }
 
 var (

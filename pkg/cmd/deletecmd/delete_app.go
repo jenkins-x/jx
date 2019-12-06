@@ -16,7 +16,7 @@ import (
 
 var (
 	deleteAppLong = templates.LongDesc(`
-		Deletes one or more Apps
+		Deletes one or more Apps (an app is similar to an addon)
 
 `)
 
@@ -55,7 +55,7 @@ func NewCmdDeleteApp(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "app",
-		Short:   "Deletes one or more apps from Jenkins X",
+		Short:   "Deletes one or more apps from Jenkins X (an app is similar to an addon)",
 		Long:    deleteAppLong,
 		Example: deleteAppExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -82,14 +82,12 @@ func (o *DeleteAppOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
 
 	installOptions := apps.InstallOptions{
-		In:        o.In,
-		DevEnv:    o.DevEnv,
-		Verbose:   o.Verbose,
-		Err:       o.Err,
-		Out:       o.Out,
-		GitOps:    o.GitOps,
-		BatchMode: o.BatchMode,
-		Helmer:    o.Helm(),
+		IOFileHandles: o.GetIOFileHandles(),
+		DevEnv:        o.DevEnv,
+		Verbose:       o.Verbose,
+		GitOps:        o.GitOps,
+		BatchMode:     o.BatchMode,
+		Helmer:        o.Helm(),
 	}
 
 	if o.GitOps {

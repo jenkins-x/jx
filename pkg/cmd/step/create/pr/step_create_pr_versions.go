@@ -148,14 +148,19 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			Version:       builderImageVersion,
 			DryRun:        o.DryRun,
 		}
-		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform):(?P<versions>.+)", "jenkins-x-*.yml")
+		authorName, authorEmail, _ := gits.EnsureUserAndEmailSetup(o.Git())
+		if authorName != "" && authorEmail != "" {
+			pro.AuthorName = authorName
+			pro.AuthorEmail = authorEmail
+		}
+		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform|go-nodejs):(?P<versions>.+)", "jenkins-x*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", fn))
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreatePullRequestBuildersFn(builderImageVersion)))
 		// Update the pipeline files
-		fn, err = operations.CreatePullRequestRegexFn(builderImageVersion, `(?m)^\s*agent:\n\s*image: .*:(?P<version>.*)$`, "jenkins-x-*.yml")
+		fn, err = operations.CreatePullRequestRegexFn(builderImageVersion, `(?m)^\s*agent:\n\s*image: gcr.io/jenkinsxio/builder-.*:(?P<version>.*)$`, "jenkins-x-*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -177,6 +182,10 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			Version:       mlBuilderImageVersion,
 			DryRun:        o.DryRun,
 		}
+		if authorName != "" && authorEmail != "" {
+			pro.AuthorName = authorName
+			pro.AuthorEmail = authorEmail
+		}
 		modifyFns = append(modifyFns, mlPro.WrapChangeFilesWithCommitFn("versions", operations.CreatePullRequestMLBuildersFn(mlBuilderImageVersion)))
 	}
 	if len(o.Includes) > 0 {
@@ -192,6 +201,11 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			Version:       o.Version,
 			DryRun:        o.DryRun,
 		}
+		authorName, authorEmail, _ := gits.EnsureUserAndEmailSetup(o.Git())
+		if authorName != "" && authorEmail != "" {
+			pro.AuthorName = authorName
+			pro.AuthorEmail = authorEmail
+		}
 		vaultClient, err := o.SystemVaultClient("")
 		if err != nil {
 			vaultClient = nil
@@ -199,7 +213,7 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 		for _, kind := range o.Kinds {
 			switch kind {
 			case string(versionstream.KindChart):
-				modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreateChartChangeFilesFn(o.Name, o.Version, kind, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err)))
+				modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreateChartChangeFilesFn(o.Name, o.Version, kind, &pro, o.Helm(), vaultClient, o.GetIOFileHandles())))
 			}
 
 		}
@@ -287,6 +301,11 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 					BranchName:    o.BranchName,
 					DryRun:        o.DryRun,
 				}
+				authorName, authorEmail, err := gits.EnsureUserAndEmailSetup(o.Git())
+				if err != nil {
+					pro.AuthorName = authorName
+					pro.AuthorEmail = authorEmail
+				}
 				var cff operations.ChangeFilesFn
 				switch kindStr {
 				case string(versionstream.KindChart):
@@ -295,7 +314,7 @@ func (o *StepCreatePullRequestVersionsOptions) CreatePullRequestUpdateVersionFil
 					if err != nil {
 						vaultClient = nil
 					}
-					cff = pro.WrapChangeFilesWithCommitFn(kindStr, operations.CreateChartChangeFilesFn(name, "", kindStr, &pro, o.Helm(), vaultClient, o.In, o.Out, o.Err))
+					cff = pro.WrapChangeFilesWithCommitFn(kindStr, operations.CreateChartChangeFilesFn(name, "", kindStr, &pro, o.Helm(), vaultClient, o.GetIOFileHandles()))
 				case string(versionstream.KindGit):
 					cff = pro.WrapChangeFilesWithCommitFn(kindStr, pro.CreatePullRequestGitReleasesFn(name))
 				}

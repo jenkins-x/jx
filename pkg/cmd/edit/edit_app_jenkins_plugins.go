@@ -68,7 +68,7 @@ func (o *EditAppJenkinsPluginsOptions) Run() error {
 	// TODO load from the GitOps values.yaml folder
 	currentValues := []string{"jx-resources:1.0.0"}
 
-	selection, err := data.PickPlugins(currentValues, o.In, o.Out, o.Err)
+	selection, err := data.PickPlugins(currentValues, o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}

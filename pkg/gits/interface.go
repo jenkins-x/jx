@@ -202,7 +202,7 @@ type Gitter interface {
 	ShallowClone(dir string, url string, commitish string, pullRequest string) error
 	FetchUnshallow(dir string) error
 	IsShallow(dir string) (bool, error)
-	Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error
+	Push(dir string, remote string, force bool, refspec ...string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error
 	// CreateAuthenticatedURL adds username and password into the specified git URL.
@@ -223,6 +223,7 @@ type Gitter interface {
 	DiscoverUpstreamGitURL(gitConf string) (string, error)
 	RemoteBranches(dir string) ([]string, error)
 	RemoteBranchNames(dir string, prefix string) ([]string, error)
+	RemoteMergedBranchNames(dir string, prefix string) ([]string, error)
 	GetRemoteUrl(config *gitcfg.Config, name string) string
 	RemoteUpdate(dir string) error
 	LocalBranches(dir string) ([]string, error)
@@ -259,6 +260,7 @@ type Gitter interface {
 	AddCommit(dir string, msg string) error
 	AddCommitFiles(dir string, msg string, files []string) error
 	HasChanges(dir string) (bool, error)
+	HasFileChanged(dir string, fileName string) (bool, error)
 	Diff(dir string) (string, error)
 	ListChangedFilesFromBranch(dir string, branch string) (string, error)
 	LoadFileFromBranch(dir string, branch string, file string) (string, error)
@@ -268,13 +270,17 @@ type Gitter interface {
 	GetCommitPointedToByLatestTag(dir string) (string, string, error)
 	GetCommitPointedToByTag(dir string, tag string) (string, error)
 	FetchTags(dir string) error
+	FetchRemoteTags(dir string, repo string) error
 	Tags(dir string) ([]string, error)
 	FilterTags(dir string, filter string) ([]string, error)
 	CreateTag(dir string, tag string, msg string) error
 	GetLatestCommitSha(dir string) (string, error)
+	GetFirstCommitSha(dir string) (string, error)
 	GetCommits(dir string, start string, end string) ([]GitCommit, error)
 	RevParse(dir string, rev string) (string, error)
 	GetCommitsNotOnAnyRemote(dir string, branch string) ([]GitCommit, error)
+	Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error)
+	IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error)
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
@@ -289,6 +295,7 @@ type PullRequestDetails struct {
 	Message    string
 	BranchName string
 	Title      string
+	Labels     []string
 }
 
 func (p *PullRequestDetails) String() string {

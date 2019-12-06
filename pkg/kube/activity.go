@@ -2,13 +2,15 @@ package kube
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/pkg/errors"
@@ -182,22 +184,6 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 	return build, answer, nil
 }
 
-func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, activityKey *PipelineActivityKey) error {
-	repoName := activityKey.GitRepository()
-	owner := activityKey.GitOwner()
-	gitURL := activityKey.GitURL()
-
-	if repoName == "" || owner == "" || gitURL == "" {
-		return nil
-	}
-	srs := jxClient.JenkinsV1().SourceRepositories(ns)
-	if srs == nil {
-		return fmt.Errorf("failed to create sourcerepository resource")
-	}
-	_, err := GetOrCreateSourceRepository(jxClient, ns, repoName, owner, gits.GitProviderURL(gitURL))
-	return err
-}
-
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, bool, error) {
 	name := naming.ToValidName(k.Name)
@@ -230,13 +216,6 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 
 	oldSpec := a.Spec
 	oldLabels := a.Labels
-
-	if a.Labels == nil {
-		err := createSourceRepositoryIfMissing(jxClient, ns, k)
-		if err != nil {
-			log.Logger().Errorf("Error trying to create missing sourcerepository object: %s", err.Error())
-		}
-	}
 
 	updateActivity(k, a)
 
@@ -367,40 +346,44 @@ func (k *PipelineActivityKey) addBatchBuildData(activitiesClient typev1.Pipeline
 			return errors.Wrapf(err, "there was a problem listing all PipelineActivities for PR-%s with lastCommitSha %s", sha, prNumber)
 		}
 
-		//Select the first one as the latest build for this SHA, then iterate the rest
-		selectedPipeline := list.Items[0]
-		list.Items = list.Items[1:]
-		for _, i := range list.Items {
-			if i.Spec.Build != "" && selectedPipeline.Spec.Build != "" {
-				ib, err := strconv.Atoi(i.Spec.Build)
-				if err != nil {
-					log.Logger().Errorf("%s", err)
-				}
-				cb, err := strconv.Atoi(selectedPipeline.Spec.Build)
-				if err != nil {
-					log.Logger().Errorf("%s", err)
-				}
-				if ib > cb {
-					selectedPipeline = i
+		// Only proceed if there are existing PipelineActivitys for this commit/branch - it's entirely possible they've
+		// all been GCed since they last ran. If there are none, just continue to the next commit/branch.
+		if len(list.Items) > 0 {
+			//Select the first one as the latest build for this SHA, then iterate the rest
+			selectedPipeline := list.Items[0]
+			list.Items = list.Items[1:]
+			for _, i := range list.Items {
+				if i.Spec.Build != "" && selectedPipeline.Spec.Build != "" {
+					ib, err := strconv.Atoi(i.Spec.Build)
+					if err != nil {
+						log.Logger().Errorf("%s", err)
+					}
+					cb, err := strconv.Atoi(selectedPipeline.Spec.Build)
+					if err != nil {
+						log.Logger().Errorf("%s", err)
+					}
+					if ib > cb {
+						selectedPipeline = i
+					}
 				}
 			}
-		}
 
-		//Update the selected PR's PipelineActivity with the batch info
-		selectedPipeline.Spec.BatchPipelineActivity = v1.BatchPipelineActivity{
-			BatchBranchName:  currentActivity.Labels[v1.LabelBranch],
-			BatchBuildNumber: k.Build,
-		}
+			//Update the selected PR's PipelineActivity with the batch info
+			selectedPipeline.Spec.BatchPipelineActivity = v1.BatchPipelineActivity{
+				BatchBranchName:  currentActivity.Labels[v1.LabelBranch],
+				BatchBuildNumber: k.Build,
+			}
 
-		_, err = activitiesClient.Update(&selectedPipeline)
-		if err != nil {
-			return errors.Wrap(err, "there was a problem updating the PR's PipelineActivity")
+			_, err = activitiesClient.Update(&selectedPipeline)
+			if err != nil {
+				return errors.Wrap(err, "there was a problem updating the PR's PipelineActivity")
+			}
+			//Add this PR's PipelineActivity info to the pull requests array of the batch build's PipelineActivity
+			prInfos = append(prInfos, v1.PullRequestInfo{
+				PullRequestNumber:        selectedPipeline.Labels[v1.LabelBranch],
+				LastBuildNumberForCommit: selectedPipeline.Spec.Build,
+			})
 		}
-		//Add this PR's PipelineActivity info to the pull requests array of the batch build's PipelineActivity
-		prInfos = append(prInfos, v1.PullRequestInfo{
-			PullRequestNumber:        selectedPipeline.Labels[v1.LabelBranch],
-			LastBuildNumberForCommit: selectedPipeline.Spec.Build,
-		})
 	}
 	currentActivity.Spec.BatchPipelineActivity = v1.BatchPipelineActivity{
 		ComprisingPulLRequests: prInfos,
@@ -471,6 +454,10 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 	buildNumber := activity.Spec.Build
 	if buildNumber != "" {
 		activity.Labels[v1.LabelBuild] = buildNumber
+	}
+
+	for k, v := range activity.Labels {
+		activity.Labels[k] = naming.ToValidValue(v)
 	}
 }
 
@@ -704,7 +691,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(jxClient versioned.Int
 }
 
 //OnPromotePullRequest updates activities on a Promote PR
-func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
+func (k *PromoteStepActivityKey) OnPromotePullRequest(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
 	if !k.IsValid() {
 		return nil
 	}
@@ -717,21 +704,25 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interfa
 	if err != nil {
 		return err
 	}
-	p1 := *p
+	p1 := asYaml(a)
 	err = fn(a, s, ps, p)
 	if err != nil {
 		return err
 	}
-	p2 := *p
+	if ok, _ := IsTektonEnabled(kubeClient, ns); ok && p.Status != v1.ActivityStatusTypeRunning && p.Status != v1.ActivityStatusTypeSucceeded {
+		a.Spec.Status = p.Status
+	}
 
-	if added || !reflect.DeepEqual(p1, p2) {
+	p2 := asYaml(a)
+
+	if added || p1 == "" || p1 != p2 {
 		_, err = activities.PatchUpdate(a)
 	}
 	return err
 }
 
 //OnPromoteUpdate updates activities on a Promote Update
-func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, ns string, fn PromoteUpdateFn) error {
+func (k *PromoteStepActivityKey) OnPromoteUpdate(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, fn PromoteUpdateFn) error {
 	if !k.IsValid() {
 		return nil
 	}
@@ -755,6 +746,10 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 	if k.ApplicationURL != "" {
 		ps.ApplicationURL = k.ApplicationURL
 	}
+
+	if ok, _ := IsTektonEnabled(kubeClient, ns); ok && p.Status != v1.ActivityStatusTypeRunning {
+		a.Spec.Status = p.Status
+	}
 	p2 := asYaml(a)
 
 	if added || p1 == "" || p1 != p2 {
@@ -764,7 +759,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 }
 
 // ListSelectedPipelineActivities retrieves the PipelineActivities instances matching the specified label and field selectors. Selectors can be empty or nil.
-func ListSelectedPipelineActivities(activitiesClient typev1.PipelineActivityInterface, labelSelector labels.Selector, fieldSelector fields.Selector) (*v1.PipelineActivityList, error) {
+func ListSelectedPipelineActivities(activitiesClient typev1.PipelineActivityInterface, labelSelector fmt.Stringer, fieldSelector fields.Selector) (*v1.PipelineActivityList, error) {
 	log.Logger().Debugf("looking for PipelineActivities with label selector %v and field selector %v", labelSelector, fieldSelector)
 
 	listOptions := metav1.ListOptions{}

@@ -2,12 +2,12 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -42,7 +42,7 @@ type CreateAddonIngressControllerOptions struct {
 func NewCmdCreateAddonIngressController(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonIngressControllerOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

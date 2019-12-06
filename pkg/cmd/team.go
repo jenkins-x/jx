@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -83,7 +84,7 @@ func (o *TeamOptions) Run() error {
 		team = args[0]
 	}
 	if team == "" && !o.BatchMode {
-		pick, err := util.PickName(teamNames, "Pick Team: ", "", o.In, o.Out, o.Err)
+		pick, err := util.PickName(teamNames, "Pick Team: ", "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

@@ -2,8 +2,10 @@ package metapipeline
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
@@ -37,23 +39,24 @@ const (
 
 // CRDCreationParameters are the parameters needed to create the Tekton CRDs
 type CRDCreationParameters struct {
-	Namespace        string
-	Context          string
-	PipelineName     string
-	ResourceName     string
-	PipelineKind     PipelineKind
-	BuildNumber      string
-	GitInfo          gits.GitRepository
-	BranchIdentifier string
-	PullRef          PullRef
-	SourceDir        string
-	PodTemplates     map[string]*corev1.Pod
-	ServiceAccount   string
-	Labels           map[string]string
-	EnvVars          map[string]string
-	DefaultImage     string
-	Apps             []jenkinsv1.App
-	VersionsDir      string
+	Namespace           string
+	Context             string
+	PipelineName        string
+	ResourceName        string
+	PipelineKind        PipelineKind
+	BuildNumber         string
+	GitInfo             gits.GitRepository
+	BranchIdentifier    string
+	PullRef             PullRef
+	SourceDir           string
+	PodTemplates        map[string]*corev1.Pod
+	ServiceAccount      string
+	Labels              map[string]string
+	EnvVars             map[string]string
+	DefaultImage        string
+	Apps                []jenkinsv1.App
+	VersionsDir         string
+	UseBranchAsRevision bool
 }
 
 // createMetaPipelineCRDs creates the Tekton CRDs needed to execute the meta pipeline.
@@ -72,7 +75,19 @@ func createMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		return nil, err
 	}
 
-	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(params.PipelineName, params.BuildNumber, params.ResourceName, params.Namespace, params.PodTemplates, params.VersionsDir, nil, params.SourceDir, labels, params.DefaultImage)
+	crdParams := syntax.CRDsFromPipelineParams{
+		PipelineIdentifier: params.PipelineName,
+		BuildIdentifier:    params.BuildNumber,
+		ResourceIdentifier: params.ResourceName,
+		Namespace:          params.Namespace,
+		PodTemplates:       params.PodTemplates,
+		VersionsDir:        params.VersionsDir,
+		SourceDir:          params.SourceDir,
+		Labels:             labels,
+		DefaultImage:       params.DefaultImage,
+		InterpretMode:      false,
+	}
+	pipeline, tasks, structure, err := parsedPipeline.GenerateCRDs(crdParams)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +97,7 @@ func createMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 		revision = params.PullRef.BaseBranch()
 	}
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.ResourceName, &params.GitInfo, revision)}
-	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.ServiceAccount, nil, nil, nil)
+	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.ServiceAccount, nil, nil, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)
 	if err != nil {
@@ -116,6 +131,22 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 		Steps: steps,
 		Agent: &syntax.Agent{
 			Image: determineDefaultStepImage(params.DefaultImage),
+		},
+		Options: &syntax.StageOptions{
+			RootOptions: &syntax.RootOptions{
+				ContainerOptions: &corev1.Container{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"cpu":    resource.MustParse("0.8"),
+							"memory": resource.MustParse("512Mi"),
+						},
+						Requests: corev1.ResourceList{
+							"cpu":    resource.MustParse("0.4"),
+							"memory": resource.MustParse("256Mi"),
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -228,7 +259,9 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
-
+	if params.UseBranchAsRevision {
+		args = append(args, "--branch-as-revision")
+	}
 	for k, v := range params.Labels {
 		args = append(args, "--label", fmt.Sprintf("%s=%s", k, v))
 	}
@@ -322,7 +355,7 @@ func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {
 	branch := params.BranchIdentifier
 	if branch != "" {
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "BRANCH_NAME",
+			Name:  util.EnvVarBranchName,
 			Value: branch,
 		})
 	}

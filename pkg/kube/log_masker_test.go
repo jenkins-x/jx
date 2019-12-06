@@ -3,13 +3,14 @@ package kube_test
 import (
 	"bytes"
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
-	"strings"
-	"testing"
 )
 
 func TestLogMasker(t *testing.T) {

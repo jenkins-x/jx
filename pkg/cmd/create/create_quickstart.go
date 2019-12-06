@@ -14,6 +14,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 
+	"github.com/jenkins-x/jx/pkg/github"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -106,7 +107,7 @@ func (o *CreateQuickstartOptions) Run() error {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
 
-	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -139,6 +140,23 @@ func (o *CreateQuickstartOptions) Run() error {
 		if q.Name == "" {
 			return util.MissingOption("project-name")
 		}
+	}
+
+	githubAppMode, err := o.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
+	if githubAppMode {
+		githubApp := &github.GithubApp{
+			Factory: o.GetFactory(),
+		}
+
+		installed, err := githubApp.Install(details.Organisation, details.RepoName, o.GetIOFileHandles(), true)
+		if err != nil {
+			return err
+		}
+		o.GithubAppInstalled = installed
 	}
 
 	// Prevent accidental attempts to use ML Project Sets in create quickstart

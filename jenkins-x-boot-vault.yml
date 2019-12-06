@@ -75,6 +75,10 @@ pipelineConfig:
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/source/Dockerfile.builder-go','--destination=gcr.io/jenkinsxio/builder-go:${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
+              - name: build-and-push-go-nodejs
+                command: /kaniko/executor
+                args: ['--dockerfile=/workspace/source/Dockerfile.builder-go-nodejs','--destination=gcr.io/jenkinsxio/builder-go-nodejs:${inputs.params.version}','--context=/workspace/source','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+
           - name: e2e-tests
             options:
               volumes:
@@ -115,11 +119,9 @@ pipelineConfig:
                   secretKeyRef:
                     name: test-jenkins-user 
                     key: password
-              - name: JX_REQUIREMENT_VAULT_DISABLE_URL_DISCOVERY
-                value: "true"
             steps:
               - name: boot-vault-e2e-tests
-                image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
+                image: gcr.io/jenkinsxio/builder-go-nodejs:${inputs.params.version}
                 command: ./jx/bdd/boot-vault/ci.sh
 
               - name: generate-report
@@ -140,17 +142,9 @@ pipelineConfig:
                   - --suite-name
                   - "BDD_Boot_Vault_Tests"
 
-              - name: stash_xml_report
+              - name: clear-kubeconfig
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
-                command: jx
-                args:
-                  - step
-                  - stash
-                  - -c
-                  - e2e-tests
-                  - -p
-                  - "/workspace/source/build/reports/create_spring_application.junit.xml"
-                  - --bucket-url gs://jx-prod-logs
+                command: rm ~/.kube/config
 
               - name: stash_html_report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}

@@ -3,7 +3,6 @@ package get
 import (
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -31,7 +30,7 @@ var (
 	getStreamLong = templates.LongDesc(`
 		Displays the version of a chart, package or docker image from the Version Stream
 
-		For more information see: [https://jenkins-x.io/architecture/version-stream/](https://jenkins-x.io/architecture/version-stream/)
+		For more information see: [https://jenkins-x.io/docs/concepts/version-stream/](https://jenkins-x.io/docs/concepts/version-stream/)
 
 `)
 
@@ -66,7 +65,7 @@ func NewCmdGetStream(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "docker", "The kind of version. Possible values: "+strings.Join(versionstream.KindStrings, ", "))
-	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", config.DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", "", "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	return cmd
 }

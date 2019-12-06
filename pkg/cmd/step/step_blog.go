@@ -468,15 +468,15 @@ func (o *StepBlogOptions) createNewCommitters() string {
 	return buffer.String()
 }
 
-func (o *StepBlogOptions) printUserMap(out *bufio.Writer, role string, newUsers map[string]*v1.UserDetails) {
+func (o *StepBlogOptions) printUserMap(out io.Writer, role string, newUsers map[string]*v1.UserDetails) {
 	if len(newUsers) > 0 {
-		out.WriteString(`
+		out.Write([]byte(`
 
 ## New ` + strings.Title(role) + `
 
 Welcome to our new ` + role + `!
 
-`)
+`))
 
 		keys := []string{}
 		for k := range newUsers {
@@ -486,7 +486,7 @@ Welcome to our new ` + role + `!
 		for _, k := range keys {
 			user := newUsers[k]
 			if user != nil {
-				out.WriteString("* " + o.formatUser(user) + "\n")
+				out.Write([]byte("* " + o.formatUser(user) + "\n"))
 			}
 		}
 	}
@@ -627,14 +627,14 @@ func (o *StepBlogOptions) CreateChatProvider(chatConfig *config.ChatConfig) (cha
 	if u == "" {
 		return nil, nil
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService("")
 	if err != nil {
 		return nil, err
 	}
 	config := authConfigSvc.Config()
 
 	server := config.GetOrCreateServer(u)
-	userAuth, err := config.PickServerUserAuth(server, "user to access the chat service at "+u, o.BatchMode, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "user to access the chat service at "+u, o.BatchMode, "", o.GetIOFileHandles())
 	if err != nil {
 		return nil, err
 	}

@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 
@@ -38,14 +37,17 @@ import (
 // PullRequestOperation provides a way to execute a PullRequest operation using Git
 type PullRequestOperation struct {
 	*opts.CommonOptions
-	GitURLs    []string
-	SrcGitURL  string
-	Base       string
-	Component  string
-	BranchName string
-	Version    string
-	DryRun     bool
-	SkipCommit bool
+	GitURLs       []string
+	SrcGitURL     string
+	Base          string
+	Component     string
+	BranchName    string
+	Version       string
+	DryRun        bool
+	SkipCommit    bool
+	AuthorName    string
+	AuthorEmail   string
+	SkipAutoMerge bool
 }
 
 // ChangeFilesFn is the function called to create the pull request
@@ -79,11 +81,16 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update ChangeFiles
 			return nil, errors.WithStack(err)
 		}
 
-		labels := []string{"updatebot"}
+		labels := []string{}
+		if !o.SkipAutoMerge {
+			labels = append(labels, "updatebot")
+		}
 		filter := &gits.PullRequestFilter{
 			Labels: labels,
 		}
-		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, !o.SkipCommit, commitMessage, true, o.DryRun, o.Git(), provider, labels)
+
+		details.Labels = labels
+		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, !o.SkipCommit, commitMessage, true, o.DryRun, o.Git(), provider)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
 		}
@@ -376,6 +383,9 @@ func (o PullRequestOperation) CreateDependencyUpdatePRDetails(kind string, srcRe
 	}
 	message.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
 	commitMessage.WriteString(fmt.Sprintf("\n\nCommand run was `%s`", strings.Join(os.Args, " ")))
+	if o.AuthorEmail != "" && o.AuthorName != "" {
+		commitMessage.WriteString(fmt.Sprintf("\n\nSigned-off-by: %s <%s>", o.AuthorName, o.AuthorEmail))
+	}
 	return commitMessage.String(), &gits.PullRequestDetails{
 		BranchName: fmt.Sprintf("bump-%s-version-%s", kind, string(uuid.NewUUID())),
 		Title:      title.String(),
@@ -498,7 +508,7 @@ func (o *PullRequestOperation) CreatePullRequestGitReleasesFn(name string) Chang
 		log.Logger().Infof("found latest version %s for git repo %s", util.ColorInfo(version), util.ColorInfo(u))
 		o.Version = version
 		if o.SrcGitURL == "" {
-			sv, err := versionstream.LoadStableVersion(dir, versionstream.VersionKind(versionstream.KindGit), name)
+			sv, err := versionstream.LoadStableVersion(dir, versionstream.KindGit, name)
 			if err != nil {
 				return nil, errors.Wrapf(err, "loading stable version")
 			}
@@ -520,7 +530,7 @@ func (o *PullRequestOperation) CreatePullRequestGitReleasesFn(name string) Chang
 // empty it will fetch the latest version using helmer, using the vaultClient to get the repo creds or prompting using
 // in, out and outErr
 func CreateChartChangeFilesFn(name string, version string, kind string, pro *PullRequestOperation, helmer helm.Helmer,
-	vaultClient vault.Client, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ChangeFilesFn {
+	vaultClient secreturl.Client, handles util.IOFileHandles) ChangeFilesFn {
 	return func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
 		if version == "" && kind == string(versionstream.KindChart) {
 			parts := strings.Split(name, "/")
@@ -538,7 +548,7 @@ func CreateChartChangeFilesFn(name string, version string, kind string, pro *Pul
 					} else if len(urls) == 0 {
 						log.Logger().Warnf("helm repo %s has more than no urls, not adding", prefix)
 					}
-					prefix, err = helm.AddHelmRepoIfMissing(urls[0], prefix, "", "", helmer, vaultClient, in, out, outErr)
+					prefix, err = helm.AddHelmRepoIfMissing(urls[0], prefix, "", "", helmer, vaultClient, handles)
 					if err != nil {
 						return nil, errors.Wrapf(err, "adding repository %s with url %s", prefix, urls[0])
 					}

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
@@ -22,7 +24,7 @@ type CreateGkeServiceAccountFlags struct {
 }
 
 type CreateGkeServiceAccountOptions struct {
-	CreateOptions
+	options.CreateOptions
 	Flags CreateGkeServiceAccountFlags
 }
 
@@ -39,7 +41,7 @@ var (
 // NewCmdCreateGkeServiceAccount creates a command object for the "create" command
 func NewCmdCreateGkeServiceAccount(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateGkeServiceAccountOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

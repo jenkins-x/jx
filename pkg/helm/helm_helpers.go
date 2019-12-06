@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -18,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pborman/uuid"
 
@@ -52,9 +50,6 @@ const (
 	// ParametersYAMLFile contains logical parameters (values or secrets) which can be fetched from a Secret URL or
 	// inlined if not a secret which can be referenced from a 'values.yaml` file via a `{{ .Parameters.foo.bar }}` expression
 	ParametersYAMLFile = "parameters.yaml"
-
-	// InClusterHelmRepositoryURL is the default cluster local helm repo
-	InClusterHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
 
 	// FakeChartmusuem is the url for the fake chart museum used in tests
 	FakeChartmusuem = "http://fake.chartmuseum"
@@ -681,8 +676,7 @@ func LoadParameters(dir string, secretURLClient secreturl.Client) (chartutil.Val
 // The repo name may have a suffix added in order to prevent name collisions, and is returned for this reason.
 // The username and password will be stored in vault for the URL (if vault is enabled).
 func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer Helmer,
-	secretURLClient secreturl.Client, in terminal.FileReader,
-	out terminal.FileWriter, outErr io.Writer) (string, error) {
+	secretURLClient secreturl.Client, handles util.IOFileHandles) (string, error) {
 	missing, existingName, err := helmer.IsRepoMissing(helmURL)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmURL)
@@ -712,7 +706,7 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 			}
 		}
 		log.Logger().Infof("Adding missing Helm repo: %s %s", util.ColorInfo(repoName), util.ColorInfo(helmURL))
-		username, password, err = DecorateWithCredentials(helmURL, username, password, secretURLClient, in, out, outErr)
+		username, password, err = DecorateWithCredentials(helmURL, username, password, secretURLClient, handles)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
@@ -728,13 +722,12 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 }
 
 // DecorateWithCredentials will, if vault is installed, store or replace the username or password
-func DecorateWithCredentials(repo string, username string, password string, secretURLClient secreturl.Client, in terminal.FileReader,
-	out terminal.FileWriter, outErr io.Writer) (string,
+func DecorateWithCredentials(repo string, username string, password string, secretURLClient secreturl.Client, handles util.IOFileHandles) (string,
 	string, error) {
 	if repo != "" && secretURLClient != nil {
 		creds := HelmRepoCredentials{}
 		if err := secretURLClient.ReadObject(RepoVaultPath, &creds); err != nil {
-			return "", "", errors.Wrapf(err, "reading repo credentials from vault %s", RepoVaultPath)
+			log.Logger().Warnf("No secrets found on %q due: %s", RepoVaultPath, err)
 		}
 		var existingCred, cred HelmRepoCredential
 		if c, ok := creds[repo]; ok {
@@ -749,7 +742,7 @@ func DecorateWithCredentials(repo string, username string, password string, secr
 			cred = existingCred
 		}
 
-		err := PromptForRepoCredsIfNeeded(repo, &cred, in, out, outErr)
+		err := PromptForRepoCredsIfNeeded(repo, &cred, handles)
 		if err != nil {
 			return "", "", errors.Wrapf(err, "prompting for creds for %s", repo)
 		}
@@ -770,7 +763,7 @@ func DecorateWithCredentials(repo string, username string, password string, secr
 		Username: username,
 		Password: password,
 	}
-	err := PromptForRepoCredsIfNeeded(repo, &cred, in, out, outErr)
+	err := PromptForRepoCredsIfNeeded(repo, &cred, handles)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "prompting for creds for %s", repo)
 	}
@@ -837,16 +830,15 @@ func SetValuesToMap(setValues []string) map[string]interface{} {
 
 // PromptForRepoCredsIfNeeded will prompt for repo credentials if required. It first checks the existing cred (
 // if any) and then prompts for new credentials up to 3 times, trying each set.
-func PromptForRepoCredsIfNeeded(repo string, cred *HelmRepoCredential, in terminal.FileReader,
-	out terminal.FileWriter, outErr io.Writer) error {
-	if repo == FakeChartmusuem || in == nil || out == nil || outErr == nil {
+func PromptForRepoCredsIfNeeded(repo string, cred *HelmRepoCredential, handles util.IOFileHandles) error {
+	if repo == FakeChartmusuem || handles.In == nil || handles.Out == nil || handles.Err == nil {
 		// Avoid doing this in tests!
 		return nil
 	}
 	u := fmt.Sprintf("%s/index.yaml", strings.TrimSuffix(repo, "/"))
 
 	httpClient := &http.Client{}
-	surveyOpts := survey.WithStdio(in, out, outErr)
+	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
 	if cred.Username == "" && cred.Password == "" {
 		// Try without any auth
 		req, err := http.NewRequest("GET", u, nil)

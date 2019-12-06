@@ -3,11 +3,12 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -72,7 +73,7 @@ func TestPatchUpdateBuildPackWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := buildPacks.PatchUpdate(testBuildPack)
+	updated, err := buildPacks.PatchUpdate(clonedBuildPack)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testBuildPack, updated)
 	assert.Equal(t, url, updated.Spec.GitURL)
@@ -117,8 +118,10 @@ func TestPatchUpdateBuildPackWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := buildPacks.PatchUpdate(testBuildPack)
+	url := "git@github.com:jenkins-x/jx.git"
+	clonedBuildPack := testBuildPack.DeepCopy()
+	clonedBuildPack.Spec.GitURL = url
+	updated, err := buildPacks.PatchUpdate(clonedBuildPack)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

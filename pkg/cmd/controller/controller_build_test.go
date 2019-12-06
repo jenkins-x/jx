@@ -212,6 +212,12 @@ func TestOnPipelinePod(t *testing.T) {
 	}, {
 		name:    "completed_generated",
 		podName: "cb-kubecd-bdd-spring-1568135191-1-from-build-pack-mrz2r-pod-8d000a",
+	}, {
+		name:    "running_generated",
+		podName: "cb-kubecd-bdd-spring-1568135191-1-from-build-pack-mrz2r-pod-8d000a",
+	}, {
+		name:    "failed_multistage_generated",
+		podName: "cb-kubecd-bdd-spring-1568135191-1-from-build-pack-mrz2r-pod-8d000a",
 	}}
 
 	for _, tt := range testCases {

@@ -19,6 +19,7 @@ package templates
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/russross/blackfriday"
@@ -138,7 +139,7 @@ func (r *ASCIIRenderer) Image(out *bytes.Buffer, link []byte, title []byte, alt 
 	r.fw(out, link)
 }
 
-func (r *ASCIIRenderer) fw(out *bytes.Buffer, text ...[]byte) {
+func (r *ASCIIRenderer) fw(out io.Writer, text ...[]byte) {
 	for _, t := range text {
 		out.Write(t)
 	}

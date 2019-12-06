@@ -3,14 +3,16 @@ package upgrade
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -25,7 +27,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	strcase "github.com/stoewer/go-strcase"
+	"github.com/stoewer/go-strcase"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -76,7 +78,7 @@ var (
 func NewCmdUpgradeExtensionsRepository(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsRepositoryOptions{
 		UpgradeExtensionsOptions: UpgradeExtensionsOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: commonOpts,
 			},
 		},

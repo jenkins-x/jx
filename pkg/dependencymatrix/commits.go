@@ -9,8 +9,6 @@ import (
 var (
 	dependencyUpdateRegex = regexp.MustCompile(`^(?m:chore\((?:deps|dependencies)\): (?:bump|update) (.*) from ([\w\.]*) to ([\w\.]*)$)`)
 	slugLinkRegex         = regexp.MustCompile(`^(?:([\w-]*?)?\/?([\w-]+)|(https?):\/\/([\w\.]*)\/([\w-]*)\/([\w-]*)(?:\.git)?)(?::([\w-]*))?$`)
-	//slugLinkRegex = regexp.MustCompile(``)
-	slugRegex = regexp.MustCompile(`^(\w*)?\/(\w*)$`)
 )
 
 // DependencyMessage is the parsed representation of a dependency update message on a commit

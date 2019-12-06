@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var fakeURIRegex = regexp.MustCompile(`vault:[-_\w\/:]*`)
+var fakeURIRegex = regexp.MustCompile(`:[\s"]*vault:[-_\w\/:]*`)
 
 // FakeClient a local file system based client loading/saving content from the given URL
 type FakeClient struct {
@@ -57,5 +57,5 @@ func (c *FakeClient) WriteObject(secretName string, secret interface{}) (map[str
 
 // ReplaceURIs will replace any local: URIs in a string
 func (c *FakeClient) ReplaceURIs(s string) (string, error) {
-	return secreturl.ReplaceURIs(s, c, fakeURIRegex, "local:")
+	return secreturl.ReplaceURIs(s, c, fakeURIRegex, "vault:")
 }

@@ -3,14 +3,14 @@ package create
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -34,7 +34,7 @@ var (
 
 // CreateTokenAddonOptions the command line options for the command
 type CreateTokenAddonOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Username    string
@@ -47,7 +47,7 @@ type CreateTokenAddonOptions struct {
 // NewCmdCreateTokenAddon creates a command
 func NewCmdCreateTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTokenAddonOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -83,11 +83,6 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
 	kind := o.Kind
 	if kind == "" {
 		kind = o.ServerFlags.ServerName
@@ -95,7 +90,11 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if kind == "" {
 		kind = "addon"
 	}
-
+	authConfigSvc, err := o.AddonAuthConfigService(kind)
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
 	var server *auth.AuthServer
 	server, err = o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
@@ -123,7 +122,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 				return nil
 			}
 
-			err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
+			err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}

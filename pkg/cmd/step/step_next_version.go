@@ -41,6 +41,7 @@ const (
 type StepNextVersionOptions struct {
 	Filename        string
 	Dir             string
+	ChartsDir       string
 	Tag             bool
 	UseGitTagOnly   bool
 	NewVersion      string
@@ -94,6 +95,7 @@ func NewCmdStepNextVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Filename, "filename", "f", "", "Filename that contains version property to update, e.g. package.json")
 	cmd.Flags().StringVarP(&options.NewVersion, "version", "", "", "optional version to use rather than generating a new one")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for files that contain a pom.xml or Makefile with the project version to bump")
+	cmd.Flags().StringVarP(&options.ChartsDir, "charts-dir", "", "", "the directory of the chart to update the version (in conjunction with --tag)")
 	cmd.Flags().BoolVarP(&options.Tag, "tag", "t", false, "tag and push new version")
 	cmd.Flags().BoolVarP(&options.UseGitTagOnly, "use-git-tag-only", "", false, "only use a git tag so work out new semantic version, else specify filename [pom.xml,package.json,Makefile,Chart.yaml]")
 	cmd.Flags().BoolVarP(&options.SemanticRelease, "semantic-release", "", false, "use conventional commits to determine next version. Ignores the --use-git-tag-only and --version options See https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines")
@@ -148,7 +150,8 @@ func (o *StepNextVersionOptions) Run() error {
 	if o.Tag {
 		tagOptions := StepTagOptions{
 			Flags: StepTagFlags{
-				Version: o.NewVersion,
+				Version:   o.NewVersion,
+				ChartsDir: o.ChartsDir,
 			},
 			StepOptions: o.StepOptions,
 		}

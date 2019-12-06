@@ -1,11 +1,12 @@
 package e2e_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestGetBuildNumberCluster(t *testing.T) {

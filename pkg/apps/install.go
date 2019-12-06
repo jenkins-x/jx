@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,8 +20,6 @@ import (
 	"github.com/pborman/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -50,9 +47,7 @@ type InstallOptions struct {
 	Verbose         bool
 	DevEnv          *jenkinsv1.Environment
 	BatchMode       bool
-	In              terminal.FileReader
-	Out             terminal.FileWriter
-	Err             io.Writer
+	IOFileHandles   util.IOFileHandles
 	GitOps          bool
 	TeamName        string
 	BasePath        string
@@ -74,13 +69,12 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 		Items: valuesFiles,
 	}
 
-	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient, o.In,
-		o.Out, o.Err)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient, o.IOFileHandles)
 	if err != nil {
 		return errors.Wrapf(err, "locating credentials for %s", repository)
 	}
 
-	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient, o.In, o.Out, o.Err)
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient, o.IOFileHandles)
 	if err != nil {
 		return errors.Wrapf(err, "adding helm repo")
 	}
@@ -223,12 +217,11 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		releaseName = fmt.Sprintf("%s-%s", o.Namespace, app)
 	}
 
-	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient, o.In,
-		o.Out, o.Err)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient, o.IOFileHandles)
 	if err != nil {
 		return errors.Wrapf(err, "locating credentials for %s", repository)
 	}
-	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient, o.In, o.Out, o.Err)
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient, o.IOFileHandles)
 
 	if err != nil {
 		return errors.Wrapf(err, "adding helm repo")
@@ -348,8 +341,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 		for _, requirement := range requirements.Dependencies {
 			// repositories that start with an @ are aliases to helm repo names
 			if !strings.HasPrefix(requirement.Repository, "@") {
-				_, err := helm.AddHelmRepoIfMissing(requirement.Repository, "", "", "", o.Helmer, o.VaultClient, o.In,
-					o.Out, o.Err)
+				_, err := helm.AddHelmRepoIfMissing(requirement.Repository, "", "", "", o.Helmer, o.VaultClient, o.IOFileHandles)
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "")
 				}
@@ -511,7 +503,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						RestartPolicy:      corev1.RestartPolicyNever,
 					},
 				}
-				log.Logger().Infof("Preparing questions to configure %s."+
+				log.Logger().Infof("Preparing questions to configure %s. "+
 					"If this is the first time you have installed the app, this may take a couple of minutes.",
 					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
@@ -544,7 +536,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				if kube.PodStatus(completePod) == string(corev1.PodFailed) {
 					log.Logger().Errorf("Pod Log")
 					log.Logger().Errorf("-----------")
-					err := kube.TailLogs(o.Namespace, pod.Name, appResource.Spec.SchemaPreprocessor.Name, o.Err, o.Out)
+					err := kube.TailLogs(o.Namespace, pod.Name, appResource.Spec.SchemaPreprocessor.Name, o.IOFileHandles.Err, o.IOFileHandles.Out)
 					log.Logger().Errorf("-----------")
 					if err != nil {
 						return &chartDetails, errors.Wrapf(err, "getting pod logs for %s container %s", pod.Name,
@@ -566,15 +558,12 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				}
 			}
 
-			if err != nil {
-				return &chartDetails, errors.Wrapf(err, "locating app resource for %s", chartName)
-			}
 			gitOpsURL := ""
 			if o.GitOps {
 				gitOpsURL = o.DevEnv.Spec.Source.URL
 			}
 			if schema != nil {
-				valuesFileName, cleanup, err := ProcessValues(schema, chartName, gitOpsURL, o.TeamName, o.BasePath, o.BatchMode, askExisting, o.VaultClient, existing, o.SecretsScheme, o.In, o.Out, o.Err, o.Verbose)
+				valuesFileName, cleanup, err := ProcessValues(schema, chartName, gitOpsURL, o.TeamName, o.BasePath, o.BatchMode, askExisting, o.VaultClient, existing, o.SecretsScheme, o.IOFileHandles, o.Verbose)
 				chartDetails.Cleanup = cleanup
 				if err != nil {
 					return &chartDetails, errors.WithStack(err)

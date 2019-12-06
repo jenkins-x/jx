@@ -8,11 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/vault/fake"
-
-	"github.com/jenkins-x/jx/pkg/vault"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
@@ -482,6 +481,24 @@ func TestIfElse(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
 		values, _, err := GenerateValuesAsYaml(r, "ifThenElse.test.schema.json", make(map[string]interface{}), false, false, false, false, func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("N")
+			console.ExpectString("Enter a value for enableInMemoryDB")
+			console.SendLine("N")
+			console.ExpectEOF()
+		}, nil)
+		assert.NoError(r, err)
+		assert.Equal(r, `enableInMemoryDB: false
+enablePersistentStorage: false
+`, values)
+	})
+}
+
+func TestIfElseTrueBoolean(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	tests.Retry(t, 5, time.Second*10, func(r *tests.R) {
+		values, _, err := GenerateValuesAsYaml(r, "ifThenElseTrueBoolean.test.schema.json", make(map[string]interface{}), false, false, false, false, func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			console.ExpectString("Enter a value for enablePersistentStorage")
 			console.SendLine("N")
@@ -986,7 +1003,7 @@ func TestJSONPointer(t *testing.T) {
 }
 
 func GenerateValuesAsYaml(r *tests.R, schemaName string, existingValues map[string]interface{}, askExisting bool, noAsk bool, autoAcceptDefaults bool, ignoreMissingValues bool, answerQuestions func(
-	console *tests.ConsoleWrapper, donec chan struct{}), vaultClient vault.Client) (string, vault.Client, error) {
+	console *tests.ConsoleWrapper, donec chan struct{}), vaultClient secreturl.Client) (string, secreturl.Client, error) {
 
 	//t.Parallel()
 	console := tests.NewTerminal(r, &timeout)

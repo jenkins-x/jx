@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/i18n"
 
+	"github.com/jenkins-x/jx/pkg/cmd/deprecation"
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
+	"github.com/jenkins-x/jx/pkg/cmd/ui"
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/boot"
-	"github.com/jenkins-x/jx/pkg/cmd/cloudbees"
 	"github.com/jenkins-x/jx/pkg/cmd/compliance"
 	"github.com/jenkins-x/jx/pkg/cmd/controller"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
@@ -174,13 +175,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 			},
 		},
 		{
-			Message: "Working with CloudBees application:",
-			Commands: []*cobra.Command{
-				cloudbees.NewCmdCloudBees(commonOpts),
-				NewCmdLogin(commonOpts),
-			},
-		},
-		{
 			Message:  "Working with Environments:",
 			Commands: environmentsCommands,
 		},
@@ -210,6 +204,12 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 				gc.NewCmdGC(commonOpts),
 			},
 		},
+		{
+			Message: "Working with Jenkins X UI:",
+			Commands: []*cobra.Command{
+				ui.NewCmdUI(commonOpts),
+			},
+		},
 	}
 
 	groups.Add(rootCommand)
@@ -234,6 +234,9 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	rootCommand.SetVersionTemplate("{{printf .Version}}\n")
 	rootCommand.AddCommand(NewCmdOptions(out))
 	rootCommand.AddCommand(NewCmdDiagnose(commonOpts))
+
+	// Mark the deprecated commands
+	deprecation.DeprecateCommands(rootCommand)
 
 	managedPlugins := &managedPluginHandler{
 		CommonOptions: commonOpts,
@@ -305,18 +308,30 @@ func fullPath(command *cobra.Command) string {
 func setLoggingLevel(cmd *cobra.Command, args []string) {
 	verbose, err := strconv.ParseBool(cmd.Flag(opts.OptionVerbose).Value.String())
 	if err != nil {
-		log.Logger().Errorf("Unable to determine log level")
+		log.Logger().Errorf("Unable to check if the verbose flag is set")
 	}
 
-	if verbose {
-		err := log.SetLevel("debug")
+	level := os.Getenv("JX_LOG_LEVEL")
+	if level != "" {
+		if verbose {
+			log.Logger().Trace("The JX_LOG_LEVEL environment variable took precedence over the verbose flag")
+		}
+
+		err := log.SetLevel(level)
 		if err != nil {
-			log.Logger().Errorf("Unable to set log level to debug")
+			log.Logger().Errorf("Unable to set log level to %s", level)
 		}
 	} else {
-		err := log.SetLevel("info")
-		if err != nil {
-			log.Logger().Errorf("Unable to set log level to info")
+		if verbose {
+			err := log.SetLevel("debug")
+			if err != nil {
+				log.Logger().Errorf("Unable to set log level to debug")
+			}
+		} else {
+			err := log.SetLevel("info")
+			if err != nil {
+				log.Logger().Errorf("Unable to set log level to info")
+			}
 		}
 	}
 }

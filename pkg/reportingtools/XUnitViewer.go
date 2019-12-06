@@ -2,12 +2,13 @@ package reportingtools
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"time"
 )
 
 // XUnitViewer is an implementation of the XUnitClient interface

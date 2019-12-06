@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/brew"
-
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/brew"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/version"
@@ -125,7 +124,7 @@ func TestVersionCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T)
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	version.Map["version"] = "1.4.0"
 	opts := &UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}
@@ -138,7 +137,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	version.Map["version"] = "1.2.3"
 	opts := &UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}
@@ -151,7 +150,7 @@ func TestVersionCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	version.Map["version"] = "1.0.0"
 	opts := &UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}
@@ -166,7 +165,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testi
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3, Pre: prVersions, Build: []string(nil)}
 	version.Map["version"] = "1.2.3"
 	opts := &UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}
@@ -179,7 +178,7 @@ func TestVersionCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *testi
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	version.Map["version"] = "1.2.3-dev+6a8285f4"
 	opts := &UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}
@@ -192,7 +191,7 @@ func TestVersionCheckWhenCurrentVersionWithPatchIsLessThanReleaseVersion(t *test
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	version.Map["version"] = "1.2.2-dev+6a8285f4"
 	opts := &UpgradeCLIOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}

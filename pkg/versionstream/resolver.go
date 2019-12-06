@@ -36,8 +36,8 @@ func (v *VersionResolver) ResolveGitVersion(gitURL string) (string, error) {
 	if answer == "" {
 		path := GitURLToName(gitURL)
 		log.Logger().Warnf("could not find a stable version for git repository: %s in %s", gitURL, v.VersionsDir)
-		log.Logger().Warn("for background see: https://jenkins-x.io/architecture/version-stream/")
-		log.Logger().Infof("please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create version pr -k git -n %s -v 1.2.3", path)))
+		log.Logger().Warn("for background see: https://jenkins-x.io/docs/concepts/version-stream/")
+		log.Logger().Infof("please lock this version down via the command: %s", util.ColorInfo(fmt.Sprintf("jx step create pr versions -k git -n %s -v 1.2.3", path)))
 	}
 	return answer, nil
 }

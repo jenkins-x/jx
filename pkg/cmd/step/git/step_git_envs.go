@@ -2,17 +2,14 @@ package git
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // StepGitEnvsOptions contains the command line flags
@@ -64,43 +61,21 @@ func NewCmdStepGitEnvs(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *StepGitEnvsOptions) Run() error {
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
+	gitAuthSvc, err := o.GitAuthConfigService()
 	if err != nil {
-		return errors.Wrap(err, "loading the pipeline secrets")
+		return errors.Wrap(err, "creating the git auth config service")
 	}
 
-	username, token, err := o.getGitCredentials(secrets, o.ServiceKind)
-	if err != nil {
-		return errors.Wrap(err, "retrieving the environment variables values")
+	cfg := gitAuthSvc.Config()
+	server := cfg.GetServerByKind(o.ServiceKind)
+	if server == nil {
+		return fmt.Errorf("no server found of kind %q", o.ServiceKind)
 	}
-
-	_, _ = fmt.Fprintf(o.Out, "export GIT_USERNAME=%s\nexport GIT_API_TOKEN=%s\n", username, token)
+	auth := server.CurrentAuth()
+	if auth == nil {
+		return fmt.Errorf("server %q has no user auth configured", server.URL)
+	}
+	_, _ = fmt.Fprintf(o.Out, "export GIT_USERNAME=%s\nexport GIT_API_TOKEN=%s\n", auth.Username, auth.ApiToken)
 
 	return nil
-}
-
-func (o *StepGitEnvsOptions) getGitCredentials(secrets *corev1.SecretList, serviceKind string) (string, string, error) {
-	if secrets == nil {
-		return "", "", errors.New("no git credentials found")
-	}
-	for _, secret := range secrets.Items {
-		labels := secret.Labels
-		data := secret.Data
-		if data == nil {
-			continue
-		}
-		if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit {
-			foundServiceKind, ok := labels[kube.LabelServiceKind]
-			if !ok {
-				continue
-			}
-			if strings.EqualFold(serviceKind, foundServiceKind) {
-				username := string(data[kube.SecretDataUsername])
-				pwd := string(data[kube.SecretDataPassword])
-				return username, pwd, nil
-			}
-		}
-	}
-
-	return "", "", errors.New("no git credentials found")
 }

@@ -1378,3 +1378,87 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 `, string(data))
 	})
 }
+
+func TestAddAppForGitOpsWithSNAPSHOTVersion(t *testing.T) {
+	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
+		testOptions := testhelpers.CreateAppTestOptions(true, "", r)
+		defer func() {
+			err := testOptions.Cleanup()
+			assert.NoError(r, err)
+		}()
+
+		nameUUID, err := uuid.NewV4()
+		assert.NoError(r, err)
+		shortName := nameUUID.String()
+		name := fmt.Sprintf("jx-app-%s", shortName)
+		version := "0.0.1-SNAPSHOT"
+		alias := fmt.Sprintf("%s-alias", name)
+		repo := kube.DefaultChartMuseumURL
+		description := "My test chart description"
+		commonOpts := *testOptions.CommonOptions
+		o := &add.AddAppOptions{
+			AddOptions: add.AddOptions{
+				CommonOptions: &commonOpts,
+			},
+			Version:    version,
+			Alias:      alias,
+			Repo:       repo,
+			GitOps:     true,
+			DevEnv:     testOptions.DevEnv,
+			HelmUpdate: true, // Flag default when run on CLI
+		}
+		pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
+			map[string]string{
+				"repo1": kube.DefaultChartMuseumURL,
+			}, nil)
+		pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString(), pegomock.EqBool(false))).ThenReturn(
+			[]helm.ChartSummary{
+				{
+					Name:         fmt.Sprintf("repo1/%s", name),
+					ChartVersion: version,
+					AppVersion:   version,
+				},
+			}, nil)
+		helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:        name,
+				Version:     version,
+				Description: description,
+			},
+		}, testOptions.MockHelmer)
+		o.Args = []string{shortName}
+		err = o.Run()
+		assert.NoError(r, err)
+		pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+		assert.NoError(r, err)
+		// Validate the PR has the right title, message
+		assert.Equal(r, fmt.Sprintf("Add %s %s", name, version), pr.Title)
+		assert.Equal(r, fmt.Sprintf("Add app %s %s", name, version), pr.Body)
+		// Validate the branch name
+		envDir, err := o.CommonOptions.EnvironmentsDir()
+		assert.NoError(r, err)
+		devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+		branchName, err := o.Git().Branch(devEnvDir)
+		assert.NoError(r, err)
+		assert.Equal(r, fmt.Sprintf("add-app-%s-%s", name, version), branchName)
+		// Validate the updated Requirements.yaml
+		requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
+		assert.NoError(r, err)
+		found := make([]*helm.Dependency, 0)
+		for _, d := range requirements.Dependencies {
+			if d.Name == name && d.Alias == alias {
+				found = append(found, d)
+			}
+		}
+		assert.Len(r, found, 1)
+		assert.Equal(r, version, found[0].Version)
+		app := &jenkinsv1.App{}
+		appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
+		_ = yaml.Unmarshal(appBytes, app)
+		assert.Equal(r, name, app.Labels[helm.LabelAppName])
+		assert.Equal(r, version, app.Labels[helm.LabelAppVersion])
+		assert.Equal(r, repo, app.Annotations[helm.AnnotationAppRepository])
+		assert.Equal(r, description, app.Annotations[helm.AnnotationAppDescription])
+		assert.Equal(r, description, app.Annotations[helm.AnnotationAppDescription])
+	})
+}

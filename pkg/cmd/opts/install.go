@@ -297,11 +297,11 @@ func (o *CommonOptions) Installhyperv() error {
 	}
 	if strings.Contains(info, "Disabled") {
 
-		log.Logger().Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
+		log.Logger().Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted command.")
 
 		message := fmt.Sprintf("Would you like to restart your computer?")
 
-		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.In, o.Out, o.Err) {
+		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.GetIOFileHandles()) {
 
 			err = o.RunCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
 			if err != nil {
@@ -536,6 +536,19 @@ func (o *CommonOptions) InstallTerraform() error {
 
 // GetLatestJXVersion returns latest jx version
 func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolver) (semver.Version, error) {
+	if config.LatestVersionStringsBucket != "" {
+		err := o.InstallRequirements(cloud.GKE)
+		if err != nil {
+			return semver.Version{}, err
+		}
+		gcloudOpts := &gke.GCloud{}
+		latestVersionStrings, err := gcloudOpts.ListObjects(config.LatestVersionStringsBucket, "binaries/jx")
+		if err != nil {
+			return semver.Version{}, nil
+		}
+		return util.GetLatestVersionStringFromBucketURLs(latestVersionStrings)
+	}
+
 	dir := resolver.VersionsDir
 	matrix, err := dependencymatrix.LoadDependencyMatrix(dir)
 	if err != nil {
@@ -553,18 +566,6 @@ func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolv
 	}
 	log.Logger().Warnf("could not find the version of jx in the dependency matrix of the version stream at %s", dir)
 
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
-		err := o.InstallRequirements(cloud.GKE)
-		if err != nil {
-			return semver.Version{}, err
-		}
-		gcloudOpts := &gke.GCloud{}
-		latestVersionStrings, err := gcloudOpts.ListObjects("artifacts.jenkinsxio.appspot.com", "binaries/jx")
-		if err != nil {
-			return semver.Version{}, nil
-		}
-		return util.GetLatestVersionStringCloudBeesBucketURLs(latestVersionStrings)
-	}
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		log.Logger().Debugf("Locating latest JX version from HomeBrew")
 		// incase auto-update is not enabled, lets perform an explicit brew update first
@@ -633,13 +634,7 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 	if runtime.GOOS == "windows" {
 		extension = "zip"
 	}
-	clientURL := ""
-	if config.LoadActiveInstallProfile() == config.CloudBeesProfile {
-		clientURL = fmt.Sprintf("https://storage.googleapis.com/artifacts.jenkinsxio.appspot.com/binaries/jx/%s/"+binary+"-%s-%s.%s", version, runtime.GOOS, runtime.GOARCH, extension)
-
-	} else {
-		clientURL = fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.%s", version, runtime.GOOS, runtime.GOARCH, extension)
-	}
+	clientURL := fmt.Sprintf("%s%s/"+binary+"-%s-%s.%s", config.BinaryDownloadBaseURL, version, runtime.GOOS, runtime.GOARCH, extension)
 	fullPath := filepath.Join(binDir, fileName)
 	if runtime.GOOS == "windows" {
 		fullPath += ".exe"
@@ -776,11 +771,6 @@ func (o *CommonOptions) InstallGcloud() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
 		return errors.New("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
 	}
-	err := o.RunCommand("brew", "tap", "caskroom/cask")
-	if err != nil {
-		return err
-	}
-
 	return o.RunCommand("brew", "cask", "install", "google-cloud-sdk")
 }
 
@@ -1027,7 +1017,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	}
 
 	if o.OAUTHToken == "" {
-		authConfigSvc, err := o.CreateGitAuthConfigService()
+		authConfigSvc, err := o.GitAuthConfigService()
 		if err != nil {
 			return errors.Wrap(err, "creating git auth config svc")
 		}
@@ -1036,7 +1026,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		// lets assume github.com for now so ignore config.CurrentServer
 		server := config.GetOrCreateServer("https://github.com")
 		message := fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
-		userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode, "", o.In, o.Out, o.Err)
+		userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode, "", o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrap(err, "picking bot user auth")
 		}
@@ -1195,11 +1185,16 @@ func (o *CommonOptions) CreateWebhookProw(gitURL string, gitProvider gits.GitPro
 	if err != nil {
 		return err
 	}
+	isInsecureSSL, err := o.IsInsecureSSLWebhooks()
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if we need to setup insecure SSL webhook")
+	}
 	webhook := &gits.GitWebHookArguments{
-		Owner:  gitInfo.Organisation,
-		Repo:   gitInfo,
-		URL:    webhookUrl,
-		Secret: string(hmacToken.Data["hmac"]),
+		Owner:       gitInfo.Organisation,
+		Repo:        gitInfo,
+		URL:         webhookUrl,
+		Secret:      string(hmacToken.Data["hmac"]),
+		InsecureSSL: isInsecureSSL,
 	}
 	return gitProvider.CreateWebHook(webhook)
 }

@@ -1,10 +1,11 @@
 package step_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/step"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/step"
 
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"

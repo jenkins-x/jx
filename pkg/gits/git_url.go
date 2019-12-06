@@ -3,6 +3,7 @@ package gits
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -148,7 +149,7 @@ func ParseGitURL(text string) (*GitRepository, error) {
 			answer.Scheme = "git"
 			answer.Host = arr[0]
 			answer.Organisation = arr[1]
-			answer.Name = arr[2]
+			answer.Name = arr[len(arr)-1]
 			return &answer, nil
 		}
 	}
@@ -200,8 +201,10 @@ func parsePath(path string, info *GitRepository, requireRepo bool) (*GitReposito
 	trimPath := strings.TrimPrefix(path, "/scm")
 
 	// This is necessary for Bitbucket Server in other cases
-	trimPath = strings.Replace(trimPath, "/projects", "", 1)
-	trimPath = strings.Replace(trimPath, "/repos", "", 1)
+	trimPath = strings.Replace(trimPath, "/projects/", "/", 1)
+	trimPath = strings.Replace(trimPath, "/repos/", "/", 1)
+	re := regexp.MustCompile("/pull.*/[0-9]+$")
+	trimPath = re.ReplaceAllString(trimPath, "")
 
 	// Remove leading and trailing slashes so that splitting on "/" won't result
 	// in empty strings at the beginning & end of the array.
@@ -212,10 +215,10 @@ func parsePath(path string, info *GitRepository, requireRepo bool) (*GitReposito
 
 	arr := strings.Split(trimPath, "/")
 	if len(arr) >= 2 {
-		// We're assuming the beginning of the path is of the form /<org>/<repo>
+		// We're assuming the beginning of the path is of the form /<org>/<repo> or /<org>/<subgroup>/.../<repo>
 		info.Organisation = arr[0]
 		info.Project = arr[0]
-		info.Name = arr[1]
+		info.Name = arr[len(arr)-1]
 
 		return info, nil
 	} else if len(arr) == 1 && !requireRepo {

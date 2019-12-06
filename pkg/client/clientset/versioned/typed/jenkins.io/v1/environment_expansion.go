@@ -1,7 +1,9 @@
 package v1
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"bytes"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	util "github.com/jenkins-x/jx/pkg/util/json"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,6 +29,9 @@ func (c *environments) PatchUpdate(environment *v1.Environment) (*v1.Environment
 	patch, err := util.CreatePatch(orig, environment)
 	if err != nil {
 		return nil, err
+	}
+	if bytes.Equal(patch, []byte("[]")) {
+		return orig, nil
 	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
 	if err != nil {

@@ -4,10 +4,11 @@
 package buildnum_test
 
 import (
-	kube "github.com/jenkins-x/jx/pkg/kube"
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	kube "github.com/jenkins-x/jx/pkg/kube"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockBuildNumberIssuer struct {
@@ -115,7 +116,7 @@ func (c *MockBuildNumberIssuer_NextBuildNumber_OngoingVerification) GetCapturedA
 func (c *MockBuildNumberIssuer_NextBuildNumber_OngoingVerification) GetAllCapturedArguments() (_param0 []kube.PipelineID) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]kube.PipelineID, len(params[0]))
+		_param0 = make([]kube.PipelineID, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(kube.PipelineID)
 		}

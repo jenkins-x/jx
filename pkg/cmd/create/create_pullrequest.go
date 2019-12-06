@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/pkg/errors"
@@ -44,7 +46,7 @@ var (
 
 // CreatePullRequestOptions the options for the create spring command
 type CreatePullRequestOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Dir    string
 	Title  string
@@ -60,7 +62,7 @@ type CreatePullRequestOptions struct {
 // NewCmdCreatePullRequest creates a command object for the "create" command
 func NewCmdCreatePullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreatePullRequestOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -122,7 +124,7 @@ func (o *CreatePullRequestOptions) Run() error {
 		return errors.WithStack(err)
 	}
 
-	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, forkInfo, o.Base, details, nil, o.Push, details.Message, o.Push, false, o.Git(), provider, nil)
+	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, forkInfo, o.Base, details, nil, o.Push, details.Message, o.Push, false, o.Git(), provider)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
 	}
@@ -142,7 +144,7 @@ func (o *CreatePullRequestOptions) createPullRequestDetails(gitInfo *gits.GitRep
 		if o.Body == "" {
 			o.Body = body
 		}
-		title, err = util.PickValue("PullRequest title:", defaultValue, true, "", o.In, o.Out, o.Err)
+		title, err = util.PickValue("PullRequest title:", defaultValue, true, "", o.GetIOFileHandles())
 		if err != nil {
 			return nil, err
 		}

@@ -583,6 +583,55 @@ var _ = Describe("Git CLI", func() {
 			})
 		})
 	})
+
+	Describe("#HasChanges", func() {
+		Context("when there are changes in directory", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+			})
+
+			Specify("a changes are shown", func() {
+				changed, err := git.HasChanges(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeTrue())
+			})
+		})
+	})
+
+	Describe("#HasFileChanged", func() {
+		Context("when there is not a file change", func() {
+			Specify("a file does not show as changed", func() {
+				changed, err := git.HasFileChanged(repoDir, "a.txt")
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeFalse())
+			})
+		})
+
+		Context("when there is a file change", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+			})
+
+			Specify("a file shows as changed", func() {
+				changed, err := git.HasFileChanged(repoDir, "a.txt")
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeTrue())
+			})
+		})
+
+		Context("when there is multiple file changes", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+			})
+
+			Specify("a specific file shows as changed", func() {
+				changed, err := git.HasFileChanged(repoDir, "a.txt")
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeTrue())
+			})
+		})
+	})
 })
 
 func TestTags(t *testing.T) {
@@ -755,4 +804,96 @@ func TestGitCLI_Remotes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDescribe(t *testing.T) {
+	tests := []struct {
+		initFn   func(dir string, gitter gits.Gitter) error
+		name     string
+		want     []string
+		wantErr  bool
+		contains bool
+		abbrev   string // Number of hex digits from object name, defaults to 7
+		fallback bool   // If given, will just return the original ref
+	}{
+		{
+			initFn: func(dir string, git gits.Gitter) error {
+				err := git.Init(dir)
+				assert.NoError(t, err)
+
+				err = git.AddCommit(dir, "Initial Commit")
+				assert.NoError(t, err)
+				err = git.CreateTag(dir, "v0.0.1", "First Tag")
+				assert.NoError(t, err)
+				return err
+			},
+			name:     "Valid commit and tag, !contains, abbrev=default, !fallback",
+			wantErr:  false,
+			contains: false,
+			abbrev:   "",
+			fallback: false,
+		},
+		{
+			initFn: func(dir string, git gits.Gitter) error {
+				var err error
+				assert.NoError(t, err)
+				err = git.Init(dir)
+				assert.NoError(t, err)
+
+				err = git.AddCommit(dir, "Initial Commit")
+				assert.NoError(t, err)
+				return err
+			},
+			name:     "Commit but no tag, !contains, abbrev=default, !fallback",
+			wantErr:  true,
+			contains: false,
+			abbrev:   "",
+			fallback: false,
+		},
+		{
+			initFn: func(dir string, git gits.Gitter) error {
+				var err error
+				assert.NoError(t, err)
+				err = git.Init(dir)
+				assert.NoError(t, err)
+
+				err = git.AddCommit(dir, "Initial Commit")
+				assert.NoError(t, err)
+				return err
+			},
+			name:     "Commit but no tag, contains, abbrev=default, fallback",
+			wantErr:  false,
+			contains: true,
+			abbrev:   "",
+			fallback: true,
+		},
+	}
+
+	for _, test := range tests {
+		dir, err := ioutil.TempDir("", "")
+		assert.NoError(t, err)
+
+		gitCli := gits.NewGitCLI()
+
+		err = test.initFn(dir, gitCli)
+		assert.NoError(t, err)
+		parts1, parts2, err := gitCli.Describe(
+			dir,
+			test.contains,
+			"HEAD",
+			test.abbrev,
+			test.fallback,
+		)
+
+		if !test.wantErr {
+			assert.NoError(t, err)
+			assert.NotNil(t, parts1)
+			assert.Equal(t, "", parts2)
+		} else {
+			assert.Error(t, err)
+			assert.Equal(t, "", parts1)
+			assert.Equal(t, "", parts2)
+		}
+	}
+
 }

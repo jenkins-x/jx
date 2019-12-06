@@ -238,16 +238,25 @@ func (o *JSONSchemaOptions) handleIf(prefixes []string, requiredFields []string,
 			if detypedCondition != nil {
 				condition := detypedCondition.(*Type)
 				if condition.Const != nil {
-					stringConst, err := util.AsString(*condition.Const)
-					if err != nil {
-						return errors.Wrapf(err, "converting %s to string", *condition.Const)
-					}
-					typedConst, err := convertAnswer(stringConst, condition.Type)
-					if err != nil {
-						return errors.Wrapf(err, "converting %s to %s", stringConst, condition.Type)
-					}
-					if typedConst != selectedValue {
-						desiredState = false
+
+					switch t.Type {
+					case "boolean":
+						tConst, err := util.AsBool(*condition.Const)
+						if err != nil {
+							return err
+						}
+						if tConst != selectedValue {
+							desiredState = false
+						}
+					default:
+						stringConst, err := util.AsString(*condition.Const)
+						if err != nil {
+							return errors.Wrapf(err, "converting %s to string", condition.Type)
+						}
+						typedConst, err := convertAnswer(stringConst, t.Type)
+						if typedConst != selectedValue {
+							desiredState = false
+						}
 					}
 				}
 			}
@@ -482,12 +491,23 @@ func (o *JSONSchemaOptions) handleConst(name string, validators []survey.Validat
 	if t.Description != "" {
 		fmt.Fprint(o.Out, t.Description)
 	}
-	stringConst, err := util.AsString(*t.Const)
-	if err != nil {
-		return errors.Wrapf(err, "converting %s to string", *t.Const)
+
+	switch t.Type {
+	case "boolean":
+		tConst, err := util.AsBool(*t.Const)
+		if err != nil {
+			return err
+		}
+		output.Set(name, tConst)
+	default:
+		stringConst, err := util.AsString(*t.Const)
+		if err != nil {
+			return errors.Wrapf(err, "converting %s to string", *t.Const)
+		}
+		typedConst, err := convertAnswer(stringConst, t.Type)
+		output.Set(name, typedConst)
 	}
-	typedConst, err := convertAnswer(stringConst, t.Type)
-	output.Set(name, typedConst)
+
 	return nil
 }
 

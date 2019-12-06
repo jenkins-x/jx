@@ -40,7 +40,6 @@ type GitFake struct {
 	Changes        bool
 	GitTags        []GitTag
 	Revision       string
-	serverURL      string
 }
 
 // NewGitFake creates a new fake Gitter
@@ -144,7 +143,7 @@ func (g *GitFake) ShallowClone(dir string, url string, commitish string, pullReq
 }
 
 // Push performs a git push
-func (g *GitFake) Push(dir string, remote string, force bool, setUpstream bool, refspec ...string) error {
+func (g *GitFake) Push(dir string, remote string, force bool, refspec ...string) error {
 	return nil
 }
 
@@ -292,6 +291,11 @@ func (g *GitFake) RemoteBranchNames(dir string, prefix string) ([]string, error)
 		remoteBranches = append(remoteBranches, remoteBranch)
 	}
 	return remoteBranches, nil
+}
+
+// RemoteMergedBranchNames list the remote branch names that are merged
+func (g *GitFake) RemoteMergedBranchNames(dir string, prefix string) ([]string, error) {
+	return g.RemoteBranchNames(dir, prefix)
 }
 
 // GetRemoteUrl get the remote URL
@@ -446,6 +450,11 @@ func (g *GitFake) HasChanges(dir string) (bool, error) {
 	return g.Changes, nil
 }
 
+// HasFileChanged returns true if file has changes in git
+func (g *GitFake) HasFileChanged(dir string, fileName string) (bool, error) {
+	return g.Changes, nil
+}
+
 // GetCommitPointedToByPreviousTag returns the previous git tag SHA
 func (g *GitFake) GetCommitPointedToByPreviousTag(dir string) (string, string, error) {
 	len := len(g.Commits)
@@ -482,8 +491,31 @@ func (g *GitFake) GetLatestCommitMessage(dir string) (string, error) {
 	return g.Commits[len-1].Message, nil
 }
 
+// GetLatestCommitSha returns the sha of the last commit
+func (g *GitFake) GetLatestCommitSha(dir string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no commits found")
+	}
+	return g.Commits[len-1].SHA, nil
+}
+
+// GetFirstCommitSha returns the last commit message
+func (g *GitFake) GetFirstCommitSha(dir string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no commits found")
+	}
+	return g.Commits[0].SHA, nil
+}
+
 // FetchTags fetches tags
 func (g *GitFake) FetchTags(dir string) error {
+	return nil
+}
+
+// FetchRemoteTags fetches tags from a remote repository
+func (g *GitFake) FetchRemoteTags(dir string, repo string) error {
 	return nil
 }
 
@@ -558,11 +590,6 @@ func (g *GitFake) CreateBranchFrom(dir string, branchName string, startPoint str
 // Merge merges the commitish into the current branch
 func (g *GitFake) Merge(dir string, commitish string) error {
 	return nil
-}
-
-// GetLatestCommitSha returns the sha of the last commit
-func (g *GitFake) GetLatestCommitSha(dir string) (string, error) {
-	return "", nil
 }
 
 // Reset performs a git reset --hard back to the commitish specified
@@ -642,4 +669,14 @@ func (g *GitFake) CherryPick(dir string, commit string) error {
 // CherryPickTheirs does a git cherry-pick of commit
 func (g *GitFake) CherryPickTheirs(dir string, commit string) error {
 	return nil
+}
+
+// Describe does a git describe of commitish, optionally adding the abbrev arg if not empty
+func (g *GitFake) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
+	return "", "", nil
+}
+
+// IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
+func (g *GitFake) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
+	return false, nil
 }

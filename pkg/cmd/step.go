@@ -78,6 +78,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(step.NewCmdStepValidate(commonOpts))
 	cmd.AddCommand(verify.NewCmdStepVerify(commonOpts))
 	cmd.AddCommand(step.NewCmdStepWaitForArtifact(commonOpts))
+	cmd.AddCommand(step.NewCmdStepWaitForChart(commonOpts))
 	cmd.AddCommand(step.NewCmdStepStash(commonOpts))
 	cmd.AddCommand(step.NewCmdStepUnstash(commonOpts))
 	cmd.AddCommand(step.NewCmdStepValuesSchemaTemplate(commonOpts))

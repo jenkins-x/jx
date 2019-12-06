@@ -2,11 +2,12 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -38,7 +39,7 @@ var (
 
 // DeleteRepoOptions the options for the create spring command
 type DeleteRepoOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	Organisation string
 	Repositories []string
@@ -51,7 +52,7 @@ type DeleteRepoOptions struct {
 // NewCmdDeleteRepo creates a command object for the "delete repo" command
 func NewCmdDeleteRepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteRepoOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -83,7 +84,7 @@ func NewCmdDeleteRepo(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements the command
 func (o *DeleteRepoOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func (o *DeleteRepoOptions) Run() error {
 		if o.GitHost != "" {
 			server = config.GetOrCreateServer(o.GitHost)
 		} else {
-			server, err = config.PickServer("Pick the Git server to search for repositories", o.BatchMode, o.In, o.Out, o.Err)
+			server, err = config.PickServer("Pick the Git server to search for repositories", o.BatchMode, o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
@@ -104,7 +105,7 @@ func (o *DeleteRepoOptions) Run() error {
 	if server == nil {
 		return fmt.Errorf("No Git server provided")
 	}
-	userAuth, err := config.PickServerUserAuth(server, "Git user name", o.BatchMode, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "Git user name", o.BatchMode, "", o.GetIOFileHandles())
 	if err != nil {
 		return err
 	}
@@ -115,7 +116,7 @@ func (o *DeleteRepoOptions) Run() error {
 	username := userAuth.Username
 	org := o.Organisation
 	if org == "" {
-		org, err = gits.PickOrganisation(provider, username, o.In, o.Out, o.Err)
+		org, err = gits.PickOrganisation(provider, username, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -127,7 +128,7 @@ func (o *DeleteRepoOptions) Run() error {
 
 	names := o.Repositories
 	if len(names) == 0 {
-		repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to delete:", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+		repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to delete:", o.SelectAll, o.SelectFilter, o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

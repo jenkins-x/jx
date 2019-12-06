@@ -277,9 +277,8 @@ func CleanupTestEnvironmentDir(o *opts.CommonOptions) error {
 	return nil
 }
 
-func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string) (*v1.PipelineActivity, error) {
-	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	key := &kube.PromoteStepActivityKey{
+func newPromoteStepActivityKey(folder string, repo string, branch string, build string, workflow string) *kube.PromoteStepActivityKey {
+	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     folder + "-" + repo + "-" + branch + "-" + build,
 			Pipeline: folder + "/" + repo + "/" + branch,
@@ -290,6 +289,12 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 			},
 		},
 	}
+}
+
+// CreateTestPipelineActivity creates a PipelineActivity with the given arguments
+func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string) (*v1.PipelineActivity, error) {
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	key := newPromoteStepActivityKey(folder, repo, branch, build, workflow)
 	a, _, err := key.GetOrCreate(jxClient, ns)
 	version := "1.0." + build
 	a.Spec.GitOwner = folder
@@ -297,6 +302,16 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	a.Spec.GitURL = "https://fake.git/" + folder + "/" + repo + ".git"
 	a.Spec.Version = version
 	a.Spec.Workflow = workflow
+	_, err = activities.Update(a)
+	return a, err
+}
+
+// CreateTestPipelineActivityWithTime creates a PipelineActivity with the given timestamp and adds it to the list of activities
+func CreateTestPipelineActivityWithTime(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string, t metav1.Time) (*v1.PipelineActivity, error) {
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	key := newPromoteStepActivityKey(folder, repo, branch, build, workflow)
+	a, _, err := key.GetOrCreate(jxClient, ns)
+	a.Spec.StartedTimestamp = &t
 	_, err = activities.Update(a)
 	return a, err
 }
@@ -371,7 +386,7 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 			//dumpFailedActivity(activity)
 			return
 		}
-		log.Logger().Infof("Waiting 1s for PullRequest in Enviroment %s", envName)
+		log.Logger().Infof("Waiting 1s for PullRequest in Environment %s", envName)
 		v, _ := time.ParseDuration("2s")
 		time.Sleep(v)
 		activity, _ = activities.Get(name, metav1.GetOptions{})
@@ -571,4 +586,26 @@ func dumpFailedActivity(activity *v1.PipelineActivity) {
 	if err == nil {
 		log.Logger().Warnf("YAML: %s", string(data))
 	}
+}
+
+// FakeOut can be passed to the Common Options for ease of testing. It's also helpful so test output doesn't get polluted by all the printouts
+type FakeOut struct {
+	content []byte
+}
+
+// Write is used to fulfill the terminal Writer interface
+func (f *FakeOut) Write(p []byte) (int, error) {
+	f.content = append(f.content, p...)
+
+	return len(f.content), nil
+}
+
+// Fd is used to fulfill the terminal Writer interface
+func (f *FakeOut) Fd() uintptr {
+	return 0
+}
+
+// GetOutput returns the contents printed to FakeOut
+func (f *FakeOut) GetOutput() string {
+	return string(f.content)
 }

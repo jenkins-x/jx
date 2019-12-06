@@ -170,7 +170,11 @@ func (o *UpdateWebhooksOptions) ensureWebHookCreated(repository *v1.SourceReposi
 		return errors.Wrapf(err, "failed to find Git Server kind for host %s", gitServerURL)
 	}
 
-	provider, err := o.GitProviderForGitServerURL(gitServerURL, gitKind)
+	ghOwner, err := o.GetGitHubAppOwnerForRepository(repository)
+	if err != nil {
+		return err
+	}
+	provider, err := o.GitProviderForGitServerURL(gitServerURL, gitKind, ghOwner)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find Git provider for host %s and kind %s", gitServerURL, gitKind)
 	}
@@ -213,7 +217,11 @@ func (o *UpdateWebhooksOptions) ensureJenkinsJobExists(repository *v1.SourceRepo
 	if err != nil {
 		return errors.Wrapf(err, "failed to find Git Server kind for host %s", gitServerURL)
 	}
-	gitProvider, err := o.GitProviderForGitServerURL(gitServerURL, gitKind)
+	ghOwner, err := o.GetGitHubAppOwnerForRepository(repository)
+	if err != nil {
+		return err
+	}
+	gitProvider, err := o.GitProviderForGitServerURL(gitServerURL, gitKind, ghOwner)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find Git provider for host %s and kind %s", gitServerURL, gitKind)
 	}
@@ -241,13 +249,17 @@ func (o *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, owner strin
 	if err != nil {
 		log.Logger().Infof("no webhooks found repository %s/%s", util.ColorInfo(owner), util.ColorInfo(repoName))
 	}
-
+	isInsecureSSL, err := o.IsInsecureSSLWebhooks()
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if we need to setup insecure SSL webhook")
+	}
 	webHookArgs := &gits.GitWebHookArguments{
 		Owner: owner,
 		Repo: &gits.GitRepository{
 			Name: repoName,
 		},
-		URL: webhookURL,
+		URL:         webhookURL,
+		InsecureSSL: isInsecureSSL,
 	}
 	if userName != owner {
 		webHookArgs.Repo.Organisation = owner

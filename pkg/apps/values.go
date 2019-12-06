@@ -3,15 +3,11 @@ package apps
 import (
 	"encoding/base64"
 	"fmt"
-
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/secreturl"
-
-	"io"
 	"io/ioutil"
 	"strings"
 
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -28,21 +24,8 @@ import (
 
 const (
 	//ValuesAnnotation is the name of the annotation used to stash values
-	ValuesAnnotation       = "jenkins.io/values.yaml"
-	appsGeneratedSecretKey = "appsGeneratedSecrets"
+	ValuesAnnotation = "jenkins.io/values.yaml"
 )
-
-const secretTemplate = `
-{{- range .Values.generatedSecrets }}
-apiVersion: v1
-data:
-  {{ .key }}: {{ .value }}
-kind: Secret
-metadata:
-  name: {{ .name }} 
-type: Opaque
-{{- end }}
-`
 
 // StashValues takes the values used to configure an app and annotates the APP CRD with them allowing them to be used
 // at a later date e.g. when the app is upgraded
@@ -108,14 +91,14 @@ func AddValuesToChart(name string, values []byte, verbose bool) (string, func(),
 
 //GenerateQuestions asks questions based on the schema
 func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath string, secretURLClient secreturl.Client,
-	existing map[string]interface{}, vaultScheme string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]byte, error) {
+	existing map[string]interface{}, vaultScheme string, handles util.IOFileHandles) ([]byte, error) {
 	schemaOptions := surveyutils.JSONSchemaOptions{
 		VaultClient:         secretURLClient,
 		VaultScheme:         vaultScheme,
 		VaultBasePath:       basePath,
-		Out:                 out,
-		In:                  in,
-		OutErr:              outErr,
+		Out:                 handles.Out,
+		In:                  handles.In,
+		OutErr:              handles.Err,
 		IgnoreMissingValues: false,
 		NoAsk:               batchMode,
 		AutoAcceptDefaults:  batchMode,
@@ -162,9 +145,7 @@ func ProcessValues(
 	secretURLClient secreturl.Client,
 	existing map[string]interface{},
 	vaultScheme string,
-	in terminal.FileReader,
-	out terminal.FileWriter,
-	outErr io.Writer,
+	handles util.IOFileHandles,
 	verbose bool) (string, func(), error) {
 	var values []byte
 	var err error
@@ -179,7 +160,7 @@ func ProcessValues(
 			basepath = strings.Join([]string{"teams", teamName}, "/")
 		}
 	}
-	values, err = GenerateQuestions(schema, batchMode, askExisting, basepath, secretURLClient, existing, vaultScheme, in, out, outErr)
+	values, err = GenerateQuestions(schema, batchMode, askExisting, basepath, secretURLClient, existing, vaultScheme, handles)
 	if err != nil {
 		return "", func() {}, errors.Wrapf(err, "asking questions for schema")
 	}

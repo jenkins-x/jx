@@ -1,11 +1,14 @@
 package create_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
@@ -60,7 +63,7 @@ func TestCreateStep(t *testing.T) {
 			assert.NoError(t, err)
 
 			createStep := &create.CreateStepOptions{
-				CreateOptions: create.CreateOptions{
+				CreateOptions: options.CreateOptions{
 					CommonOptions: &opts.CommonOptions{
 						BatchMode: true,
 					},

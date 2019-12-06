@@ -3,11 +3,12 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -76,7 +77,7 @@ func TestPatchUpdateCommitStatusWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := commitStatuses.PatchUpdate(testCommitStatus)
+	updated, err := commitStatuses.PatchUpdate(clonedCommitStatus)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testCommitStatus, updated)
 	assert.Equal(t, context, updated.Spec.Items[0].Context)
@@ -121,8 +122,14 @@ func TestPatchUpdateCommitStatusWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := commitStatuses.PatchUpdate(testCommitStatus)
+	context := "foo"
+	clonedCommitStatus := testCommitStatus.DeepCopy()
+	clonedCommitStatus.Spec.Items = []v1.CommitStatusDetails{
+		{
+			Context: context,
+		},
+	}
+	updated, err := commitStatuses.PatchUpdate(clonedCommitStatus)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

@@ -3,11 +3,12 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -71,7 +72,7 @@ func TestPatchUpdatePipelineStructureWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := pipelineStructures.PatchUpdate(testPipelineStructure)
+	updated, err := pipelineStructures.PatchUpdate(clonedPipelineStructure)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testPipelineStructure, updated)
 	assert.Equal(t, &ref, updated.PipelineRef)
@@ -116,8 +117,10 @@ func TestPatchUpdatePipelineStructureWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := pipelineStructures.PatchUpdate(testPipelineStructure)
+	ref := "susfu"
+	clonedPipelineStructure := testPipelineStructure.DeepCopy()
+	clonedPipelineStructure.PipelineRef = &ref
+	updated, err := pipelineStructures.PatchUpdate(clonedPipelineStructure)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

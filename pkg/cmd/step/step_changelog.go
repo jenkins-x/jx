@@ -255,8 +255,15 @@ func (o *StepChangelogOptions) Run() error {
 			return err
 		}
 		if previousRev == "" {
-			log.Logger().Info("no previous commit version found so change diff unavailable")
-			return nil
+			// lets assume we are the first release
+			previousRev, err = o.Git().GetFirstCommitSha(dir)
+			if err != nil {
+				return errors.Wrap(err, "failed to find first commit after we found no previous releaes")
+			}
+			if previousRev == "" {
+				log.Logger().Info("no previous commit version found so change diff unavailable")
+				return nil
+			}
 		}
 	}
 	currentRev := o.CurrentRevision
@@ -308,7 +315,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	o.State.Tracker = tracker
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -319,7 +326,11 @@ func (o *StepChangelogOptions) Run() error {
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	foundGitProvider := true
-	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	ghOwner, err := o.GetGitHubAppOwner(gitInfo)
+	if err != nil {
+		return err
+	}
+	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 	if err != nil {
 		foundGitProvider = false
 		log.Logger().Warnf("Could not create GitProvide so cannot update the release notes: %s", err)
@@ -387,7 +398,7 @@ func (o *StepChangelogOptions) Run() error {
 		Namespace:   devNs,
 		JXClient:    jxClient,
 	}
-	if commits != nil {
+	if commits != nil && gitProvider != nil {
 		for _, commit := range *commits {
 
 			if o.IncludeMergeCommits || len(commit.ParentHashes) <= 1 {

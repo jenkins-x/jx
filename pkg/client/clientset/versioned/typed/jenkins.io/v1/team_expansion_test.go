@@ -3,11 +3,12 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -72,7 +73,7 @@ func TestPatchUpdateTeamWithChange(t *testing.T) {
 		ns:     "default",
 	}
 
-	updated, err := teams.PatchUpdate(testTeam)
+	updated, err := teams.PatchUpdate(clonedTeam)
 	assert.NoError(t, err)
 	assert.NotEqual(t, testTeam, updated)
 	assert.Equal(t, label, updated.Spec.Label)
@@ -117,8 +118,10 @@ func TestPatchUpdateTeamWithErrorInPatch(t *testing.T) {
 		client: fakeClient,
 		ns:     "default",
 	}
-
-	updated, err := teams.PatchUpdate(testTeam)
+	label := "Black Team"
+	clonedTeam := testTeam.DeepCopy()
+	clonedTeam.Spec.Label = label
+	updated, err := teams.PatchUpdate(clonedTeam)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), errorMessage)
 	assert.Nil(t, updated)

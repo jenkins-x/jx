@@ -72,7 +72,7 @@ func (o *StepHelmVersionOptions) Run() error {
 		version = builds.GetBuildNumber()
 	}
 	if version == "" {
-		return fmt.Errorf("No version specified and could not detect the build number via $BUILD_NUMBER")
+		return fmt.Errorf("no version specified and could not detect the build number via $BUILD_NUMBER")
 	}
 	var err error
 	dir := o.Dir
@@ -88,7 +88,7 @@ func (o *StepHelmVersionOptions) Run() error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("No chart exists at %s", chartFile)
+		return fmt.Errorf("no chart exists at %s", chartFile)
 	}
 	err = helm.SetChartVersion(chartFile, version)
 	if err != nil {

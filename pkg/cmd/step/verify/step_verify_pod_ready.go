@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"os"
@@ -89,7 +90,7 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 			return err
 		}
 		log.Logger().Warnf("%s\n", err.Error())
-		log.Logger().Infof("\nWaiting %s for the pods to become Ready...\n\n", o.WaitDuration.String())
+		log.Logger().Infof("\nWaiting %s for the pods to become ready...\n\n", o.WaitDuration.String())
 
 		err = o.RetryQuietlyUntilTimeout(o.WaitDuration, time.Second*10, func() error {
 			var err error
@@ -107,7 +108,7 @@ func (o *StepVerifyPodReadyOptions) waitForReadyPods(kubeClient kubernetes.Inter
 	var listOptions metav1.ListOptions
 	if o.ExcludeBuildPods {
 		listOptions = metav1.ListOptions{
-			LabelSelector: "created-by-prow != true",
+			LabelSelector: fmt.Sprintf("!%s", builds.LabelPipelineRunName),
 		}
 	} else {
 		listOptions = metav1.ListOptions{}
@@ -172,7 +173,7 @@ func (o *StepVerifyPodReadyOptions) waitForReadyPods(kubeClient kubernetes.Inter
 		for k, list := range notReadyPhases {
 			phaseSlice = append(phaseSlice, fmt.Sprintf("%s: %s", k, strings.Join(list, ", ")))
 		}
-		return table, fmt.Errorf("the following pods are not Ready:\n%s", strings.Join(phaseSlice, "\n"))
+		return table, fmt.Errorf("the following pods are not ready:\n%s", strings.Join(phaseSlice, "\n"))
 	}
 	return table, nil
 }

@@ -40,12 +40,10 @@ func NewCmdDeleteAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteAddonCloudBees(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonEnvironmentController(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonFlagger(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonGitea(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonIstio(commonOpts))
-	cmd.AddCommand(NewCmdDeleteAddonSSO(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonKnativeBuild(commonOpts))
 	options.addFlags(cmd)
 	return cmd

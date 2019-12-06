@@ -115,12 +115,12 @@ func (ps *PipelineStructure) GetStageAndChildren(name string) *PipelineStageAndC
 }
 
 // GetAllStagesWithSteps gets all stages in this pipeline that have steps, and therefore will have a pod.
-func (ps *PipelineStructure) GetAllStagesWithSteps() []*PipelineStructureStage {
-	var stages []*PipelineStructureStage
+func (ps *PipelineStructure) GetAllStagesWithSteps() []PipelineStructureStage {
+	var stages []PipelineStructureStage
 
 	for _, s := range ps.Stages {
 		if len(s.Stages) == 0 && len(s.Parallel) == 0 {
-			stages = append(stages, &s)
+			stages = append(stages, s)
 		}
 	}
 	return stages

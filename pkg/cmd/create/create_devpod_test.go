@@ -1,9 +1,10 @@
 package create_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"path"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -193,7 +194,7 @@ var _ = Describe("step git merge", func() {
 	})
 })
 
-func read(r *os.File, w *os.File) (string, error) {
+func read(r io.Reader, w io.Closer) (string, error) {
 	err := w.Close()
 	if err != nil {
 		return "", err

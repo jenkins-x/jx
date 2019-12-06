@@ -2,7 +2,8 @@ package deletecmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -28,7 +29,7 @@ var (
 
 // DeleteGitTokenOptions the options for the create spring command
 type DeleteGitTokenOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 }
@@ -36,7 +37,7 @@ type DeleteGitTokenOptions struct {
 // NewCmdDeleteGitToken defines the command
 func NewCmdDeleteGitToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteGitTokenOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -64,7 +65,7 @@ func (o *DeleteGitTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing Git user name")
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
 	}

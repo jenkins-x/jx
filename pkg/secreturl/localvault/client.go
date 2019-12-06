@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/secreturl"
@@ -12,7 +13,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var localURIRegex = regexp.MustCompile(`local:[-_\w\/:]*`)
+var localURIRegex = regexp.MustCompile(`:[\s"]*local:[-_\w\/:]*`)
+
+// CanonicalClusterPath this is the path where the client will fall back when secrets are not found at the standard path
+const CanonicalClusterPath = "currentCluster"
 
 // FileSystemClient a local file system based client loading/saving content from the given URL
 type FileSystemClient struct {
@@ -34,6 +38,20 @@ func (c *FileSystemClient) Read(secretName string) (map[string]interface{}, erro
 		return nil, errors.Wrapf(err, "failed to check if file exists %s", name)
 	}
 	if !exists {
+		parts := strings.Split(secretName, "/")
+		if len(parts) == 2 {
+			// secrets will be mounted in this path because we have no way to get the cluster name at that point
+			secretName = filepath.Join(CanonicalClusterPath, parts[1])
+			name = c.fileName(secretName)
+			exists, err = util.FileExists(name)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to check if file exists %s", name)
+			}
+			if !exists {
+				return nil, errors.Wrapf(err, "the canonical path %s doesn't exist", name)
+			}
+			return helm.LoadValuesFile(name)
+		}
 		return nil, fmt.Errorf("local vault file does not exist: %s", name)
 	}
 	return helm.LoadValuesFile(name)

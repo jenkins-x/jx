@@ -94,7 +94,7 @@ func (o *DeleteDevPodOptions) Run() error {
 	}
 
 	if len(devPods) == 0 {
-		devPods, err = util.PickNames(names, "Pick DevPod:", "", o.In, o.Out, o.Err)
+		devPods, err = util.PickNames(names, "Pick DevPod:", "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
@@ -102,7 +102,7 @@ func (o *DeleteDevPodOptions) Run() error {
 
 	deletePods := strings.Join(devPods, ", ")
 
-	if !o.BatchMode && !util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted", o.In, o.Out, o.Err) {
+	if !o.BatchMode && !util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted", o.GetIOFileHandles()) {
 		return nil
 	}
 	for _, name := range devPods {

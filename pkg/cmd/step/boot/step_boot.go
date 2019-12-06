@@ -31,7 +31,6 @@ func NewCmdStepBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepBootUpgrade(commonOpts))
 	cmd.AddCommand(NewCmdStepBootVault(commonOpts))
 	return cmd
 }

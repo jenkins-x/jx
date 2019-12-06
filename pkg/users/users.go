@@ -88,6 +88,8 @@ func DeleteUser(jxClient versioned.Interface, ns string, userName string) error 
 func Resolve(id string, providerKey string, jxClient versioned.Interface,
 	namespace string, selectUsers func(id string, users []jenkinsv1.User) (string,
 		[]jenkinsv1.User, *jenkinsv1.User, error)) (*jenkinsv1.User, error) {
+
+	id = naming.ToValidValue(id)
 	if id != "" {
 
 		labelSelector := fmt.Sprintf("%s=%s", providerKey, id)

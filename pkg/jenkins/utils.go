@@ -1,7 +1,6 @@
 package jenkins
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -14,10 +13,9 @@ import (
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigService, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (gojenkins.JenkinsClient, error) {
+func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigService, handles util.IOFileHandles) (gojenkins.JenkinsClient, error) {
 	if url == "" {
 		return nil, errors.New("no external Jenkins URL found in the development namespace!\nAre you sure you installed Jenkins X? Try: https://jenkins-x.io/getting-started/")
 	}
@@ -54,7 +52,7 @@ func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigServi
 			a := config.FindUserAuth(url, username)
 			if a != nil {
 				if a.IsInvalid() {
-					auth, err = EditUserAuth(url, configService, config, a, tokenUrl, batch, in, out, outErr)
+					auth, err = EditUserAuth(url, configService, config, a, tokenUrl, batch, handles)
 					if err != nil {
 						return nil, err
 					}
@@ -63,7 +61,7 @@ func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigServi
 				}
 			} else {
 				// lets create a new Auth
-				auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl, batch, in, out, outErr)
+				auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl, batch, handles)
 				if err != nil {
 					return nil, err
 				}
@@ -92,11 +90,7 @@ func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigServi
 	}
 	jenkins := gojenkins.NewJenkins(jauth, url)
 
-	// handle insecure TLS for minishift
 	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		}}
@@ -122,7 +116,7 @@ func JenkinsLoginURL(url string) string {
 	return util.UrlJoin(url, "/login")
 }
 
-func EditUserAuth(url string, configService jenkauth.ConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (jenkauth.UserAuth, error) {
+func EditUserAuth(url string, configService jenkauth.ConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, handles util.IOFileHandles) (jenkauth.UserAuth, error) {
 
 	log.Logger().Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n")
 
@@ -134,7 +128,7 @@ func EditUserAuth(url string, configService jenkauth.ConfigService, config *jenk
 
 	defaultUsername := "admin"
 
-	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true, batchMode, f, in, out, outErr)
+	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true, batchMode, f, handles)
 	if err != nil {
 		return *auth, err
 	}

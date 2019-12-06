@@ -115,7 +115,7 @@ func (o *CreateJHipsterOptions) Run() error {
 		if o.BatchMode {
 			return util.MissingOption(opts.OptionOutputDir)
 		}
-		dir, err = util.PickValue("Pick the name of the new project:", "myhipster", true, "", o.In, o.Out, o.Err)
+		dir, err = util.PickValue("Pick the name of the new project:", "myhipster", true, "", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}

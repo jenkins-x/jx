@@ -3,22 +3,30 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
-	"github.com/petergtz/pegomock"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	fake "github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+	"github.com/stretchr/testify/require"
+
+	gkeTest "github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	projectID      = "cheese"
-	domain         = "wine.com"
-	subDomain      = projectID + "." + domain
-	zone           = "zone"
-	domainResponse = `{
+	projectID               = "cheese"
+	cluster                 = "brie"
+	domain                  = "wine.com"
+	subDomain               = projectID + "." + domain
+	zone                    = "zone"
+	tempToken               = "a_temporary_test_token"
+	getTokenResponse        = "a_real_test_token"
+	deleteTempTokenResponse = "temporary token deleted"
+	domainResponse          = `{
 		"data": {
 			"subdomain": "cheese.wine.com"
 		}
@@ -30,6 +38,67 @@ const (
 	}`
 )
 
+func TestClientGetAndStoreTenantToken(t *testing.T) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(getTokenResponse))
+	})
+	httpClient, teardown := testingHTTPClient(h)
+	defer teardown()
+
+	cli := NewTenantClient()
+	cli.httpClient = httpClient
+
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
+
+	err = cli.GetAndStoreTenantToken("http://localhost", "", projectID, tempToken, namespace, client)
+	assert.Nil(t, err)
+}
+
+func TestClientGetTenantToken(t *testing.T) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(getTokenResponse))
+	})
+	httpClient, teardown := testingHTTPClient(h)
+	defer teardown()
+
+	cli := NewTenantClient()
+	cli.httpClient = httpClient
+
+	token, err := cli.GetTenantToken("http://localhost", "", projectID, tempToken)
+	assert.Nil(t, err)
+	assert.Equal(t, getTokenResponse, token)
+}
+
+func TestClientDeleteTempTenantToken(t *testing.T) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(deleteTempTokenResponse))
+	})
+	httpClient, teardown := testingHTTPClient(h)
+	defer teardown()
+
+	cli := NewTenantClient()
+	cli.httpClient = httpClient
+
+	response, err := cli.DeleteTempTenantToken("http://localhost", "", projectID, tempToken)
+	assert.Nil(t, err)
+	assert.Equal(t, deleteTempTokenResponse, response)
+}
+
+func TestClientWriteKubernetesSecret(t *testing.T) {
+	f := fake.NewFakeFactory()
+	client, namespace, err := f.CreateKubeClient()
+	require.NoError(t, err, "CreateKubeClient() failed")
+	assert.Equal(t, "jx", namespace, "namespace")
+	assert.NotNil(t, client, "client")
+
+	err = writeKubernetesSecret([]byte(getTokenResponse), namespace, client)
+	assert.Nil(t, err)
+}
+
 func TestClientGetTenantSubDomain(t *testing.T) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(domainResponse))
@@ -40,10 +109,10 @@ func TestClientGetTenantSubDomain(t *testing.T) {
 	cli := NewTenantClient()
 	cli.httpClient = httpClient
 
-	gclouder := &gke_test.MockGClouder{}
+	gclouder := &gkeTest.MockGClouder{}
 	pegomock.When(gclouder.CreateDNSZone("cheese", "cheese.wine.com")).ThenReturn("123", []string{"abc"}, nil)
 
-	s, err := cli.GetTenantSubDomain("http://localhost", "", projectID, gclouder)
+	s, err := cli.GetTenantSubDomain("http://localhost", "", projectID, cluster, gclouder)
 
 	assert.Nil(t, err)
 	assert.Equal(t, subDomain, s)
@@ -80,7 +149,7 @@ func testingHTTPClient(handler http.Handler) (*http.Client, func()) {
 
 func TestGetBasicAuthUserAndPassword(t *testing.T) {
 	auth := "some_user:some_password"
-	user, pass := getBasicAuthUserAndPassword(auth)
+	user, pass := util.GetBasicAuthUserAndPassword(auth)
 	assert.Equal(t, auth, user+":"+pass)
 }
 

@@ -1,12 +1,13 @@
 package storage
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
+	"strings"
+	"testing"
+
+	gke_test "github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
 func TestCreateNewBucketForClusterWithLongClusterNameAndDashAtCharacterSixty(t *testing.T) {
