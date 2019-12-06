@@ -39,6 +39,14 @@ func (gh *GithubApp) isGithubAppEnabled() (bool, error) {
 // Install - confirms that the github app is installed and if it isn't then prints out a url for the user to install
 func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileHandles, newRepo bool) (bool, error) {
 	installed, accessToRepo, url, appName, err := gh.isInstalled(owner, repo)
+	if err != nil {
+		return false, errors.Wrap(err, "when querying whether the Github App is installed")
+	}
+	if appName == "" {
+		// if the appName is empty lets use Jenkins X as the default
+		appName = "Jenkins X"
+	}
+
 	if installed {
 		fmt.Println(fmt.Sprintf("'%s' Github App installed", util.ColorInfo(appName)))
 		if newRepo {
