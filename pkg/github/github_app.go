@@ -40,7 +40,7 @@ func (gh *GithubApp) isGithubAppEnabled() (bool, error) {
 func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileHandles, newRepo bool) (bool, error) {
 	installed, accessToRepo, url, appName, err := gh.isInstalled(owner, repo)
 	if installed {
-		fmt.Sprintln(util.ColorInfo(appName), "Github App installed")
+		fmt.Println(fmt.Sprintf("'%s' Github App installed", util.ColorInfo(appName)))
 		if newRepo {
 			// if this is a new repo we can't confirm if it has access at this stage
 			return false, nil
