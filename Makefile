@@ -116,7 +116,7 @@ get-test-deps: ## Install test dependencies
 print-version: ## Print version
 	@echo $(VERSION)
 
-build: $(GO_DEPENDENCIES) ## Build jx binary for current OS
+build: $(GO_DEPENDENCIES) gen-data ## Build jx binary for current OS
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/$(NAME) $(MAIN_SRC_FILE)
 
 build-all: $(GO_DEPENDENCIES) build make-reports-dir ## Build all files - runtime, all tests etc.
@@ -267,6 +267,12 @@ fmt: ## Format the code
       	else \
       		echo "Fixed formatting for: $(FORMATTED)"; \
       	fi
+JX_FILES="pkg/cmd/*.go"
+gettext:
+	go-xgettext -k=i18n.T "${JX_FILES}" > pkg/i18n/jx.pot
+
+gen-data:
+	cd pkg/i18n && go-bindata -o bindata.go -pkg i18n jx/zh_CN/LC_MESSAGES/
 
 .PHONY: importfmt
 importfmt:

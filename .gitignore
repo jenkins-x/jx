@@ -62,3 +62,7 @@ docs/apidocs/static/jquery-3.2.1.min.js
 docs/apidocs/static/jquery.scrollTo.min.js
 docs/apidocs/static/scroll.js
 pkg/jx/cmd/verify-pod.log
+
+# i18n files
+pkg/i18n/jx.pot
+pkg/i18n/bindata.go
