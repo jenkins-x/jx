@@ -135,40 +135,44 @@ func (o *GetApplicationsOptions) generateTable(kubeClient kubernetes.Interface, 
 		row := []string{}
 		name := a.Name()
 
-		for _, k := range o.sortedKeys(list.Environments()) {
+		if len(a.Environments) > 0 {
 
-			if ae, ok := a.Environments[k]; ok {
-				for _, d := range ae.Deployments {
-					name = kube.GetAppName(d.Deployment.Name, k)
-					if ae.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
-						name = kube.GetEditAppName(name)
-					} else if ae.Environment.Spec.Kind == v1.EnvironmentKindTypePreview {
-						name = ae.Environment.Spec.PullRequestURL
+			for _, k := range o.sortedKeys(list.Environments()) {
+
+				if ae, ok := a.Environments[k]; ok {
+					for _, d := range ae.Deployments {
+						name = kube.GetAppName(d.Deployment.Name, k)
+						if ae.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
+							name = kube.GetEditAppName(name)
+						} else if ae.Environment.Spec.Kind == v1.EnvironmentKindTypePreview {
+							name = ae.Environment.Spec.PullRequestURL
+						}
+						if !ae.IsPreview() {
+							row = append(row, d.Version())
+						}
+						if !o.HidePod {
+							row = append(row, d.Pods())
+						}
+						if !o.HideUrl {
+							row = append(row, d.URL(kubeClient, a))
+						}
 					}
+				} else {
 					if !ae.IsPreview() {
-						row = append(row, d.Version())
+						row = append(row, "")
 					}
 					if !o.HidePod {
-						row = append(row, d.Pods())
+						row = append(row, "")
 					}
 					if !o.HideUrl {
-						row = append(row, d.URL(kubeClient, a))
+						row = append(row, "")
 					}
 				}
-			} else {
-				if !ae.IsPreview() {
-					row = append(row, "")
-				}
-				if !o.HidePod {
-					row = append(row, "")
-				}
-				if !o.HideUrl {
-					row = append(row, "")
-				}
 			}
+			row = append([]string{name}, row...)
+
+			table.AddRow(row...)
 		}
-		row = append([]string{name}, row...)
-		table.AddRow(row...)
 	}
 	return table
 }
