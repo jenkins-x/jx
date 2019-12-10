@@ -1068,7 +1068,9 @@ func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) 
 	}
 }
 
-func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
+// ScopedEnv combines the two environments into a single unified slice where
+// the `newEnv` overrides anything in the `parentEnv`
+func ScopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 	if len(parentEnv) == 0 && len(newEnv) == 0 {
 		return nil
 	}
@@ -1252,7 +1254,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 	}
 	stageVolumes = append(stageVolumes, params.parentVolumes...)
 
-	env := scopedEnv(params.stage.GetEnv(), params.parentEnv)
+	env := ScopedEnv(params.stage.GetEnv(), params.parentEnv)
 
 	agent := params.stage.Agent.DeepCopy()
 
@@ -1581,12 +1583,12 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 
 		c.Stdin = false
 		c.TTY = false
-		c.Env = scopedEnv(params.step.Env, scopedEnv(params.env, c.Env))
+		c.Env = ScopedEnv(params.step.Env, ScopedEnv(params.env, c.Env))
 
 		steps = append(steps, *c)
 	} else if params.step.Loop != nil {
 		for i, v := range params.step.Loop.Values {
-			loopEnv := scopedEnv([]corev1.EnvVar{{Name: params.step.Loop.Variable, Value: v}}, params.env)
+			loopEnv := ScopedEnv([]corev1.EnvVar{{Name: params.step.Loop.Variable, Value: v}}, params.env)
 
 			for _, s := range params.step.Loop.Steps {
 				if s.Name != "" {

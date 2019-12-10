@@ -449,12 +449,8 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 	}
 
 	// lets override any container options env vars from any custom injected env vars from the metapipeline client
-	for _, e := range pipelineConfig.Env {
-		for i, e2 := range parsed.Options.ContainerOptions.Env {
-			if e.Name == e2.Name {
-				parsed.Options.ContainerOptions.Env[i] = e
-			}
-		}
+	if parsed != nil && parsed.Options != nil && parsed.Options.ContainerOptions != nil {
+		parsed.Options.ContainerOptions.Env = syntax.ScopedEnv(pipelineConfig.Env, parsed.Options.ContainerOptions.Env)
 	}
 	return parsed, nil
 }
