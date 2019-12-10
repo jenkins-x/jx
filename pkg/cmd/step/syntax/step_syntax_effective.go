@@ -448,6 +448,14 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 		return nil, errors.Wrapf(validateErr, "validation failed for Pipeline")
 	}
 
+	// lets override any container options env vars from any custom injected env vars from the metapipeline client
+	for _, e := range pipelineConfig.Env {
+		for i, e2 := range parsed.Options.ContainerOptions.Env {
+			if e.Name == e2.Name {
+				parsed.Options.ContainerOptions.Env[i] = e
+			}
+		}
+	}
 	return parsed, nil
 }
 
