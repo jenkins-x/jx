@@ -466,6 +466,7 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 	return parsed, nil
 }
 
+// RemoveDuplicateEnvVars removes any duplicate env var definitions
 func RemoveDuplicateEnvVars(env []corev1.EnvVar) []corev1.EnvVar {
 	counts := map[string]int{}
 	for _, e := range env {
