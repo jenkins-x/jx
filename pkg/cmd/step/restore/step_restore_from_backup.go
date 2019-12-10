@@ -7,9 +7,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube/velero"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -80,7 +80,7 @@ func (o *FromBackupOptions) Run() error {
 		errors.Wrap(err, "when trying to check for velero schedules")
 	}
 
-	// if a Velero Schedule exists then we should be confident that is an existing operational cluster
+	// However, if a Velero Schedule exists then we should be confident that is an existing operational cluster
 	// and abort the restore. However if
 	if scheduleExists {
 		fmt.Println("A schedule exists for this cluster - aborting restore as it would be dangerous to apply the latest backup")
@@ -90,7 +90,7 @@ func (o *FromBackupOptions) Run() error {
 		if err != nil {
 			errors.Wrap(err, "when trying to get the latest backup")
 		}
-		log.Infof("Using backup '%s' as the latest backup to restore", util.ColorInfo(latestBackupName))
+		log.Logger().Infof("Using backup '%s' as the latest backup to restore", util.ColorInfo(latestBackupName))
 
 		if o.BatchMode {
 			err := velero.RestoreFromBackup(apiClient, kubeClient, "velero", latestBackupName)
