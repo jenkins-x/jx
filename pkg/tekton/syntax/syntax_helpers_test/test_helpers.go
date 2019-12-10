@@ -279,6 +279,16 @@ func EnvVarFrom(name string, source *corev1.EnvVarSource) builder.ContainerOp {
 	}
 }
 
+// EnvVar adds an environment variable with a value to the container options
+func EnvVar(name string, value string) builder.ContainerOp {
+	return func(container *corev1.Container) {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  name,
+			Value: value,
+		})
+	}
+}
+
 // PipelineOptionsTimeout sets the timeout for the pipeline
 func PipelineOptionsTimeout(time int64, unit syntax.TimeoutUnit) PipelineOptionsOp {
 	return func(options *syntax.RootOptions) {
