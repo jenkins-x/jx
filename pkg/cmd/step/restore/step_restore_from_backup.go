@@ -93,7 +93,7 @@ func (o *FromBackupOptions) Run() error {
 		log.Logger().Infof("Using backup '%s' as the latest backup to restore", util.ColorInfo(latestBackupName))
 
 		if o.BatchMode {
-			err := velero.RestoreFromBackup(apiClient, kubeClient, "velero", latestBackupName)
+			err := velero.RestoreFromBackup(apiClient, kubeClient, o.Namespace, latestBackupName)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("when attempting to automatically restore from '%s' backup", latestBackupName))
 			}
@@ -113,7 +113,7 @@ func (o *FromBackupOptions) Run() error {
 				return fmt.Errorf("No backup chosen")
 			}
 			selectedBackupName := args[0]
-			err = velero.RestoreFromBackup(apiClient, kubeClient, "velero", selectedBackupName)
+			err = velero.RestoreFromBackup(apiClient, kubeClient, o.Namespace, selectedBackupName)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("when attempting to restore from '%s' backup", selectedBackupName))
 			}
