@@ -3,13 +3,13 @@ metadata:
   labels:
     branch: master
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: golang-qs-test
-  name: abayer-golang-qs-test-master-1
+  name: abayer-golang-qs-test-master-78c5n-1
 pipelineRef: null
 pipelineRunRef: null
 stages:
 - depth: 0
   name: from-build-pack
-  taskRef: abayer-golang-qs-test-master-from-build-pack-1
+  taskRef: abayer-golang-qs-test-master-78c5n-from-build-pack-1

@@ -5,10 +5,10 @@ metadata:
   labels:
     branch: really-long
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: js-test-repo
-  name: abayer-js-test-repo-really-long-1
+  name: abayer-js-test-repo-really-long-j9gz7-1
   namespace: jx
 spec:
   params:
@@ -32,7 +32,7 @@ spec:
       - name: workspace
         resource: abayer-js-test-repo-really-long
     taskRef:
-      name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
+      name: abayer-js-test-repo-really-long-j9gz7-build-a-really-long-sta-1
   - name: second
     params:
     - name: version
@@ -46,5 +46,5 @@ spec:
     runAfter:
     - build-a-really-long-stage-name-please-but-not-too-long-thanks
     taskRef:
-      name: abayer-js-test-repo-really-long-second-1
+      name: abayer-js-test-repo-really-long-j9gz7-second-1
 status: {}

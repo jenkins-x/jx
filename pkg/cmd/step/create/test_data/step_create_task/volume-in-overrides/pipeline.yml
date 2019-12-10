@@ -5,10 +5,10 @@ metadata:
   labels:
     branch: master
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: jx-demo-qs
-  name: abayer-jx-demo-qs-master-1
+  name: abayer-jx-demo-qs-master-lxm9g-1
   namespace: jx
 spec:
   params:
@@ -29,5 +29,5 @@ spec:
       - name: workspace
         resource: abayer-jx-demo-qs-master
     taskRef:
-      name: abayer-jx-demo-qs-master-from-build-pack-1
+      name: abayer-jx-demo-qs-master-lxm9g-from-build-pack-1
 status: {}

@@ -37,7 +37,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -392,6 +391,8 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 
+	rand.Seed(12345)
+
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			devEnv := v1.Environment{
@@ -462,8 +463,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			testhelpers.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
 			ns := "jx"
-			// Create a single duplicate PipelineResource for the name used by the 'kaniko_entrypoint' test case to verify that the deduplication logic works correctly.
-			tektonClient := tektonfake.NewSimpleClientset(tekton_helpers_test.AssertLoadPipelineResources(t, path.Join(testData, "prepopulated")))
 
 			err = createTask.setBuildValues()
 			assert.NoError(t, err)
@@ -485,8 +484,8 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), nil, "")
-				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), tektonClient, ns)
+				resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), false)
+				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), true)
 				crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
 				if tt.generateError != nil {
 					if err == nil {

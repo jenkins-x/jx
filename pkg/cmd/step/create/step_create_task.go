@@ -303,8 +303,8 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	// resourceName is shared across all builds of a branch, while the pipelineName is unique for each build.
-	resourceName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), nil, "")
-	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), tektonClient, ns)
+	resourceName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), false)
+	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), true)
 
 	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {

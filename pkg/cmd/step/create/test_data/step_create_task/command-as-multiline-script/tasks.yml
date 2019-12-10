@@ -6,11 +6,11 @@ items:
     labels:
       branch: really-long
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: build-a-really-long-stage-name-please-but-not-too-long-thanks
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: js-test-repo
-    name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
+    name: abayer-js-test-repo-really-long-vt9mj-build-a-really-long-sta-1
     namespace: jx
   spec:
     inputs:
@@ -173,11 +173,11 @@ items:
     labels:
       branch: really-long
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: second
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: js-test-repo
-    name: abayer-js-test-repo-really-long-second-1
+    name: abayer-js-test-repo-really-long-vt9mj-second-1
     namespace: jx
   spec:
     inputs:

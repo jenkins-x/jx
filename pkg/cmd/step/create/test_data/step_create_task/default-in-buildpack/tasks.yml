@@ -6,11 +6,11 @@ items:
     labels:
       branch: master
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: from-build-pack
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: golang-qs-test
-    name: abayer-golang-qs-test-master-from-build-pack-1
+    name: abayer-golang-qs-test-master-sn8zf-from-build-pack-1
     namespace: jx
   spec:
     inputs:
