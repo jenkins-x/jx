@@ -12,6 +12,7 @@ type StepRestoreOptions struct {
 	step.StepOptions
 }
 
+// NewCmdStepRestore performs the command setup
 func NewCmdStepRestore(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepRestoreOptions{
 		StepOptions: step.StepOptions{

@@ -2,19 +2,19 @@ package restore
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube/velero"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// RestoreFromScheduleOptions contains the command line options
-type RestoreFromBackupOptions struct {
+// FromBackupOptions contains the command line options
+type FromBackupOptions struct {
 	*StepRestoreOptions
 
 	Namespace string
@@ -34,9 +34,9 @@ var (
 
 // NewCmdStepRestoreFromBackup creates the command
 func NewCmdStepRestoreFromBackup(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &RestoreFromBackupOptions{
-		StepRestoreOptions: &StepRestoreOptions {
-			StepOptions: step.StepOptions {
+	options := &FromBackupOptions{
+		StepRestoreOptions: &StepRestoreOptions{
+			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
 		},
@@ -60,7 +60,7 @@ func NewCmdStepRestoreFromBackup(commonOpts *opts.CommonOptions) *cobra.Command 
 }
 
 // Run implements this command
-func (o *RestoreFromBackupOptions) Run() error {
+func (o *FromBackupOptions) Run() error {
 
 	// create the api extensions client
 	apiClient, err := o.ApiExtensionsClient()
@@ -93,7 +93,7 @@ func (o *RestoreFromBackupOptions) Run() error {
 		log.Infof("Using backup '%s' as the latest backup to restore", util.ColorInfo(latestBackupName))
 
 		if o.BatchMode {
-			err := velero.RestoreFromBackup(apiClient, kubeClient,"velero", latestBackupName)
+			err := velero.RestoreFromBackup(apiClient, kubeClient, "velero", latestBackupName)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("when attempting to automatically restore from '%s' backup", latestBackupName))
 			}
@@ -113,7 +113,7 @@ func (o *RestoreFromBackupOptions) Run() error {
 				return fmt.Errorf("No backup chosen")
 			}
 			selectedBackupName := args[0]
-			err = velero.RestoreFromBackup(apiClient, kubeClient,"velero", selectedBackupName)
+			err = velero.RestoreFromBackup(apiClient, kubeClient, "velero", selectedBackupName)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("when attempting to restore from '%s' backup", selectedBackupName))
 			}
@@ -121,4 +121,3 @@ func (o *RestoreFromBackupOptions) Run() error {
 	}
 	return nil
 }
-
