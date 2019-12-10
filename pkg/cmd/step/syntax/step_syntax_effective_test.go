@@ -106,14 +106,14 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
 									sht.ContainerResourceRequests("400m", "512Mi"),
-									sht.EnvVar("DOCKER_REGISTRY", "gcr.io"),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									sht.EnvVar("DOCKER_REGISTRY", "gcr.io"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									sht.ContainerSecurityContext(true),
 									tb.VolumeMount("workspace-volume", "/home/jenkins"),
@@ -148,14 +148,14 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
 									sht.ContainerResourceRequests("400m", "512Mi"),
-									sht.EnvVar("DOCKER_REGISTRY", "gcr.io"),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									sht.EnvVar("DOCKER_REGISTRY", "gcr.io"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									sht.ContainerSecurityContext(true),
 									tb.VolumeMount("workspace-volume", "/home/jenkins"),
@@ -236,19 +236,19 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
 									sht.ContainerResourceRequests("400m", "512Mi"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									sht.ContainerSecurityContext(true),
 									tb.VolumeMount("workspace-volume", "/home/jenkins"),
@@ -282,19 +282,19 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
 									sht.ContainerResourceRequests("400m", "512Mi"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									sht.ContainerSecurityContext(true),
 									tb.VolumeMount("workspace-volume", "/home/jenkins"),
@@ -502,19 +502,20 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("FRUIT", "BANANA"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
-									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									tb.EnvVar("_JAVA_OPTIONS", "-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m"),
 									sht.ContainerSecurityContext(true),
@@ -554,19 +555,20 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("FRUIT", "BANANA"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
-									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									tb.EnvVar("_JAVA_OPTIONS", "-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m"),
 									sht.ContainerSecurityContext(true),
