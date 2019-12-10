@@ -5,17 +5,17 @@ metadata:
   labels:
     branch: no-default-agent
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: js-test-repo
-  name: abayer-js-test-repo-no-default-1
+  name: abayer-js-test-repo-no-default-j2tds-1
 spec:
   params:
   - name: version
     value: 0.0.1
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
-    name: abayer-js-test-repo-no-default-1
+    name: abayer-js-test-repo-no-default-j2tds-1
   resources:
   - name: abayer-js-test-repo-no-default
     resourceRef:

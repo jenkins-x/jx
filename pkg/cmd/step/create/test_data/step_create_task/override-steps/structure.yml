@@ -3,13 +3,13 @@ metadata:
   labels:
     branch: master
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: jx-demo-qs
-  name: abayer-jx-demo-qs-master-1
+  name: abayer-jx-demo-qs-master-l22wn-1
 pipelineRef: null
 pipelineRunRef: null
 stages:
 - depth: 0
   name: from-build-pack
-  taskRef: abayer-jx-demo-qs-master-from-build-pack-1
+  taskRef: abayer-jx-demo-qs-master-l22wn-from-build-pack-1

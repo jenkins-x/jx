@@ -6,11 +6,11 @@ items:
     labels:
       branch: override-default-agent
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: from-build-pack
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: js-test-repo
-    name: abayer-js-test-repo-override-de-from-build-pack-1
+    name: abayer-js-test-repo-override-de-vr6ds-from-build-pack-1
     namespace: jx
   spec:
     inputs:

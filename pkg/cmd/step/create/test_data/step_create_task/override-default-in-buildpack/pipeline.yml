@@ -5,10 +5,10 @@ metadata:
   labels:
     branch: master
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: golang-qs-test
-  name: abayer-golang-qs-test-master-1
+  name: abayer-golang-qs-test-master-klrgx-1
   namespace: jx
 spec:
   params:
@@ -29,5 +29,5 @@ spec:
       - name: workspace
         resource: abayer-golang-qs-test-master
     taskRef:
-      name: abayer-golang-qs-test-master-from-build-pack-1
+      name: abayer-golang-qs-test-master-klrgx-from-build-pack-1
 status: {}

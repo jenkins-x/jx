@@ -5,10 +5,10 @@ metadata:
   labels:
     branch: no-default-agent
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: js-test-repo
-  name: abayer-js-test-repo-no-default-1
+  name: abayer-js-test-repo-no-default-j2tds-1
   namespace: jx
 spec:
   params:
@@ -29,5 +29,5 @@ spec:
       - name: workspace
         resource: abayer-js-test-repo-no-default
     taskRef:
-      name: abayer-js-test-repo-no-default-from-build-pack-1
+      name: abayer-js-test-repo-no-default-j2tds-from-build-pack-1
 status: {}

@@ -106,8 +106,8 @@ func (c *clientFactory) Create(param PipelineCreateParam) (kube.PromoteStepActiv
 	}
 
 	// resourceName is shared across all builds of a branch, while the pipelineName is unique for each build.
-	resourceName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, param.Context, tekton.MetaPipeline.String(), nil, "")
-	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, param.Context, tekton.MetaPipeline.String(), c.tektonClient, c.ns)
+	resourceName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, param.Context, tekton.MetaPipeline.String(), false)
+	pipelineName := tekton.PipelineResourceNameFromGitInfo(gitInfo, branchIdentifier, param.Context, tekton.MetaPipeline.String(), true)
 	buildNumber, err := tekton.GenerateNextBuildNumber(c.tektonClient, c.jxClient, c.ns, gitInfo, branchIdentifier, retryDuration, param.Context, param.UseActivityForNextBuildNumber)
 	if err != nil {
 		return kube.PromoteStepActivityKey{}, tekton.CRDWrapper{}, errors.Wrap(err, "unable to determine next build number")
