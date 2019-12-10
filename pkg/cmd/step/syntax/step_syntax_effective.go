@@ -420,6 +420,21 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to generate pipeline from build pack")
 		}
+
+		// lets remove any environment variables defined in the container options from build packs/pod templates
+		// which are explicitly passed in to avoid possibly adding a value and valueFrom expression in the
+		// generated pod's container env vars
+		co := parsed.Options.ContainerOptions
+		for _, ev := range pipelineConfig.Env {
+			name := ev.Name
+			for i, e := range co.Env {
+				if e.Name == name {
+					co.Env = append(co.Env[0:i], co.Env[i+1:]...)
+					break
+				}
+			}
+		}
+		co.Env = RemoveDuplicateEnvVars(co.Env)
 	}
 
 	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
@@ -449,6 +464,25 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 	}
 
 	return parsed, nil
+}
+
+func RemoveDuplicateEnvVars(env []corev1.EnvVar) []corev1.EnvVar {
+	counts := map[string]int{}
+	for _, e := range env {
+		counts[e.Name] = counts[e.Name] + 1
+	}
+	for name, c := range counts {
+		for i := c - 1; i > 0; i-- {
+			// lets remove the dupe
+			for i, e := range env {
+				if e.Name == name {
+					env = append(env[0:i], env[i+1:]...)
+					break
+				}
+			}
+		}
+	}
+	return env
 }
 
 func (o *StepSyntaxEffectiveOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {

@@ -35,6 +35,8 @@ items:
       env:
       - name: FRUIT
         value: BANANA
+      - name: GIT_AUTHOR_NAME
+        value: somebodyelse
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
@@ -46,8 +48,6 @@ items:
         value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
-      - name: GIT_AUTHOR_NAME
-        value: somebodyelse
       - name: GIT_COMMITTER_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
