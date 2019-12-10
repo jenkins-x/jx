@@ -209,7 +209,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				},
 			},
 		},
-	}, /*{
+	}, {
 		name:         "js_build_pack",
 		pack:         "javascript",
 		repoName:     "js-test-repo",
@@ -680,7 +680,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				},
 			},
 		},
-	}*/}
+	}}
 
 	k8sObjects := []runtime.Object{
 		&corev1.ConfigMap{
