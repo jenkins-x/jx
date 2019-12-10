@@ -2,6 +2,7 @@ package restore
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -100,7 +101,7 @@ func (o *FromBackupOptions) Run() error {
 		} else {
 			backupNames, err := velero.GetBackupsFromBackupResource(apiClient, o.Namespace)
 			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("when attempting to retrieve the latest backups", latestBackupName))
+				return errors.Wrap(err, "when attempting to retrieve the backups")
 			}
 
 			selectedBackup, err := util.PickNameWithDefault(backupNames, "Which backup do you want to restore from?: ", latestBackupName, "", o.GetIOFileHandles())
