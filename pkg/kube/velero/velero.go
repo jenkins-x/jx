@@ -3,7 +3,8 @@ package velero
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/martian/log"
+
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -11,34 +12,35 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type VeleroSchedule struct {
+type veleroSchedule struct {
 	Name string `json:"metadata.name"`
 }
 
-type VeleroScheduleList struct {
-	Items []VeleroSchedule `json:"items"`
+type veleroScheduleList struct {
+	Items []veleroSchedule `json:"items"`
 }
 
-type VeleroBackup struct {
+type veleroBackup struct {
 	Name string `json:"metadata.name"`
 }
 
-type VeleroBackupList struct {
-	Items []VeleroBackup `json"items"`
+type veleroBackupList struct {
+	Items []veleroBackup `json"items"`
 }
 
 var (
-	veleroBackupsResource = "backups.velero.io"
+	veleroBackupsResource   = "backups.velero.io"
 	veleroSchedulesResource = "schedules.velero.io"
 )
 
+// RestoreFromBackup restores from a named velero backup
 func RestoreFromBackup(apiClient apiextensionsclientset.Interface, kubeClient kubernetes.Interface, namespace string, backupName string) error {
 	if backupName == "" {
 		return errors.Errorf("")
 	}
-	log.Infof("Using backup '%s'", backupName)
+	log.Logger().Infof("Using backup '%s'", backupName)
 
-	args := [] string {"create", "restore", "--from-backup", backupName, "--namespace", namespace}
+	args := []string{"create", "restore", "--from-backup", backupName, "--namespace", namespace}
 	cmd := util.Command{
 		Name: "velero",
 		Args: args,
@@ -49,11 +51,12 @@ func RestoreFromBackup(apiClient apiextensionsclientset.Interface, kubeClient ku
 		return errors.Wrap(err, fmt.Sprintf("executing '%s %v' command", cmd.Name, cmd.Args))
 	}
 
-	log.Infof(output)
+	log.Logger().Infof(output)
 
 	return nil
 }
 
+// DoesVeleroBackupScheduleExist checks whether a velero schedule exists
 func DoesVeleroBackupScheduleExist(apiClient apiextensionsclientset.Interface, namespace string) (bool, error) {
 
 	if doesVeleroSchedulesResourceExist(apiClient) {
@@ -69,7 +72,7 @@ func DoesVeleroBackupScheduleExist(apiClient apiextensionsclientset.Interface, n
 			return false, errors.Wrap(err, fmt.Sprintf("executing kubectl get %s command", veleroSchedulesResource))
 		}
 
-		var veleroShedules VeleroScheduleList
+		var veleroShedules veleroScheduleList
 		err = json.Unmarshal([]byte(output), &veleroShedules)
 		if err != nil {
 			return false, errors.Wrap(err, "unmarshalling kubectl response")
@@ -83,7 +86,7 @@ func DoesVeleroBackupScheduleExist(apiClient apiextensionsclientset.Interface, n
 	return false, nil
 }
 
-func doesVeleroBackupsResourceExist(apiClient apiextensionsclientset.Interface) bool{
+func doesVeleroBackupsResourceExist(apiClient apiextensionsclientset.Interface) bool {
 	listOptions := metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", veleroBackupsResource),
 	}
@@ -94,12 +97,11 @@ func doesVeleroBackupsResourceExist(apiClient apiextensionsclientset.Interface) 
 
 	if len(backupList.Items) > 0 {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
-func doesVeleroSchedulesResourceExist(apiClient apiextensionsclientset.Interface) bool{
+func doesVeleroSchedulesResourceExist(apiClient apiextensionsclientset.Interface) bool {
 	listOptions := metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", veleroSchedulesResource),
 	}
@@ -110,11 +112,11 @@ func doesVeleroSchedulesResourceExist(apiClient apiextensionsclientset.Interface
 
 	if len(schedulesList.Items) > 0 {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
+// GetBackupsFromBackupResource returns a list of all velero backups
 func GetBackupsFromBackupResource(apiClient apiextensionsclientset.Interface, namespace string) ([]string, error) {
 
 	if doesVeleroBackupsResourceExist(apiClient) {
@@ -130,7 +132,7 @@ func GetBackupsFromBackupResource(apiClient apiextensionsclientset.Interface, na
 			return []string{}, errors.Wrap(err, fmt.Sprintf("executing '%s %v' command", cmd.Name, cmd.Args))
 		}
 
-		var veleroBackups VeleroBackupList
+		var veleroBackups veleroBackupList
 		err = json.Unmarshal([]byte(output), &veleroBackups)
 		if err != nil {
 			return []string{}, errors.Wrap(err, "unmarshalling kubectl response for backups")
@@ -149,6 +151,7 @@ func GetBackupsFromBackupResource(apiClient apiextensionsclientset.Interface, na
 	return []string{}, nil
 }
 
+// GetLatestBackupFromBackupResource returns the latest velero backup name
 func GetLatestBackupFromBackupResource(apiClient apiextensionsclientset.Interface, namespace string) (string, error) {
 
 	if doesVeleroBackupsResourceExist(apiClient) {
@@ -158,7 +161,7 @@ func GetLatestBackupFromBackupResource(apiClient apiextensionsclientset.Interfac
 			errors.Wrap(err, "when attempting to retrieve velero backup list")
 		}
 
-		return backups[len(backups) - 1], nil
+		return backups[len(backups)-1], nil
 	}
 	return "", nil
 }
