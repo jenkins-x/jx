@@ -1,10 +1,11 @@
 package dependencymatrix_test
 
 import (
+	"testing"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCanLoadDependencyUpdates(t *testing.T) {
