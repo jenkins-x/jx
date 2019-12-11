@@ -259,7 +259,7 @@ clean: ## Clean the generated artifacts
 	rm -rf build release dist
 
 .PHONY: fmt
-fmt: ## Format the code
+fmt: importfmt ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
 	@if [ "$(FORMATTED)" == "" ]; \
       	then \
