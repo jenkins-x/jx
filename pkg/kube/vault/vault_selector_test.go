@@ -1,6 +1,8 @@
 package vault_test
 
 import (
+	"fmt"
+	vault_const "github.com/jenkins-x/jx/pkg/vault"
 	"testing"
 
 	expect "github.com/Netflix/go-expect"
@@ -34,7 +36,7 @@ func Test_GetVault_InclusterUsesInternalVaultURL(t *testing.T) {
 
 	assert.Equal(t, "myVault", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
-	assert.Equal(t, "http://myVault:8200", vault.URL)
+	assert.Equal(t, fmt.Sprintf("http://myVault:%s", vault_const.DefaultVaultPort), vault.URL)
 	assert.Equal(t, "myVault-auth-sa", vault.AuthServiceAccountName)
 	assert.NoError(t, err)
 }

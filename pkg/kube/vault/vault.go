@@ -44,7 +44,7 @@ const (
 
 	vaultSecretEngines      = "secrets"
 	defaultNumVaults        = 1
-	defaultInternalVaultURL = "http://%s:8200"
+	defaultInternalVaultURL = "http://%s:" + vault.DefaultVaultPort
 )
 
 // Vault stores some details of a Vault resource
@@ -321,11 +321,11 @@ func NewVaultCRD(kubeClient kubernetes.Interface, name string, ns string, images
 			ServiceType:     string(v1.ServiceTypeClusterIP),
 			ServiceAccount:  name,
 			Config: map[string]interface{}{
-				"api_addr":           fmt.Sprintf("http://%s.%s:8200", name, ns),
+				"api_addr":           fmt.Sprintf("http://%s.%s:%s", name, ns, vault.DefaultVaultPort),
 				"disable_clustering": true,
 				"listener": Listener{
 					Tcp: Tcp{
-						Address:    "0.0.0.0:8200",
+						Address:    fmt.Sprintf("0.0.0.0:%s", vault.DefaultVaultPort),
 						TlsDisable: true,
 					},
 				},
