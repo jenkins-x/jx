@@ -5,11 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/promote"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/cmd/step/post"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -98,7 +99,7 @@ func (o *StepReleaseOptions) Run() error {
 		}
 	}
 
-	stepGitCredentialsOptions := &git.StepGitCredentialsOptions{
+	stepGitCredentialsOptions := &credentials.StepGitCredentialsOptions{
 		StepOptions: o.StepOptions,
 	}
 	err = stepGitCredentialsOptions.Run()

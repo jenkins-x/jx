@@ -3,6 +3,7 @@ package git
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -33,7 +34,7 @@ func NewCmdStepGit(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepGitCredentials(commonOpts))
+	cmd.AddCommand(credentials.NewCmdStepGitCredentials(commonOpts))
 	cmd.AddCommand(NewCmdStepGitEnvs(commonOpts))
 	cmd.AddCommand(NewCmdStepGitMerge(commonOpts))
 	cmd.AddCommand(NewCmdStepGitForkAndClone(commonOpts))

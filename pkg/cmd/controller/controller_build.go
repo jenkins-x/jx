@@ -9,10 +9,11 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/logs"
 	"k8s.io/apimachinery/pkg/fields"
@@ -1065,7 +1066,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 	}
 
 	if initGitCredentials {
-		gc := &git.StepGitCredentialsOptions{}
+		gc := &credentials.StepGitCredentialsOptions{}
 		copy := *o.CommonOptions
 		gc.CommonOptions = &copy
 		gc.BatchMode = true
