@@ -2,8 +2,9 @@ package vault_test
 
 import (
 	"fmt"
-	vault_const "github.com/jenkins-x/jx/pkg/vault"
 	"testing"
+
+	vault_const "github.com/jenkins-x/jx/pkg/vault"
 
 	expect "github.com/Netflix/go-expect"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"

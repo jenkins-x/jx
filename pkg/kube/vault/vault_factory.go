@@ -2,10 +2,11 @@ package vault
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 	"os"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
