@@ -4,15 +4,15 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+
 	"github.com/jenkins-x/jx/pkg/environments"
 
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -98,7 +98,7 @@ func (o *ControllerTeamOptions) Run() error {
 
 	// now lets setup the git secrets
 	if co.InCluster() {
-		sgc := &git.StepGitCredentialsOptions{}
+		sgc := &credentials.StepGitCredentialsOptions{}
 		sgc.CommonOptions = co.CommonOptions
 		log.Logger().Info("Setting up git credentials")
 		err = sgc.Run()

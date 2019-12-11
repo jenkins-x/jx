@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -19,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/gits"
 	v12 "k8s.io/client-go/kubernetes/typed/core/v1"
 
@@ -97,7 +98,7 @@ type CreateDevPodOptions struct {
 	ServiceAccount  string
 	PullSecrets     string
 
-	GitCredentials git.StepGitCredentialsOptions
+	GitCredentials credentials.StepGitCredentialsOptions
 
 	Results CreateDevPodResults
 }
@@ -108,7 +109,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
-		GitCredentials: git.StepGitCredentialsOptions{
+		GitCredentials: credentials.StepGitCredentialsOptions{
 			StepOptions: step.StepOptions{
 				CommonOptions: commonOpts,
 			},
@@ -855,8 +856,12 @@ func (o *CreateDevPodOptions) Run() error {
 			if err != nil {
 				return errors.Wrap(err, "creating git credentials")
 			}
+			data, err := o.GitCredentials.GitCredentialsFileData(gitCredentials)
+			if err != nil {
+				return errors.Wrap(err, "creating git credentials")
+			}
 			theiaRshExec := []string{
-				fmt.Sprintf("echo \"%s\" >> ~/.git-credentials", string(gitCredentials)),
+				fmt.Sprintf("echo \"%s\" >> ~/.git-credentials", string(data)),
 				"git config --global credential.helper store",
 			}
 

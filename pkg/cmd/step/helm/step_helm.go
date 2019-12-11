@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/ghodss/yaml"
@@ -14,7 +16,6 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/spf13/cobra"
 
@@ -142,7 +143,7 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 	stepOpts := step.StepOptions{
 		CommonOptions: o.CommonOptions,
 	}
-	gitOpts := git.StepGitCredentialsOptions{
+	gitOpts := credentials.StepGitCredentialsOptions{
 		StepOptions: stepOpts,
 	}
 

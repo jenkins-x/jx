@@ -1,4 +1,4 @@
-package git
+package credentials
 
 import (
 	"bytes"
@@ -39,6 +39,12 @@ type StepGitCredentialsOptions struct {
 	CredentialsSecret string
 }
 
+type credentials struct {
+	user       string
+	password   string
+	serviceURL string
+}
+
 var (
 	StepGitCredentialsLong = templates.LongDesc(`
 		This pipeline step generates a Git credentials file for the current Git provider secrets
@@ -51,7 +57,6 @@ var (
 
 		# generate the Git credentials to a output file
 		jx step git credentials -o /tmp/mycreds
-
 `)
 )
 
@@ -86,26 +91,9 @@ func (o *StepGitCredentialsOptions) Run() error {
 		o.CredentialsSecret = os.Getenv("JX_CREDENTIALS_FROM_SECRET")
 	}
 
-	outFile := o.OutputFile
-	if outFile == "" {
-		// lets figure out the default output file
-		cfgHome := os.Getenv("XDG_CONFIG_HOME")
-		if cfgHome == "" {
-			cfgHome = util.HomeDir()
-		}
-		if cfgHome != "" {
-			outFile = filepath.Join(cfgHome, "git", "credentials")
-		}
-	}
-	if outFile == "" {
-		return util.MissingOption(optionOutputFile)
-	}
-	dir, _ := filepath.Split(outFile)
-	if dir != "" {
-		err := os.MkdirAll(dir, util.DefaultWritePermissions)
-		if err != nil {
-			return err
-		}
+	outFile, err := o.determineOutputFile()
+	if err != nil {
+		return err
 	}
 
 	if o.CredentialsSecret != "" {
@@ -120,12 +108,13 @@ func (o *StepGitCredentialsOptions) Run() error {
 			return errors.Wrapf(err, "failed to find secret '%s' in namespace '%s'", o.CredentialsSecret, ns)
 		}
 
-		username := string(secret.Data["user"])
-		token := string(secret.Data["token"])
-		url := string(secret.Data["url"])
+		creds := credentials{
+			user:       string(secret.Data["user"]),
+			password:   string(secret.Data["token"]),
+			serviceURL: string(secret.Data["url"]),
+		}
 
-		return o.CreateGitCredentialsFileFromUsernameAndToken(outFile, username, token, url)
-
+		return o.createGitCredentialsFile(outFile, []credentials{creds})
 	}
 
 	gha, err := o.IsGitHubAppMode()
@@ -151,105 +140,110 @@ func (o *StepGitCredentialsOptions) Run() error {
 		}
 	}
 
-	return o.CreateGitCredentialsFile(outFile, authConfigSvc)
-}
-
-// CreateGitCredentialsFile creates the git credentials into file using the provided auth config service
-func (o *StepGitCredentialsOptions) CreateGitCredentialsFile(fileName string, configSvc auth.ConfigService) error {
-	data, err := o.CreateGitCredentialsFromAuthService(configSvc)
+	credentials, err := o.CreateGitCredentialsFromAuthService(authConfigSvc)
 	if err != nil {
 		return errors.Wrap(err, "creating git credentials")
 	}
-	if err := ioutil.WriteFile(fileName, data, util.DefaultWritePermissions); err != nil {
-		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
+	return o.createGitCredentialsFile(outFile, credentials)
+}
+
+func (o *StepGitCredentialsOptions) GitCredentialsFileData(credentials []credentials) ([]byte, error) {
+	var buffer bytes.Buffer
+	for _, creds := range credentials {
+		u, err := url.Parse(creds.serviceURL)
+		if err != nil {
+			log.Logger().Warnf("Ignoring invalid git service URL %q", creds.serviceURL)
+			continue
+		}
+
+		u.User = url.UserPassword(creds.user, creds.password)
+		buffer.WriteString(u.String() + "\n")
+		// Write the https protocol in case only https is set for completeness
+		if u.Scheme == "http" {
+			u.Scheme = "https"
+			buffer.WriteString(u.String() + "\n")
+		}
 	}
-	log.Logger().Infof("Generated Git credentials file %s", util.ColorInfo(fileName))
-	return nil
+
+	return buffer.Bytes(), nil
+}
+
+func (o *StepGitCredentialsOptions) determineOutputFile() (string, error) {
+	outFile := o.OutputFile
+	if outFile == "" {
+		outFile = util.GitCredentialsFile()
+	}
+
+	dir, _ := filepath.Split(outFile)
+	if dir != "" {
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
+		if err != nil {
+			return "", err
+		}
+	}
+	return outFile, nil
 }
 
 // CreateGitCredentialsFileFromUsernameAndToken creates the git credentials into file using the provided username, token & url
-func (o *StepGitCredentialsOptions) CreateGitCredentialsFileFromUsernameAndToken(fileName string, username string, token string, url string) error {
-	data, err := o.CreateGitCredentialsFromUsernameAndToken(username, token, url)
+func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, credentials []credentials) error {
+	data, err := o.GitCredentialsFileData(credentials)
 	if err != nil {
 		return errors.Wrap(err, "creating git credentials")
 	}
+
 	if err := ioutil.WriteFile(fileName, data, util.DefaultWritePermissions); err != nil {
-		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
+		return fmt.Errorf("failed to write to %s: %s", fileName, err)
 	}
 	log.Logger().Infof("Generated Git credentials file %s", util.ColorInfo(fileName))
 	return nil
 }
 
 // CreateGitCredentialsFromAuthService creates the git credentials using the auth config service
-func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConfigSvc auth.ConfigService) ([]byte, error) {
+func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConfigSvc auth.ConfigService) ([]credentials, error) {
+	var credentialList []credentials
+
 	cfg := authConfigSvc.Config()
 	if cfg == nil {
 		return nil, errors.New("no git auth config found")
 	}
 
-	var buffer bytes.Buffer
 	for _, server := range cfg.Servers {
-		auths := []*auth.UserAuth{}
+		var auths []*auth.UserAuth
 		if o.GitHubAppOwner != "" {
 			auths = server.Users
 		} else {
-			auth := server.CurrentAuth()
-			if auth == nil {
+			gitAuth := server.CurrentAuth()
+			if gitAuth == nil {
 				continue
 			} else {
-				auths = append(auths, auth)
+				auths = append(auths, gitAuth)
 			}
 		}
-		for _, auth := range auths {
-			if o.GitHubAppOwner != "" && auth.GithubAppOwner != o.GitHubAppOwner {
+		for _, gitAuth := range auths {
+			if o.GitHubAppOwner != "" && gitAuth.GithubAppOwner != o.GitHubAppOwner {
 				continue
 			}
-			username := auth.Username
-			password := auth.ApiToken
+			username := gitAuth.Username
+			password := gitAuth.ApiToken
 			if password == "" {
-				password = auth.BearerToken
+				password = gitAuth.BearerToken
 			}
 			if password == "" {
-				password = auth.Password
+				password = gitAuth.Password
 			}
 			if username == "" || password == "" {
 				log.Logger().Warnf("Empty auth config for git service URL %q", server.URL)
 				continue
 			}
-			u, err := url.Parse(server.URL)
-			if err != nil {
-				log.Logger().Warnf("Ignoring invalid git service URL %q", server.URL)
-				continue
+
+			credential := credentials{
+				user:       username,
+				password:   password,
+				serviceURL: server.URL,
 			}
-			u.User = url.UserPassword(auth.Username, auth.ApiToken)
-			buffer.WriteString(u.String() + "\n")
-			// Write the https protocol in case only https is set for completeness
-			if u.Scheme == "http" {
-				u.Scheme = "https"
-			}
-			buffer.WriteString(u.String() + "\n")
+
+			credentialList = append(credentialList, credential)
 		}
 	}
-	return buffer.Bytes(), nil
-}
-
-// CreateGitCredentialsFromUsernameAndToken creates the git credentials using the auth config service
-func (o *StepGitCredentialsOptions) CreateGitCredentialsFromUsernameAndToken(username string, token string, serverURL string) ([]byte, error) {
-	var buffer bytes.Buffer
-
-	u, err := url.Parse(serverURL)
-	if err != nil {
-		log.Logger().Warnf("Ignoring invalid git service URL %q", serverURL)
-		return nil, err
-	}
-
-	u.User = url.UserPassword(username, token)
-	buffer.WriteString(u.String() + "\n")
-	// Write the https protocol in case only https is set for completeness
-	if u.Scheme == "http" {
-		u.Scheme = "https"
-	}
-
-	buffer.WriteString(u.String() + "\n")
-	return buffer.Bytes(), nil
+	return credentialList, nil
 }

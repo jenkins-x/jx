@@ -14,14 +14,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+
 	"github.com/jenkins-x/jx/pkg/cmd/controller/pipeline"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -463,7 +463,7 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 	if !o.NoGitCredeentialsInit {
 		copy := *o.CommonOptions
 		copy.BatchMode = true
-		gsc := &git.StepGitCredentialsOptions{
+		gsc := &credentials.StepGitCredentialsOptions{
 			StepOptions: step.StepOptions{
 				CommonOptions: &copy,
 			},

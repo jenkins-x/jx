@@ -3,7 +3,7 @@ package pipeline
 import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git"
+	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
 	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -131,7 +131,7 @@ func (o *PipelineRunnerOptions) stepGitCredentials() error {
 	if !o.NoGitCredentialsInit {
 		copy := *o.CommonOptions
 		copy.BatchMode = true
-		gsc := &git.StepGitCredentialsOptions{
+		gsc := &credentials.StepGitCredentialsOptions{
 			StepOptions: step.StepOptions{
 				CommonOptions: &copy,
 			},
