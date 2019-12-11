@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/blang/semver"
-
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -219,21 +217,10 @@ func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionSt
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to get latest tag at %s", o.Dir)
 		}
-		// if version stream is currently set to a sha
-	} else if len(versionStreamRef) == 40 {
+	} else {
 		upgradeRef, err = o.Git().GetCommitPointedToByTag(versionsDir, upgradeRef)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to get commit pointed to by %s", upgradeRef)
-		}
-	} else {
-		// if version stream is currently tagged version
-		versionText := strings.TrimPrefix(versionStreamRef, "v")
-		_, err = semver.Parse(versionText)
-		if err == nil {
-			_, upgradeRef, err = o.Git().GetCommitPointedToByLatestTag(versionsDir)
-			if err != nil {
-				return "", errors.Wrapf(err, "failed to get latest tag at %s", o.Dir)
-			}
 		}
 	}
 

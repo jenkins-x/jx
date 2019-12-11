@@ -30,11 +30,12 @@ func TestUpgradeAvailable(t *testing.T) {
 		latestRelease    bool
 		wantSha          bool
 		wantTag          bool
+		upgradeVSRef     string
 	}{
 		{
 			name:             "TestUpgradeAvailableFromTaggedVersion",
 			versionStreamRef: "v1.0.35",
-			wantTag:          true,
+			wantSha:          true,
 		},
 		{
 			name:             "TestUpgradeAvailableFromSha",
