@@ -11,7 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-const JXInstallCertManagerVersion = "0.9.1"
+// jxInstallCertManagerVersion is the locked cert-manager version to use for the old jenkins x install method
+const jxInstallCertManagerVersion = "0.9.1"
 
 // EnsureCertManager ensures cert-manager is installed
 func (o *CommonOptions) EnsureCertManager() error {
@@ -57,7 +58,7 @@ func (o *CommonOptions) EnsureCertManager() error {
 			err = o.InstallChartWithOptions(helm.InstallChartOptions{
 				ReleaseName: pki.CertManagerReleaseName,
 				Chart:       pki.CertManagerChart,
-				Version:     JXInstallCertManagerVersion,
+				Version:     jxInstallCertManagerVersion,
 				Ns:          pki.CertManagerNamespace,
 				HelmUpdate:  true,
 				SetValues:   values,
