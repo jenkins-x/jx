@@ -23,10 +23,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	exposedVaultPort = "8200"
-)
-
 var (
 	createVaultLong = templates.LongDesc(`
 		Creates a Vault using the vault-operator
@@ -295,7 +291,7 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	}
 	if svc.Annotations[kube.AnnotationExpose] == "" {
 		svc.Annotations[kube.AnnotationExpose] = "true"
-		svc.Annotations[kube.AnnotationExposePort] = exposedVaultPort
+		svc.Annotations[kube.AnnotationExposePort] = vault.DefaultVaultPort
 		svc, err = client.CoreV1().Services(o.Namespace).Update(svc)
 		if err != nil {
 			return errors.Wrapf(err, "updating %s service annotations", vaultService)

@@ -253,8 +253,6 @@ This repository contains the source code for the Jenkins X Development Environme
 	prowFlagName            = "prow"
 	staticJenkinsFlagName   = "static-jenkins"
 	gitOpsFlagName          = "gitops"
-
-	exposedVaultPort = "8200"
 )
 
 var (
@@ -2475,7 +2473,7 @@ func (options *InstallOptions) exposeVault(vaultService string, namespace string
 	}
 	if svc.Annotations[kube.AnnotationExpose] == "" {
 		svc.Annotations[kube.AnnotationExpose] = "true"
-		svc.Annotations[kube.AnnotationExposePort] = exposedVaultPort
+		svc.Annotations[kube.AnnotationExposePort] = vault.DefaultVaultPort
 		svc, err = client.CoreV1().Services(namespace).Update(svc)
 		if err != nil {
 			return errors.Wrapf(err, "updating %s service annotations", vaultService)
