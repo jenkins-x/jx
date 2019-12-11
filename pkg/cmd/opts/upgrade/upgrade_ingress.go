@@ -55,6 +55,21 @@ func (o *UpgradeIngressOptions) Run() error {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 
+	jxClient, ns, err := o.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "error obtaining the JX Client")
+	}
+
+	devEnv, err := jxClient.JenkinsV1().Environments(ns).Get("dev", metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "error obtaining the ")
+	}
+
+	if devEnv.Spec.TeamSettings.BootRequirements != "" {
+		return errors.New(`jx upgrade ingress shouldn't be used in a Jenkins X Boot cluster.
+For more documentation on Ingress configuration see: [https://jenkins-x.io/docs/getting-started/setup/boot/#ingress](https://jenkins-x.io/docs/getting-started/setup/boot/#ingress)`)
+	}
+
 	previousWebHookEndpoint := ""
 	if !o.SkipResourcesUpdate {
 		previousWebHookEndpoint, err = o.GetWebHookEndpoint()

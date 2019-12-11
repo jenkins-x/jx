@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const JXInstallCertManagerVersion = "0.9.1"
+
 // EnsureCertManager ensures cert-manager is installed
 func (o *CommonOptions) EnsureCertManager() error {
 	log.Logger().Infof("Looking for %q deployment in namespace %q...", pki.CertManagerDeployment, pki.CertManagerNamespace)
@@ -55,7 +57,7 @@ func (o *CommonOptions) EnsureCertManager() error {
 			err = o.InstallChartWithOptions(helm.InstallChartOptions{
 				ReleaseName: pki.CertManagerReleaseName,
 				Chart:       pki.CertManagerChart,
-				Version:     "",
+				Version:     JXInstallCertManagerVersion,
 				Ns:          pki.CertManagerNamespace,
 				HelmUpdate:  true,
 				SetValues:   values,
