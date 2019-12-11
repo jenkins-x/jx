@@ -1626,6 +1626,16 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 		return nil, nil, params.stepCounter, errors.New("syntactic sugar steps not yet supported")
 	}
 
+	// lets make sure if we've overloaded any environment variables we remove any remaining valueFrom structs
+	// to avoid creating bad Tasks
+	for _, step := range steps {
+		for i, e := range step.Env {
+			if e.Value != "" {
+				step.Env[i].ValueFrom = nil
+			}
+		}
+	}
+
 	return steps, volumes, params.stepCounter, nil
 }
 
