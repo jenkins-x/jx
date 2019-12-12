@@ -1628,10 +1628,10 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 
 	// lets make sure if we've overloaded any environment variables we remove any remaining valueFrom structs
 	// to avoid creating bad Tasks
-	for _, step := range steps {
-		for i, e := range step.Env {
+	for i, step := range steps {
+		for j, e := range step.Env {
 			if e.Value != "" {
-				step.Env[i].ValueFrom = nil
+				steps[i].Env[j].ValueFrom = nil
 			}
 		}
 	}
