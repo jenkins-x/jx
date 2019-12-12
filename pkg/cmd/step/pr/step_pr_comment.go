@@ -28,6 +28,7 @@ type StepPRCommentFlags struct {
 	Owner      string
 	Repository string
 	PR         string
+	Code       bool
 }
 
 // NewCmdStepPRComment Steps a command object for the "step pr comment" command
@@ -55,6 +56,7 @@ func NewCmdStepPRComment(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.Owner, "owner", "o", "", "Git organisation / owner")
 	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "Git repository")
 	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "Git Pull Request number")
+	cmd.Flags().BoolVarP(&options.Flags.Code, "code", "", false, "Treat the comment as code")
 
 	return cmd
 }
@@ -120,5 +122,12 @@ func (o *StepPRCommentOptions) Run() error {
 		Number: &prNumber,
 	}
 
+	if o.Flags.Code {
+		return provider.AddPRComment(&pr, escapeAsCode(o.Flags.Comment))
+	}
 	return provider.AddPRComment(&pr, o.Flags.Comment)
+}
+
+func escapeAsCode(comment string) string {
+	return "```\n" + comment
 }
