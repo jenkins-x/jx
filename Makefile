@@ -258,6 +258,9 @@ release-distro:
 clean: ## Clean the generated artifacts
 	rm -rf build release dist
 
+get-fmt-deps: ## Install test dependencies
+	$(GO_NOMOD) get golang.org/x/tools/cmd/goimports
+
 .PHONY: fmt
 fmt: importfmt ## Format the code
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
@@ -269,7 +272,7 @@ fmt: importfmt ## Format the code
       	fi
 
 .PHONY: importfmt
-importfmt:
+importfmt: get-fmt-deps
 	# $(GO_NOMOD) get golang.org/x/tools/cmd/goimports
 	@echo "Formatting the imports..."
 	goimports -w $(GO_DEPENDENCIES)
