@@ -567,8 +567,9 @@ func (o *GCGKEOptions) determineUnusedIamBindings(policy iamPolicy) ([]string, e
 	}
 	for _, b := range policy.Bindings {
 		for _, m := range b.Members {
-			if strings.HasPrefix(m, "serviceAccount:") {
-				saName := strings.TrimPrefix(m, "serviceAccount:")
+			if strings.HasPrefix(m, "deleted:serviceAccount:") || strings.HasPrefix(m, "serviceAccount:") {
+				saName := strings.TrimPrefix(m, "deleted:")
+				saName = strings.TrimPrefix(saName, "serviceAccount:")
 				displayName := saName[:strings.IndexByte(saName, '@')]
 
 				if isServiceAccount(displayName) {
