@@ -47,12 +47,12 @@ pipelineConfig:
                     mountPath: /secrets
             steps:
               - name: build-binary
-                image: docker.io/golang:1.11.5
+                image: docker.io/golang:1.12.4
                 command: make
                 args: ['linux']
 
               - name: validate-binary
-                image: docker.io/golang:1.11.5
+                image: docker.io/golang:1.12.4
                 command: "./build/linux/jx"
                 args: ['help']
                 # Supported when we upgrade
