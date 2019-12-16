@@ -839,7 +839,6 @@ func addLabelsToChartYaml(basedir string, hooksDir string, chart string, release
 }
 
 func getHelmHookFromFile(basedir string, path string, hooksDir string, helmHook string, kind string, m *yaml.MapSlice, partFile string) (*HelmHook, error) {
-
 	// lets move any helm hooks to the new partFile
 	relPath, err := filepath.Rel(basedir, path)
 	if err != nil {
@@ -849,8 +848,12 @@ func getHelmHookFromFile(basedir string, path string, hooksDir string, helmHook 
 		return &HelmHook{}, fmt.Errorf("Failed to find relative path of basedir %s and path %s", basedir, partFile)
 	}
 
+	helmHookDir := helmHook
+	if strings.Contains(helmHookDir, ",") {
+		helmHookDir = strings.ReplaceAll(helmHookDir, ",", "_")
+	}
 	// add the hook type into the directory structure
-	newPath := filepath.Join(hooksDir, helmHook, relPath)
+	newPath := filepath.Join(hooksDir, helmHookDir, relPath)
 	newDir, _ := filepath.Split(newPath)
 	err = os.MkdirAll(newDir, util.DefaultWritePermissions)
 	if err != nil {
