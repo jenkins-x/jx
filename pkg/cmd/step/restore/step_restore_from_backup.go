@@ -3,12 +3,13 @@ package restore
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube/velero"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,7 +19,8 @@ import (
 type FromBackupOptions struct {
 	*StepRestoreOptions
 
-	Namespace string
+	Namespace       string
+	UseLatestBackup bool
 }
 
 var (
@@ -29,7 +31,7 @@ var (
 
 	restoreFromBackupExample = templates.Examples(`
 		# executes the step which restores data from a backup 
-		jx step restore from-latest-backup
+		jx step restore from-backup
 	`)
 )
 
@@ -44,11 +46,11 @@ func NewCmdStepRestoreFromBackup(commonOpts *opts.CommonOptions) *cobra.Command 
 	}
 
 	cmd := &cobra.Command{
-		Use:     "from-latest-backup [flags]",
-		Short:   "stuff",
+		Use:     "from-backup [flags]",
+		Short:   "This step attempts a velero restore from a selected velero backup",
 		Long:    restoreFromBackupLong,
 		Example: restoreFromBackupExample,
-		Aliases: []string{"from-latest-backups"},
+		Aliases: []string{"from-backups"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -57,6 +59,7 @@ func NewCmdStepRestoreFromBackup(commonOpts *opts.CommonOptions) *cobra.Command 
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "velero", "The namespace where velero has been installed")
+	cmd.Flags().BoolVarP(&options.UseLatestBackup, "latest", "", false, "This indicates whether to use the latest velero backup as the restore point")
 	return cmd
 }
 
@@ -84,16 +87,17 @@ func (o *FromBackupOptions) Run() error {
 	// However, if a Velero Schedule exists then we should be confident that is an existing operational cluster
 	// and abort the restore. However if
 	if scheduleExists {
-		fmt.Println("A schedule exists for this cluster - aborting restore as it would be dangerous to apply the latest backup")
-		fmt.Println("If you expected this command to execute automatically - perhaps the backup schdule apply step comes before this step?")
+		fmt.Println("A velero schedule exists for this cluster")
+		fmt.Println("Aborting restore as it would be dangerous to apply the a backup")
+		fmt.Println("If you expected this command to execute automatically - perhaps the backup schedule apply step comes before this step?")
 	} else {
 		latestBackupName, err := velero.GetLatestBackupFromBackupResource(apiClient, o.Namespace)
 		if err != nil {
 			errors.Wrap(err, "when trying to get the latest backup")
 		}
-		log.Logger().Infof("Using backup '%s' as the latest backup to restore", util.ColorInfo(latestBackupName))
 
-		if o.BatchMode {
+		if o.UseLatestBackup {
+			log.Logger().Infof("Using backup '%s' as the latest backup to restore", util.ColorInfo(latestBackupName))
 			err := velero.RestoreFromBackup(apiClient, kubeClient, o.Namespace, latestBackupName)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("when attempting to automatically restore from '%s' backup", latestBackupName))
@@ -114,6 +118,7 @@ func (o *FromBackupOptions) Run() error {
 				return fmt.Errorf("No backup chosen")
 			}
 			selectedBackupName := args[0]
+			log.Logger().Infof("Using backup '%s' as the backup to restore", util.ColorInfo(selectedBackupName))
 			err = velero.RestoreFromBackup(apiClient, kubeClient, o.Namespace, selectedBackupName)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("when attempting to restore from '%s' backup", selectedBackupName))
