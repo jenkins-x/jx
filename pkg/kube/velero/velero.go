@@ -13,19 +13,27 @@ import (
 )
 
 type veleroSchedule struct {
-	Name string `json:"metadata.name"`
+	Metadata veleroScheduleMetadata `json:"metadata"`
+}
+
+type veleroScheduleMetadata struct {
+	Name string `json:"name"`
 }
 
 type veleroScheduleList struct {
 	Items []veleroSchedule `json:"items"`
 }
 
+type veleroBackupMetadata struct {
+	Name string `json:"name"`
+}
+
 type veleroBackup struct {
-	Name string `json:"metadata.name"`
+	Metadata veleroBackupMetadata `json:"metadata"`
 }
 
 type veleroBackupList struct {
-	Items []veleroBackup `json"items"`
+	Items []veleroBackup `json:"items"`
 }
 
 var (
@@ -142,7 +150,7 @@ func GetBackupsFromBackupResource(apiClient apiextensionsclientset.Interface, na
 			backups := make([]string, len(veleroBackups.Items))
 			// there must be a nicer way to do this
 			for index, veleroBackup := range veleroBackups.Items {
-				backups[index] = veleroBackup.Name
+				backups[index] = veleroBackup.Metadata.Name
 			}
 			return backups, nil
 		}
