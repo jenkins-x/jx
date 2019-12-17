@@ -77,7 +77,7 @@ func TestAddYamlLabels(t *testing.T) {
 		return nil
 	})
 
-	assert.FileExists(t, filepath.Join(hooksDir, "post-install-job.yaml"), "Should have moved this YAML into the hooks dir!")
+	assert.FileExists(t, filepath.Join(hooksDir, "part0-post-install-job.yaml"), "Should have moved this YAML into the hooks dir!")
 
 	if assert.Equal(t, 1, len(helmHooks), "number of helm hooks") {
 		hook := helmHooks[0]
