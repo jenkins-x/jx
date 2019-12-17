@@ -420,6 +420,8 @@ type VeleroConfig struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	// Schedule of backups
 	Schedule string `json:"schedule,omitempty"`
+	// TimeToLive period for backups to be retained
+	TimeToLive string `json:"ttl,omitempty"`
 }
 
 // AutoUpdateConfig contains auto update config
