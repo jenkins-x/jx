@@ -418,6 +418,8 @@ type VeleroConfig struct {
 	Namespace string `json:"namespace,omitempty"`
 	// ServiceAccount the cloud service account used to run velero
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// Schedule of backups
+	Schedule string `json:"schedule,omitempty"`
 }
 
 // AutoUpdateConfig contains auto update config
