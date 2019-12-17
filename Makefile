@@ -273,7 +273,6 @@ fmt: importfmt ## Format the code
 
 .PHONY: importfmt
 importfmt: get-fmt-deps
-	# $(GO_NOMOD) get golang.org/x/tools/cmd/goimports
 	@echo "Formatting the imports..."
 	goimports -w $(GO_DEPENDENCIES)
 
