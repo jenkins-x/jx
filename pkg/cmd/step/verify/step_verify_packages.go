@@ -136,9 +136,11 @@ func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver *versionstream.Vers
 	}
 
 	log.Logger().Info("\n")
-	log.Logger().Warnf("A different %s version %s is available in the version stream. We highly recommend you upgrade to it.", info("jx"), info(versionText))
+	log.Logger().Warnf("jx version specified in the version stream %s is %s. You are using %s. We highly recommend you upgrade to it.", util.ColorInfo(resolver.VersionsDir), util.ColorInfo(newVersion.String()), util.ColorInfo(currentVersion.String()))
 	if o.BatchMode {
 		log.Logger().Warnf("To upgrade to this new version use: %s then re-run %s", info("jx upgrade cli"), info("jx boot"))
+	} else if strings.Contains(currentVersion.String(), "-dev") {
+		log.Logger().Warn("Skipping version upgrade since a dev version is used")
 	} else {
 		log.Logger().Info("\n")
 		message := fmt.Sprintf("Would you like to upgrade to the %s version?", info("jx"))
