@@ -53,7 +53,7 @@ const (
 	// TestVersion used in test cases for the current version if no
 	// version can be found - such as if the version property is not properly
 	// included in the go test flags
-	TestVersion = "1.0.1"
+	TestVersion = "2.0.404"
 )
 
 // GetVersion gets the current version string
