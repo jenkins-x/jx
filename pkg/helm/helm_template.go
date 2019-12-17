@@ -848,12 +848,8 @@ func getHelmHookFromFile(basedir string, path string, hooksDir string, helmHook 
 		return &HelmHook{}, fmt.Errorf("Failed to find relative path of basedir %s and path %s", basedir, partFile)
 	}
 
-	helmHookDir := helmHook
-	if strings.Contains(helmHookDir, ",") {
-		helmHookDir = strings.ReplaceAll(helmHookDir, ",", "_")
-	}
 	// add the hook type into the directory structure
-	newPath := filepath.Join(hooksDir, helmHookDir, relPath)
+	newPath := filepath.Join(hooksDir, relPath)
 	newDir, _ := filepath.Split(newPath)
 	err = os.MkdirAll(newDir, util.DefaultWritePermissions)
 	if err != nil {
@@ -863,7 +859,7 @@ func getHelmHookFromFile(basedir string, path string, hooksDir string, helmHook 
 	// copy the hook part file to the hooks path
 	_, hookFileName := filepath.Split(partFile)
 	hookFile := filepath.Join(newDir, hookFileName)
-	err = util.CopyFile(partFile, hookFile)
+	err = os.Rename(partFile, hookFile)
 	if err != nil {
 		return &HelmHook{}, errors.Wrap(err, fmt.Sprintf("when copying from '%s' to '%s'", partFile, hookFile))
 	}
