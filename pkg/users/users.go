@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -85,11 +87,11 @@ func DeleteUser(jxClient versioned.Interface, ns string, userName string) error 
 // * checking the user custom resources to see if the user is present there
 // * calling selectUsers to try to identify the user
 // as often user info is not complete in a git response
-func Resolve(id string, providerKey string, jxClient versioned.Interface,
-	namespace string, selectUsers func(id string, users []jenkinsv1.User) (string,
+func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Interface,
+	namespace string, selectUsers func(gitUser *gits.GitUser, users []jenkinsv1.User) (string,
 		[]jenkinsv1.User, *jenkinsv1.User, error)) (*jenkinsv1.User, error) {
 
-	id = naming.ToValidValue(id)
+	id := naming.ToValidValue(gitUser.Login)
 	if id != "" {
 
 		labelSelector := fmt.Sprintf("%s=%s", providerKey, id)
@@ -150,7 +152,7 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 	// Finally, try to resolve by callback
 	//var possibles []jenkinsv1.User
 	//var err error
-	id, possibles, new, err := selectUsers(id, users.Items)
+	id, possibles, new, err := selectUsers(gitUser, users.Items)
 	if err != nil {
 		return nil, err
 	}

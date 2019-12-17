@@ -63,7 +63,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 	if r == nil || user == nil {
 		return nil, nil
 	}
-	selectUsers := func(id string, users []jenkinsv1.User) (string, []jenkinsv1.User,
+	selectUsers := func(user *gits.GitUser, users []jenkinsv1.User) (string, []jenkinsv1.User,
 		*jenkinsv1.User, error) {
 		var gitUser *gits.GitUser
 		if user.Login != "" {
@@ -86,7 +86,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 			}
 		}
 		new := r.GitUserToUser(gitUser)
-		id = gitUser.Login
+		id := gitUser.Login
 		// Check if the user id is available, if not append "-<n>" where <n> is some integer
 		for i := 0; true; i++ {
 			_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
@@ -99,7 +99,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		return id, possibles, new, nil
 	}
 	user.Login = naming.ToValidValue(user.Login)
-	return Resolve(user.Login, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
+	return Resolve(user, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
 }
 
 // UpdateUserFromPRAuthor will attempt to use the
