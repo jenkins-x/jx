@@ -90,9 +90,10 @@ func DeleteUser(jxClient versioned.Interface, ns string, userName string) error 
 // * calling selectUsers to try to identify the user
 // as often user info is not complete in a git response
 func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Interface,
-	namespace string, selectUsers func(gitUser *gits.GitUser) (*jenkinsv1.User, error)) (*jenkinsv1.User, error) {
+	namespace string) (*jenkinsv1.User, *jenkinsv1.UserList, error) {
 
 	id := naming.ToValidValue(gitUser.Login)
+
 	if id != "" {
 
 		labelSelector := fmt.Sprintf("%s=%s", providerKey, id)
@@ -102,23 +103,25 @@ func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Inter
 			LabelSelector: labelSelector,
 		})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if len(users.Items) > 1 {
-			return nil, fmt.Errorf("more than one user found in users.jenkins.io with label %s, found %v", labelSelector,
+			return nil, nil, fmt.Errorf("more than one user found in users.jenkins.io with label %s, found %v", labelSelector,
 				users.Items)
 		} else if len(users.Items) == 1 {
-			return &users.Items[0], nil
+			return &users.Items[0], users, nil
 		}
 	}
 
 	// Next try without the label - this might occur if someone manually updated the list
 	users, err := jxClient.JenkinsV1().Users(namespace).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if id != "" {
 
+	if id == "" {
+		return nil, users, nil
+	} else if id != "" {
 		possibles := make([]jenkinsv1.User, 0)
 		for _, u := range users.Items {
 			for _, a := range u.Spec.Accounts {
@@ -132,30 +135,34 @@ func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Inter
 			for _, p := range possibles {
 				possibleUsers = append(possibleUsers, p.Name)
 			}
-			return nil, fmt.Errorf("more than one user found in users.jenkins.io with login %s for provider %s, "+
+			return nil, nil, fmt.Errorf("more than one user found in users.jenkins.io with login %s for provider %s, "+
 				"found %s", id, providerKey, possibleUsers)
-		} else if len(possibles) == 1 {
-			// Add the label for next time
-			found := &possibles[0]
-			if found.Labels == nil {
-				found.Labels = make(map[string]string)
-			}
-			found.Labels[providerKey] = id
-			found, err := jxClient.JenkinsV1().Users(namespace).Update(found)
-			if err != nil {
-				return nil, err
-			}
-			log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io", providerKey, id, found.Name)
-			return found, nil
+		} else if len(possibles) == 0 {
+			return nil, users, nil
 		}
+
+		// Add the label for next time
+		found := &possibles[0]
+
+		if found.Labels == nil {
+			found.Labels = make(map[string]string)
+		}
+
+		found.Labels[providerKey] = id
+		found, err := jxClient.JenkinsV1().Users(namespace).Update(found)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io", providerKey, id, found.Name)
+		return found, users, nil
 	}
 
-	// Finally, try to resolve by callback
-	//var possibles []jenkinsv1.User
-	//var err error
-	jxUser, err := selectUsers(gitUser)
-	id, possibles, jxUser, err := matchPossibleUsers(jxUser, users.Items, gitUser, jxClient, namespace)
+	return nil, users, nil
+}
 
+func findOrCreateJXUser(jxUser *jenkinsv1.User, err error, users *jenkinsv1.UserList, gitUser *gits.GitUser, jxClient versioned.Interface, namespace string, providerKey string) (*jenkinsv1.User, error) {
+	id, possibles, jxUser, err := matchPossibleUsers(jxUser, users.Items, gitUser, jxClient, namespace)
 	if err != nil {
 		return nil, err
 	}
