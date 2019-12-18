@@ -59,22 +59,37 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 	if r == nil || user == nil {
 		return nil, nil
 	}
-	selectUsers := func(user *gits.GitUser) (*jenkinsv1.User, error) {
-		var gitUser *gits.GitUser
-		if user.Login != "" {
-			gitUser = r.GitProvider.UserInfo(user.Login)
-		}
-		if gitUser == nil {
-			gitUser = user
-		}
-
-		newUser := r.GitUserToUser(gitUser)
-
-		return newUser, nil
-	}
 
 	user.Login = naming.ToValidValue(user.Login)
-	return Resolve(user, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
+	jxUser, users, err := Resolve(user, r.GitProviderKey(), r.JXClient, r.Namespace)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if jxUser == nil {
+		// Finally, try to resolve by callback
+		//var possibles []jenkinsv1.User
+		//var err error
+		jxUser, err := r.selectGitUser(user)
+		return findOrCreateJXUser(jxUser, err, users, user, r.JXClient, r.Namespace, r.GitProviderKey())
+	}
+
+	return jxUser, nil
+}
+
+func (r *GitUserResolver) selectGitUser(user *gits.GitUser) (*jenkinsv1.User, error) {
+	var gitUser *gits.GitUser
+	if user.Login != "" {
+		gitUser = r.GitProvider.UserInfo(user.Login)
+	}
+	if gitUser == nil {
+		gitUser = user
+	}
+
+	newUser := r.GitUserToUser(gitUser)
+
+	return newUser, nil
 }
 
 // UpdateUserFromPRAuthor will attempt to use the
