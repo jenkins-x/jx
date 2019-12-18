@@ -74,10 +74,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		}
 
 		possibles := make([]jenkinsv1.User, 0)
-		if gitUser == nil {
-			// annoyingly UserInfo swallows the error, so we recreate it!
-			log.Logger().Warnf("unable to find user with login %s from %s", user.Login, r.GitProvider.Kind())
-		} else if user.Email != "" {
+		if user.Email != "" {
 			// Don't do this if email is empty as otherwise we risk matching any users who have empty emails!
 			for _, u := range users {
 				if u.Spec.Email == gitUser.Email {
