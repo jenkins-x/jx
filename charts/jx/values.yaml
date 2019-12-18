@@ -17,6 +17,8 @@ daemonset:
 job:
   enabled: false
 
+podAnnotations: {}
+
 cronjob:
   enabled: false
   schedule: "* * * * *"
