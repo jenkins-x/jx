@@ -328,7 +328,7 @@ func (o *CommonOptions) InstallHelm() error {
 	binary := "helm"
 
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		err := o.RunCommand("brew", "install", "kubernetes-helm")
+		err := o.RunCommand("brew", "install", "helm@2")
 		if err != nil {
 			return err
 		}
@@ -344,10 +344,7 @@ func (o *CommonOptions) InstallHelm() error {
 	if err != nil || !flag {
 		return err
 	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
-	if err != nil {
-		return err
-	}
+	latestVersion := "v2.16.1"
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
