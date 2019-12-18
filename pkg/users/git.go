@@ -4,11 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/kube/naming"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/pkg/errors"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
@@ -63,8 +59,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 	if r == nil || user == nil {
 		return nil, nil
 	}
-	selectUsers := func(user *gits.GitUser, users []jenkinsv1.User) (string, []jenkinsv1.User,
-		*jenkinsv1.User, error) {
+	selectUsers := func(user *gits.GitUser) (*jenkinsv1.User, error) {
 		var gitUser *gits.GitUser
 		if user.Login != "" {
 			gitUser = r.GitProvider.UserInfo(user.Login)
@@ -73,28 +68,11 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 			gitUser = user
 		}
 
-		possibles := make([]jenkinsv1.User, 0)
-		if user.Email != "" {
-			// Don't do this if email is empty as otherwise we risk matching any users who have empty emails!
-			for _, u := range users {
-				if u.Spec.Email == gitUser.Email {
-					possibles = append(possibles, u)
-				}
-			}
-		}
-		new := r.GitUserToUser(gitUser)
-		id := gitUser.Login
-		// Check if the user id is available, if not append "-<n>" where <n> is some integer
-		for i := 0; true; i++ {
-			_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
-			if k8serrors.IsNotFound(err) {
-				break
-			}
-			id = fmt.Sprintf("%s-%d", gitUser.Login, i)
-		}
-		new.Name = naming.ToValidName(id)
-		return id, possibles, new, nil
+		newUser := r.GitUserToUser(gitUser)
+
+		return newUser, nil
 	}
+
 	user.Login = naming.ToValidValue(user.Login)
 	return Resolve(user, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
 }
