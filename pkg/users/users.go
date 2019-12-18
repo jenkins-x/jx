@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -88,8 +90,7 @@ func DeleteUser(jxClient versioned.Interface, ns string, userName string) error 
 // * calling selectUsers to try to identify the user
 // as often user info is not complete in a git response
 func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Interface,
-	namespace string, selectUsers func(gitUser *gits.GitUser, users []jenkinsv1.User) (string,
-		[]jenkinsv1.User, *jenkinsv1.User, error)) (*jenkinsv1.User, error) {
+	namespace string, selectUsers func(gitUser *gits.GitUser) (*jenkinsv1.User, error)) (*jenkinsv1.User, error) {
 
 	id := naming.ToValidValue(gitUser.Login)
 	if id != "" {
@@ -152,7 +153,9 @@ func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Inter
 	// Finally, try to resolve by callback
 	//var possibles []jenkinsv1.User
 	//var err error
-	id, possibles, new, err := selectUsers(gitUser, users.Items)
+	jxUser, err := selectUsers(gitUser)
+	id, possibles, jxUser, err := matchPossibleUsers(jxUser, users.Items, gitUser, jxClient, namespace)
+
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +192,35 @@ func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Inter
 		return found, nil
 	} else {
 		// Otherwise, create a new user
-		return jxClient.JenkinsV1().Users(namespace).Create(new)
+		return jxClient.JenkinsV1().Users(namespace).Create(jxUser)
 	}
+}
+
+func matchPossibleUsers(user *jenkinsv1.User, users []jenkinsv1.User, gitUser *gits.GitUser, jxClient versioned.Interface,
+	namespace string) (string, []jenkinsv1.User,
+	*jenkinsv1.User, error) {
+	possibles := make([]jenkinsv1.User, 0)
+	if gitUser.Email != "" {
+		// Don't do this if email is empty as otherwise we risk matching any users who have empty emails!
+		for _, u := range users {
+			if u.Spec.Email == gitUser.Email {
+				possibles = append(possibles, u)
+			}
+		}
+	}
+
+	id := gitUser.Login
+
+	// Check if the user id is available, if not append "-<n>" where <n> is some integer
+	for i := 0; true; i++ {
+		_, err := jxClient.JenkinsV1().Users(namespace).Get(id, metav1.GetOptions{})
+		if k8serrors.IsNotFound(err) {
+			break
+		}
+		id = fmt.Sprintf("%s-%d", gitUser.Login, i)
+	}
+
+	user.Name = naming.ToValidName(id)
+
+	return id, possibles, user, nil
 }

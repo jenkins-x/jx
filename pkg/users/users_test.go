@@ -55,18 +55,16 @@ func TestResolveUserWithEmptyIdDoesNotCreateEmptyAccountReference(t *testing.T) 
 	}
 
 	// First check resolving with an id
-	resolved, err := users.Resolve(&gitUser, "testProvider", jxClient, ns, func(gitUser *gits.GitUser, users []jenkinsv1.User) (string,
-		[]jenkinsv1.User, *jenkinsv1.User, error) {
-		return "123", []jenkinsv1.User{user}, &jenkinsv1.User{}, nil
+	resolved, err := users.Resolve(&gitUser, "testProvider", jxClient, ns, func(gitUser *gits.GitUser) (*jenkinsv1.User, error) {
+		return &jenkinsv1.User{}, nil
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, resolved)
 	assert.Len(t, resolved.Spec.Accounts, 1)
 
 	// Now with an empty id
-	resolved, err = users.Resolve(&gitUser, "testProvider", jxClient, ns, func(gitUser *gits.GitUser, users []jenkinsv1.User) (string,
-		[]jenkinsv1.User, *jenkinsv1.User, error) {
-		return "", []jenkinsv1.User{user}, &jenkinsv1.User{}, nil
+	resolved, err = users.Resolve(&gitUser, "testProvider", jxClient, ns, func(gitUser *gits.GitUser) (*jenkinsv1.User, error) {
+		return &jenkinsv1.User{}, nil
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, resolved)
@@ -124,10 +122,9 @@ func TestExistingUserIdButNotFoundBySelectErrors(t *testing.T) {
 	}
 
 	// Resolve returns the new user as the first one doesn't match because the emails are different
-	_, err = users.Resolve(&gitUser, "testProvider", jxClient, ns, func(gitUser *gits.GitUser, users []jenkinsv1.User) (string,
-		[]jenkinsv1.User, *jenkinsv1.User, error) {
+	_, err = users.Resolve(&gitUser, "testProvider", jxClient, ns, func(gitUser *gits.GitUser) (*jenkinsv1.User, error) {
 		// A real selector would actually check the emails are different, here we force it!
-		return "test-user", []jenkinsv1.User{}, &user2, nil
+		return &user2, nil
 	})
 	assert.Error(t, err)
 }
