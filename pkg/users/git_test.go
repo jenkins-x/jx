@@ -279,6 +279,30 @@ func TestFindUserWithNoEmailButSameGitLogin(t *testing.T) {
 	assert.Len(t, users.Items, 2)
 }
 
+func TestFindUserByUpperCaseGitUserName(t *testing.T) {
+	t.Parallel()
+	resolver, _, err := prepare(t)
+	assert.NoError(t, err)
+	assert.NoError(t, err)
+
+	gitUser := gits.GitUser{
+		Login: "foo",
+	}
+
+	user, err := resolver.Resolve(&gitUser)
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+
+	gitUser = gits.GitUser{
+		Login: "Foo",
+	}
+
+	user, err = resolver.Resolve(&gitUser)
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, user.Spec.Login, gitUser.Login)
+}
+
 func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
