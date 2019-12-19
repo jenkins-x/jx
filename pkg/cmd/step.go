@@ -22,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/pr"
 	"github.com/jenkins-x/jx/pkg/cmd/step/pre"
 	"github.com/jenkins-x/jx/pkg/cmd/step/report"
+	"github.com/jenkins-x/jx/pkg/cmd/step/restore"
 	"github.com/jenkins-x/jx/pkg/cmd/step/scheduler"
 	"github.com/jenkins-x/jx/pkg/cmd/step/syntax"
 	"github.com/jenkins-x/jx/pkg/cmd/step/update"
@@ -87,6 +88,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(update.NewCmdStepUpdate(commonOpts))
 	cmd.AddCommand(report.NewCmdStepReport(commonOpts))
 	cmd.AddCommand(step.NewCmdStepOverrideRequirements(commonOpts))
+	cmd.AddCommand(restore.NewCmdStepRestore(commonOpts))
 
 	return cmd
 }
