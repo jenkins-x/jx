@@ -3,7 +3,6 @@ package users
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/pkg/errors"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -51,32 +50,29 @@ func (r *GitUserResolver) GitUserSliceAsUserDetailsSlice(users []gits.GitUser) (
 	return answer, nil
 }
 
-// Resolve will convert the GitUser to a Jenkins X user and attempt to complete the user info by:
+// Resolve will convert the GitUser to a Jenkins X user
+// and attempt to complete the user info by:
 // * checking the user custom resources to see if the user is present there
 // * making a call to the gitProvider
-// as often user info is not complete in a git response
 func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 	if r == nil || user == nil {
 		return nil, nil
 	}
 
-	user.Login = naming.ToValidName(user.Login)
-	user.Login = naming.ToValidValue(user.Login)
-	jxUser, users, err := Resolve(user, r.GitProviderKey(), r.JXClient, r.Namespace)
-
+	jxUser, err := ResolveJXUser(user, r.GitProviderKey(), r.JXClient, r.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	if jxUser == nil {
-		// Finally, try to resolve by callback
-		//var possibles []jenkinsv1.User
-		//var err error
-		jxUser, err := r.selectGitUser(user)
-		return findOrCreateJXUser(jxUser, err, users, user, r.JXClient, r.Namespace, r.GitProviderKey())
+	if jxUser != nil {
+		return jxUser, nil
 	}
 
-	return jxUser, nil
+	jxUser, err = r.selectGitUser(user)
+	if err != nil {
+		return nil, err
+	}
+	return createJXUser(jxUser, r.JXClient, r.Namespace)
 }
 
 func (r *GitUserResolver) selectGitUser(user *gits.GitUser) (*jenkinsv1.User, error) {

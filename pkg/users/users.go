@@ -1,6 +1,7 @@
 package users
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -8,11 +9,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-	"github.com/jenkins-x/jx/pkg/log"
-
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -84,150 +83,121 @@ func DeleteUser(jxClient versioned.Interface, ns string, userName string) error 
 	return err
 }
 
-// Resolve does the heavy lifting for user resolution.
-// This function is not normally called directly but by a dedicated user resolver (e.g. GitUserResolver)
-// * checking the user custom resources to see if the user is present there
-// * calling selectUsers to try to identify the user
-// as often user info is not complete in a git response
-func Resolve(gitUser *gits.GitUser, providerKey string, jxClient versioned.Interface,
-	namespace string) (*jenkinsv1.User, *jenkinsv1.UserList, error) {
+// ResolveJXUser checks for a Jenkins X users in the User CRD matching the specified git user.
+// If a match is found it is returned. If no match is found or an error occurs nil is returned together with
+// the potential error.
+func ResolveJXUser(user *gits.GitUser, providerKey string, jxClient versioned.Interface, namespace string) (*jenkinsv1.User, error) {
+	if user == nil {
+		return nil, errors.New("a git user needs to be specified")
+	}
 
-	id := naming.ToValidValue(gitUser.Login)
+	// need to convert the git login to a valid Kubernetes label. This label is not unique and multiple users
+	// can match the same label, hence we need to match the returns Jenkins X users.
+	id := naming.ToValidValue(user.Login)
 
+	// First try to find by label - this is much faster as it uses an index
 	if id != "" {
-
 		labelSelector := fmt.Sprintf("%s=%s", providerKey, id)
-
-		// First try to find by label - this is much faster as it uses an index
-		users, err := jxClient.JenkinsV1().Users(namespace).List(metav1.ListOptions{
-			LabelSelector: labelSelector,
-		})
+		jxUsers, err := jxClient.JenkinsV1().Users(namespace).List(metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		if len(users.Items) > 1 {
-			return nil, nil, fmt.Errorf("more than one user found in users.jenkins.io with label %s, found %v", labelSelector,
-				users.Items)
-		} else if len(users.Items) == 1 {
-			return &users.Items[0], users, nil
+		matchedUser, err := matchGitUser(user, jxUsers, providerKey)
+		if err != nil {
+			return nil, err
+		}
+
+		// return match found within labeled Jenkins X users
+		if matchedUser != nil {
+			return matchedUser, nil
 		}
 	}
 
 	// Next try without the label - this might occur if someone manually updated the list
-	users, err := jxClient.JenkinsV1().Users(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if id == "" {
-		return nil, users, nil
-	} else if id != "" {
-		possibles := make([]jenkinsv1.User, 0)
-		for _, u := range users.Items {
-			for _, a := range u.Spec.Accounts {
-				if a.Provider == providerKey && a.ID == id {
-					possibles = append(possibles, u)
-				}
-			}
-		}
-		if len(possibles) > 1 {
-			possibleUsers := make([]string, 0)
-			for _, p := range possibles {
-				possibleUsers = append(possibleUsers, p.Name)
-			}
-			return nil, nil, fmt.Errorf("more than one user found in users.jenkins.io with login %s for provider %s, "+
-				"found %s", id, providerKey, possibleUsers)
-		} else if len(possibles) == 0 {
-			return nil, users, nil
-		}
-
-		// Add the label for next time
-		found := &possibles[0]
-
-		if found.Labels == nil {
-			found.Labels = make(map[string]string)
-		}
-
-		found.Labels[providerKey] = id
-		found, err := jxClient.JenkinsV1().Users(namespace).Update(found)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io", providerKey, id, found.Name)
-		return found, users, nil
-	}
-
-	return nil, users, nil
-}
-
-func findOrCreateJXUser(jxUser *jenkinsv1.User, err error, users *jenkinsv1.UserList, gitUser *gits.GitUser, jxClient versioned.Interface, namespace string, providerKey string) (*jenkinsv1.User, error) {
-	id, possibles, jxUser, err := matchPossibleUsers(jxUser, users.Items, gitUser, jxClient, namespace)
+	jxUsers, err := jxClient.JenkinsV1().Users(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if len(possibles) > 1 {
-		possibleStrings := make([]string, 0)
-		for _, p := range possibles {
-			possibleStrings = append(possibleStrings, p.Name)
-		}
-		return nil, fmt.Errorf("selected more than one user from users.jenkins.io: %v", possibleStrings)
-	} else if len(possibles) == 1 {
-		found := &possibles[0]
-		if id != "" {
-			// Add the git id to the user
-			if found.Spec.Accounts == nil {
-				found.Spec.Accounts = make([]jenkinsv1.AccountReference, 0)
-			}
-			found.Spec.Accounts = append(found.Spec.Accounts, jenkinsv1.AccountReference{
-				ID:       id,
-				Provider: providerKey,
-			})
-			// Add the label as well
-			if found.Labels == nil {
-				found.Labels = make(map[string]string)
-			}
-			found.Labels[providerKey] = id
-			log.Logger().Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
-				"emails match", found.Name, found.Spec.Email, id)
-			log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io", providerKey, id, found.Name)
-			_, err := jxClient.JenkinsV1().Users(namespace).Update(found)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return found, nil
-	} else {
-		// Otherwise, create a new user
-		return jxClient.JenkinsV1().Users(namespace).Create(jxUser)
+
+	matchedUser, err := matchGitUser(user, jxUsers, providerKey)
+	if err != nil {
+		return nil, err
 	}
+
+	if matchedUser != nil {
+		matchedUser, err = addLabelsToJXUser(matchedUser, providerKey, id, namespace, jxClient)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return matchedUser, nil
 }
 
-func matchPossibleUsers(user *jenkinsv1.User, users []jenkinsv1.User, gitUser *gits.GitUser, jxClient versioned.Interface,
-	namespace string) (string, []jenkinsv1.User,
-	*jenkinsv1.User, error) {
-	possibles := make([]jenkinsv1.User, 0)
-	if gitUser.Email != "" {
-		// Don't do this if email is empty as otherwise we risk matching any users who have empty emails!
-		for _, u := range users {
-			if u.Spec.Email == gitUser.Email {
-				possibles = append(possibles, u)
-			}
-		}
+func addLabelsToJXUser(user *jenkinsv1.User, providerKey string, id string, namespace string, jxClient versioned.Interface) (*jenkinsv1.User, error) {
+	if user.Labels == nil {
+		user.Labels = make(map[string]string)
 	}
 
-	id := gitUser.Login
+	user.Labels[providerKey] = id
+	user, err := jxClient.JenkinsV1().Users(namespace).Update(user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
 
+// createJXUser creates the specified user after creating a unique name for it.
+func createJXUser(jxUser *jenkinsv1.User, jxClient versioned.Interface, namespace string) (*jenkinsv1.User, error) {
+	if jxUser == nil {
+		return nil, errors.New("the user to create can not be nil")
+	}
+
+	name := naming.ToValidName(jxUser.Name)
 	// Check if the user id is available, if not append "-<n>" where <n> is some integer
 	for i := 0; true; i++ {
-		_, err := jxClient.JenkinsV1().Users(namespace).Get(id, metav1.GetOptions{})
+		_, err := jxClient.JenkinsV1().Users(namespace).Get(name, metav1.GetOptions{})
 		if k8serrors.IsNotFound(err) {
 			break
 		}
-		id = fmt.Sprintf("%s-%d", gitUser.Login, i)
+		name = fmt.Sprintf("%s-%d", name, i)
+	}
+	jxUser.Name = name
+	return jxClient.JenkinsV1().Users(namespace).Create(jxUser)
+}
+
+// matchGitUser tries to match a git user against a list of Jenkins X users.
+// If there is a unique match the match is returned. If more than one Jenkins X user match the git user an error is returned.
+// If not match is found no user and no error is returned.
+func matchGitUser(gitUser *gits.GitUser, users *jenkinsv1.UserList, providerKey string) (*jenkinsv1.User, error) {
+	possibles := make([]jenkinsv1.User, 0)
+	for _, jxUser := range users.Items {
+		for _, a := range jxUser.Spec.Accounts {
+			if a.Provider == providerKey {
+				// email and provider match - add to possible!
+				if gitUser.Email != "" && jxUser.Spec.Email == gitUser.Email {
+					possibles = append(possibles, jxUser)
+					continue
+				}
+
+				// login and provider match - add to possibles!
+				if a.ID == gitUser.Login {
+					possibles = append(possibles, jxUser)
+					continue
+				}
+			}
+		}
 	}
 
-	user.Name = naming.ToValidName(id)
-
-	return id, possibles, user, nil
+	switch len(possibles) {
+	case 0:
+		return nil, nil
+	case 1:
+		return &possibles[0], nil
+	default:
+		var userNames []string
+		for _, p := range possibles {
+			userNames = append(userNames, p.Name)
+		}
+		return nil, fmt.Errorf("selected more than one user from users.jenkins.io: %v", userNames)
+	}
 }
