@@ -15,7 +15,7 @@ func NewAWSCli() awsClient {
 
 // ConnectToClusterWithAWSCLI will modify the kube-config file to add the provided cluster and change context to it
 func (awsClient) ConnectToClusterWithAWSCLI(clusterName string) error {
-	args := []string{"eks", "update-kubeconfig", "--cluster", clusterName}
+	args := []string{"eks", "update-kubeconfig", "--name", clusterName}
 
 	cmd := util.Command{
 		Name: "aws",
