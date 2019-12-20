@@ -111,7 +111,8 @@ func (o *FromBackupOptions) Run() error {
 	}
 	if o.UseLatestBackup {
 		if latestBackupName == "" {
-			return errors.Errorf("unable locate latest backup")
+			fmt.Println("unable to locate latest backup - it's possible there may not be any yet")
+			return nil
 		}
 		err = performVeleroRestore(apiClient, kubeClient, latestBackupName, o.Namespace)
 		if err != nil {
