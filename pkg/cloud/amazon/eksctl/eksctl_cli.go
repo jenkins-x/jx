@@ -19,7 +19,7 @@ func NewEksctlClient() eksctlClient {
 
 // DeleteCluster performs an eksctl cluster deletion process
 func (eksctlClient) DeleteCluster(cluster *cluster.Cluster) error {
-	cmd := exec.Command("eksctl", "delete", "cluster", "--name", cluster.Name) //nolint:gosec
+	cmd := exec.Command("eksctl", "delete", "cluster", "--cluster", cluster.Name) //nolint:gosec
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
