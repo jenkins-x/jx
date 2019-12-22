@@ -100,7 +100,7 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-// Runs on step helm apply 
+// Run runs on step helm apply
 func (o *StepHelmApplyOptions) Run() (err error) {
 
 	chartName := o.Dir
