@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/spf13/cobra"
 
@@ -40,7 +41,7 @@ var (
 
 // CreateIssueOptions the options for the create spring command
 type CreateIssueOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Dir    string
 	Title  string
@@ -51,7 +52,7 @@ type CreateIssueOptions struct {
 // NewCmdCreateIssue creates a command object for the "create" command
 func NewCmdCreateIssue(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateIssueOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

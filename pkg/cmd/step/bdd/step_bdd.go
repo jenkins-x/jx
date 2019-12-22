@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
@@ -257,7 +259,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		// now lets setup the git server
 		createGitServer := &create.CreateGitServerOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			Kind: gitProviderName,
@@ -276,7 +278,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		}
 
 		createGitToken := &create.CreateGitTokenOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			ServerFlags: opts.ServerFlags{
@@ -292,7 +294,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		// now lets create an environment...
 		createEnv := &create.CreateEnvOptions{
-			CreateOptions: create.CreateOptions{
+			CreateOptions: options.CreateOptions{
 				CommonOptions: defaultOptions,
 			},
 			HelmValuesConfig: config.HelmValuesConfig{

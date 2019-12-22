@@ -698,11 +698,11 @@ func splitObjectsInFiles(inputFile string, baseDir string, relativePath, default
 				continue
 			}
 
-			objFile, err := writeObjectInFile(&buf, baseDir, relativePath, namespace, fileName, count)
+			partFile, err := writeObjectInFile(&buf, baseDir, relativePath, namespace, fileName, count)
 			if err != nil {
 				return result, errors.Wrapf(err, "saving object")
 			}
-			result = append(result, objFile)
+			result = append(result, partFile)
 			buf.Reset()
 			count += count + 1
 		} else {
@@ -727,11 +727,11 @@ func splitObjectsInFiles(inputFile string, baseDir string, relativePath, default
 			namespace = defaultNamespace
 		}
 
-		objFile, err := writeObjectInFile(&buf, baseDir, relativePath, namespace, fileName, count)
+		partFile, err := writeObjectInFile(&buf, baseDir, relativePath, namespace, fileName, count)
 		if err != nil {
 			return result, errors.Wrapf(err, "saving object")
 		}
-		result = append(result, objFile)
+		result = append(result, partFile)
 	}
 
 	return result, nil
@@ -797,89 +797,38 @@ func addLabelsToChartYaml(basedir string, hooksDir string, chart string, release
 				return errors.Wrapf(err, "unable to determine relative path %q", file)
 			}
 
-			objFiles, err := splitObjectsInFiles(file, basedir, relativePath, ns)
+			partFiles, err := splitObjectsInFiles(file, basedir, relativePath, ns)
 			if err != nil {
 				return errors.Wrapf(err, "splitting objects from file %q", file)
 			}
 
-			for _, file := range objFiles {
-				data, err := ioutil.ReadFile(file)
+			log.Logger().Debugf("part files list: %v", partFiles)
+
+			for _, partFile := range partFiles {
+				log.Logger().Debugf("processing part file: %s", partFile)
+				data, err := ioutil.ReadFile(partFile)
 				if err != nil {
-					return errors.Wrapf(err, "Failed to load file %s", file)
+					return errors.Wrapf(err, "Failed to load partFile %s", partFile)
 				}
 				m := yaml.MapSlice{}
 				err = yaml.Unmarshal(data, &m)
 				if err != nil {
-					return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
+					return errors.Wrapf(err, "Failed to parse YAML of partFile %s", partFile)
 				}
 				kind := getYamlValueString(&m, "kind")
-				helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
-				if helmHook != "" {
-					// lets move any helm hooks to the new file
-					relPath, err := filepath.Rel(basedir, path)
+				helmHookType := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
+				if helmHookType != "" {
+					helmHook, err := getHelmHookFromFile(basedir, path, hooksDir, helmHookType, kind, &m, partFile)
 					if err != nil {
-						return err
+						return errors.Wrap(err, fmt.Sprintf("when getting helm hook from part file '%s'", partFile))
 					}
-					if relPath == "" {
-						return fmt.Errorf("Failed to find relative path of basedir %s and path %s", basedir, file)
-					}
-					newPath := filepath.Join(hooksDir, relPath)
-					newDir, _ := filepath.Split(newPath)
-					err = os.MkdirAll(newDir, util.DefaultWritePermissions)
+					helmHooks = append(helmHooks, helmHook)
+				} else {
+					err := processChartResource(partFile, data, kind, ns, releaseName, &m, metadata, version, chart)
 					if err != nil {
-						return err
+						return errors.Wrap(err, fmt.Sprintf("when processing chart resource '%s'", partFile))
 					}
-					err = os.Rename(file, newPath)
-					if err != nil {
-						log.Logger().Warnf("Failed to move helm hook template %s to %s: %s", file, newPath, err)
-						return err
-					}
-					name := getYamlValueString(&m, "metadata", "name")
-					helmDeletePolicy := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook-delete-policy")
-					helmHooks = append(helmHooks, NewHelmHook(kind, name, newPath, helmHook, helmDeletePolicy))
-					return nil
-				}
-				err = setYamlValue(&m, releaseName, "metadata", "labels", LabelReleaseName)
-				if err != nil {
-					return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
-				}
-				if !isClusterKind(kind) {
-					err = setYamlValue(&m, ns, "metadata", "labels", LabelNamespace)
-					if err != nil {
-						return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
-					}
-				}
-				err = setYamlValue(&m, version, "metadata", "labels", LabelReleaseChartVersion)
-				if err != nil {
-					return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
-				}
-				chartName := ""
 
-				if metadata != nil {
-					chartName = metadata.GetName()
-					appVersion := metadata.GetAppVersion()
-					if appVersion != "" {
-						err = setYamlValue(&m, appVersion, "metadata", "annotations", AnnotationAppVersion)
-						if err != nil {
-							return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
-						}
-					}
-				}
-				if chartName == "" {
-					chartName = chart
-				}
-				err = setYamlValue(&m, chartName, "metadata", "annotations", AnnotationChartName)
-				if err != nil {
-					return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
-				}
-
-				data, err = yaml.Marshal(&m)
-				if err != nil {
-					return errors.Wrapf(err, "Failed to marshal YAML of file %s", file)
-				}
-				err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
-				if err != nil {
-					return errors.Wrapf(err, "Failed to write YAML file %s", file)
 				}
 			}
 		}
@@ -889,10 +838,88 @@ func addLabelsToChartYaml(basedir string, hooksDir string, chart string, release
 	return helmHooks, err
 }
 
+func getHelmHookFromFile(basedir string, path string, hooksDir string, helmHook string, kind string, m *yaml.MapSlice, partFile string) (*HelmHook, error) {
+	// lets move any helm hooks to the new partFile
+	relPath, err := filepath.Rel(basedir, path)
+	if err != nil {
+		return &HelmHook{}, err
+	}
+	if relPath == "" {
+		return &HelmHook{}, fmt.Errorf("Failed to find relative path of basedir %s and path %s", basedir, partFile)
+	}
+
+	// add the hook type into the directory structure
+	newPath := filepath.Join(hooksDir, relPath)
+	newDir, _ := filepath.Split(newPath)
+	err = os.MkdirAll(newDir, util.DefaultWritePermissions)
+	if err != nil {
+		return &HelmHook{}, errors.Wrap(err, fmt.Sprintf("when creating '%s'", newDir))
+	}
+
+	// copy the hook part file to the hooks path
+	_, hookFileName := filepath.Split(partFile)
+	hookFile := filepath.Join(newDir, hookFileName)
+	err = os.Rename(partFile, hookFile)
+	if err != nil {
+		return &HelmHook{}, errors.Wrap(err, fmt.Sprintf("when copying from '%s' to '%s'", partFile, hookFile))
+	}
+
+	name := getYamlValueString(m, "metadata", "name")
+	helmDeletePolicy := getYamlValueString(m, "metadata", "annotations", "helm.sh/hook-delete-policy")
+	return NewHelmHook(kind, name, hookFile, helmHook, helmDeletePolicy), nil
+}
+
+func processChartResource(partFile string, data []byte, kind string, ns string, releaseName string, m *yaml.MapSlice, metadata *chart.Metadata, version string, chart string) error {
+	err := setYamlValue(m, releaseName, "metadata", "labels", LabelReleaseName)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to modify YAML of partFile %s", partFile)
+	}
+	if !isClusterKind(kind) {
+		err = setYamlValue(m, ns, "metadata", "labels", LabelNamespace)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to modify YAML of partFile %s", partFile)
+		}
+	}
+	err = setYamlValue(m, version, "metadata", "labels", LabelReleaseChartVersion)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to modify YAML of partFile %s", partFile)
+	}
+	chartName := ""
+
+	if metadata != nil {
+		chartName = metadata.GetName()
+		appVersion := metadata.GetAppVersion()
+		if appVersion != "" {
+			err = setYamlValue(m, appVersion, "metadata", "annotations", AnnotationAppVersion)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to modify YAML of partFile %s", partFile)
+			}
+		}
+	}
+	if chartName == "" {
+		chartName = chart
+	}
+	err = setYamlValue(m, chartName, "metadata", "annotations", AnnotationChartName)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to modify YAML of partFile %s", partFile)
+	}
+
+	data, err = yaml.Marshal(m)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to marshal YAML of partFile %s", partFile)
+	}
+	err = ioutil.WriteFile(partFile, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to write YAML partFile %s", partFile)
+	}
+	return nil
+}
+
 func getYamlValueString(mapSlice *yaml.MapSlice, keys ...string) string {
 	value := getYamlValue(mapSlice, keys...)
 	answer, ok := value.(string)
 	if ok {
+
 		return answer
 	}
 	return ""

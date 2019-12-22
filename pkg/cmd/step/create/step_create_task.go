@@ -303,8 +303,8 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	// resourceName is shared across all builds of a branch, while the pipelineName is unique for each build.
-	resourceName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), nil, "")
-	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), tektonClient, ns)
+	resourceName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), false)
+	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String(), true)
 
 	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {
@@ -1012,7 +1012,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 		}
 	}
 
-	if container.Name == "build-container-build" && !o.NoKaniko {
+	if isKanikoExecutorStep(container) && !o.NoKaniko {
 		if kube.GetSliceEnvVar(envVars, "GOOGLE_APPLICATION_CREDENTIALS") == nil {
 			envVars = append(envVars, corev1.EnvVar{
 				Name:  "GOOGLE_APPLICATION_CREDENTIALS",
@@ -1040,7 +1040,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volumes []corev1.Volume) []corev1.Volume {
 	answer := volumes
 
-	if container.Name == "build-container-build" && !o.NoKaniko {
+	if isKanikoExecutorStep(container) && !o.NoKaniko {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			log.Logger().Warnf("failed to find kaniko secret: %s", err)
@@ -1603,4 +1603,10 @@ func createEnvMapForInterpretExecution(envVars []corev1.EnvVar) map[string]strin
 	}
 
 	return m
+}
+
+// isKanikoExecutorStep looks at a container and determines whether its command or args starts with /kaniko/executor.
+func isKanikoExecutorStep(container *corev1.Container) bool {
+	return strings.HasPrefix(strings.Join(container.Command, " "), "/kaniko/executor") ||
+		(len(container.Args) > 0 && strings.HasPrefix(strings.Join(container.Args, " "), "/kaniko/executor"))
 }

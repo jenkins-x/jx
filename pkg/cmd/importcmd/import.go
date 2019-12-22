@@ -86,6 +86,7 @@ type ImportOptions struct {
 	PipelineServer        string
 	ImportMode            string
 	UseDefaultGit         bool
+	GithubAppInstalled    bool
 }
 
 const (
@@ -105,7 +106,7 @@ var (
 
 	    You can specify the git URL as an argument.
 	    
-		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
+		For more documentation see: [https://jenkins-x.io/docs/using-jx/creating/import/](https://jenkins-x.io/docs/using-jx/creating/import/)
 	    
 ` + helper.SeeAlsoText("jx create project"))
 
@@ -430,19 +431,22 @@ func (options *ImportOptions) Run() error {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}
 
-	githubAppMode, err := options.IsGitHubAppMode()
-	if err != nil {
-		return err
-	}
-
-	if githubAppMode {
-		githubApp := &github.GithubApp{
-			Factory: options.GetFactory(),
-		}
-
-		err := githubApp.Install(options.Organisation, options.Repository, options.GetIOFileHandles(), false)
+	if !options.GithubAppInstalled {
+		githubAppMode, err := options.IsGitHubAppMode()
 		if err != nil {
 			return err
+		}
+
+		if githubAppMode {
+			githubApp := &github.GithubApp{
+				Factory: options.GetFactory(),
+			}
+
+			installed, err := githubApp.Install(options.Organisation, options.Repository, options.GetIOFileHandles(), false)
+			if err != nil {
+				return err
+			}
+			options.GithubAppInstalled = installed
 		}
 	}
 
@@ -988,6 +992,11 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		return err
 	}
 
+	gha, err := options.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
 	if settings.IsSchedulerMode() {
 		jxClient, _, err := options.JXClient()
 		if err != nil {
@@ -1022,11 +1031,6 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		sourceGitURL, err := kube.GetRepositoryGitURL(sr)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get the git URL for SourceRepository %s", sr.Name)
-		}
-
-		gha, err := options.IsGitHubAppMode()
-		if err != nil {
-			return err
 		}
 
 		devGitURL := devEnv.Spec.Source.URL
@@ -1072,14 +1076,17 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		}
 	}
 
-	startBuildOptions := start.StartPipelineOptions{
-		CommonOptions: options.CommonOptions,
+	if !gha {
+		startBuildOptions := start.StartPipelineOptions{
+			CommonOptions: options.CommonOptions,
+		}
+		startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
+		err = startBuildOptions.Run()
+		if err != nil {
+			return fmt.Errorf("failed to start pipeline build")
+		}
 	}
-	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
-	err = startBuildOptions.Run()
-	if err != nil {
-		return fmt.Errorf("failed to start pipeline build")
-	}
+
 	options.LogImportedProject(false, gitInfo)
 
 	return nil

@@ -3,7 +3,10 @@ package vault
 import (
 	"fmt"
 	"io"
+	"os"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
@@ -139,6 +142,10 @@ func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIng
 	vlt, err := v.Selector.GetVault(name, namespace, useIngressURL)
 	if err != nil {
 		return nil, "", "", err
+	}
+
+	if os.Getenv(vault.LocalVaultEnvVar) != "" && !useIngressURL {
+		vlt.URL = os.Getenv(vault.LocalVaultEnvVar)
 	}
 
 	serviceAccount, err := v.getServiceAccountFromVault(vlt)

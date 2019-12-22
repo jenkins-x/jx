@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -39,7 +39,7 @@ var (
 
 // DeleteRepoOptions the options for the create spring command
 type DeleteRepoOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	Organisation string
 	Repositories []string
@@ -52,7 +52,7 @@ type DeleteRepoOptions struct {
 // NewCmdDeleteRepo creates a command object for the "delete repo" command
 func NewCmdDeleteRepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteRepoOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

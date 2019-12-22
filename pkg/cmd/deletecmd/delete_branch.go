@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -36,7 +36,7 @@ var (
 
 // DeleteBranchOptions the options for the create spring command
 type DeleteBranchOptions struct {
-	create.CreateOptions
+	options.CreateOptions
 
 	Organisation      string
 	Repositories      []string
@@ -46,12 +46,13 @@ type DeleteBranchOptions struct {
 	SelectFilter      string
 	SelectAllRepos    bool
 	SelectFilterRepos string
+	Merged            bool
 }
 
 // NewCmdDeleteBranch creates a command object for the "delete repo" command
 func NewCmdDeleteBranch(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteBranchOptions{
-		CreateOptions: create.CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -79,12 +80,12 @@ func NewCmdDeleteBranch(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "If selecting branches to remove this filters the list of repositories")
 	cmd.Flags().BoolVarP(&options.SelectAllRepos, "all-repos", "", false, "If selecting projects to remove branches this defaults to selecting them all")
 	cmd.Flags().StringVarP(&options.SelectFilterRepos, "filter-repos", "", "", "If selecting projects to remove brancehs this filters the list of repositories")
+	cmd.Flags().BoolVarP(&options.Merged, "merged", "", false, "If deleting merged branches in a repository")
 	return cmd
 }
 
 // Run implements the command
 func (o *DeleteBranchOptions) Run() error {
-	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return err
@@ -154,45 +155,86 @@ func (o *DeleteBranchOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "Failed to pull remote branches for %s/%s", org, name)
 		}
-		branchNames, err := o.Git().RemoteBranchNames(dir, "remotes/origin/")
-		if err != nil {
-			return errors.Wrapf(err, "Failed to get remote branches for %s/%s", org, name)
-		}
 
-		branches, err := util.SelectNamesWithFilter(branchNames, "Which remote branches do you to to delete: ", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
-		if err != nil {
-			return err
-		}
-		if len(branches) == 0 {
-			return fmt.Errorf("No branches selected!")
-		}
-		if !o.BatchMode {
-			log.Logger().Warnf("You are about to delete these branches '%s' on the Git provider. This operation CANNOT be undone!",
-				strings.Join(branches, ","))
-
-			flag := false
-			prompt := &survey.Confirm{
-				Message: "Are you sure you want to delete these all these branches?",
-				Default: false,
+		if o.Merged {
+			branches, err := o.Git().RemoteMergedBranchNames(dir, "remotes/origin/")
+			if err != nil {
+				return errors.Wrapf(err, "fetching remote merged branches for %s/%s", org, name)
 			}
-			err = survey.AskOne(prompt, &flag, nil, surveyOpts)
+
+			if len(branches) == 0 {
+				return fmt.Errorf("no branches to remove")
+			}
+
+			if !o.BatchMode {
+				if !o.confirmDeletion(branches) {
+					return nil
+				}
+			}
+
+			if err := o.deleteRemoteBranches(branches, dir, org, name); err != nil {
+				return errors.Wrap(err, "deleting branches")
+			}
+		} else {
+			branchNames, err := o.Git().RemoteBranchNames(dir, "remotes/origin/")
+			if err != nil {
+				return errors.Wrapf(err, "fetching remote branches for %s/%s", org, name)
+			}
+
+			branches, err := util.SelectNamesWithFilter(branchNames, "Which remote branches do you to to delete: ", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 			if err != nil {
 				return err
 			}
-			if !flag {
-				return nil
+
+			if len(branches) == 0 {
+				return fmt.Errorf("no branches selected")
 			}
+
+			if !o.BatchMode {
+				if !o.confirmDeletion(branches) {
+					return nil
+				}
+			}
+
+			if err := o.deleteRemoteBranches(branches, dir, org, name); err != nil {
+				return errors.Wrap(err, "deleting branches")
+			}
+		}
+	}
+	return nil
+}
+
+func (o *DeleteBranchOptions) confirmDeletion(branches []string) bool {
+	log.Logger().Warnf("You are about to delete these branches '%s' on the Git provider. This operation CANNOT be undone!",
+		strings.Join(branches, ","))
+
+	flag := false
+	prompt := &survey.Confirm{
+		Message: "Are you sure you want to delete these all these branches?",
+		Default: false,
+	}
+
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	err := survey.AskOne(prompt, &flag, nil, surveyOpts)
+
+	if err != nil {
+		return false
+	}
+
+	return flag
+}
+
+func (o *DeleteBranchOptions) deleteRemoteBranches(branches []string, dir string, org string, name string) error {
+	for _, branch := range branches {
+		err := o.Git().DeleteRemoteBranch(dir, "origin", branch)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to delete remote branche %s from %s/%s", branch, org, name)
 		}
 
 		info := util.ColorInfo
-		for _, branch := range branches {
-			err := o.Git().DeleteRemoteBranch(dir, "origin", branch)
-			if err != nil {
-				return errors.Wrapf(err, "Failed to delete remote branche %s from %s/%s", branch, org, name)
-			}
-			log.Logger().Infof("Deleted branch in repo %s/%s branch: %s", info(org), info(name), info(branch))
-		}
+		log.Logger().Infof("Deleted branch in repo %s/%s branch: %s", info(org), info(name), info(branch))
 	}
+
 	return nil
 }
 

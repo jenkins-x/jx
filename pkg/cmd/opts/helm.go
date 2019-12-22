@@ -714,16 +714,27 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 		}
 		currChartDep := depQueue[0]
 		depQueue = depQueue[1:]
+		seenDep := map[string]bool{}
 		for _, dep := range currChartDep.deps {
+			if seenDep[dep.Name] {
+				continue
+			}
+			seenDep[dep.Name] = true
 			chartArchive := filepath.Join(currChartDep.path, fmt.Sprintf("%s-%s.tgz", dep.Name, dep.Version))
 			chartPath := filepath.Join(currChartDep.path, dep.Name)
-			err := os.MkdirAll(chartPath, os.ModePerm)
+			err := os.MkdirAll(chartPath, 0755)
 			if err != nil {
 				return errors.Wrap(err, "creating directory")
 			}
-			err = util.UnTargz(chartArchive, chartPath, []string{})
+			err = util.UnTargzAll(chartArchive, currChartDep.path)
 			if err != nil {
 				return errors.Wrap(err, "extracting chart")
+			}
+			// remove the original archive, such that helm does not have to
+			// choose between the archive and the folder
+			err = os.Remove(chartArchive)
+			if err != nil {
+				return errors.Wrap(err, "removing chart archive")
 			}
 			o.Helm().SetCWD(chartPath)
 			err = o.Helm().BuildDependency()

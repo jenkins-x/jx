@@ -518,6 +518,23 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 		return nil, errors.Wrapf(err, "checking if vault ingress should be used in namespace %q", devNamespace)
 	}
 
+	if useIngressURL {
+		// does the ingress exist
+		_, err := kube.GetIngress(kubeClient, namespace, name)
+		if err != nil {
+			if os.Getenv("LOCAL_VAULT_ADDR") == "" {
+				log.Logger().Infof("Vault ingress is not present for '%s'", util.ColorInfo(name))
+				log.Logger().Info("It appears like you're attempting to access vault locally but the cluster isn't exposing Vault (which is good)")
+				log.Logger().Info("Execute the following in another terminal window:")
+				log.Logger().Infof(util.ColorInfo("\n\tkubectl port-forward -n %s %s-0 %s:%s\n"), namespace, name, vault.DefaultVaultPort, vault.DefaultVaultPort)
+				log.Logger().Info("Then execute the following:")
+				log.Logger().Infof(util.ColorInfo("\n\tLOCAL_VAULT_ADDR=http://localhost:%s jx get vault-config\n"), vault.DefaultVaultPort)
+				return nil, errors.Errorf("no local configuration set - follow the instructions above and try again")
+			}
+			useIngressURL = false
+		}
+	}
+
 	insecureSSLWebhook, err := f.useVaultInsecureSSL(namespace)
 	if err != nil {
 		// use secure SSL by default if cannot determine if it's insecure
@@ -732,7 +749,7 @@ func (f *factory) CreateHelm(verbose bool,
 	if verbose {
 		log.Logger().Debugf("Using helmBinary %s with feature flag: %s", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
 	}
-	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
+	helmCLI := helm.NewHelmCLIWithCompatibilityCheck(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI
 	if helmTemplate {
 		kubeClient, ns, _ := f.CreateKubeClient()

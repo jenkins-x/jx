@@ -6,11 +6,11 @@ items:
     labels:
       branch: fix-kaniko-special-casing
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: ci
       owner: jenkins-x
-      jenkins.io/pipelineType: build
       repository: jx
-    name: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
+    name: jenkins-x-jx-fix-kaniko-special-6nl7g-ci-1
     namespace: jx
   spec:
     inputs:
@@ -163,7 +163,9 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile --destination=docker.io/jenkinsxio/jx:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile --destination=docker.io/jenkinsxio/jx:A_VERSION
+        --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
+        --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
       - /busybox/sh
       - -c
@@ -197,6 +199,8 @@ items:
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
       image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
@@ -208,7 +212,10 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-nodejs --destination=docker.io/jenkinsxio/builder-nodejs:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-nodejs
+        --destination=docker.io/jenkinsxio/builder-nodejs:A_VERSION --context=/workspace/source
+        --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true
+        --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
       - /busybox/sh
       - -c
@@ -242,6 +249,8 @@ items:
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
       image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
@@ -253,7 +262,9 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-maven --destination=docker.io/jenkinsxio/builder-maven:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-maven --destination=docker.io/jenkinsxio/builder-maven:A_VERSION
+        --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
+        --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
       - /busybox/sh
       - -c
@@ -287,6 +298,8 @@ items:
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
       image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
@@ -298,7 +311,9 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-go --destination=docker.io/jenkinsxio/builder-go:A_VERSION --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/ --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+      - /kaniko/executor --dockerfile=/workspace/source/Dockerfile.builder-go --destination=docker.io/jenkinsxio/builder-go:A_VERSION
+        --context=/workspace/source --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
+        --cache=true --cache-dir=/workspace --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
       command:
       - /bin/sh
       - -c
@@ -332,6 +347,8 @@ items:
         value: "true"
       - name: VERSION
         value: ${inputs.params.version}
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
         value: ${inputs.params.version}
       image: rawlingsj/executor:dev40

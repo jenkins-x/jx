@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -218,10 +217,7 @@ func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionSt
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to get latest tag at %s", o.Dir)
 		}
-	}
-
-	// if version stream is currently need to sha compare sha's
-	if len(versionStreamRef) == 40 {
+	} else {
 		upgradeRef, err = o.Git().GetCommitPointedToByTag(versionsDir, upgradeRef)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to get commit pointed to by %s", upgradeRef)
@@ -416,12 +412,7 @@ func (o *UpgradeBootOptions) excludeFiles(commit string) error {
 }
 
 func (o *UpgradeBootOptions) raisePR() error {
-	gitInfo, err := o.Git().Info(o.Dir)
-	if err != nil {
-		return errors.Wrap(err, "failed to get git info")
-	}
-
-	provider, err := o.gitProvider(gitInfo)
+	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to get git provider")
 	}
@@ -431,26 +422,33 @@ func (o *UpgradeBootOptions) raisePR() error {
 		return errors.Wrapf(err, "getting repository %s/%s", gitInfo.Organisation, gitInfo.Name)
 	}
 
+	details, filter, err := prDetailsAndFilter()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get PR details and filter")
+	}
+
+	_, err = gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
+	}
+	return nil
+}
+
+func prDetailsAndFilter() (gits.PullRequestDetails, gits.PullRequestFilter, error) {
 	details := gits.PullRequestDetails{
 		BranchName: fmt.Sprintf("jx_boot_upgrade"),
 		Title:      "feat(config): upgrade configuration",
 		Message:    "Upgrade configuration",
 	}
-
+	labels := []string{}
 	filter := gits.PullRequestFilter{
 		Labels: []string{
 			boot.PullRequestLabel,
 		},
 	}
-	prInfo, err := gits.PushRepoAndCreatePullRequest(o.Dir, upstreamInfo, nil, "master", &details, &filter, false, details.Title, true, false, o.Git(), provider)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", "master", details.BranchName)
-	}
-	err = gits.AddLabelsToPullRequest(prInfo, []string{boot.PullRequestLabel})
-	if err != nil {
-		return errors.Wrapf(err, "failed to add label %s to PR %s", boot.PullRequestLabel, prInfo.PullRequest.URL)
-	}
-	return nil
+	details.Labels = labels
+
+	return details, filter, nil
 }
 
 func (o *UpgradeBootOptions) deleteLocalBranch(branch string) error {
@@ -481,7 +479,9 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to give write perms to tmp dir to clone dev env repo")
 	}
-	_, userAuth, err := o.pipelineUserAuth()
+
+	gitInfo, err := gits.ParseGitURL(devEnvURL)
+	_, userAuth, err := o.GetPipelineGitAuthForRepo(gitInfo)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pipeline user auth")
 	}
@@ -497,37 +497,6 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 
 	o.Dir = cloneDir
 	return nil
-}
-
-func (o *UpgradeBootOptions) pipelineUserAuth() (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.GitAuthConfigService()
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create pipeline user git auth config service")
-	}
-	cfg := authConfigSvc.Config()
-	if cfg == nil {
-		return nil, nil, errors.Wrap(err, "git auth config is empty")
-	}
-	server, userAuth := cfg.GetPipelineAuth()
-	return server, userAuth, nil
-}
-
-func (o *UpgradeBootOptions) gitProvider(gitInfo *gits.GitRepository) (gits.GitProvider, error) {
-	server, userAuth, err := o.pipelineUserAuth()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get pipeline user auth")
-	}
-
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get git kind")
-	}
-
-	provider, err := gitInfo.CreateProviderForUser(server, userAuth, gitKind, o.Git())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create provider for user")
-	}
-	return provider, nil
 }
 
 func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.VersionResolver) error {

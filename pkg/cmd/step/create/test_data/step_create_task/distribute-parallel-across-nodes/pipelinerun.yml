@@ -5,24 +5,24 @@ metadata:
   labels:
     branch: really-long
     build: "1"
-    owner: abayer
     jenkins.io/pipelineType: build
+    owner: abayer
     repository: js-test-repo
-  name: abayer-js-test-repo-really-long-1
+  name: abayer-js-test-repo-really-long-shnql-1
 spec:
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchLabels:
-              tekton.dev/pipelineRun: abayer-js-test-repo-really-long-1
-          topologyKey: kubernetes.io/hostname
+      - labelSelector:
+          matchLabels:
+            tekton.dev/pipelineRun: abayer-js-test-repo-really-long-shnql-1
+        topologyKey: kubernetes.io/hostname
   params:
   - name: version
     value: 0.0.1
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
-    name: abayer-js-test-repo-really-long-1
+    name: abayer-js-test-repo-really-long-shnql-1
   resources:
   - name: abayer-js-test-repo-really-long
     resourceRef:

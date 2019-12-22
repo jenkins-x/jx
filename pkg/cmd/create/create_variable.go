@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -37,7 +39,7 @@ var (
 
 // CreateVariableOptions the options for the create spring command
 type CreateVariableOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Dir   string
 	Name  string
@@ -47,7 +49,7 @@ type CreateVariableOptions struct {
 // NewCmdCreateVariable creates a command object for the "create" command
 func NewCmdCreateVariable(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateVariableOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

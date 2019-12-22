@@ -5,17 +5,17 @@ metadata:
   labels:
     branch: fix-kaniko-special-casing
     build: "1"
-    owner: jenkins-x
     jenkins.io/pipelineType: build
+    owner: jenkins-x
     repository: jx
-  name: jenkins-x-jx-fix-kaniko-special-9l9zj-1
+  name: jenkins-x-jx-fix-kaniko-special-6nl7g-1
 spec:
   params:
   - name: version
     value: 0.0.1
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
-    name: jenkins-x-jx-fix-kaniko-special-9l9zj-1
+    name: jenkins-x-jx-fix-kaniko-special-6nl7g-1
   resources:
   - name: jenkins-x-jx-fix-kaniko-special
     resourceRef:

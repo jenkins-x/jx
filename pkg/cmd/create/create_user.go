@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/users"
@@ -35,14 +37,14 @@ var (
 
 // CreateUserOptions the options for the create spring command
 type CreateUserOptions struct {
-	CreateOptions
+	options.CreateOptions
 	UserSpec v1.UserDetails
 }
 
 // NewCmdCreateUser creates a command object for the "create" command
 func NewCmdCreateUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateUserOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -953,10 +953,28 @@ func writePreviewURL(o *PreviewOptions, url string) {
 	}
 }
 
-func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
+func (o *PreviewOptions) getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return "", errors.Wrap(err, "could not load team")
+	}
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return "", errors.Wrap(err, "could not get requirements from team setting")
+	}
+	if requirements != nil {
+		registryHost := requirements.Cluster.Registry
+		if registryHost != "" {
+			return registryHost, nil
+		}
+	}
+
+	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	registry := ""
 	if projectConfig != nil {
 		registry = projectConfig.DockerRegistryHost
+	}
+	if registryHost == "" {
 	}
 	if registry == "" {
 		registry = os.Getenv(DOCKER_REGISTRY)
@@ -965,7 +983,6 @@ func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
 		return registry, nil
 	}
 
-	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	if registryHost == "" {
 		return "", fmt.Errorf("no %s environment variable found", JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	}
@@ -978,7 +995,7 @@ func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
 }
 
 func (o *PreviewOptions) getImageName(projectConfig *config.ProjectConfig) (string, error) {
-	containerRegistry, err := getContainerRegistry(projectConfig)
+	containerRegistry, err := o.getContainerRegistry(projectConfig)
 	if err != nil {
 		return "", err
 	}

@@ -583,6 +583,55 @@ var _ = Describe("Git CLI", func() {
 			})
 		})
 	})
+
+	Describe("#HasChanges", func() {
+		Context("when there are changes in directory", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+			})
+
+			Specify("a changes are shown", func() {
+				changed, err := git.HasChanges(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeTrue())
+			})
+		})
+	})
+
+	Describe("#HasFileChanged", func() {
+		Context("when there is not a file change", func() {
+			Specify("a file does not show as changed", func() {
+				changed, err := git.HasFileChanged(repoDir, "a.txt")
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeFalse())
+			})
+		})
+
+		Context("when there is a file change", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+			})
+
+			Specify("a file shows as changed", func() {
+				changed, err := git.HasFileChanged(repoDir, "a.txt")
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeTrue())
+			})
+		})
+
+		Context("when there is multiple file changes", func() {
+			BeforeEach(func() {
+				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+			})
+
+			Specify("a specific file shows as changed", func() {
+				changed, err := git.HasFileChanged(repoDir, "a.txt")
+				Expect(err).Should(BeNil())
+				Expect(changed).Should(BeTrue())
+			})
+		})
+	})
 })
 
 func TestTags(t *testing.T) {

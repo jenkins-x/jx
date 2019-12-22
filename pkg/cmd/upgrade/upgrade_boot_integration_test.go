@@ -6,7 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/blang/semver"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -15,6 +18,64 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestUpgradeAvailable(t *testing.T) {
+	o := UpgradeBootOptions{
+		CommonOptions: &opts.CommonOptions{},
+	}
+
+	tests := []struct {
+		name             string
+		versionStreamRef string
+		latestRelease    bool
+		wantSha          bool
+		wantTag          bool
+		upgradeVSRef     string
+	}{
+		{
+			name:             "TestUpgradeAvailableFromTaggedVersion",
+			versionStreamRef: "v1.0.35",
+			wantSha:          true,
+		},
+		{
+			name:             "TestUpgradeAvailableFromSha",
+			versionStreamRef: "282fd7579ef82df408ccd2d425f99779784f75a9",
+			wantSha:          true,
+		},
+		{
+			name:             "TestUpgradeAvailableLatestReleaseFromTaggedVersion",
+			versionStreamRef: "v1.0.35",
+			latestRelease:    true,
+			wantTag:          true,
+		},
+		{
+			name:             "TestUpgradeAvailableLatestReleaseFromSha",
+			versionStreamRef: "282fd7579ef82df408ccd2d425f99779784f75a9",
+			latestRelease:    true,
+			wantTag:          true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.latestRelease {
+				o.LatestRelease = true
+			}
+
+			upgradeRef, err := o.upgradeAvailable(config.DefaultVersionsURL, tt.versionStreamRef, config.DefaultVersionsRef)
+			assert.NoError(t, err)
+
+			if tt.wantSha {
+				assert.Equal(t, len(upgradeRef), 40)
+			}
+
+			if tt.wantTag {
+				upgradeRefText := strings.TrimPrefix(upgradeRef, "v")
+				_, err = semver.Parse(upgradeRefText)
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
 
 func TestUpdateBootConfig(t *testing.T) {
 	origJxHome := os.Getenv("JX_HOME")

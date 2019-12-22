@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -25,7 +27,7 @@ var (
 
 // CreateChatServerOptions the options for the create spring command
 type CreateChatServerOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Name string
 }
@@ -33,7 +35,7 @@ type CreateChatServerOptions struct {
 // NewCmdCreateChatServer creates a command object for the "create" command
 func NewCmdCreateChatServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateChatServerOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

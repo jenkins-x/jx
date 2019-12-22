@@ -3,6 +3,8 @@ package deletecmd
 import (
 	"errors"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/jenkins-x/jx/pkg/cmd/get"
 	"github.com/jenkins-x/jx/pkg/packages"
 
@@ -10,8 +12,6 @@ import (
 	"os/exec"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -55,7 +55,7 @@ func newCmdDeleteEks(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Profile, "profile", "", "", "AWS profile to use.")
-	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)
+	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use. Default: "+session.DefaultRegion)
 
 	options.AddGetFlags(cmd)
 	return cmd
@@ -82,7 +82,7 @@ func (o *deleteEksOptions) Run() error {
 		os.Exit(-1)
 	}
 
-	region, err := amazon.ResolveRegion(o.Profile, o.Region)
+	region, err := session.ResolveRegion(o.Profile, o.Region)
 	if err != nil {
 		return err
 	}

@@ -10,12 +10,29 @@ import (
 func TestToValidName(t *testing.T) {
 	t.Parallel()
 	assertToValidName(t, "foo", "foo")
+	assertToValidName(t, "foo[bot]", "foo-bot")
 	assertToValidName(t, "foo-bar", "foo-bar")
 	assertToValidName(t, "foo-bar-", "foo-bar")
 	assertToValidName(t, "foo-bar-0.1.0", "foo-bar-0-1-0")
 	assertToValidName(t, "---foo-bar-", "foo-bar")
 	assertToValidName(t, "foo/bar_*123", "foo-bar-123")
 	assertToValidName(t, "", "")
+}
+
+func TestToValidValue(t *testing.T) {
+	t.Parallel()
+	assertToValidValue(t, "1", "1")
+	assertToValidValue(t, "1.2.3", "1.2.3")
+	assertToValidValue(t, "foo/bar", "foo/bar")
+	assertToValidValue(t, "Foo/Bar", "Foo/Bar")
+	assertToValidValue(t, "foo", "foo")
+	assertToValidValue(t, "foo[bot]", "foo-bot")
+	assertToValidValue(t, "foo-bar", "foo-bar")
+	assertToValidValue(t, "foo-bar-", "foo-bar")
+	assertToValidValue(t, "foo-bar-0.1.0", "foo-bar-0.1.0")
+	assertToValidValue(t, "---foo-bar-", "-foo-bar")
+	assertToValidValue(t, "foo/bar_*123", "foo/bar-123")
+	assertToValidValue(t, "", "")
 }
 
 func TestToValidNameWithDots(t *testing.T) {
@@ -44,6 +61,11 @@ func assertToValidNameWithDots(t *testing.T, input string, expected string) {
 func assertToValidName(t *testing.T, input string, expected string) {
 	actual := naming.ToValidName(input)
 	assert.Equal(t, expected, actual, "ToValidName for input %s", input)
+}
+
+func assertToValidValue(t *testing.T, input string, expected string) {
+	actual := naming.ToValidValue(input)
+	assert.Equal(t, expected, actual, "ToValidValue for input %s", input)
 }
 
 func assertToValidNameTruncated(t *testing.T, input string, maxLength int, expected string) {

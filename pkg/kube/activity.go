@@ -455,6 +455,10 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 	if buildNumber != "" {
 		activity.Labels[v1.LabelBuild] = buildNumber
 	}
+
+	for k, v := range activity.Labels {
+		activity.Labels[k] = naming.ToValidValue(v)
+	}
 }
 
 func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {

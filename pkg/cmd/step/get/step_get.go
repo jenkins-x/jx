@@ -32,7 +32,6 @@ func NewCmdStepGet(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.AddCommand(NewCmdStepGetBuildNumber(commonOpts))
 	cmd.AddCommand(NewCmdStepGetVersionChangeSet(commonOpts))
-	cmd.AddCommand(NewCmdStepGetSubdomain(commonOpts))
 	cmd.AddCommand(NewCmdStepGetDependencyVersion(commonOpts))
 	return cmd
 }

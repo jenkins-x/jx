@@ -56,7 +56,7 @@ type helmInfoStatus struct {
 
 var (
 	getAppsLong = templates.LongDesc(`
-		Display installed Apps
+		Display installed Apps (an app is similar to an addon)
 `)
 
 	getAppsExample = templates.Examples(`
@@ -86,7 +86,7 @@ func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "apps",
-		Short:   "Display one or more installed Apps",
+		Short:   "Display one or more installed Apps (an app is similar to an addon)",
 		Aliases: []string{"app"},
 		Long:    getAppsLong,
 		Example: getAppsExample,

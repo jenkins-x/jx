@@ -69,8 +69,147 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 		repoName     string
 		organization string
 		branch       string
+		customEnvs   []string
 		expected     *config.ProjectConfig
 	}{{
+		name:         "js_build_pack_with_yaml",
+		pack:         "javascript",
+		repoName:     "js-test-repo",
+		organization: "abayer",
+		branch:       "build-pack",
+		customEnvs:   []string{"DOCKER_REGISTRY=gcr.io"},
+		expected: &config.ProjectConfig{
+			BuildPack: "javascript",
+			PipelineConfig: &jenkinsfile.PipelineConfig{
+				Agent: &jxsyntax.Agent{
+					Container: "nodejs",
+					Label:     "jenkins-nodejs",
+				},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "DOCKER_REGISTRY",
+						Value: "gcr.io",
+					},
+				},
+				Extends: &jenkinsfile.PipelineExtends{
+					File:   "javascript/pipeline.yaml",
+					Import: "classic",
+				},
+				Pipelines: jenkinsfile.Pipelines{
+					Post: &jenkinsfile.PipelineLifecycle{
+						Steps:    []*jxsyntax.Step{},
+						PreSteps: []*jxsyntax.Step{},
+					},
+					PullRequest: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineEnvVar("DOCKER_REGISTRY", "gcr.io"),
+							sht.PipelineOptions(
+								sht.PipelineContainerOptions(
+									sht.ContainerResourceRequests("400m", "512Mi"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									sht.EnvVar("DOCKER_REGISTRY", "gcr.io"),
+									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
+									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
+									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
+									sht.ContainerSecurityContext(true),
+									tb.VolumeMount("workspace-volume", "/home/jenkins"),
+									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
+									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
+								),
+							),
+							sht.PipelineStage("from-build-pack",
+								sht.StageAgent("nodejs"),
+								sht.StageStep(sht.StepCmd("npm install"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-npm-install")),
+								sht.StageStep(sht.StepCmd("CI=true DISPLAY=:99 npm test"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-step3")),
+								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
+									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
+									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
+									sht.StepArg("--destination=gcr.io/abayer/js-test-repo:${inputs.params.version}"),
+									sht.StepArg("--cache-repo=gcr.io//cache")),
+								sht.StageStep(sht.StepCmd("jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"),
+									sht.StepDir("/workspace/source"), sht.StepImage("nodejs"), sht.StepName("postbuild-post-build")),
+								sht.StageStep(sht.StepCmd("make preview"), sht.StepDir("/workspace/source/charts/preview"),
+									sht.StepImage("nodejs"), sht.StepName("promote-make-preview")),
+								sht.StageStep(sht.StepCmd("jx preview --app $APP_NAME --dir ../.."), sht.StepDir("/workspace/source/charts/preview"),
+									sht.StepImage("nodejs"), sht.StepName("promote-jx-preview")),
+							),
+						),
+					},
+					Release: &jenkinsfile.PipelineLifecycles{
+						Pipeline: sht.ParsedPipeline(
+							sht.PipelineEnvVar("DOCKER_REGISTRY", "gcr.io"),
+							sht.PipelineOptions(
+								sht.PipelineContainerOptions(
+									sht.ContainerResourceRequests("400m", "512Mi"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									sht.EnvVar("DOCKER_REGISTRY", "gcr.io"),
+									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
+									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
+									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
+									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
+									sht.ContainerSecurityContext(true),
+									tb.VolumeMount("workspace-volume", "/home/jenkins"),
+									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
+									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
+								),
+							),
+							sht.PipelineStage("from-build-pack",
+								sht.StageAgent("nodejs"),
+								sht.StageStep(sht.StepCmd("jx step git credentials"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("setup-jx-git-credentials")),
+								sht.StageStep(sht.StepCmd("npm install"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-npm-install")),
+								sht.StageStep(sht.StepCmd("CI=true DISPLAY=:99 npm test"), sht.StepDir("/workspace/source"),
+									sht.StepImage("nodejs"), sht.StepName("build-npm-test")),
+								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
+									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
+									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
+									sht.StepArg("--destination=gcr.io/abayer/js-test-repo:${inputs.params.version}"),
+									sht.StepArg("--cache-repo=gcr.io//cache")),
+								sht.StageStep(sht.StepCmd("jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:${VERSION}"),
+									sht.StepDir("/workspace/source"), sht.StepImage("nodejs"), sht.StepName("build-post-build")),
+								sht.StageStep(sht.StepCmd("jx step changelog --batch-mode --version v${VERSION}"),
+									sht.StepDir("/workspace/source/charts/js-test-repo"), sht.StepImage("nodejs"),
+									sht.StepName("promote-changelog")),
+								sht.StageStep(sht.StepCmd("jx step helm release"), sht.StepDir("/workspace/source/charts/js-test-repo"),
+									sht.StepImage("nodejs"), sht.StepName("promote-helm-release")),
+								sht.StageStep(sht.StepCmd("jx promote -b --all-auto --timeout 1h --version ${VERSION}"),
+									sht.StepDir("/workspace/source/charts/js-test-repo"),
+									sht.StepImage("nodejs"), sht.StepName("promote-jx-promote")),
+							),
+						),
+						SetVersion: &jenkinsfile.PipelineLifecycle{
+							Steps: []*jxsyntax.Step{{
+								Image: "nodejs",
+								Steps: []*jxsyntax.Step{{
+									Comment: "so we can retrieve the version in later steps",
+									Name:    "next-version",
+									Sh:      "echo \\$(jx-release-version) > VERSION",
+									Steps:   []*jxsyntax.Step{},
+								}, {
+									Name:  "tag-version",
+									Sh:    "jx step tag --version \\$(cat VERSION)",
+									Steps: []*jxsyntax.Step{},
+								}},
+							}},
+							PreSteps: []*jxsyntax.Step{},
+						},
+					},
+				},
+			},
+		},
+	}, {
 		name:         "js_build_pack",
 		pack:         "javascript",
 		repoName:     "js-test-repo",
@@ -97,19 +236,19 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
 									sht.ContainerResourceRequests("400m", "512Mi"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									sht.ContainerSecurityContext(true),
 									tb.VolumeMount("workspace-volume", "/home/jenkins"),
@@ -143,19 +282,19 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
 									sht.ContainerResourceRequests("400m", "512Mi"),
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									sht.ContainerSecurityContext(true),
 									tb.VolumeMount("workspace-volume", "/home/jenkins"),
@@ -363,19 +502,20 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("FRUIT", "BANANA"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
-									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									tb.EnvVar("_JAVA_OPTIONS", "-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m"),
 									sht.ContainerSecurityContext(true),
@@ -415,19 +555,20 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 							sht.PipelineOptions(
 								sht.PipelineContainerOptions(
+									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
 									sht.EnvVarFrom("DOCKER_REGISTRY", &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											Key: "docker.registry",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "jenkins-x-docker-registry",
 											}}}),
-									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
-									tb.EnvVar("DOCKER_CONFIG", "/home/jenkins/.docker/"),
+									tb.EnvVar("FRUIT", "BANANA"),
 									tb.EnvVar("GIT_AUTHOR_EMAIL", "jenkins-x@googlegroups.com"),
-									tb.EnvVar("GIT_AUTHOR_NAME", "jenkins-x-bot"),
+									tb.EnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 									tb.EnvVar("GIT_COMMITTER_EMAIL", "jenkins-x@googlegroups.com"),
 									tb.EnvVar("GIT_COMMITTER_NAME", "jenkins-x-bot"),
 									tb.EnvVar("JENKINS_URL", "http://jenkins:8080"),
+									tb.EnvVar("TILLER_NAMESPACE", "kube-system"),
 									tb.EnvVar("XDG_CONFIG_HOME", "/home/jenkins"),
 									tb.EnvVar("_JAVA_OPTIONS", "-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m"),
 									sht.ContainerSecurityContext(true),
@@ -578,6 +719,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 
 			createCanonical := &syntax.StepSyntaxEffectiveOptions{
 				Pack:         tt.pack,
+				CustomEnvs:   tt.customEnvs,
 				DefaultImage: "maven",
 				KanikoImage:  "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6",
 				UseKaniko:    true,

@@ -68,21 +68,15 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 		return nil, err
 	}
 	labels := make([]string, 0)
+	labels = append(labels, pullRequestDetails.Labels...)
 	labels = append(labels, o.Labels...)
 	if autoMerge {
 		labels = append(labels, gits.LabelUpdatebot)
 	}
+	pullRequestDetails.Labels = labels
 	prInfo, err := gits.PushRepoAndCreatePullRequest(dir, upstreamRepo, forkURL, base, pullRequestDetails, filter, true, pullRequestDetails.Message, true, false, o.Gitter, o.GitProvider)
 	if err != nil {
 		return nil, err
-	}
-
-	// this will be nil if no PR was created due to no real changes in source
-	if prInfo != nil {
-		err = gits.AddLabelsToPullRequest(prInfo, labels)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return prInfo, nil
 }

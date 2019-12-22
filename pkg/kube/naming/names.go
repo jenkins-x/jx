@@ -88,6 +88,34 @@ func toValidName(name string, allowDots bool, maxLength int) string {
 	return answer
 }
 
+// ToValidValue validates a label value which can start with numbers
+func ToValidValue(name string) string {
+	if name == "" {
+		return ""
+	}
+	var buffer bytes.Buffer
+	lastCharDash := false
+	for _, ch := range name {
+		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '-' && ch != '.' && ch != '/' {
+			ch = '-'
+		}
+
+		if ch != '-' || !lastCharDash {
+			buffer.WriteRune(ch)
+		}
+		lastCharDash = ch == '-'
+	}
+	answer := buffer.String()
+	for {
+		if strings.HasSuffix(answer, "-") {
+			answer = strings.TrimSuffix(answer, "-")
+		} else {
+			break
+		}
+	}
+	return answer
+}
+
 //EmailToK8sID converts the provided email address to a valid Kubernetes resource name, converting the @ to a .
 func EmailToK8sID(email string) string {
 	return ToValidNameWithDots(strings.Replace(email, "@", ".", -1))

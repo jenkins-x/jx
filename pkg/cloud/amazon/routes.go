@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -14,7 +16,7 @@ import (
 // RegisterAwsCustomDomain registers a wildcard ALIAS for the custom domain
 // to point at the given ELB host name
 func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
-	sess, err := NewAwsSessionWithoutOptions()
+	sess, err := session.NewAwsSessionWithoutOptions()
 	if err != nil {
 		return err
 	}

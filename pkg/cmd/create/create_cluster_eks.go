@@ -6,6 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/eks"
+
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/packages"
@@ -143,11 +147,11 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if flags.ClusterName != "" {
 		args = append(args, "--name", flags.ClusterName)
 
-		eksOptions, err := amazon.NewEKSClusterOptions()
+		provider, err := amazon.NewProvider(flags.Profile, flags.Region)
 		if err != nil {
-			return errors.Wrap(err, "error obtaining the EKS cluster commands")
+			return errors.Wrap(err, "error obtaining the AWS provider")
 		}
-		clusterExists, err := eksOptions.EksClusterExists(flags.ClusterName, flags.Profile, flags.Region)
+		clusterExists, err := provider.EKS().EksClusterExists(flags.ClusterName, flags.Profile, flags.Region)
 		if err != nil {
 			return err
 		}
@@ -155,7 +159,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 			log.Logger().Infof("EKS cluster %s already exists.", util.ColorInfo(flags.ClusterName))
 			return nil
 		} else {
-			stackExists, err := eksOptions.EksClusterObsoleteStackExists(flags.ClusterName, flags.Profile, flags.Region)
+			stackExists, err := provider.EKS().EksClusterObsoleteStackExists(flags.ClusterName, flags.Profile, flags.Region)
 			if err != nil {
 				return err
 			}
@@ -164,8 +168,8 @@ func (o *CreateClusterEKSOptions) Run() error {
 					`Cloud formation stack named %s exists in rollbacked state. At the same 
 time there is no EKS cluster associated with it. This usually happens when there was an error during 
 cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
-					util.ColorInfo(amazon.EksctlStackName(flags.ClusterName)), util.ColorInfo(amazon.EksctlStackName(flags.ClusterName)))
-				err = eksOptions.CleanUpObsoleteEksClusterStack(flags.ClusterName, flags.Profile, flags.Region)
+					util.ColorInfo(eks.EksctlStackName(flags.ClusterName)), util.ColorInfo(eks.EksctlStackName(flags.ClusterName)))
+				err = provider.EKS().CleanUpObsoleteEksClusterStack(flags.ClusterName, flags.Profile, flags.Region)
 				if err != nil {
 					return err
 				}
@@ -173,7 +177,7 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 		}
 	}
 
-	region, err := amazon.ResolveRegion("", flags.Region)
+	region, err := session.ResolveRegion("", flags.Region)
 	if err != nil {
 		return err
 	}

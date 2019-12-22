@@ -11,6 +11,10 @@ const (
 	AdminSecretsPath = "admin/"
 	// AuthSecretsPath the path of auth secrets
 	AuthSecretsPath = "auth/"
+	// LocalVaultEnvVar defines the address to search for when using kubectl port-forward to access Vault without an ingress
+	LocalVaultEnvVar = "LOCAL_VAULT_ADDR"
+	//DefaultVaultPort defines the port to access vault
+	DefaultVaultPort = "8200"
 )
 
 // AdminSecret type for a vault admin secret

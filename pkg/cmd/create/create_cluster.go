@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -20,7 +22,7 @@ type KubernetesProvider string
 
 // CreateClusterOptions the flags for running create cluster
 type CreateClusterOptions struct {
-	CreateOptions
+	options.CreateOptions
 	InstallOptions   InstallOptions
 	Flags            initcmd.InitFlags
 	Provider         string
@@ -126,7 +128,7 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 
 func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider string) CreateClusterOptions {
 	options := CreateClusterOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 		Provider:       cloudProvider,

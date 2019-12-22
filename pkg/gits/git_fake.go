@@ -293,6 +293,11 @@ func (g *GitFake) RemoteBranchNames(dir string, prefix string) ([]string, error)
 	return remoteBranches, nil
 }
 
+// RemoteMergedBranchNames list the remote branch names that are merged
+func (g *GitFake) RemoteMergedBranchNames(dir string, prefix string) ([]string, error) {
+	return g.RemoteBranchNames(dir, prefix)
+}
+
 // GetRemoteUrl get the remote URL
 func (g *GitFake) GetRemoteUrl(config *gitcfg.Config, name string) string {
 	if len(g.GitRemotes) == 0 {

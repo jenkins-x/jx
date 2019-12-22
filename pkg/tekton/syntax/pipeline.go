@@ -1072,6 +1072,12 @@ func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVa
 	if len(parentEnv) == 0 && len(newEnv) == 0 {
 		return nil
 	}
+	return CombineEnv(newEnv, parentEnv)
+}
+
+// CombineEnv combines the two environments into a single unified slice where
+// the `newEnv` overrides anything in the `parentEnv`
+func CombineEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 	envMap := make(map[string]corev1.EnvVar)
 
 	for _, e := range parentEnv {
@@ -1618,6 +1624,16 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 		}
 	} else {
 		return nil, nil, params.stepCounter, errors.New("syntactic sugar steps not yet supported")
+	}
+
+	// lets make sure if we've overloaded any environment variables we remove any remaining valueFrom structs
+	// to avoid creating bad Tasks
+	for i, step := range steps {
+		for j, e := range step.Env {
+			if e.Value != "" {
+				steps[i].Env[j].ValueFrom = nil
+			}
+		}
 	}
 
 	return steps, volumes, params.stepCounter, nil

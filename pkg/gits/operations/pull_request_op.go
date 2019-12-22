@@ -88,13 +88,11 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update ChangeFiles
 		filter := &gits.PullRequestFilter{
 			Labels: labels,
 		}
+
+		details.Labels = labels
 		result, err = gits.PushRepoAndCreatePullRequest(dir, upstreamInfo, forkInfo, o.Base, details, filter, !o.SkipCommit, commitMessage, true, o.DryRun, o.Git(), provider)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create PR for base %s and head branch %s from temp dir %s", o.Base, details.BranchName, dir)
-		}
-		err = gits.AddLabelsToPullRequest(result, labels)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to add labels %+v to PR %s", labels, result.PullRequest.URL)
 		}
 	}
 	return result, nil
@@ -230,8 +228,10 @@ func AddDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsse
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
 	}
-	err = yaml.Unmarshal(b.Bytes(), &upstreamUpdates)
+	bytes := b.Bytes()
+	err = yaml.Unmarshal(bytes, &upstreamUpdates)
 	if err != nil {
+		log.Logger().Errorf("unable to unmarshall from %s", string(bytes))
 		return nil, errors.Wrapf(err, "unmarshaling dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
 	}
 	for _, d := range upstreamUpdates.Updates {

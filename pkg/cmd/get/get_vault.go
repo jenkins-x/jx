@@ -39,7 +39,8 @@ func NewCmdGetVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:     "vaults",
+		Use:     "vault",
+		Aliases: []string{"vaults"},
 		Short:   "Display one or more Vaults",
 		Long:    getVaultLong,
 		Example: getVaultExample,

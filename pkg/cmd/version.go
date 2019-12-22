@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 
@@ -121,7 +122,7 @@ func (o *VersionOptions) upgradeCliIfNeeded(resolver *versionstream.VersionResol
 			message := fmt.Sprintf("Would you like to upgrade to the %s version?", app)
 			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles()) {
 				options := &upgrade.UpgradeCLIOptions{
-					CreateOptions: create.CreateOptions{
+					CreateOptions: options.CreateOptions{
 						CommonOptions: o.CommonOptions,
 					},
 				}

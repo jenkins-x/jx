@@ -6,11 +6,11 @@ items:
     labels:
       branch: master
       build: "1"
+      jenkins.io/pipelineType: build
       jenkins.io/task-stage-name: from-build-pack
       owner: abayer
-      jenkins.io/pipelineType: build
       repository: golang-qs-test
-    name: abayer-golang-qs-test-master-from-build-pack-1
+    name: abayer-golang-qs-test-master-78c5n-from-build-pack-1
     namespace: jx
   spec:
     inputs:
@@ -33,15 +33,13 @@ items:
       command:
       - jx
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -50,6 +48,8 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
       - name: BUILD_NUMBER

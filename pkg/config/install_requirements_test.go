@@ -2,9 +2,12 @@ package config_test
 
 import (
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -58,6 +61,33 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	assert.Equal(t, expectedClusterName, requirements.Cluster.ClusterName, "requirements.ClusterName")
 	assert.Equal(t, expectedSecretStorage, requirements.SecretStorage, "requirements.SecretStorage")
 	assert.Equal(t, expectedDomain, requirements.Ingress.Domain, "requirements.Domain")
+}
+
+func TestOverrideRequirementsFromEnvironment(t *testing.T) {
+	t.Parallel()
+
+	requirements, fileName, err := config.LoadRequirementsConfig(testDataDir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", testDataDir)
+	assert.FileExists(t, fileName)
+
+	err = os.Setenv("JX_REQUIREMENT_VELERO_SCHEDULE", "*/5 * * * *")
+	assert.NoError(t, err, "could not Setenv JX_REQUIREMENT_VELERO_SCHEDULE")
+
+	requirements.OverrideRequirementsFromEnvironment(func() gke.GClouder {
+		return nil
+	})
+
+	tempDir, err := ioutil.TempDir("", "test-requirements-config")
+	assert.NoError(t, err, "should create a temporary config dir")
+
+	err = requirements.SaveConfig(filepath.Join(tempDir, config.RequirementsConfigFileName))
+	assert.NoError(t, err, "failed to save requirements file in dir %s", tempDir)
+	overrideRequirements, fileName, err := config.LoadRequirementsConfig(tempDir)
+	assert.NoError(t, err, "failed to load requirements file in dir %s", testDataDir)
+	assert.FileExists(t, fileName)
+
+	assert.Equal(t, "*/5 * * * *", overrideRequirements.Velero.Schedule)
+
 }
 
 func TestRequirementsConfigMarshalExistingFileKanikoFalse(t *testing.T) {

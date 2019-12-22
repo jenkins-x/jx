@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -403,7 +405,7 @@ func (o *StepVerifyPreInstallOptions) configureVelero(requirements *config.Requi
 
 	serviceAccountName := requirements.Velero.ServiceAccount
 	if serviceAccountName == "" {
-		serviceAccountName = naming.ToValidNameTruncated(fmt.Sprintf("%s-velero", clusterName), 30)
+		serviceAccountName = naming.ToValidNameTruncated(fmt.Sprintf("%s-vo", clusterName), 30)
 		requirements.Velero.ServiceAccount = serviceAccountName
 	}
 	log.Logger().Infof("Configuring Velero service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
@@ -442,6 +444,7 @@ func (o *StepVerifyPreInstallOptions) VerifyInstallConfig(kubeClient kubernetes.
 			modifyMapIfNotBlank(configMap.Data, kube.ClusterName, requirements.Cluster.ClusterName)
 			modifyMapIfNotBlank(configMap.Data, secrets.SecretsLocationKey, secretsLocation)
 			modifyMapIfNotBlank(configMap.Data, kube.Region, requirements.Cluster.Region)
+			modifyMapIfNotBlank(configMap.Data, kube.Zone, requirements.Cluster.Zone)
 			return nil
 		}, nil)
 	if err != nil {
@@ -564,7 +567,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		var currentRegion, currentClusterName string
 		var autoAcceptDefaults bool
 		if requirements.Cluster.Region == "" || requirements.Cluster.ClusterName == "" {
-			currentClusterName, currentRegion, err = amazon.GetCurrentlyConnectedRegionAndClusterName()
+			currentClusterName, currentRegion, err = session.GetCurrentlyConnectedRegionAndClusterName()
 			if err != nil {
 				return requirements, errors.Wrap(err, "there was a problem obtaining the current cluster name and region")
 			}

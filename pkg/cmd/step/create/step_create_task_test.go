@@ -37,7 +37,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,7 +50,7 @@ type testCase struct {
 	kind                  string
 	generateError         error
 	effectiveProjectError error
-	useKaniko             bool
+	noKaniko              bool
 	pipelineUserName      string
 	pipelineUserEmail     string
 	branchAsRevision      bool
@@ -89,7 +88,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "build-pack",
 			kind:         "release",
-			useKaniko:    true,
 		},
 		{
 			name:         "maven_build_pack",
@@ -98,7 +96,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "from_yaml",
@@ -158,7 +156,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "override_block_step",
@@ -175,7 +173,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "containeroptions-on-pipelineconfig",
@@ -184,7 +182,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "default-in-jenkins-x-yml",
@@ -276,7 +274,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "replace-stage-steps-in-jenkins-x-yml",
@@ -326,7 +324,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "master",
 			kind:         "release",
-			useKaniko:    false,
+			noKaniko:     true,
 		},
 		{
 			name:         "volume-in-overrides",
@@ -393,6 +391,8 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 
+	rand.Seed(12345)
+
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			devEnv := v1.Environment{
@@ -444,7 +444,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				Branch:              tt.branch,
 				UseBranchAsRevision: tt.branchAsRevision,
 				PipelineKind:        tt.kind,
-				NoKaniko:            !tt.useKaniko,
+				NoKaniko:            tt.noKaniko,
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
 						ServiceAccount: "tekton-bot",
@@ -463,8 +463,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			testhelpers.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
 			ns := "jx"
-			// Create a single duplicate PipelineResource for the name used by the 'kaniko_entrypoint' test case to verify that the deduplication logic works correctly.
-			tektonClient := tektonfake.NewSimpleClientset(tekton_helpers_test.AssertLoadPipelineResources(t, path.Join(testData, "prepopulated")))
 
 			err = createTask.setBuildValues()
 			assert.NoError(t, err)
@@ -486,8 +484,8 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), nil, "")
-				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), tektonClient, ns)
+				resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), false)
+				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), true)
 				crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
 				if tt.generateError != nil {
 					if err == nil {

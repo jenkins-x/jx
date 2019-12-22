@@ -14,6 +14,7 @@ if ! [ -x "$(command -v golangci-lint)" ]; then
 	${DIR}/install_golint.sh -b $GOPATH/bin v1.20.0
 fi
 
+export GO111MODULE=on
 golangci-lint run \
 	--no-config \
     --disable-all \

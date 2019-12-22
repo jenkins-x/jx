@@ -3,53 +3,75 @@ package eks
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/pkg/errors"
+
 	awsAPI "github.com/aws/aws-sdk-go/aws"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cluster"
 )
 
-// AWSClusterClient that will provide functions to interact with EKS through the AWS API or the AWS CLI
-type AWSClusterClient struct {
-	awsClusterClient *amazon.AWSCli
-	awsEKSAPI        *amazon.EksClusterOptions
+// awsClusterClient that will provide functions to interact with EKS through the AWS API or the AWS CLI
+type awsClusterClient struct {
+	amazon.Provider
 }
 
 // NewAWSClusterClient will return an AWSClusterClient
 func NewAWSClusterClient() (cluster.Client, error) {
-	return &AWSClusterClient{
-		awsClusterClient: &amazon.AWSCli{},
-		awsEKSAPI:        &amazon.EksClusterOptions{},
+	provider, err := amazon.NewProvider("", "")
+	if err != nil {
+		return nil, errors.Wrap(err, "error obtaining a cluster provider for AWS")
+	}
+	return &awsClusterClient{
+		provider,
 	}, nil
 }
 
 // List will return a slice of every EKS cluster existing in the configured region
-func (a AWSClusterClient) List() ([]*cluster.Cluster, error) {
-	return a.awsEKSAPI.ListClusters()
+func (a awsClusterClient) List() ([]*cluster.Cluster, error) {
+	return a.EKS().ListClusters()
 }
 
 // ListFilter lists the clusters with the matching label filters
-func (a AWSClusterClient) ListFilter(tags map[string]string) ([]*cluster.Cluster, error) {
+func (a awsClusterClient) ListFilter(tags map[string]string) ([]*cluster.Cluster, error) {
 	return cluster.ListFilter(a, tags)
 }
 
 // Connect connects to the given cluster - returning an error if the connection cannot be made
-func (a AWSClusterClient) Connect(cluster *cluster.Cluster) error {
-	return a.awsClusterClient.ConnectToClusterWithAWSCLI(cluster.Name)
+func (a awsClusterClient) Connect(cluster *cluster.Cluster) error {
+	return a.AWSCli().ConnectToClusterWithAWSCLI(cluster.Name)
 }
 
 // String returns a text representation of the client
-func (a AWSClusterClient) String() string {
+func (a awsClusterClient) String() string {
 	return fmt.Sprintf("EKS Cluster client")
 }
 
 // SetClusterLabels adds labels to the given cluster
-func (a AWSClusterClient) SetClusterLabels(cluster *cluster.Cluster, clusterTags map[string]string) error {
+func (a awsClusterClient) SetClusterLabels(cluster *cluster.Cluster, clusterTags map[string]string) error {
 	// AWS works with Tags, should be equal
-	return a.awsEKSAPI.AddTagsToCluster(cluster.Name, awsAPI.StringMap(clusterTags))
+	return a.EKS().AddTagsToCluster(cluster.Name, awsAPI.StringMap(clusterTags))
 }
 
 // Get looks up a given cluster by name returning nil if its not found
-func (a AWSClusterClient) Get(clusterName string) (*cluster.Cluster, error) {
-	describedCluster, _, err := a.awsEKSAPI.DescribeCluster(clusterName)
+func (a awsClusterClient) Get(clusterName string) (*cluster.Cluster, error) {
+	describedCluster, _, err := a.EKS().DescribeCluster(clusterName)
 	return describedCluster, err
+}
+
+// Delete should delete the given cluster using eksctl and delete any created EBS volumes to avoid extra charges
+func (a awsClusterClient) Delete(cluster *cluster.Cluster) error {
+	log.Logger().Infof("Attempting to delete cluster %s", cluster.Name)
+	err := a.EKSCtl().DeleteCluster(cluster)
+	if err != nil {
+		return errors.Wrapf(err, "error deleting cluster %s", cluster.Name)
+	}
+	// clean up the left over EBS volumes
+	err = a.EC2().DeleteVolumesForCluster(cluster)
+	if err != nil {
+		return errors.Wrapf(err, "error deleting EC2 Volume for cluster %s", cluster.Name)
+	}
+
+	return nil
 }

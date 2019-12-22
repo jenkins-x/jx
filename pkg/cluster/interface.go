@@ -27,4 +27,6 @@ type Client interface {
 
 	// Get looks up a given cluster by name returning nil if its not found
 	Get(name string) (*Cluster, error)
+
+	Delete(cluster *Cluster) error
 }

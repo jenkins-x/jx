@@ -5,10 +5,10 @@ metadata:
   labels:
     branch: fix-kaniko-special-casing
     build: "1"
-    owner: jenkins-x
     jenkins.io/pipelineType: build
+    owner: jenkins-x
     repository: jx
-  name: jenkins-x-jx-fix-kaniko-special-9l9zj-1
+  name: jenkins-x-jx-fix-kaniko-special-6nl7g-1
   namespace: jx
 spec:
   params:
@@ -29,5 +29,5 @@ spec:
       - name: workspace
         resource: jenkins-x-jx-fix-kaniko-special
     taskRef:
-      name: jenkins-x-jx-fix-kaniko-special-9l9zj-ci-1
+      name: jenkins-x-jx-fix-kaniko-special-6nl7g-ci-1
 status: {}

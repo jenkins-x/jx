@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -33,7 +34,7 @@ var (
 
 // CreateGitServerOptions the options for the create spring command
 type CreateGitServerOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	Name string
 	Kind string
@@ -43,7 +44,7 @@ type CreateGitServerOptions struct {
 // NewCmdCreateGitServer creates a command object for the "create" command
 func NewCmdCreateGitServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateGitServerOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

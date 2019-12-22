@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vrischmann/envconfig"
+
 	"github.com/imdario/mergo"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
@@ -418,6 +420,10 @@ type VeleroConfig struct {
 	Namespace string `json:"namespace,omitempty"`
 	// ServiceAccount the cloud service account used to run velero
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// Schedule of backups
+	Schedule string `json:"schedule,omitempty" envconfig:"JX_REQUIREMENT_VELERO_SCHEDULE"`
+	// TimeToLive period for backups to be retained
+	TimeToLive string `json:"ttl,omitempty" envconfig:"JX_REQUIREMENT_VELERO_TTL"`
 }
 
 // AutoUpdateConfig contains auto update config
@@ -809,6 +815,12 @@ func (i *IngressConfig) IsAutoDNSDomain() bool {
 
 // OverrideRequirementsFromEnvironment allows properties to be overridden with environment variables
 func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func() gke.GClouder) {
+	//init envconfig struct tags
+	err := envconfig.InitWithOptions(&c, envconfig.Options{AllOptional: true})
+	if err != nil {
+		log.Logger().Errorf("Unable to init envconfig for override requirements: %s", err)
+	}
+
 	if "" != os.Getenv(RequirementClusterName) {
 		c.Cluster.ClusterName = os.Getenv(RequirementClusterName)
 	}
@@ -893,8 +905,14 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func()
 		useProduction := os.Getenv(RequirementIngressTLSProduction)
 		if envVarBoolean(useProduction) {
 			c.Ingress.TLS.Production = true
+			for _, e := range c.Environments {
+				e.Ingress.TLS.Production = true
+			}
 		} else {
 			c.Ingress.TLS.Production = false
+			for _, e := range c.Environments {
+				e.Ingress.TLS.Production = false
+			}
 		}
 	}
 	if "" != os.Getenv(RequirementKaniko) {

@@ -22,6 +22,7 @@ type response struct {
 	Installed    bool
 	AccessToRepo bool
 	URL          string
+	AppName      string
 }
 
 func (gh *GithubApp) isGithubAppEnabled() (bool, error) {
@@ -36,34 +37,42 @@ func (gh *GithubApp) isGithubAppEnabled() (bool, error) {
 }
 
 // Install - confirms that the github app is installed and if it isn't then prints out a url for the user to install
-func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileHandles, newRepo bool) error {
-	installed, accessToRepo, url, err := gh.isInstalled(owner, repo)
+func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileHandles, newRepo bool) (bool, error) {
+	installed, accessToRepo, url, appName, err := gh.isInstalled(owner, repo)
+	if err != nil {
+		return false, errors.Wrap(err, "when querying whether the Github App is installed")
+	}
+	if appName == "" {
+		// if the appName is empty lets use Jenkins X as the default
+		appName = "Jenkins X"
+	}
+
 	if installed {
-		fmt.Println("Github App installed")
+		fmt.Println(fmt.Sprintf("'%s' Github App installed", util.ColorInfo(appName)))
 		if newRepo {
 			// if this is a new repo we can't confirm if it has access at this stage
-			return nil
+			return false, nil
 		}
 		if !accessToRepo {
-			fmt.Fprintf(fileHandles.Out, "Please confirm Jenkins X GithubApp App access to repository %s. Click this url \n%s\n\n", repo, util.ColorInfo(url))
+			fmt.Fprintf(fileHandles.Out, "Please confirm '%s' Github App has access to repository %s. Click this url \n%s\n\n", util.ColorInfo(appName), repo, util.ColorInfo(url))
 		}
 	} else {
-		fmt.Fprintf(fileHandles.Out, "Please install Jenkins X GithubApp App into your organisation %s and allow access to repository %s. Click this url \n%s\n\n", owner, repo, util.ColorInfo(url))
+		fmt.Fprintf(fileHandles.Out, "Please install '%s' Github App into your organisation/account %s and allow access to repository %s. Click this url \n%s\n\n", util.ColorInfo(appName), owner, repo, util.ColorInfo(url))
 	}
 	if !accessToRepo {
-		accessToRepo = util.Confirm("does the github app have access to repository", false,
-			"install github app into your organisation and grant access to repositories", fileHandles)
+		accessToRepo = util.Confirm(fmt.Sprintf("Does the '%s' Github App have access to repository", util.ColorInfo(appName)), false,
+			fmt.Sprintf("Please install '%s' Github App into your organisation and grant access to repositories", util.ColorInfo(appName)), fileHandles)
 	}
 	if !accessToRepo {
-		return errors.New("Please install Jenkins X github app")
+		return false, errors.New(fmt.Sprintf("Please install '%s' Github App", util.ColorInfo(appName)))
 	}
-	return err
+	return accessToRepo, err
 }
 
-func (gh *GithubApp) isInstalled(owner string, repo string) (bool, bool, string, error) {
+func (gh *GithubApp) isInstalled(owner string, repo string) (bool, bool, string, string, error) {
 	requirementConfig, err := gh.getRequirementConfig()
 	if err != nil {
-		return false, false, "", err
+		return false, false, "", "", err
 	}
 
 	if requirementConfig.GithubApp != nil {
@@ -73,7 +82,7 @@ func (gh *GithubApp) isInstalled(owner string, repo string) (bool, bool, string,
 			respBody, err := util.CallWithExponentialBackOff(url, "", "GET", []byte{}, nil)
 			log.Logger().Debug(string(respBody))
 			if err != nil {
-				return false, false, "", errors.Wrapf(err, "error getting response from github app via %s", url)
+				return false, false, "", "", errors.Wrapf(err, "error getting response from github app via %s", url)
 			}
 
 			response := &response{}
@@ -81,12 +90,12 @@ func (gh *GithubApp) isInstalled(owner string, repo string) (bool, bool, string,
 			err = json.Unmarshal(respBody, response)
 
 			if err != nil {
-				return false, false, "", errors.Wrapf(err, "error marshalling response %s", url)
+				return false, false, "", "", errors.Wrapf(err, "error marshalling response %s", url)
 			}
-			return response.Installed, response.AccessToRepo, response.URL, nil
+			return response.Installed, response.AccessToRepo, response.URL, response.AppName, nil
 		}
 	}
-	return false, false, "", errors.New("unable to locate github app ")
+	return false, false, "", "", errors.New("unable to locate github app ")
 }
 
 func (gh *GithubApp) getRequirementConfig() (*config.RequirementsConfig, error) {

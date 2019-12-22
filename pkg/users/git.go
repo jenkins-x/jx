@@ -86,7 +86,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 			}
 		}
 		new := r.GitUserToUser(gitUser)
-		id = gitUser.Login
+		id = naming.ToValidName(gitUser.Login)
 		// Check if the user id is available, if not append "-<n>" where <n> is some integer
 		for i := 0; true; i++ {
 			_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
@@ -98,6 +98,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		new.Name = naming.ToValidName(id)
 		return id, possibles, new, nil
 	}
+	user.Login = naming.ToValidValue(user.Login)
 	return Resolve(user.Login, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
 }
 

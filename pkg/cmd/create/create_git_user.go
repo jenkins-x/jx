@@ -3,6 +3,8 @@ package create
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"time"
@@ -28,7 +30,7 @@ var (
 
 // CreateGitUserOptions the command line options for the command
 type CreateGitUserOptions struct {
-	CreateOptions
+	options.CreateOptions
 
 	ServerFlags opts.ServerFlags
 	Username    string
@@ -41,7 +43,7 @@ type CreateGitUserOptions struct {
 // NewCmdCreateGitUser creates a command
 func NewCmdCreateGitUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateGitUserOptions{
-		CreateOptions: CreateOptions{
+		CreateOptions: options.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}

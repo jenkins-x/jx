@@ -77,7 +77,7 @@ func TestAddYamlLabels(t *testing.T) {
 		return nil
 	})
 
-	assert.FileExists(t, filepath.Join(hooksDir, "post-install-job.yaml"), "Should have moved this YAML into the hooks dir!")
+	assert.FileExists(t, filepath.Join(hooksDir, "part0-post-install-job.yaml"), "Should have moved this YAML into the hooks dir!")
 
 	if assert.Equal(t, 1, len(helmHooks), "number of helm hooks") {
 		hook := helmHooks[0]
@@ -152,6 +152,42 @@ func TestSplitObjectsInFiles(t *testing.T) {
 		"multiple objects with separator and different namespaces": {
 			file:    "objects_separator_namespace.yaml",
 			want:    2,
+			wantErr: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			// baseDir string, relativePath, defaultNamespace string
+			parts, err := splitObjectsInFiles(filepath.Join(testDir, tc.file), testDir, tc.file, "jx")
+			if tc.wantErr {
+				assert.Error(t, err, "should fail")
+			} else {
+				assert.NoError(t, err, "should not fail")
+			}
+			assert.Equal(t, tc.want, len(parts))
+		})
+	}
+}
+
+func TestSplitObjectsInFilesWithHooks(t *testing.T) {
+	t.Parallel()
+
+	dataDir := filepath.Join("test_data", "helm_hooks")
+	testDir, err := ioutil.TempDir("", "test_helm_hooks")
+	assert.NoError(t, err, "should create a temp dir for tests")
+	err = util.CopyDir(dataDir, testDir, true)
+	assert.NoError(t, err, "should copy the test data into a temporary folder")
+	defer os.RemoveAll(testDir)
+
+	tests := map[string]struct {
+		file    string
+		want    int
+		wantErr bool
+	}{
+		"multiple_crds_with_hooks": {
+			file:    "crds.yaml",
+			want:    3,
 			wantErr: false,
 		},
 	}
