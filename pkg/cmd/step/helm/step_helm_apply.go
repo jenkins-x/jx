@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -290,47 +291,13 @@ func (o *StepHelmApplyOptions) Run() (err error) {
 
 	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts(), valueFiles)
 	if err != nil {
-		return err
+		return
 	}
 
 	// Now let's unpack all the dependencies and apply the vault URLs
-	dependencies, err := filepath.Glob(filepath.Join(dir, "charts", "*.tgz"))
-	if err != nil {
-		return errors.Wrapf(err, "finding chart dependencies in %s", filepath.Join(dir, "charts"))
-	}
-	for _, src := range dependencies {
-		dest, err := ioutil.TempDir("", "")
-		if err != nil {
-			return errors.Wrapf(err, "creating temp dir")
-		}
-		err = archiver.Unarchive(src, dest)
-		if err != nil {
-			return errors.Wrapf(err, "untarring %s to %s", src, dest)
-		}
-		err = os.Remove(src)
-		if err != nil {
-			return errors.Wrapf(err, "removing %s", src)
-		}
-		filepath.Walk(dest, func(path string, info os.FileInfo, err error) error {
-			if filepath.Base(path) == helm.ValuesFileName {
-
-				newFiles, cleanup, err := helm.DecorateWithSecrets([]string{path}, secretURLClient)
-				defer cleanup()
-				if err != nil {
-					return errors.Wrapf(err, "decorating %s with secrets", path)
-				}
-				err = util.CopyFile(newFiles[0], path)
-				if err != nil {
-					return errors.Wrapf(err, "moving decorated file %s to %s", newFiles[0], path)
-				}
-			}
-			return nil
-		})
-		dirs, err := filepath.Glob(filepath.Join(dest, "*"))
-		if err != nil {
-			return errors.Wrapf(err, "list %s", filepath.Join(dest, "*"))
-		}
-		err = archiver.Archive(dirs, src)
+	err = unpackDependencies(dir, secretURLClient)
+	if err != nil{
+		return
 	}
 
 	err = o.applyAppsTemplateOverrides(chartName)
@@ -364,7 +331,7 @@ func (o *StepHelmApplyOptions) Run() (err error) {
 	if err != nil {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
 	}
-	return nil
+	return
 }
 
 // DefaultEnvironments ensures we have valid values for environment owner and repository names.
@@ -533,6 +500,7 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 	return files, nil
 }
 
+// Sets the Release name
 func setReleaseName(ns string, args []string, options *StepHelmApplyOptions) (releaseName string, err error) {
 
 	helmBinary, noTiller, helmTemplate, err := options.TeamHelmBin()
@@ -557,6 +525,49 @@ func setReleaseName(ns string, args []string, options *StepHelmApplyOptions) (re
 				releaseName = "jx"
 			}
 		}
+	}
+	return
+}
+
+// Unpack all the dependencies
+func unpackDependencies(dir string, secretURLClient secreturl.Client) (err error) {
+	dependencies, err := filepath.Glob(filepath.Join(dir, "charts", "*.tgz"))
+	if err != nil {
+		return errors.Wrapf(err, "finding chart dependencies in %s", filepath.Join(dir, "charts"))
+	}
+	for _, src := range dependencies {
+		dest, err := ioutil.TempDir("", "")
+		if err != nil {
+			return errors.Wrapf(err, "creating temp dir")
+		}
+		err = archiver.Unarchive(src, dest)
+		if err != nil {
+			return errors.Wrapf(err, "untarring %s to %s", src, dest)
+		}
+		err = os.Remove(src)
+		if err != nil {
+			return errors.Wrapf(err, "removing %s", src)
+		}
+		filepath.Walk(dest, func(path string, info os.FileInfo, err error) error {
+			if filepath.Base(path) == helm.ValuesFileName {
+
+				newFiles, cleanup, err := helm.DecorateWithSecrets([]string{path}, secretURLClient)
+				defer cleanup()
+				if err != nil {
+					return errors.Wrapf(err, "decorating %s with secrets", path)
+				}
+				err = util.CopyFile(newFiles[0], path)
+				if err != nil {
+					return errors.Wrapf(err, "moving decorated file %s to %s", newFiles[0], path)
+				}
+			}
+			return nil
+		})
+		dirs, err := filepath.Glob(filepath.Join(dest, "*"))
+		if err != nil {
+			return errors.Wrapf(err, "list %s", filepath.Join(dest, "*"))
+		}
+		err = archiver.Archive(dirs, src)
 	}
 	return
 }
