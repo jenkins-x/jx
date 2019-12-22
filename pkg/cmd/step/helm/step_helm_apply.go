@@ -99,17 +99,14 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func (o *StepHelmApplyOptions) Run() error {
-	var err error
+func (o *StepHelmApplyOptions) Run() (err error) {
+
 	chartName := o.Dir
 	dir := o.Dir
 	releaseName := o.ReleaseName
 
 	// let allow arguments to be passed in like for `helm install releaseName dir`
 	args := o.Args
-	if releaseName == "" && len(args) > 0 {
-		releaseName = args[0]
-	}
 	if dir == "" && len(args) > 1 {
 		dir = args[1]
 	}
@@ -117,12 +114,12 @@ func (o *StepHelmApplyOptions) Run() error {
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
-			return err
+			return
 		}
 	}
 
 	if !o.DisableHelmVersion {
-		(&StepHelmVersionOptions{
+		err = (&StepHelmVersionOptions{
 			StepHelmOptions: StepHelmOptions{
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{},
@@ -130,42 +127,31 @@ func (o *StepHelmApplyOptions) Run() error {
 			},
 		}).Run()
 	}
-	helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
+
 	if err != nil {
-		return err
+		return
 	}
 
 	ns, err := o.GetDeployNamespace(o.Namespace)
 	if err != nil {
-		return err
+		return
 	}
 
 	kubeClient, err := o.KubeClient()
 	if err != nil {
-		return err
+		return
 	}
 
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
 	if err != nil {
-		return err
+		return
 	}
 
-	_, devNs, err := o.KubeClientAndDevNamespace()
+	releaseName, err = setReleaseName(ns, args, o)
 	if err != nil {
-		return err
+		return
 	}
 
-	if releaseName == "" {
-		if devNs == ns {
-			releaseName = platform.JenkinsXPlatformRelease
-		} else {
-			releaseName = ns
-
-			if helmBinary != "helm" || noTiller || helmTemplate {
-				releaseName = "jx"
-			}
-		}
-	}
 	info := util.ColorInfo
 
 	path, err := filepath.Abs(dir)
@@ -545,4 +531,32 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 		files = append(files, secretFile)
 	}
 	return files, nil
+}
+
+func setReleaseName(ns string, args []string, options *StepHelmApplyOptions) (releaseName string, err error) {
+
+	helmBinary, noTiller, helmTemplate, err := options.TeamHelmBin()
+	if err != nil {
+		return
+	}
+
+	_, devNs, err := options.KubeClientAndDevNamespace()
+	if err != nil {
+		return
+	}
+
+	if releaseName == "" {
+		if len(args) > 0 {
+			releaseName = args[0]
+		} else
+		if devNs == ns {
+			releaseName = platform.JenkinsXPlatformRelease
+		} else {
+			releaseName = ns
+			if helmBinary != "helm" || noTiller || helmTemplate {
+				releaseName = "jx"
+			}
+		}
+	}
+	return
 }
