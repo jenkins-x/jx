@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/secreturl"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -48,14 +49,14 @@ type StepHelmApplyOptions struct {
 
 var (
 	StepHelmApplyLong = templates.LongDesc(`
-		Applies the helm chart in a given directory.
+      Applies the helm chart in a given directory.
 
-		This step is usually used to apply any GitOps promotion changes into a Staging or Production cluster.
+      This step is usually used to apply any GitOps promotion changes into a Staging or Production cluster.
 `)
 
 	StepHelmApplyExample = templates.Examples(`
-		# apply the chart in the env folder to namespace jx-staging
-		jx step helm apply --dir env --namespace jx-staging
+      # apply the chart in the env folder to namespace jx-staging 
+      jx step helm apply --dir env --namespace jx-staging
 
 `)
 
@@ -99,17 +100,15 @@ func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func (o *StepHelmApplyOptions) Run() error {
-	var err error
+// Run runs on step helm apply
+func (o *StepHelmApplyOptions) Run() (err error) {
+
 	chartName := o.Dir
 	dir := o.Dir
 	releaseName := o.ReleaseName
 
 	// let allow arguments to be passed in like for `helm install releaseName dir`
 	args := o.Args
-	if releaseName == "" && len(args) > 0 {
-		releaseName = args[0]
-	}
 	if dir == "" && len(args) > 1 {
 		dir = args[1]
 	}
@@ -117,55 +116,43 @@ func (o *StepHelmApplyOptions) Run() error {
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Error getting current working directory")
 		}
 	}
 
 	if !o.DisableHelmVersion {
-		(&StepHelmVersionOptions{
+		err = (&StepHelmVersionOptions{
 			StepHelmOptions: StepHelmOptions{
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{},
 				},
 			},
 		}).Run()
-	}
-	helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
-	if err != nil {
-		return err
+		if err != nil {
+			return errors.Wrap(err, "Error in applying step helm options")
+		}
 	}
 
 	ns, err := o.GetDeployNamespace(o.Namespace)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error getting deploy namespace")
 	}
 
 	kubeClient, err := o.KubeClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error creating a kube client ")
 	}
 
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error getting the namespace")
 	}
 
-	_, devNs, err := o.KubeClientAndDevNamespace()
+	releaseName, err = setReleaseName(ns, args, o)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error setting the Release Name")
 	}
 
-	if releaseName == "" {
-		if devNs == ns {
-			releaseName = platform.JenkinsXPlatformRelease
-		} else {
-			releaseName = ns
-
-			if helmBinary != "helm" || noTiller || helmTemplate {
-				releaseName = "jx"
-			}
-		}
-	}
 	info := util.ColorInfo
 
 	path, err := filepath.Abs(dir)
@@ -304,47 +291,13 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts(), valueFiles)
 	if err != nil {
-		return err
+		return
 	}
 
 	// Now let's unpack all the dependencies and apply the vault URLs
-	dependencies, err := filepath.Glob(filepath.Join(dir, "charts", "*.tgz"))
+	err = unpackDependencies(dir, secretURLClient)
 	if err != nil {
-		return errors.Wrapf(err, "finding chart dependencies in %s", filepath.Join(dir, "charts"))
-	}
-	for _, src := range dependencies {
-		dest, err := ioutil.TempDir("", "")
-		if err != nil {
-			return errors.Wrapf(err, "creating temp dir")
-		}
-		err = archiver.Unarchive(src, dest)
-		if err != nil {
-			return errors.Wrapf(err, "untarring %s to %s", src, dest)
-		}
-		err = os.Remove(src)
-		if err != nil {
-			return errors.Wrapf(err, "removing %s", src)
-		}
-		filepath.Walk(dest, func(path string, info os.FileInfo, err error) error {
-			if filepath.Base(path) == helm.ValuesFileName {
-
-				newFiles, cleanup, err := helm.DecorateWithSecrets([]string{path}, secretURLClient)
-				defer cleanup()
-				if err != nil {
-					return errors.Wrapf(err, "decorating %s with secrets", path)
-				}
-				err = util.CopyFile(newFiles[0], path)
-				if err != nil {
-					return errors.Wrapf(err, "moving decorated file %s to %s", newFiles[0], path)
-				}
-			}
-			return nil
-		})
-		dirs, err := filepath.Glob(filepath.Join(dest, "*"))
-		if err != nil {
-			return errors.Wrapf(err, "list %s", filepath.Join(dest, "*"))
-		}
-		err = archiver.Archive(dirs, src)
+		return
 	}
 
 	err = o.applyAppsTemplateOverrides(chartName)
@@ -382,7 +335,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
 	}
-	return nil
+	return
 }
 
 // DefaultEnvironments ensures we have valid values for environment owner and repository names.
@@ -549,4 +502,81 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 		files = append(files, secretFile)
 	}
 	return files, nil
+}
+
+// Sets the Release name
+func setReleaseName(ns string, args []string, options *StepHelmApplyOptions) (releaseName string, err error) {
+
+	helmBinary, noTiller, helmTemplate, err := options.TeamHelmBin()
+	if err != nil {
+		return releaseName, errors.Wrap(err, "Error getting the Helm binary for the team")
+	}
+
+	_, devNs, err := options.KubeClientAndDevNamespace()
+	if err != nil {
+		return releaseName, errors.Wrap(err, "Error getting a Kube client or the development namespace")
+	}
+
+	if releaseName == "" {
+		if len(args) > 0 {
+			releaseName = args[0]
+		} else if devNs == ns {
+			releaseName = platform.JenkinsXPlatformRelease
+		} else {
+			releaseName = ns
+			if helmBinary != "helm" || noTiller || helmTemplate {
+				releaseName = "jx"
+			}
+		}
+	}
+	return
+}
+
+// Unpack all the dependencies
+func unpackDependencies(dir string, secretURLClient secreturl.Client) (err error) {
+	dependencies, err := filepath.Glob(filepath.Join(dir, "charts", "*.tgz"))
+	if err != nil {
+		return errors.Wrapf(err, "finding chart dependencies in %s", filepath.Join(dir, "charts"))
+	}
+	dep := func() (err error) {
+		var dest string
+		for _, src := range dependencies {
+			dest, err := ioutil.TempDir("", "")
+			if err != nil {
+				return errors.Wrapf(err, "creating temp dir")
+			}
+			err = archiver.Unarchive(src, dest)
+			if err != nil {
+				return errors.Wrapf(err, "untarring %s to %s", src, dest)
+			}
+			err = os.Remove(src)
+			if err != nil {
+				return errors.Wrapf(err, "removing %s", src)
+			}
+			filepath.Walk(dest, func(path string, info os.FileInfo, err error) error {
+				if filepath.Base(path) == helm.ValuesFileName {
+
+					newFiles, cleanup, err := helm.DecorateWithSecrets([]string{path}, secretURLClient)
+					defer cleanup()
+					if err != nil {
+						return errors.Wrapf(err, "decorating %s with secrets", path)
+					}
+					err = util.CopyFile(newFiles[0], path)
+					if err != nil {
+						return errors.Wrapf(err, "moving decorated file %s to %s", newFiles[0], path)
+					}
+				}
+				return nil
+			})
+			dirs, err := filepath.Glob(filepath.Join(dest, "*"))
+			if err != nil {
+				return errors.Wrapf(err, "list %s", filepath.Join(dest, "*"))
+			}
+			err = archiver.Archive(dirs, src)
+		}
+		defer os.RemoveAll(dest)
+		return errors.Wrapf(err, "Error unpacking dependencies")
+	}
+	dep()
+	return
 }
