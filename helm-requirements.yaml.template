@@ -1,0 +1,21 @@
+dependencies:
+  - name: jxboot-resources
+    repository: http://chartmuseum.jenkins-x.io
+  - alias: tekton
+    name: tekton
+    repository: http://chartmuseum.jenkins-x.io
+    version: 0.0.0-tekton0.9.2
+  - alias: prow
+    condition: prow.enabled
+    name: prow
+    repository: http://chartmuseum.jenkins-x.io
+  - alias: lighthouse
+    condition: lighthouse.enabled
+    name: lighthouse
+    repository: http://chartmuseum.jenkins-x.io
+  - alias: bucketrepo
+    condition: bucketrepo.enabled
+    name: bucketrepo
+    repository: http://chartmuseum.jenkins-x.io
+  - name: jenkins-x-platform
+    repository: http://chartmuseum.jenkins-x.io
