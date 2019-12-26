@@ -23,6 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )
 
 const (
@@ -171,6 +172,11 @@ func (o *StartPipelineOptions) Run() error {
 			if err != nil {
 				return err
 			}
+		} else if isProw {
+			err = o.createProwJob(a)
+			if err != nil {
+				return err
+			}
 		} else {
 			err = o.startJenkinsJob(a)
 			if err != nil {
@@ -254,6 +260,72 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 	}
 
 	return nil
+}
+
+func (o *StartPipelineOptions) createProwJob(jobname string) error {
+	parts := strings.Split(jobname, "/")
+	if len(parts) != 3 {
+		return fmt.Errorf("job name [%s] does not match org/repo/branch format", jobname)
+	}
+	org := parts[0]
+	repo := parts[1]
+	branch := parts[2]
+
+	postSubmitJob, err := o.ProwOptions.GetPostSubmitJob(org, repo, branch)
+	if err != nil {
+		return err
+	}
+	agent := prowjobv1.ProwJobAgent(prow.TektonAgent)
+	jobSpec := prowjobv1.ProwJobSpec{
+		BuildSpec: postSubmitJob.BuildSpec,
+		Agent:     agent,
+	}
+	jobSpec.Type = prowjobv1.PostsubmitJob
+
+	// TODO prow only supports github.com
+	// if you want to use anything but github.com you should use
+	// lighthouse: https://jenkins-x.io/docs/reference/components/lighthouse/
+	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", org, repo)
+
+	provider, _, err := o.CreateGitProviderForURLWithoutKind(sourceURL)
+	if err != nil {
+		return errors.Wrapf(err, "creating git provider for %s", sourceURL)
+	}
+	gitBranch, err := provider.GetBranch(org, repo, branch)
+	if err != nil {
+		return errors.Wrapf(err, "getting branch %s on %s/%s", branch, org, repo)
+	}
+
+	if gitBranch != nil && gitBranch.Commit != nil {
+		if jobSpec.Refs == nil {
+			jobSpec.Refs = &prowjobv1.Refs{}
+		}
+		jobSpec.Refs.BaseSHA = gitBranch.Commit.SHA
+		jobSpec.Refs.Repo = repo
+		jobSpec.Refs.Org = org
+		jobSpec.Refs.BaseRef = branch
+	}
+
+	p := prow.NewProwJob(jobSpec, nil)
+	p.Status = prowjobv1.ProwJobStatus{
+		State: prowjobv1.PendingState,
+	}
+	p.Spec.Refs = &prowjobv1.Refs{
+		BaseRef: branch,
+		Org:     org,
+		Repo:    repo,
+	}
+
+	if gitBranch != nil && gitBranch.Commit != nil {
+		p.Spec.Refs.BaseSHA = gitBranch.Commit.SHA
+	}
+
+	client, currentNamespace, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return err
+	}
+	_, err = prow.CreateProwJob(client, currentNamespace, p)
+	return err
 }
 
 func (o *StartPipelineOptions) startJenkinsJob(name string) error {
