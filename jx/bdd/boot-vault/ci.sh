@@ -79,4 +79,5 @@ jx step bdd \
     --no-delete-app \
     --no-delete-repo \
     --tests test-quickstart-golang-http \
+    --tests test-import-golang-http-from-jenkins-x-yml \
     --tests test-app-lifecycle
