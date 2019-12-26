@@ -50,6 +50,7 @@ git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
 cd boot-source
 cp ../jx/bdd/boot-vault/jx-requirements.yml .
 cp ../jx/bdd/boot-vault/parameters.yaml env
+cp ../helm-requirements.yaml.template env/requirements.yaml
 
 cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
 cat tmp.yaml ../boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
