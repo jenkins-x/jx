@@ -26,9 +26,6 @@ import (
 )
 
 const (
-	repoOwnerEnv      = "REPO_OWNER"
-	repoNameEnv       = "REPO_NAME"
-	jmbrSourceURL     = "SOURCE_URL"
 	releaseBranchName = "master"
 )
 

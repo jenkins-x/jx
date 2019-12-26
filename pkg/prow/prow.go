@@ -29,12 +29,6 @@ const (
 	KnativeBuildAgent = "knative-build"
 	TektonAgent       = "tekton"
 	KubernetesAgent   = "kubernetes"
-
-	applyTemplate = "environment-apply"
-	buildTemplate = "environment-build"
-
-	serviceAccountApply = "helm"
-	serviceAccountBuild = "knative-build-bot"
 )
 
 const (
