@@ -22,14 +22,12 @@ items:
         type: string
       resources:
       - name: workspace
-        outputImageDir: ""
         targetPath: source
         type: git
     outputs:
       resources:
       - name: workspace
-        outputImageDir: ""
-        targetPath: ""
+        targetPath: source
         type: git
     steps:
     - args:
@@ -190,7 +188,6 @@ items:
         type: string
       resources:
       - name: workspace
-        outputImageDir: ""
         targetPath: source
         type: git
     steps:

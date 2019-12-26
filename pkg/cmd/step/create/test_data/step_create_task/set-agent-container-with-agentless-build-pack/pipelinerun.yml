@@ -16,6 +16,7 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-js-test-repo-no-default-j2tds-1
+  podTemplate: {}
   resources:
   - name: abayer-js-test-repo-no-default
     resourceRef:

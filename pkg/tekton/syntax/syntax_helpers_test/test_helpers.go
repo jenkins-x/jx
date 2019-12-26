@@ -637,3 +637,19 @@ func TaskStageLabel(value string) builder.TaskOp {
 		t.ObjectMeta.Labels[syntax.LabelStageName] = syntax.MangleToRfc1035Label(value, "")
 	}
 }
+
+// OutputsResource adds a resource, with specified name and type, to the Outputs.
+// Any number of TaskResource modifier can be passed to transform it.
+func OutputsResource(name string, resourceType v1alpha1.PipelineResourceType, ops ...builder.TaskResourceOp) builder.OutputsOp {
+	return func(i *v1alpha1.Outputs) {
+		r := &v1alpha1.TaskResource{
+			ResourceDeclaration: v1alpha1.ResourceDeclaration{
+				Name: name,
+				Type: resourceType,
+			}}
+		for _, op := range ops {
+			op(r)
+		}
+		i.Resources = append(i.Resources, *r)
+	}
+}

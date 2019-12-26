@@ -16,6 +16,7 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: jenkins-x-jx-fix-kaniko-special-6nl7g-1
+  podTemplate: {}
   resources:
   - name: jenkins-x-jx-fix-kaniko-special
     resourceRef:

@@ -1308,14 +1308,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 		}
 
 		t.Spec.Outputs = &tektonv1alpha1.Outputs{
-			Resources: []tektonv1alpha1.TaskResource{
-				{
-					ResourceDeclaration: tektonv1alpha1.ResourceDeclaration{
-						Name: "workspace",
-						Type: tektonv1alpha1.PipelineResourceTypeGit,
-					},
-				},
-			},
+			Resources: []tektonv1alpha1.TaskResource{*ws},
 		}
 
 		// We don't want to dupe volumes for the Task if there are multiple steps

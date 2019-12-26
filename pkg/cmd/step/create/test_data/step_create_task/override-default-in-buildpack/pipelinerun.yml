@@ -16,6 +16,7 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-golang-qs-test-master-klrgx-1
+  podTemplate: {}
   resources:
   - name: abayer-golang-qs-test-master
     resourceRef:

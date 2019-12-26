@@ -16,6 +16,7 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-jx-demo-qs-master-tbl2p-1
+  podTemplate: {}
   resources:
   - name: abayer-jx-demo-qs-master
     resourceRef:

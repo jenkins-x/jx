@@ -16,6 +16,7 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-js-test-repo-override-de-vr6ds-1
+  podTemplate: {}
   resources:
   - name: abayer-js-test-repo-override-de
     resourceRef:

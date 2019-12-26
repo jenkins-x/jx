@@ -23,12 +23,12 @@ spec:
     affinity:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                foo: bar
-                fruit: apple
-                way-too-long-a-label-seriously-this-just-goes-on-for-so-many-ch: this-hasinvalidcharacters
-            topologyKey: kubernetes.io/hostname
+        - labelSelector:
+            matchLabels:
+              foo: bar
+              fruit: apple
+              way-too-long-a-label-seriously-this-just-goes-on-for-so-many-ch: this-hasinvalidcharacters
+          topologyKey: kubernetes.io/hostname
   resources:
   - name: abayer-js-test-repo-really-long
     resourceRef:

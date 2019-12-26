@@ -20,10 +20,10 @@ spec:
     affinity:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                tekton.dev/pipelineRun: abayer-js-test-repo-really-long-shnql-1
-            topologyKey: kubernetes.io/hostname
+        - labelSelector:
+            matchLabels:
+              tekton.dev/pipelineRun: abayer-js-test-repo-really-long-shnql-1
+          topologyKey: kubernetes.io/hostname
   resources:
   - name: abayer-js-test-repo-really-long
     resourceRef:
