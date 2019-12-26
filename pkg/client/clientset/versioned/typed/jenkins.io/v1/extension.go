@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type ExtensionsGetter interface {
 type ExtensionInterface interface {
 	Create(*v1.Extension) (*v1.Extension, error)
 	Update(*v1.Extension) (*v1.Extension, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.Extension, error)
-	List(opts meta_v1.ListOptions) (*v1.ExtensionList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.Extension, error)
+	List(opts metav1.ListOptions) (*v1.ExtensionList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.Extension, err error)
 	ExtensionExpansion
 }
@@ -45,7 +45,7 @@ func newExtensions(c *JenkinsV1Client, namespace string) *extensions {
 }
 
 // Get takes name of the extension, and returns the corresponding extension object, and an error if there is any.
-func (c *extensions) Get(name string, options meta_v1.GetOptions) (result *v1.Extension, err error) {
+func (c *extensions) Get(name string, options metav1.GetOptions) (result *v1.Extension, err error) {
 	result = &v1.Extension{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *extensions) Get(name string, options meta_v1.GetOptions) (result *v1.Ex
 }
 
 // List takes label and field selectors, and returns the list of Extensions that match those selectors.
-func (c *extensions) List(opts meta_v1.ListOptions) (result *v1.ExtensionList, err error) {
+func (c *extensions) List(opts metav1.ListOptions) (result *v1.ExtensionList, err error) {
 	result = &v1.ExtensionList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *extensions) List(opts meta_v1.ListOptions) (result *v1.ExtensionList, e
 }
 
 // Watch returns a watch.Interface that watches the requested extensions.
-func (c *extensions) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *extensions) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *extensions) Update(extension *v1.Extension) (result *v1.Extension, err 
 }
 
 // Delete takes name of the extension and deletes it. Returns an error if one occurs.
-func (c *extensions) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *extensions) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("extensions").
@@ -116,7 +116,7 @@ func (c *extensions) Delete(name string, options *meta_v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *extensions) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *extensions) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("extensions").

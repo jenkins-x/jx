@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,20 +23,20 @@ var pluginsResource = schema.GroupVersionResource{Group: "jenkins.io", Version: 
 var pluginsKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "Plugin"}
 
 // Get takes name of the plugin, and returns the corresponding plugin object, and an error if there is any.
-func (c *FakePlugins) Get(name string, options v1.GetOptions) (result *jenkins_io_v1.Plugin, err error) {
+func (c *FakePlugins) Get(name string, options v1.GetOptions) (result *jenkinsiov1.Plugin, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(pluginsResource, c.ns, name), &jenkins_io_v1.Plugin{})
+		Invokes(testing.NewGetAction(pluginsResource, c.ns, name), &jenkinsiov1.Plugin{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Plugin), err
+	return obj.(*jenkinsiov1.Plugin), err
 }
 
 // List takes label and field selectors, and returns the list of Plugins that match those selectors.
-func (c *FakePlugins) List(opts v1.ListOptions) (result *jenkins_io_v1.PluginList, err error) {
+func (c *FakePlugins) List(opts v1.ListOptions) (result *jenkinsiov1.PluginList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(pluginsResource, pluginsKind, c.ns, opts), &jenkins_io_v1.PluginList{})
+		Invokes(testing.NewListAction(pluginsResource, pluginsKind, c.ns, opts), &jenkinsiov1.PluginList{})
 
 	if obj == nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *FakePlugins) List(opts v1.ListOptions) (result *jenkins_io_v1.PluginLis
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &jenkins_io_v1.PluginList{ListMeta: obj.(*jenkins_io_v1.PluginList).ListMeta}
-	for _, item := range obj.(*jenkins_io_v1.PluginList).Items {
+	list := &jenkinsiov1.PluginList{ListMeta: obj.(*jenkinsiov1.PluginList).ListMeta}
+	for _, item := range obj.(*jenkinsiov1.PluginList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -63,31 +63,31 @@ func (c *FakePlugins) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a plugin and creates it.  Returns the server's representation of the plugin, and an error, if there is any.
-func (c *FakePlugins) Create(plugin *jenkins_io_v1.Plugin) (result *jenkins_io_v1.Plugin, err error) {
+func (c *FakePlugins) Create(plugin *jenkinsiov1.Plugin) (result *jenkinsiov1.Plugin, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(pluginsResource, c.ns, plugin), &jenkins_io_v1.Plugin{})
+		Invokes(testing.NewCreateAction(pluginsResource, c.ns, plugin), &jenkinsiov1.Plugin{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Plugin), err
+	return obj.(*jenkinsiov1.Plugin), err
 }
 
 // Update takes the representation of a plugin and updates it. Returns the server's representation of the plugin, and an error, if there is any.
-func (c *FakePlugins) Update(plugin *jenkins_io_v1.Plugin) (result *jenkins_io_v1.Plugin, err error) {
+func (c *FakePlugins) Update(plugin *jenkinsiov1.Plugin) (result *jenkinsiov1.Plugin, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(pluginsResource, c.ns, plugin), &jenkins_io_v1.Plugin{})
+		Invokes(testing.NewUpdateAction(pluginsResource, c.ns, plugin), &jenkinsiov1.Plugin{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Plugin), err
+	return obj.(*jenkinsiov1.Plugin), err
 }
 
 // Delete takes name of the plugin and deletes it. Returns an error if one occurs.
 func (c *FakePlugins) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(pluginsResource, c.ns, name), &jenkins_io_v1.Plugin{})
+		Invokes(testing.NewDeleteAction(pluginsResource, c.ns, name), &jenkinsiov1.Plugin{})
 
 	return err
 }
@@ -96,17 +96,17 @@ func (c *FakePlugins) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakePlugins) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(pluginsResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &jenkins_io_v1.PluginList{})
+	_, err := c.Fake.Invokes(action, &jenkinsiov1.PluginList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched plugin.
-func (c *FakePlugins) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkins_io_v1.Plugin, err error) {
+func (c *FakePlugins) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Plugin, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(pluginsResource, c.ns, name, data, subresources...), &jenkins_io_v1.Plugin{})
+		Invokes(testing.NewPatchSubresourceAction(pluginsResource, c.ns, name, data, subresources...), &jenkinsiov1.Plugin{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Plugin), err
+	return obj.(*jenkinsiov1.Plugin), err
 }

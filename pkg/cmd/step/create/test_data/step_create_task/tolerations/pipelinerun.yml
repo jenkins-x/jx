@@ -16,15 +16,16 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-js-test-repo-really-long-xw5r5-1
+  podTemplate:
+    tolerations:
+      - effect: NoSchedule
+        key: some-key
+        operator: Exists
   resources:
   - name: abayer-js-test-repo-really-long
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
       name: abayer-js-test-repo-really-long
-  serviceAccount: tekton-bot
+  serviceAccountName: tekton-bot
   timeout: 240h0m0s
-  tolerations:
-  - effect: NoSchedule
-    key: some-key
-    operator: Exists
 status: {}

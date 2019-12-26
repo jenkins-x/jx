@@ -32,18 +32,23 @@ func (in *CRDsFromPipelineParams) DeepCopyInto(out *CRDsFromPipelineParams) {
 		in, out := &in.PodTemplates, &out.PodTemplates
 		*out = make(map[string]*v1.Pod, len(*in))
 		for key, val := range *in {
+			var outVal *v1.Pod
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				(*out)[key] = new(v1.Pod)
-				val.DeepCopyInto((*out)[key])
+				in, out := &val, &outVal
+				*out = new(v1.Pod)
+				(*in).DeepCopyInto(*out)
 			}
+			(*out)[key] = outVal
 		}
 	}
 	if in.TaskParams != nil {
 		in, out := &in.TaskParams, &out.TaskParams
 		*out = make([]v1alpha1.ParamSpec, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
@@ -98,12 +103,8 @@ func (in *ParsedPipeline) DeepCopyInto(out *ParsedPipeline) {
 	*out = *in
 	if in.Agent != nil {
 		in, out := &in.Agent, &out.Agent
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Agent)
-			**out = **in
-		}
+		*out = new(Agent)
+		**out = **in
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
@@ -114,12 +115,8 @@ func (in *ParsedPipeline) DeepCopyInto(out *ParsedPipeline) {
 	}
 	if in.Options != nil {
 		in, out := &in.Options, &out.Options
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(RootOptions)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(RootOptions)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Stages != nil {
 		in, out := &in.Stages, &out.Stages
@@ -137,12 +134,8 @@ func (in *ParsedPipeline) DeepCopyInto(out *ParsedPipeline) {
 	}
 	if in.WorkingDir != nil {
 		in, out := &in.WorkingDir, &out.WorkingDir
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	if in.Environment != nil {
 		in, out := &in.Environment, &out.Environment
@@ -169,61 +162,43 @@ func (in *PipelineOverride) DeepCopyInto(out *PipelineOverride) {
 	*out = *in
 	if in.Step != nil {
 		in, out := &in.Step, &out.Step
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Step)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(Step)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Steps != nil {
 		in, out := &in.Steps, &out.Steps
 		*out = make([]*Step, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(Step)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(Step)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
 	if in.Type != nil {
 		in, out := &in.Type, &out.Type
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(StepOverrideType)
-			**out = **in
-		}
+		*out = new(StepOverrideType)
+		**out = **in
 	}
 	if in.Agent != nil {
 		in, out := &in.Agent, &out.Agent
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Agent)
-			**out = **in
-		}
+		*out = new(Agent)
+		**out = **in
 	}
 	if in.ContainerOptions != nil {
 		in, out := &in.ContainerOptions, &out.ContainerOptions
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(v1.Container)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(v1.Container)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
 		*out = make([]*v1.Volume, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(v1.Volume)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(v1.Volume)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
@@ -291,31 +266,22 @@ func (in *RootOptions) DeepCopyInto(out *RootOptions) {
 	*out = *in
 	if in.Timeout != nil {
 		in, out := &in.Timeout, &out.Timeout
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Timeout)
-			**out = **in
-		}
+		*out = new(Timeout)
+		**out = **in
 	}
 	if in.ContainerOptions != nil {
 		in, out := &in.ContainerOptions, &out.ContainerOptions
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(v1.Container)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(v1.Container)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
 		*out = make([]*v1.Volume, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(v1.Volume)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(v1.Volume)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
@@ -351,12 +317,8 @@ func (in *Stage) DeepCopyInto(out *Stage) {
 	*out = *in
 	if in.Agent != nil {
 		in, out := &in.Agent, &out.Agent
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Agent)
-			**out = **in
-		}
+		*out = new(Agent)
+		**out = **in
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
@@ -367,12 +329,8 @@ func (in *Stage) DeepCopyInto(out *Stage) {
 	}
 	if in.Options != nil {
 		in, out := &in.Options, &out.Options
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(StageOptions)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(StageOptions)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Steps != nil {
 		in, out := &in.Steps, &out.Steps
@@ -404,12 +362,8 @@ func (in *Stage) DeepCopyInto(out *Stage) {
 	}
 	if in.WorkingDir != nil {
 		in, out := &in.WorkingDir, &out.WorkingDir
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	if in.Environment != nil {
 		in, out := &in.Environment, &out.Environment
@@ -436,39 +390,23 @@ func (in *StageOptions) DeepCopyInto(out *StageOptions) {
 	*out = *in
 	if in.RootOptions != nil {
 		in, out := &in.RootOptions, &out.RootOptions
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(RootOptions)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(RootOptions)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Stash != nil {
 		in, out := &in.Stash, &out.Stash
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Stash)
-			**out = **in
-		}
+		*out = new(Stash)
+		**out = **in
 	}
 	if in.Unstash != nil {
 		in, out := &in.Unstash, &out.Unstash
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Unstash)
-			**out = **in
-		}
+		*out = new(Unstash)
+		**out = **in
 	}
 	if in.Workspace != nil {
 		in, out := &in.Workspace, &out.Workspace
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	return
 }
@@ -516,21 +454,13 @@ func (in *Step) DeepCopyInto(out *Step) {
 	}
 	if in.Loop != nil {
 		in, out := &in.Loop, &out.Loop
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Loop)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(Loop)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Agent != nil {
 		in, out := &in.Agent, &out.Agent
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Agent)
-			**out = **in
-		}
+		*out = new(Agent)
+		**out = **in
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
@@ -543,11 +473,10 @@ func (in *Step) DeepCopyInto(out *Step) {
 		in, out := &in.Steps, &out.Steps
 		*out = make([]*Step, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(Step)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(Step)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}

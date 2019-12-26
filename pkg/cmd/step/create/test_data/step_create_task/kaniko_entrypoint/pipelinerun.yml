@@ -21,6 +21,6 @@ spec:
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
       name: jenkins-x-jx-fix-kaniko-special
-  serviceAccount: tekton-bot
+  serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}

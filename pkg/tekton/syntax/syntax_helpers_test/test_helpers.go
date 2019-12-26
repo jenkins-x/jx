@@ -269,6 +269,39 @@ func ContainerSecurityContext(privileged bool) builder.ContainerOp {
 	}
 }
 
+// StepResourceLimits sets the resource limits for container options on a step
+func StepResourceLimits(cpus, memory string) builder.StepOp {
+	return func(step *v1alpha1.Step) {
+		cpuQuantity, _ := resource.ParseQuantity(cpus)
+		memoryQuantity, _ := resource.ParseQuantity(memory)
+		step.Resources.Limits = corev1.ResourceList{
+			"cpu":    cpuQuantity,
+			"memory": memoryQuantity,
+		}
+	}
+}
+
+// StepResourceRequests sets the resource requests for container options on a step
+func StepResourceRequests(cpus, memory string) builder.StepOp {
+	return func(step *v1alpha1.Step) {
+		cpuQuantity, _ := resource.ParseQuantity(cpus)
+		memoryQuantity, _ := resource.ParseQuantity(memory)
+		step.Resources.Requests = corev1.ResourceList{
+			"cpu":    cpuQuantity,
+			"memory": memoryQuantity,
+		}
+	}
+}
+
+// StepSecurityContext sets the security context for container options on a step
+func StepSecurityContext(privileged bool) builder.StepOp {
+	return func(step *v1alpha1.Step) {
+		step.SecurityContext = &corev1.SecurityContext{
+			Privileged: &privileged,
+		}
+	}
+}
+
 // EnvVarFrom adds an environment variable using EnvVarSource to the container options
 func EnvVarFrom(name string, source *corev1.EnvVarSource) builder.ContainerOp {
 	return func(container *corev1.Container) {

@@ -15,11 +15,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
-	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	knativeapis "knative.dev/pkg/apis"
 )
 
 // PipelineRunInfo provides information on a PipelineRun and its stages for use in getting logs and populating activity

@@ -39,7 +39,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	istioclient "github.com/knative/pkg/client/clientset/versioned"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
@@ -142,7 +141,6 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	jxClient            versioned.Interface
 	gcloudClient        gke.GClouder
-	knbClient           buildclient.Interface
 	kserveClient        kserve.Interface
 	kubeClient          kubernetes.Interface
 	kuber               kube.Kuber
@@ -414,24 +412,6 @@ func (o *CommonOptions) TektonClient() (tektonclient.Interface, string, error) {
 		}
 	}
 	return o.tektonClient, o.currentNamespace, nil
-}
-
-// KnativeBuildClient returns or creates the knative build client
-func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, error) {
-	if o.factory == nil {
-		return nil, "", errors.New("command factory is not initialized")
-	}
-	if o.knbClient == nil {
-		knbClient, ns, err := o.factory.CreateKnativeBuildClient()
-		if err != nil {
-			return nil, ns, err
-		}
-		o.knbClient = knbClient
-		if o.currentNamespace == "" {
-			o.currentNamespace = ns
-		}
-	}
-	return o.knbClient, o.currentNamespace, nil
 }
 
 // KnativeServeClient returns or creates the knative serve client

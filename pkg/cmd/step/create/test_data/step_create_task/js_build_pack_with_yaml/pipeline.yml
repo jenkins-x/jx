@@ -16,6 +16,7 @@ spec:
     description: the version number for this pipeline which is used as a tag on docker
       images and helm charts
     name: version
+    type: string
   resources:
   - name: abayer-js-test-repo-build-pack
     type: git
@@ -23,7 +24,7 @@ spec:
   - name: from-build-pack
     params:
     - name: version
-      value: ${params.version}
+      value: $(params.version)
     resources:
       inputs:
       - name: workspace

@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,20 +23,20 @@ var extensionsResource = schema.GroupVersionResource{Group: "jenkins.io", Versio
 var extensionsKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "Extension"}
 
 // Get takes name of the extension, and returns the corresponding extension object, and an error if there is any.
-func (c *FakeExtensions) Get(name string, options v1.GetOptions) (result *jenkins_io_v1.Extension, err error) {
+func (c *FakeExtensions) Get(name string, options v1.GetOptions) (result *jenkinsiov1.Extension, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(extensionsResource, c.ns, name), &jenkins_io_v1.Extension{})
+		Invokes(testing.NewGetAction(extensionsResource, c.ns, name), &jenkinsiov1.Extension{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Extension), err
+	return obj.(*jenkinsiov1.Extension), err
 }
 
 // List takes label and field selectors, and returns the list of Extensions that match those selectors.
-func (c *FakeExtensions) List(opts v1.ListOptions) (result *jenkins_io_v1.ExtensionList, err error) {
+func (c *FakeExtensions) List(opts v1.ListOptions) (result *jenkinsiov1.ExtensionList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(extensionsResource, extensionsKind, c.ns, opts), &jenkins_io_v1.ExtensionList{})
+		Invokes(testing.NewListAction(extensionsResource, extensionsKind, c.ns, opts), &jenkinsiov1.ExtensionList{})
 
 	if obj == nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *FakeExtensions) List(opts v1.ListOptions) (result *jenkins_io_v1.Extens
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &jenkins_io_v1.ExtensionList{ListMeta: obj.(*jenkins_io_v1.ExtensionList).ListMeta}
-	for _, item := range obj.(*jenkins_io_v1.ExtensionList).Items {
+	list := &jenkinsiov1.ExtensionList{ListMeta: obj.(*jenkinsiov1.ExtensionList).ListMeta}
+	for _, item := range obj.(*jenkinsiov1.ExtensionList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -63,31 +63,31 @@ func (c *FakeExtensions) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a extension and creates it.  Returns the server's representation of the extension, and an error, if there is any.
-func (c *FakeExtensions) Create(extension *jenkins_io_v1.Extension) (result *jenkins_io_v1.Extension, err error) {
+func (c *FakeExtensions) Create(extension *jenkinsiov1.Extension) (result *jenkinsiov1.Extension, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(extensionsResource, c.ns, extension), &jenkins_io_v1.Extension{})
+		Invokes(testing.NewCreateAction(extensionsResource, c.ns, extension), &jenkinsiov1.Extension{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Extension), err
+	return obj.(*jenkinsiov1.Extension), err
 }
 
 // Update takes the representation of a extension and updates it. Returns the server's representation of the extension, and an error, if there is any.
-func (c *FakeExtensions) Update(extension *jenkins_io_v1.Extension) (result *jenkins_io_v1.Extension, err error) {
+func (c *FakeExtensions) Update(extension *jenkinsiov1.Extension) (result *jenkinsiov1.Extension, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(extensionsResource, c.ns, extension), &jenkins_io_v1.Extension{})
+		Invokes(testing.NewUpdateAction(extensionsResource, c.ns, extension), &jenkinsiov1.Extension{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Extension), err
+	return obj.(*jenkinsiov1.Extension), err
 }
 
 // Delete takes name of the extension and deletes it. Returns an error if one occurs.
 func (c *FakeExtensions) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(extensionsResource, c.ns, name), &jenkins_io_v1.Extension{})
+		Invokes(testing.NewDeleteAction(extensionsResource, c.ns, name), &jenkinsiov1.Extension{})
 
 	return err
 }
@@ -96,17 +96,17 @@ func (c *FakeExtensions) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakeExtensions) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(extensionsResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &jenkins_io_v1.ExtensionList{})
+	_, err := c.Fake.Invokes(action, &jenkinsiov1.ExtensionList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched extension.
-func (c *FakeExtensions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkins_io_v1.Extension, err error) {
+func (c *FakeExtensions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Extension, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(extensionsResource, c.ns, name, data, subresources...), &jenkins_io_v1.Extension{})
+		Invokes(testing.NewPatchSubresourceAction(extensionsResource, c.ns, name, data, subresources...), &jenkinsiov1.Extension{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Extension), err
+	return obj.(*jenkinsiov1.Extension), err
 }

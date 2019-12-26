@@ -262,7 +262,7 @@ func GenerateSourceRepoResource(name string, gitInfo *gits.GitRepository, revisi
 		},
 		Spec: pipelineapi.PipelineResourceSpec{
 			Type: pipelineapi.PipelineResourceTypeGit,
-			Params: []pipelineapi.Param{
+			Params: []pipelineapi.ResourceParam{
 				{
 					Name:  "revision",
 					Value: revision,
@@ -313,7 +313,7 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 			Labels: util.MergeMaps(labels),
 		},
 		Spec: pipelineapi.PipelineRunSpec{
-			ServiceAccount: serviceAccount,
+			ServiceAccountName: serviceAccount,
 			PipelineRef: pipelineapi.PipelineRef{
 				Name:       name,
 				APIVersion: apiVersion,
@@ -321,9 +321,11 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 			Resources: resourceBindings,
 			Params:    pipelineParams,
 			// TODO: We shouldn't have to set a default timeout in the first place. See https://github.com/tektoncd/pipeline/issues/978
-			Timeout:     timeout,
-			Affinity:    affinity,
-			Tolerations: tolerations,
+			Timeout: timeout,
+			PodTemplate: pipelineapi.PodTemplate{
+				Affinity:    affinity,
+				Tolerations: tolerations,
+			},
 		},
 	}
 

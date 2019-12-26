@@ -19,6 +19,7 @@ items:
         description: the version number for this pipeline which is used as a tag on
           docker images and helm charts
         name: version
+        type: string
       resources:
       - name: workspace
         outputImageDir: ""
@@ -67,9 +68,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
       resources:
@@ -129,9 +130,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: step2
       resources:
@@ -186,6 +187,7 @@ items:
         description: the version number for this pipeline which is used as a tag on
           docker images and helm charts
         name: version
+        type: string
       resources:
       - name: workspace
         outputImageDir: ""
@@ -236,9 +238,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: step2
       resources:

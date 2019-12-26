@@ -30,23 +30,22 @@ func (in *CreatePipelineArguments) DeepCopyInto(out *CreatePipelineArguments) {
 	*out = *in
 	if in.Lifecycles != nil {
 		in, out := &in.Lifecycles, &out.Lifecycles
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycles)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycles)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.PodTemplates != nil {
 		in, out := &in.PodTemplates, &out.PodTemplates
 		*out = make(map[string]*v1.Pod, len(*in))
 		for key, val := range *in {
+			var outVal *v1.Pod
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				(*out)[key] = new(v1.Pod)
-				val.DeepCopyInto((*out)[key])
+				in, out := &val, &outVal
+				*out = new(v1.Pod)
+				(*in).DeepCopyInto(*out)
 			}
+			(*out)[key] = outVal
 		}
 	}
 	return
@@ -101,11 +100,10 @@ func (in *Modules) DeepCopyInto(out *Modules) {
 		in, out := &in.Modules, &out.Modules
 		*out = make([]*Module, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(Module)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(Module)
+				**out = **in
 			}
 		}
 	}
@@ -127,12 +125,8 @@ func (in *NamedLifecycle) DeepCopyInto(out *NamedLifecycle) {
 	*out = *in
 	if in.Lifecycle != nil {
 		in, out := &in.Lifecycle, &out.Lifecycle
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -152,21 +146,13 @@ func (in *PipelineConfig) DeepCopyInto(out *PipelineConfig) {
 	*out = *in
 	if in.Extends != nil {
 		in, out := &in.Extends, &out.Extends
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineExtends)
-			**out = **in
-		}
+		*out = new(PipelineExtends)
+		**out = **in
 	}
 	if in.Agent != nil {
 		in, out := &in.Agent, &out.Agent
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(syntax.Agent)
-			**out = **in
-		}
+		*out = new(syntax.Agent)
+		**out = **in
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
@@ -178,12 +164,8 @@ func (in *PipelineConfig) DeepCopyInto(out *PipelineConfig) {
 	in.Pipelines.DeepCopyInto(&out.Pipelines)
 	if in.ContainerOptions != nil {
 		in, out := &in.ContainerOptions, &out.ContainerOptions
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(v1.Container)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(v1.Container)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -221,11 +203,10 @@ func (in *PipelineLifecycle) DeepCopyInto(out *PipelineLifecycle) {
 		in, out := &in.Steps, &out.Steps
 		*out = make([]*syntax.Step, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(syntax.Step)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(syntax.Step)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
@@ -233,11 +214,10 @@ func (in *PipelineLifecycle) DeepCopyInto(out *PipelineLifecycle) {
 		in, out := &in.PreSteps, &out.PreSteps
 		*out = make([]*syntax.Step, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(syntax.Step)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(syntax.Step)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
@@ -281,66 +261,38 @@ func (in *PipelineLifecycles) DeepCopyInto(out *PipelineLifecycles) {
 	*out = *in
 	if in.Setup != nil {
 		in, out := &in.Setup, &out.Setup
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.SetVersion != nil {
 		in, out := &in.SetVersion, &out.SetVersion
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.PreBuild != nil {
 		in, out := &in.PreBuild, &out.PreBuild
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Build != nil {
 		in, out := &in.Build, &out.Build
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.PostBuild != nil {
 		in, out := &in.PostBuild, &out.PostBuild
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Promote != nil {
 		in, out := &in.Promote, &out.Promote
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Pipeline != nil {
 		in, out := &in.Pipeline, &out.Pipeline
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(syntax.ParsedPipeline)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(syntax.ParsedPipeline)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -360,60 +312,39 @@ func (in *Pipelines) DeepCopyInto(out *Pipelines) {
 	*out = *in
 	if in.PullRequest != nil {
 		in, out := &in.PullRequest, &out.PullRequest
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycles)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycles)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Release != nil {
 		in, out := &in.Release, &out.Release
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycles)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycles)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Feature != nil {
 		in, out := &in.Feature, &out.Feature
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycles)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycles)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Post != nil {
 		in, out := &in.Post, &out.Post
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineLifecycle)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(PipelineLifecycle)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Overrides != nil {
 		in, out := &in.Overrides, &out.Overrides
 		*out = make([]*syntax.PipelineOverride, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(syntax.PipelineOverride)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(syntax.PipelineOverride)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
 	if in.Default != nil {
 		in, out := &in.Default, &out.Default
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(syntax.ParsedPipeline)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(syntax.ParsedPipeline)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }

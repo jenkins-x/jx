@@ -28,13 +28,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/util"
-	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	tektonapis "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	knativeapis "knative.dev/pkg/apis"
 )
 
 // TektonLogger contains the necessary clients and the namespace to get data from the cluster, an implementation of
@@ -163,8 +163,8 @@ func createPipelineActivityName(labels map[string]string, buildNumber string) st
 func findLegacyPipelineRunBuildNumber(pipelineRun *tektonapis.PipelineRun) string {
 	var buildNumber string
 	for _, p := range pipelineRun.Spec.Params {
-		if p.Name == "build_id" {
-			buildNumber = p.Value
+		if p.Name == "build_id" && p.Value.Type == tektonapis.ParamTypeString {
+			buildNumber = p.Value.StringVal
 		}
 	}
 	return buildNumber

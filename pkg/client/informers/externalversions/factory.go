@@ -9,7 +9,7 @@ import (
 
 	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/jenkins-x/jx/pkg/client/informers/externalversions/internalinterfaces"
-	jenkins_io "github.com/jenkins-x/jx/pkg/client/informers/externalversions/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/client/informers/externalversions/jenkins.io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -156,9 +156,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Jenkins() jenkins_io.Interface
+	Jenkins() jenkinsio.Interface
 }
 
-func (f *sharedInformerFactory) Jenkins() jenkins_io.Interface {
-	return jenkins_io.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Jenkins() jenkinsio.Interface {
+	return jenkinsio.New(f, f.namespace, f.tweakListOptions)
 }
