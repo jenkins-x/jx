@@ -16,7 +16,7 @@ import (
 
 // WaitForReadyPodForDeployment waits for a pod of a deployment to be ready
 func (o *CommonOptions) WaitForReadyPodForDeployment(c kubernetes.Interface, ns string, name string, names []string, readyOnly bool) (string, error) {
-	deployment, err := c.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
+	deployment, err := c.AppsV1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil || deployment == nil {
 		return "", util.InvalidArg(name, names)
 	}

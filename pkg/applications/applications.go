@@ -8,14 +8,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 // Deployment represents an application deployment in a single environment
 type Deployment struct {
-	*v1beta1.Deployment
+	*appsv1.Deployment
 }
 
 // Environment represents an environment in which an application has been
@@ -128,7 +128,7 @@ func GetApplications(factory clients.Factory) (List, error) {
 	kubeClient, _, err := factory.CreateKubeClient()
 
 	// fetch deployments by environment (excluding dev)
-	deployments := make(map[string]map[string]v1beta1.Deployment)
+	deployments := make(map[string]map[string]appsv1.Deployment)
 	for _, env := range permanentEnvsMap {
 		if env.Spec.Kind != v1.EnvironmentKindTypeDevelopment {
 			envDeployments, err := kube.GetDeployments(kubeClient, env.Spec.Namespace)
@@ -148,7 +148,7 @@ func GetApplications(factory clients.Factory) (List, error) {
 	return list, nil
 }
 
-func getDeploymentAppNameInEnvironment(d v1beta1.Deployment, e *v1.Environment) (string, error) {
+func getDeploymentAppNameInEnvironment(d appsv1.Deployment, e *v1.Environment) (string, error) {
 	labels, err := metav1.LabelSelectorAsMap(d.Spec.Selector)
 	if err != nil {
 		return "", err
@@ -158,7 +158,7 @@ func getDeploymentAppNameInEnvironment(d v1beta1.Deployment, e *v1.Environment) 
 	return name, nil
 }
 
-func (l List) appendMatchingDeployments(envs map[string]*v1.Environment, deps map[string]map[string]v1beta1.Deployment) error {
+func (l List) appendMatchingDeployments(envs map[string]*v1.Environment, deps map[string]map[string]appsv1.Deployment) error {
 	for _, app := range l.Items {
 		for envName, env := range envs {
 			for _, dep := range deps[envName] {

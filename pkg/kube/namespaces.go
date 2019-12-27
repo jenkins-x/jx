@@ -111,7 +111,7 @@ func GetEnrichedDevEnvironment(kubeClient kubernetes.Interface, jxClient version
 // IsProwEnabled returns true if Prow is enabled in the given development namespace
 func IsProwEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 	// lets try determine if its Jenkins or not via the deployments
-	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentProwBuild, metav1.GetOptions{})
+	_, err := kubeClient.AppsV1().Deployments(ns).Get(DeploymentProwBuild, metav1.GetOptions{})
 	if err != nil {
 		if isProwBuildNotFoundError(err) {
 			return false, nil
@@ -128,7 +128,7 @@ func isProwBuildNotFoundError(err error) bool {
 // IsTektonEnabled returns true if Build Pipeline is enabled in the given development namespace
 func IsTektonEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 	// lets try determine if its Jenkins or not via the deployments
-	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentTektonController, metav1.GetOptions{})
+	_, err := kubeClient.AppsV1().Deployments(ns).Get(DeploymentTektonController, metav1.GetOptions{})
 	if err != nil {
 		if isTektonNotFoundError(err) {
 			return false, nil

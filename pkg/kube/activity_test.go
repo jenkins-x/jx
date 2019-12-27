@@ -94,7 +94,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 			Name: kube.DeploymentTektonController,
 		},
 	}
-	mockKubeClient.AppsV1beta1().Deployments(nsObj.Namespace).Create(mockTektonDeployment)
+	mockKubeClient.AppsV1().Deployments(nsObj.Namespace).Create(mockTektonDeployment)
 	jxClient := jxfake.NewSimpleClientset()
 
 	const (

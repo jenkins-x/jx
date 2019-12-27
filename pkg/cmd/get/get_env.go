@@ -101,7 +101,7 @@ func (o *GetEnvOptions) Run() error {
 
 		ens := env.Spec.Namespace
 		if ens != "" {
-			deps, err := kubeClient.AppsV1beta1().Deployments(ens).List(metav1.ListOptions{})
+			deps, err := kubeClient.AppsV1().Deployments(ens).List(metav1.ListOptions{})
 			if err != nil {
 				return fmt.Errorf("Could not find deployments in namespace %s: %s", ens, err)
 			}
