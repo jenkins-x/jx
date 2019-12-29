@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -58,35 +59,44 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 			name := annotations[annotationName]
 			serviceKind := labels[labelServiceKind]
 			if url != "" {
+				var server *AuthServer
 				user, err := k.userFromSecret(secret)
 				if err != nil {
-					continue
-				}
-				user.GithubAppOwner = labels[labelGithubAppOwner]
-				var server *AuthServer
+					log.Logger().Warnf("Git server %s for URL %s having empty user", util.ColorInfo(name), util.ColorInfo(url))
+				} else {
+					user.GithubAppOwner = labels[labelGithubAppOwner]
 
-				// for github app mode lets share the same server and have multiple users
-				if user.GithubAppOwner != "" {
-					for _, s := range config.Servers {
-						if s.URL == url {
-							server = s
-							break
+					// for github app mode lets share the same server and have multiple users
+					if user.GithubAppOwner != "" {
+						for _, s := range config.Servers {
+							if s.URL == url {
+								server = s
+								break
+							}
 						}
+					} else {
+						config.PipeLineUsername = user.Username
+						config.DefaultUsername = user.Username
+					}
+
+					if server != nil {
+						server.Users = append(server.Users, &user)
 					}
 				}
-				if server != nil {
-					server.Users = append(server.Users, &user)
-				} else {
+
+				if server == nil {
 					server = &AuthServer{
 						URL:  url,
 						Name: name,
 						Kind: serviceKind,
-						Users: []*UserAuth{
-							&user,
-						},
 					}
-					if user.GithubAppOwner == "" {
-						server.CurrentUser = user.Username
+					if err == nil {
+						server.Users = []*UserAuth{
+							&user,
+						}
+						if user.GithubAppOwner == "" {
+							server.CurrentUser = user.Username
+						}
 					}
 					if config.Servers == nil {
 						config.Servers = []*AuthServer{}
@@ -95,10 +105,6 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 				}
 				config.CurrentServer = server.URL
 				config.PipeLineServer = server.URL
-				if user.GithubAppOwner == "" {
-					config.PipeLineUsername = user.Username
-					config.DefaultUsername = user.Username
-				}
 			}
 		}
 	}
@@ -126,28 +132,30 @@ func (k *KubeAuthConfigHandler) SaveConfig(config *AuthConfig) error {
 		} else {
 			secret.Labels = util.MergeMaps(secret.Labels, labels)
 			secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
+			if secret.Data == nil {
+				secret.Data = map[string][]byte{}
+			}
 		}
 		user := server.CurrentAuth()
 		if user == nil {
-			return fmt.Errorf("current user for %q server is empty", server.URL)
-		}
-		if user.Username == "" {
-			return errors.New("empty username")
-		}
-		if user.ApiToken == "" && user.Password == "" {
-			return errors.New("empty credentials")
-		}
-		secret.Data[usernameKey] = []byte(user.Username)
-		if user.ApiToken != "" {
-			secret.Data[passwordKey] = []byte(user.ApiToken)
+			log.Logger().Warnf("Added Git server %s for URL %s with empty user", util.ColorInfo(name), util.ColorInfo(server.URL))
 		} else {
-			secret.Data[passwordKey] = []byte(user.Password)
-		}
-		if user.GithubAppOwner != "" {
-			labels := map[string]string{
-				labelGithubAppOwner: user.GithubAppOwner,
+			if user.Username != "" {
+				secret.Data[usernameKey] = []byte(user.Username)
 			}
-			secret.Labels = util.MergeMaps(secret.Labels, labels)
+			if user.ApiToken != "" || user.Password != "" {
+				if user.ApiToken != "" {
+					secret.Data[passwordKey] = []byte(user.ApiToken)
+				} else {
+					secret.Data[passwordKey] = []byte(user.Password)
+				}
+			}
+			if user.GithubAppOwner != "" {
+				labels := map[string]string{
+					labelGithubAppOwner: user.GithubAppOwner,
+				}
+				secret.Labels = util.MergeMaps(secret.Labels, labels)
+			}
 		}
 		if create {
 			if _, err := k.client.CoreV1().Secrets(k.namespace).Create(secret); err != nil {
