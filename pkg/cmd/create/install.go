@@ -829,7 +829,7 @@ func (options *InstallOptions) Run() error {
 	log.Logger().Infof("Or to use this context/namespace in just one terminal use: %s", util.ColorInfo("jx shell"))
 	log.Logger().Infof("For help on switching contexts see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
-	log.Logger().Infof("To import existing projects into Jenkins:       %s", util.ColorInfo("jx import"))
+	log.Logger().Infof("To import existing projects into Jenkins X:       %s", util.ColorInfo("jx import"))
 	log.Logger().Infof("To create a new Spring Boot microservice:       %s", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Logger().Infof("To create a new microservice from a quickstart: %s", util.ColorInfo("jx create quickstart"))
 	return nil
