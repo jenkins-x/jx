@@ -11,6 +11,7 @@ import (
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
+	appsv1 "k8s.io/api/apps/v1"
 	k8s_v1 "k8s.io/api/core/v1"
 
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -18,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
@@ -89,7 +89,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	mockKubeClient.CoreV1().ConfigMaps(nsObj.Namespace).Create(ingressConfig)
-	mockTektonDeployment := &v1beta1.Deployment{
+	mockTektonDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: kube.DeploymentTektonController,
 		},
