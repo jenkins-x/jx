@@ -5,7 +5,7 @@ import (
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,7 +14,7 @@ func TestAppendMatchingDeployments(t *testing.T) {
 		name             string
 		list             List
 		environments     map[string]*v1.Environment
-		deployments      map[string]map[string]v1beta1.Deployment
+		deployments      map[string]map[string]appsv1.Deployment
 		wantApplications int
 		wantEnvironments int
 		wantDeployments  int
@@ -23,7 +23,7 @@ func TestAppendMatchingDeployments(t *testing.T) {
 			"No source repositories found",
 			List{},
 			make(map[string]*v1.Environment),
-			make(map[string]map[string]v1beta1.Deployment),
+			make(map[string]map[string]appsv1.Deployment),
 			0, 0, 0,
 		},
 		{
@@ -41,7 +41,7 @@ func TestAppendMatchingDeployments(t *testing.T) {
 				},
 			},
 			make(map[string]*v1.Environment),
-			make(map[string]map[string]v1beta1.Deployment),
+			make(map[string]map[string]appsv1.Deployment),
 			1, 0, 0,
 		},
 		{
@@ -66,10 +66,10 @@ func TestAppendMatchingDeployments(t *testing.T) {
 					},
 				},
 			},
-			map[string]map[string]v1beta1.Deployment{
+			map[string]map[string]appsv1.Deployment{
 				"staging": {
-					"jx-staging": v1beta1.Deployment{
-						Spec: v1beta1.DeploymentSpec{
+					"jx-staging": appsv1.Deployment{
+						Spec: appsv1.DeploymentSpec{
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									"app": "my-repo-name",
@@ -115,10 +115,10 @@ func TestAppendMatchingDeployments(t *testing.T) {
 					},
 				},
 			},
-			map[string]map[string]v1beta1.Deployment{
+			map[string]map[string]appsv1.Deployment{
 				"staging": {
-					"jx-staging": v1beta1.Deployment{
-						Spec: v1beta1.DeploymentSpec{
+					"jx-staging": appsv1.Deployment{
+						Spec: appsv1.DeploymentSpec{
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									"app": "jx-my-repo-name",
@@ -128,8 +128,8 @@ func TestAppendMatchingDeployments(t *testing.T) {
 					},
 				},
 				"production": {
-					"jx-production": v1beta1.Deployment{
-						Spec: v1beta1.DeploymentSpec{
+					"jx-production": appsv1.Deployment{
+						Spec: appsv1.DeploymentSpec{
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									"app": "jx-my-repo-name",
