@@ -8,6 +8,8 @@ import (
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/pkg/errors"
+	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 
 	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -15,6 +17,7 @@ import (
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned/typed/prowjobs/v1"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -32,6 +35,7 @@ type GCActivitiesOptions struct {
 	ReleaseAgeLimit         time.Duration
 	PullRequestAgeLimit     time.Duration
 	PipelineRunAgeLimit     time.Duration
+	ProwJobAgeLimit         time.Duration
 	jclient                 gojenkins.JenkinsClient
 }
 
@@ -102,6 +106,7 @@ func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().DurationVarP(&options.PullRequestAgeLimit, "pull-request-age", "p", time.Hour*48, "Maximum age to keep PipelineActivities for Pull Requests")
 	cmd.Flags().DurationVarP(&options.ReleaseAgeLimit, "release-age", "r", time.Hour*24*30, "Maximum age to keep PipelineActivities for Releases")
 	cmd.Flags().DurationVarP(&options.PipelineRunAgeLimit, "pipelinerun-age", "", time.Hour*2, "Maximum age to keep completed PipelineRuns for all pipelines")
+	cmd.Flags().DurationVarP(&options.ProwJobAgeLimit, "prowjob-age", "", time.Hour*24*7, "Maximum age to keep completed ProwJobs for all pipelines")
 	return cmd
 }
 
@@ -213,6 +218,12 @@ func (o *GCActivitiesOptions) Run() error {
 		return err
 	}
 
+	// Clean up completed ProwJobs
+	err = o.gcProwJobs(currentNs)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -265,6 +276,44 @@ func (o *GCActivitiesOptions) deletePipelineRun(pipelineRunInterface tektonclien
 		return nil
 	}
 	return pipelineRunInterface.Delete(pr.Name, metav1.NewDeleteOptions(0))
+}
+
+func (o *GCActivitiesOptions) gcProwJobs(ns string) error {
+	prowJobClient, _, err := o.ProwJobClient()
+	if err != nil {
+		return err
+	}
+	pjInterface := prowJobClient.ProwV1().ProwJobs(ns)
+	pjList, err := pjInterface.List(metav1.ListOptions{})
+	if err != nil {
+		log.Logger().Warnf("no ProwJob instances found: %s", err.Error())
+		return nil
+	}
+
+	now := time.Now()
+
+	for _, pj := range pjList.Items {
+		completionTime := pj.Status.CompletionTime
+		if completionTime != nil && completionTime.Add(o.ProwJobAgeLimit).Before(now) {
+			err = o.deleteProwJob(pjInterface, &pj)
+			if err != nil {
+				return errors.Wrapf(err, "error deleting ProwJob %s", pj.Name)
+			}
+		}
+	}
+	return nil
+}
+
+func (o *GCActivitiesOptions) deleteProwJob(pjInterface prowjobclient.ProwJobInterface, pj *prowjobv1.ProwJob) error {
+	prefix := ""
+	if o.DryRun {
+		prefix = "not "
+	}
+	log.Logger().Infof("%sdeleting ProwJob %s", prefix, util.ColorInfo(pj.Name))
+	if o.DryRun {
+		return nil
+	}
+	return pjInterface.Delete(pj.Name, metav1.NewDeleteOptions(0))
 }
 
 func (o *GCActivitiesOptions) ageAndHistoryLimits(isPR, isBatch bool) (time.Duration, int) {

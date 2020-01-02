@@ -48,6 +48,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
+
 	"github.com/jenkins-x/jx/pkg/jxfactory"
 )
 
@@ -615,6 +617,23 @@ func (f *factory) CreateKnativeServeClient() (kserve.Interface, string, error) {
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := kserve.NewForConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
+func (f *factory) CreateProwJobClient() (prowjobclient.Interface, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := f.jxFactory.KubeConfig().LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := prowjobclient.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}
