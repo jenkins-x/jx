@@ -544,7 +544,4 @@ L:
 	log.Logger().Info("Setting kube config file")
 	log.Logger().Infof("export KUBECONFIG=\"%s\"", kubeconfig)
 	os.Setenv("KUBECONFIG", kubeconfig)
-	log.Logger().Info("Initialising cluster ...")
-
-	return o.initAndInstall(cloud.IKS)
 }

@@ -464,9 +464,6 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			if err != nil {
 				return err
 			}
-			log.Logger().Info("Initialising cluster ...")
-
-			return o.initAndInstall(cloud.OKE)
 		}
 	}
 	return nil

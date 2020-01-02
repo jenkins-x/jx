@@ -341,9 +341,6 @@ func (o *CreateClusterAWSOptions) Run() error {
 	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Region: region,
 	})
-
-	log.Logger().Info("Initialising cluster ...")
-	return o.initAndInstall(cloud.AWS)
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {

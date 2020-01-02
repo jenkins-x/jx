@@ -254,11 +254,5 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		}
 	}
 
-	log.Logger().Info("Initialising cluster ...")
-	err = o.initAndInstall(cloud.MINISHIFT)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

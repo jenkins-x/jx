@@ -6,12 +6,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
-	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -23,10 +20,9 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running create cluster
 type CreateClusterOptions struct {
 	options.CreateOptions
-	InstallOptions   InstallOptions
-	Flags            initcmd.InitFlags
-	Provider         string
-	SkipInstallation bool `mapstructure:"skip-installation"`
+	InstallOptions InstallOptions
+	Flags          initcmd.InitFlags
+	Provider       string
 }
 
 const (
@@ -35,7 +31,6 @@ const (
 	optionCluster           = "cluster"
 	optionClusterName       = "cluster-name"
 	optionCloudProvider     = "cloud-provider"
-	optionSkipInstallation  = "skip-installation"
 )
 
 const (
@@ -138,30 +133,6 @@ func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider st
 		InstallOptions: CreateInstallOptions(commonOpts),
 	}
 	return options
-}
-
-func (o *CreateClusterOptions) initAndInstall(provider string) error {
-	err := o.GetConfiguration(&o)
-	if err != nil {
-		return errors.Wrap(err, "getting create cluster configuration")
-	}
-
-	if o.SkipInstallation {
-		log.Logger().Infof("%s cluster created. Skipping Jenkins X installation.", o.Provider)
-		return nil
-	}
-
-	o.InstallOptions.BatchMode = o.BatchMode
-	o.InstallOptions.Flags.Provider = provider
-
-	installOpts := &o.InstallOptions
-
-	// call jx install
-	err = installOpts.Run()
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Run returns help if function is run without any argument

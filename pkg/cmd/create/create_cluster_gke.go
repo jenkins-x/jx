@@ -600,19 +600,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	log.Logger().Info("Initialising cluster ...")
-
 	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Zone:        zone,
 		kube.Region:      region,
 		kube.ProjectID:   projectID,
 		kube.ClusterName: o.Flags.ClusterName,
 	})
-
-	err = o.initAndInstall(cloud.GKE)
-	if err != nil {
-		return err
-	}
 
 	getCredsCommand := []string{"container", "clusters", "get-credentials", o.Flags.ClusterName}
 	if "" != zone {

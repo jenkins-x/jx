@@ -240,9 +240,6 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Region: region,
 	})
-
-	log.Logger().Info("Initialising cluster ...")
-	return o.initAndInstall(cloud.EKS)
 }
 
 func (o *CreateClusterEKSOptions) addTagsToCluster(awsProvider amazon.Provider) error {

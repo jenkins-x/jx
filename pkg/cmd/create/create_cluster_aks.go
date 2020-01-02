@@ -378,7 +378,4 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	if err != nil {
 		return err
 	}
-
-	log.Logger().Info("Initialising cluster ...")
-	return o.initAndInstall(cloud.AKS)
 }
