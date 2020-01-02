@@ -279,12 +279,6 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		o.InstallOptions.Flags.Domain = o.CreateClusterOptions.InstallOptions.InitOptions.Flags.Domain
 	}
 
-	log.Logger().Info("Initialising cluster ...")
-	err = o.initAndInstall(cloud.MINIKUBE)
-	if err != nil {
-		return err
-	}
-
 	context, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err

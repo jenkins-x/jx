@@ -544,4 +544,6 @@ L:
 	log.Logger().Info("Setting kube config file")
 	log.Logger().Infof("export KUBECONFIG=\"%s\"", kubeconfig)
 	os.Setenv("KUBECONFIG", kubeconfig)
+
+	return nil
 }

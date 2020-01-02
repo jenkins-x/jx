@@ -341,6 +341,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	o.InstallOptions.SetInstallValues(map[string]string{
 		kube.Region: region,
 	})
+	return nil
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {

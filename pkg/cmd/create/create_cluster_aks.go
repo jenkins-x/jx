@@ -378,4 +378,5 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	if err != nil {
 		return err
 	}
+	return nil
 }

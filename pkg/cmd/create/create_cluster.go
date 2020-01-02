@@ -6,7 +6,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -120,8 +119,6 @@ func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	o.InstallOptions.AddInstallFlags(cmd, true)
-	cmd.Flags().BoolVarP(&o.SkipInstallation, optionSkipInstallation, "", false, "Provision cluster only, don't install Jenkins X into it")
-	_ = viper.BindPFlag(optionSkipInstallation, cmd.Flags().Lookup(optionSkipInstallation))
 }
 
 func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider string) CreateClusterOptions {
