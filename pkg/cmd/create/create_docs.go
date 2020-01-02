@@ -140,7 +140,7 @@ func (o *CreateDocsOptions) genMarkdownDeprecation(cmd *cobra.Command, dir strin
 	return nil
 }
 
-func (o *CreateDocsOptions) genMarkdownTableRows(cmd *cobra.Command, buf *bytes.Buffer) {
+func (o *CreateDocsOptions) genMarkdownTableRows(cmd *cobra.Command, buf io.StringWriter) {
 	if cmd.Deprecated != "" {
 		buf.WriteString(fmt.Sprintf("| %s | %s | %s |\n",
 			cmd.CommandPath(),
