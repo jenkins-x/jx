@@ -41,6 +41,8 @@ import (
 	"k8s.io/client-go/rest"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 	fake_metricsclient "k8s.io/metrics/pkg/client/clientset/versioned/fake"
+	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
+	fake_prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned/fake"
 )
 
 // FakeFactory points to a fake factory implementation
@@ -56,12 +58,13 @@ type FakeFactory struct {
 	offline         bool
 
 	// cached fake clients
-	apiClient    apiextensionsclientset.Interface
-	buildClient  build.Interface
-	jxClient     versioned.Interface
-	kubeClient   kubernetes.Interface
-	kserveClient kserve.Interface
-	tektonClient tektonclient.Interface
+	apiClient     apiextensionsclientset.Interface
+	buildClient   build.Interface
+	jxClient      versioned.Interface
+	kubeClient    kubernetes.Interface
+	kserveClient  kserve.Interface
+	tektonClient  tektonclient.Interface
+	prowJobClient prowjobclient.Interface
 }
 
 var _ clients.Factory = (*FakeFactory)(nil)
@@ -272,6 +275,14 @@ func (f *FakeFactory) CreateKnativeBuildClient() (build.Interface, string, error
 		f.buildClient = buildfake.NewSimpleClientset()
 	}
 	return f.buildClient, f.namespace, nil
+}
+
+// CreateProwJobClient creates a new Kubernetes client for ProwJob resources
+func (f *FakeFactory) CreateProwJobClient() (prowjobclient.Interface, string, error) {
+	if f.prowJobClient == nil {
+		f.prowJobClient = fake_prowjobclient.NewSimpleClientset()
+	}
+	return f.prowJobClient, f.namespace, nil
 }
 
 // CreateKnativeServeClient create a new Kubernetes client for Knative serve resources

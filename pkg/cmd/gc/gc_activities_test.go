@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 
 	"github.com/stretchr/testify/assert"
 
@@ -30,12 +31,16 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 		ReleaseHistoryLimit:     5,
 		PullRequestHistoryLimit: 2,
 		PipelineRunAgeLimit:     time.Hour * 2,
+		ProwJobAgeLimit:         time.Hour * 24 * 7,
 	}
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()
 	assert.NoError(t, err)
 	tektonClient, ns, err := options.TektonClient()
 	assert.NoError(t, err)
+	prowJobClient, ns, err := options.ProwJobClient()
+	assert.NoError(t, err)
+
 	err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
 		env.Spec.TeamSettings.PromotionEngine = jenkinsv1.PromotionEngineProw
 		return nil
@@ -168,6 +173,32 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	_, err = prowJobClient.ProwV1().ProwJobs(ns).Create(&prowjobv1.ProwJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "job1",
+		},
+		Status: prowjobv1.ProwJobStatus{
+			CompletionTime: &metav1.Time{Time: nowMinusThirtyOneDays},
+		},
+	})
+	assert.NoError(t, err)
+	_, err = prowJobClient.ProwV1().ProwJobs(ns).Create(&prowjobv1.ProwJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "job2",
+		},
+		Status: prowjobv1.ProwJobStatus{},
+	})
+	assert.NoError(t, err)
+	_, err = prowJobClient.ProwV1().ProwJobs(ns).Create(&prowjobv1.ProwJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "job3",
+		},
+		Status: prowjobv1.ProwJobStatus{
+			CompletionTime: &metav1.Time{Time: nowMinusThreeDays},
+		},
+	})
+	assert.NoError(t, err)
+
 	err = o.Run()
 	assert.NoError(t, err)
 
@@ -192,4 +223,26 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	remainingRun := runs.Items[0]
 	assert.NotNil(t, remainingRun.Status.CompletionTime)
 	assert.Equal(t, nowMinusOneHour, remainingRun.Status.CompletionTime.Time, "Expected completion time for remaining PipelineRun of %s, but is %s", nowMinusOneHour, remainingRun.Status.CompletionTime.Time)
+
+	jobs, err := prowJobClient.ProwV1().ProwJobs(ns).List(metav1.ListOptions{})
+	assert.NoError(t, err)
+
+	assert.Len(t, jobs.Items, 2, "One of three ProwJobs should've been garbage collected")
+
+	var job1 *prowjobv1.ProwJob
+	var job2 *prowjobv1.ProwJob
+	var job3 *prowjobv1.ProwJob
+
+	for _, job := range jobs.Items {
+		if job.Name == "job1" {
+			job1 = &job
+		} else if job.Name == "job2" {
+			job2 = &job
+		} else if job.Name == "job3" {
+			job3 = &job
+		}
+	}
+	assert.Nil(t, job1, "ProwJob job1 completed more than 7 days ago and so should have been deleted")
+	assert.NotNil(t, job2, "ProwJob job2 has no completion time and so shouldn't have been deleted")
+	assert.NotNil(t, job3, "ProwJob job3 completed less than 7 days ago and so shouldn't have been deleted")
 }

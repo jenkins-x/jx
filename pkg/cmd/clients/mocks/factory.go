@@ -30,6 +30,7 @@ import (
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 	versioned5 "k8s.io/metrics/pkg/client/clientset/versioned"
+	versioned6 "k8s.io/test-infra/prow/client/clientset/versioned"
 )
 
 type MockFactory struct {
@@ -479,6 +480,29 @@ func (mock *MockFactory) CreateMetricsClient() (versioned5.Interface, error) {
 		}
 	}
 	return ret0, ret1
+}
+
+func (mock *MockFactory) CreateProwJobClient() (versioned6.Interface, string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateProwJobClient", params, []reflect.Type{reflect.TypeOf((*versioned6.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned6.Interface
+	var ret1 string
+	var ret2 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(versioned6.Interface)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
+	}
+	return ret0, ret1, ret2
 }
 
 func (mock *MockFactory) CreateSystemVaultClient(_param0 string) (vault.Client, error) {
@@ -1328,6 +1352,23 @@ func (c *MockFactory_CreateMetricsClient_OngoingVerification) GetCapturedArgumen
 }
 
 func (c *MockFactory_CreateMetricsClient_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierMockFactory) CreateProwJobClient() *MockFactory_CreateProwJobClient_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateProwJobClient", params, verifier.timeout)
+	return &MockFactory_CreateProwJobClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockFactory_CreateProwJobClient_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockFactory_CreateProwJobClient_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockFactory_CreateProwJobClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockFactory) CreateSystemVaultClient(_param0 string) *MockFactory_CreateSystemVaultClient_OngoingVerification {

@@ -26,6 +26,7 @@ import (
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
+	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 
@@ -122,6 +123,9 @@ type Factory interface {
 
 	// CreateTektonClient create a new Kubernetes client for Tekton resources
 	CreateTektonClient() (tektonclient.Interface, string, error)
+
+	// CreateProwJobClient creates a new Kubernetes client for ProwJob resources
+	CreateProwJobClient() (prowjobclient.Interface, string, error)
 
 	// CreateKnativeBuildClient create a new Kubernetes client for Knative Build resources
 	CreateKnativeBuildClient() (buildclient.Interface, string, error)

@@ -49,6 +49,7 @@ import (
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
+	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
 )
 
 // LogLevel represents the logging level when reporting feedback
@@ -145,6 +146,7 @@ type CommonOptions struct {
 	kserveClient        kserve.Interface
 	kubeClient          kubernetes.Interface
 	kuber               kube.Kuber
+	prowJobClient       prowjobclient.Interface
 	resourcesInstaller  resources.Installer
 	systemVaultClient   vault.Client
 	tektonClient        tektonclient.Interface
@@ -453,6 +455,24 @@ func (o *CommonOptions) KnativeServeClient() (kserve.Interface, string, error) {
 // SetKnativeServeClient sets the kantive serve client
 func (o *CommonOptions) SetKnativeServeClient(client kserve.Interface) {
 	o.kserveClient = client
+}
+
+// ProwJobClient returns or creates the ProwJob client
+func (o *CommonOptions) ProwJobClient() (prowjobclient.Interface, string, error) {
+	if o.factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.prowJobClient == nil {
+		prowJobClient, ns, err := o.factory.CreateProwJobClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.prowJobClient = prowJobClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.prowJobClient, o.currentNamespace, nil
 }
 
 // JXClientAndAdminNamespace returns or creates the jx client and admin namespace
