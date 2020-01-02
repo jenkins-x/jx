@@ -355,7 +355,7 @@ func (o *CommonOptions) InstallHelm() error {
 		return err
 	}
 
-	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", stableVersion, runtime.GOOS, runtime.GOARCH)
+	clientURL := fmt.Sprintf("https://get.helm.sh/helm-v%s-%s-%s.tar.gz", stableVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
 	err = packages.DownloadFile(clientURL, tarFile)
@@ -396,7 +396,7 @@ func (o *CommonOptions) InstallTiller() error {
 				return err
 			}
 	*/
-	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	clientURL := fmt.Sprintf("https://get.helm.sh/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	helmFullPath := filepath.Join(binDir, "helm")
 	tarFile := fullPath + ".tgz"
