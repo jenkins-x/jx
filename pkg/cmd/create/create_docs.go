@@ -1,7 +1,9 @@
 package create
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -9,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/deprecation"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -102,5 +105,52 @@ func (o *CreateDocsOptions) Run(jxCommand *cobra.Command) error {
 		base := strings.TrimSuffix(name, path.Ext(name))
 		return "/commands/" + strings.ToLower(base) + "/"
 	}
+	if err := o.genMarkdownDeprecation(jxCommand, dir, now); err != nil {
+		return errors.Wrapf(err, "generating the deprecation doc")
+	}
 	return doc.GenMarkdownTreeCustom(jxCommand, dir, prepender, linkHandler)
+}
+
+func (o *CreateDocsOptions) genMarkdownDeprecation(cmd *cobra.Command, dir string, date string) error {
+	basename := "deprecation"
+	filename := filepath.Join(dir, basename+".md")
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	header := fmt.Sprintf(gendocFrontmatterTemplate, date, "deprecated commands",
+		basename, "/commands/"+strings.ToLower(basename)+"/")
+
+	if _, err := io.WriteString(f, header); err != nil {
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	buf.WriteString("\n\n")
+	buf.WriteString("## Deprecated Commands\n\n")
+	buf.WriteString("\n\n")
+	buf.WriteString("| Command        | Removal Date   | Replacement  |\n")
+	buf.WriteString("|----------------|----------------|--------------|\n")
+	o.genMarkdownTableRows(cmd, buf)
+
+	buf.WriteTo(f)
+
+	return nil
+}
+
+func (o *CreateDocsOptions) genMarkdownTableRows(cmd *cobra.Command, buf *bytes.Buffer) {
+	if cmd.Deprecated != "" {
+		buf.WriteString(fmt.Sprintf("| %s | %s | %s |\n",
+			cmd.CommandPath(),
+			deprecation.GetRemovalDate(cmd),
+			deprecation.GetReplacement(cmd),
+		))
+		return
+	}
+
+	for _, c := range cmd.Commands() {
+		o.genMarkdownTableRows(c, buf)
+	}
 }
