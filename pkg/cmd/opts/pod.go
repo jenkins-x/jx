@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -38,60 +37,6 @@ func (o *CommonOptions) WaitForReadyPodForSelectorLabels(c kubernetes.Interface,
 		return "", err
 	}
 	return o.WaitForReadyPodForSelector(c, ns, selector, readyOnly)
-}
-
-// WaitForReadyKnativeBuildPod waits for knative build pod to be ready
-func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns string, readyOnly bool) (string, error) {
-	log.Logger().Warnf("Waiting for a running Knative build pod in namespace %s", ns)
-	lastPod := ""
-	for {
-		pods, err := builds.GetBuildPods(c, ns)
-		if err != nil {
-			return "", err
-		}
-		name := ""
-		loggedContainerIdx := -1
-		var latestPod *corev1.Pod
-		lastTime := time.Time{}
-		for _, pod := range pods {
-			phase := pod.Status.Phase
-			if phase == corev1.PodRunning || phase == corev1.PodPending {
-				if !readyOnly {
-					created := pod.CreationTimestamp
-					if name == "" || created.After(lastTime) {
-						lastTime = created.Time
-						name = pod.Name
-						latestPod = pod
-					}
-				}
-			}
-		}
-		if latestPod != nil && name != "" {
-			if name != lastPod {
-				lastPod = name
-				loggedContainerIdx = -1
-				log.Logger().Warnf("Found newest pod: %s", name)
-			}
-			if kube.IsPodReady(latestPod) {
-				return name, nil
-			}
-
-			_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(latestPod)
-			for idx, ic := range containerStatuses {
-				if isContainerStarted(&ic.State) && idx > loggedContainerIdx {
-					loggedContainerIdx = idx
-					containerName := ic.Name
-					log.Logger().Warnf("Container on pod: %s is: %s", name, containerName)
-					err = o.TailLogs(ns, name, containerName)
-					if err != nil {
-						break
-					}
-				}
-			}
-		}
-		// TODO replace with a watch flavour
-		time.Sleep(time.Second)
-	}
 }
 
 // WaitForReadyPodForSelector waits for a pod to which the selector applies to be ready

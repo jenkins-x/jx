@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,20 +23,20 @@ var usersResource = schema.GroupVersionResource{Group: "jenkins.io", Version: "v
 var usersKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "User"}
 
 // Get takes name of the user, and returns the corresponding user object, and an error if there is any.
-func (c *FakeUsers) Get(name string, options v1.GetOptions) (result *jenkins_io_v1.User, err error) {
+func (c *FakeUsers) Get(name string, options v1.GetOptions) (result *jenkinsiov1.User, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(usersResource, c.ns, name), &jenkins_io_v1.User{})
+		Invokes(testing.NewGetAction(usersResource, c.ns, name), &jenkinsiov1.User{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.User), err
+	return obj.(*jenkinsiov1.User), err
 }
 
 // List takes label and field selectors, and returns the list of Users that match those selectors.
-func (c *FakeUsers) List(opts v1.ListOptions) (result *jenkins_io_v1.UserList, err error) {
+func (c *FakeUsers) List(opts v1.ListOptions) (result *jenkinsiov1.UserList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(usersResource, usersKind, c.ns, opts), &jenkins_io_v1.UserList{})
+		Invokes(testing.NewListAction(usersResource, usersKind, c.ns, opts), &jenkinsiov1.UserList{})
 
 	if obj == nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *FakeUsers) List(opts v1.ListOptions) (result *jenkins_io_v1.UserList, e
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &jenkins_io_v1.UserList{ListMeta: obj.(*jenkins_io_v1.UserList).ListMeta}
-	for _, item := range obj.(*jenkins_io_v1.UserList).Items {
+	list := &jenkinsiov1.UserList{ListMeta: obj.(*jenkinsiov1.UserList).ListMeta}
+	for _, item := range obj.(*jenkinsiov1.UserList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -63,31 +63,31 @@ func (c *FakeUsers) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a user and creates it.  Returns the server's representation of the user, and an error, if there is any.
-func (c *FakeUsers) Create(user *jenkins_io_v1.User) (result *jenkins_io_v1.User, err error) {
+func (c *FakeUsers) Create(user *jenkinsiov1.User) (result *jenkinsiov1.User, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(usersResource, c.ns, user), &jenkins_io_v1.User{})
+		Invokes(testing.NewCreateAction(usersResource, c.ns, user), &jenkinsiov1.User{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.User), err
+	return obj.(*jenkinsiov1.User), err
 }
 
 // Update takes the representation of a user and updates it. Returns the server's representation of the user, and an error, if there is any.
-func (c *FakeUsers) Update(user *jenkins_io_v1.User) (result *jenkins_io_v1.User, err error) {
+func (c *FakeUsers) Update(user *jenkinsiov1.User) (result *jenkinsiov1.User, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(usersResource, c.ns, user), &jenkins_io_v1.User{})
+		Invokes(testing.NewUpdateAction(usersResource, c.ns, user), &jenkinsiov1.User{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.User), err
+	return obj.(*jenkinsiov1.User), err
 }
 
 // Delete takes name of the user and deletes it. Returns an error if one occurs.
 func (c *FakeUsers) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(usersResource, c.ns, name), &jenkins_io_v1.User{})
+		Invokes(testing.NewDeleteAction(usersResource, c.ns, name), &jenkinsiov1.User{})
 
 	return err
 }
@@ -96,17 +96,17 @@ func (c *FakeUsers) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakeUsers) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(usersResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &jenkins_io_v1.UserList{})
+	_, err := c.Fake.Invokes(action, &jenkinsiov1.UserList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched user.
-func (c *FakeUsers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkins_io_v1.User, err error) {
+func (c *FakeUsers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.User, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(usersResource, c.ns, name, data, subresources...), &jenkins_io_v1.User{})
+		Invokes(testing.NewPatchSubresourceAction(usersResource, c.ns, name, data, subresources...), &jenkinsiov1.User{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.User), err
+	return obj.(*jenkinsiov1.User), err
 }

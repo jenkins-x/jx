@@ -2,21 +2,19 @@ package prow
 
 import (
 	"encoding/json"
+	//"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 
-	//"encoding/json"
-	"fmt"
-	"strings"
-
 	"github.com/pkg/errors"
 
 	"github.com/ghodss/yaml"
 	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -26,17 +24,7 @@ import (
 )
 
 const (
-	Hook = "hook"
-
-	KnativeBuildAgent = "knative-build"
-	TektonAgent       = "tekton"
-	KubernetesAgent   = "kubernetes"
-
-	applyTemplate = "environment-apply"
-	buildTemplate = "environment-build"
-
-	serviceAccountApply = "helm"
-	serviceAccountBuild = "knative-build-bot"
+	TektonAgent = "tekton"
 )
 
 const (
@@ -70,10 +58,8 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowco
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
-	agent := KnativeBuildAgent
-	if teamSettings.GetProwEngine() == v1.ProwEngineTypeTekton {
-		agent = TektonAgent
-	}
+	agent := TektonAgent
+
 	o := Options{
 		KubeClient:           kubeClient,
 		Repos:                repos,
@@ -160,17 +146,6 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps.SkipReport = false
 	ps.Context = prowconfig.PromotionBuild
 	ps.Agent = o.Agent
-
-	if o.Agent == KnativeBuildAgent {
-		spec := &build.BuildSpec{
-			ServiceAccountName: serviceAccountBuild,
-			Template: &build.TemplateInstantiationSpec{
-				Name: buildTemplate,
-			},
-		}
-
-		ps.BuildSpec = spec
-	}
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 
@@ -183,18 +158,6 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps.Agent = o.Agent
 	ps.Branches = []string{"master"}
 
-	if o.Agent == KnativeBuildAgent {
-		spec := &build.BuildSpec{
-			ServiceAccountName: serviceAccountApply,
-			Template: &build.TemplateInstantiationSpec{
-				Name: applyTemplate,
-				Env: []corev1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
-				},
-			},
-		}
-		ps.BuildSpec = spec
-	}
 	return ps
 }
 
@@ -204,18 +167,6 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps.Name = "release"
 	ps.Agent = o.Agent
 
-	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-
-	if o.Agent == KnativeBuildAgent {
-		spec := &build.BuildSpec{
-			ServiceAccountName: serviceAccountBuild,
-			Template: &build.TemplateInstantiationSpec{
-				Name: templateName,
-			},
-		}
-
-		ps.BuildSpec = spec
-	}
 	return ps
 }
 
@@ -230,18 +181,6 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.SkipReport = false
 	ps.Agent = o.Agent
 
-	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-
-	if o.Agent == KnativeBuildAgent {
-		spec := &build.BuildSpec{
-			ServiceAccountName: serviceAccountApply,
-			Template: &build.TemplateInstantiationSpec{
-				Name: templateName,
-			},
-		}
-
-		ps.BuildSpec = spec
-	}
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 

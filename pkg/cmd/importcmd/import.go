@@ -1083,7 +1083,7 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 		startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, opts.MasterBranch)}
 		err = startBuildOptions.Run()
 		if err != nil {
-			return fmt.Errorf("failed to start pipeline build")
+			return fmt.Errorf("failed to start pipeline build: %s", err)
 		}
 	}
 

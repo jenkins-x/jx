@@ -19,9 +19,9 @@ items:
         description: the version number for this pipeline which is used as a tag on
           docker images and helm charts
         name: version
+        type: string
       resources:
       - name: workspace
-        outputImageDir: ""
         targetPath: source
         type: git
     steps:
@@ -61,9 +61,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
       resources: {}
@@ -106,9 +106,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: docker.io/golang:1.11.5
       name: build-binary
       resources: {}
@@ -151,9 +151,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: docker.io/golang:1.11.5
       name: validate-binary
       resources: {}
@@ -198,11 +198,11 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
       name: build-and-push-image
       resources: {}
@@ -248,11 +248,11 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
       name: build-and-push-nodejs
       resources: {}
@@ -297,11 +297,11 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
       name: build-and-push-maven
       resources: {}
@@ -346,11 +346,11 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: rawlingsj/executor:dev40
       name: build-and-push-go
       resources: {}
@@ -393,9 +393,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/jenkinsxio/builder-go:0.1.332
       name: preview
       resources: {}

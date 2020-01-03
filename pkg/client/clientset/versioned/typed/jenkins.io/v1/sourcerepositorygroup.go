@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type SourceRepositoryGroupsGetter interface {
 type SourceRepositoryGroupInterface interface {
 	Create(*v1.SourceRepositoryGroup) (*v1.SourceRepositoryGroup, error)
 	Update(*v1.SourceRepositoryGroup) (*v1.SourceRepositoryGroup, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.SourceRepositoryGroup, error)
-	List(opts meta_v1.ListOptions) (*v1.SourceRepositoryGroupList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.SourceRepositoryGroup, error)
+	List(opts metav1.ListOptions) (*v1.SourceRepositoryGroupList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.SourceRepositoryGroup, err error)
 	SourceRepositoryGroupExpansion
 }
@@ -45,7 +45,7 @@ func newSourceRepositoryGroups(c *JenkinsV1Client, namespace string) *sourceRepo
 }
 
 // Get takes name of the sourceRepositoryGroup, and returns the corresponding sourceRepositoryGroup object, and an error if there is any.
-func (c *sourceRepositoryGroups) Get(name string, options meta_v1.GetOptions) (result *v1.SourceRepositoryGroup, err error) {
+func (c *sourceRepositoryGroups) Get(name string, options metav1.GetOptions) (result *v1.SourceRepositoryGroup, err error) {
 	result = &v1.SourceRepositoryGroup{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *sourceRepositoryGroups) Get(name string, options meta_v1.GetOptions) (r
 }
 
 // List takes label and field selectors, and returns the list of SourceRepositoryGroups that match those selectors.
-func (c *sourceRepositoryGroups) List(opts meta_v1.ListOptions) (result *v1.SourceRepositoryGroupList, err error) {
+func (c *sourceRepositoryGroups) List(opts metav1.ListOptions) (result *v1.SourceRepositoryGroupList, err error) {
 	result = &v1.SourceRepositoryGroupList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *sourceRepositoryGroups) List(opts meta_v1.ListOptions) (result *v1.Sour
 }
 
 // Watch returns a watch.Interface that watches the requested sourceRepositoryGroups.
-func (c *sourceRepositoryGroups) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *sourceRepositoryGroups) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *sourceRepositoryGroups) Update(sourceRepositoryGroup *v1.SourceReposito
 }
 
 // Delete takes name of the sourceRepositoryGroup and deletes it. Returns an error if one occurs.
-func (c *sourceRepositoryGroups) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *sourceRepositoryGroups) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("sourcerepositorygroups").
@@ -116,7 +116,7 @@ func (c *sourceRepositoryGroups) Delete(name string, options *meta_v1.DeleteOpti
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *sourceRepositoryGroups) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *sourceRepositoryGroups) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("sourcerepositorygroups").

@@ -30,57 +30,33 @@ func (in *AdminSecretsConfig) DeepCopyInto(out *AdminSecretsConfig) {
 	*out = *in
 	if in.ChartMuseum != nil {
 		in, out := &in.ChartMuseum, &out.ChartMuseum
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ChartMuseum)
-			**out = **in
-		}
+		*out = new(ChartMuseum)
+		**out = **in
 	}
 	if in.Grafana != nil {
 		in, out := &in.Grafana, &out.Grafana
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Grafana)
-			**out = **in
-		}
+		*out = new(Grafana)
+		**out = **in
 	}
 	if in.Jenkins != nil {
 		in, out := &in.Jenkins, &out.Jenkins
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Jenkins)
-			**out = **in
-		}
+		*out = new(Jenkins)
+		**out = **in
 	}
 	if in.Nexus != nil {
 		in, out := &in.Nexus, &out.Nexus
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Nexus)
-			**out = **in
-		}
+		*out = new(Nexus)
+		**out = **in
 	}
 	if in.PipelineSecrets != nil {
 		in, out := &in.PipelineSecrets, &out.PipelineSecrets
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PipelineSecrets)
-			**out = **in
-		}
+		*out = new(PipelineSecrets)
+		**out = **in
 	}
 	if in.KanikoSecret != nil {
 		in, out := &in.KanikoSecret, &out.KanikoSecret
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(KanikoSecret)
-			**out = **in
-		}
+		*out = new(KanikoSecret)
+		**out = **in
 	}
 	return
 }
@@ -249,21 +225,13 @@ func (in *ClusterConfig) DeepCopyInto(out *ClusterConfig) {
 	*out = *in
 	if in.AzureConfig != nil {
 		in, out := &in.AzureConfig, &out.AzureConfig
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(AzureConfig)
-			**out = **in
-		}
+		*out = new(AzureConfig)
+		**out = **in
 	}
 	if in.GKEConfig != nil {
 		in, out := &in.GKEConfig, &out.GKEConfig
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(GKEConfig)
-			**out = **in
-		}
+		*out = new(GKEConfig)
+		**out = **in
 	}
 	return
 }
@@ -421,42 +389,26 @@ func (in *HelmValuesConfig) DeepCopyInto(out *HelmValuesConfig) {
 	*out = *in
 	if in.ExposeController != nil {
 		in, out := &in.ExposeController, &out.ExposeController
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ExposeController)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ExposeController)
+		(*in).DeepCopyInto(*out)
 	}
 	in.Jenkins.DeepCopyInto(&out.Jenkins)
 	out.Prow = in.Prow
 	out.PipelineSecrets = in.PipelineSecrets
 	if in.ControllerBuild != nil {
 		in, out := &in.ControllerBuild, &out.ControllerBuild
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(EnabledConfig)
-			**out = **in
-		}
+		*out = new(EnabledConfig)
+		**out = **in
 	}
 	if in.ControllerWorkflow != nil {
 		in, out := &in.ControllerWorkflow, &out.ControllerWorkflow
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(EnabledConfig)
-			**out = **in
-		}
+		*out = new(EnabledConfig)
+		**out = **in
 	}
 	if in.DockerRegistryEnabled != nil {
 		in, out := &in.DockerRegistryEnabled, &out.DockerRegistryEnabled
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(EnabledConfig)
-			**out = **in
-		}
+		*out = new(EnabledConfig)
+		**out = **in
 	}
 	return
 }
@@ -674,12 +626,8 @@ func (in *JenkinsValuesConfig) DeepCopyInto(out *JenkinsValuesConfig) {
 	in.Servers.DeepCopyInto(&out.Servers)
 	if in.Enabled != nil {
 		in, out := &in.Enabled, &out.Enabled
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(bool)
-			**out = **in
-		}
+		*out = new(bool)
+		**out = **in
 	}
 	return
 }
@@ -763,12 +711,8 @@ func (in *Preview) DeepCopyInto(out *Preview) {
 	*out = *in
 	if in.Image != nil {
 		in, out := &in.Image, &out.Image
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Image)
-			**out = **in
-		}
+		*out = new(Image)
+		**out = **in
 	}
 	return
 }
@@ -804,21 +748,13 @@ func (in *PreviewValuesConfig) DeepCopyInto(out *PreviewValuesConfig) {
 	*out = *in
 	if in.ExposeController != nil {
 		in, out := &in.ExposeController, &out.ExposeController
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ExposeController)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ExposeController)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Preview != nil {
 		in, out := &in.Preview, &out.Preview
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(Preview)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(Preview)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -845,60 +781,39 @@ func (in *ProjectConfig) DeepCopyInto(out *ProjectConfig) {
 	}
 	if in.PreviewEnvironments != nil {
 		in, out := &in.PreviewEnvironments, &out.PreviewEnvironments
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(PreviewEnvironmentConfig)
-			**out = **in
-		}
+		*out = new(PreviewEnvironmentConfig)
+		**out = **in
 	}
 	if in.IssueTracker != nil {
 		in, out := &in.IssueTracker, &out.IssueTracker
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(IssueTrackerConfig)
-			**out = **in
-		}
+		*out = new(IssueTrackerConfig)
+		**out = **in
 	}
 	if in.Chat != nil {
 		in, out := &in.Chat, &out.Chat
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ChatConfig)
-			**out = **in
-		}
+		*out = new(ChatConfig)
+		**out = **in
 	}
 	if in.Wiki != nil {
 		in, out := &in.Wiki, &out.Wiki
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(WikiConfig)
-			**out = **in
-		}
+		*out = new(WikiConfig)
+		**out = **in
 	}
 	if in.Addons != nil {
 		in, out := &in.Addons, &out.Addons
 		*out = make([]*AddonConfig, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(AddonConfig)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(AddonConfig)
+				**out = **in
 			}
 		}
 	}
 	if in.PipelineConfig != nil {
 		in, out := &in.PipelineConfig, &out.PipelineConfig
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(jenkinsfile.PipelineConfig)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(jenkinsfile.PipelineConfig)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -941,12 +856,8 @@ func (in *RequirementsConfig) DeepCopyInto(out *RequirementsConfig) {
 	}
 	if in.GithubApp != nil {
 		in, out := &in.GithubApp, &out.GithubApp
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(GithubAppConfig)
-			**out = **in
-		}
+		*out = new(GithubAppConfig)
+		**out = **in
 	}
 	out.Ingress = in.Ingress
 	out.Storage = in.Storage
@@ -1056,12 +967,8 @@ func (in *VaultConfig) DeepCopyInto(out *VaultConfig) {
 	*out = *in
 	if in.AWSConfig != nil {
 		in, out := &in.AWSConfig, &out.AWSConfig
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(VaultAWSConfig)
-			**out = **in
-		}
+		*out = new(VaultAWSConfig)
+		**out = **in
 	}
 	return
 }

@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type ReleasesGetter interface {
 type ReleaseInterface interface {
 	Create(*v1.Release) (*v1.Release, error)
 	Update(*v1.Release) (*v1.Release, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.Release, error)
-	List(opts meta_v1.ListOptions) (*v1.ReleaseList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.Release, error)
+	List(opts metav1.ListOptions) (*v1.ReleaseList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.Release, err error)
 	ReleaseExpansion
 }
@@ -45,7 +45,7 @@ func newReleases(c *JenkinsV1Client, namespace string) *releases {
 }
 
 // Get takes name of the release, and returns the corresponding release object, and an error if there is any.
-func (c *releases) Get(name string, options meta_v1.GetOptions) (result *v1.Release, err error) {
+func (c *releases) Get(name string, options metav1.GetOptions) (result *v1.Release, err error) {
 	result = &v1.Release{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *releases) Get(name string, options meta_v1.GetOptions) (result *v1.Rele
 }
 
 // List takes label and field selectors, and returns the list of Releases that match those selectors.
-func (c *releases) List(opts meta_v1.ListOptions) (result *v1.ReleaseList, err error) {
+func (c *releases) List(opts metav1.ListOptions) (result *v1.ReleaseList, err error) {
 	result = &v1.ReleaseList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *releases) List(opts meta_v1.ListOptions) (result *v1.ReleaseList, err e
 }
 
 // Watch returns a watch.Interface that watches the requested releases.
-func (c *releases) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *releases) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *releases) Update(release *v1.Release) (result *v1.Release, err error) {
 }
 
 // Delete takes name of the release and deletes it. Returns an error if one occurs.
-func (c *releases) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *releases) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("releases").
@@ -116,7 +116,7 @@ func (c *releases) Delete(name string, options *meta_v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *releases) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *releases) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("releases").

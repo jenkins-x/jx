@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,20 +23,20 @@ var buildpacksResource = schema.GroupVersionResource{Group: "jenkins.io", Versio
 var buildpacksKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "BuildPack"}
 
 // Get takes name of the buildPack, and returns the corresponding buildPack object, and an error if there is any.
-func (c *FakeBuildPacks) Get(name string, options v1.GetOptions) (result *jenkins_io_v1.BuildPack, err error) {
+func (c *FakeBuildPacks) Get(name string, options v1.GetOptions) (result *jenkinsiov1.BuildPack, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(buildpacksResource, c.ns, name), &jenkins_io_v1.BuildPack{})
+		Invokes(testing.NewGetAction(buildpacksResource, c.ns, name), &jenkinsiov1.BuildPack{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.BuildPack), err
+	return obj.(*jenkinsiov1.BuildPack), err
 }
 
 // List takes label and field selectors, and returns the list of BuildPacks that match those selectors.
-func (c *FakeBuildPacks) List(opts v1.ListOptions) (result *jenkins_io_v1.BuildPackList, err error) {
+func (c *FakeBuildPacks) List(opts v1.ListOptions) (result *jenkinsiov1.BuildPackList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(buildpacksResource, buildpacksKind, c.ns, opts), &jenkins_io_v1.BuildPackList{})
+		Invokes(testing.NewListAction(buildpacksResource, buildpacksKind, c.ns, opts), &jenkinsiov1.BuildPackList{})
 
 	if obj == nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *FakeBuildPacks) List(opts v1.ListOptions) (result *jenkins_io_v1.BuildP
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &jenkins_io_v1.BuildPackList{ListMeta: obj.(*jenkins_io_v1.BuildPackList).ListMeta}
-	for _, item := range obj.(*jenkins_io_v1.BuildPackList).Items {
+	list := &jenkinsiov1.BuildPackList{ListMeta: obj.(*jenkinsiov1.BuildPackList).ListMeta}
+	for _, item := range obj.(*jenkinsiov1.BuildPackList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -63,31 +63,31 @@ func (c *FakeBuildPacks) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a buildPack and creates it.  Returns the server's representation of the buildPack, and an error, if there is any.
-func (c *FakeBuildPacks) Create(buildPack *jenkins_io_v1.BuildPack) (result *jenkins_io_v1.BuildPack, err error) {
+func (c *FakeBuildPacks) Create(buildPack *jenkinsiov1.BuildPack) (result *jenkinsiov1.BuildPack, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(buildpacksResource, c.ns, buildPack), &jenkins_io_v1.BuildPack{})
+		Invokes(testing.NewCreateAction(buildpacksResource, c.ns, buildPack), &jenkinsiov1.BuildPack{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.BuildPack), err
+	return obj.(*jenkinsiov1.BuildPack), err
 }
 
 // Update takes the representation of a buildPack and updates it. Returns the server's representation of the buildPack, and an error, if there is any.
-func (c *FakeBuildPacks) Update(buildPack *jenkins_io_v1.BuildPack) (result *jenkins_io_v1.BuildPack, err error) {
+func (c *FakeBuildPacks) Update(buildPack *jenkinsiov1.BuildPack) (result *jenkinsiov1.BuildPack, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(buildpacksResource, c.ns, buildPack), &jenkins_io_v1.BuildPack{})
+		Invokes(testing.NewUpdateAction(buildpacksResource, c.ns, buildPack), &jenkinsiov1.BuildPack{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.BuildPack), err
+	return obj.(*jenkinsiov1.BuildPack), err
 }
 
 // Delete takes name of the buildPack and deletes it. Returns an error if one occurs.
 func (c *FakeBuildPacks) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(buildpacksResource, c.ns, name), &jenkins_io_v1.BuildPack{})
+		Invokes(testing.NewDeleteAction(buildpacksResource, c.ns, name), &jenkinsiov1.BuildPack{})
 
 	return err
 }
@@ -96,17 +96,17 @@ func (c *FakeBuildPacks) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakeBuildPacks) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(buildpacksResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &jenkins_io_v1.BuildPackList{})
+	_, err := c.Fake.Invokes(action, &jenkinsiov1.BuildPackList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched buildPack.
-func (c *FakeBuildPacks) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkins_io_v1.BuildPack, err error) {
+func (c *FakeBuildPacks) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.BuildPack, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(buildpacksResource, c.ns, name, data, subresources...), &jenkins_io_v1.BuildPack{})
+		Invokes(testing.NewPatchSubresourceAction(buildpacksResource, c.ns, name, data, subresources...), &jenkinsiov1.BuildPack{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.BuildPack), err
+	return obj.(*jenkinsiov1.BuildPack), err
 }

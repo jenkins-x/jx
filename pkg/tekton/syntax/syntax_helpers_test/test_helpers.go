@@ -269,13 +269,56 @@ func ContainerSecurityContext(privileged bool) builder.ContainerOp {
 	}
 }
 
-// VolumeMount adds a VolumeMount to the container options
-func VolumeMount(name string, mountPath string) builder.ContainerOp {
+// ContainerVolumeMount adds a VolumeMount to the container options
+func ContainerVolumeMount(name string, mountPath string) builder.ContainerOp {
 	return func(container *corev1.Container) {
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 			Name:      name,
 			MountPath: mountPath,
 		})
+	}
+}
+
+// StepVolumeMount adds a VolumeMount to the container options on a step
+func StepVolumeMount(name string, mountPath string) builder.StepOp {
+	return func(step *v1alpha1.Step) {
+		step.VolumeMounts = append(step.VolumeMounts, corev1.VolumeMount{
+			Name:      name,
+			MountPath: mountPath,
+		})
+	}
+}
+
+// StepResourceLimits sets the resource limits for container options on a step
+func StepResourceLimits(cpus, memory string) builder.StepOp {
+	return func(step *v1alpha1.Step) {
+		cpuQuantity, _ := resource.ParseQuantity(cpus)
+		memoryQuantity, _ := resource.ParseQuantity(memory)
+		step.Resources.Limits = corev1.ResourceList{
+			"cpu":    cpuQuantity,
+			"memory": memoryQuantity,
+		}
+	}
+}
+
+// StepResourceRequests sets the resource requests for container options on a step
+func StepResourceRequests(cpus, memory string) builder.StepOp {
+	return func(step *v1alpha1.Step) {
+		cpuQuantity, _ := resource.ParseQuantity(cpus)
+		memoryQuantity, _ := resource.ParseQuantity(memory)
+		step.Resources.Requests = corev1.ResourceList{
+			"cpu":    cpuQuantity,
+			"memory": memoryQuantity,
+		}
+	}
+}
+
+// StepSecurityContext sets the security context for container options on a step
+func StepSecurityContext(privileged bool) builder.StepOp {
+	return func(step *v1alpha1.Step) {
+		step.SecurityContext = &corev1.SecurityContext{
+			Privileged: &privileged,
+		}
 	}
 }
 
@@ -612,5 +655,21 @@ func TaskStageLabel(value string) builder.TaskOp {
 			t.ObjectMeta.Labels = map[string]string{}
 		}
 		t.ObjectMeta.Labels[syntax.LabelStageName] = syntax.MangleToRfc1035Label(value, "")
+	}
+}
+
+// OutputsResource adds a resource, with specified name and type, to the Outputs.
+// Any number of TaskResource modifier can be passed to transform it.
+func OutputsResource(name string, resourceType v1alpha1.PipelineResourceType, ops ...builder.TaskResourceOp) builder.OutputsOp {
+	return func(i *v1alpha1.Outputs) {
+		r := &v1alpha1.TaskResource{
+			ResourceDeclaration: v1alpha1.ResourceDeclaration{
+				Name: name,
+				Type: resourceType,
+			}}
+		for _, op := range ops {
+			op(r)
+		}
+		i.Resources = append(i.Resources, *r)
 	}
 }
