@@ -55,7 +55,6 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	},
 	"create step": {
 		date: "Feb 1 2020",
-		info: fmt.Sprintf("This will be renamed to %s command.", util.ColorStatus("edit pipeline")),
 	},
 	"create archetype": {
 		replacement: "jx create quickstart",
