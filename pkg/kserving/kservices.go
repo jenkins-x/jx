@@ -25,7 +25,12 @@ func GetServiceURL(service *v1alpha1.Service, kubeClient kubernetes.Interface, n
 	if service == nil {
 		return ""
 	}
-	domain := service.Status.Domain
+	domain := service.Status.DeprecatedDomain
+	if domain == "" {
+		if service.Status.Address != nil {
+			domain = service.Status.Address.Hostname
+		}
+	}
 	if domain == "" {
 		return ""
 	}

@@ -23,24 +23,24 @@ type GetBuildPodsOptions struct {
 
 var (
 	getBiuldPodsLong = templates.LongDesc(`
-		Display the knative build pods
+		Display the Tekton build pods
 
 `)
 
 	getBiuldPodsExample = templates.Examples(`
-		# List all the knative build pods
+		# List all the Tekton build pods
 		jx get build pods
 
-		# List all the pending knative build pods 
+		# List all the pending Tekton build pods 
 		jx get build pods -p
 
-		# List all the knative build pods for a given repository
+		# List all the Tekton build pods for a given repository
 		jx get build pods --repo cheese
 
-		# List all the pending knative build pods for a given repository
+		# List all the pending Tekton build pods for a given repository
 		jx get build pods --repo cheese -p
 
-		# List all the knative build pods for a given Pull Request
+		# List all the Tekton build pods for a given Pull Request
 		jx get build pods --repo cheese --branch PR-1234
 	`)
 )
@@ -91,11 +91,6 @@ func (o *GetBuildPodsOptions) Run() error {
 	if o.Namespace != "" {
 		ns = o.Namespace
 	}
-	teamSettings, err := o.TeamSettings()
-	if err != nil {
-		return err
-	}
-	jxPipelines := teamSettings.IsJenkinsXPipelines()
 	pods, err := builds.GetBuildPods(kubeClient, ns)
 	if err != nil {
 		log.Logger().Warnf("Failed to query pods %s", err)
@@ -103,11 +98,7 @@ func (o *GetBuildPodsOptions) Run() error {
 	}
 
 	table := o.CreateTable()
-	if jxPipelines {
-		table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "POD", "GIT URL")
-	} else {
-		table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
-	}
+	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "POD", "GIT URL")
 
 	buildInfos := []*builds.BuildPodInfo{}
 	for _, pod := range pods {
@@ -122,11 +113,7 @@ func (o *GetBuildPodsOptions) Run() error {
 	for _, build := range buildInfos {
 		duration := strings.TrimSuffix(now.Sub(build.CreatedTime).Round(time.Minute).String(), "0s")
 
-		if jxPipelines {
-			table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, build.Context, duration, build.Status(), build.PodName, build.GitURL)
-		} else {
-			table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, build.Context, duration, build.Status(), build.FirstStepImage, build.PodName, build.GitURL)
-		}
+		table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, build.Context, duration, build.Status(), build.PodName, build.GitURL)
 	}
 	table.Render()
 	return nil

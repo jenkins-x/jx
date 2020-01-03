@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type EnvironmentRoleBindingsGetter interface {
 type EnvironmentRoleBindingInterface interface {
 	Create(*v1.EnvironmentRoleBinding) (*v1.EnvironmentRoleBinding, error)
 	Update(*v1.EnvironmentRoleBinding) (*v1.EnvironmentRoleBinding, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.EnvironmentRoleBinding, error)
-	List(opts meta_v1.ListOptions) (*v1.EnvironmentRoleBindingList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.EnvironmentRoleBinding, error)
+	List(opts metav1.ListOptions) (*v1.EnvironmentRoleBindingList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.EnvironmentRoleBinding, err error)
 	EnvironmentRoleBindingExpansion
 }
@@ -45,7 +45,7 @@ func newEnvironmentRoleBindings(c *JenkinsV1Client, namespace string) *environme
 }
 
 // Get takes name of the environmentRoleBinding, and returns the corresponding environmentRoleBinding object, and an error if there is any.
-func (c *environmentRoleBindings) Get(name string, options meta_v1.GetOptions) (result *v1.EnvironmentRoleBinding, err error) {
+func (c *environmentRoleBindings) Get(name string, options metav1.GetOptions) (result *v1.EnvironmentRoleBinding, err error) {
 	result = &v1.EnvironmentRoleBinding{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *environmentRoleBindings) Get(name string, options meta_v1.GetOptions) (
 }
 
 // List takes label and field selectors, and returns the list of EnvironmentRoleBindings that match those selectors.
-func (c *environmentRoleBindings) List(opts meta_v1.ListOptions) (result *v1.EnvironmentRoleBindingList, err error) {
+func (c *environmentRoleBindings) List(opts metav1.ListOptions) (result *v1.EnvironmentRoleBindingList, err error) {
 	result = &v1.EnvironmentRoleBindingList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *environmentRoleBindings) List(opts meta_v1.ListOptions) (result *v1.Env
 }
 
 // Watch returns a watch.Interface that watches the requested environmentRoleBindings.
-func (c *environmentRoleBindings) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *environmentRoleBindings) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *environmentRoleBindings) Update(environmentRoleBinding *v1.EnvironmentR
 }
 
 // Delete takes name of the environmentRoleBinding and deletes it. Returns an error if one occurs.
-func (c *environmentRoleBindings) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *environmentRoleBindings) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("environmentrolebindings").
@@ -116,7 +116,7 @@ func (c *environmentRoleBindings) Delete(name string, options *meta_v1.DeleteOpt
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *environmentRoleBindings) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *environmentRoleBindings) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("environmentrolebindings").

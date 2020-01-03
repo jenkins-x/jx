@@ -19,9 +19,9 @@ items:
         description: the version number for this pipeline which is used as a tag on
           docker images and helm charts
         name: version
+        type: string
       resources:
       - name: workspace
-        outputImageDir: ""
         targetPath: source
         type: git
     steps:
@@ -75,9 +75,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
       resources:
@@ -149,9 +149,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: setup-jx-git-credentials
       resources:
@@ -225,9 +225,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step3
       resources:
@@ -303,9 +303,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step4
       resources:
@@ -381,9 +381,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step5
       resources:
@@ -457,9 +457,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step6
       resources:
@@ -535,9 +535,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step7
       resources:
@@ -613,9 +613,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: step8
       resources:
@@ -687,9 +687,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-mvn-deploy
       resources:
@@ -761,9 +761,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-skaffold-version
       resources:
@@ -835,9 +835,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-container-build
       resources:
@@ -909,9 +909,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-post-build
       resources:
@@ -983,9 +983,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-changelog
       resources:
@@ -1057,9 +1057,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-helm-release
       resources:
@@ -1132,9 +1132,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-jx-promote
       resources:

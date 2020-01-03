@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type PluginsGetter interface {
 type PluginInterface interface {
 	Create(*v1.Plugin) (*v1.Plugin, error)
 	Update(*v1.Plugin) (*v1.Plugin, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.Plugin, error)
-	List(opts meta_v1.ListOptions) (*v1.PluginList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.Plugin, error)
+	List(opts metav1.ListOptions) (*v1.PluginList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.Plugin, err error)
 	PluginExpansion
 }
@@ -45,7 +45,7 @@ func newPlugins(c *JenkinsV1Client, namespace string) *plugins {
 }
 
 // Get takes name of the plugin, and returns the corresponding plugin object, and an error if there is any.
-func (c *plugins) Get(name string, options meta_v1.GetOptions) (result *v1.Plugin, err error) {
+func (c *plugins) Get(name string, options metav1.GetOptions) (result *v1.Plugin, err error) {
 	result = &v1.Plugin{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *plugins) Get(name string, options meta_v1.GetOptions) (result *v1.Plugi
 }
 
 // List takes label and field selectors, and returns the list of Plugins that match those selectors.
-func (c *plugins) List(opts meta_v1.ListOptions) (result *v1.PluginList, err error) {
+func (c *plugins) List(opts metav1.ListOptions) (result *v1.PluginList, err error) {
 	result = &v1.PluginList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *plugins) List(opts meta_v1.ListOptions) (result *v1.PluginList, err err
 }
 
 // Watch returns a watch.Interface that watches the requested plugins.
-func (c *plugins) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *plugins) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *plugins) Update(plugin *v1.Plugin) (result *v1.Plugin, err error) {
 }
 
 // Delete takes name of the plugin and deletes it. Returns an error if one occurs.
-func (c *plugins) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *plugins) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("plugins").
@@ -116,7 +116,7 @@ func (c *plugins) Delete(name string, options *meta_v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *plugins) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *plugins) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("plugins").

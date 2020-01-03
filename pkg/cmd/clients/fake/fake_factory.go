@@ -30,8 +30,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
 	fake_vault "github.com/jenkins-x/jx/pkg/vault/fake"
-	build "github.com/knative/build/pkg/client/clientset/versioned"
-	buildfake "github.com/knative/build/pkg/client/clientset/versioned/fake"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -59,7 +57,6 @@ type FakeFactory struct {
 
 	// cached fake clients
 	apiClient     apiextensionsclientset.Interface
-	buildClient   build.Interface
 	jxClient      versioned.Interface
 	kubeClient    kubernetes.Interface
 	kserveClient  kserve.Interface
@@ -267,14 +264,6 @@ func (f *FakeFactory) CreateApiExtensionsClient() (apiextensionsclientset.Interf
 		f.apiClient = apifake.NewSimpleClientset()
 	}
 	return f.apiClient, nil
-}
-
-// CreateKnativeBuildClient creates knative build client
-func (f *FakeFactory) CreateKnativeBuildClient() (build.Interface, string, error) {
-	if f.buildClient == nil {
-		f.buildClient = buildfake.NewSimpleClientset()
-	}
-	return f.buildClient, f.namespace, nil
 }
 
 // CreateProwJobClient creates a new Kubernetes client for ProwJob resources

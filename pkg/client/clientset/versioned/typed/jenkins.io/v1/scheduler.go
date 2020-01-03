@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type SchedulersGetter interface {
 type SchedulerInterface interface {
 	Create(*v1.Scheduler) (*v1.Scheduler, error)
 	Update(*v1.Scheduler) (*v1.Scheduler, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.Scheduler, error)
-	List(opts meta_v1.ListOptions) (*v1.SchedulerList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.Scheduler, error)
+	List(opts metav1.ListOptions) (*v1.SchedulerList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.Scheduler, err error)
 	SchedulerExpansion
 }
@@ -45,7 +45,7 @@ func newSchedulers(c *JenkinsV1Client, namespace string) *schedulers {
 }
 
 // Get takes name of the scheduler, and returns the corresponding scheduler object, and an error if there is any.
-func (c *schedulers) Get(name string, options meta_v1.GetOptions) (result *v1.Scheduler, err error) {
+func (c *schedulers) Get(name string, options metav1.GetOptions) (result *v1.Scheduler, err error) {
 	result = &v1.Scheduler{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *schedulers) Get(name string, options meta_v1.GetOptions) (result *v1.Sc
 }
 
 // List takes label and field selectors, and returns the list of Schedulers that match those selectors.
-func (c *schedulers) List(opts meta_v1.ListOptions) (result *v1.SchedulerList, err error) {
+func (c *schedulers) List(opts metav1.ListOptions) (result *v1.SchedulerList, err error) {
 	result = &v1.SchedulerList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *schedulers) List(opts meta_v1.ListOptions) (result *v1.SchedulerList, e
 }
 
 // Watch returns a watch.Interface that watches the requested schedulers.
-func (c *schedulers) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *schedulers) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *schedulers) Update(scheduler *v1.Scheduler) (result *v1.Scheduler, err 
 }
 
 // Delete takes name of the scheduler and deletes it. Returns an error if one occurs.
-func (c *schedulers) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *schedulers) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("schedulers").
@@ -116,7 +116,7 @@ func (c *schedulers) Delete(name string, options *meta_v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *schedulers) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *schedulers) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("schedulers").

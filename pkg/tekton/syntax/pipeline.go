@@ -34,6 +34,9 @@ const (
 
 	// WorkingDirRoot is the root directory for working directories.
 	WorkingDirRoot = "/workspace"
+
+	// braceMatchingRegex matches "${inputs.params.foo}" so we can replace it with "$(inputs.params.foo)"
+	braceMatchingRegex = "(\\$(\\{(?P<var>inputs\\.params\\.[_a-zA-Z][_a-zA-Z0-9.-]*)\\}))"
 )
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
@@ -1351,9 +1354,11 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 		t.SetDefaults(context.Background())
 
 		ws := &tektonv1alpha1.TaskResource{
-			Name:       "workspace",
-			TargetPath: params.parentParams.SourceDir,
-			Type:       tektonv1alpha1.PipelineResourceTypeGit,
+			ResourceDeclaration: tektonv1alpha1.ResourceDeclaration{
+				Name:       "workspace",
+				TargetPath: params.parentParams.SourceDir,
+				Type:       tektonv1alpha1.PipelineResourceTypeGit,
+			},
 		}
 
 		t.Spec.Inputs = &tektonv1alpha1.Inputs{
@@ -1361,12 +1366,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 		}
 
 		t.Spec.Outputs = &tektonv1alpha1.Outputs{
-			Resources: []tektonv1alpha1.TaskResource{
-				{
-					Name: "workspace",
-					Type: tektonv1alpha1.PipelineResourceTypeGit,
-				},
-			},
+			Resources: []tektonv1alpha1.TaskResource{*ws},
 		}
 
 		// We don't want to dupe volumes for the Task if there are multiple steps
@@ -1550,9 +1550,9 @@ type generateStepsParams struct {
 	stepCounter     int
 }
 
-func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]corev1.Volume, int, error) {
+func generateSteps(params generateStepsParams) ([]tektonv1alpha1.Step, map[string]corev1.Volume, int, error) {
 	volumes := make(map[string]corev1.Volume)
-	var steps []corev1.Container
+	var steps []tektonv1alpha1.Step
 
 	stepImage := params.inheritedAgent
 	if params.step.GetImage() != "" {
@@ -1634,6 +1634,16 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 		if params.stageParams.parentParams.InterpretMode {
 			c.WorkingDir = targetDir
 		} else {
+			var newCmd []string
+			var newArgs []string
+			for _, c := range c.Command {
+				newCmd = append(newCmd, ReplaceCurlyWithParen(c))
+			}
+			c.Command = newCmd
+			for _, a := range c.Args {
+				newArgs = append(newArgs, ReplaceCurlyWithParen(a))
+			}
+			c.Args = newArgs
 			c.WorkingDir = workingDir
 		}
 		params.stepCounter++
@@ -1647,7 +1657,9 @@ func generateSteps(params generateStepsParams) ([]corev1.Container, map[string]c
 		c.TTY = false
 		c.Env = scopedEnv(params.step.Env, scopedEnv(params.env, c.Env))
 
-		steps = append(steps, *c)
+		steps = append(steps, tektonv1alpha1.Step{
+			Container: *c,
+		})
 	} else if params.step.Loop != nil {
 		for i, v := range params.step.Loop.Values {
 			loopEnv := scopedEnv([]corev1.EnvVar{{Name: params.step.Loop.Variable, Value: v}}, params.env)
@@ -1862,7 +1874,7 @@ func createPipelineTasks(stage *transformedStage, resourceName string) []tektonv
 		return pTasks
 	} else {
 		pTask := tektonv1alpha1.PipelineTask{
-			Name: stage.Stage.taskName(), // TODO: What should this actually be named?
+			Name: stage.Stage.stageLabelName(),
 			TaskRef: tektonv1alpha1.TaskRef{
 				Name: stage.Task.Name,
 			},
@@ -2071,7 +2083,7 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container,
 	}
 
 	return tektonv1alpha1.TaskSpec{
-		Steps: []corev1.Container{*childContainer},
+		Steps: []tektonv1alpha1.Step{{Container: *childContainer}},
 	}, nil
 }
 
@@ -2344,4 +2356,24 @@ func OverrideStep(step Step, override *PipelineOverride) []Step {
 	}
 
 	return []Step{step}
+}
+
+// StringParamValue generates a Tekton ArrayOrString value for the given string
+func StringParamValue(val string) tektonv1alpha1.ArrayOrString {
+	return tektonv1alpha1.ArrayOrString{
+		Type:      tektonv1alpha1.ParamTypeString,
+		StringVal: val,
+	}
+}
+
+// ReplaceCurlyWithParen replaces legacy "${inputs.params.foo}" with "$(inputs.params.foo)"
+func ReplaceCurlyWithParen(input string) string {
+	re := regexp.MustCompile(braceMatchingRegex)
+	matches := re.FindAllStringSubmatch(input, -1)
+	for _, m := range matches {
+		if len(m) >= 3 {
+			input = strings.ReplaceAll(input, m[0], "$("+m[3]+")")
+		}
+	}
+	return input
 }

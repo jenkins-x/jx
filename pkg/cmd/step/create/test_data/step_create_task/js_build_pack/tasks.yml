@@ -19,9 +19,9 @@ items:
         description: the version number for this pipeline which is used as a tag on
           docker images and helm charts
         name: version
+        type: string
       resources:
       - name: workspace
-        outputImageDir: ""
         targetPath: source
         type: git
     steps:
@@ -69,9 +69,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/jenkinsxio/builder-jx:0.1.527
       name: git-merge
       resources:
@@ -133,9 +133,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: setup-jx-git-credentials
       resources:
@@ -197,9 +197,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: build-npm-install
       resources:
@@ -261,9 +261,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: build-npm-test
       resources:
@@ -285,7 +285,7 @@ items:
       workingDir: /workspace/source
     - args:
       - /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source
-        --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/abayer/js-test-repo:${inputs.params.version}
+        --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/abayer/js-test-repo:$(inputs.params.version)
         --cache-repo=gcr.io//cache
       command:
       - /busybox/sh
@@ -327,11 +327,11 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
       name: build-container-build
       resources:
@@ -393,9 +393,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: build-post-build
       resources:
@@ -458,9 +458,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: promote-changelog
       resources:
@@ -522,9 +522,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: promote-helm-release
       resources:
@@ -587,9 +587,9 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       - name: PREVIEW_VERSION
-        value: ${inputs.params.version}
+        value: $(inputs.params.version)
       image: jenkinsxio/builder-nodejs:0.1.235
       name: promote-jx-promote
       resources:

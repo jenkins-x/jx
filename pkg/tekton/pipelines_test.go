@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -37,8 +38,14 @@ func TestPipelineRunIsNotPendingCompletedRun(t *testing.T) {
 		},
 		Spec: v1alpha1.PipelineRunSpec{
 			Params: []v1alpha1.Param{
-				{Name: "version", Value: "v1"},
-				{Name: "build_id", Value: "1"},
+				{
+					Name:  "version",
+					Value: syntax.StringParamValue("v1"),
+				},
+				{
+					Name:  "build_id",
+					Value: syntax.StringParamValue("1"),
+				},
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{
@@ -74,8 +81,8 @@ func TestPipelineRunIsNotPendingRunningSteps(t *testing.T) {
 		},
 		Spec: v1alpha1.PipelineRunSpec{
 			Params: []v1alpha1.Param{
-				{Name: "version", Value: "v1"},
-				{Name: "build_id", Value: "1"},
+				{Name: "version", Value: syntax.StringParamValue("v1")},
+				{Name: "build_id", Value: syntax.StringParamValue("1")},
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{
@@ -113,8 +120,8 @@ func TestPipelineRunIsNotPendingWaitingSteps(t *testing.T) {
 		},
 		Spec: v1alpha1.PipelineRunSpec{
 			Params: []v1alpha1.Param{
-				{Name: "version", Value: "v1"},
-				{Name: "build_id", Value: "1"},
+				{Name: "version", Value: syntax.StringParamValue("v1")},
+				{Name: "build_id", Value: syntax.StringParamValue("1")},
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{
@@ -152,8 +159,8 @@ func TestPipelineRunIsNotPendingWaitingStepsInPodInitializing(t *testing.T) {
 		},
 		Spec: v1alpha1.PipelineRunSpec{
 			Params: []v1alpha1.Param{
-				{Name: "version", Value: "v1"},
-				{Name: "build_id", Value: "1"},
+				{Name: "version", Value: syntax.StringParamValue("v1")},
+				{Name: "build_id", Value: syntax.StringParamValue("1")},
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{

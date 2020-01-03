@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,20 +23,20 @@ var schedulersResource = schema.GroupVersionResource{Group: "jenkins.io", Versio
 var schedulersKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "Scheduler"}
 
 // Get takes name of the scheduler, and returns the corresponding scheduler object, and an error if there is any.
-func (c *FakeSchedulers) Get(name string, options v1.GetOptions) (result *jenkins_io_v1.Scheduler, err error) {
+func (c *FakeSchedulers) Get(name string, options v1.GetOptions) (result *jenkinsiov1.Scheduler, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(schedulersResource, c.ns, name), &jenkins_io_v1.Scheduler{})
+		Invokes(testing.NewGetAction(schedulersResource, c.ns, name), &jenkinsiov1.Scheduler{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Scheduler), err
+	return obj.(*jenkinsiov1.Scheduler), err
 }
 
 // List takes label and field selectors, and returns the list of Schedulers that match those selectors.
-func (c *FakeSchedulers) List(opts v1.ListOptions) (result *jenkins_io_v1.SchedulerList, err error) {
+func (c *FakeSchedulers) List(opts v1.ListOptions) (result *jenkinsiov1.SchedulerList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(schedulersResource, schedulersKind, c.ns, opts), &jenkins_io_v1.SchedulerList{})
+		Invokes(testing.NewListAction(schedulersResource, schedulersKind, c.ns, opts), &jenkinsiov1.SchedulerList{})
 
 	if obj == nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *FakeSchedulers) List(opts v1.ListOptions) (result *jenkins_io_v1.Schedu
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &jenkins_io_v1.SchedulerList{ListMeta: obj.(*jenkins_io_v1.SchedulerList).ListMeta}
-	for _, item := range obj.(*jenkins_io_v1.SchedulerList).Items {
+	list := &jenkinsiov1.SchedulerList{ListMeta: obj.(*jenkinsiov1.SchedulerList).ListMeta}
+	for _, item := range obj.(*jenkinsiov1.SchedulerList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -63,31 +63,31 @@ func (c *FakeSchedulers) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a scheduler and creates it.  Returns the server's representation of the scheduler, and an error, if there is any.
-func (c *FakeSchedulers) Create(scheduler *jenkins_io_v1.Scheduler) (result *jenkins_io_v1.Scheduler, err error) {
+func (c *FakeSchedulers) Create(scheduler *jenkinsiov1.Scheduler) (result *jenkinsiov1.Scheduler, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(schedulersResource, c.ns, scheduler), &jenkins_io_v1.Scheduler{})
+		Invokes(testing.NewCreateAction(schedulersResource, c.ns, scheduler), &jenkinsiov1.Scheduler{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Scheduler), err
+	return obj.(*jenkinsiov1.Scheduler), err
 }
 
 // Update takes the representation of a scheduler and updates it. Returns the server's representation of the scheduler, and an error, if there is any.
-func (c *FakeSchedulers) Update(scheduler *jenkins_io_v1.Scheduler) (result *jenkins_io_v1.Scheduler, err error) {
+func (c *FakeSchedulers) Update(scheduler *jenkinsiov1.Scheduler) (result *jenkinsiov1.Scheduler, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(schedulersResource, c.ns, scheduler), &jenkins_io_v1.Scheduler{})
+		Invokes(testing.NewUpdateAction(schedulersResource, c.ns, scheduler), &jenkinsiov1.Scheduler{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Scheduler), err
+	return obj.(*jenkinsiov1.Scheduler), err
 }
 
 // Delete takes name of the scheduler and deletes it. Returns an error if one occurs.
 func (c *FakeSchedulers) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(schedulersResource, c.ns, name), &jenkins_io_v1.Scheduler{})
+		Invokes(testing.NewDeleteAction(schedulersResource, c.ns, name), &jenkinsiov1.Scheduler{})
 
 	return err
 }
@@ -96,17 +96,17 @@ func (c *FakeSchedulers) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakeSchedulers) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(schedulersResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &jenkins_io_v1.SchedulerList{})
+	_, err := c.Fake.Invokes(action, &jenkinsiov1.SchedulerList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched scheduler.
-func (c *FakeSchedulers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkins_io_v1.Scheduler, err error) {
+func (c *FakeSchedulers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Scheduler, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(schedulersResource, c.ns, name, data, subresources...), &jenkins_io_v1.Scheduler{})
+		Invokes(testing.NewPatchSubresourceAction(schedulersResource, c.ns, name, data, subresources...), &jenkinsiov1.Scheduler{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Scheduler), err
+	return obj.(*jenkinsiov1.Scheduler), err
 }
