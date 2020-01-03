@@ -323,7 +323,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	o.Setup()
 	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
-	o.Agent = prow.KnativeBuildAgent
+	o.Agent = prow.TektonAgent
 
 	data := make(map[string]string)
 	data["domain"] = "dummy.domain.nip.io"
@@ -394,7 +394,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
 
 	p = prowConfig.Presubmits["test/repo"]
-	assert.Equal(t, "knative-build", p[0].Agent)
+	assert.Equal(t, "tekton", p[0].Agent)
 
 	// add test/repo2
 	o.Options.Repos = []string{"test/repo2"}

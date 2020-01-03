@@ -23,7 +23,6 @@ type LogsOptions struct {
 	Filter          string
 	Label           string
 	EditEnvironment bool
-	KNativeBuild    bool
 }
 
 var (
@@ -38,9 +37,6 @@ var (
 
 		# Tails the log of the container foo in the latest pod in deployment myapp
 		jx logs myapp -c foo
-
-		# Tails the log of the latest Knative build pod
-		jx logs -k
 `)
 )
 
@@ -66,7 +62,6 @@ func NewCmdLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "the Environment to look for the Deployment. Defaults to the current environment")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters the available deployments if no deployment argument is provided")
 	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The label to filter the pods if no deployment argument is provided")
-	cmd.Flags().BoolVarP(&options.KNativeBuild, "knative-build", "k", false, "View the logs of the latest Knative build pod")
 	cmd.Flags().BoolVarP(&options.EditEnvironment, "edit", "d", false, "Use my Edit Environment to look for the Deployment pods")
 	return cmd
 }
@@ -115,7 +110,7 @@ func (o *LogsOptions) Run() error {
 	}
 	name := ""
 	if len(args) == 0 {
-		if o.Label == "" && !o.KNativeBuild {
+		if o.Label == "" {
 			n, err := util.PickName(names, "Pick Deployment:", "", o.GetIOFileHandles())
 			if err != nil {
 				return err
@@ -131,12 +126,7 @@ func (o *LogsOptions) Run() error {
 
 	for {
 		pod := ""
-		if o.KNativeBuild {
-			pod, err = o.WaitForReadyKnativeBuildPod(client, ns, false)
-			if pod == "" {
-				return fmt.Errorf("No Knative build pod found for namespace %s", ns)
-			}
-		} else if o.Label != "" {
+		if o.Label != "" {
 			selector, err := parseSelector(o.Label)
 			if err != nil {
 				return err

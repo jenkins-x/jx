@@ -24,11 +24,7 @@ import (
 )
 
 const (
-	Hook = "hook"
-
-	KnativeBuildAgent = "knative-build"
-	TektonAgent       = "tekton"
-	KubernetesAgent   = "kubernetes"
+	TektonAgent = "tekton"
 )
 
 const (
@@ -62,10 +58,8 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowco
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
-	agent := KnativeBuildAgent
-	if teamSettings.GetProwEngine() == v1.ProwEngineTypeTekton {
-		agent = TektonAgent
-	}
+	agent := TektonAgent
+
 	o := Options{
 		KubeClient:           kubeClient,
 		Repos:                repos,

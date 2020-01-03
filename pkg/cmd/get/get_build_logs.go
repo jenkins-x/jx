@@ -27,7 +27,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -64,13 +63,13 @@ var (
 		# Pick a build to view the log based on the repo cheese
 		jx get build log --repo cheese
 
-		# Pick a pending knative build to view the log based 
+		# Pick a pending Tekton build to view the log based 
 		jx get build log -p
 
-		# Pick a pending knative build to view the log based on the repo cheese
+		# Pick a pending Tekton build to view the log based on the repo cheese
 		jx get build log --repo cheese -p
 
-		# Pick a knative build for the 1234 Pull Request on the repo cheese
+		# Pick a Tekton build for the 1234 Pull Request on the repo cheese
 		jx get build log --repo cheese --branch PR-1234
 
 		# View the build logs for a specific tekton build pod
@@ -376,49 +375,6 @@ func (o *CLILogWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) e
 func (o *CLILogWriter) BytesLimit() int {
 	//We are not limiting bytes with this writer
 	return 0
-}
-
-func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
-	log.Logger().Infof("getting the log for pod %s and container %s", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
-	return o.TailLogs(ns, pod.Name, container.Name)
-}
-
-func (o *GetBuildLogsOptions) loadBuilds(kubeClient kubernetes.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, error) {
-	defaultName := ""
-	names := []string{}
-	buildMap := map[string][]builds.BaseBuildInfo{}
-
-	pods, err := builds.GetBuildPods(kubeClient, ns)
-	if err != nil {
-		log.Logger().Warnf("Failed to query pods %s", err)
-		return names, defaultName, buildMap, err
-	}
-
-	buildInfos := []*builds.BuildPodInfo{}
-	for _, pod := range pods {
-		containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
-		if len(containers) > 0 {
-			buildInfo := builds.CreateBuildPodInfo(pod)
-			if o.BuildFilter.BuildMatches(buildInfo) {
-				buildInfos = append(buildInfos, buildInfo)
-			}
-		}
-	}
-	builds.SortBuildPodInfos(buildInfos)
-	if len(buildInfos) == 0 {
-		return names, defaultName, buildMap, fmt.Errorf("no knative builds have been triggered which match the current filter")
-	}
-
-	for _, build := range buildInfos {
-		name := build.Pipeline + " #" + build.Build
-		names = append(names, name)
-		buildMap[name] = append(buildMap[name], build)
-
-		if build.Branch == "master" {
-			defaultName = name
-		}
-	}
-	return names, defaultName, buildMap, nil
 }
 
 // loadPipelines loads all available pipelines as PipelineRunInfos.
