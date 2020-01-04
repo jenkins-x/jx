@@ -220,7 +220,7 @@ func TestGatherRequirements_SetsDefaults(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "test-step-verify-preinstall-")
 	require.NoError(t, err)
 
-	requirementsFileName := filepath.Join(tempDir, "jx-requirements.yaml")
+	requirementsFileName := filepath.Join(tempDir, "jx-requirements.yml")
 
 	testConfig := &config.RequirementsConfig{}
 	testConfig.Cluster.Provider = "gke"

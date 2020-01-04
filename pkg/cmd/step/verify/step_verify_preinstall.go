@@ -258,7 +258,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		}
 	}
 
-	// Lets update the TeamSettings with the VersionStream data from the jx-requirements.yaml file so we make sure
+	// Lets update the TeamSettings with the VersionStream data from the jx-requirements.yml file so we make sure
 	// we are upgrading with the latest versions
 	log.Logger().Infof("Cluster looks good, you are ready to '%s' now!", info("jx boot"))
 	fmt.Println()
@@ -671,7 +671,7 @@ func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config
 		}
 
 		if requirements.Cluster.EnvironmentGitPublic {
-			log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s jx-requirements.yaml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("false"))
+			log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s jx-requirements.yml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("false"))
 		} else {
 			err = o.verifyPrivateRepos(requirements)
 			if err != nil {
@@ -683,7 +683,7 @@ func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config
 }
 
 func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.RequirementsConfig) error {
-	log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s in jx-requirements.yaml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("true"))
+	log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s in jx-requirements.yml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("true"))
 
 	if o.BatchMode {
 		return nil
