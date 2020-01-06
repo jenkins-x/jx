@@ -647,7 +647,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 }
 
 func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config.RequirementsConfig) error {
-	requirements.Cluster.EnvironmentGitOwner = strings.TrimSpace(strings.ToLower(requirements.Cluster.EnvironmentGitOwner))
+	requirements.Cluster.EnvironmentGitOwner = strings.TrimSpace(requirements.Cluster.EnvironmentGitOwner)
 
 	// lets fix up any missing or incorrect git kinds for public git servers
 	if gits.IsGitHubServerURL(requirements.Cluster.GitServer) {

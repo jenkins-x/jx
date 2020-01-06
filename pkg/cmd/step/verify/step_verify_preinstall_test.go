@@ -216,6 +216,45 @@ func Test_abort_private_repos_with_github_provider(t *testing.T) {
 	assert.Equal(t, "cannot continue without completed git requirements", err.Error())
 }
 
+func TestGatherRequirements_PreserveEnvironmentGitOwnerCase(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "test-step-verify-preinstall-")
+	require.NoError(t, err)
+
+	requirementsFileName := filepath.Join(tempDir, "jx-requirements.yml")
+
+	testConfig := &config.RequirementsConfig{}
+	testConfig.Cluster.Provider = "gke"
+	testConfig.Cluster.EnvironmentGitOwner = "ACME"
+	testConfig.Cluster.ProjectID = "test"
+	testConfig.Cluster.Zone = "exzone"
+	testConfig.Cluster.ClusterName = "acme"
+
+	testOptions := &StepVerifyPreInstallOptions{
+		WorkloadIdentity: true,
+		StepVerifyOptions: StepVerifyOptions{
+			StepOptions: step.StepOptions{
+				CommonOptions: &opts.CommonOptions{
+					BatchMode: true,
+				},
+			},
+		},
+	}
+
+	_, err = testOptions.gatherRequirements(testConfig, requirementsFileName)
+	assert.NoError(t, err)
+
+	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "jx", requirementsWithDefaults.Cluster.Namespace)
+	assert.Equal(t, "https://github.com", requirementsWithDefaults.Cluster.GitServer)
+	assert.Equal(t, "github", requirementsWithDefaults.Cluster.GitKind)
+	assert.Equal(t, "github", requirementsWithDefaults.Cluster.GitName)
+	assert.Equal(t, "-jx.", requirementsWithDefaults.Ingress.NamespaceSubDomain)
+	assert.Equal(t, config.RepositoryTypeNexus, requirementsWithDefaults.Repository)
+	assert.Equal(t, "ACME", requirementsWithDefaults.Cluster.EnvironmentGitOwner)
+}
+
 func TestGatherRequirements_SetsDefaults(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "test-step-verify-preinstall-")
 	require.NoError(t, err)
