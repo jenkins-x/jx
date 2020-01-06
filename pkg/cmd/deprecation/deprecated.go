@@ -171,9 +171,6 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 		date: "Feb 1 2020",
 		info: "This is now replaced by apps",
 	},
-	"edit deploy": {
-		date: "Feb 1 2020",
-	},
 	"edit extensionsrepository": {
 		date: "Feb 1 2020",
 		info: "This is now replaced by apps",
