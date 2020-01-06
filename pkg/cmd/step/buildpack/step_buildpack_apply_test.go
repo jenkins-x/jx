@@ -62,7 +62,7 @@ func testCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir 
 		OutputFile:   actualFile,
 	}
 	if testcase == "prow" || strings.HasPrefix(testcase, "prow_") {
-		arguments.JenkinsfileRunner = true
+		arguments.IsTekton = true
 		arguments.ClearContainerNames = true
 	}
 

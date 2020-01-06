@@ -57,7 +57,6 @@ func TestCheckFlags(t *testing.T) {
 		tekton         bool
 		prow           bool
 		staticJenkins  bool
-		knativeBuild   bool
 		kaniko         bool
 		provider       string
 		dockerRegistry string
@@ -72,7 +71,6 @@ func TestCheckFlags(t *testing.T) {
 			tekton:         false,
 			prow:           false,
 			staticJenkins:  true,
-			knativeBuild:   false,
 			kaniko:         false,
 			dockerRegistry: "",
 			err:            nil,
@@ -87,7 +85,6 @@ func TestCheckFlags(t *testing.T) {
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
-			knativeBuild:   false,
 			kaniko:         true,
 			dockerRegistry: "gcr.io",
 			err:            nil,
@@ -102,7 +99,6 @@ func TestCheckFlags(t *testing.T) {
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
-			knativeBuild:   false,
 			kaniko:         true,
 			dockerRegistry: "gcr.io",
 			err:            nil,
@@ -117,7 +113,6 @@ func TestCheckFlags(t *testing.T) {
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
-			knativeBuild:   false,
 			kaniko:         true,
 			dockerRegistry: "gcr.io",
 			err:            nil,
@@ -132,7 +127,6 @@ func TestCheckFlags(t *testing.T) {
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
-			knativeBuild:   false,
 			kaniko:         false,
 			dockerRegistry: "",
 			err:            nil,
@@ -148,7 +142,6 @@ func TestCheckFlags(t *testing.T) {
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
-			knativeBuild:   false,
 			kaniko:         true,
 			dockerRegistry: "",
 			err:            nil,
@@ -164,42 +157,8 @@ func TestCheckFlags(t *testing.T) {
 			tekton:         true,
 			prow:           true,
 			staticJenkins:  false,
-			knativeBuild:   false,
 			kaniko:         true,
 			dockerRegistry: "my.docker.registry.io",
-			err:            nil,
-		},
-		{
-			name: "prow_and_knative",
-			in: &create.InstallFlags{
-				Prow:         true,
-				KnativeBuild: true,
-				Provider:     cloud.GKE,
-			},
-			nextGeneration: false,
-			tekton:         false,
-			prow:           true,
-			staticJenkins:  false,
-			knativeBuild:   true,
-			kaniko:         false,
-			dockerRegistry: "",
-			err:            nil,
-		},
-		{
-			name: "prow_and_knative_and_kaniko",
-			in: &create.InstallFlags{
-				Prow:         true,
-				KnativeBuild: true,
-				Kaniko:       true,
-				Provider:     cloud.GKE,
-			},
-			nextGeneration: false,
-			tekton:         false,
-			prow:           true,
-			staticJenkins:  false,
-			knativeBuild:   true,
-			kaniko:         true,
-			dockerRegistry: "gcr.io",
 			err:            nil,
 		},
 		{
@@ -217,14 +176,6 @@ func TestCheckFlags(t *testing.T) {
 				StaticJenkins: true,
 			},
 			err: errors.New("incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated"),
-		},
-		{
-			name: "tekton_and_knative",
-			in: &create.InstallFlags{
-				Tekton:       true,
-				KnativeBuild: true,
-			},
-			err: errors.New("incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated"),
 		},
 	}
 
@@ -249,7 +200,6 @@ func TestCheckFlags(t *testing.T) {
 				assert.Equal(t, tt.tekton, opts.Flags.Tekton, "Tekton flag is not as expected")
 				assert.Equal(t, tt.prow, opts.Flags.Prow, "Prow flag is not as expected")
 				assert.Equal(t, tt.staticJenkins, opts.Flags.StaticJenkins, "StaticJenkins flag is not as expected")
-				assert.Equal(t, tt.knativeBuild, opts.Flags.KnativeBuild, "KnativeBuild flag is not as expected")
 				assert.Equal(t, tt.kaniko, opts.Flags.Kaniko, "Kaniko flag is not as expected")
 				if tt.dockerRegistry != "" {
 					assert.Equal(t, tt.dockerRegistry, opts.Flags.DockerRegistry, "DockerRegistry flag is not as expected")

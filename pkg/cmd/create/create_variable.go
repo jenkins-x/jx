@@ -192,8 +192,7 @@ func (o *CreateVariableOptions) loadEnvVars(projectConfig *config.ProjectConfig)
 		if !exists {
 			return answer, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
 		}
-		jenkinsfileRunner := true
-		buildPackPipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
+		buildPackPipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
 		if err != nil {
 			return answer, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 		}

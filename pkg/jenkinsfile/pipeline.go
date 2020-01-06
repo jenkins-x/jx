@@ -134,7 +134,7 @@ type CreateJenkinsfileArguments struct {
 	ConfigFile          string
 	TemplateFile        string
 	OutputFile          string
-	JenkinsfileRunner   bool
+	IsTekton            bool
 	ClearContainerNames bool
 }
 
@@ -481,12 +481,12 @@ func defaultDirAroundSteps(dir string, steps []*syntax.Step) []*syntax.Step {
 }
 
 // LoadPipelineConfig returns the pipeline configuration
-func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool) (*PipelineConfig, error) {
-	return LoadPipelineConfigAndMaybeValidate(fileName, resolver, jenkinsfileRunner, clearContainer, true)
+func LoadPipelineConfig(fileName string, resolver ImportFileResolver, isTekton bool, clearContainer bool) (*PipelineConfig, error) {
+	return LoadPipelineConfigAndMaybeValidate(fileName, resolver, isTekton, clearContainer, true)
 }
 
 // LoadPipelineConfigAndMaybeValidate returns the pipeline configuration, optionally after validating the YAML.
-func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool, skipYamlValidation bool) (*PipelineConfig, error) {
+func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileResolver, isTekton bool, clearContainer bool, skipYamlValidation bool) (*PipelineConfig, error) {
 	config := PipelineConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
@@ -510,7 +510,7 @@ func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileReso
 		return &config, errors.Wrapf(err, "Failed to unmarshal file %s", fileName)
 	}
 	pipelines := &config.Pipelines
-	pipelines.RemoveWhenStatements(jenkinsfileRunner)
+	pipelines.RemoveWhenStatements(isTekton)
 	if clearContainer {
 		// lets force any agent for prow / jenkinsfile runner
 		config.Agent = clearContainerAndLabel(config.Agent)
@@ -541,7 +541,7 @@ func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileReso
 	if !exists {
 		return &config, fmt.Errorf("base pipeline file does not exist %s", file)
 	}
-	basePipeline, err := LoadPipelineConfig(file, resolver, jenkinsfileRunner, clearContainer)
+	basePipeline, err := LoadPipelineConfig(file, resolver, isTekton, clearContainer)
 	if err != nil {
 		return &config, errors.Wrapf(err, "Failed to base pipeline file %s", file)
 	}
@@ -761,7 +761,7 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	if err != nil {
 		return err
 	}
-	config, err := LoadPipelineConfig(a.ConfigFile, resolver, a.JenkinsfileRunner, a.ClearContainerNames)
+	config, err := LoadPipelineConfig(a.ConfigFile, resolver, a.IsTekton, a.ClearContainerNames)
 	if err != nil {
 		return err
 	}
