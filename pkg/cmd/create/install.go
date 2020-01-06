@@ -139,7 +139,6 @@ type InstallFlags struct {
 	Vault                       bool
 	RecreateVaultBucket         bool
 	Tekton                      bool
-	KnativeBuild                bool
 	BuildPackName               string
 	Kaniko                      bool
 	GitOpsMode                  bool
@@ -380,7 +379,6 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, prowFlagName, "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
 	cmd.Flags().BoolVarP(&flags.Tekton, tektonFlagName, "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline) along with Prow to provide Serverless Jenkins. Otherwise we default to use Knative Build if you enable Prow")
-	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the strategic tekton")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, gitOpsFlagName, "", false, "Creates a git repository for the Dev environment to manage the installation, configuration, upgrade and addition of Apps in Jenkins X all via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
@@ -436,19 +434,8 @@ func (options *InstallOptions) CheckFlags() error {
 		return fmt.Errorf("incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated")
 	}
 
-	if flags.KnativeBuild && flags.Tekton {
-		return fmt.Errorf("incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
-	}
-
-	if flags.KnativeBuild {
-		log.Logger().Warnf("Support for Knative Build is now deprecated. Please use '--tekton' instead. More details here: https://jenkins-x.io/architecture/jenkins-x-pipelines/\n")
-		flags.Tekton = false
-	}
-
 	if flags.Prow {
 		flags.StaticJenkins = false
-	}
-	if flags.Prow && !flags.KnativeBuild {
 		flags.Tekton = true
 	}
 
@@ -461,7 +448,6 @@ func (options *InstallOptions) CheckFlags() error {
 
 	if flags.NextGeneration {
 		flags.StaticJenkins = false
-		flags.KnativeBuild = false
 		flags.GitOpsMode = true
 		flags.Vault = true
 		flags.Prow = true
@@ -542,9 +528,6 @@ func (options *InstallOptions) CheckFlags() error {
 func (options *InstallOptions) CheckFeatures() error {
 	if options.Flags.Tekton {
 		return features.CheckTektonEnabled()
-	}
-	if options.Flags.Prow && options.Flags.KnativeBuild {
-		return features.CheckJenkinsFileRunner()
 	}
 	return nil
 }
@@ -1203,9 +1186,7 @@ func (options *InstallOptions) selectJenkinsInstallation() error {
 			}
 			if jenkinsInstallOption == ServerlessJenkins {
 				options.Flags.Prow = true
-				if !options.Flags.KnativeBuild {
-					options.Flags.Tekton = true
-				}
+				options.Flags.Tekton = true
 			}
 		} else {
 			//determine which install type is configured
@@ -1619,11 +1600,8 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 			env.Spec.WebHookEngine = v1.WebHookEngineProw
 			settings := &env.Spec.TeamSettings
 			settings.PromotionEngine = v1.PromotionEngineProw
-			settings.ProwEngine = v1.ProwEngineTypeKnativeBuild
-			if options.Flags.Tekton {
-				settings.ProwEngine = v1.ProwEngineTypeTekton
-				settings.ImportMode = v1.ImportModeTypeYAML
-			}
+			settings.ProwEngine = v1.ProwEngineTypeTekton
+			settings.ImportMode = v1.ImportModeTypeYAML
 			log.Logger().Debugf("Configuring the TeamSettings for Prow with engine %s", string(settings.ProwEngine))
 			return nil
 		}

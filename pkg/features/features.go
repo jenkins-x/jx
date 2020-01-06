@@ -22,9 +22,8 @@ var oss bool
 type Features struct {
 
 	// types of Jenkins X installations
-	Tekton            server.RoxFlag
-	StaticJenkins     server.RoxFlag
-	JenkinsFileRunner server.RoxFlag
+	Tekton        server.RoxFlag
+	StaticJenkins server.RoxFlag
 
 	// Supported Cloud Providers
 	AKS        server.RoxFlag
@@ -46,23 +45,22 @@ type Features struct {
 }
 
 var features = &Features{
-	Tekton:            server.NewRoxFlag(false),
-	StaticJenkins:     server.NewRoxFlag(false),
-	JenkinsFileRunner: server.NewRoxFlag(false),
-	AKS:               server.NewRoxFlag(false),
-	AWS:               server.NewRoxFlag(false),
-	EKS:               server.NewRoxFlag(false),
-	GKE:               server.NewRoxFlag(false),
-	ICP:               server.NewRoxFlag(false),
-	IKS:               server.NewRoxFlag(false),
-	OKE:               server.NewRoxFlag(false),
-	Kubernetes:        server.NewRoxFlag(false),
-	Minikube:          server.NewRoxFlag(false),
-	Minishift:         server.NewRoxFlag(false),
-	Openshift:         server.NewRoxFlag(false),
-	Java:              server.NewRoxFlag(false),
-	Go:                server.NewRoxFlag(false),
-	Node:              server.NewRoxFlag(false),
+	Tekton:        server.NewRoxFlag(false),
+	StaticJenkins: server.NewRoxFlag(false),
+	AKS:           server.NewRoxFlag(false),
+	AWS:           server.NewRoxFlag(false),
+	EKS:           server.NewRoxFlag(false),
+	GKE:           server.NewRoxFlag(false),
+	ICP:           server.NewRoxFlag(false),
+	IKS:           server.NewRoxFlag(false),
+	OKE:           server.NewRoxFlag(false),
+	Kubernetes:    server.NewRoxFlag(false),
+	Minikube:      server.NewRoxFlag(false),
+	Minishift:     server.NewRoxFlag(false),
+	Openshift:     server.NewRoxFlag(false),
+	Java:          server.NewRoxFlag(false),
+	Go:            server.NewRoxFlag(false),
+	Node:          server.NewRoxFlag(false),
 }
 
 var rox *server.Rox
@@ -116,18 +114,6 @@ func CheckStaticJenkins() error {
 		log.Logger().Debug("Checking if static jenkins master enabled")
 		if !features.StaticJenkins.IsEnabled(ctx) {
 			return errors.New("static jenkins master not supported in CloudBees Distribution of Jenkins X")
-		}
-		log.Logger().Debug("Static Jenkins Master enabled")
-	}
-	return nil
-}
-
-// CheckJenkinsFileRunner checks if jenkins file runner is enabled
-func CheckJenkinsFileRunner() error {
-	if !oss {
-		log.Logger().Debug("Checking if Jenkins File Runner enabled")
-		if !features.JenkinsFileRunner.IsEnabled(ctx) {
-			return errors.New("jenkins file runner not supported in CloudBees Distribution of Jenkins X")
 		}
 		log.Logger().Debug("Static Jenkins Master enabled")
 	}

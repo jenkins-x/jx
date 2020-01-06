@@ -305,7 +305,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 						ConfigFile:          pipelineFile,
 						TemplateFile:        templateFile,
 						OutputFile:          generateJenkinsPath,
-						JenkinsfileRunner:   prow,
+						IsTekton:            prow,
 						ClearContainerNames: prow,
 					}
 					err = arguments.GenerateJenkinsfile(moduleResolver.AsImportResolver())

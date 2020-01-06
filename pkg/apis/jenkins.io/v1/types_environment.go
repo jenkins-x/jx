@@ -122,9 +122,6 @@ const (
 type ProwEngineType string
 
 const (
-	// ProwEngineTypeKnativeBuild represents the Knative Build engine for use with Prow
-	ProwEngineTypeKnativeBuild ProwEngineType = "KnativeBuild"
-
 	// ProwEngineTypeTekton represents using Tekton as the execution engine with Prow
 	ProwEngineTypeTekton ProwEngineType = "Tekton"
 )
