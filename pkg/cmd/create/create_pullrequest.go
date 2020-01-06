@@ -160,6 +160,7 @@ func (o *CreatePullRequestOptions) createPullRequestDetails(gitInfo *gits.GitRep
 		Title:      title,
 		Message:    o.Body,
 		BranchName: branchName,
+		Labels:     o.Labels,
 	}, nil
 
 }
