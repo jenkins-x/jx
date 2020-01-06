@@ -13,14 +13,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/versionstream"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -530,7 +529,11 @@ func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
 		return err
 	}
 
-	if err := validateStages(j.Stages, j.Agent); err != nil {
+	var volumes []*corev1.Volume
+	if j.Options != nil && len(j.Options.Volumes) > 0 {
+		volumes = append(volumes, j.Options.Volumes...)
+	}
+	if err := validateStages(j.Stages, j.Agent, volumes); err != nil {
 		return err
 	}
 
@@ -538,7 +541,7 @@ func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
 		return err
 	}
 
-	if err := validateRootOptions(j.Options).ViaField("options"); err != nil {
+	if err := validateRootOptions(j.Options, volumes).ViaField("options"); err != nil {
 		return err
 	}
 
@@ -576,7 +579,7 @@ func validateAgent(a *Agent) *apis.FieldError {
 
 var containsASCIILetter = regexp.MustCompile(`[a-zA-Z]`).MatchString
 
-func validateStage(s Stage, parentAgent *Agent) *apis.FieldError {
+func validateStage(s Stage, parentAgent *Agent, parentVolumes []*corev1.Volume) *apis.FieldError {
 	if len(s.Steps) == 0 && len(s.Stages) == 0 && len(s.Parallel) == 0 {
 		return apis.ErrMissingOneOf("steps", "stages", "parallel")
 	}
@@ -586,6 +589,13 @@ func validateStage(s Stage, parentAgent *Agent) *apis.FieldError {
 			Message: "Stage name must contain at least one ASCII letter",
 			Paths:   []string{"name"},
 		}
+	}
+
+	var volumes []*corev1.Volume
+
+	volumes = append(volumes, parentVolumes...)
+	if s.Options != nil && s.Options.RootOptions != nil && len(s.Options.Volumes) > 0 {
+		volumes = append(volumes, s.Options.Volumes...)
 	}
 
 	stageAgent := s.Agent.DeepCopy()
@@ -639,7 +649,7 @@ func validateStage(s Stage, parentAgent *Agent) *apis.FieldError {
 			return apis.ErrMultipleOneOf("steps", "stages", "parallel")
 		}
 		for i, stage := range s.Stages {
-			if err := validateStage(stage, parentAgent).ViaFieldIndex("stages", i); err != nil {
+			if err := validateStage(stage, parentAgent, volumes).ViaFieldIndex("stages", i); err != nil {
 				return err
 			}
 		}
@@ -647,13 +657,13 @@ func validateStage(s Stage, parentAgent *Agent) *apis.FieldError {
 
 	if len(s.Parallel) > 0 {
 		for i, stage := range s.Parallel {
-			if err := validateStage(stage, parentAgent).ViaFieldIndex("parallel", i); err != nil {
+			if err := validateStage(stage, parentAgent, volumes).ViaFieldIndex("parallel", i); err != nil {
 				return nil
 			}
 		}
 	}
 
-	return validateStageOptions(s.Options).ViaField("options")
+	return validateStageOptions(s.Options, volumes).ViaField("options")
 }
 
 func moreThanOneAreTrue(vals ...bool) bool {
@@ -757,13 +767,13 @@ func validateLoop(l *Loop) *apis.FieldError {
 	return nil
 }
 
-func validateStages(stages []Stage, parentAgent *Agent) *apis.FieldError {
+func validateStages(stages []Stage, parentAgent *Agent, parentVolumes []*corev1.Volume) *apis.FieldError {
 	if len(stages) == 0 {
 		return apis.ErrMissingField("stages")
 	}
 
 	for i, s := range stages {
-		if err := validateStage(s, parentAgent).ViaFieldIndex("stages", i); err != nil {
+		if err := validateStage(s, parentAgent, parentVolumes).ViaFieldIndex("stages", i); err != nil {
 			return err
 		}
 	}
@@ -771,7 +781,7 @@ func validateStages(stages []Stage, parentAgent *Agent) *apis.FieldError {
 	return nil
 }
 
-func validateRootOptions(o *RootOptions) *apis.FieldError {
+func validateRootOptions(o *RootOptions, volumes []*corev1.Volume) *apis.FieldError {
 	if o != nil {
 		if o.Timeout != nil {
 			if err := validateTimeout(o.Timeout); err != nil {
@@ -793,7 +803,7 @@ func validateRootOptions(o *RootOptions) *apis.FieldError {
 			}
 		}
 
-		return validateContainerOptions(o.ContainerOptions).ViaField("containerOptions")
+		return validateContainerOptions(o.ContainerOptions, volumes).ViaField("containerOptions")
 	}
 
 	return nil
@@ -809,7 +819,7 @@ func validateVolume(v *corev1.Volume) *apis.FieldError {
 	return nil
 }
 
-func validateContainerOptions(c *corev1.Container) *apis.FieldError {
+func validateContainerOptions(c *corev1.Container, volumes []*corev1.Volume) *apis.FieldError {
 	if c != nil {
 		if len(c.Command) != 0 {
 			return &apis.FieldError{
@@ -853,12 +863,37 @@ func validateContainerOptions(c *corev1.Container) *apis.FieldError {
 				Paths:   []string{"tty"},
 			}
 		}
+		if len(c.VolumeMounts) > 0 {
+			for i, m := range c.VolumeMounts {
+				if !isVolumeMountValid(m, volumes) {
+					fieldErr := &apis.FieldError{
+						Message: fmt.Sprintf("Volume mount name %s not found in volumes for stage or pipeline", m.Name),
+						Paths:   []string{"name"},
+					}
+
+					return fieldErr.ViaFieldIndex("volumeMounts", i)
+				}
+			}
+		}
 	}
 
 	return nil
 }
 
-func validateStageOptions(o *StageOptions) *apis.FieldError {
+func isVolumeMountValid(mount corev1.VolumeMount, volumes []*corev1.Volume) bool {
+	foundVolume := false
+
+	for _, v := range volumes {
+		if v.Name == mount.Name {
+			foundVolume = true
+			break
+		}
+	}
+
+	return foundVolume
+}
+
+func validateStageOptions(o *StageOptions, volumes []*corev1.Volume) *apis.FieldError {
 	if o != nil {
 		if err := validateStash(o.Stash); err != nil {
 			return err.ViaField("stash")
@@ -883,7 +918,7 @@ func validateStageOptions(o *StageOptions) *apis.FieldError {
 			}
 		}
 
-		return validateRootOptions(o.RootOptions)
+		return validateRootOptions(o.RootOptions, volumes)
 	}
 
 	return nil

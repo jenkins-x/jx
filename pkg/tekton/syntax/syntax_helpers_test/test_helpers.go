@@ -269,6 +269,16 @@ func ContainerSecurityContext(privileged bool) builder.ContainerOp {
 	}
 }
 
+// VolumeMount adds a VolumeMount to the container options
+func VolumeMount(name string, mountPath string) builder.ContainerOp {
+	return func(container *corev1.Container) {
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			Name:      name,
+			MountPath: mountPath,
+		})
+	}
+}
+
 // EnvVarFrom adds an environment variable using EnvVarSource to the container options
 func EnvVarFrom(name string, source *corev1.EnvVarSource) builder.ContainerOp {
 	return func(container *corev1.Container) {

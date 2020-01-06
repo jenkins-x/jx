@@ -1201,6 +1201,10 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 								},
 							},
 						}),
+						sh.StageContainerOptions(
+							sh.VolumeMount("top-level-volume", "/mnt/top-level-volume"),
+							sh.VolumeMount("stage-level-volume", "/mnt/stage-level-volume"),
+						),
 					),
 					sh.StageStep(
 						sh.StepCmd("echo"),
@@ -1220,8 +1224,20 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("source"))),
-						tb.Step("git-merge", resolvedGitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
-						tb.Step("a-step-with-spaces-and-such", "some-image:0.0.1", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
+						tb.Step("git-merge", resolvedGitMergeImage,
+							tb.Command("jx"),
+							tb.Args("step", "git", "merge", "--verbose"),
+							workingDir("/workspace/source"),
+							sh.VolumeMount("top-level-volume", "/mnt/top-level-volume"),
+							sh.VolumeMount("stage-level-volume", "/mnt/stage-level-volume"),
+						),
+						tb.Step("a-step-with-spaces-and-such", "some-image:0.0.1",
+							tb.Command("/bin/sh", "-c"),
+							tb.Args("echo hello world"),
+							workingDir("/workspace/source"),
+							sh.VolumeMount("top-level-volume", "/mnt/top-level-volume"),
+							sh.VolumeMount("stage-level-volume", "/mnt/stage-level-volume"),
+						),
 						tb.TaskVolume("stage-level-volume", tb.VolumeSource(corev1.VolumeSource{
 							GCEPersistentDisk: &corev1.GCEPersistentDiskVolumeSource{
 								PDName: "stage-level-volume",
@@ -1742,6 +1758,13 @@ func TestFailedValidation(t *testing.T) {
 		{
 			name:          "volume_missing_name",
 			expectedError: apis.ErrMissingField("name").ViaFieldIndex("volumes", 0).ViaField("options"),
+		},
+		{
+			name: "top_level_missing_volume",
+			expectedError: (&apis.FieldError{
+				Message: "Volume mount name not-present not found in volumes for stage or pipeline",
+				Paths:   []string{"name"},
+			}).ViaFieldIndex("volumeMounts", 0).ViaField("containerOptions").ViaField("options"),
 		},
 	}
 

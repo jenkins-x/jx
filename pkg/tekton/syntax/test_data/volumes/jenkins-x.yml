@@ -17,6 +17,12 @@ pipelineConfig:
                 - name: stage-level-volume
                   gcePersistentDisk:
                     pdName: stage-level-volume
+              containerOptions:
+                volumeMounts:
+                  - name: top-level-volume
+                    mountPath: /mnt/top-level-volume
+                  - name: stage-level-volume
+                    mountPath: /mnt/stage-level-volume
             steps:
               - command: echo
                 args:

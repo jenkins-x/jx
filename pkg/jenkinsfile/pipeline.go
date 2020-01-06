@@ -1003,6 +1003,12 @@ func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments
 					parsed.Options = &syntax.RootOptions{}
 				}
 				parsed.Options.ContainerOptions = &container
+				for _, v := range podTemplate.Spec.Volumes {
+					parsed.Options.Volumes = append(parsed.Options.Volumes, &corev1.Volume{
+						Name:         v.Name,
+						VolumeSource: v.VolumeSource,
+					})
+				}
 			}
 		}
 	}
