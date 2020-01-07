@@ -20,11 +20,12 @@ import (
 type StepHelmInstallOptions struct {
 	StepHelmOptions
 
-	Name        string
-	Namespace   string
-	Version     string
-	Values      []string
-	ValuesFiles []string
+	Name         string
+	Namespace    string
+	Version      string
+	Values       []string
+	ValueStrings []string
+	ValuesFiles  []string
 }
 
 var (
@@ -66,6 +67,7 @@ func NewCmdStepHelmInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to install. Defaults to the latest")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The namespace to install into. Defaults to the current namespace")
 	cmd.Flags().StringArrayVarP(&options.Values, "set", "", []string{}, "The values to override in the helm chart")
+	cmd.Flags().StringArrayVarP(&options.ValueStrings, "set-string", "", []string{}, "The STRING values to override in the helm chart")
 	cmd.Flags().StringArrayVarP(&options.ValuesFiles, "set-file", "", []string{}, "The values files to override values in the helm chart")
 
 	return cmd
@@ -94,12 +96,16 @@ func (o *StepHelmInstallOptions) Run() error {
 	if o.Version == "" {
 		version = ""
 	}
+
+	SetValues, setStrings := o.getChartValues(ns)
+
 	helmOptions := helm.InstallChartOptions{
 		Chart:       chart,
 		ReleaseName: releaseName,
 		Version:     version,
 		Ns:          ns,
-		SetValues:   o.Values,
+		SetValues:   append(SetValues, o.Values...),
+		SetStrings:  append(setStrings, o.ValueStrings...),
 		ValueFiles:  o.ValuesFiles,
 	}
 	err = o.InstallChartWithOptions(helmOptions)

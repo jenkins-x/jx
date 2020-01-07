@@ -291,6 +291,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 			pegomock.AnyBool(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())).
@@ -348,6 +349,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 				pegomock.AnyInt(),
 				pegomock.AnyBool(),
 				pegomock.AnyBool(),
+				pegomock.AnyStringSlice(),
 				pegomock.AnyStringSlice(),
 				pegomock.AnyStringSlice(),
 				pegomock.EqString(kube.DefaultChartMuseumURL),
@@ -436,6 +438,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 			pegomock.AnyBool(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())).
@@ -478,6 +481,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 				pegomock.AnyInt(),
 				pegomock.AnyBool(),
 				pegomock.AnyBool(),
+				pegomock.AnyStringSlice(),
 				pegomock.AnyStringSlice(),
 				pegomock.AnyStringSlice(),
 				pegomock.EqString(kube.DefaultChartMuseumURL),
@@ -715,6 +719,7 @@ func TestAddApp(t *testing.T) {
 			pegomock.AnyBool(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())
@@ -786,6 +791,7 @@ func TestAddAppWithShortName(t *testing.T) {
 			pegomock.AnyBool(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())
@@ -843,6 +849,7 @@ func TestAddAppFromPath(t *testing.T) {
 			pegomock.AnyInt(),
 			pegomock.AnyBool(),
 			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyString(),
@@ -904,6 +911,7 @@ func TestAddLatestApp(t *testing.T) {
 			pegomock.AnyInt(),
 			pegomock.AnyBool(),
 			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
@@ -1231,7 +1239,7 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
   "description": "test values.yaml",
   "type": "object",
   "properties": {
-    "enablePersistentStorage": { 
+    "enablePersistentStorage": {
       "type": "boolean"
     }
     },
@@ -1239,8 +1247,8 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
       "properties": { "enablePersistentStorage": { "const": "true", "type": "boolean" } }
     },
     "then": {
-      "properties": { "databaseConnectionUrl": { "type": "string" }, 
-                      "databaseUsername": { "type": "string"}, 
+      "properties": { "databaseConnectionUrl": { "type": "string" },
+                      "databaseUsername": { "type": "string"},
                       "databasePassword": { "type": "string", "format" : "password"} }
     }}`),
 				},

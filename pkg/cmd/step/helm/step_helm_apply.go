@@ -54,7 +54,7 @@ var (
 `)
 
 	StepHelmApplyExample = templates.Examples(`
-		# apply the chart in the env folder to namespace jx-staging 
+		# apply the chart in the env folder to namespace jx-staging
 		jx step helm apply --dir env --namespace jx-staging
 
 `)
@@ -356,11 +356,15 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrap(err, "applying chart overrides")
 	}
 
+	setValues, setStrings := o.getChartValues(ns)
+
 	helmOptions := helm.InstallChartOptions{
 		Chart:       chartName,
 		ReleaseName: releaseName,
 		Ns:          ns,
 		NoForce:     !o.Force,
+		SetValues:   setValues,
+		SetStrings:  setStrings,
 		ValueFiles:  valueFiles,
 		Dir:         dir,
 	}

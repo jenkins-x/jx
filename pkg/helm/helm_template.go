@@ -225,17 +225,17 @@ func (h *HelmTemplate) Version(tls bool) (string, error) {
 }
 
 // Template generates the YAML from the chart template to the given directory
-func (h *HelmTemplate) Template(chart string, releaseName string, ns string, outDir string, upgrade bool, values []string,
+func (h *HelmTemplate) Template(chart string, releaseName string, ns string, outDir string, upgrade bool, values []string, valueStrings []string,
 	valueFiles []string) error {
 
-	return h.Client.Template(chart, releaseName, ns, outDir, upgrade, values, valueFiles)
+	return h.Client.Template(chart, releaseName, ns, outDir, upgrade, values, valueStrings, valueFiles)
 }
 
 // Mutation API
 
 // InstallChart installs a helm chart according with the given flags
 func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
-	values []string, valueFiles []string, repo string, username string, password string) error {
+	values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -247,7 +247,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	if err != nil {
 		return err
 	}
-	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueFiles)
+	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueStrings, valueFiles)
 	if err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, unta
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string, password string) error {
+func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -333,7 +333,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 			return err
 		}
 	}
-	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueFiles)
+	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueStrings, valueFiles)
 	if err != nil {
 		return err
 	}
