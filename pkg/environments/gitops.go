@@ -554,7 +554,7 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 		},
 		Spec: jenkinsv1.AppSpec{},
 	}
-	err = helmer.Template(chartDir, appName, "", templateWorkDir, false, make([]string, 0), make([]string, 0))
+	err = helmer.Template(chartDir, appName, "", templateWorkDir, false, make([]string, 0), make([]string, 0), make([]string, 0))
 	if err != nil {
 		templateWorkDir = chartDir
 	}

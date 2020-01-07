@@ -502,10 +502,14 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
+	setValues, setStrings := o.GetEnvChartValues(o.Namespace, env)
+
 	helmOptions := helm.InstallChartOptions{
 		Chart:       ".",
 		ReleaseName: o.ReleaseName,
 		Ns:          o.Namespace,
+		SetValues:   setValues,
+		SetStrings:  setStrings,
 		ValueFiles:  []string{configFileName},
 		Wait:        true,
 	}

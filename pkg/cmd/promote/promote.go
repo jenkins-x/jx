@@ -98,7 +98,7 @@ var (
 `)
 
 	promote_example = templates.Examples(`
-		# Promote a version of the current application to staging 
+		# Promote a version of the current application to staging
         # discovering the application name from the source code
 		jx promote --version 1.2.3 --env staging
 
@@ -504,14 +504,19 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, startPromote)
 
+	setValues, setStrings := o.GetEnvChartValues(o.Namespace, env)
+
 	helmOptions := helm.InstallChartOptions{
 		Chart:       fullAppName,
 		ReleaseName: releaseName,
 		Ns:          targetNS,
 		Version:     version,
+		SetValues:   setValues,
+		SetStrings:  setStrings,
 		NoForce:     true,
 		Wait:        true,
 	}
+
 	err = o.InstallChartWithOptions(helmOptions)
 	if err == nil {
 		err = o.CommentOnIssues(targetNS, env, promoteKey)
@@ -1170,4 +1175,28 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 	o.Version = chart.ChartVersion
 	o.HelmRepositoryURL = repoUrl
 	return appName, nil
+}
+
+func (o *PromoteOptions) GetEnvChartValues(targetNS string, env *v1.Environment) ([]string, []string) {
+	kind := strings.ToLower(string(env.Spec.Kind))
+	values := []string{
+		fmt.Sprintf("tags.jx-ns-%s=true", targetNS),
+		fmt.Sprintf("global.jx-ns-%s=true", targetNS),
+		fmt.Sprintf("tags.jx-%s=true", kind),
+		fmt.Sprintf("tags.jx-env-%s=true", env.ObjectMeta.Name),
+		fmt.Sprintf("global.jx-%s=true", kind),
+		fmt.Sprintf("global.jx-env-%s=true", env.ObjectMeta.Name),
+	}
+	valueString := []string{
+		fmt.Sprintf("global.jx-ns=%s", targetNS),
+		fmt.Sprintf("global.jx-type-env=%s", kind),
+		fmt.Sprintf("global.jx-env=%s", env.ObjectMeta.Name),
+	}
+	if env.Spec.Kind == v1.EnvironmentKindTypePreview {
+		valueString = append(valueString,
+			fmt.Sprintf("global.jx-preview-app=%s", env.Spec.PreviewGitSpec.ApplicationName),
+			fmt.Sprintf("global.jx-preview-pr=%s", env.Spec.PreviewGitSpec.Name),
+		)
+	}
+	return values, valueString
 }

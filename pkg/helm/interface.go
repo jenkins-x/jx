@@ -15,9 +15,9 @@ type Helmer interface {
 	RemoveRequirementsLock() error
 	BuildDependency() error
 	InstallChart(chart string, releaseName string, ns string, version string, timeout int,
-		values []string, valueFiles []string, repo string, username string, password string) error
+		values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error
 	UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool,
-		values []string, valueFiles []string, repo string, username string, password string) error
+		values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error
 	FetchChart(chart string, version string, untar bool, untardir string, repo string, username string,
 		password string) error
 	DeleteRelease(ns string, releaseName string, purge bool) error
@@ -32,5 +32,5 @@ type Helmer interface {
 	SetHost(host string)
 	Env() map[string]string
 	DecryptSecrets(location string) error
-	Template(chartDir string, releaseName string, ns string, outputDir string, upgrade bool, values []string, valueFiles []string) error
+	Template(chartDir string, releaseName string, ns string, outputDir string, upgrade bool, values []string, valueStrings []string, valueFiles []string) error
 }
