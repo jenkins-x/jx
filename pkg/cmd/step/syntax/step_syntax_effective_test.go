@@ -120,6 +120,28 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
 									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
 								),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "workspace-volume",
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "docker-daemon",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/var/run/docker.sock",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-0",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-docker-cfg",
+										},
+									},
+								}),
 							),
 							sht.PipelineStage("from-build-pack",
 								sht.StageAgent("nodejs"),
@@ -162,6 +184,28 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
 									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
 								),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "workspace-volume",
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "docker-daemon",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/var/run/docker.sock",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-0",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-docker-cfg",
+										},
+									},
+								}),
 							),
 							sht.PipelineStage("from-build-pack",
 								sht.StageAgent("nodejs"),
@@ -255,6 +299,28 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
 									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
 								),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "workspace-volume",
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "docker-daemon",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/var/run/docker.sock",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-0",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-docker-cfg",
+										},
+									},
+								}),
 							),
 							sht.PipelineStage("from-build-pack",
 								sht.StageAgent("nodejs"),
@@ -301,6 +367,28 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									tb.VolumeMount("docker-daemon", "/var/run/docker.sock"),
 									tb.VolumeMount("volume-0", "/home/jenkins/.docker"),
 								),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "workspace-volume",
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "docker-daemon",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/var/run/docker.sock",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-0",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-docker-cfg",
+										},
+									},
+								}),
 							),
 							sht.PipelineStage("from-build-pack",
 								sht.StageAgent("nodejs"),
@@ -525,6 +613,44 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									tb.VolumeMount("volume-1", "/home/jenkins/.docker"),
 									tb.VolumeMount("volume-2", "/home/jenkins/.gnupg"),
 								),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "workspace-volume",
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "docker-daemon",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/var/run/docker.sock",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-0",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-maven-settings",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-1",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-docker-cfg",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-2",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-release-gpg",
+										},
+									},
+								}),
 							),
 							sht.PipelineStage("from-build-pack",
 								sht.StageAgent("maven"),
@@ -578,6 +704,44 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 									tb.VolumeMount("volume-1", "/home/jenkins/.docker"),
 									tb.VolumeMount("volume-2", "/home/jenkins/.gnupg"),
 								),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "workspace-volume",
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "docker-daemon",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/var/run/docker.sock",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-0",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-maven-settings",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-1",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-docker-cfg",
+										},
+									},
+								}),
+								sht.PipelineVolume(&corev1.Volume{
+									Name: "volume-2",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "jenkins-release-gpg",
+										},
+									},
+								}),
 							),
 							sht.PipelineStage("from-build-pack",
 								sht.StageAgent("maven"),
@@ -694,6 +858,25 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				"docker.registry": "gcr.io",
 			},
 		},
+		// Dummy secrets created for validation purposes
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "jenkins-docker-cfg",
+				Namespace: "jx",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "jenkins-maven-settings",
+				Namespace: "jx",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "jenkins-release-gpg",
+				Namespace: "jx",
+			},
+		},
 	}
 	jxObjects := []runtime.Object{}
 	repoOwnerUUID, err := uuid.NewV4()
@@ -738,6 +921,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 						ServiceAccount: "tekton-bot",
 					},
 				},
+				ValidateInCluster: true,
 			}
 			testhelpers.ConfigureTestOptionsWithResources(createCanonical.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 

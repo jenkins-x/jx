@@ -3,14 +3,13 @@ package syntax_test
 import (
 	"context"
 	"errors"
+	"path/filepath"
+	"testing"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
-
-	"path/filepath"
-	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -22,6 +21,7 @@ import (
 	tb "github.com/tektoncd/pipeline/test/builder"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 )
 
 var (
@@ -1766,6 +1766,13 @@ func TestFailedValidation(t *testing.T) {
 				Paths:   []string{"name"},
 			}).ViaFieldIndex("volumeMounts", 0).ViaField("containerOptions").ViaField("options"),
 		},
+		{
+			name: "volume_does_not_exist",
+			expectedError: (&apis.FieldError{
+				Message: "PVC does-not-exist does not exist, so cannot be used as a volume",
+				Paths:   []string{"claimName"},
+			}).ViaFieldIndex("volumes", 0).ViaField("options"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -1789,8 +1796,9 @@ func TestFailedValidation(t *testing.T) {
 					t.Fatalf("Pipeline at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines.Release)
 				}
 				parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
+				kubeClient := kubefake.NewSimpleClientset()
 
-				err = parsed.Validate(ctx)
+				err = parsed.ValidateInCluster(ctx, kubeClient, "jx")
 
 				if err == nil {
 					t.Fatalf("Expected a validation failure but none occurred")

@@ -381,6 +381,38 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				"docker.registry": "gcr.io",
 			},
 		},
+		// Dummy secrets created for validation purposes
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "jenkins-docker-cfg",
+				Namespace: "jx",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "jenkins-maven-settings",
+				Namespace: "jx",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "jenkins-release-gpg",
+				Namespace: "jx",
+			},
+		},
+		// Dummy PVCs created for validation purposes
+		&corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "top-level-volume",
+				Namespace: "jx",
+			},
+		},
+		&corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "stage-level-volume",
+				Namespace: "jx",
+			},
+		},
 	}
 	repoOwnerUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
