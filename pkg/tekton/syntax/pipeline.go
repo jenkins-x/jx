@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -521,10 +522,13 @@ func (s *Stage) GetEnv() []corev1.EnvVar {
 	return s.Environment
 }
 
-// Validate checks the parsed ParsedPipeline to find any errors in it.
-// TODO: Improve validation to actually return all the errors via the nested errors?
-// TODO: Add validation for the not-yet-supported-for-CRD-generation sections
+// Validate checks the ParsedPipeline to find any errors in it, without validating against the cluster.
 func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
+	return j.ValidateInCluster(context, nil, "")
+}
+
+// ValidateInCluster checks the parsed ParsedPipeline to find any errors in it, including validation against the cluster.
+func (j *ParsedPipeline) ValidateInCluster(context context.Context, kubeClient kubernetes.Interface, ns string) *apis.FieldError {
 	if err := validateAgent(j.Agent).ViaField("agent"); err != nil {
 		return err
 	}
@@ -533,7 +537,7 @@ func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
 	if j.Options != nil && len(j.Options.Volumes) > 0 {
 		volumes = append(volumes, j.Options.Volumes...)
 	}
-	if err := validateStages(j.Stages, j.Agent, volumes); err != nil {
+	if err := validateStages(j.Stages, j.Agent, volumes, kubeClient, ns); err != nil {
 		return err
 	}
 
@@ -541,7 +545,7 @@ func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
 		return err
 	}
 
-	if err := validateRootOptions(j.Options, volumes).ViaField("options"); err != nil {
+	if err := validateRootOptions(j.Options, volumes, kubeClient, ns).ViaField("options"); err != nil {
 		return err
 	}
 
@@ -579,7 +583,7 @@ func validateAgent(a *Agent) *apis.FieldError {
 
 var containsASCIILetter = regexp.MustCompile(`[a-zA-Z]`).MatchString
 
-func validateStage(s Stage, parentAgent *Agent, parentVolumes []*corev1.Volume) *apis.FieldError {
+func validateStage(s Stage, parentAgent *Agent, parentVolumes []*corev1.Volume, kubeClient kubernetes.Interface, ns string) *apis.FieldError {
 	if len(s.Steps) == 0 && len(s.Stages) == 0 && len(s.Parallel) == 0 {
 		return apis.ErrMissingOneOf("steps", "stages", "parallel")
 	}
@@ -649,7 +653,7 @@ func validateStage(s Stage, parentAgent *Agent, parentVolumes []*corev1.Volume) 
 			return apis.ErrMultipleOneOf("steps", "stages", "parallel")
 		}
 		for i, stage := range s.Stages {
-			if err := validateStage(stage, parentAgent, volumes).ViaFieldIndex("stages", i); err != nil {
+			if err := validateStage(stage, parentAgent, volumes, kubeClient, ns).ViaFieldIndex("stages", i); err != nil {
 				return err
 			}
 		}
@@ -657,13 +661,13 @@ func validateStage(s Stage, parentAgent *Agent, parentVolumes []*corev1.Volume) 
 
 	if len(s.Parallel) > 0 {
 		for i, stage := range s.Parallel {
-			if err := validateStage(stage, parentAgent, volumes).ViaFieldIndex("parallel", i); err != nil {
+			if err := validateStage(stage, parentAgent, volumes, kubeClient, ns).ViaFieldIndex("parallel", i); err != nil {
 				return nil
 			}
 		}
 	}
 
-	return validateStageOptions(s.Options, volumes).ViaField("options")
+	return validateStageOptions(s.Options, volumes, kubeClient, ns).ViaField("options")
 }
 
 func moreThanOneAreTrue(vals ...bool) bool {
@@ -767,13 +771,13 @@ func validateLoop(l *Loop) *apis.FieldError {
 	return nil
 }
 
-func validateStages(stages []Stage, parentAgent *Agent, parentVolumes []*corev1.Volume) *apis.FieldError {
+func validateStages(stages []Stage, parentAgent *Agent, parentVolumes []*corev1.Volume, kubeClient kubernetes.Interface, ns string) *apis.FieldError {
 	if len(stages) == 0 {
 		return apis.ErrMissingField("stages")
 	}
 
 	for i, s := range stages {
-		if err := validateStage(s, parentAgent, parentVolumes).ViaFieldIndex("stages", i); err != nil {
+		if err := validateStage(s, parentAgent, parentVolumes, kubeClient, ns).ViaFieldIndex("stages", i); err != nil {
 			return err
 		}
 	}
@@ -781,7 +785,7 @@ func validateStages(stages []Stage, parentAgent *Agent, parentVolumes []*corev1.
 	return nil
 }
 
-func validateRootOptions(o *RootOptions, volumes []*corev1.Volume) *apis.FieldError {
+func validateRootOptions(o *RootOptions, volumes []*corev1.Volume, kubeClient kubernetes.Interface, ns string) *apis.FieldError {
 	if o != nil {
 		if o.Timeout != nil {
 			if err := validateTimeout(o.Timeout); err != nil {
@@ -798,7 +802,7 @@ func validateRootOptions(o *RootOptions, volumes []*corev1.Volume) *apis.FieldEr
 		}
 
 		for i, v := range o.Volumes {
-			if err := validateVolume(v).ViaFieldIndex("volumes", i); err != nil {
+			if err := validateVolume(v, kubeClient, ns).ViaFieldIndex("volumes", i); err != nil {
 				return err
 			}
 		}
@@ -809,10 +813,29 @@ func validateRootOptions(o *RootOptions, volumes []*corev1.Volume) *apis.FieldEr
 	return nil
 }
 
-func validateVolume(v *corev1.Volume) *apis.FieldError {
+func validateVolume(v *corev1.Volume, kubeClient kubernetes.Interface, ns string) *apis.FieldError {
 	if v != nil {
 		if v.Name == "" {
 			return apis.ErrMissingField("name")
+		}
+		if kubeClient != nil {
+			if v.Secret != nil {
+				_, err := kubeClient.CoreV1().Secrets(ns).Get(v.Secret.SecretName, metav1.GetOptions{})
+				if err != nil {
+					return &apis.FieldError{
+						Message: fmt.Sprintf("Secret %s does not exist, so cannot be used as a volume", v.Secret.SecretName),
+						Paths:   []string{"secretName"},
+					}
+				}
+			} else if v.PersistentVolumeClaim != nil {
+				_, err := kubeClient.CoreV1().PersistentVolumeClaims(ns).Get(v.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
+				if err != nil {
+					return &apis.FieldError{
+						Message: fmt.Sprintf("PVC %s does not exist, so cannot be used as a volume", v.PersistentVolumeClaim.ClaimName),
+						Paths:   []string{"claimName"},
+					}
+				}
+			}
 		}
 	}
 
@@ -893,7 +916,7 @@ func isVolumeMountValid(mount corev1.VolumeMount, volumes []*corev1.Volume) bool
 	return foundVolume
 }
 
-func validateStageOptions(o *StageOptions, volumes []*corev1.Volume) *apis.FieldError {
+func validateStageOptions(o *StageOptions, volumes []*corev1.Volume, kubeClient kubernetes.Interface, ns string) *apis.FieldError {
 	if o != nil {
 		if err := validateStash(o.Stash); err != nil {
 			return err.ViaField("stash")
@@ -918,7 +941,7 @@ func validateStageOptions(o *StageOptions, volumes []*corev1.Volume) *apis.Field
 			}
 		}
 
-		return validateRootOptions(o.RootOptions, volumes)
+		return validateRootOptions(o.RootOptions, volumes, kubeClient, ns)
 	}
 
 	return nil

@@ -595,6 +595,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfig(packsDir string, pr
 		GitInfo:           o.GitInfo,
 		PodTemplates:      o.PodTemplates,
 		VersionResolver:   o.VersionResolver,
+		ValidateInCluster: !o.InterpretMode,
 	}
 	commonCopy := *o.CommonOptions
 	createEffective.CommonOptions = &commonCopy
