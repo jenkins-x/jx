@@ -55,6 +55,7 @@ type CreateClusterGKEFlags struct {
 	Preemptible              bool
 	EnhancedApis             bool `mapstructure:"enhanced-apis"`
 	UseStackDriverMonitoring bool `mapstructure:"use-stackdriver-monitoring"`
+	ServiceAccount           string
 }
 
 const (
@@ -78,6 +79,7 @@ const (
 	labelsFlagName            = "labels"
 	scopeFlagName             = "scope"
 	stackDriverFlagName       = "use-stackdriver-monitoring"
+	serviceAccountFlagName    = "service-account"
 )
 
 var (
@@ -151,6 +153,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 	cmd.Flags().BoolVarP(&options.Flags.UseStackDriverMonitoring, stackDriverFlagName, "", true, "Enable Stackdriver Kubernetes Engine Monitoring")
+	cmd.Flags().StringVarP(&options.Flags.ServiceAccount, serviceAccountFlagName, "", "", "The service account used to run the cluster")
 	bindGKEConfigToFlags(cmd)
 
 	return cmd
@@ -178,6 +181,7 @@ func bindGKEConfigToFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(clusterConfigKey(enhancedScopesFlagName), cmd.Flags().Lookup(enhancedScopesFlagName))
 	_ = viper.BindPFlag(clusterConfigKey(enhancedAPIFlagName), cmd.Flags().Lookup(enhancedAPIFlagName))
 	_ = viper.BindPFlag(clusterConfigKey(stackDriverFlagName), cmd.Flags().Lookup(stackDriverFlagName))
+	_ = viper.BindPFlag(clusterConfigKey(serviceAccountFlagName), cmd.Flags().Lookup(serviceAccountFlagName))
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
@@ -582,6 +586,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	labels = AddLabel(labels, "create-time", timeText)
 	if labels != "" {
 		args = append(args, "--labels="+strings.ToLower(labels))
+	}
+
+	if o.Flags.ServiceAccount != "" {
+		args = append(args, "--service-account", o.Flags.ServiceAccount)
 	}
 
 	log.Logger().Info("Creating cluster...")
