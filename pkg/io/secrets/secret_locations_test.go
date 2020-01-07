@@ -21,7 +21,7 @@ func TestSecretsLocation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test we have actually added the item to the configmap
-	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	configMap, err := kubeClient.CoreV1().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, string(VaultLocationKind), configMap.Data[SecretsLocationKey])
 	// Test we haven't overwritten the configmap
@@ -31,7 +31,7 @@ func TestSecretsLocation(t *testing.T) {
 	err = secretLocation.SetLocation(FileSystemLocationKind, true)
 	assert.NoError(t, err)
 
-	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	configMap, err = kubeClient.CoreV1().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, string(FileSystemLocationKind), configMap.Data[SecretsLocationKey])
 	// Test we haven't overwritten the configmap
@@ -49,7 +49,7 @@ func TestSecretsLocation_NoJxInstallConfigMap(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test we have actually added the item to the configmap
-	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	configMap, err := kubeClient.CoreV1().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, string(VaultLocationKind), configMap.Data[SecretsLocationKey])
 	assert.Equal(t, VaultLocationKind, secretLocation.Location())
@@ -57,7 +57,7 @@ func TestSecretsLocation_NoJxInstallConfigMap(t *testing.T) {
 	err = secretLocation.SetLocation(FileSystemLocationKind, true)
 	assert.NoError(t, err)
 
-	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	configMap, err = kubeClient.CoreV1().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, string(FileSystemLocationKind), configMap.Data[SecretsLocationKey])
 	assert.NotEqual(t, VaultLocationKind, secretLocation.Location())
@@ -72,18 +72,18 @@ func TestSecretsLocation_UpdateFromJxInstallConfigMap(t *testing.T) {
 	err := secretLocation.SetLocation(FileSystemLocationKind, false)
 	assert.NoError(t, err)
 
-	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	configMap, err := kubeClient.CoreV1().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, "", configMap.Data[SecretsLocationKey])
 	configMap.Data[SecretsLocationKey] = string(VaultLocationKind)
-	configMap, err = kubeClient.Core().ConfigMaps(ns).Update(configMap)
+	configMap, err = kubeClient.CoreV1().ConfigMaps(ns).Update(configMap)
 	assert.NoError(t, err)
 
 	assert.Equal(t, VaultLocationKind, secretLocation.Location())
 
 	err = secretLocation.SetLocation(FileSystemLocationKind, false)
 	assert.NoError(t, err)
-	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	configMap, err = kubeClient.CoreV1().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, string(VaultLocationKind), configMap.Data[SecretsLocationKey])
 }

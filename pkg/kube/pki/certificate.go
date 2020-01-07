@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	kubeservices "github.com/jenkins-x/jx/pkg/kube/services"
+	certutil "github.com/jetstack/cert-manager/pkg/api/util"
 	certmng "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	certclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 		if err != nil {
 			return false, nil
 		}
-		isReady := cert.HasCondition(certmng.CertificateCondition{
+		isReady := certutil.CertificateHasCondition(cert, certmng.CertificateCondition{
 			Type:   certmng.CertificateConditionReady,
 			Status: certmng.ConditionTrue,
 		})
@@ -89,7 +90,7 @@ func CleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns
 }
 
 func cleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns string, allow func(string) bool) error {
-	certsClient := certclient.Certmanager().Certificates(ns)
+	certsClient := certclient.CertmanagerV1alpha1().Certificates(ns)
 	certsList, err := certsClient.List(metav1.ListOptions{})
 	if err != nil {
 		// there are no certificates to clean
@@ -127,7 +128,7 @@ func (c Certificate) String() string {
 // WatchCertificatesIssuedReady starts watching for ready certificate in the given namespace.
 // If the namespace is empty, it will watch the entire cluster. The caller can stop watching by cancelling the context.
 func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interface, ns string) (<-chan Certificate, error) {
-	watcher, err := client.Certmanager().Certificates(ns).Watch(metav1.ListOptions{})
+	watcher, err := client.CertmanagerV1alpha1().Certificates(ns).Watch(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "watching certificates in namespace %q", ns)
 	}
@@ -159,7 +160,7 @@ func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interfa
 }
 
 func isCertReady(cert *certmng.Certificate) bool {
-	return cert.HasCondition(certmng.CertificateCondition{
+	return certutil.CertificateHasCondition(cert, certmng.CertificateCondition{
 		Type:   certmng.CertificateConditionReady,
 		Status: certmng.ConditionTrue,
 	})
@@ -168,7 +169,7 @@ func isCertReady(cert *certmng.Certificate) bool {
 // GetIssuedReadyCertificates returns the current ready certificates in the given namespace
 func GetIssuedReadyCertificates(client certclient.Interface, ns string) ([]Certificate, error) {
 	certs := make([]Certificate, 0)
-	certsList, err := client.Certmanager().Certificates(ns).List(metav1.ListOptions{})
+	certsList, err := client.CertmanagerV1alpha1().Certificates(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return certs, errors.Wrapf(err, "listing certificates in namespace %q", ns)
 	}

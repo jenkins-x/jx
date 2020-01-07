@@ -437,7 +437,7 @@ func GetVault(vaultOperatorClient versioned.Interface, name string, ns string) (
 
 // GetVaults returns all vaults available in a given namespaces
 func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string, useIngressURL bool) ([]*Vault, error) {
-	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
+	vaultList, err := vaultOperatorClient.VaultV1alpha1().Vaults(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing vaults in namespace '%s'", ns)
 	}
@@ -471,7 +471,7 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 
 // DeleteVault delete a Vault resource
 func DeleteVault(vaultOperatorClient versioned.Interface, name string, ns string) error {
-	return vaultOperatorClient.Vault().Vaults(ns).Delete(name, &metav1.DeleteOptions{})
+	return vaultOperatorClient.VaultV1alpha1().Vaults(ns).Delete(name, &metav1.DeleteOptions{})
 }
 
 // GetAuthSaName gets the Auth Service Account name for the vault

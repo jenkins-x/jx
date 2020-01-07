@@ -39,8 +39,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	istioclient "github.com/knative/pkg/client/clientset/versioned"
-	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -49,6 +47,8 @@ import (
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
+	istioclient "knative.dev/pkg/client/clientset/versioned"
+	kserve "knative.dev/serving/pkg/client/clientset/versioned"
 )
 
 // LogLevel represents the logging level when reporting feedback

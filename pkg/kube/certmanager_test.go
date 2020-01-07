@@ -18,7 +18,7 @@ func TestIsStagingCertificate(t *testing.T) {
 	const ns = "test"
 	cert := newCert(name, "staging")
 
-	_, err := client.Certmanager().Certificates(ns).Create(cert)
+	_, err := client.CertmanagerV1alpha1().Certificates(ns).Create(cert)
 	assert.NoError(t, err, "should create a test certificate whithout an error")
 
 	isStaging, err := IsStagingCertificate(client, ns)
@@ -34,7 +34,7 @@ func TestIsNotStagingCertificate(t *testing.T) {
 	const name = "test"
 	const ns = "test"
 	cert := newCert(name, "production")
-	_, err := client.Certmanager().Certificates(ns).Create(cert)
+	_, err := client.CertmanagerV1alpha1().Certificates(ns).Create(cert)
 	assert.NoError(t, err, "should create a test certificate whithout an error")
 
 	isStaging, err := IsStagingCertificate(client, ns)

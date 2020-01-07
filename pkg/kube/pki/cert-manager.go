@@ -38,23 +38,23 @@ const (
 // CleanCertManagerResources removed the cert-manager resources from the given namespaces
 func CleanCertManagerResources(certclient certclient.Interface, ns string, ic kube.IngressConfig) error {
 	if ic.Issuer == CertManagerIssuerProd {
-		_, err := certclient.Certmanager().Issuers(ns).Get(CertManagerIssuerProd, metav1.GetOptions{})
+		_, err := certclient.CertmanagerV1alpha1().Issuers(ns).Get(CertManagerIssuerProd, metav1.GetOptions{})
 		if err == nil {
-			err := certclient.Certmanager().Issuers(ns).Delete(CertManagerIssuerProd, &metav1.DeleteOptions{})
+			err := certclient.CertmanagerV1alpha1().Issuers(ns).Delete(CertManagerIssuerProd, &metav1.DeleteOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "deleting cert-manager issuer %q", CertManagerIssuerProd)
 			}
 		}
-		_ = certclient.Certmanager().Certificates(ns).Delete(CertManagerIssuerProd, &metav1.DeleteOptions{})
+		_ = certclient.CertmanagerV1alpha1().Certificates(ns).Delete(CertManagerIssuerProd, &metav1.DeleteOptions{})
 	} else {
-		_, err := certclient.Certmanager().Issuers(ns).Get(CertManagerIssuerStaging, metav1.GetOptions{})
+		_, err := certclient.CertmanagerV1alpha1().Issuers(ns).Get(CertManagerIssuerStaging, metav1.GetOptions{})
 		if err == nil {
-			err := certclient.Certmanager().Issuers(ns).Delete(CertManagerIssuerStaging, &metav1.DeleteOptions{})
+			err := certclient.CertmanagerV1alpha1().Issuers(ns).Delete(CertManagerIssuerStaging, &metav1.DeleteOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "deleting cert-manager issuer %q", CertManagerIssuerStaging)
 			}
 		}
-		_ = certclient.Certmanager().Certificates(ns).Delete(CertManagerIssuerStaging, &metav1.DeleteOptions{})
+		_ = certclient.CertmanagerV1alpha1().Certificates(ns).Delete(CertManagerIssuerStaging, &metav1.DeleteOptions{})
 	}
 	return nil
 }
@@ -62,18 +62,18 @@ func CleanCertManagerResources(certclient certclient.Interface, ns string, ic ku
 // CreateIssuer creates a cert-manager issuer according with the ingress configuration
 func CreateIssuer(certclient certclient.Interface, ns string, ic kube.IngressConfig) error {
 	if ic.Issuer == CertManagerIssuerProd {
-		_, err := certclient.Certmanager().Issuers(ns).Get(CertManagerIssuerProd, metav1.GetOptions{})
+		_, err := certclient.CertmanagerV1alpha1().Issuers(ns).Get(CertManagerIssuerProd, metav1.GetOptions{})
 		if err != nil {
-			_, err := certclient.Certmanager().Issuers(ns).Create(
+			_, err := certclient.CertmanagerV1alpha1().Issuers(ns).Create(
 				issuer(CertManagerIssuerProd, certManagerIssuerProdServer, ic.Email))
 			if err != nil {
 				return errors.Wrapf(err, "creating cert-manager issuer %q", CertManagerIssuerProd)
 			}
 		}
 	} else {
-		_, err := certclient.Certmanager().Issuers(ns).Get(CertManagerIssuerStaging, metav1.GetOptions{})
+		_, err := certclient.CertmanagerV1alpha1().Issuers(ns).Get(CertManagerIssuerStaging, metav1.GetOptions{})
 		if err != nil {
-			_, err := certclient.Certmanager().Issuers(ns).Create(
+			_, err := certclient.CertmanagerV1alpha1().Issuers(ns).Create(
 				issuer(CertManagerIssuerStaging, certManagerIssuerStagingServer, ic.Email))
 			if err != nil {
 				return errors.Wrapf(err, "creating cert-manager issuer %q", CertManagerIssuerStaging)
@@ -100,7 +100,6 @@ func issuer(name string, server string, email string) *certmng.Issuer {
 							Name: name,
 						},
 					},
-					HTTP01: &certmng.ACMEIssuerHTTP01Config{},
 				},
 			},
 		},

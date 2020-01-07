@@ -208,7 +208,7 @@ func verifyProwConfigMap(err error, kubeClient kubernetes.Interface, devEnv *v1.
 	assert.NotNil(t, pluginsConfigMap.Data)
 	expectedPluginConfig, err := testOptions.loadExpectedConfig(testOptions.TestType, "plugins.yaml", testOptions.DevEnvRepo.Owner, testOptions.DevRepoName)
 	assert.NoError(t, err)
-	assert.Equal(t, pluginsConfigMap.Data["plugins.yaml"], expectedPluginConfig)
+	assert.Equal(t, expectedPluginConfig, pluginsConfigMap.Data["plugins.yaml"])
 }
 
 // AppTestOptions contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`

@@ -22,10 +22,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/knative/pkg/kmp"
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"knative.dev/pkg/kmp"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"

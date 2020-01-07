@@ -35,33 +35,39 @@ postsubmits:
     - master
     context: ""
     name: release
+    skip_report: true
   cb-kubecd/jx-scheduler-test-group-repo:
   - agent: tekton
     branches:
     - master
     context: ""
     name: magic
+    skip_report: true
   - agent: tekton
     branches:
     - master
     context: ""
     name: release
+    skip_report: true
   cb-kubecd/jx-scheduler-test-repo:
   - agent: tekton
     branches:
     - master
     context: ""
     name: bdd
+    skip_report: true
   - agent: tekton
     branches:
     - master
     context: ""
     name: magic
+    skip_report: true
   - agent: tekton
     branches:
     - master
     context: ""
     name: release
+    skip_report: true
 presubmits:
   dev-env-org/environment-dev-env-org-dev-env-repo-dev:
   - agent: tekton

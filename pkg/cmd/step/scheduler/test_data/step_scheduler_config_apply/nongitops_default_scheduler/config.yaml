@@ -11,9 +11,13 @@ branch-protection:
 deck:
   spyglass: {}
 gerrit: {}
+github:
+  LinkURL: null
+github_reporter: {}
 owners_dir_blacklist:
   default: null
   repos: null
+pipeline: {}
 plank: {}
 pod_namespace: jx
 postsubmits:

@@ -271,14 +271,9 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	repo := parts[1]
 	branch := parts[2]
 
-	postSubmitJob, err := o.ProwOptions.GetPostSubmitJob(org, repo, branch)
-	if err != nil {
-		return err
-	}
 	agent := prowjobv1.ProwJobAgent(prow.TektonAgent)
 	jobSpec := prowjobv1.ProwJobSpec{
-		BuildSpec: postSubmitJob.BuildSpec,
-		Agent:     agent,
+		Agent: agent,
 	}
 	jobSpec.Type = prowjobv1.PostsubmitJob
 

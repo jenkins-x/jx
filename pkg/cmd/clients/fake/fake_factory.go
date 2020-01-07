@@ -9,9 +9,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/builds"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	kservefake "github.com/knative/serving/pkg/client/clientset/versioned/fake"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	"k8s.io/client-go/kubernetes/fake"
+	kservefake "knative.dev/serving/pkg/client/clientset/versioned/fake"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -30,7 +30,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
 	fake_vault "github.com/jenkins-x/jx/pkg/vault/fake"
-	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
@@ -41,6 +40,7 @@ import (
 	fake_metricsclient "k8s.io/metrics/pkg/client/clientset/versioned/fake"
 	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
 	fake_prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned/fake"
+	kserve "knative.dev/serving/pkg/client/clientset/versioned"
 )
 
 // FakeFactory points to a fake factory implementation

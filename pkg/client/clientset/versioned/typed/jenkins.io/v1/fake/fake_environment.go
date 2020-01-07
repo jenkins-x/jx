@@ -103,7 +103,7 @@ func (c *FakeEnvironments) DeleteCollection(options *v1.DeleteOptions, listOptio
 // Patch applies the patch and returns the patched environment.
 func (c *FakeEnvironments) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Environment, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(environmentsResource, c.ns, name, data, subresources...), &jenkinsiov1.Environment{})
+		Invokes(testing.NewPatchSubresourceAction(environmentsResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.Environment{})
 
 	if obj == nil {
 		return nil, err

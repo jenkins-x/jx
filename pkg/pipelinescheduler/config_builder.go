@@ -377,7 +377,7 @@ func buildPostsubmits(jobConfig *config.JobConfig, items []*jenkinsv1.Postsubmit
 			}
 		}
 		if postsubmit.Report != nil {
-			c.Report = *postsubmit.Report
+			c.SkipReport = !*postsubmit.Report
 		}
 		if postsubmit.Context != nil {
 			c.Context = *postsubmit.Context

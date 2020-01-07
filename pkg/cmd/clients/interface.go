@@ -21,11 +21,11 @@ import (
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
+	kserve "knative.dev/serving/pkg/client/clientset/versioned"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 

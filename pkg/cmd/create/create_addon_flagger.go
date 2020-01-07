@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/jenkins-x/jx/pkg/log"
-	istiov1alpha3 "github.com/knative/pkg/apis/istio/v1alpha3"
+	istiov1alpha3 "knative.dev/pkg/apis/istio/v1alpha3"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"

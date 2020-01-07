@@ -89,6 +89,8 @@ func verifySchedulerResources(err error, jxClient versioned.Interface, devEnv *v
 	assert.NoError(t, err)
 	expectedSchedulerYaml, err := ioutil.ReadFile("test_data/step_scheduler_config_migrate/" + testOptions.TestType + "/schedulers.yaml")
 	assert.NoError(t, err)
+	ioutil.WriteFile("/Users/abayer/Downloads/foo1", expectedSchedulerYaml, 0644)
+	ioutil.WriteFile("/Users/abayer/Downloads/foo2", migratedSchedulerYaml, 0644)
 	assert.Equal(t, string(expectedSchedulerYaml), string(migratedSchedulerYaml))
 }
 

@@ -103,7 +103,7 @@ func (c *FakeBuildPacks) DeleteCollection(options *v1.DeleteOptions, listOptions
 // Patch applies the patch and returns the patched buildPack.
 func (c *FakeBuildPacks) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.BuildPack, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(buildpacksResource, c.ns, name, data, subresources...), &jenkinsiov1.BuildPack{})
+		Invokes(testing.NewPatchSubresourceAction(buildpacksResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.BuildPack{})
 
 	if obj == nil {
 		return nil, err

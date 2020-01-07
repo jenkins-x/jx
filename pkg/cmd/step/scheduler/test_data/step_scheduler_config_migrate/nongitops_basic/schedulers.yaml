@@ -32,7 +32,7 @@ items:
         labels: {}
         maxConcurrency: 0
         name: magic
-        report: false
+        report: true
         runIfChanged: ""
         skipBranches: {}
       - agent: tekton
@@ -44,7 +44,7 @@ items:
         labels: {}
         maxConcurrency: 0
         name: release
-        report: false
+        report: true
         runIfChanged: ""
         skipBranches: {}
     presubmits:

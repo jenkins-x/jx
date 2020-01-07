@@ -441,43 +441,38 @@ func buildSchedulerGlobalProtectionPolicy(prowConfig *config.Config) *jenkinsv1.
 
 func buildSchedulerProtectionPolicies(repo string, prowConfig *config.Config) *jenkinsv1.ProtectionPolicies {
 	orgRepo := strings.Split(repo, "/")
-	orgBranchProtection, err := prowConfig.BranchProtection.GetOrg(orgRepo[0])
-	if err == nil {
-		repoBranchProtection, err := orgBranchProtection.GetRepo(orgRepo[1])
-		if err == nil {
-			var protectionPolicies map[string]*jenkinsv1.ProtectionPolicy
-			for branchName, branch := range repoBranchProtection.Branches {
-				if protectionPolicies == nil {
-					protectionPolicies = make(map[string]*jenkinsv1.ProtectionPolicy)
-				}
-				protectionPolicies[branchName] = &jenkinsv1.ProtectionPolicy{
-					Admins:                     branch.Admins,
-					Protect:                    branch.Protect,
-					RequiredPullRequestReviews: buildSchedulerRequiredPullRequestReviews(branch.RequiredPullRequestReviews),
-					RequiredStatusChecks:       buildSchedulerRequiredStatusChecks(branch.RequiredStatusChecks),
-					Restrictions:               buildSchedulerRestrictions(branch.Restrictions),
-				}
-			}
-			var repoPolicy *jenkinsv1.ProtectionPolicy
-			requiredPullRequestReviews := buildSchedulerRequiredPullRequestReviews(repoBranchProtection.RequiredPullRequestReviews)
-			requiredStatusChecks := buildSchedulerRequiredStatusChecks(repoBranchProtection.RequiredStatusChecks)
-			restrictions := buildSchedulerRestrictions(repoBranchProtection.Restrictions)
-			if repoBranchProtection.Admins != nil || repoBranchProtection.Protect != nil || requiredPullRequestReviews != nil || requiredStatusChecks != nil || restrictions != nil {
-				repoPolicy = &jenkinsv1.ProtectionPolicy{
-					Admins:                     repoBranchProtection.Admins,
-					Protect:                    repoBranchProtection.Protect,
-					RequiredPullRequestReviews: requiredPullRequestReviews,
-					RequiredStatusChecks:       requiredStatusChecks,
-					Restrictions:               buildSchedulerRestrictions(repoBranchProtection.Restrictions),
-				}
-			}
-			return &jenkinsv1.ProtectionPolicies{
-				ProtectionPolicy: repoPolicy,
-				Items:            protectionPolicies,
-			}
+	orgBranchProtection := prowConfig.BranchProtection.GetOrg(orgRepo[0])
+	repoBranchProtection := orgBranchProtection.GetRepo(orgRepo[1])
+	var protectionPolicies map[string]*jenkinsv1.ProtectionPolicy
+	for branchName, branch := range repoBranchProtection.Branches {
+		if protectionPolicies == nil {
+			protectionPolicies = make(map[string]*jenkinsv1.ProtectionPolicy)
+		}
+		protectionPolicies[branchName] = &jenkinsv1.ProtectionPolicy{
+			Admins:                     branch.Admins,
+			Protect:                    branch.Protect,
+			RequiredPullRequestReviews: buildSchedulerRequiredPullRequestReviews(branch.RequiredPullRequestReviews),
+			RequiredStatusChecks:       buildSchedulerRequiredStatusChecks(branch.RequiredStatusChecks),
+			Restrictions:               buildSchedulerRestrictions(branch.Restrictions),
 		}
 	}
-	return nil
+	var repoPolicy *jenkinsv1.ProtectionPolicy
+	requiredPullRequestReviews := buildSchedulerRequiredPullRequestReviews(repoBranchProtection.RequiredPullRequestReviews)
+	requiredStatusChecks := buildSchedulerRequiredStatusChecks(repoBranchProtection.RequiredStatusChecks)
+	restrictions := buildSchedulerRestrictions(repoBranchProtection.Restrictions)
+	if repoBranchProtection.Admins != nil || repoBranchProtection.Protect != nil || requiredPullRequestReviews != nil || requiredStatusChecks != nil || restrictions != nil {
+		repoPolicy = &jenkinsv1.ProtectionPolicy{
+			Admins:                     repoBranchProtection.Admins,
+			Protect:                    repoBranchProtection.Protect,
+			RequiredPullRequestReviews: requiredPullRequestReviews,
+			RequiredStatusChecks:       requiredStatusChecks,
+			Restrictions:               buildSchedulerRestrictions(repoBranchProtection.Restrictions),
+		}
+	}
+	return &jenkinsv1.ProtectionPolicies{
+		ProtectionPolicy: repoPolicy,
+		Items:            protectionPolicies,
+	}
 }
 
 func buildSchedulerRequiredPullRequestReviews(requiredPullRequestReviews *config.ReviewPolicy) *jenkinsv1.ReviewPolicy {
@@ -536,6 +531,7 @@ func buildSchedulerPostsubmits(repo string, prowConfig *config.Config) *jenkinsv
 		branches := &jenkinsv1.ReplaceableSliceOfStrings{
 			Items: postsubmit.Branches,
 		}
+		report := !postsubmit.SkipReport
 		schedulerPostsubmit := &jenkinsv1.Postsubmit{
 			JobBase: buildSchedulerJobBase(&postsubmit.JobBase),
 			Brancher: &jenkinsv1.Brancher{
@@ -546,7 +542,7 @@ func buildSchedulerPostsubmits(repo string, prowConfig *config.Config) *jenkinsv
 				RunIfChanged: &postsubmit.RunIfChanged,
 			},
 			Context: &postsubmit.Context,
-			Report:  &postsubmit.Report,
+			Report:  &report,
 		}
 		schedulerPostsubmits.Items = append(schedulerPostsubmits.Items, schedulerPostsubmit)
 	}

@@ -103,7 +103,7 @@ func (c *FakeCommitStatuses) DeleteCollection(options *v1.DeleteOptions, listOpt
 // Patch applies the patch and returns the patched commitStatus.
 func (c *FakeCommitStatuses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.CommitStatus, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(commitstatusesResource, c.ns, name, data, subresources...), &jenkinsiov1.CommitStatus{})
+		Invokes(testing.NewPatchSubresourceAction(commitstatusesResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.CommitStatus{})
 
 	if obj == nil {
 		return nil, err

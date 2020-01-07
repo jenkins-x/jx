@@ -26,13 +26,13 @@ import (
 	jxsyntax "github.com/jenkins-x/jx/pkg/tekton/syntax"
 	sht "github.com/jenkins-x/jx/pkg/tekton/syntax/syntax_helpers_test"
 	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/knative/pkg/kmp"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	tb "github.com/tektoncd/pipeline/test/builder"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"knative.dev/pkg/kmp"
 	"sigs.k8s.io/yaml"
 )
 

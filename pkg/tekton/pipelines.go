@@ -292,7 +292,7 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 	for _, resource := range resources {
 		resourceBindings = append(resourceBindings, pipelineapi.PipelineResourceBinding{
 			Name: resource.Name,
-			ResourceRef: pipelineapi.PipelineResourceRef{
+			ResourceRef: &pipelineapi.PipelineResourceRef{
 				Name:       resource.Name,
 				APIVersion: resource.APIVersion,
 			},
@@ -314,7 +314,7 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 		},
 		Spec: pipelineapi.PipelineRunSpec{
 			ServiceAccountName: serviceAccount,
-			PipelineRef: pipelineapi.PipelineRef{
+			PipelineRef: &pipelineapi.PipelineRef{
 				Name:       name,
 				APIVersion: apiVersion,
 			},

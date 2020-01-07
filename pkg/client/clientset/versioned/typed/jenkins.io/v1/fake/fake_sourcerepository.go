@@ -103,7 +103,7 @@ func (c *FakeSourceRepositories) DeleteCollection(options *v1.DeleteOptions, lis
 // Patch applies the patch and returns the patched sourceRepository.
 func (c *FakeSourceRepositories) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.SourceRepository, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(sourcerepositoriesResource, c.ns, name, data, subresources...), &jenkinsiov1.SourceRepository{})
+		Invokes(testing.NewPatchSubresourceAction(sourcerepositoriesResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.SourceRepository{})
 
 	if obj == nil {
 		return nil, err

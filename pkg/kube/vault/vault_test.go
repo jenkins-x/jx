@@ -26,7 +26,10 @@ func TestCreateOrUpdateVault_with_no_preexisting_CRD_creates_vault(t *testing.T)
 			Name:      vaultName,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.VaultSpec{},
+		Spec: v1alpha1.VaultSpec{
+			Config:         v1alpha1.VaultConfig{},
+			ExternalConfig: v1alpha1.VaultExternalConfig{},
+		},
 	}
 
 	vaultOperatorClient := fake.NewSimpleClientset()

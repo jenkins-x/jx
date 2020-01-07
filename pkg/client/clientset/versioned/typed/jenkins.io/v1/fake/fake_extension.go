@@ -103,7 +103,7 @@ func (c *FakeExtensions) DeleteCollection(options *v1.DeleteOptions, listOptions
 // Patch applies the patch and returns the patched extension.
 func (c *FakeExtensions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Extension, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(extensionsResource, c.ns, name, data, subresources...), &jenkinsiov1.Extension{})
+		Invokes(testing.NewPatchSubresourceAction(extensionsResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.Extension{})
 
 	if obj == nil {
 		return nil, err
