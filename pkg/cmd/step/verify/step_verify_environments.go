@@ -402,7 +402,11 @@ func (o *StepVerifyEnvironmentsOptions) handleDevEnvironmentRepository(envGitInf
 }
 
 func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(gitInfo *gits.GitRepository, localRepoDir string, fromGitURL string, fromGitRef string, privateRepo bool, requirements *config.RequirementsConfig, provider gits.GitProvider, gitter gits.Gitter) (*gits.GitRepository, error) {
-	if fromGitURL == config.DefaultBootRepository && fromGitRef == "master" {
+	isDefaultBootURL, err := gits.IsDefaultBootConfigURL(fromGitURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to verify whether %s is the default boot config repository", fromGitURL)
+	}
+	if isDefaultBootURL && fromGitRef == "master" {
 		// If the GitURL is not overridden and the GitRef is set to it's default value then look up the version number
 		resolver, err := o.CreateVersionResolver(requirements.VersionStream.URL, requirements.VersionStream.Ref)
 		if err != nil {
@@ -428,7 +432,27 @@ func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(gitInfo *
 		log.Logger().Debugf("set commitish to '%s'", commitish)
 	}
 
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(gitInfo.Organisation, gitInfo.Name, fromGitURL, commitish, "master", privateRepo, provider, gitter)
+	var fromProvider gits.GitProvider
+	// If the to URL isn't github.com, and the fromGitURL is the default boot repository, use a non-authenticated github.com provider for the from provider.
+	if !gitInfo.IsGitHub() && isDefaultBootURL {
+		fromGitInfo, err := gits.ParseGitURL(fromGitURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse upstream boot config URL %s", fromGitURL)
+		}
+		if fromGitInfo.IsGitHub() {
+			ghServer := &auth.AuthServer{
+				URL:  "https://github.com",
+				Name: "gh",
+				Kind: "github",
+			}
+			fromProvider, err = gits.NewAnonymousGitHubProvider(ghServer, gitter)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to configure anonymous GitHub provider for upstream boot config URL %s", fromGitURL)
+			}
+		}
+	}
+
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(gitInfo.Organisation, gitInfo.Name, fromGitURL, commitish, "master", privateRepo, provider, gitter, fromProvider)
 	if err != nil {
 		return nil, errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, gitInfo.Organisation, gitInfo.Name)
 	}

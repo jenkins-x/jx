@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -48,8 +49,26 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter)
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
+	return newGitHubProviderFromOauthClient(tc, provider)
+}
+
+// NewAnonymousGitHubProvider returns a new GitHubProvider without any authentication
+func NewAnonymousGitHubProvider(server *auth.AuthServer, git Gitter) (GitProvider, error) {
+	ctx := context.Background()
+
+	provider := GitHubProvider{
+		Server:  *server,
+		User:    auth.UserAuth{},
+		Context: ctx,
+		Git:     git,
+	}
+
+	return newGitHubProviderFromOauthClient(nil, provider)
+}
+
+func newGitHubProviderFromOauthClient(tc *http.Client, provider GitHubProvider) (GitProvider, error) {
 	var err error
-	u := server.URL
+	u := provider.Server.URL
 	if IsGitHubServerURL(u) {
 		provider.Client = github.NewClient(tc)
 	} else {

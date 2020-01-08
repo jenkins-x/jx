@@ -3,7 +3,10 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/vrischmann/envconfig"
@@ -16,10 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
-
-	"io/ioutil"
-	"path/filepath"
-	"reflect"
 
 	"github.com/jenkins-x/jx/pkg/util"
 )
