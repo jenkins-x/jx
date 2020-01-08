@@ -220,7 +220,20 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceURL string, gitKind
 	if o.fakeGitProvider != nil {
 		return o.fakeGitProvider, nil
 	}
-	authConfigSvc, err := o.GitAuthConfigServiceGitHubMode(ghOwner != "", gitKind)
+
+	gha := ghOwner != ""
+	// if the github owner is empty then check if github app mode is enabled
+	if !gha {
+		ghaMode, err := o.IsGitHubAppMode()
+		if err != nil {
+			return nil, errors.Wrap(err, "when trying to check if in GitHub App mode")
+		}
+		if ghaMode {
+			gha = ghaMode
+		}
+	}
+
+	authConfigSvc, err := o.GitAuthConfigServiceGitHubMode(gha, gitKind)
 	if err != nil {
 		return nil, err
 	}
