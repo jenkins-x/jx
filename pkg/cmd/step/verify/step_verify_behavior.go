@@ -77,15 +77,15 @@ func (o *BehaviorOptions) Run() error {
 
 	list, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrapf(err, "failed to load SourceRepositories in namespace %s", ns)
+		return errors.Wrapf(err, "failed to load SourceRepositories in namespace '%s'", ns)
 	}
 	gitInfo, err := gits.ParseGitURL(o.SourceGitURL)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse git URL %s", o.SourceGitURL)
+		return errors.Wrapf(err, "failed to parse git URL '%s'", o.SourceGitURL)
 	}
 	sr, err := o.findSourceRepository(list.Items, o.SourceGitURL, gitInfo)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find SourceRepositories for URL  %s", o.SourceGitURL)
+		return errors.Wrapf(err, "failed to find SourceRepositories for URL '%s'", o.SourceGitURL)
 	}
 	owner := ""
 	repo := ""
@@ -93,7 +93,7 @@ func (o *BehaviorOptions) Run() error {
 	if sr == nil {
 		err = o.importSourceRepository(gitInfo)
 		if err != nil {
-			return errors.Wrapf(err, "failed to find SourceRepositories for URL  %s", o.SourceGitURL)
+			return errors.Wrapf(err, "failed to find SourceRepositories for URL '%s'", o.SourceGitURL)
 		}
 		trigger = false
 	} else {
@@ -109,7 +109,7 @@ func (o *BehaviorOptions) Run() error {
 	if trigger {
 		err = o.triggerPipeline(owner, repo)
 		if err != nil {
-			return errors.Wrapf(err, "failed to find SourceRepositories for URL  %s", o.SourceGitURL)
+			return errors.Wrapf(err, "failed to trigger Pipeline for URL '%s/%s'", owner, repo)
 		}
 	}
 
