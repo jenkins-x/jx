@@ -221,22 +221,29 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceURL string, gitKind
 		return o.fakeGitProvider, nil
 	}
 
+	var err error
 	gha := ghOwner != ""
 	// if the github owner is empty then check if github app mode is enabled
 	if !gha {
-		ghaMode, err := o.IsGitHubAppMode()
+		gha, err = o.IsGitHubAppMode()
 		if err != nil {
 			return nil, errors.Wrap(err, "when trying to check if in GitHub App mode")
 		}
-		if ghaMode {
-			gha = ghaMode
+	}
+
+	var authConfigSvc auth.ConfigService
+	if gha {
+		authConfigSvc, err = o.GitAuthConfigServiceGitHubMode(gitKind)
+		if err != nil {
+			return nil, errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubMode")
+		}
+	} else {
+		authConfigSvc, err = o.GitAuthConfigService()
+		if err != nil {
+			return nil, errors.Wrap(err, "when creating auth config service using GitAuthConfigService")
 		}
 	}
 
-	authConfigSvc, err := o.GitAuthConfigServiceGitHubMode(gha, gitKind)
-	if err != nil {
-		return nil, err
-	}
 	return gits.CreateProviderForURL(cluster.IsInCluster(), authConfigSvc, gitKind, gitServiceURL, ghOwner, o.Git(), o.BatchMode, o.GetIOFileHandles())
 }
 

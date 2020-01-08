@@ -158,10 +158,7 @@ func (o *CommonOptions) GitAuthConfigService() (auth.ConfigService, error) {
 }
 
 // GitAuthConfigServiceGitHubMode create the git auth config service optionally handling github app mode
-func (o *CommonOptions) GitAuthConfigServiceGitHubMode(gha bool, serviceKind string) (auth.ConfigService, error) {
-	if !gha {
-		return o.GitAuthConfigService()
-	}
+func (o *CommonOptions) GitAuthConfigServiceGitHubMode(serviceKind string) (auth.ConfigService, error) {
 	client, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the kube client")

@@ -106,11 +106,20 @@ func (o *StepGitCredentialsOptions) Run() error {
 		}
 	}
 
-	gitAuthSvc, err := o.GitAuthConfigServiceGitHubMode(gha, o.GitKind)
-	if err != nil {
-		return errors.Wrap(err, "creating git auth service")
+	var authConfigSvc auth.ConfigService
+	if gha {
+		authConfigSvc, err = o.GitAuthConfigServiceGitHubMode(o.GitKind)
+		if err != nil {
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubMode")
+		}
+	} else {
+		authConfigSvc, err = o.GitAuthConfigService()
+		if err != nil {
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigService")
+		}
 	}
-	return o.CreateGitCredentialsFile(outFile, gitAuthSvc)
+
+	return o.CreateGitCredentialsFile(outFile, authConfigSvc)
 }
 
 // CreateGitCredentialsFile creates the git credentials into file using the provided auth config service
