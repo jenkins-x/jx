@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -516,7 +517,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 				secretName = fmt.Sprintf("tls-%s-s", domain)
 			}
 		}
-		helmValues.ExposeController.Config.TLSSecretName = secretName
+		helmValues.ExposeController.Config.TLSSecretName = strings.ReplaceAll(secretName, ".", "-")
 	}
 
 	return helmValues, nil
