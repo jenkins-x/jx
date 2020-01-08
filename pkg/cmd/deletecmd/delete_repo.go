@@ -60,7 +60,7 @@ func NewCmdDeleteRepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "repo",
 		Short:   "Deletes one or more Git repositories",
-		Aliases: []string{"repository"},
+		Aliases: []string{"repository", "repos"},
 		Long:    deleteRepoLong,
 		Example: deleteRepoExample,
 		Run: func(cmd *cobra.Command, args []string) {
