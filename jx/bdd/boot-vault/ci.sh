@@ -46,11 +46,16 @@ export JX_VALUE_PROW_HMACTOKEN="$GH_ACCESS_TOKEN"
 # TODO temporary hack until the batch mode in jx is fixed...
 export JX_BATCH_MODE="true"
 
+# Use the latest boot config promoted in the version stream instead of master to avoid conflicts during boot, because
+# boot fetches always the latest version available in the version stream.
+git clone  https://github.com/jenkins-x/jenkins-x-versions.git versions
+export BOOT_CONFIG_VERSION=$(jx step get dependency-version --host=github.com --owner=jenkins-x --repo=jenkins-x-boot-config --dir versions | sed 's/.*: \(.*\)/\1/')
 git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
 cd boot-source
+git checkout tags/v${BOOT_CONFIG_VERSION} -b latest-boot-config
+
 cp ../jx/bdd/boot-vault/jx-requirements.yml .
 cp ../jx/bdd/boot-vault/parameters.yaml env
-
 cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
 cat tmp.yaml ../boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
 rm tmp.yaml
