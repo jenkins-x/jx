@@ -87,6 +87,8 @@ type ImportOptions struct {
 	ImportMode            string
 	UseDefaultGit         bool
 	GithubAppInstalled    bool
+
+	reporter ImportReporter
 }
 
 const (
@@ -262,7 +264,7 @@ func (options *ImportOptions) Run() error {
 			userAuth = config.CurrentUser(server, options.CommonOptions.InCluster())
 		} else if options.GitRepositoryOptions.Username != "" {
 			userAuth = config.GetOrCreateUserAuth(server.URL, options.GitRepositoryOptions.Username)
-			log.Logger().Infof("Using Git user name: %s", options.GitRepositoryOptions.Username)
+			options.GetReporter().UsingGitUserName(options.GitRepositoryOptions.Username)
 		} else {
 			// Get the org in case there is more than one user auth on the server and batchMode is true
 			org := options.getOrganisationOrCurrentUser()
@@ -482,6 +484,19 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 	return nil
 }
 
+// GetReporter returns the reporter interface
+func (options *ImportOptions) GetReporter() ImportReporter {
+	if options.reporter == nil {
+		options.reporter = &LogImportReporter{}
+	}
+	return options.reporter
+}
+
+// SetReporter overrides the reporter interface
+func (options *ImportOptions) SetReporter(reporter ImportReporter) {
+	options.reporter = reporter
+}
+
 // DraftCreate creates a draft
 func (options *ImportOptions) DraftCreate() error {
 	// TODO this is a workaround of this draft issue:
@@ -678,7 +693,8 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("Pushed Git repository to %s\n", util.ColorInfo(repo.HTMLURL))
+	repoURL := repo.HTMLURL
+	options.GetReporter().PushedGitRepository(repoURL)
 
 	githubAppMode, err := options.IsGitHubAppMode()
 	if err != nil {
@@ -783,7 +799,7 @@ func (options *ImportOptions) DiscoverGit() error {
 		}
 		if root != "" {
 			if root != options.Dir {
-				log.Logger().Infof("Importing from directory %s as we found a .git folder there", root)
+				options.GetReporter().Trace("Importing from directory %s as we found a .git folder there", root)
 			}
 			options.Dir = root
 			options.GitConfDir = gitConf
@@ -798,7 +814,7 @@ func (options *ImportOptions) DiscoverGit() error {
 
 	// lets prompt the user to initialise the Git repository
 	if !options.BatchMode {
-		log.Logger().Infof("The directory %s is not yet using git", util.ColorInfo(dir))
+		options.GetReporter().Trace("The directory %s is not yet using git", util.ColorInfo(dir))
 		flag := false
 		prompt := &survey.Confirm{
 			Message: "Would you like to initialise git now?",
@@ -852,7 +868,7 @@ func (options *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	log.Logger().Infof("\nGit repository created")
+	options.GetReporter().GitRepositoryCreated()
 	return nil
 }
 
@@ -1057,12 +1073,11 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 			if err != nil {
 				return errors.Wrapf(err, "failed to create Pull Request on the development environment git repository %s", devGitURL)
 			}
-			info := util.ColorInfo
 			prURL := ""
 			if pro.Results != nil && pro.Results.PullRequest != nil {
 				prURL = pro.Results.PullRequest.URL
 			}
-			log.Logger().Infof("created pull request %s on the development git repository %s", info(prURL), info(devGitURL))
+			options.GetReporter().CreatedDevRepoPullRequest(prURL, devGitURL)
 		}
 
 		err = options.GenerateProwConfig(currentNamespace, devEnv)
@@ -1176,8 +1191,8 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 // ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryOrg string) error {
 	options.Organisation = naming.ToValidName(strings.ToLower(options.Organisation))
-	log.Logger().Infof("replacing placeholders in directory %s", options.Dir)
-	log.Logger().Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
+	options.GetReporter().Trace("replacing placeholders in directory %s", options.Dir)
+	options.GetReporter().Trace("app name: %s, git server: %s, org: %s, Docker registry org: %s", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
 
 	ignore, err := gitignore.NewRepository(options.Dir)
 	if err != nil {
@@ -1224,16 +1239,16 @@ func (options *ImportOptions) skipPathForReplacement(path string, fi os.FileInfo
 	matchIgnore := match != nil && match.Ignore() //Defaults to including if match == nil
 	if fi.IsDir() {
 		if matchIgnore || fi.Name() == ".git" {
-			log.Logger().Infof("skipping directory %q", path)
+			options.GetReporter().Trace("skipping directory %q", path)
 			return true, filepath.SkipDir
 		}
 	} else if matchIgnore {
-		log.Logger().Infof("skipping ignored file %q", path)
+		options.GetReporter().Trace("skipping ignored file %q", path)
 		return true, nil
 	}
 	// Don't process nor follow symlinks
 	if (fi.Mode() & os.ModeSymlink) == os.ModeSymlink {
-		log.Logger().Infof("skipping symlink file %q", path)
+		options.GetReporter().Trace("skipping symlink file %q", path)
 		return true, nil
 	}
 	return false, nil
@@ -1405,7 +1420,7 @@ func (options *ImportOptions) fixDockerIgnoreFile() error {
 				if err != nil {
 					return err
 				}
-				log.Logger().Infof("Removed old `Dockerfile` entry from %s", util.ColorInfo(filename))
+				options.GetReporter().Trace("Removed old `Dockerfile` entry from %s", util.ColorInfo(filename))
 			}
 		}
 	}
@@ -1565,7 +1580,7 @@ func (options *ImportOptions) allDraftPacks() ([]string, error) {
 	initOpts := initcmd.InitOptions{
 		CommonOptions: options.CommonOptions,
 	}
-	log.Logger().Info("Getting latest packs ...")
+	log.Logger().Debug("Getting latest packs ...")
 	dir, _, err := initOpts.InitBuildPacks(nil)
 	if err != nil {
 		return nil, err

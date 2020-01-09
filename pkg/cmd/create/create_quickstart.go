@@ -206,8 +206,6 @@ func (o *CreateQuickstartOptions) CreateQuickStart(q *quickstarts.QuickstartForm
 			o.PostDraftPackCallback = func() error {
 				_, appName := filepath.Split(genDir)
 				appChartDir := filepath.Join(genDir, "charts", appName)
-
-				log.Logger().Infof("### PostDraftPack callback copying from %s to %s!!!s", chartsDir, appChartDir)
 				err := util.CopyDirOverwrite(chartsDir, appChartDir)
 				if err != nil {
 					return err
@@ -218,11 +216,9 @@ func (o *CreateQuickstartOptions) CreateQuickStart(q *quickstarts.QuickstartForm
 				}
 				return o.Git().Remove(genDir, filepath.Join("charts", folder))
 			}
-		} else {
-			log.Logger().Infof("### NO charts folder %s", chartsDir)
 		}
 	}
-	log.Logger().Infof("Created project at %s\n", util.ColorInfo(genDir))
+	o.GetReporter().CreatedProject(genDir)
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 
@@ -290,7 +286,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, fmt.Errorf("failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
 	}
-	log.Logger().Infof("Generated quickstart at %s", answer)
+	o.GetReporter().GeneratedQuickStartAt(answer)
 	return answer, nil
 }
 
