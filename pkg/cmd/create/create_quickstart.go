@@ -114,6 +114,7 @@ func (o *CreateQuickstartOptions) Run() error {
 	return o.CreateQuickStart(q)
 }
 
+// CreateQuickStart helper method to create a quickstart from a quickstart resource
 func (o *CreateQuickstartOptions) CreateQuickStart(q *quickstarts.QuickstartForm) error {
 	if q == nil {
 		return fmt.Errorf("no quickstart chosen")

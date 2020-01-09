@@ -1553,6 +1553,7 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	return options.DefaultValuesFromTeamSettings(settings)
 }
 
+// DefaultValuesFromTeamSettings defaults the repository options from the given team settings
 func (options *ImportOptions) DefaultValuesFromTeamSettings(settings *v1.TeamSettings) error {
 	if options.DeployKind == "" {
 		options.DeployKind = settings.DeployKind
