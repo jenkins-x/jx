@@ -111,6 +111,10 @@ func (o *CreateQuickstartOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	return o.CreateQuickStart(q)
+}
+
+func (o *CreateQuickstartOptions) CreateQuickStart(q *quickstarts.QuickstartForm) error {
 	if q == nil {
 		return fmt.Errorf("no quickstart chosen")
 	}
@@ -120,6 +124,7 @@ func (o *CreateQuickstartOptions) Run() error {
 	o.GitRepositoryOptions.RepoName = o.ImportOptions.Repository
 	repoName := o.GitRepositoryOptions.RepoName
 	if !o.BatchMode {
+		var err error
 		details, err = o.GetGitRepositoryDetails()
 		if err != nil {
 			return err
@@ -140,6 +145,7 @@ func (o *CreateQuickstartOptions) Run() error {
 		if q.Name == "" {
 			return util.MissingOption("project-name")
 		}
+
 	}
 
 	githubAppMode, err := o.IsGitHubAppMode()
@@ -152,7 +158,13 @@ func (o *CreateQuickstartOptions) Run() error {
 			Factory: o.GetFactory(),
 		}
 
-		installed, err := githubApp.Install(details.Organisation, details.RepoName, o.GetIOFileHandles(), true)
+		owner := o.GitRepositoryOptions.Owner
+		repoName := o.GitRepositoryOptions.RepoName
+		if details != nil {
+			owner = details.Organisation
+			repoName = details.RepoName
+		}
+		installed, err := githubApp.Install(owner, repoName, o.GetIOFileHandles(), true)
 		if err != nil {
 			return err
 		}

@@ -1535,6 +1535,10 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	if err != nil {
 		return err
 	}
+	return options.DefaultValuesFromTeamSettings(settings)
+}
+
+func (options *ImportOptions) DefaultValuesFromTeamSettings(settings *v1.TeamSettings) error {
 	if options.DeployKind == "" {
 		options.DeployKind = settings.DeployKind
 	}
