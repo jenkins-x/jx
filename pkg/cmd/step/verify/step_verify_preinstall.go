@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/pkg/prow"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -643,7 +646,33 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		return nil, errors.Wrap(err, "error saving requirements file")
 	}
 
+	err = o.writeOwnersFile(requirements)
+	if err != nil {
+		return nil, errors.Wrapf(err, "writing approvers to OWNERS file in %s", o.Dir)
+	}
+
 	return requirements, nil
+}
+
+func (o *StepVerifyPreInstallOptions) writeOwnersFile(requirements *config.RequirementsConfig) error {
+	if len(requirements.Cluster.DevEnvApprovers) > 0 {
+		filename := filepath.Join(o.Dir, "OWNERS")
+		data := prow.Owners{}
+		for _, approver := range requirements.Cluster.DevEnvApprovers {
+			data.Approvers = append(data.Approvers, approver)
+			data.Reviewers = append(data.Reviewers, approver)
+		}
+		ownersYaml, err := yaml.Marshal(data)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filename, ownersYaml, 0644)
+		if err != nil {
+			return err
+		}
+		log.Logger().Infof("writing the following to the OWNERS file for the development environment repository:\n%s", string(ownersYaml))
+	}
+	return nil
 }
 
 func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config.RequirementsConfig) error {
@@ -677,6 +706,22 @@ func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config
 			if err != nil {
 				return err
 			}
+		}
+	}
+	if len(requirements.Cluster.DevEnvApprovers) == 0 && !o.BatchMode {
+		approversString, err := util.PickValue(
+			"Comma-separated git provider usernames of approvers for development environment repository",
+			"",
+			true,
+			"Pull requests to the development environment repository require approval by one or more "+
+				"users, specified in the 'OWNERS' file in the repository. Please specify a comma-separated "+
+				"list of usernames for your Git provider to be used as approvers.",
+			o.GetIOFileHandles())
+		if err != nil {
+			return errors.Wrap(err, "configuring approvers for development environment repository")
+		}
+		for _, a := range strings.Split(approversString, ",") {
+			requirements.Cluster.DevEnvApprovers = append(requirements.Cluster.DevEnvApprovers, strings.TrimSpace(a))
 		}
 	}
 	return nil
