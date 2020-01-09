@@ -4,6 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
+	"github.com/sirupsen/logrus"
+
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/cmd/get"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -30,6 +33,7 @@ type BehaviorOptions struct {
 
 	SourceGitURL string
 	Branch       string
+	NoImport     bool
 }
 
 var (
@@ -65,6 +69,7 @@ func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.SourceGitURL, "git-url", "u", "https://github.com/jenkins-x/bdd-jx.git", "The git URL of the BDD tests pipeline")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "master", "The git branch to use to run the BDD tests")
+	cmd.Flags().BoolVarP(&options.NoImport, "no-import", "", false, "Create the pipeline directly, don't import the repository")
 	return cmd
 }
 
@@ -73,6 +78,10 @@ func (o *BehaviorOptions) Run() error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
+	}
+
+	if o.NoImport {
+		return o.runPipelineDirectly("jenkins-x", "bdd-jx", o.SourceGitURL)
 	}
 
 	list, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{})
@@ -85,7 +94,7 @@ func (o *BehaviorOptions) Run() error {
 	}
 	sr, err := o.findSourceRepository(list.Items, o.SourceGitURL, gitInfo)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find SourceRepositories for URL '%s'", o.SourceGitURL)
+		return errors.Wrapf(err, "failed to find SourceRepository for URL '%s'", o.SourceGitURL)
 	}
 	owner := ""
 	repo := ""
@@ -93,7 +102,7 @@ func (o *BehaviorOptions) Run() error {
 	if sr == nil {
 		err = o.importSourceRepository(gitInfo)
 		if err != nil {
-			return errors.Wrapf(err, "failed to find SourceRepositories for URL '%s'", o.SourceGitURL)
+			return errors.Wrapf(err, "failed to import SourceRepository for URL '%s'", o.SourceGitURL)
 		}
 		trigger = false
 	} else {
@@ -184,6 +193,56 @@ func (o *BehaviorOptions) triggerPipeline(owner string, repo string) error {
 	err := so.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to start pipeline %s", pipeline)
+	}
+	return nil
+}
+
+func (o *BehaviorOptions) runPipelineDirectly(owner string, repo string, sourceURL string) error {
+	pullRefs := ""
+	branch := "master"
+	pullRefs = branch + ":"
+	kind := metapipeline.ReleasePipeline
+	sa := "tekton-bot"
+
+	l := logrus.WithFields(logrus.Fields(map[string]interface{}{
+		"Owner":     owner,
+		"Name":      repo,
+		"SourceURL": sourceURL,
+		"Branch":    branch,
+		"PullRefs":  pullRefs,
+		//"Job":       job,
+	}))
+	l.Info("about to start Jenkinx X meta pipeline")
+
+	pullRefData := metapipeline.NewPullRef(sourceURL, branch, "")
+	envVars := map[string]string{}
+	pipelineCreateParam := metapipeline.PipelineCreateParam{
+		PullRef:      pullRefData,
+		PipelineKind: kind,
+		Context:      "",
+		// No equivalent to https://github.com/jenkins-x/jx/blob/bb59278c2707e0e99b3c24be926745c324824388/pkg/cmd/controller/pipeline/pipelinerunner_controller.go#L236
+		//   for getting environment variables from the prow job here, so far as I can tell (abayer)
+		// Also not finding an equivalent to labels from the PipelineRunRequest
+		ServiceAccount: sa,
+		// I believe we can use an empty string default image?
+		DefaultImage:        "",
+		EnvVariables:        envVars,
+		UseBranchAsRevision: true,
+	}
+
+	c, err := metapipeline.NewMetaPipelineClient()
+	if err != nil {
+		return errors.Wrap(err, "unable to create metapipeline client")
+	}
+
+	pipelineActivity, tektonCRDs, err := c.Create(pipelineCreateParam)
+	if err != nil {
+		return errors.Wrap(err, "unable to create Tekton CRDs")
+	}
+
+	err = c.Apply(pipelineActivity, tektonCRDs)
+	if err != nil {
+		return errors.Wrap(err, "unable to apply Tekton CRDs")
 	}
 	return nil
 }
