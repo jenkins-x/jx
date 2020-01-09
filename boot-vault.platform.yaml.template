@@ -21,7 +21,28 @@ jenkins:
         EnvVars:
           CODECOV_TOKEN: $CODECOV_TOKEN
 
+{{- if eq .Requirements.webhook "lighthouse" }}
 controllerbuild:
+  enabled: true
+  args:
+  - "controller"
+  - "build"
+  - "--git-reporting"
+  - "--batch-mode"
+  - "--git-credentials"
+  - "--verbose"
   image:
     repository: gcr.io/jenkinsxio/builder-go
     tag: $VERSION
+{{- else }}
+controllerbuild:
+  enabled: true
+  args:
+  - "controller"
+  - "build"
+  - "--batch-mode"
+  - "--verbose"
+  image:
+    repository: gcr.io/jenkinsxio/builder-go
+    tag: $VERSION
+{{- end }}
