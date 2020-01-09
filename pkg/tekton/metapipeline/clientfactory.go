@@ -139,6 +139,7 @@ func (c *clientFactory) Create(param PipelineCreateParam) (kube.PromoteStepActiv
 		VersionsDir:         c.versionDir,
 		GitInfo:             *gitInfo,
 		UseBranchAsRevision: param.UseBranchAsRevision,
+		NoReleasePrepare:    param.NoReleasePrepare,
 	}
 
 	return c.createActualCRDs(buildNumber, branchIdentifier, param.Context, param.PullRef, crdCreationParams)

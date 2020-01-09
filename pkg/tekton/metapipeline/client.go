@@ -38,6 +38,9 @@ type PipelineCreateParam struct {
 	// UseBranchAsRevision forces step_create_task to use the branch it's passed as the revision to checkout for release
 	// pipelines, rather than use the version tag
 	UseBranchAsRevision bool
+
+	// NoReleasePrepare do not prepare the release, this passes the --no-release-prepare flag to `jx step create task`
+	NoReleasePrepare bool
 }
 
 // Client defines the interface for meta pipeline creation and application.
