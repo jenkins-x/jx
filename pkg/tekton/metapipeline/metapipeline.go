@@ -57,6 +57,7 @@ type CRDCreationParameters struct {
 	Apps                []jenkinsv1.App
 	VersionsDir         string
 	UseBranchAsRevision bool
+	NoReleasePrepare    bool
 }
 
 // createMetaPipelineCRDs creates the Tekton CRDs needed to execute the meta pipeline.
@@ -261,6 +262,9 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	}
 	if params.UseBranchAsRevision {
 		args = append(args, "--branch-as-revision")
+	}
+	if params.NoReleasePrepare {
+		args = append(args, "--no-release-prepare")
 	}
 	for k, v := range params.Labels {
 		args = append(args, "--label", fmt.Sprintf("%s=%s", k, v))

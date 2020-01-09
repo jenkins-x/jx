@@ -228,6 +228,7 @@ func (o *BehaviorOptions) runPipelineDirectly(owner string, repo string, sourceU
 		DefaultImage:        "",
 		EnvVariables:        envVars,
 		UseBranchAsRevision: true,
+		NoReleasePrepare:    true,
 	}
 
 	c, err := metapipeline.NewMetaPipelineClient()
