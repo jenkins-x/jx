@@ -233,6 +233,11 @@ func (in *ClusterConfig) DeepCopyInto(out *ClusterConfig) {
 		*out = new(GKEConfig)
 		**out = **in
 	}
+	if in.DevEnvApprovers != nil {
+		in, out := &in.DevEnvApprovers, &out.DevEnvApprovers
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

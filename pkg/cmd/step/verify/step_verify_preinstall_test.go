@@ -13,9 +13,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 )
 
 var timeout = 1 * time.Second
@@ -98,6 +101,7 @@ func Test_doesnt_ask_for_confirmation_when_in_gke(t *testing.T) {
 	testConfig.Cluster.ProjectID = "test"
 	testConfig.Cluster.Zone = "exzone"
 	testConfig.Cluster.ClusterName = "acme"
+	testConfig.Cluster.DevEnvApprovers = []string{"bob"}
 
 	testOptions.gatherRequirements(testConfig, "")
 	fakeStdout.Close()
@@ -129,6 +133,7 @@ func Test_doesnt_ask_for_confirmation_when_in_batch_mode_and_with_different_prov
 	testConfig.Cluster.ProjectID = "test"
 	testConfig.Cluster.Zone = "exzone"
 	testConfig.Cluster.ClusterName = "acme"
+	testConfig.Cluster.DevEnvApprovers = []string{"bob"}
 
 	testOptions.gatherRequirements(testConfig, "")
 	fakeStdout.Close()
@@ -165,6 +170,7 @@ func Test_asks_for_confirmation_when_not_in_batch_mode_and_with_different_provid
 	testConfig.Cluster.ProjectID = "test"
 	testConfig.Cluster.Zone = "exzone"
 	testConfig.Cluster.ClusterName = "acme"
+	testConfig.Cluster.DevEnvApprovers = []string{"bob"}
 
 	done := make(chan struct{})
 	go func() {
@@ -255,7 +261,7 @@ func TestGatherRequirements_PreserveEnvironmentGitOwnerCase(t *testing.T) {
 	assert.Equal(t, "ACME", requirementsWithDefaults.Cluster.EnvironmentGitOwner)
 }
 
-func TestGatherRequirements_SetsDefaults(t *testing.T) {
+func TestGatherRequirements_DevEnvApprovers(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "test-step-verify-preinstall-")
 	require.NoError(t, err)
 
@@ -267,9 +273,14 @@ func TestGatherRequirements_SetsDefaults(t *testing.T) {
 	testConfig.Cluster.ProjectID = "test"
 	testConfig.Cluster.Zone = "exzone"
 	testConfig.Cluster.ClusterName = "acme"
+	testConfig.Cluster.DevEnvApprovers = []string{
+		"bob",
+		"steve",
+	}
 
 	testOptions := &StepVerifyPreInstallOptions{
 		WorkloadIdentity: true,
+		Dir:              tempDir,
 		StepVerifyOptions: StepVerifyOptions{
 			StepOptions: step.StepOptions{
 				CommonOptions: &opts.CommonOptions{
@@ -291,4 +302,69 @@ func TestGatherRequirements_SetsDefaults(t *testing.T) {
 	assert.Equal(t, "github", requirementsWithDefaults.Cluster.GitName)
 	assert.Equal(t, "-jx.", requirementsWithDefaults.Ingress.NamespaceSubDomain)
 	assert.Equal(t, config.RepositoryTypeNexus, requirementsWithDefaults.Repository)
+	assert.Len(t, requirementsWithDefaults.Cluster.DevEnvApprovers, 2)
+	assert.Equal(t, []string{"bob", "steve"}, requirementsWithDefaults.Cluster.DevEnvApprovers)
+
+	ownersFileName := filepath.Join(tempDir, "OWNERS")
+	ownersExists, err := util.FileExists(ownersFileName)
+	assert.NoError(t, err)
+	assert.True(t, ownersExists)
+
+	expectedOwners := &prow.Owners{
+		Approvers: []string{"bob", "steve"},
+		Reviewers: []string{"bob", "steve"},
+	}
+	loadedOwners := &prow.Owners{}
+
+	ownersContent, err := ioutil.ReadFile(ownersFileName)
+	assert.NoError(t, err)
+
+	err = yaml.Unmarshal(ownersContent, loadedOwners)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedOwners, loadedOwners)
+}
+
+func TestGatherRequirements_SetsDefaults(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "test-step-verify-preinstall-")
+	require.NoError(t, err)
+
+	requirementsFileName := filepath.Join(tempDir, "jx-requirements.yml")
+
+	testConfig := &config.RequirementsConfig{}
+	testConfig.Cluster.Provider = "gke"
+	testConfig.Cluster.EnvironmentGitOwner = "acme"
+	testConfig.Cluster.ProjectID = "test"
+	testConfig.Cluster.Zone = "exzone"
+	testConfig.Cluster.ClusterName = "acme"
+
+	testOptions := &StepVerifyPreInstallOptions{
+		WorkloadIdentity: true,
+		Dir:              tempDir,
+		StepVerifyOptions: StepVerifyOptions{
+			StepOptions: step.StepOptions{
+				CommonOptions: &opts.CommonOptions{
+					BatchMode: true,
+				},
+			},
+		},
+	}
+
+	_, err = testOptions.gatherRequirements(testConfig, requirementsFileName)
+	assert.NoError(t, err)
+
+	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "jx", requirementsWithDefaults.Cluster.Namespace)
+	assert.Equal(t, "https://github.com", requirementsWithDefaults.Cluster.GitServer)
+	assert.Equal(t, "github", requirementsWithDefaults.Cluster.GitKind)
+	assert.Equal(t, "github", requirementsWithDefaults.Cluster.GitName)
+	assert.Equal(t, "-jx.", requirementsWithDefaults.Ingress.NamespaceSubDomain)
+	assert.Equal(t, config.RepositoryTypeNexus, requirementsWithDefaults.Repository)
+	assert.Len(t, requirementsWithDefaults.Cluster.DevEnvApprovers, 0)
+
+	ownersFileName := filepath.Join(tempDir, "OWNERS")
+	ownersExists, err := util.FileExists(ownersFileName)
+	assert.NoError(t, err)
+	assert.False(t, ownersExists)
 }

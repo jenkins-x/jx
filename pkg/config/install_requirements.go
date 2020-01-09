@@ -110,6 +110,8 @@ const (
 	RequirementGitAppEnabled = "JX_REQUIREMENT_GITHUB_APP_ENABLED"
 	// RequirementGitAppURL contains the URL to the github app
 	RequirementGitAppURL = "JX_REQUIREMENT_GITHUB_APP_URL"
+	// RequirementDevEnvApprovers contains the optional list of users to populate the dev env's OWNERS with
+	RequirementDevEnvApprovers = "JX_REQUIREMENT_DEV_ENV_APPROVERS"
 )
 
 const (
@@ -333,6 +335,8 @@ type ClusterConfig struct {
 	KanikoSAName string `json:"kanikoSAName,omitempty"`
 	// HelmMajorVersion contains the major helm version number. Assumes helm 2.x with no tiller if no value specified
 	HelmMajorVersion string `json:"helmMajorVersion,omitempty"`
+	// DevEnvApprovers contains an optional list of approvers to populate the initial OWNERS file in the dev env repo
+	DevEnvApprovers []string `json:"devEnvApprovers,omitempty"`
 }
 
 // VaultConfig contains Vault configuration for boot
@@ -981,6 +985,12 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func()
 			c.GithubApp = &GithubAppConfig{}
 		}
 		c.GithubApp.URL = os.Getenv(RequirementGitAppURL)
+	}
+	if "" != os.Getenv(RequirementDevEnvApprovers) {
+		rawApprovers := os.Getenv(RequirementDevEnvApprovers)
+		for _, approver := range strings.Split(rawApprovers, ",") {
+			c.Cluster.DevEnvApprovers = append(c.Cluster.DevEnvApprovers, strings.TrimSpace(approver))
+		}
 	}
 	// set this if its not currently configured
 	if c.Cluster.Provider == "gke" {
