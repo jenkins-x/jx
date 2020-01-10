@@ -242,6 +242,9 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
+	if err != nil {
+		return err
+	}
 
 	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
 	if err != nil {
@@ -288,7 +291,6 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
 	}
-	log.Logger().Info("")
 	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
@@ -299,7 +301,6 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
-	log.Logger().Info("")
 
 	return util.CombineErrors(err, err2)
 }
@@ -313,12 +314,14 @@ func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, unta
 
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
-
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
 		return err
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
+	if err != nil {
+		return err
+	}
 
 	// check if we are installing a chart from the filesystem
 	chartDir := filepath.Join(h.CWD, chart)
