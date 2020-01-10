@@ -38,9 +38,12 @@ type GitCLI struct {
 
 // NewGitCLI creates a new GitCLI instance
 func NewGitCLI() *GitCLI {
-	return &GitCLI{
+	cli := &GitCLI{
 		Env: map[string]string{},
 	}
+	// Ensure that error output is in English so parsing work
+	cli.Env["LC_ALL"] = "C"
+	return cli
 }
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -550,8 +553,7 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Args: args,
 		Env:  g.Env,
 	}
-	// Ensure that error output is in English so parsing work
-	cmd.Env = map[string]string{"LC_ALL": "C"}
+	log.Logger().Debug(cmd.String())
 	output, err := cmd.RunWithoutRetry()
 	return errors.Wrapf(err, "git output: %s", output)
 }
@@ -561,9 +563,9 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 		Dir:  dir,
 		Name: "git",
 		Args: args,
+		Env:  g.Env,
 	}
-	// Ensure that error output is in English so parsing work
-	cmd.Env = map[string]string{"LC_ALL": "C"}
+	log.Logger().Debug(cmd.String())
 	return cmd.RunWithoutRetry()
 }
 
