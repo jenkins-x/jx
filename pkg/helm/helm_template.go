@@ -288,15 +288,18 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 
 	err = h.kubectlApply(ns, releaseName, wait, create, force, outputDir)
 	if err != nil {
-		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
-		return err
+		err2 := h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
+		return util.CombineErrors(err, err2)
 	}
-	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
+	err = h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
+	if err != nil {
+		log.Logger().Warnf("Failed to delete the %s hook, due to: %s", helmPrePhase, err)
+	}
 
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
-		h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
-		return err
+		err2 := h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
+		return util.CombineErrors(err, err2)
 	}
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
@@ -373,15 +376,18 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 
 	err = h.kubectlApply(ns, releaseName, wait, create, force, outputDir)
 	if err != nil {
-		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
-		return err
+		err2 := h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
+		return util.CombineErrors(err, err2)
 	}
-	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
+	err = h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
+	if err != nil {
+		log.Logger().Warnf("Failed to delete the %s hook, due to: %s", helmPrePhase, err)
+	}
 
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
-		h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
-		return err
+		err2 := h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
+		return util.CombineErrors(err, err2)
 	}
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
