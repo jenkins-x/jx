@@ -401,8 +401,6 @@ func (h *HelmTemplate) DecryptSecrets(location string) error {
 }
 
 func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, create bool, force bool, dir string) error {
-
-	// does namespaces dir exist?
 	namespacesDir := filepath.Join(dir, "namespaces")
 	if _, err := os.Stat(namespacesDir); !os.IsNotExist(err) {
 
