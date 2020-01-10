@@ -14,7 +14,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/features"
-	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -599,13 +598,6 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if err != nil {
 		return err
 	}
-
-	o.InstallOptions.SetInstallValues(map[string]string{
-		kube.Zone:        zone,
-		kube.Region:      region,
-		kube.ProjectID:   projectID,
-		kube.ClusterName: o.Flags.ClusterName,
-	})
 
 	getCredsCommand := []string{"container", "clusters", "get-credentials", o.Flags.ClusterName}
 	if "" != zone {

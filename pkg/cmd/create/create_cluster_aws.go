@@ -338,9 +338,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.InstallOptions.SetInstallValues(map[string]string{
-		kube.Region: region,
-	})
+
 	return nil
 }
 

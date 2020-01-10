@@ -5,8 +5,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -19,9 +17,7 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running create cluster
 type CreateClusterOptions struct {
 	options.CreateOptions
-	InstallOptions InstallOptions
-	Flags          initcmd.InitFlags
-	Provider       string
+	Provider string
 }
 
 const (

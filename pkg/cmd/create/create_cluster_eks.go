@@ -20,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/features"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -237,9 +236,6 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 		return errors.Wrap(err, "there was a problem adding flags to the cluster")
 	}
 
-	o.InstallOptions.SetInstallValues(map[string]string{
-		kube.Region: region,
-	})
 	return nil
 }
 
