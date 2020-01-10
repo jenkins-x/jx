@@ -167,7 +167,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFile(fileName string, co
 	return nil
 }
 
-// CreateGitCredentialsFile creates the git credentials into file using the provided username, token & url
+// CreateGitCredentialsFileFromUsernameAndToken creates the git credentials into file using the provided username, token & url
 func (o *StepGitCredentialsOptions) CreateGitCredentialsFileFromUsernameAndToken(fileName string, username string, token string, url string) error {
 	data, err := o.CreateGitCredentialsFromUsernameAndToken(username, token, url)
 	if err != nil {
@@ -180,7 +180,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFileFromUsernameAndToken
 	return nil
 }
 
-// CreateGitCredentials creates the git credentials using the auth config service
+// CreateGitCredentialsFromAuthService creates the git credentials using the auth config service
 func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConfigSvc auth.ConfigService) ([]byte, error) {
 	cfg := authConfigSvc.Config()
 	if cfg == nil {
@@ -233,7 +233,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConf
 	return buffer.Bytes(), nil
 }
 
-// CreateGitCredentials creates the git credentials using the auth config service
+// CreateGitCredentialsFromUsernameAndToken creates the git credentials using the auth config service
 func (o *StepGitCredentialsOptions) CreateGitCredentialsFromUsernameAndToken(username string, token string, serverURL string) ([]byte, error) {
 	var buffer bytes.Buffer
 
