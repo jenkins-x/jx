@@ -851,7 +851,7 @@ func (o *CreateDevPodOptions) Run() error {
 			if err != nil {
 				return errors.Wrap(err, "creating git auth config service")
 			}
-			gitCredentials, err := o.GitCredentials.CreateGitCredentials(gitAuthSvc)
+			gitCredentials, err := o.GitCredentials.CreateGitCredentialsFromAuthService(gitAuthSvc)
 			if err != nil {
 				return errors.Wrap(err, "creating git credentials")
 			}

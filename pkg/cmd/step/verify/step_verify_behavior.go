@@ -31,9 +31,10 @@ import (
 type BehaviorOptions struct {
 	*opts.CommonOptions
 
-	SourceGitURL string
-	Branch       string
-	NoImport     bool
+	SourceGitURL      string
+	Branch            string
+	NoImport          bool
+	CredentialsSecret string
 }
 
 var (
@@ -70,6 +71,7 @@ func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.SourceGitURL, "git-url", "u", "https://github.com/jenkins-x/bdd-jx.git", "The git URL of the BDD tests pipeline")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "master", "The git branch to use to run the BDD tests")
 	cmd.Flags().BoolVarP(&options.NoImport, "no-import", "", false, "Create the pipeline directly, don't import the repository")
+	cmd.Flags().StringVarP(&options.CredentialsSecret, "credentials-secret", "", "", "The name of the secret to generate the bdd credentials from, if not specified, the default git auth will be used")
 	return cmd
 }
 
@@ -216,6 +218,10 @@ func (o *BehaviorOptions) runPipelineDirectly(owner string, repo string, sourceU
 
 	pullRefData := metapipeline.NewPullRef(sourceURL, branch, "")
 	envVars := map[string]string{}
+	if o.CredentialsSecret != "" {
+		envVars["JX_CREDENTIALS_FROM_SECRET"] = o.CredentialsSecret
+	}
+
 	pipelineCreateParam := metapipeline.PipelineCreateParam{
 		PullRef:      pullRefData,
 		PipelineKind: kind,

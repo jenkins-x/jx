@@ -19,6 +19,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -30,9 +33,10 @@ const (
 type StepGitCredentialsOptions struct {
 	step.StepOptions
 
-	OutputFile     string
-	GitHubAppOwner string
-	GitKind        string
+	OutputFile        string
+	GitHubAppOwner    string
+	GitKind           string
+	CredentialsSecret string
 }
 
 var (
@@ -71,19 +75,17 @@ func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.OutputFile, optionOutputFile, "o", "", "The output file name")
 	cmd.Flags().StringVarP(&options.GitHubAppOwner, optionGitHubAppOwner, "g", "", "The owner (organisation or user name) if using GitHub App based tokens")
+	cmd.Flags().StringVarP(&options.CredentialsSecret, "credentials-secret", "s", "", "The secret name to read the credentials from")
 	cmd.Flags().StringVarP(&options.GitKind, "git-kind", "", "", "The git kind. e.g. github, bitbucketserver etc")
 	return cmd
 }
 
 func (o *StepGitCredentialsOptions) Run() error {
-	gha, err := o.IsGitHubAppMode()
-	if err != nil {
-		return err
+	if os.Getenv("JX_CREDENTIALS_FROM_SECRET") != "" {
+		log.Logger().Infof("Overriding CredentialsSecret from env var JX_CREDENTIALS_FROM_SECRET")
+		o.CredentialsSecret = os.Getenv("JX_CREDENTIALS_FROM_SECRET")
 	}
-	if gha && o.GitHubAppOwner == "" {
-		log.Logger().Infof("this command does nothing if using github app mode and no %s option specified", optionGitHubAppOwner)
-		return nil
-	}
+
 	outFile := o.OutputFile
 	if outFile == "" {
 		// lets figure out the default output file
@@ -106,16 +108,58 @@ func (o *StepGitCredentialsOptions) Run() error {
 		}
 	}
 
-	gitAuthSvc, err := o.GitAuthConfigServiceGitHubMode(gha, o.GitKind)
-	if err != nil {
-		return errors.Wrap(err, "creating git auth service")
+	if o.CredentialsSecret != "" {
+		// get secret
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			return err
+		}
+
+		secret, err := kubeClient.CoreV1().Secrets(ns).Get(o.CredentialsSecret, metav1.GetOptions{})
+		if err != nil && !apierrors.IsNotFound(err) {
+			return errors.Wrapf(err, "failed to find secret '%s' in namespace '%s'", o.CredentialsSecret, ns)
+		}
+
+		username := string(secret.Data["user"])
+		token := string(secret.Data["token"])
+		url := string(secret.Data["url"])
+
+		return o.CreateGitCredentialsFileFromUsernameAndToken(outFile, username, token, url)
+
+	} else {
+		gha, err := o.IsGitHubAppMode()
+		if err != nil {
+			return err
+		}
+		if gha && o.GitHubAppOwner == "" {
+			log.Logger().Infof("this command does nothing if using github app mode and no %s option specified", optionGitHubAppOwner)
+			return nil
+		}
+
+		gitAuthSvc, err := o.GitAuthConfigServiceGitHubMode(gha, o.GitKind)
+		if err != nil {
+			return errors.Wrap(err, "creating git auth service")
+		}
+		return o.CreateGitCredentialsFile(outFile, gitAuthSvc)
 	}
-	return o.CreateGitCredentialsFile(outFile, gitAuthSvc)
 }
 
 // CreateGitCredentialsFile creates the git credentials into file using the provided auth config service
 func (o *StepGitCredentialsOptions) CreateGitCredentialsFile(fileName string, configSvc auth.ConfigService) error {
-	data, err := o.CreateGitCredentials(configSvc)
+	data, err := o.CreateGitCredentialsFromAuthService(configSvc)
+	if err != nil {
+		return errors.Wrap(err, "creating git credentials")
+	}
+	if err := ioutil.WriteFile(fileName, data, util.DefaultWritePermissions); err != nil {
+		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
+	}
+	log.Logger().Infof("Generated Git credentials file %s", util.ColorInfo(fileName))
+	return nil
+}
+
+// CreateGitCredentialsFile creates the git credentials into file using the provided username, token & url
+func (o *StepGitCredentialsOptions) CreateGitCredentialsFileFromUsernameAndToken(fileName string, username string, token string, url string) error {
+	data, err := o.CreateGitCredentialsFromUsernameAndToken(username, token, url)
 	if err != nil {
 		return errors.Wrap(err, "creating git credentials")
 	}
@@ -127,7 +171,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFile(fileName string, co
 }
 
 // CreateGitCredentials creates the git credentials using the auth config service
-func (o *StepGitCredentialsOptions) CreateGitCredentials(authConfigSvc auth.ConfigService) ([]byte, error) {
+func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConfigSvc auth.ConfigService) ([]byte, error) {
 	cfg := authConfigSvc.Config()
 	if cfg == nil {
 		return nil, errors.New("no git auth config found")
@@ -176,5 +220,26 @@ func (o *StepGitCredentialsOptions) CreateGitCredentials(authConfigSvc auth.Conf
 			buffer.WriteString(u.String() + "\n")
 		}
 	}
+	return buffer.Bytes(), nil
+}
+
+// CreateGitCredentials creates the git credentials using the auth config service
+func (o *StepGitCredentialsOptions) CreateGitCredentialsFromUsernameAndToken(username string, token string, serverURL string) ([]byte, error) {
+	var buffer bytes.Buffer
+
+	u, err := url.Parse(serverURL)
+	if err != nil {
+		log.Logger().Warnf("Ignoring invalid git service URL %q", serverURL)
+		return nil, err
+	}
+
+	u.User = url.UserPassword(username, token)
+	buffer.WriteString(u.String() + "\n")
+	// Write the https protocol in case only https is set for completeness
+	if u.Scheme == "http" {
+		u.Scheme = "https"
+	}
+
+	buffer.WriteString(u.String() + "\n")
 	return buffer.Bytes(), nil
 }
