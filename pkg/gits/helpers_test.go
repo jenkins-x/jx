@@ -30,6 +30,37 @@ const (
 	license             = "LICENSE"
 )
 
+func TestGetRemoteForURL(t *testing.T) {
+	gitter := gits.NewGitCLI()
+
+	repoDir, err := ioutil.TempDir("", "get-remote-for-url")
+	assert.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(repoDir)
+	}()
+
+	err = gitter.Init(repoDir)
+	assert.NoError(t, err)
+
+	remote, err := gits.GetRemoteForURL(repoDir, "http://github.com/acme/foo.git", gitter)
+	assert.NoError(t, err)
+	assert.Empty(t, remote)
+
+	err = gitter.AddRemote(repoDir, "origin", "http://github.com/acme/foo.git")
+	assert.NoError(t, err)
+
+	err = gitter.AddRemote(repoDir, "upstream", "http://github.com/acme/bar.git")
+	assert.NoError(t, err)
+
+	remote, err = gits.GetRemoteForURL(repoDir, "http://github.com/acme/foo.git", gitter)
+	assert.NoError(t, err)
+	assert.Equal(t, "origin", remote)
+
+	remote, err = gits.GetRemoteForURL(repoDir, "http://github.com/acme/bar.git", gitter)
+	assert.NoError(t, err)
+	assert.Equal(t, "upstream", remote)
+}
+
 func TestFetchAndMergeOneSHA(t *testing.T) {
 	// This forkAndPullTest only uses local repos, so it's safe to use real git
 	env := prepareFetchAndMergeTests(t)
@@ -1086,249 +1117,6 @@ func TestExistingForkAndExistingCheckoutWithNonConflictingLocalModifications(t *
 			assert.Equal(t, fmt.Sprintf("file://%s/acme", args.provider.Repositories["acme"][0].BaseDir), upstreamURL)
 			assert.FileExists(t, filepath.Join(args.dir, "CONTRIBUTING"))
 			tests.AssertFileContains(t, filepath.Join(args.dir, "CONTRIBUTING"), "TODO ;-)")
-			return nil
-		},
-	})
-}
-func TestExistingForkAndExistingCheckoutWithExistingLocalCommits(t *testing.T) {
-
-	runForkAndPullTestCase(t, forkAndPullTest{
-		name: "existingForkAndExistingCheckoutWithExistingLocalCommits",
-		args: forkAndPullTestArgs{
-			gitter: gits.NewGitCLI(),
-			initFn: func(args *forkAndPullTestArgs) error {
-				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
-					if err != nil {
-						return errors.WithStack(err)
-					}
-					return nil
-				}, args.gitter)
-				args.provider = gits.NewFakeProvider(acmeRepo)
-				fork, err := args.provider.ForkRepository("acme", "roadrunner", "wile")
-				assert.NoError(t, err)
-
-				// Add a commit to the fork that isn't on the upstream to validate later. Let's use a temp clone and push it.
-				dir, err := ioutil.TempDir("", "")
-				assert.NoError(t, err)
-				err = args.gitter.Clone(fork.CloneURL, dir)
-				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
-				assert.NoError(t, err)
-				err = args.gitter.Add(dir, "CONTRIBUTING")
-				assert.NoError(t, err)
-				err = args.gitter.CommitDir(dir, "Second commit")
-				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, "HEAD")
-				assert.NoError(t, err)
-
-				// Set the provider username to wile in order to use the fork
-				args.provider.User.Username = "wile"
-
-				// Let's checkout our fork
-				args.dir, err = ioutil.TempDir("", "")
-				assert.NoError(t, err)
-				err = args.gitter.Clone(fork.CloneURL, args.dir)
-				assert.NoError(t, err)
-				// Let's add some local modifications that don't conflict
-				err = ioutil.WriteFile(filepath.Join(args.dir, "LICENSE"), []byte("TODO ;-)"), 0655)
-				assert.NoError(t, err)
-
-				err = args.gitter.Add(args.dir, "LICENSE")
-				assert.NoError(t, err)
-				err = args.gitter.CommitDir(args.dir, "Local commit")
-				assert.NoError(t, err)
-
-				return nil
-			},
-			cleanFn: func(args *forkAndPullTestArgs) {
-				for _, o := range args.provider.Repositories {
-					for _, r := range o {
-						if r.BaseDir != "" {
-							err := os.RemoveAll(r.BaseDir)
-							assert.NoError(t, err)
-						}
-					}
-				}
-				err := os.RemoveAll(args.dir)
-				assert.NoError(t, err)
-			},
-			gitURL:     fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
-			dir:        "",  // set by initFn
-			provider:   nil, // set by initFn
-			branchName: "master",
-			baseRef:    "master",
-		},
-		baseRef: "master",
-		upstreamInfo: &gits.GitRepository{
-			Name:         "roadrunner",
-			URL:          "https://fake.git/acme/roadrunner.git",
-			HTMLURL:      "https://fake.git/acme/roadrunner",
-			Scheme:       "https",
-			Host:         "fake.git",
-			Organisation: "acme",
-			Fork:         false,
-		},
-		forkInfo: &gits.GitRepository{
-			Name:         "roadrunner",
-			URL:          "https://fake.git/wile/roadrunner.git",
-			HTMLURL:      "https://fake.git/wile/roadrunner",
-			Scheme:       "https",
-			Host:         "fake.git",
-			Organisation: "wile",
-			Project:      "wile",
-			Fork:         true,
-		},
-		postFn: func(args *forkAndPullTestArgs, test *forkAndPullTest) error {
-			test.dir = args.dir //make sure we end up with the same dir we start with
-			test.upstreamInfo.CloneURL = fmt.Sprintf("file://%s/acme", args.provider.Repositories["acme"][0].BaseDir)
-			test.forkInfo.CloneURL = fmt.Sprintf("file://%s/wile", args.provider.Repositories["acme"][0].BaseDir)
-			_, gitConf, err := args.gitter.FindGitConfigDir(args.dir)
-			assert.NoError(t, err)
-			remotes, err := args.gitter.Remotes(args.dir)
-			assert.NoError(t, err)
-			assert.Len(t, remotes, 2)
-			assert.Contains(t, remotes, "origin")
-			assert.Contains(t, remotes, "upstream")
-			originURL, err := args.gitter.DiscoverRemoteGitURL(gitConf)
-			assert.NoError(t, err)
-			upstreamURL, err := args.gitter.DiscoverUpstreamGitURL(gitConf)
-			assert.NoError(t, err)
-			assert.Equal(t, fmt.Sprintf("file://%s/wile", args.provider.Repositories["acme"][0].BaseDir), originURL)
-			assert.Equal(t, fmt.Sprintf("file://%s/acme", args.provider.Repositories["acme"][0].BaseDir), upstreamURL)
-			assert.FileExists(t, filepath.Join(args.dir, "LICENSE"))
-			tests.AssertFileContains(t, filepath.Join(args.dir, "LICENSE"), "TODO ;-)")
-			return nil
-		},
-	})
-}
-
-func TestExistingForkAndChangesToOriginAndExistingCheckoutWithExistingLocalCommits(t *testing.T) {
-
-	runForkAndPullTestCase(t, forkAndPullTest{
-		name: "existingForkAndChangesToOriginAndExistingCheckoutWithExistingLocalCommits",
-		args: forkAndPullTestArgs{
-			gitter: gits.NewGitCLI(),
-			initFn: func(args *forkAndPullTestArgs) error {
-				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
-					if err != nil {
-						return errors.WithStack(err)
-					}
-					return nil
-				}, args.gitter)
-				args.provider = gits.NewFakeProvider(acmeRepo)
-				fork, err := args.provider.ForkRepository("acme", "roadrunner", "wile")
-				assert.NoError(t, err)
-
-				// Add a commit to the fork that isn't on the upstream to validate later. Let's use a temp clone and push it.
-				dir, err := ioutil.TempDir("", "")
-				assert.NoError(t, err)
-				err = args.gitter.Clone(fork.CloneURL, dir)
-				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
-				assert.NoError(t, err)
-				err = args.gitter.Add(dir, "CONTRIBUTING")
-				assert.NoError(t, err)
-				err = args.gitter.CommitDir(dir, "Second commit")
-				assert.NoError(t, err)
-				err = args.gitter.Push(dir, "origin", false, "HEAD")
-				assert.NoError(t, err)
-
-				// Set the provider username to wile in order to use the fork
-				args.provider.User.Username = "wile"
-
-				// Let's checkout our fork
-				args.dir, err = ioutil.TempDir("", "")
-				assert.NoError(t, err)
-				err = args.gitter.Clone(fork.CloneURL, args.dir)
-				assert.NoError(t, err)
-				// Let's add some local modifications that don't conflict
-				err = ioutil.WriteFile(filepath.Join(args.dir, "LICENSE"), []byte("TODO ;-)"), 0655)
-				assert.NoError(t, err)
-
-				err = args.gitter.Add(args.dir, "LICENSE")
-				assert.NoError(t, err)
-				err = args.gitter.CommitDir(args.dir, "Local commit")
-				assert.NoError(t, err)
-
-				// Let's make some changes to origin
-				origindir, err := ioutil.TempDir("", "")
-				assert.NoError(t, err)
-				err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, origindir)
-				assert.NoError(t, err)
-				// Let's add some modifications that don't conflict
-				err = ioutil.WriteFile(filepath.Join(origindir, "cheese"), []byte("TODO! ;-)"), 0655)
-				assert.NoError(t, err)
-
-				err = args.gitter.Add(origindir, "cheese")
-				assert.NoError(t, err)
-				err = args.gitter.CommitDir(origindir, "commit cheese")
-				assert.NoError(t, err)
-				err = args.gitter.Push(origindir, "origin", false, "HEAD:master")
-				assert.NoError(t, err)
-
-				return nil
-			},
-			cleanFn: func(args *forkAndPullTestArgs) {
-				for _, o := range args.provider.Repositories {
-					for _, r := range o {
-						if r.BaseDir != "" {
-							err := os.RemoveAll(r.BaseDir)
-							assert.NoError(t, err)
-						}
-					}
-				}
-				err := os.RemoveAll(args.dir)
-				assert.NoError(t, err)
-			},
-			gitURL:     fmt.Sprintf("https://fake.git/acme/roadrunner.git"),
-			dir:        "",  // set by initFn
-			provider:   nil, // set by initFn
-			branchName: "master",
-			baseRef:    "master",
-		},
-		baseRef: "master",
-		upstreamInfo: &gits.GitRepository{
-			Name:         "roadrunner",
-			URL:          "https://fake.git/acme/roadrunner.git",
-			HTMLURL:      "https://fake.git/acme/roadrunner",
-			Scheme:       "https",
-			Host:         "fake.git",
-			Organisation: "acme",
-			Fork:         false,
-		},
-		forkInfo: &gits.GitRepository{
-			Name:         "roadrunner",
-			URL:          "https://fake.git/wile/roadrunner.git",
-			HTMLURL:      "https://fake.git/wile/roadrunner",
-			Scheme:       "https",
-			Host:         "fake.git",
-			Organisation: "wile",
-			Project:      "wile",
-			Fork:         true,
-		},
-		postFn: func(args *forkAndPullTestArgs, test *forkAndPullTest) error {
-			test.dir = args.dir //make sure we end up with the same dir we start with
-			test.upstreamInfo.CloneURL = fmt.Sprintf("file://%s/acme", args.provider.Repositories["acme"][0].BaseDir)
-			test.forkInfo.CloneURL = fmt.Sprintf("file://%s/wile", args.provider.Repositories["acme"][0].BaseDir)
-			_, gitConf, err := args.gitter.FindGitConfigDir(args.dir)
-			assert.NoError(t, err)
-			remotes, err := args.gitter.Remotes(args.dir)
-			assert.NoError(t, err)
-			assert.Len(t, remotes, 2)
-			assert.Contains(t, remotes, "origin")
-			assert.Contains(t, remotes, "upstream")
-			originURL, err := args.gitter.DiscoverRemoteGitURL(gitConf)
-			assert.NoError(t, err)
-			upstreamURL, err := args.gitter.DiscoverUpstreamGitURL(gitConf)
-			assert.NoError(t, err)
-			assert.Equal(t, fmt.Sprintf("file://%s/wile", args.provider.Repositories["acme"][0].BaseDir), originURL)
-			assert.Equal(t, fmt.Sprintf("file://%s/acme", args.provider.Repositories["acme"][0].BaseDir), upstreamURL)
-			assert.FileExists(t, filepath.Join(args.dir, "LICENSE"))
-			tests.AssertFileContains(t, filepath.Join(args.dir, "LICENSE"), "TODO ;-)")
-			assert.FileExists(t, filepath.Join(args.dir, "cheese"))
-			tests.AssertFileContains(t, filepath.Join(args.dir, "cheese"), "TODO! ;-)")
 			return nil
 		},
 	})

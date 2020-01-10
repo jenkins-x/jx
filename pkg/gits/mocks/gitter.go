@@ -291,6 +291,24 @@ func (mock *MockGitter) CommitIfChanges(_param0 string, _param1 string) error {
 	return ret0
 }
 
+func (mock *MockGitter) Config(_param0 string, _param1 ...string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0}
+	for _, param := range _param1 {
+		params = append(params, param)
+	}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Config", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGitter) ConvertToValidBranchName(_param0 string) string {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -2220,6 +2238,45 @@ func (c *MockGitter_CommitIfChanges_OngoingVerification) GetAllCapturedArguments
 		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierMockGitter) Config(_param0 string, _param1 ...string) *MockGitter_Config_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	for _, param := range _param1 {
+		params = append(params, param)
+	}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Config", params, verifier.timeout)
+	return &MockGitter_Config_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockGitter_Config_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockGitter_Config_OngoingVerification) GetCapturedArguments() (string, []string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *MockGitter_Config_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 [][]string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(c.methodInvocations))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([][]string, len(c.methodInvocations))
+		for u := 0; u < len(c.methodInvocations); u++ {
+			_param1[u] = make([]string, len(params)-1)
+			for x := 1; x < len(params); x++ {
+				if params[x][u] != nil {
+					_param1[u][x-1] = params[x][u].(string)
+				}
+			}
 		}
 	}
 	return

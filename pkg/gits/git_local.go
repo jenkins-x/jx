@@ -32,6 +32,10 @@ func (g *GitLocal) FindGitConfigDir(dir string) (string, string, error) {
 	return g.GitCLI.FindGitConfigDir(dir)
 }
 
+func (g *GitLocal) Config(dir string, args ...string) error {
+	return g.GitCLI.Config(dir, args...)
+}
+
 // Clone clones the given git URL into the given directory
 // Faked out
 func (g *GitLocal) Clone(url string, dir string) error {
