@@ -153,11 +153,11 @@ func TestSequentialWorkflow(t *testing.T) {
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	err = o.Run()
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 
 	// still no PR merged so cannot create a PR for production
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
 	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
@@ -165,7 +165,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	}
 
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 
 	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
 		return
@@ -295,7 +295,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	// lets make sure we don't create a PR for production as its manual
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 
 	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
 		return
@@ -308,7 +308,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	testhelpers.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	testhelpers.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 
@@ -524,11 +524,11 @@ func TestParallelWorkflow(t *testing.T) {
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	err = o.Run()
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, envNameC)
 
 	// still no PR merged so cannot create a PR for C until A and B complete
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, envNameC)
 
 	// test no PR on production until staging completed
 	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, repoA.Owner, repoA.GitRepo.Name, 1) {
@@ -536,7 +536,7 @@ func TestParallelWorkflow(t *testing.T) {
 	}
 
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, envNameC)
 
 	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, repoA, 1) {
 		return
@@ -545,7 +545,7 @@ func TestParallelWorkflow(t *testing.T) {
 	// now lets poll again due to change to the activity to detect the staging is complete
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, envNameC)
 	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
 	testhelpers.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeRunning)
 	testhelpers.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
@@ -715,13 +715,13 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 
 	testhelpers.AssertWorkflowStatus(t, activities, aOld.Name, v1.ActivityStatusTypeAborted)
 
 	// still no PR merged so cannot create a PR for production
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
 	if !testhelpers.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 2) {
@@ -729,7 +729,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	}
 
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-	testhelpers.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	testhelpers.AssertHasNoPullRequestForEnvInPipelineActivity(t, activities, a.Name, "production")
 
 	if !testhelpers.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 2) {
 		return

@@ -83,6 +83,7 @@ func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runti
 		devEnv := kube.NewPermanentEnvironment("dev")
 		devEnv.Spec.Namespace = currentNamespace
 		devEnv.Spec.Kind = v1.EnvironmentKindTypeDevelopment
+		devEnv.Spec.PromotionStrategy = v1.PromotionStrategyTypeNever
 
 		jxObjects = append(jxObjects, devEnv)
 	}
@@ -349,7 +350,7 @@ func AssertHasPullRequestForEnv(t *testing.T, activities typev1.PipelineActivity
 	dumpFailedActivity(activity)
 }
 
-func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
+func WaitForPullRequestForEnvInPipelineActivity(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
 	activity, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
 		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
@@ -508,7 +509,7 @@ func AssertAllPromoteStepsSuccessful(t *testing.T, activities typev1.PipelineAct
 	}
 }
 
-func AssertHasNoPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
+func AssertHasNoPullRequestForEnvInPipelineActivity(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
 	activity, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
 		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
