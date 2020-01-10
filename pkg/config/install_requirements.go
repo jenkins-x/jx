@@ -425,9 +425,9 @@ type VeleroConfig struct {
 	// ServiceAccount the cloud service account used to run velero
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	// Schedule of backups
-	Schedule string `json:"schedule,omitempty" envconfig:"JX_REQUIREMENT_VELERO_SCHEDULE"`
+	Schedule string `json:"schedule" envconfig:"JX_REQUIREMENT_VELERO_SCHEDULE"`
 	// TimeToLive period for backups to be retained
-	TimeToLive string `json:"ttl,omitempty" envconfig:"JX_REQUIREMENT_VELERO_TTL"`
+	TimeToLive string `json:"ttl" envconfig:"JX_REQUIREMENT_VELERO_TTL"`
 }
 
 // AutoUpdateConfig contains auto update config
