@@ -47,6 +47,10 @@ func NewGitFake() Gitter {
 	return &GitFake{}
 }
 
+func (g *GitFake) Config(dir string, args ...string) error {
+	return nil
+}
+
 // FindGitConfigDir finds the git config dir
 func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
 	return dir, dir, nil

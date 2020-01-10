@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/gits/testhelpers"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -119,6 +121,29 @@ var _ = Describe("Git CLI", func() {
 		})
 	})
 
+	Describe("#Config", func() {
+		It("should return an error if no repoDir is specified", func() {
+			err := git.Config("")
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("should return error if no parameters are passed", func() {
+			err := git.Config(repoDir)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("should apply the specified config", func() {
+			err := git.Config(repoDir, "--local", "credential.helper", "/path/to/jx step git credentials --credential-helper")
+			Expect(err).Should(BeNil())
+
+			filename := filepath.Join(repoDir, ".git", "config")
+			Expect(util.FileExists(filename)).Should(Equal(true))
+			contents, err := ioutil.ReadFile(filename)
+			Expect(err).Should(BeNil())
+			Expect(string(contents)).Should(ContainSubstring("helper = /path/to/jx step git credentials --credential-helper"))
+		})
+	})
+
 	Describe("#GetCommits", func() {
 		var (
 			commitASha string
@@ -195,7 +220,7 @@ var _ = Describe("Git CLI", func() {
 			Specify("an error is returned", func() {
 				_, err := git.GetLatestCommitSha(repoDir)
 				Expect(err).ShouldNot(BeNil())
-				// TODO Currently the error message is returned which seems odd. Should be empty string imo.
+				// TODO Currently the error message is returned which seems odd. Should be empty string imo (HF)
 				//Expect(sha).Should(BeEmpty())
 			})
 		})

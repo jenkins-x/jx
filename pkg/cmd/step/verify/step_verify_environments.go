@@ -482,12 +482,19 @@ func (o *StepVerifyEnvironmentsOptions) pushDevEnvironmentUpdates(environmentRep
 		}
 	}
 
-	userDetails := provider.UserAuth()
-	authenticatedPushURL, err := gitter.CreateAuthenticatedURL(environmentRepo.CloneURL, &userDetails)
+	remoteURL, err := gits.AddUserToURL(environmentRepo.CloneURL, provider.CurrentUsername())
 	if err != nil {
-		return errors.Wrapf(err, "failed to create push URL for %s", environmentRepo.CloneURL)
+		return errors.Wrapf(err, "unable to add username to git url %s", environmentRepo.CloneURL)
 	}
-	err = gitter.Push(localRepoDir, authenticatedPushURL, true, "master")
+	remoteName, err := gits.GetRemoteForURL(localRepoDir, remoteURL, gitter)
+	if err != nil {
+		return errors.Wrapf(err, "cannot determine remote name for %s", environmentRepo.CloneURL)
+	}
+	if remoteName == "" {
+		return errors.Wrapf(err, "no remote configured for %s", environmentRepo.CloneURL)
+	}
+
+	err = gitter.Push(localRepoDir, remoteName, true, "master")
 	if err != nil {
 		return errors.Wrapf(err, "unable to push %s to %s", localRepoDir, environmentRepo.URL)
 	}

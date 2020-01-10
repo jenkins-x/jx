@@ -43,7 +43,19 @@ func NewGitCLI() *GitCLI {
 	}
 	// Ensure that error output is in English so parsing work
 	cli.Env["LC_ALL"] = "C"
+	// When jx is called as credential helper we want to make sure that potential debug trace is not interfering with the process
+	cli.Env["JX_LOG_LEVEL"] = "error"
 	return cli
+}
+
+// Config runs a 'git config' command in the specified directory
+func (g *GitCLI) Config(dir string, args ...string) error {
+	if args == nil {
+		args = []string{"config"}
+	} else {
+		args = append([]string{"config"}, args...)
+	}
+	return g.gitCmd(dir, args...)
 }
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
