@@ -413,7 +413,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 			namespace := filepath.Base(path.Name())
 			fullPath := filepath.Join(namespacesDir, path.Name())
 
-			log.Logger().Debugf("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, fullPath, namespace)
+			log.Logger().Debugf("Applying generated chart %q YAML via kubectl in dir: %s to namespace %s", releaseName, fullPath, namespace)
 
 			command := "apply"
 			if create {
@@ -442,7 +442,7 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 		return err
 	}
 
-	log.Logger().Debugf("Applying generated chart '%s' YAML via kubectl in dir: %s to namespace %s", releaseName, dir, ns)
+	log.Logger().Debugf("Applying generated chart %q YAML via kubectl in dir: %s to namespace %s", releaseName, dir, ns)
 	command := "apply"
 	if create {
 		command = "create"
@@ -465,7 +465,6 @@ func (h *HelmTemplate) kubectlApply(ns string, releaseName string, wait bool, cr
 		return err
 	}
 
-	log.Logger().Info("")
 	return nil
 
 }
@@ -491,7 +490,6 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 		args = append(args, "--validate=false")
 	}
 	err := h.runKubectl(args...)
-	log.Logger().Info("")
 	return err
 }
 
