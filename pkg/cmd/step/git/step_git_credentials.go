@@ -125,7 +125,6 @@ func (o *StepGitCredentialsOptions) Run() error {
 		url := string(secret.Data["url"])
 
 		return o.CreateGitCredentialsFileFromUsernameAndToken(outFile, username, token, url)
-
 	}
 
 	gha, err := o.IsGitHubAppMode()
