@@ -62,6 +62,7 @@ type FakeFactory struct {
 	kserveClient  kserve.Interface
 	tektonClient  tektonclient.Interface
 	prowJobClient prowjobclient.Interface
+	dyncClient    *dynamic.APIHelper
 }
 
 var _ clients.Factory = (*FakeFactory)(nil)
@@ -78,12 +79,16 @@ func NewFakeFactory() clients.Factory {
 // NewFakeFactoryFromClients creates a fake factory which uses fake k8s clients for testing
 func NewFakeFactoryFromClients(apiClient apiextensionsclientset.Interface,
 	jxClient versioned.Interface,
-	kubeClient kubernetes.Interface) *FakeFactory {
+	kubeClient kubernetes.Interface,
+	tektonClient tektonclient.Interface,
+	dyncClient *dynamic.APIHelper) *FakeFactory {
 	f := &FakeFactory{
-		namespace:  "jx",
-		apiClient:  apiClient,
-		jxClient:   jxClient,
-		kubeClient: kubeClient,
+		namespace:    "jx",
+		apiClient:    apiClient,
+		jxClient:     jxClient,
+		kubeClient:   kubeClient,
+		tektonClient: tektonClient,
+		dyncClient:   dyncClient,
 	}
 	f.kubeConfig = kube.NewKubeConfig()
 	return f
@@ -292,20 +297,23 @@ func (f *FakeFactory) CreateTektonClient() (tektonclient.Interface, string, erro
 
 // CreateDynamicClient creates a new Kubernetes Dynamic client
 func (f *FakeFactory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
-	config, err := f.CreateKubeConfig()
-	if err != nil {
-		return nil, "", err
+	if f.dyncClient == nil {
+		config, err := f.CreateKubeConfig()
+		if err != nil {
+			return nil, "", err
+		}
+		kubeConfig, _, err := f.kubeConfig.LoadConfig()
+		if err != nil {
+			return nil, "", err
+		}
+		ns := kube.CurrentNamespace(kubeConfig)
+		f.dyncClient, err = dynamic.NewAPIHelperFromRESTConfig(config)
+		if err != nil {
+			return nil, ns, err
+		}
+		return f.dyncClient, ns, err
 	}
-	kubeConfig, _, err := f.kubeConfig.LoadConfig()
-	if err != nil {
-		return nil, "", err
-	}
-	ns := kube.CurrentNamespace(kubeConfig)
-	client, err := dynamic.NewAPIHelperFromRESTConfig(config)
-	if err != nil {
-		return nil, ns, err
-	}
-	return client, ns, err
+	return f.dyncClient, f.namespace, nil
 }
 
 // CreateMetricsClient creates a new Kubernetes metrics client

@@ -120,7 +120,7 @@ func SetFakeFactoryFromKubeClients(o *opts.CommonOptions) {
 	apiClient, _ := o.ApiExtensionsClient()
 	jxClient, _, _ := o.JXClient()
 	kubeClient, _ := o.KubeClient()
-	f := fakefactory.NewFakeFactoryFromClients(apiClient, jxClient, kubeClient)
+	f := fakefactory.NewFakeFactoryFromClients(apiClient, jxClient, kubeClient, nil, nil)
 	f.SetDelegateFactory(o.GetFactory())
 	o.SetFactory(f)
 }
