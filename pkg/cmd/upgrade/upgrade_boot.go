@@ -42,10 +42,18 @@ var (
 		# create pr for upgrading a jx boot gitOps cluster
 		jx upgrade boot
 `)
+
+	filesExcludedFromCherryPick = []string{
+		"OWNERS",
+	}
 )
 
 const (
-	builderImage = "gcr.io/jenkinsxio/builder-go"
+	builderImage           = "gcr.io/jenkinsxio/builder-go"
+	keepDevEnvKey          = "keepDevEnv"
+	keepDevEnvForGitConfig = "\n[merge \"keepDevEnv\"]\n" +
+		"\tname = Always keep the dev env version during merges and cherry-picks\n" +
+		"\tdriver = true\n"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -312,6 +320,12 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 		return errors.Wrapf(err, "failed to fetch upgrade tag %s from %s", upgradeVersion, bootConfigURL)
 	}
 
+	// Set up custom merge driver to ensure that specified files always use the local/dev env version in merges/cherry picks with conflicts
+	err = o.configureGitMergeExcludes()
+	if err != nil {
+		return errors.Wrapf(err, "configuring files (%s) to always use existing version when conflicting with upstream", strings.Join(filesExcludedFromCherryPick, ", "))
+	}
+
 	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha)
 	if err != nil {
 		return errors.Wrap(err, "failed to cherry pick upgrade commits")
@@ -320,6 +334,59 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 	if err != nil {
 		return errors.Wrap(err, "failed to exclude files from commit")
 	}
+	return nil
+}
+
+func (o *UpgradeBootOptions) configureGitMergeExcludes() error {
+	gitConfigFile := filepath.Join(o.Dir, ".git", "config")
+	var existingGitConfig string
+	gcExists, err := util.FileExists(gitConfigFile)
+	if err != nil {
+		return errors.Wrapf(err, "checking if git config for repo at %s exists", gitConfigFile)
+	}
+	if gcExists {
+		// Read the existing .git/config
+		gcBytes, err := ioutil.ReadFile(gitConfigFile)
+		if err != nil {
+			return errors.Wrapf(err, "reading existing git config for repo from %s", gitConfigFile)
+		}
+		existingGitConfig = string(gcBytes)
+	}
+
+	// Write the existing .git/config content and our custom driver to .git/config in the repo
+	gitConfigContent := existingGitConfig + keepDevEnvForGitConfig
+
+	err = ioutil.WriteFile(gitConfigFile, []byte(gitConfigContent), util.DefaultFileWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "writing new git config for repo to %s", gitConfigFile)
+	}
+
+	// Read the existing .git/info/attributes if it exists
+	gitAttrFile := filepath.Join(o.Dir, ".git", "info", "attributes")
+	var existingGitAttr string
+	gaExists, err := util.FileExists(gitAttrFile)
+	if err != nil {
+		return errors.Wrapf(err, "checking if repo-local git attributes file %s exists", gitAttrFile)
+	}
+	if gaExists {
+		gaBytes, err := ioutil.ReadFile(gitAttrFile)
+		if err != nil {
+			return errors.Wrapf(err, "reading existing repo-local git attributes from %s", gitAttrFile)
+		}
+		existingGitAttr = string(gaBytes)
+	}
+
+	// Write the existing .git/info/attributes content and marking the selected files as using our custom driver
+	gitAttrContent := existingGitAttr + "\n"
+	for _, excludedFile := range filesExcludedFromCherryPick {
+		gitAttrContent += fmt.Sprintf("%s merge=%s\n", excludedFile, keepDevEnvKey)
+	}
+
+	err = ioutil.WriteFile(gitAttrFile, []byte(gitAttrContent), util.DefaultFileWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "writing new repo-local git attributes to %s", gitAttrFile)
+	}
+
 	return nil
 }
 
@@ -399,14 +466,13 @@ func (o *UpgradeBootOptions) setupGitConfig(dir string) error {
 }
 
 func (o *UpgradeBootOptions) excludeFiles(commit string) error {
-	excludedFiles := []string{"OWNERS"}
-	err := o.Git().CheckoutCommitFiles(o.Dir, commit, excludedFiles)
+	err := o.Git().CheckoutCommitFiles(o.Dir, commit, filesExcludedFromCherryPick)
 	if err != nil {
 		return errors.Wrap(err, "failed to checkout files")
 	}
-	err = o.Git().AddCommitFiles(o.Dir, "chore: exclude files from upgrade", excludedFiles)
+	err = o.Git().AddCommitFiles(o.Dir, "chore: exclude files from upgrade", filesExcludedFromCherryPick)
 	if err != nil && !strings.Contains(err.Error(), "nothing to commit") {
-		return errors.Wrapf(err, "failed to commit excluded files %v", excludedFiles)
+		return errors.Wrapf(err, "failed to commit excluded files %v", filesExcludedFromCherryPick)
 	}
 	return nil
 }
