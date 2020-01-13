@@ -26,9 +26,6 @@ type GetAppsOptions struct {
 	ShowStatus bool
 	GitOps     bool
 	DevEnv     *v1.Environment
-
-	// Used for testing
-	CloneDir string
 }
 
 type appsResult struct {
@@ -155,7 +152,6 @@ func (o *GetAppsOptions) Run() error {
 		}
 		installOptions.GitProvider = gitProvider
 		installOptions.Gitter = o.Git()
-		installOptions.EnvironmentCloneDir = o.CloneDir
 	}
 
 	apps, err := installOptions.GetApps(o.Args)

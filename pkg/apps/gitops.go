@@ -167,15 +167,14 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 
 // GetApps retrieves all the apps information for the given appNames from the repository and / or the CRD API
 func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string) (*v1.AppList, error)) (*v1.AppList, error) {
-	dir := o.EnvironmentCloneDir
-	if dir == "" {
-		tmpDir, err := ioutil.TempDir("", "get-apps-")
-		if err != nil {
-			return nil, err
-		}
-		defer os.RemoveAll(tmpDir)
-		dir = tmpDir
+	// AddApp, DeleteApp, and UpgradeApps delegate selecting/creating the directory to clone in to environments/gitops.go's
+	// Create function, but here we need to create the directory explicitly. since we aren't calling Create, because we're
+	// not creating a pull request.
+	dir, err := ioutil.TempDir("", "get-apps-")
+	if err != nil {
+		return nil, err
 	}
+	defer os.RemoveAll(dir)
 
 	gitInfo, err := gits.ParseGitURL(o.DevEnv.Spec.Source.URL)
 	if err != nil {
