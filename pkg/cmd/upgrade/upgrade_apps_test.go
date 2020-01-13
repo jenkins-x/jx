@@ -58,6 +58,10 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		DevEnv:     testOptions.DevEnv,
 	}
 	o.Args = []string{name}
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	o.CloneDir = devEnvDir
 
 	helm_test.StubFetchChart(name, newVersion.String(), helm.FakeChartmusuem, &chart.Chart{
 		Metadata: &chart.Metadata{
@@ -75,9 +79,6 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("Upgrade %s to %s", name, newVersion.String()), pr.Title)
 	assert.Equal(t, fmt.Sprintf("Upgrade %s from %s to %s", name, version, newVersion.String()), pr.Body)
 	// Validate the branch name
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
@@ -121,6 +122,11 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 		HelmUpdate: true,
 		DevEnv:     testOptions.DevEnv,
 	}
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	o.CloneDir = devEnvDir
+
 	pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
 		map[string]string{
 			"repo1": kube.DefaultChartMuseumURL,
@@ -153,9 +159,6 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("Upgrade %s to %s", name, newVersion.String()), pr.Title)
 	assert.Equal(t, fmt.Sprintf("Upgrade %s from %s to %s", name, version, newVersion.String()), pr.Body)
 	// Validate the branch name
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
@@ -196,7 +199,8 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 
 		envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 		assert.NoError(r, err)
-		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
+		devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+		appDir := filepath.Join(devEnvDir, name)
 
 		// Now let's upgrade
 
@@ -214,6 +218,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 			HelmUpdate: true,
 			DevEnv:     testOptions.DevEnv,
 		}
+		o.CloneDir = devEnvDir
 		o.Args = []string{name}
 
 		helm_test.StubFetchChart(name, newVersion.String(),
@@ -282,7 +287,8 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 
 		envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 		assert.NoError(r, err)
-		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
+		devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+		appDir := filepath.Join(devEnvDir, name)
 		// Now let's upgrade
 
 		newVersion, err := semver.Parse(version)
@@ -299,6 +305,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 			HelmUpdate: true,
 			DevEnv:     testOptions.DevEnv,
 		}
+		o.CloneDir = devEnvDir
 		o.Args = []string{name}
 		o.BatchMode = false
 
@@ -380,7 +387,8 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 
 		envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 		assert.NoError(r, err)
-		appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
+		devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+		appDir := filepath.Join(devEnvDir, name)
 
 		// Now let's upgrade
 
@@ -399,6 +407,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 			DevEnv:     testOptions.DevEnv,
 			AskAll:     true,
 		}
+		o.CloneDir = devEnvDir
 		o.Args = []string{name}
 		o.BatchMode = false
 
@@ -562,6 +571,10 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 		DevEnv:     testOptions.DevEnv,
 	}
 	o.Args = []string{name}
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	o.CloneDir = devEnvDir
 
 	helm_test.StubFetchChart(name, "", helm.FakeChartmusuem, &chart.Chart{
 		Metadata: &chart.Metadata{
@@ -579,9 +592,6 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("Upgrade %s to %s", name, newVersion.String()), pr.Title)
 	assert.Equal(t, fmt.Sprintf("Upgrade %s from %s to %s", name, version, newVersion.String()), pr.Body)
 	// Validate the branch name
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
@@ -628,6 +638,10 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		HelmUpdate: true,
 		DevEnv:     testOptions.DevEnv,
 	}
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	o.CloneDir = devEnvDir
 
 	helm_test.StubFetchChart(name1, "", helm.FakeChartmusuem, &chart.Chart{
 		Metadata: &chart.Metadata{
@@ -656,9 +670,6 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		version1,
 		newVersion1.String(), name2, version2, newVersion2.String()), pr.Body)
 	// Validate the branch name1
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-all-apps"), branchName[:len(branchName)-6])

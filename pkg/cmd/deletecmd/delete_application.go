@@ -75,6 +75,9 @@ type DeleteApplicationOptions struct {
 	// calculated fields
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
+
+	// Used for testing
+	CloneDir string
 }
 
 // NewCmdDeleteApplication creates a command object for this command
@@ -406,11 +409,11 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
 	}
-	environmentsDir, err := o.EnvironmentsDir()
-	if err != nil {
-		return errors.Wrapf(err, "getting environments dir")
-	}
 
+	envDir := ""
+	if o.CloneDir != "" {
+		envDir = o.CloneDir
+	}
 	details := gits.PullRequestDetails{
 		BranchName: "delete-" + applicationName,
 		Title:      "Delete application " + applicationName + " from this environment",
@@ -421,7 +424,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	info, err := options.Create(env, environmentsDir, &details, nil, "", o.AutoMerge)
+	info, err := options.Create(env, envDir, &details, nil, "", o.AutoMerge)
 	if err != nil {
 		return err
 	}

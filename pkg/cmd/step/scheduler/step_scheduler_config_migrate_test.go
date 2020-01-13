@@ -67,10 +67,12 @@ func TestStepSchedulerConfigMigrateGitopsBasic(t *testing.T) {
 	testOptions.createSchedulerMigrateTestOptions("gitops_basic", true, t)
 	testOptions.StepSchedulerConfigMigrateOptions.ProwConfigFileLocation = "test_data/step_scheduler_config_migrate/" + testOptions.TestType + "/config.yaml"
 	testOptions.StepSchedulerConfigMigrateOptions.ProwPluginsFileLocation = "test_data/step_scheduler_config_migrate/" + testOptions.TestType + "/plugins.yaml"
-	err := testOptions.StepSchedulerConfigMigrateOptions.Run()
-	assert.NoError(t, err)
 	envDir, err := testOptions.StepSchedulerConfigMigrateOptions.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
 	devEnvDir := filepath.Join(envDir, testOptions.DevEnvName)
+	testOptions.StepSchedulerConfigMigrateOptions.CloneDir = devEnvDir
+	err = testOptions.StepSchedulerConfigMigrateOptions.Run()
+	assert.NoError(t, err)
 	verifySchedulerGitOps(err, t, testOptions, devEnvDir, "cb-kubecd-jx-scheduler-test-group-repo-scheduler")
 	verifySchedulerGitOps(err, t, testOptions, devEnvDir, "cb-kubecd-jx-scheduler-test-repo-scheduler")
 	verifySchedulerGitOps(err, t, testOptions, devEnvDir, "default-scheduler")

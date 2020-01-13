@@ -19,6 +19,9 @@ type StepSchedulerConfigMigrateOptions struct {
 	ProwPluginsFileLocation string
 	SkipVerification        bool
 	DryRun                  bool
+
+	// Used for testing
+	CloneDir string
 }
 
 var (
@@ -98,11 +101,10 @@ func (o *StepSchedulerConfigMigrateOptions) Run() error {
 					Verbose: o.Verbose,
 					DevEnv:  devEnv,
 				}
-				environmentsDir, err := o.EnvironmentsDir()
-				if err != nil {
-					return errors.Wrapf(err, "getting environments dir")
+				opts.PullRequestCloneDir = ""
+				if o.CloneDir != "" {
+					opts.PullRequestCloneDir = o.CloneDir
 				}
-				opts.EnvironmentsDir = environmentsDir
 
 				gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(devEnv.Spec.Source.URL)
 				if err != nil {

@@ -40,6 +40,9 @@ type AddAppOptions struct {
 	ValuesFiles []string
 	HelmUpdate  bool
 	AutoMerge   bool
+
+	// Used for testing
+	CloneDir string
 }
 
 const (
@@ -141,11 +144,12 @@ func (o *AddAppOptions) Run() error {
 		AutoMerge:     o.AutoMerge,
 		SecretsScheme: "vault",
 
-		Helmer:         o.Helm(),
-		Namespace:      o.Namespace,
-		KubeClient:     kubeClient,
-		JxClient:       jxClient,
-		InstallTimeout: opts.DefaultInstallTimeout,
+		Helmer:              o.Helm(),
+		Namespace:           o.Namespace,
+		KubeClient:          kubeClient,
+		JxClient:            jxClient,
+		InstallTimeout:      opts.DefaultInstallTimeout,
+		EnvironmentCloneDir: o.CloneDir,
 	}
 
 	if o.GitOps {
@@ -163,11 +167,6 @@ func (o *AddAppOptions) Run() error {
 			return util.InvalidOptionf(optionValues, o.SetValues,
 				"no more than one --%s can be specified when using GitOps for your dev environment", optionValues)
 		}
-		environmentsDir, err := o.EnvironmentsDir()
-		if err != nil {
-			return errors.Wrapf(err, "getting environments dir")
-		}
-		installOpts.EnvironmentsDir = environmentsDir
 
 		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
 		if err != nil {

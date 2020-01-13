@@ -53,14 +53,22 @@ type EnvironmentPullRequestOptions struct {
 // the message as the body for both the commit and the pull request,
 // and the pullRequestInfo for any existing PR that exists to modify the environment that we want to merge these
 // changes into.
-func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
+func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, prDir string,
 	pullRequestDetails *gits.PullRequestDetails, filter *gits.PullRequestFilter, chartName string, autoMerge bool) (*gits.PullRequestInfo, error) {
-	dir := filepath.Join(environmentsDir, env.Name)
-	dir, base, upstreamRepo, forkURL, err := gits.ForkAndPullRepo(env.Spec.Source.URL, dir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, "")
+	if prDir == "" {
+		tempDir, err := ioutil.TempDir("", "create-pr")
+		if err != nil {
+			return nil, err
+		}
+		prDir = tempDir
+		defer os.RemoveAll(tempDir)
+	}
+
+	dir, base, upstreamRepo, forkURL, err := gits.ForkAndPullRepo(env.Spec.Source.URL, prDir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, "")
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "pulling environment repo %s into %s", env.Spec.Source.URL,
-			environmentsDir)
+			prDir)
 	}
 
 	err = ModifyChartFiles(dir, pullRequestDetails, o.ModifyChartFn, chartName)

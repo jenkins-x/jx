@@ -42,7 +42,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		GitProvider: o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", autoMerge)
+	info, err := options.Create(o.DevEnv, o.EnvironmentCloneDir, &details, nil, "", autoMerge)
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
 	}
@@ -104,7 +104,8 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
 		GitProvider: o.GitProvider,
 	}
-	_, err = options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app, autoMerge)
+
+	_, err = options.Create(o.DevEnv, o.EnvironmentCloneDir, &details, nil, app, autoMerge)
 	if err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 		GitProvider:   o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", autoMerge)
+	info, err := options.Create(o.DevEnv, o.EnvironmentCloneDir, &details, nil, "", autoMerge)
 	if err != nil {
 		return err
 	}
@@ -166,9 +167,38 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 
 // GetApps retrieves all the apps information for the given appNames from the repository and / or the CRD API
 func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string) (*v1.AppList, error)) (*v1.AppList, error) {
-	dir, _, _, _, err := gits.ForkAndPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, "")
+	dir := o.EnvironmentCloneDir
+	if dir == "" {
+		tmpDir, err := ioutil.TempDir("", "get-apps-")
+		if err != nil {
+			return nil, err
+		}
+		defer os.RemoveAll(tmpDir)
+		dir = tmpDir
+	}
+
+	gitInfo, err := gits.ParseGitURL(o.DevEnv.Spec.Source.URL)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't pull the environment repository from %s", o.DevEnv.Name)
+		return nil, errors.Wrapf(err, "parsing dev env repo URL %s", o.DevEnv.Spec.Source.URL)
+	}
+
+	providerInfo, err := o.GitProvider.GetRepository(gitInfo.Organisation, gitInfo.Name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "determining git provider information for %s", o.DevEnv.Spec.Source.URL)
+	}
+	cloneUrl := providerInfo.CloneURL
+	userDetails := o.GitProvider.UserAuth()
+	originFetchURL, err := o.Gitter.CreateAuthenticatedURL(cloneUrl, &userDetails)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create authenticated fetch URL for %s", cloneUrl)
+	}
+	err = o.Gitter.Clone(originFetchURL, dir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to clone %s to dir %s", cloneUrl, dir)
+	}
+	err = o.Gitter.Checkout(dir, o.DevEnv.Spec.Source.Ref)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to checkout %s to dir %s", o.DevEnv.Spec.Source.Ref, dir)
 	}
 
 	envDir := filepath.Join(dir, helm.DefaultEnvironmentChartDir)
