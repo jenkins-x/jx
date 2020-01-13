@@ -492,7 +492,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		}
 	}
 
-	if requirements.Cluster.Provider != cloud.GKE {
+	if requirements.Cluster.Provider != cloud.GKE && requirements.Cluster.Provider != cloud.EKS {
 		// lets check we want to try installation as we've only tested on GKE at the moment
 		if !o.showProvideFeedbackMessage() {
 			return requirements, errors.New("finishing execution")
@@ -968,7 +968,7 @@ func modifyMapIfNotBlank(m map[string]string, key string, value string) {
 }
 
 func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() bool {
-	log.Logger().Info("jx boot has only been validated on GKE, we'd love feedback and contributions for other Kubernetes providers")
+	log.Logger().Info("jx boot has only been validated on GKE and EKS, we'd love feedback and contributions for other Kubernetes providers")
 	if !o.BatchMode {
 		return util.Confirm("Continue execution anyway?",
 			true, "", o.GetIOFileHandles())
