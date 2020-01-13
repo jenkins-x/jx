@@ -87,6 +87,12 @@ func (o *AppTestOptions) AddApp(values map[string]interface{}, prefix string) (s
 		},
 	}, o.MockHelmer)
 	installOpts.Args = []string{name}
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	if err != nil {
+		return "", "", "", errors.WithStack(err)
+	}
+	devEnvDir := o.GetFullDevEnvDir(envDir)
+	installOpts.CloneDir = devEnvDir
 	err = installOpts.Run()
 	if err != nil {
 		return "", "", "", errors.WithStack(err)

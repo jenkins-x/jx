@@ -36,24 +36,24 @@ import (
 
 // InstallOptions are shared options for installing, removing or upgrading apps for either GitOps or HelmOps
 type InstallOptions struct {
-	Helmer          helm.Helmer
-	KubeClient      kubernetes.Interface
-	InstallTimeout  string
-	JxClient        versioned.Interface
-	Namespace       string
-	EnvironmentsDir string
-	GitProvider     gits.GitProvider
-	Gitter          gits.Gitter
-	Verbose         bool
-	DevEnv          *jenkinsv1.Environment
-	BatchMode       bool
-	IOFileHandles   util.IOFileHandles
-	GitOps          bool
-	TeamName        string
-	BasePath        string
-	VaultClient     vault.Client
-	AutoMerge       bool
-	SecretsScheme   string
+	Helmer              helm.Helmer
+	KubeClient          kubernetes.Interface
+	InstallTimeout      string
+	JxClient            versioned.Interface
+	Namespace           string
+	EnvironmentCloneDir string
+	GitProvider         gits.GitProvider
+	Gitter              gits.Gitter
+	Verbose             bool
+	DevEnv              *jenkinsv1.Environment
+	BatchMode           bool
+	IOFileHandles       util.IOFileHandles
+	GitOps              bool
+	TeamName            string
+	BasePath            string
+	VaultClient         vault.Client
+	AutoMerge           bool
+	SecretsScheme       string
 
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
@@ -104,7 +104,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := GitOpsOptions{
 				InstallOptions: o,
 			}
-			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias, o.AutoMerge)
+			err = opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias, o.AutoMerge)
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", chartName, version, alias)
 			}

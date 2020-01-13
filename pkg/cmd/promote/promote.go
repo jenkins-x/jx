@@ -80,6 +80,9 @@ type PromoteOptions struct {
 	releaseResource         *v1.Release
 	ReleaseInfo             *ReleaseInfo
 	prow                    bool
+
+	// Used for testing
+	CloneDir string
 }
 
 type ReleaseInfo struct {
@@ -560,9 +563,10 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
 	}
-	environmentsDir, err := o.EnvironmentsDir()
-	if err != nil {
-		return errors.Wrapf(err, "getting environments dir")
+
+	envDir := ""
+	if o.CloneDir != "" {
+		envDir = o.CloneDir
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
@@ -574,7 +578,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	if releaseInfo.PullRequestInfo != nil && releaseInfo.PullRequestInfo.PullRequest != nil {
 		filter.Number = releaseInfo.PullRequestInfo.PullRequest.Number
 	}
-	info, err := options.Create(env, environmentsDir, &details, filter, "", true)
+	info, err := options.Create(env, envDir, &details, filter, "", true)
 	releaseInfo.PullRequestInfo = info
 	return err
 }

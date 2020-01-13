@@ -60,6 +60,9 @@ type UpgradeAppsOptions struct {
 
 	Namespace string
 	Set       []string
+
+	// Used for testing
+	CloneDir string
 }
 
 // NewCmdUpgradeApps defines the command
@@ -132,11 +135,12 @@ func (o *UpgradeAppsOptions) Run() error {
 		AutoMerge:     o.AutoMerge,
 		SecretsScheme: "vault",
 
-		Helmer:         o.Helm(),
-		Namespace:      o.Namespace,
-		KubeClient:     kubeClient,
-		JxClient:       jxClient,
-		InstallTimeout: opts.DefaultInstallTimeout,
+		Helmer:              o.Helm(),
+		Namespace:           o.Namespace,
+		KubeClient:          kubeClient,
+		JxClient:            jxClient,
+		InstallTimeout:      opts.DefaultInstallTimeout,
+		EnvironmentCloneDir: o.CloneDir,
 	}
 	if o.Namespace != "" {
 		installOpts.Namespace = o.Namespace
@@ -158,11 +162,6 @@ func (o *UpgradeAppsOptions) Run() error {
 		if !o.HelmUpdate {
 			return util.InvalidOptionf(optionHelmUpdate, o.HelmUpdate, msg, optionHelmUpdate)
 		}
-		environmentsDir, err := o.EnvironmentsDir()
-		if err != nil {
-			return errors.Wrapf(err, "getting environments dir")
-		}
-		installOpts.EnvironmentsDir = environmentsDir
 
 		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
 		if err != nil {

@@ -517,12 +517,12 @@ func ApplySchedulersDirectly(jxClient versioned.Interface, namespace string, sou
 
 //GitOpsOptions are options for running AddToEnvironmentRepo
 type GitOpsOptions struct {
-	Gitter          gits.Gitter
-	Verbose         bool
-	Helmer          helm.Helmer
-	GitProvider     gits.GitProvider
-	DevEnv          *jenkinsv1.Environment
-	EnvironmentsDir string
+	Gitter              gits.Gitter
+	Verbose             bool
+	Helmer              helm.Helmer
+	GitProvider         gits.GitProvider
+	DevEnv              *jenkinsv1.Environment
+	PullRequestCloneDir string
 }
 
 // AddToEnvironmentRepo adds the prow config to the gitops environment repo
@@ -574,7 +574,7 @@ func (o *GitOpsOptions) AddToEnvironmentRepo(cfg *config.Config, plugs *plugins.
 		GitProvider:   o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", false)
+	info, err := options.Create(o.DevEnv, o.PullRequestCloneDir, &details, nil, "", false)
 
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for prow config")
@@ -709,7 +709,7 @@ func (o *GitOpsOptions) AddSchedulersToEnvironmentRepo(sourceRepositoryGroups []
 		GitProvider:   o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "", false)
+	info, err := options.Create(o.DevEnv, o.PullRequestCloneDir, &details, nil, "", false)
 
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for scheduler config")

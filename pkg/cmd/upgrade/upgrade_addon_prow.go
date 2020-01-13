@@ -42,6 +42,9 @@ type UpgradeAddonProwOptions struct {
 	newKnativeBuildVersion string
 	Tekton                 bool
 	ExternalDNS            bool
+
+	// Used for testing
+	CloneDir string
 }
 
 // NewCmdUpgradeAddonProw defines the command
@@ -189,19 +192,12 @@ func (o *UpgradeAddonProwOptions) Upgrade() error {
 // UpgradeViaGitOps
 func (o *UpgradeAddonProwOptions) UpgradeViaGitOps(devEnv *jenkinsv1.Environment) error {
 
-	environmentsDir, err := o.EnvironmentsDir()
-	if err != nil {
-		return errors.Wrapf(err, "getting environments dir")
-	}
-
 	gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(devEnv.Spec.Source.URL)
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for %s", devEnv.Spec.Source.URL)
 	}
 
 	log.Logger().Debugf("Git URL %s", devEnv.Spec.Source.URL)
-
-	log.Logger().Debugf("Environment Dir %s", environmentsDir)
 
 	prowVersion, err := o.GetVersionNumber(versionstream.KindChart, "jenkins-x/prow", "", "")
 
@@ -243,12 +239,18 @@ func (o *UpgradeAddonProwOptions) UpgradeViaGitOps(devEnv *jenkinsv1.Environment
 		return nil
 	}
 
+	envDir := ""
+
+	if o.CloneDir != "" {
+		envDir = o.CloneDir
+	}
+
 	options := environments.EnvironmentPullRequestOptions{
 		Gitter:        o.Git(),
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	_, err = options.Create(devEnv, environmentsDir, details, nil, "", false)
+	_, err = options.Create(devEnv, envDir, details, nil, "", false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create a pull request to update prow version")
 	}

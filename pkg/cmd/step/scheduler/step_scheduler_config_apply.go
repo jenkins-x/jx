@@ -15,6 +15,9 @@ type StepSchedulerConfigApplyOptions struct {
 	step.StepOptions
 	Agent         string
 	ApplyDirectly bool
+
+	// Used for testing
+	CloneDir string
 }
 
 var (
@@ -81,11 +84,10 @@ func (o *StepSchedulerConfigApplyOptions) Run() error {
 				Verbose: o.Verbose,
 				DevEnv:  devEnv,
 			}
-			environmentsDir, err := o.EnvironmentsDir()
-			if err != nil {
-				return errors.Wrapf(err, "getting environments dir")
+			opts.PullRequestCloneDir = ""
+			if o.CloneDir != "" {
+				opts.PullRequestCloneDir = o.CloneDir
 			}
-			opts.EnvironmentsDir = environmentsDir
 
 			gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(devEnv.Spec.Source.URL)
 			if err != nil {

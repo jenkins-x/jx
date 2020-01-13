@@ -44,6 +44,11 @@ func TestDeleteAppForGitOps(t *testing.T) {
 		Alias:         alias,
 	}
 	o.Args = []string{name}
+	// Validate the branch name
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	o.CloneDir = devEnvDir
 
 	err = o.Run()
 	assert.NoError(t, err)
@@ -53,10 +58,6 @@ func TestDeleteAppForGitOps(t *testing.T) {
 	// Validate the PR has the right title, message
 	assert.Equal(t, fmt.Sprintf("Delete %s", name), pr.Title)
 	assert.Equal(t, fmt.Sprintf("Delete app %s", name), pr.Body)
-	// Validate the branch name
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("delete-app-%s", name), branchName)
@@ -89,6 +90,11 @@ func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
 		Alias:         alias,
 	}
 	o.Args = []string{shortName}
+	// Validate the branch name
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	o.CloneDir = devEnvDir
 
 	err = o.Run()
 	assert.NoError(t, err)
@@ -98,10 +104,6 @@ func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
 	// Validate the PR has the right title, message
 	assert.Equal(t, fmt.Sprintf("Delete %s", name), pr.Title)
 	assert.Equal(t, fmt.Sprintf("Delete app %s", name), pr.Body)
-	// Validate the branch name
-	envDir, err := o.CommonOptions.EnvironmentsDir()
-	assert.NoError(t, err)
-	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("delete-app-%s", name), branchName)
