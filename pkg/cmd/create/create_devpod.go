@@ -155,8 +155,6 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *CreateDevPodOptions) Run() error {
-	addedServices := false
-
 	if o.Persist && o.Sync {
 		return errors.New("Cannot specify --persist and --sync")
 	}
@@ -692,6 +690,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 
 		// Create services
+		var addedServices []string
 
 		// Create a service for every port we expose
 		if len(exposeServicePorts) > 0 {
@@ -725,8 +724,8 @@ func (o *CreateDevPodOptions) Run() error {
 				if err != nil {
 					return errors.Wrapf(err, "creating service %q in namespace %q", service.Name, curNs)
 				}
+				addedServices = append(addedServices, service.Name)
 			}
-			addedServices = true
 		}
 		if !o.Sync {
 			// Create a service for the IDE
@@ -757,11 +756,11 @@ func (o *CreateDevPodOptions) Run() error {
 			if err != nil {
 				return errors.Wrapf(err, "creating the service %q for IDE in namespace %q", ideService.Name, curNs)
 			}
-			addedServices = true
+			addedServices = append(addedServices, ideServiceName)
 		}
 
-		if addedServices {
-			err = o.updateExposeController(client, ns, ns)
+		if len(addedServices) > 0 {
+			err = o.updateExposeController(client, ns, ns, addedServices...)
 			if err != nil {
 				return errors.Wrapf(err, "updating the expose controller in namespace %s", ns)
 			}
@@ -1018,12 +1017,12 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (str
 }
 
 // updateExposeController lets update the exposecontroller to expose any new Service resources created for this devpod
-func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface, devNs string, ns string) error {
+func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface, devNs string, ns string, services ...string) error {
 	ingressConfig, err := kube.GetIngressConfig(client, devNs)
 	if err != nil {
 		return errors.Wrapf(err, "loading the ingress-config in namespace %s", devNs)
 	}
-	err = o.RunExposecontroller(ns, ns, ingressConfig)
+	err = o.RunExposecontroller(ns, ns, ingressConfig, services...)
 	if err != nil {
 		return errors.Wrapf(err, "running the expose controller in the namespace %q", ns)
 	}
