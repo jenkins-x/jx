@@ -176,25 +176,25 @@ func (o *RequirementsOptions) applyDefaults() error {
 	}
 
 	// override boolean flags if specified
-	if o.Cmd.Flag("autoupgrade").Changed {
+	if o.FlagChanged("autoupgrade") {
 		r.AutoUpdate.Enabled = o.Flags.AutoUpgrade
 	}
-	if o.Cmd.Flag("env-git-public").Changed {
+	if o.FlagChanged("env-git-public") {
 		r.Cluster.EnvironmentGitPublic = o.Flags.EnvironmentGitPublic
 	}
-	if o.Cmd.Flag("gitops").Changed {
+	if o.FlagChanged("gitops") {
 		r.GitOps = o.Flags.GitOps
 	}
-	if o.Cmd.Flag("kaniko").Changed {
+	if o.FlagChanged("kaniko") {
 		r.Kaniko = o.Flags.Kaniko
 	}
-	if o.Cmd.Flag("terraform").Changed {
+	if o.FlagChanged("terraform") {
 		r.Terraform = o.Flags.Terraform
 	}
-	if o.Cmd.Flag("vault-disable-url-discover").Changed {
+	if o.FlagChanged("vault-disable-url-discover") {
 		r.Vault.DisableURLDiscovery = o.Flags.VaultDisableURLDiscover
 	}
-	if o.Cmd.Flag("vault-recreate-bucket").Changed {
+	if o.FlagChanged("vault-recreate-bucket") {
 		r.Vault.RecreateBucket = o.Flags.VaultRecreateBucket
 	}
 
