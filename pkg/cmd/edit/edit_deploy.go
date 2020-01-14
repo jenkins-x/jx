@@ -69,7 +69,7 @@ func NewCmdEditDeployKind(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-// NewCmdEditDeployKind creates a command object for the "create" command
+// NewCmdEditDeployKindAndOption creates a command object for the "create" command
 func NewCmdEditDeployKindAndOption(commonOpts *opts.CommonOptions) (*cobra.Command, *EditDeployKindOptions) {
 	options := &EditDeployKindOptions{
 		EditOptions: EditOptions{
@@ -158,6 +158,7 @@ func (o *EditDeployKindOptions) Run() error {
 	return o.ModifyHelmValuesFile(o.Dir, fn)
 }
 
+// FindDefaultDeployKindInValuesYaml finds the deployment values for the given values.yaml text
 func (o *EditDeployKindOptions) FindDefaultDeployKindInValuesYaml(yamlText string) (string, v1.DeployOptions) {
 	deployOptions := v1.DeployOptions{}
 	// lets try find the current setting
