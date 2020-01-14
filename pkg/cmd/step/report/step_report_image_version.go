@@ -263,9 +263,9 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 			return nil
 		}
 		if !o.BatchMode {
-			if !util.Confirm(fmt.Sprintf("are you ready to delete the Job %s", job.Name), true,
-				"we should delete the job when it is finished", o.GetIOFileHandles()) {
-				return nil
+			if answer, err := util.Confirm(fmt.Sprintf("are you ready to delete the Job %s", job.Name), true,
+				"we should delete the job when it is finished", o.GetIOFileHandles()); !answer {
+				return err
 			}
 		}
 		err = jobs.Delete(job.Name, nil)

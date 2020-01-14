@@ -64,9 +64,9 @@ var (
 		jx create cluster gke --skip-installation
 
 		# now lets boot up Jenkins X installing/upgrading whatever is needed
-		jx boot 
+		jx boot
 
-		# if we have already booted and just want to apply some environment changes without 
+		# if we have already booted and just want to apply some environment changes without
         # re-applying ingress and so forth we can start at the environment step:
 		jx boot --start-step install-env
 `)
@@ -187,7 +187,9 @@ func (o *BootOptions) Run() error {
 
 			help := "A git clone of a Jenkins X Boot source repository is required for 'jx boot'"
 			message := "Do you want to clone the Jenkins X Boot Git repository?"
-			if !util.Confirm(message, true, help, o.GetIOFileHandles()) {
+			if answer, err := util.Confirm(message, true, help, o.GetIOFileHandles()); err != nil {
+				return err
+			} else if !answer {
 				return fmt.Errorf("Please run this command again inside a git clone from a Jenkins X Boot repository")
 			}
 		}

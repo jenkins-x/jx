@@ -112,7 +112,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOption
 					if structField.Type.String() == "string" {
 						value, err = util.PickValue(commandUsage+":", field.String(), true, "", options.GetIOFileHandles())
 					} else if structField.Type.String() == "bool" {
-						value = util.Confirm(commandUsage+":", field.Bool(), "", options.GetIOFileHandles())
+						value, err = util.Confirm(commandUsage+":", field.Bool(), "", options.GetIOFileHandles())
 					}
 					helper.CheckErr(err)
 				} else {

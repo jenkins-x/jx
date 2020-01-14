@@ -159,7 +159,7 @@ func SelectNames(names []string, message string, selectAll bool, help string, ha
 }
 
 // Confirm prompts the user to confirm something
-func Confirm(message string, defaultValue bool, help string, handles IOFileHandles) bool {
+func Confirm(message string, defaultValue bool, help string, handles IOFileHandles) (bool, error) {
 	answer := defaultValue
 	prompt := &survey.Confirm{
 		Message: message,
@@ -167,7 +167,10 @@ func Confirm(message string, defaultValue bool, help string, handles IOFileHandl
 		Help:    help,
 	}
 	surveyOpts := survey.WithStdio(handles.In, handles.Out, handles.Err)
-	survey.AskOne(prompt, &answer, nil, surveyOpts)
+	err := survey.AskOne(prompt, &answer, nil, surveyOpts)
+	if err != nil {
+		return false, err
+	}
 	log.Blank()
-	return answer
+	return answer, nil
 }

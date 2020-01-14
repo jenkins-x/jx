@@ -102,8 +102,10 @@ func (o *DeleteDevPodOptions) Run() error {
 
 	deletePods := strings.Join(devPods, ", ")
 
-	if !o.BatchMode && !util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted", o.GetIOFileHandles()) {
-		return nil
+	if !o.BatchMode {
+		if answer, err := util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted", o.GetIOFileHandles()); !answer {
+			return err
+		}
 	}
 	for _, name := range devPods {
 		if util.StringArrayIndex(names, name) < 0 {

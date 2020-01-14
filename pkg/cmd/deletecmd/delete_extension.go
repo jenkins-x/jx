@@ -164,10 +164,12 @@ func (o *DeleteExtensionOptions) Run() error {
 	}
 
 	// TODO display the extensions to delete in a tree view
-	if !o.BatchMode && !util.Confirm(fmt.Sprintf("You are about to delete the Extensions: %s",
-		strings.Join(extensionsToDeleteStrings, ", ")), false,
-		"The list of Extensions to be deleted", o.GetIOFileHandles()) {
-		return nil
+	if !o.BatchMode {
+		if answer, err := util.Confirm(fmt.Sprintf("You are about to delete the Extensions: %s",
+			strings.Join(extensionsToDeleteStrings, ", ")), false,
+			"The list of Extensions to be deleted", o.GetIOFileHandles()); !answer {
+			return err
+		}
 	}
 	deletedExtensions := make([]string, 0)
 	for _, ext := range extensionsToDelete {

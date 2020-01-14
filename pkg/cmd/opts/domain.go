@@ -80,8 +80,10 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				return "", fmt.Errorf("Please specify a custom DNS name via --domain when installing on AWS in batch mode")
 			}
 			for {
-				if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
-					"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.", o.GetIOFileHandles()) {
+				if answer, err := util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
+					"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.", o.GetIOFileHandles()); err != nil {
+					return "", err
+				} else if answer {
 					customDomain := ""
 					prompt := &survey.Input{
 						Message: "Your custom DNS name: ",
@@ -125,9 +127,16 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				util.ColorInfo(address))
 
 			addressIP := ""
-			if o.BatchMode || util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
-				"Should we convert "+address+" to an IP address so we can access resources externally", o.GetIOFileHandles()) {
-
+			resolve := true
+			if !o.BatchMode {
+				answer, err := util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
+					"Should we convert "+address+" to an IP address so we can access resources externally", o.GetIOFileHandles())
+				if err != nil {
+					return "", err
+				}
+				resolve = answer
+			}
+			if resolve {
 				log.Logger().Infof("Waiting for %s to be resolvable to an IP address...", util.ColorInfo(address))
 				f := func() error {
 					ips, err := net.LookupIP(address)

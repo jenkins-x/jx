@@ -91,9 +91,9 @@ func CreateBucket(gcloud gke.GClouder, vaultName, bucketName string, projectID, 
 		if batchMode {
 			log.Logger().Warnf("We are deleting the Vault bucket %s so that Vault will install cleanly", bucketName)
 		} else {
-			if !util.Confirm(fmt.Sprintf("We are about to delete bucket %q, so we can install a clean Vault. Are you sure: ", bucketName),
-				true, "We recommend you delete the Vault bucket on install to ensure Vault starts up reliably", handles) {
-				return bucketName, nil
+			if answer, err := util.Confirm(fmt.Sprintf("We are about to delete bucket %q, so we can install a clean Vault. Are you sure: ", bucketName),
+				true, "We recommend you delete the Vault bucket on install to ensure Vault starts up reliably", handles); !answer {
+				return bucketName, err
 			}
 		}
 		err = gcloud.DeleteAllObjectsInBucket(bucketName)
