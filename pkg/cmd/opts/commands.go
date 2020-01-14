@@ -136,3 +136,14 @@ func (o *CommonOptions) GetCommandOutput(dir string, name string, args ...string
 	}
 	return text, err
 }
+
+// FlagChanged returns true if the given flag was supplied on the command line
+func (o *CommonOptions) FlagChanged(name string) bool {
+	if o.Cmd != nil {
+		f := o.Cmd.Flag(name)
+		if f != nil {
+			return f.Changed
+		}
+	}
+	return false
+}
