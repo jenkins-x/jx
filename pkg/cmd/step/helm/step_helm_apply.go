@@ -244,9 +244,9 @@ func (o *StepHelmApplyOptions) Run() error {
 		}()
 	}
 
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := o.getRequirements()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "loading the requirements")
 	}
 
 	secretURLClient, err := o.GetSecretURLClient(secrets.ToSecretsLocation(string(requirements.SecretStorage)))
@@ -264,7 +264,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}
-	if o.ProviderValuesDir != "" {
+	if o.ProviderValuesDir != "" && requirementsFileName != "" {
 		chartValues, err = o.overwriteProviderValues(requirements, requirementsFileName, chartValues, params, o.ProviderValuesDir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to overwrite provider values in dir: %s", dir)
@@ -383,6 +383,29 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
 	}
 	return nil
+}
+
+// getRequirements tries to load the requirements either from the team settings or local requirements file
+func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, string, error) {
+	// Try to load first the requirements from current directory
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	if err == nil {
+		return requirements, requirementsFileName, nil
+	}
+	// When no requirements file is found, try to load the requirements from team settings
+	jxClient, ns, err := o.JXClient()
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting the jx client")
+	}
+	teamSetttings, err := kube.GetDevEnvTeamSettings(jxClient, ns)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting the team setting from the cluster")
+	}
+	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSetttings)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting the requirements from team settings")
+	}
+	return requirements, "", nil
 }
 
 // DefaultEnvironments ensures we have valid values for environment owner and repository names.
