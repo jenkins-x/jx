@@ -137,7 +137,7 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", true, "Reuse an existing DevPod if a suitable one exists. The DevPod will be selected based on the label (or current working directory)")
 	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
 	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
-	cmd.Flags().BoolVarP(&options.AutoExpose, "auto-expose", "", true, "Automatically expose useful ports as services such as the debug port, as well as any ports specified using --ports")
+	cmd.Flags().BoolVarP(&options.AutoExpose, "auto-expose", "", false, "Automatically expose useful ports as services such as the debug port, as well as any ports specified using --ports")
 	cmd.Flags().BoolVarP(&options.Persist, "persist", "", false, "Persist changes made to the DevPod. Cannot be used with --sync")
 	cmd.Flags().StringVarP(&options.ImportURL, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
@@ -594,21 +594,20 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 
 		// Assign the container the ports provided automatically
-		if o.AutoExpose {
-			exposeServicePorts = o.Ports
-			if portsStr, ok := pod.Annotations["jenkins-x.io/devpodPorts"]; ok {
-				ports := strings.Split(portsStr, ", ")
-				for _, portStr := range ports {
-					port, _ := strconv.Atoi(portStr)
-					exposeServicePorts = append(exposeServicePorts, port)
-					cp := corev1.ContainerPort{
-						Name:          fmt.Sprintf("port-%d", port),
-						ContainerPort: int32(port),
-					}
-					container1.Ports = append(container1.Ports, cp)
+		exposeServicePorts = o.Ports
+		if portsStr, ok := pod.Annotations["jenkins-x.io/devpodPorts"]; ok {
+			ports := strings.Split(portsStr, ", ")
+			for _, portStr := range ports {
+				port, _ := strconv.Atoi(portStr)
+				exposeServicePorts = append(exposeServicePorts, port)
+				cp := corev1.ContainerPort{
+					Name:          fmt.Sprintf("port-%d", port),
+					ContainerPort: int32(port),
 				}
+				container1.Ports = append(container1.Ports, cp)
 			}
 		}
+
 		if o.Reuse {
 			matchLabels := map[string]string{
 				kube.LabelPodTemplate:    label,
@@ -643,9 +642,11 @@ func (o *CreateDevPodOptions) Run() error {
 			return fmt.Errorf("failed to create pod %s\npod: %#v", err, pod)
 		}
 
-		err := o.ensureEditEnvironmentHasExposeController(editEnv)
-		if err != nil {
-			return errors.Wrap(err, "ensuring that edit environment has expose-controller")
+		if o.AutoExpose {
+			err := o.ensureEditEnvironmentHasExposeController(editEnv)
+			if err != nil {
+				return errors.Wrap(err, "ensuring that edit environment has expose-controller")
+			}
 		}
 
 		o.NotifyProgress(opts.LogInfo, "Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
@@ -692,6 +693,12 @@ func (o *CreateDevPodOptions) Run() error {
 		// Create services
 		var addedServices []string
 
+		svcAnotations := map[string]string{}
+		if o.AutoExpose {
+			svcAnotations = map[string]string{
+				"fabric8.io/expose": "true",
+			}
+		}
 		// Create a service for every port we expose
 		if len(exposeServicePorts) > 0 {
 			for _, port := range exposeServicePorts {
@@ -705,10 +712,8 @@ func (o *CreateDevPodOptions) Run() error {
 				}
 				service := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Annotations: map[string]string{
-							"fabric8.io/expose": "true",
-						},
-						Name: fmt.Sprintf("%s-port-%d", pod.Name, port),
+						Annotations: svcAnotations,
+						Name:        fmt.Sprintf("%s-port-%d", pod.Name, port),
 						OwnerReferences: []metav1.OwnerReference{
 							kube.PodOwnerRef(pod),
 						},
@@ -731,10 +736,8 @@ func (o *CreateDevPodOptions) Run() error {
 			// Create a service for the IDE
 			ideService := corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"fabric8.io/expose": "true",
-					},
-					Name: ideServiceName,
+					Annotations: svcAnotations,
+					Name:        ideServiceName,
 					OwnerReferences: []metav1.OwnerReference{
 						kube.PodOwnerRef(pod),
 					},
@@ -759,7 +762,7 @@ func (o *CreateDevPodOptions) Run() error {
 			addedServices = append(addedServices, ideServiceName)
 		}
 
-		if len(addedServices) > 0 {
+		if len(addedServices) > 0 && o.AutoExpose {
 			err = o.updateExposeController(client, ns, ns, addedServices...)
 			if err != nil {
 				return errors.Wrapf(err, "updating the expose controller in namespace %s", ns)
@@ -770,7 +773,7 @@ func (o *CreateDevPodOptions) Run() error {
 	o.NotifyProgress(opts.LogInfo, "Pod %s is now ready!\n", util.ColorInfo(pod.Name))
 	log.Logger().Infof("You can open other shells into this DevPod via %s", util.ColorInfo("jx create devpod"))
 
-	if !o.Sync {
+	if !o.Sync && o.AutoExpose {
 		ideServiceURL, err := services.FindServiceURL(client, curNs, ideServiceName)
 		if err != nil {
 			return errors.Wrapf(err, "finding the URL for service %q", ideServiceName)
@@ -792,28 +795,29 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	exposePortServices, err := services.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
-	if err != nil {
-		return errors.Wrapf(err, "getting the exposed port service for POD %q in namespace %q", pod.Name, curNs)
-	}
-	var exposePortURLs []string
-	for _, svcName := range exposePortServices {
-		u, err := services.GetServiceURLFromName(client, svcName, curNs)
+	if o.AutoExpose {
+		exposePortServices, err := services.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
 		if err != nil {
-			return errors.Wrapf(err, "getting the service URL from service name %q in namespace %q", svcName, curNs)
+			return errors.Wrapf(err, "getting the exposed port service for POD %q in namespace %q", pod.Name, curNs)
 		}
-		exposePortURLs = append(exposePortURLs, u)
-	}
-	if len(exposePortURLs) > 0 {
-		log.Logger().Infof("\nYou can access the DevPod from your browser via the following URLs:")
-		for _, u := range exposePortURLs {
-			log.Logger().Infof("* %s", util.ColorInfo(u))
+		var exposePortURLs []string
+		for _, svcName := range exposePortServices {
+			u, err := services.GetServiceURLFromName(client, svcName, curNs)
+			if err != nil {
+				return errors.Wrapf(err, "getting the service URL from service name %q in namespace %q", svcName, curNs)
+			}
+			exposePortURLs = append(exposePortURLs, u)
 		}
-		log.Logger().Info("")
+		if len(exposePortURLs) > 0 {
+			log.Logger().Infof("\nYou can access the DevPod from your browser via the following URLs:")
+			for _, u := range exposePortURLs {
+				log.Logger().Infof("* %s", util.ColorInfo(u))
+			}
+			log.Logger().Info("")
 
-		o.Results.ExposePortURLs = exposePortURLs
+			o.Results.ExposePortURLs = exposePortURLs
+		}
 	}
-
 	if o.Sync {
 		syncOptions := &sync.SyncOptions{
 			CommonOptions: o.CommonOptions,
