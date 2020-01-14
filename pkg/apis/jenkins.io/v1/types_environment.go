@@ -185,6 +185,15 @@ type EnvironmentRepository struct {
 	Ref  string                    `json:"ref,omitempty" protobuf:"bytes,3,opt,name=ref"`
 }
 
+// DeployOptions configures options for how to deploy applications by default such as using progressive delivery or using horizontal pod autoscaler
+type DeployOptions struct {
+	// Canary should we enable canary rollouts (progressive delivery) for apps by default
+	Canary bool `json:"canary,omitempty" protobuf:"bytes,1,opt,name=canary"`
+
+	// should we use the horizontal pod autoscaler on new apps by default?
+	HPA bool `json:"hpa,omitempty" protobuf:"bytes,2,opt,name=hpa"`
+}
+
 // TeamSettings the default settings for a team
 type TeamSettings struct {
 	UseGitOps           bool                 `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
@@ -210,7 +219,9 @@ type TeamSettings struct {
 	AppsRepository      string               `json:"appsRepository,omitempty" protobuf:"bytes,19,opt,name=appsRepository"`
 	BuildPackName       string               `json:"buildPackName,omitempty" protobuf:"bytes,20,opt,name=buildPackName"`
 	StorageLocations    []StorageLocation    `json:"storageLocations,omitempty" protobuf:"bytes,21,opt,name=storageLocations"`
-	DeployKind          string               `json:"deployKind,omitempty" protobuf:"bytes,24,opt,name=deployKind"`
+
+	// DeployKind what kind of deployment ("default" uses regular Kubernetes Services and Deployments, "knative" uses the Knative Service resource instead)
+	DeployKind string `json:"deployKind,omitempty" protobuf:"bytes,24,opt,name=deployKind"`
 
 	// ImportMode indicates what kind of
 	ImportMode ImportModeType `json:"importMode,omitempty" protobuf:"bytes,22,opt,name=importMode"`
@@ -236,6 +247,9 @@ type TeamSettings struct {
 
 	// BootRequirements is a marshaled string of the jx-requirements.yml used in the most recent run for this cluster
 	BootRequirements string `json:"bootRequirements,omitempty" protobuf:"bytes,31,opt,name=bootRequirements"`
+
+	// DeployOptions configures options for how to deploy applications by default such as using canary rollouts (progressive delivery) or using horizontal pod autoscaler
+	DeployOptions *DeployOptions `json:"deployOptions,omitempty" protobuf:"bytes,32,opt,name=deployOptions"`
 }
 
 // StorageLocation
@@ -393,6 +407,14 @@ func (t *TeamSettings) GetProwConfig() ProwConfigType {
 		t.ProwConfig = ProwConfigLegacy
 	}
 	return t.ProwConfig
+}
+
+// GetDeployOptions returns the default deploy options for a team
+func (t *TeamSettings) GetDeployOptions() DeployOptions {
+	if t.DeployOptions != nil {
+		return *t.DeployOptions
+	}
+	return DeployOptions{}
 }
 
 // DefaultMissingValues defaults any missing values

@@ -40,6 +40,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep":                    schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate":                    schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdateDetails":             schema_pkg_apis_jenkinsio_v1_DependencyUpdateDetails(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DeployOptions":                       schema_pkg_apis_jenkinsio_v1_DeployOptions(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment":                         schema_pkg_apis_jenkinsio_v1_Environment(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter":                   schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentList":                     schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
@@ -1310,6 +1311,34 @@ func schema_pkg_apis_jenkinsio_v1_DependencyUpdateDetails(ref common.ReferenceCa
 					},
 				},
 				Required: []string{"host", "owner", "repo", "url", "fromVersion", "fromReleaseHTMLURL", "fromReleaseName", "toVersion", "toReleaseHTMLURL", "toReleaseName"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_DeployOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DeployOptions configures options for how to deploy applications by default such as using progressive delivery or using horizontal pod autoscaler",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"canary": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Canary should we enable canary rollouts (progressive delivery) for apps by default",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"hpa": {
+						SchemaProps: spec.SchemaProps{
+							Description: "should we use the horizontal pod autoscaler on new apps by default?",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
 			},
 		},
 		Dependencies: []string{},
@@ -6175,8 +6204,9 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 					},
 					"deployKind": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "DeployKind what kind of deployment (\"default\" uses regular Kubernetes Services and Deployments, \"knative\" uses the Knative Service resource instead)",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"importMode": {
@@ -6247,11 +6277,17 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Format:      "",
 						},
 					},
+					"deployOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployOptions configures options for how to deploy applications by default such as using canary rollouts (progressive delivery) or using horizontal pod autoscaler",
+							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DeployOptions"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation", "k8s.io/api/batch/v1.Job"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DeployOptions", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation", "k8s.io/api/batch/v1.Job"},
 	}
 }
 

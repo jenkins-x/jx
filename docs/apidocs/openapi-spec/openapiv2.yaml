@@ -471,6 +471,18 @@ definitions:
     - toReleaseHTMLURL
     - toReleaseName
     type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DeployOptions:
+    description: DeployOptions configures options for how to deploy applications by
+      default such as using progressive delivery or using horizontal pod autoscaler
+    properties:
+      canary:
+        description: Canary should we enable canary rollouts (progressive delivery)
+          for apps by default
+        type: boolean
+      hpa:
+        description: should we use the horizontal pod autoscaler on new apps by default?
+        type: boolean
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Environment:
     description: Environment represents an environment like Dev, Test, Staging, Production
       where code lives
@@ -2421,7 +2433,14 @@ definitions:
       defaultScheduler:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
       deployKind:
+        description: DeployKind what kind of deployment ("default" uses regular Kubernetes
+          Services and Deployments, "knative" uses the Knative Service resource instead)
         type: string
+      deployOptions:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DeployOptions'
+        description: DeployOptions configures options for how to deploy applications
+          by default such as using canary rollouts (progressive delivery) or using
+          horizontal pod autoscaler
       dockerRegistryOrg:
         type: string
       envOrganisation:
