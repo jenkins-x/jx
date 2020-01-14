@@ -109,8 +109,14 @@ func (o *EditDeployKindOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		canary := o.pickProgressiveDelivery(teamDeployOptions.Canary)
-		hpa := o.pickHPA(teamDeployOptions.HPA)
+		canary, err := o.pickProgressiveDelivery(teamDeployOptions.Canary)
+		if err != nil {
+			return err
+		}
+		hpa, err := o.pickHPA(teamDeployOptions.HPA)
+		if err != nil {
+			return err
+		}
 
 		callback := func(env *v1.Environment) error {
 			teamSettings := &env.Spec.TeamSettings
@@ -139,8 +145,14 @@ func (o *EditDeployKindOptions) Run() error {
 		if err != nil {
 			return name, err
 		}
-		canary := o.pickProgressiveDelivery(currentDeployOptions.Canary)
-		hpa := o.pickHPA(currentDeployOptions.HPA)
+		canary, err := o.pickProgressiveDelivery(currentDeployOptions.Canary)
+		if err != nil {
+			return name, err
+		}
+		hpa, err := o.pickHPA(currentDeployOptions.HPA)
+		if err != nil {
+			return name, err
+		}
 		return o.setDeployKindInValuesYaml(text, name, canary, hpa)
 	}
 	return o.ModifyHelmValuesFile(o.Dir, fn)
@@ -252,24 +264,24 @@ func (o *EditDeployKindOptions) pickDeployKind(defaultName string) (string, erro
 	return name, nil
 }
 
-func (o *EditDeployKindOptions) pickProgressiveDelivery(defaultValue bool) bool {
+func (o *EditDeployKindOptions) pickProgressiveDelivery(defaultValue bool) (bool, error) {
 	// return the CLI option if specified
 	if o.FlagChanged(opts.OptionCanary) {
-		return o.DeployOptions.Canary
+		return o.DeployOptions.Canary, nil
 	}
 	if o.BatchMode {
-		return defaultValue
+		return defaultValue, nil
 	}
 	return util.Confirm("Would you like to use Canary Delivery", defaultValue, "Canary delivery lets us use Canary rollouts to incrementally test applications", o.GetIOFileHandles())
 }
 
-func (o *EditDeployKindOptions) pickHPA(defaultValue bool) bool {
+func (o *EditDeployKindOptions) pickHPA(defaultValue bool) (bool, error) {
 	// return the CLI option if specified
 	if o.FlagChanged(opts.OptionHPA) {
-		return o.DeployOptions.HPA
+		return o.DeployOptions.HPA, nil
 	}
 	if o.BatchMode {
-		return defaultValue
+		return defaultValue, nil
 	}
 	return util.Confirm("Would you like to use the Horizontal Pod Autoscaler with deployments", defaultValue, "The Horizontal Pod Autoscaler lets you scale your pods up and down automatically", o.GetIOFileHandles())
 }
