@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -67,14 +68,13 @@ func NewCmdGetDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetDevPodOptions) Run() error {
-
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "get kubernetes client")
 	}
 	ns, _, err := kube.GetDevNamespace(client, curNs)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "get dev namespace")
 	}
 
 	var userName string
@@ -82,14 +82,16 @@ func (o *GetDevPodOptions) Run() error {
 		if o.Username != "" {
 			log.Logger().Warn("getting devpods for all usernames. Explicit username will be ignored")
 		}
-		// Leave userName blank
 	} else {
 		userName, err = o.GetUsername(o.Username)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "getting the current user")
 		}
 	}
 	names, m, err := kube.GetDevPodNames(client, ns, userName)
+	if err != nil {
+		return errors.Wrap(err, "getting the DevPod names")
+	}
 
 	table := o.CreateTable()
 	table.AddRow("NAME", "POD TEMPLATE", "AGE", "STATUS")
