@@ -9,7 +9,7 @@ development environment for working on the jx source code.
 To compile, test and contribute towards the jx binaries you will need:
 
  - [git][]
- - [Go][] 1.11 or later, with support for compiling to `linux/amd64`
+ - [Go][] 1.11 or 1.12, with support for compiling to `linux/amd64` (Go version 1.13 is at the moment not supported).
  - [dep](https://github.com/golang/dep)
  - [pre-commit](https://pre-commit.com) _optional: we use [detect-secrets](https://github.com/Yelp/detect-secrets) to help prevent secrets leaking into the code base_
  
