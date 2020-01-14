@@ -301,7 +301,9 @@ func (o *CommonOptions) Installhyperv() error {
 
 		message := fmt.Sprintf("Would you like to restart your computer?")
 
-		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.GetIOFileHandles()) {
+		if answer, err := util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.GetIOFileHandles()); err != nil {
+			return err
+		} else if answer {
 
 			err = o.RunCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
 			if err != nil {

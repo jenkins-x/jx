@@ -120,7 +120,9 @@ func (o *VersionOptions) upgradeCliIfNeeded(resolver *versionstream.VersionResol
 		} else {
 			log.Logger().Info("\n")
 			message := fmt.Sprintf("Would you like to upgrade to the %s version?", app)
-			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles()) {
+			if answer, err := util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles()); err != nil {
+				return err
+			} else if answer {
 				options := &upgrade.UpgradeCLIOptions{
 					CreateOptions: options.CreateOptions{
 						CommonOptions: o.CommonOptions,

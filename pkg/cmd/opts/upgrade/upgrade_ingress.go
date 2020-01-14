@@ -93,7 +93,9 @@ For more documentation on Ingress configuration see: [https://jenkins-x.io/docs/
 
 	// confirm values
 	if !o.BatchMode {
-		if !util.Confirm(fmt.Sprintf("Using config values %v, ok?", o.IngressConfig), true, "", o.GetIOFileHandles()) {
+		if answer, err := util.Confirm(fmt.Sprintf("Using config values %v, ok?", o.IngressConfig), true, "", o.GetIOFileHandles()); err != nil {
+			return err
+		} else if !answer {
 			log.Logger().Infof("Terminating")
 			return nil
 		}
@@ -270,7 +272,9 @@ func (o *UpgradeIngressOptions) updateResources(previousWebHookEndpoint string) 
 	log.Logger().Infof("Updated webhook endpoint %s", updatedWebHookEndpoint)
 	updateWebHooks := true
 	if !o.BatchMode {
-		if !util.Confirm("Do you want to update all existing webhooks?", true, "", o.GetIOFileHandles()) {
+		if answer, err := util.Confirm("Do you want to update all existing webhooks?", true, "", o.GetIOFileHandles()); err != nil {
+			return err
+		} else if !answer {
 			updateWebHooks = false
 		}
 	}
@@ -457,7 +461,10 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 
 		if !strings.HasSuffix(o.IngressConfig.Domain, "nip.io") {
 			if !o.BatchMode {
-				o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.GetIOFileHandles())
+				o.IngressConfig.TLS, err = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.GetIOFileHandles())
+				if err != nil {
+					return err
+				}
 			}
 
 			if o.IngressConfig.TLS {

@@ -60,8 +60,11 @@ func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileH
 		fmt.Fprintf(fileHandles.Out, "Please install '%s' Github App into your organisation/account %s and allow access to repository %s. Click this url \n%s\n\n", util.ColorInfo(appName), owner, repo, util.ColorInfo(url))
 	}
 	if !accessToRepo {
-		accessToRepo = util.Confirm(fmt.Sprintf("Does the '%s' Github App have access to repository", util.ColorInfo(appName)), false,
+		accessToRepo, err = util.Confirm(fmt.Sprintf("Does the '%s' Github App have access to repository", util.ColorInfo(appName)), false,
 			fmt.Sprintf("Please install '%s' Github App into your organisation and grant access to repositories", util.ColorInfo(appName)), fileHandles)
+		if err != nil {
+			return false, err
+		}
 	}
 	if !accessToRepo {
 		return false, errors.New(fmt.Sprintf("Please install '%s' Github App", util.ColorInfo(appName)))

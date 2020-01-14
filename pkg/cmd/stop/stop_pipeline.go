@@ -211,8 +211,8 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 			return err
 		}
 
-		if !util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.GetIOFileHandles()) {
-			return nil
+		if answer, err := util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.GetIOFileHandles()); !answer {
+			return err
 		}
 		args = []string{name}
 	}

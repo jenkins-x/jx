@@ -87,10 +87,9 @@ func (o *UninstallOptions) Run() error {
 				help += "\n " + envNamespace
 			}
 
-			uninstall := util.Confirm("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?", false,
-				help, o.GetIOFileHandles())
-			if !uninstall {
-				return nil
+			if answer, err := util.Confirm("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?", false,
+				help, o.GetIOFileHandles()); !answer {
+				return err
 			}
 		}
 		if o.BatchMode || o.Context != "" {

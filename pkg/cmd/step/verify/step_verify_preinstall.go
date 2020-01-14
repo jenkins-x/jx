@@ -494,7 +494,9 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 
 	if requirements.Cluster.Provider != cloud.GKE && requirements.Cluster.Provider != cloud.EKS {
 		// lets check we want to try installation as we've only tested on GKE at the moment
-		if !o.showProvideFeedbackMessage() {
+		if answer, err := o.showProvideFeedbackMessage(); err != nil {
+			return requirements, err
+		} else if !answer {
 			return requirements, errors.New("finishing execution")
 		}
 	}
@@ -514,7 +516,10 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			}
 			if currentClusterName != "" && currentProject != "" && currentZone != "" {
 				log.Logger().Infof("Currently connected cluster is %s in %s in project %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentZone), util.ColorInfo(currentProject))
-				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
+				autoAcceptDefaults, err = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
+				if err != nil {
+					return nil, err
+				}
 			} else {
 				log.Logger().Infof("Enter the cluster you want to jx boot")
 			}
@@ -577,7 +582,10 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			if currentClusterName != "" && currentRegion != "" {
 				log.Logger().Infof("")
 				log.Logger().Infof("Currently connected cluster is %s in region %s", util.ColorInfo(currentClusterName), util.ColorInfo(currentRegion))
-				autoAcceptDefaults = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
+				autoAcceptDefaults, err = util.Confirm(fmt.Sprintf("Do you want to jx boot the %s cluster?", util.ColorInfo(currentClusterName)), true, "Enter Y to use the currently connected cluster or enter N to specify a different cluster", o.GetIOFileHandles())
+				if err != nil {
+					return nil, err
+				}
 			} else {
 				log.Logger().Infof("Enter the cluster you want to jx boot")
 			}
@@ -737,8 +745,9 @@ func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.Re
 	if requirements.Cluster.GitKind == "github" {
 		message := fmt.Sprintf("If '%s' is an GitHub organisation it needs to have a paid subscription to create private repos. Do you wish to continue?", requirements.Cluster.EnvironmentGitOwner)
 		help := fmt.Sprint("GitHub organisation on a free plan cannot create private repositories. You either need to upgrade, use a GitHub user instead or use public repositories.")
-		confirmed := util.Confirm(message, false, help, o.GetIOFileHandles())
-		if !confirmed {
+		if answer, err := util.Confirm(message, false, help, o.GetIOFileHandles()); err != nil {
+			return err
+		} else if !answer {
 			return errors.New("cannot continue without completed git requirements")
 		}
 	}
@@ -787,8 +796,9 @@ func (o *StepVerifyPreInstallOptions) verifyTLS(requirements *config.Requirement
 
 			message := fmt.Sprintf("Do you wish to continue?")
 			help := fmt.Sprintf("Jenkins X needs TLS enabled to send secrets securely. We strongly recommend enabling TLS.")
-			value := util.Confirm(message, false, help, o.GetIOFileHandles())
-			if !value {
+			if answer, err := util.Confirm(message, false, help, o.GetIOFileHandles()); err != nil {
+				return err
+			} else if !answer {
 				return errors.Errorf("cannot continue because TLS is not enabled.")
 			}
 		}
@@ -967,12 +977,12 @@ func modifyMapIfNotBlank(m map[string]string, key string, value string) {
 	}
 }
 
-func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() bool {
+func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() (bool, error) {
 	log.Logger().Info("jx boot has only been validated on GKE and EKS, we'd love feedback and contributions for other Kubernetes providers")
 	if !o.BatchMode {
 		return util.Confirm("Continue execution anyway?",
 			true, "", o.GetIOFileHandles())
 	}
 	log.Logger().Info("Running in Batch Mode, execution will continue")
-	return true
+	return true, nil
 }

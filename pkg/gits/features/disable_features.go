@@ -173,8 +173,9 @@ Wiki Pages: %s
 			} else {
 
 				if !batchMode {
-					proceed := util.Confirm(fmt.Sprintf("Are you sure you want to disable %s on %s", strings.Join(toClose, ","), util.ColorInfo(fmt.Sprintf("%s/%s", c.Organisation, c.Name))), true, "", handles)
-					if !proceed {
+					if answer, err := util.Confirm(fmt.Sprintf("Are you sure you want to disable %s on %s", strings.Join(toClose, ","), util.ColorInfo(fmt.Sprintf("%s/%s", c.Organisation, c.Name))), true, "", handles); err != nil {
+						return err
+					} else if !answer {
 						continue
 					}
 				}

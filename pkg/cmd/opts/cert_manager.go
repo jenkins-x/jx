@@ -25,11 +25,14 @@ func (o *CommonOptions) EnsureCertManager() error {
 	if err != nil {
 		ok := true
 		if !o.BatchMode {
-			ok = util.Confirm(
+			ok, err = util.Confirm(
 				"CertManager deployment not found, shall we install it now?",
 				true,
 				"CertManager automatically configures Ingress rules with TLS using signed certificates from LetsEncrypt",
 				o.GetIOFileHandles())
+			if err != nil {
+				return err
+			}
 		}
 		if ok {
 			log.Logger().Info("Installing cert-manager...")

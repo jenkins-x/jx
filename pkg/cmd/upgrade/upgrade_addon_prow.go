@@ -30,7 +30,7 @@ var (
 `)
 
 	upgradeAddonProwExample = templates.Examples(`
-		# Upgrades the Jenkins X platform 
+		# Upgrades the Jenkins X platform
 		jx upgrade addon prow
 	`)
 )
@@ -117,8 +117,8 @@ func (o *UpgradeAddonProwOptions) Run() error {
 					"you like to install the latest Knative Build?\nWARNING: this will remove the previous version and " +
 					"install the latest, any existing builds or custom changes to BuildTemplate resources will be lost"
 
-				if !util.Confirm(message, false, "", o.GetIOFileHandles()) {
-					return nil
+				if answer, err := util.Confirm(message, false, "", o.GetIOFileHandles()); !answer {
+					return err
 				}
 
 				// delete knative build

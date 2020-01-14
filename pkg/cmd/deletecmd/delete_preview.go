@@ -85,13 +85,13 @@ func (o *DeletePreviewOptions) Run() error {
 				log.Logger().Warn("\nYou did not select any preview environments to delete\n")
 				log.Logger().Infof("Press the %s to select a preview environment to delete\n", util.ColorInfo("[space bar]"))
 
-				if !util.Confirm("Do you want to pick a preview environment to delete?", true, "Use the space bar to select previews", o.GetIOFileHandles()) {
-					return nil
+				if answer, err := util.Confirm("Do you want to pick a preview environment to delete?", true, "Use the space bar to select previews", o.GetIOFileHandles()); !answer {
+					return err
 				}
 			}
 			deletePreviews := strings.Join(selected, ", ")
-			if !util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Environments to be deleted", o.GetIOFileHandles()) {
-				return nil
+			if answer, err := util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Environments to be deleted", o.GetIOFileHandles()); !answer {
+				return err
 			}
 
 			for _, name := range selected {
