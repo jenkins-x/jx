@@ -141,7 +141,7 @@ func (o *CreateAddonGlooOptions) Run() error {
 	eo := &edit.EditDeployKindOptions{}
 	eo.CommonOptions = o.CommonOptions
 	eo.Team = true
-	eo.Kind = edit.DeployKindKnative
+	eo.Kind = opts.DeployKindKnative
 	return eo.Run()
 }
 

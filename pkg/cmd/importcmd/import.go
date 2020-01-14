@@ -71,6 +71,7 @@ type ImportOptions struct {
 	DockerRegistryOrg       string
 	GitDetails              gits.CreateRepoData
 	DeployKind              string
+	DeployOptions           v1.DeployOptions
 	SchedulerName           string
 
 	DisableDotGitSearch   bool
@@ -91,13 +92,7 @@ type ImportOptions struct {
 	reporter ImportReporter
 }
 
-const (
-	// DeployKindKnative for knative serve based deployments
-	DeployKindKnative = "knative"
-
-	// DeployKindDefault for default kubernetes Deployment + Service deployment kinds
-	DeployKindDefault = "default"
-)
+const ()
 
 var (
 	importLong = templates.LongDesc(`
@@ -132,13 +127,19 @@ var (
 		jx import --github --org myname --all --filter foo 
 		`)
 
-	deployKinds = []string{DeployKindKnative, DeployKindDefault}
+	deployKinds = []string{opts.DeployKindKnative, opts.DeployKindDefault}
 
 	removeSourceRepositoryAnnotations = []string{"kubectl.kubernetes.io/last-applied-configuration", "jenkins.io/chart"}
 )
 
 // NewCmdImport the cobra command for jx import
 func NewCmdImport(commonOpts *opts.CommonOptions) *cobra.Command {
+	cmd, _ := NewCmdImportAndOptions(commonOpts)
+	return cmd
+}
+
+// NewCmdImportAndOptions creates the cobra command for jx import and the options
+func NewCmdImportAndOptions(commonOpts *opts.CommonOptions) (*cobra.Command, *ImportOptions) {
 	options := &ImportOptions{
 		CommonOptions: commonOpts,
 	}
@@ -159,8 +160,8 @@ func NewCmdImport(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a Git provider this defaults to selecting them all")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a Git provider this filters the list of repositories")
 	options.AddImportFlags(cmd, false)
-
-	return cmd
+	options.Cmd = cmd
+	return cmd, options
 }
 
 func (options *ImportOptions) AddImportFlags(cmd *cobra.Command, createProject bool) {
@@ -188,6 +189,8 @@ func (options *ImportOptions) AddImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.ImportMode, "import-mode", "m", "", fmt.Sprintf("The import mode to use. Should be one of %s", strings.Join(v1.ImportModeStrings, ", ")))
 	cmd.Flags().BoolVarP(&options.UseDefaultGit, "use-default-git", "", false, "use default git account")
 	cmd.Flags().StringVarP(&options.DeployKind, "deploy-kind", "", "", fmt.Sprintf("The kind of deployment to use for the project. Should be one of %s", strings.Join(deployKinds, ", ")))
+	cmd.Flags().BoolVarP(&options.DeployOptions.Canary, opts.OptionCanary, "", false, "should we use canary rollouts (progressive delivery) by default for this application. e.g. using a Canary deployment via flagger. Requires the installation of flagger and istio/gloo in your cluster")
+	cmd.Flags().BoolVarP(&options.DeployOptions.HPA, opts.OptionHPA, "", false, "should we enable the Horizontal Pod Autoscaler for this application.")
 
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
@@ -535,6 +538,7 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
+	err = options.modifyDeployKind()
 	err = options.modifyDeployKind()
 	if err != nil {
 		return err
@@ -1558,6 +1562,15 @@ func (options *ImportOptions) DefaultValuesFromTeamSettings(settings *v1.TeamSet
 	if options.DeployKind == "" {
 		options.DeployKind = settings.DeployKind
 	}
+
+	// lets override any deploy options from the team settings if they are not specified
+	teamDeployOptions := settings.GetDeployOptions()
+	if !options.FlagChanged(opts.OptionCanary) {
+		options.DeployOptions.Canary = teamDeployOptions.Canary
+	}
+	if !options.FlagChanged(opts.OptionHPA) {
+		options.DeployOptions.HPA = teamDeployOptions.HPA
+	}
 	if options.Organisation == "" {
 		options.Organisation = settings.Organisation
 	}
@@ -1639,13 +1652,18 @@ func (options *ImportOptions) modifyDeployKind() error {
 	if deployKind == "" {
 		return nil
 	}
+	dopts := options.DeployOptions
 
-	eo := &edit.EditDeployKindOptions{}
 	copy := *options.CommonOptions
-	eo.CommonOptions = &copy
-	eo.Args = []string{deployKind}
+	cmd, eo := edit.NewCmdEditDeployKindAndOption(&copy)
 	eo.Dir = options.Dir
-	err := eo.Run()
+
+	// lets parse the CLI arguments so that the flags are marked as specified to force them to be overridden
+	err := cmd.Flags().Parse(edit.ToDeployArguments(opts.OptionKind, deployKind, dopts.Canary, dopts.HPA))
+	if err != nil {
+		return err
+	}
+	err = eo.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to modify the deployment kind to %s", deployKind)
 	}

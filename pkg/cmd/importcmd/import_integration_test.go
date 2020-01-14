@@ -186,7 +186,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	o.UseDefaultGit = true
 
 	if dirName == "maven-camel" {
-		o.DeployKind = importcmd.DeployKindKnative
+		o.DeployKind = opts.DeployKindKnative
 	}
 	if nextGenPipeline {
 		callback := func(env *v1.Environment) error {
