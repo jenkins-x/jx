@@ -92,8 +92,6 @@ type ImportOptions struct {
 	reporter ImportReporter
 }
 
-const ()
-
 var (
 	importLong = templates.LongDesc(`
 		Imports a local folder or Git repository into Jenkins X.
