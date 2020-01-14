@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -72,20 +73,20 @@ func (o *DeleteDevPodOptions) Run() error {
 
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting the kubernetes client")
 	}
 	ns, _, err := kube.GetDevNamespace(client, curNs)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting the dev namespace")
 	}
 	userName, err := o.GetUsername(o.CommonDevPodOptions.Username)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting the current user")
 	}
 	name := naming.ToValidName(userName)
 	names, err := kube.GetPodNames(client, ns, name)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting the pod names")
 	}
 
 	info := util.ColorInfo
@@ -96,7 +97,7 @@ func (o *DeleteDevPodOptions) Run() error {
 	if len(devPods) == 0 {
 		devPods, err = util.PickNames(names, "Pick DevPod:", "", o.GetIOFileHandles())
 		if err != nil {
-			return err
+			return errors.Wrap(err, "picking the DevPod names")
 		}
 	}
 
@@ -114,7 +115,7 @@ func (o *DeleteDevPodOptions) Run() error {
 		log.Logger().Debugf("About to delete Devpod %s", name)
 		err = client.CoreV1().Pods(ns).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "deleting the devpod %q", name)
 		}
 	}
 	log.Logger().Infof("Deleted DevPods %s", util.ColorInfo(deletePods))
