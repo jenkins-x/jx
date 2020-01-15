@@ -156,11 +156,11 @@ func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *CreateDevPodOptions) Run() error {
 	if o.Persist && o.Sync {
-		return errors.New("Cannot specify --persist and --sync")
+		return errors.New("cannot specify --persist and --sync")
 	}
 
 	if o.ImportURL != "" && o.Sync {
-		return errors.New("Cannot specify --import-url && --sync")
+		return errors.New("cannot specify --import-url && --sync")
 	}
 
 	client, curNs, err := o.KubeClientAndNamespace()
@@ -170,6 +170,10 @@ func (o *CreateDevPodOptions) Run() error {
 	ns, _, err := kube.GetDevNamespace(client, curNs)
 	if err != nil {
 		return errors.Wrap(err, "getting the dev namespce")
+	}
+
+	if o.AutoExpose && !o.isAutoExposeSecure(client, ns) {
+		return errors.New("skipping creating the DevPod because auto-expose is insecure")
 	}
 
 	userName, err := o.GetUsername(o.Username)
@@ -950,6 +954,25 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 	options.Args = []string{}
 	return options.Run()
+}
+
+func (o *CreateDevPodOptions) isAutoExposeSecure(client kubernetes.Interface, ns string) bool {
+	ingressConfig, err := kube.GetIngressConfig(client, ns)
+	tlsEnabled := false
+	if err == nil {
+		tlsEnabled = ingressConfig.TLS
+	}
+	if tlsEnabled {
+		return true
+	}
+
+	if o.BatchMode {
+		return false
+	}
+
+	help := "TLS doesn't seem to be enabled in the ingress-config. This setup is insecure to use with a basic auth password."
+	message := "Do you want to use an insecure connection to expose the DevPod?"
+	return util.Confirm(message, false, help, o.GetIOFileHandles())
 }
 
 func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, error) {
