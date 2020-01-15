@@ -44,7 +44,7 @@ func TestImportProjectNextGenPipelineWithDeploy(t *testing.T) {
 	assert.NoError(t, err)
 	require.DirExists(t, tmpDir, "could not create temp dir for running tests")
 
-	srcDir := path.Join("test_data", "import_projects", "maven_springboot")
+	srcDir := path.Join("test_data", "import_projects", "nodejs")
 	assert.DirExists(t, srcDir, "missing source data")
 
 	type testData struct {
