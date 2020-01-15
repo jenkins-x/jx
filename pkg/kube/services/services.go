@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -472,6 +473,43 @@ func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer st
 	return result, nil
 }
 
+// AnnotateServicesWithBasicAuth annotates the services with nginx baisc auth annotations
+func AnnotateServicesWithBasicAuth(client kubernetes.Interface, ns string, services ...string) error {
+	if len(services) == 0 {
+		return nil
+	}
+	svcList, err := GetServices(client, ns)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving the services from namespace %q", ns)
+	}
+	for _, service := range svcList {
+		// Check if the service is in the white-list
+		idx := util.StringArrayIndex(services, service.GetName())
+		if idx < 0 {
+			continue
+		}
+		if service.Annotations == nil {
+			service.Annotations = map[string]string{}
+		}
+		// Add the required basic authentication annotation for nginx-ingress controller
+		ingressAnnotations := service.Annotations[ExposeIngressAnnotation]
+		basicAuthAnnotations := fmt.Sprintf(
+			"nginx.ingress.kubernetes.io/auth-type: basic\nnginx.ingress.kubernetes.io/auth-secret: %s\nnginx.ingress.kubernetes.io/auth-realm: Authentication is required to access this service",
+			kube.SecretBasicAuth)
+		if ingressAnnotations != "" {
+			ingressAnnotations = ingressAnnotations + "\n" + basicAuthAnnotations
+		} else {
+			ingressAnnotations = basicAuthAnnotations
+		}
+		service.Annotations[ExposeIngressAnnotation] = ingressAnnotations
+		_, err = client.CoreV1().Services(ns).Update(service)
+		if err != nil {
+			return errors.Wrapf(err, "updating the service %q in namesapce %q", service.GetName(), ns)
+		}
+	}
+	return nil
+}
+
 func CleanServiceAnnotations(c kubernetes.Interface, ns string, services ...string) error {
 	svcList, err := GetServices(c, ns)
 	if err != nil {
@@ -488,7 +526,7 @@ func CleanServiceAnnotations(c kubernetes.Interface, ns string, services ...stri
 		}
 		if s.Annotations[ExposeAnnotation] == "true" && s.Annotations[JenkinsXSkipTLSAnnotation] != "true" {
 			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-			annotationsForIngress, _ := s.Annotations[ExposeIngressAnnotation]
+			annotationsForIngress := s.Annotations[ExposeIngressAnnotation]
 			if len(annotationsForIngress) > 0 {
 
 				var newAnnotations []string

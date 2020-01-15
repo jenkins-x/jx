@@ -960,7 +960,7 @@ func (o *CreateDevPodOptions) isAutoExposeSecure(client kubernetes.Interface, ns
 	ingressConfig, err := kube.GetIngressConfig(client, ns)
 	tlsEnabled := false
 	if err == nil {
-		tlsEnabled = ingressConfig.TLS
+		tlsEnabled = ingressConfig.TLS && ingressConfig.Issuer != ""
 	}
 	if tlsEnabled {
 		return true
@@ -1064,12 +1064,23 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (str
 }
 
 // updateExposeController lets update the exposecontroller to expose any new Service resources created for this devpod
-func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface, devNs string, ns string, services ...string) error {
-	ingressConfig, err := kube.GetIngressConfig(client, devNs)
+func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface, devNs string, ns string, serviceNames ...string) error {
+	ic, err := kube.GetIngressConfig(client, devNs)
 	if err != nil {
 		return errors.Wrapf(err, "loading the ingress-config in namespace %s", devNs)
 	}
-	err = o.RunExposecontroller(ns, ns, ingressConfig, services...)
+
+	if err := services.AnnotateServicesWithBasicAuth(client, ns, serviceNames...); err != nil {
+		return errors.Wrapf(err, "annotating the exposed services to enable basic authentication")
+	}
+
+	if ic.TLS && ic.Issuer != "" {
+		if _, err := services.AnnotateServicesWithCertManagerIssuer(client, ns, ic.Issuer, ic.ClusterIssuer, serviceNames...); err != nil {
+			return errors.Wrapf(err, "annotating the exposed services with cert-manager issuer")
+		}
+	}
+
+	err = o.RunExposecontroller(ns, ns, ic, serviceNames...)
 	if err != nil {
 		return errors.Wrapf(err, "running the expose controller in the namespace %q", ns)
 	}
