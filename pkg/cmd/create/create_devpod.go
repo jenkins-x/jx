@@ -302,7 +302,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 		editEnv, err = o.getOrCreateEditEnvironment()
 		if err != nil {
-			return errors.Wrap(err, "getting or creating the edit edit environment")
+			return errors.Wrap(err, "getting or creating the edit environment")
 		}
 
 		// If the user passed in Image Pull Secrets, patch them in to the edit env's default service account
