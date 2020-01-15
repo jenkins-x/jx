@@ -23,7 +23,7 @@ const (
 	optionArtifact          = "artifact"
 	optionVersion           = "version"
 	optionPollTime          = "poll-time"
-	DefaultMavenCentralRepo = "http://central.maven.org/maven2/"
+	DefaultMavenCentralRepo = "https://repo1.maven.org/maven2/"
 )
 
 // StepWaitForArtifactOptions contains the command line flags
