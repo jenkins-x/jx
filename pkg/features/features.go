@@ -2,6 +2,7 @@ package features
 
 import (
 	"errors"
+	"os"
 	"strings"
 
 	"reflect"
@@ -148,4 +149,9 @@ func IsEnabled(cmd *cobra.Command) error {
 		}
 	}
 	return nil
+}
+
+// IsHelmfile returns true if the helmfile feature flag env var is set
+func IsHelmfile() bool {
+	return os.Getenv("JX_HELMFILE") == "true"
 }

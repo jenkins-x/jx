@@ -40,16 +40,17 @@ import (
 // StepVerifyPreInstallOptions contains the command line flags
 type StepVerifyPreInstallOptions struct {
 	StepVerifyOptions
-	Debug                bool
-	Dir                  string
-	LazyCreate           bool
-	DisableVerifyHelm    bool
-	LazyCreateFlag       string
-	Namespace            string
-	ProviderValuesDir    string
-	TestKanikoSecretData string
-	TestVeleroSecretData string
-	WorkloadIdentity     bool
+	Debug                 bool
+	Dir                   string
+	LazyCreate            bool
+	DisableVerifyHelm     bool
+	DisableVerifyPackages bool
+	LazyCreateFlag        string
+	Namespace             string
+	ProviderValuesDir     string
+	TestKanikoSecretData  string
+	TestVeleroSecretData  string
+	WorkloadIdentity      bool
 }
 
 // NewCmdStepVerifyPreInstall creates the `jx step verify pod` command
@@ -80,6 +81,8 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
 	cmd.Flags().StringVarP(&options.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific files")
 	cmd.Flags().BoolVarP(&options.WorkloadIdentity, "workload-identity", "", false, "Enable this if using GKE Workload Identity to avoid reconnecting to the Cluster.")
+	cmd.Flags().BoolVarP(&options.DisableVerifyPackages, "disable-verify-packages", "", false, "Disable packages verification, helpful when testing different package versions.")
+	cmd.Flags().BoolVarP(&options.DisableVerifyHelm, "disable-verify-helm", "", false, "Disable Helm verification, helpful when testing different Helm versions.")
 
 	return cmd
 }
@@ -152,7 +155,6 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
 	no := &namespace.NamespaceOptions{}
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{ns}
@@ -165,30 +167,29 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	po := &StepVerifyPackagesOptions{}
 	po.CommonOptions = o.CommonOptions
 	po.Packages = []string{"kubectl", "git", "helm"}
-	err = po.Run()
-	if err != nil {
-		return err
+	if !o.DisableVerifyPackages {
+		err = po.Run()
+		if err != nil {
+			return err
+		}
+		log.Logger().Info("\n")
 	}
-	log.Logger().Info("\n")
 
 	err = o.VerifyInstallConfig(kubeClient, ns, requirements, requirementsFileName)
 	if err != nil {
 		return err
 	}
-
 	err = o.verifyStorage(requirements, requirementsFileName)
 	if err != nil {
 		return err
 	}
 	log.Logger().Info("\n")
-
 	if !o.DisableVerifyHelm {
 		err = o.verifyHelm(ns)
 		if err != nil {
 			return err
 		}
 	}
-
 	if requirements.Kaniko {
 		if requirements.Cluster.Provider == cloud.GKE {
 			log.Logger().Infof("Validating Kaniko secret in namespace %s", info(ns))

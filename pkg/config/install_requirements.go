@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/imdario/mergo"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/features"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -35,6 +37,8 @@ var (
 const (
 	// RequirementsConfigFileName is the name of the requirements configuration file
 	RequirementsConfigFileName = "jx-requirements.yml"
+	// RequirementsValuesFileName is the name of the requirements configuration file
+	RequirementsValuesFileName = "jx-requirements.values.yaml.gotmpl"
 	// RequirementDomainIssuerUsername contains the username used for basic auth when requesting a domain
 	RequirementDomainIssuerUsername = "JX_REQUIREMENT_DOMAIN_ISSUER_USERNAME"
 	// RequirementDomainIssuerPassword contains the password used for basic auth when requesting a domain
@@ -447,6 +451,12 @@ type GithubAppConfig struct {
 	URL string `json:"url,omitempty"`
 }
 
+// RequirementsValues contains the logical installation requirements in the `jx-requirements.yml` file as helm values
+type RequirementsValues struct {
+	// RequirementsConfig contains the logical installation requirements
+	RequirementsConfig *RequirementsConfig `json:"jxRequirements,omitempty"`
+}
+
 // RequirementsConfig contains the logical installation requirements in the `jx-requirements.yml` file when
 // installing, configuring or upgrading Jenkins X via `jx boot`
 type RequirementsConfig struct {
@@ -633,6 +643,22 @@ func (c *RequirementsConfig) SaveConfig(fileName string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to save file %s", fileName)
 	}
+
+	if features.IsHelmfile() {
+		y := RequirementsValues{
+			RequirementsConfig: c,
+		}
+		data, err = yaml.Marshal(y)
+		if err != nil {
+			return err
+		}
+
+		err = ioutil.WriteFile(path.Join(path.Dir(fileName), RequirementsValuesFileName), data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save file %s", RequirementsValuesFileName)
+		}
+	}
+
 	return nil
 }
 
