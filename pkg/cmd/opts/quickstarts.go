@@ -65,17 +65,13 @@ func (o *CommonOptions) LoadQuickStartsFromLocations(locations []v1.QuickStartLo
 				kind = gits.KindGitHub
 			}
 
-			var gitProvider gits.GitProvider
-			var err error
-
-			// If this is a default quickstart location but there's no github.com credentials, fall back to anonymous
+			// If this is a default quickstart location but there's no github.com credentials, skip and rely on the version stream alone.
 			server := config.GetOrCreateServer(gitURL)
 			userAuth := config.CurrentUser(server, o.InCluster())
 			if kube.IsDefaultQuickstartLocation(location) && (userAuth == nil || userAuth.IsInvalid()) {
-				gitProvider, err = gits.NewAnonymousGitHubProvider(server, nil)
-			} else {
-				gitProvider, err = o.GitProviderForGitServerURL(gitURL, kind, "")
+				continue
 			}
+			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind, "")
 			if err != nil {
 				return model, err
 			}
