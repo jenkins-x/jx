@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -36,9 +37,11 @@ var (
 type CreateGitServerOptions struct {
 	options.CreateOptions
 
-	Name string
-	Kind string
-	URL  string
+	Name   string
+	Kind   string
+	URL    string
+	User   string
+	Secret string
 }
 
 // NewCmdCreateGitServer creates a command object for the "create" command
@@ -66,6 +69,8 @@ func NewCmdCreateGitServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name for the Git server being created")
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "The kind of Git server being created")
 	cmd.Flags().StringVarP(&options.URL, "url", "u", "", "The git server URL")
+	cmd.Flags().StringVarP(&options.User, "apiuser", "a", "", "The git server api user")
+	cmd.Flags().StringVarP(&options.Secret, "secret", "s", "", "The git server api user secret")
 	return cmd
 }
 
@@ -103,12 +108,28 @@ func (o *CreateGitServerOptions) Run() error {
 		return util.MissingOption("url")
 	}
 
+	user := o.User
+	if user == "" {
+		return util.MissingOption("apiuser")
+	}
+
+	secret := o.Secret
+	if secret == "" {
+		return util.MissingOption("secret")
+	}
+
+	initUser := &auth.UserAuth{
+		Username: user,
+		ApiToken: secret,
+	}
+
 	authConfigSvc, err := o.GitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "failed to create CreateGitAuthConfigService")
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServerName(gitUrl, name, kind)
+	server.Users = append(server.Users, initUser)
 	config.CurrentServer = gitUrl
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
