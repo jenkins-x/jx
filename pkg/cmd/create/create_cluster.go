@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -17,7 +18,9 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running create cluster
 type CreateClusterOptions struct {
 	options.CreateOptions
-	Provider string
+	Provider       string
+	InstallOptions InstallOptions
+	Flags          initcmd.InitFlags
 }
 
 const (

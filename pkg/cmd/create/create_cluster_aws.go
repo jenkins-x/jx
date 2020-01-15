@@ -334,11 +334,6 @@ func (o *CreateClusterAWSOptions) Run() error {
 	log.Logger().Info("State of kops cluster: OK")
 	log.Blank()
 
-	region, err := session.ResolveRegion(o.Flags.Profile, o.Flags.Region)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
