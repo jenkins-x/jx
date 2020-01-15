@@ -1662,38 +1662,6 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 				"LICENSE": []byte("TODO"),
 			},
 		},
-		{
-			name: "wrongDifferentProvider",
-			args: args{
-				toOrg:         "coyote",
-				toName:        "wile",
-				fromGitURL:    "https://fake.git/acme/roadrunner.git",
-				fromCommitish: "master",
-				toBranch:      "master",
-				gitter:        gitter,
-			},
-			useOtherProvider: true,
-			want: &gits.GitRepository{
-				Name:             "wile",
-				AllowMergeCommit: false,
-				HTMLURL:          "https://fake.git/coyote/wile",
-				CloneURL:         "",
-				SSHURL:           "",
-				Language:         "",
-				Fork:             false,
-				Stars:            0,
-				URL:              "https://fake.git/coyote/wile.git",
-				Scheme:           "https",
-				Host:             "fake.git",
-				Organisation:     "coyote",
-				Project:          "",
-				Private:          false,
-			},
-			wantErr: "organization 'acme' not found",
-			wantFiles: map[string][]byte{
-				"README": []byte("Hello!"),
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1708,13 +1676,12 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 			}
 			tt.provider = provider
 
-			var fromProvider *gits.FakeProvider
+			var fromRepo *gits.GitRepository
 			if tt.useOtherProvider {
-				fromProvider = gits.NewFakeProvider(otherProviderRepo)
-				fromProvider.Gitter = gitter
+				fromRepo = otherProviderRepo.GitRepo
 			}
 
-			got, err := gits.DuplicateGitRepoFromCommitish(tt.args.toOrg, tt.args.toName, tt.args.fromGitURL, tt.args.fromCommitish, tt.args.toBranch, false, tt.provider, tt.args.gitter, fromProvider)
+			got, err := gits.DuplicateGitRepoFromCommitish(tt.args.toOrg, tt.args.toName, tt.args.fromGitURL, tt.args.fromCommitish, tt.args.toBranch, false, tt.provider, tt.args.gitter, fromRepo)
 			if tt.wantErr != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.wantErr)

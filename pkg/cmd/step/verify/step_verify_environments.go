@@ -432,27 +432,19 @@ func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(gitInfo *
 		log.Logger().Debugf("set commitish to '%s'", commitish)
 	}
 
-	var fromProvider gits.GitProvider
+	var fromRepo *gits.GitRepository
 	// If the to URL isn't github.com, and the fromGitURL is the default boot repository, use a non-authenticated github.com provider for the from provider.
 	if !gitInfo.IsGitHub() && isDefaultBootURL {
 		fromGitInfo, err := gits.ParseGitURL(fromGitURL)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse upstream boot config URL %s", fromGitURL)
 		}
-		if fromGitInfo.IsGitHub() {
-			ghServer := &auth.AuthServer{
-				URL:  "https://github.com",
-				Name: "gh",
-				Kind: "github",
-			}
-			fromProvider, err = gits.NewAnonymousGitHubProvider(ghServer, gitter)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to configure anonymous GitHub provider for upstream boot config URL %s", fromGitURL)
-			}
-		}
+		fromRepo = fromGitInfo
+		fromRepo.CloneURL = fromGitURL
+		fromRepo.HTMLURL = strings.TrimSuffix(fromGitURL, ".git")
 	}
 
-	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(gitInfo.Organisation, gitInfo.Name, fromGitURL, commitish, "master", privateRepo, provider, gitter, fromProvider)
+	duplicateInfo, err := gits.DuplicateGitRepoFromCommitish(gitInfo.Organisation, gitInfo.Name, fromGitURL, commitish, "master", privateRepo, provider, gitter, fromRepo)
 	if err != nil {
 		return nil, errors.Wrapf(err, "duplicating %s to %s/%s", fromGitURL, gitInfo.Organisation, gitInfo.Name)
 	}

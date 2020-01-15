@@ -8,7 +8,6 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -777,27 +776,24 @@ func FindTagForVersion(dir string, version string, gitter Gitter) (string, error
 // DuplicateGitRepoFromCommitish will duplicate branches (but not tags) from fromGitURL to toOrg/toName. It will reset the
 // head of the toBranch on the duplicated repo to fromCommitish. It returns the GitRepository for the duplicated repo.
 // If the repository already exist and error is returned.
-func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, private bool, provider GitProvider, gitter Gitter, fromProvider GitProvider) (*GitRepository, error) {
+func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL string, fromCommitish string, toBranch string, private bool, provider GitProvider, gitter Gitter, fromInfo *GitRepository) (*GitRepository, error) {
 	log.Logger().Debugf("getting repo %s/%s", toOrg, toName)
 	_, err := provider.GetRepository(toOrg, toName)
 	if err == nil {
 		return nil, errors.Errorf("repository %s/%s already exists", toOrg, toName)
 	}
 
-	// If the duplicate doesn't exist create it
-	log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", toOrg, toName).Error())
-	fromInfo, err := ParseGitURL(fromGitURL)
-	if err != nil {
-		return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
-	}
-
-	// If no separate fromProvider is specified, use the same provider.
-	if fromProvider == nil || reflect.ValueOf(fromProvider).IsNil() {
-		fromProvider = provider
-	}
-	fromInfo, err = fromProvider.GetRepository(fromInfo.Organisation, fromInfo.Name)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
+	if fromInfo == nil {
+		// If the duplicate doesn't exist create it
+		log.Logger().Debugf(errors.Wrapf(err, "getting repository %s/%s", toOrg, toName).Error())
+		fromInfo, err = ParseGitURL(fromGitURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing %s", fromGitURL)
+		}
+		fromInfo, err = provider.GetRepository(fromInfo.Organisation, fromInfo.Name)
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting repo for %s", fromGitURL)
+		}
 	}
 
 	duplicateInfo, err := provider.CreateRepository(toOrg, toName, private)
