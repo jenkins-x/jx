@@ -837,7 +837,7 @@ func (o *CreateDevPodOptions) Run() error {
 		for _, svcName := range exposePortServices {
 			exposeCmd := fmt.Sprintf("kubectl port-forward svc/%s %d:80", svcName, localPort)
 			log.Logger().Infof("* %s", util.ColorInfo(exposeCmd))
-			localPort += 1
+			localPort++
 		}
 		log.Logger().Info("")
 	}
