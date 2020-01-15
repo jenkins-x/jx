@@ -35,7 +35,7 @@ func InstallMavenIfRequired() error {
 		return nil
 	}
 	// lets assume maven is not installed so lets download it
-	clientURL := fmt.Sprintf("http://central.maven.org/maven2/org/apache/maven/apache-maven/%s/apache-maven-%s-bin.zip", MavenVersion, MavenVersion)
+	clientURL := fmt.Sprintf("https://repo1.maven.org/maven2/org/apache/maven/apache-maven/%s/apache-maven-%s-bin.zip", MavenVersion, MavenVersion)
 
 	log.Logger().Infof("Apache Maven is not installed so lets download: %s", util.ColorInfo(clientURL))
 
