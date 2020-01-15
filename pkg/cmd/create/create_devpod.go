@@ -799,7 +799,7 @@ func (o *CreateDevPodOptions) Run() error {
 				o.NotifyProgress(opts.LogWarning, "Could not find service with name %s in namespace %s\n", ideServiceName, curNs)
 			}
 		} else {
-			exposeCmd := fmt.Sprintf("kubectl port-forward 80:8080 svc/%s", ideServiceName)
+			exposeCmd := fmt.Sprintf("kubectl port-forward svc/%s 8080:80", ideServiceName)
 			log.Logger().Info("\nYou can access the Web IDE to edit your app with command:")
 			log.Logger().Infof("* %s", util.ColorInfo(exposeCmd))
 		}
@@ -835,7 +835,7 @@ func (o *CreateDevPodOptions) Run() error {
 		localPort := 8081
 		log.Logger().Info("\nYou can access the DevPod locally with the following commands:")
 		for _, svcName := range exposePortServices {
-			exposeCmd := fmt.Sprintf("kubectl port-forward 80:%d svc/%s", localPort, svcName)
+			exposeCmd := fmt.Sprintf("kubectl port-forward svc/%s %d:80", svcName, localPort)
 			log.Logger().Infof("* %s", util.ColorInfo(exposeCmd))
 			localPort += 1
 		}
