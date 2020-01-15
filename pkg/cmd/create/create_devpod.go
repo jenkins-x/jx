@@ -773,32 +773,38 @@ func (o *CreateDevPodOptions) Run() error {
 	o.NotifyProgress(opts.LogInfo, "Pod %s is now ready!\n", util.ColorInfo(pod.Name))
 	log.Logger().Infof("You can open other shells into this DevPod via %s", util.ColorInfo("jx create devpod"))
 
-	if !o.Sync && o.AutoExpose {
-		ideServiceURL, err := services.FindServiceURL(client, curNs, ideServiceName)
-		if err != nil {
-			return errors.Wrapf(err, "finding the URL for service %q", ideServiceName)
-		}
-		if ideServiceURL != "" {
-			pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+	if !o.Sync {
+		if o.AutoExpose {
+			ideServiceURL, err := services.FindServiceURL(client, curNs, ideServiceName)
 			if err != nil {
-				return errors.Wrapf(err, "getting the POD %q in namespace %q", name, curNs)
+				return errors.Wrapf(err, "finding the URL for service %q", ideServiceName)
 			}
-			pod.Annotations["jenkins-x.io/devpod_IDE_URL"] = ideServiceURL
-			pod, err = client.CoreV1().Pods(curNs).Update(pod)
-			if err != nil {
-				return errors.Wrapf(err, "updating the POD %q in namespace %q", name, curNs)
+			if ideServiceURL != "" {
+				pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "getting the POD %q in namespace %q", name, curNs)
+				}
+				pod.Annotations["jenkins-x.io/devpod_IDE_URL"] = ideServiceURL
+				pod, err = client.CoreV1().Pods(curNs).Update(pod)
+				if err != nil {
+					return errors.Wrapf(err, "updating the POD %q in namespace %q", name, curNs)
+				}
+				log.Logger().Infof("\nYou can edit your app using the Web IDE at: %s", util.ColorInfo(ideServiceURL))
+				o.Results.TheaServiceURL = ideServiceURL
+			} else {
+				o.NotifyProgress(opts.LogWarning, "Could not find service with name %s in namespace %s\n", ideServiceName, curNs)
 			}
-			log.Logger().Infof("\nYou can edit your app using the Web IDE at: %s", util.ColorInfo(ideServiceURL))
-			o.Results.TheaServiceURL = ideServiceURL
 		} else {
-			o.NotifyProgress(opts.LogWarning, "Could not find service with name %s in namespace %s\n", ideServiceName, curNs)
+			exposeCmd := fmt.Sprintf("kubectl port-forward 80:8080 svc/%s", ideServiceName)
+			log.Logger().Info("\nYou can access the Web IDE to edit your app with command:")
+			log.Logger().Infof("* %s", util.ColorInfo(exposeCmd))
 		}
 	}
 
 	if o.AutoExpose {
 		exposePortServices, err := services.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
 		if err != nil {
-			return errors.Wrapf(err, "getting the exposed port service for POD %q in namespace %q", pod.Name, curNs)
+			return errors.Wrapf(err, "getting the exposed services for POD %q in namespace %q", pod.Name, curNs)
 		}
 		var exposePortURLs []string
 		for _, svcName := range exposePortServices {
@@ -817,7 +823,21 @@ func (o *CreateDevPodOptions) Run() error {
 
 			o.Results.ExposePortURLs = exposePortURLs
 		}
+	} else {
+		exposePortServices, err := services.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
+		if err != nil {
+			return errors.Wrapf(err, "getting the exposed services for POD %q in namesapce %q", pod.Name, curNs)
+		}
+		localPort := 8081
+		log.Logger().Info("\nYou can access the DevPod locally with the following commands:")
+		for _, svcName := range exposePortServices {
+			exposeCmd := fmt.Sprintf("kubectl port-forward 80:%d svc/%s", localPort, svcName)
+			log.Logger().Infof("* %s", util.ColorInfo(exposeCmd))
+			localPort += 1
+		}
+		log.Logger().Info("")
 	}
+
 	if o.Sync {
 		syncOptions := &sync.SyncOptions{
 			CommonOptions: o.CommonOptions,
