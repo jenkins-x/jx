@@ -334,3 +334,28 @@ func Test_EnvironmentGitPublic_and_EnvironmentGitPrivate_specified_together_retu
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "only EnvironmentGitPublic should be used")
 }
+
+func TestHelmfileRequirementValues(t *testing.T) {
+	t.Parallel()
+
+	dir, err := ioutil.TempDir("", "test-requirements-config-")
+	assert.NoError(t, err, "should create a temporary config dir")
+
+	file := filepath.Join(dir, config.RequirementsConfigFileName)
+	requirements := config.NewRequirementsConfig()
+	requirements.Cluster.ClusterName = "jx_rocks"
+
+	err = requirements.SaveConfig(file)
+	assert.NoError(t, err, "failed to save file %s", file)
+	assert.FileExists(t, file)
+	valuesFile := filepath.Join(dir, config.RequirementsValuesFileName)
+
+	valuesFileExists, err := util.FileExists(valuesFile)
+	assert.False(t, valuesFileExists, "file %s should not exist", valuesFile)
+
+	os.Setenv("JX_HELMFILE", "true")
+	err = requirements.SaveConfig(file)
+	assert.NoError(t, err, "failed to save file %s", file)
+	assert.FileExists(t, file)
+	assert.FileExists(t, valuesFile, "file %s should exist", valuesFile)
+}
