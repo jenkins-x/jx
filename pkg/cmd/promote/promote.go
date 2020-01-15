@@ -96,7 +96,7 @@ var (
 	promote_long = templates.LongDesc(`
 		Promotes a version of an application to zero to many permanent environments.
 
-		For more documentation see: [https://jenkins-x.io/about/features/#promotion](https://jenkins-x.io/about/features/#promotion)
+		For more documentation see: [https://jenkins-x.io/docs/getting-started/promotion/](https://jenkins-x.io/docs/getting-started/promotion/)
 
 `)
 
@@ -106,7 +106,7 @@ var (
 		jx promote --version 1.2.3 --env staging
 
 		# Promote a version of the myapp application to production
-		jx promote myapp --version 1.2.3 --env production
+		jx promote --app myapp --version 1.2.3 --env production
 
 		# To search for all the available charts for a given name use -f.
 		# e.g. to find a redis chart to install
@@ -115,7 +115,7 @@ var (
 		# To promote a postgres chart using an alias
 		jx promote -f postgres --alias mydb
 
-		# To create or update a Preview Environment please see the 'jx preview' command
+		# To create or update a Preview Environment please see the 'jx preview' command if you are inside a git clone of a repo
 		jx preview
 	`)
 )
