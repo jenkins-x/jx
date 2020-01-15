@@ -972,7 +972,11 @@ func (o *CreateDevPodOptions) isAutoExposeSecure(client kubernetes.Interface, ns
 
 	help := "TLS doesn't seem to be enabled in the ingress-config. This setup is insecure to use with a basic auth password."
 	message := "Do you want to use an insecure connection to expose the DevPod?"
-	return util.Confirm(message, false, help, o.GetIOFileHandles())
+	confirmed, err := util.Confirm(message, false, help, o.GetIOFileHandles())
+	if confirmed && err == nil {
+		return true
+	}
+	return false
 }
 
 func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, error) {
