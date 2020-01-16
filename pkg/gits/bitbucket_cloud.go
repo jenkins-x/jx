@@ -1040,7 +1040,8 @@ func (b *BitbucketCloudProvider) AcceptInvitation(ID int64) (*github.Response, e
 }
 
 func (b *BitbucketCloudProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
-	return nil, fmt.Errorf("Getting content not supported on bitbucket")
+	log.Logger().Warn("Getting content not supported on bitbucket")
+	return nil, nil
 }
 
 // ShouldForkForPullReques treturns true if we should create a personal fork of this repository
@@ -1061,12 +1062,14 @@ func BitBucketCloudAccessTokenURL(url string, username string) string {
 
 // ListCommits lists the commits for the specified repo and owner
 func (b *BitbucketCloudProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
-	return nil, fmt.Errorf("Listing commits not supported on bitbucket")
+	log.Logger().Warn("Listing commits not supported on bitbucket cloud")
+	return nil, nil
 }
 
 // AddLabelsToIssue adds labels to issues or pullrequests
 func (b *BitbucketCloudProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
-	return fmt.Errorf("Getting content not supported on bitbucket")
+	log.Logger().Warn("Adding labels to issues or pullrequest not implemented/supported on bitbucket cloud")
+	return nil
 }
 
 // GetLatestRelease fetches the latest release from the git provider for org and name
