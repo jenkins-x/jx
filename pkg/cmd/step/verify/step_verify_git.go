@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/auth"
+
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -16,9 +18,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	optionGitHubAppOwner = "github-app-owner"
+)
+
 // StepVerifyGitOptions contains the command line flags
 type StepVerifyGitOptions struct {
 	step.StepOptions
+
+	GitHubAppOwner string
 }
 
 // NewCmdStepVerifyGit creates the `jx step verify pod` command
@@ -38,6 +46,8 @@ func NewCmdStepVerifyGit(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
+
+	cmd.Flags().StringVarP(&options.GitHubAppOwner, optionGitHubAppOwner, "g", "", "The owner (organisation or user name) if using GitHub App based tokens")
 	return cmd
 }
 
@@ -45,9 +55,27 @@ func NewCmdStepVerifyGit(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *StepVerifyGitOptions) Run() error {
 	log.Logger().Infof("Verifying the git config\n")
 
-	authSvc, err := o.GitAuthConfigService()
+	gha, err := o.IsGitHubAppMode()
 	if err != nil {
-		return errors.Wrap(err, "creating the git auth config service")
+		return errors.Wrap(err, "while checking if github app mode is enabled")
+	}
+
+	if gha && o.GitHubAppOwner == "" {
+		log.Logger().Infof("this command does nothing if using github app mode and no %s option specified", optionGitHubAppOwner)
+		return nil
+	}
+
+	var authSvc auth.ConfigService
+	if gha {
+		authSvc, err = o.GitAuthConfigServiceGitHubMode("github")
+		if err != nil {
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubMode")
+		}
+	} else {
+		authSvc, err = o.GitAuthConfigService()
+		if err != nil {
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigService")
+		}
 	}
 
 	config := authSvc.Config()
