@@ -334,3 +334,5 @@ If you're looking to build from source or get started hacking on jx, please see 
 
 
 [hacking]: docs/contributing/hacking.md
+
+[experiments]: docs/contributing/experiments.md
