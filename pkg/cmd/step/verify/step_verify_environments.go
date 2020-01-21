@@ -432,13 +432,14 @@ func (o *StepVerifyEnvironmentsOptions) createDevEnvironmentRepository(gitInfo *
 		log.Logger().Debugf("set commitish to '%s'", commitish)
 	}
 
+	fromGitInfo, err := gits.ParseGitURL(fromGitURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse upstream boot config URL %s", fromGitURL)
+	}
+
 	var fromRepo *gits.GitRepository
-	// If the to URL isn't github.com, and the fromGitURL is the default boot repository, use a non-authenticated github.com provider for the from provider.
-	if !gitInfo.IsGitHub() && isDefaultBootURL {
-		fromGitInfo, err := gits.ParseGitURL(fromGitURL)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse upstream boot config URL %s", fromGitURL)
-		}
+	// If the to URL and from URL aren't on the same host, pass in a simple repo info to duplicate rather than using the provider.
+	if fromGitInfo.Host != gitInfo.Host {
 		fromRepo = fromGitInfo
 		fromRepo.CloneURL = fromGitURL
 		fromRepo.HTMLURL = strings.TrimSuffix(fromGitURL, ".git")
