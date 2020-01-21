@@ -183,7 +183,7 @@ func (o *StepSyntaxEffectiveOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to find git information from dir %s", workingDir)
 	}
-	projectConfig, projectConfigFile, err := o.loadProjectConfig(workingDir)
+	projectConfig, projectConfigFile, err := o.LoadProjectConfig(workingDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load project config in dir %s", workingDir)
 	}
@@ -503,7 +503,7 @@ func (o *StepSyntaxEffectiveOptions) getDockerRegistry(projectConfig *config.Pro
 	return dockerRegistry
 }
 
-func (o *StepSyntaxEffectiveOptions) loadProjectConfig(workingDir string) (*config.ProjectConfig, string, error) {
+func (o *StepSyntaxEffectiveOptions) LoadProjectConfig(workingDir string) (*config.ProjectConfig, string, error) {
 	if o.Context != "" {
 		fileName := filepath.Join(workingDir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
 		exists, err := util.FileExists(fileName)
