@@ -503,6 +503,7 @@ func (o *StepSyntaxEffectiveOptions) getDockerRegistry(projectConfig *config.Pro
 	return dockerRegistry
 }
 
+// LoadProjectConfig loads the pipeline config from the given workingDir
 func (o *StepSyntaxEffectiveOptions) LoadProjectConfig(workingDir string) (*config.ProjectConfig, string, error) {
 	if o.Context != "" {
 		fileName := filepath.Join(workingDir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
