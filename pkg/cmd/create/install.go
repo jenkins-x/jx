@@ -398,7 +398,7 @@ func (options *InstallOptions) AddInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVar(&options.SkipAuthSecretsMerge, opts.OptionSkipAuthSecMerge, false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
 
 	bindInstallConfigToFlags(cmd)
-	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	opts.AddGitRepoOptionsArgumentsWithGithubDefault(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
 	options.AdminSecretsService.AddAdminSecretsValues(cmd)
 	options.InitOptions.AddInitFlags(cmd)

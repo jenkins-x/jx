@@ -153,6 +153,8 @@ func (o *StepVerifyEnvironmentsOptions) storeRequirementsInTeamSettings(requirem
 			return errors.Wrap(err, "there was a problem marshalling the requirements file to include it in the TeamSettings")
 		}
 		env.Spec.TeamSettings.BootRequirements = string(reqBytes)
+		// Also set the gitServer from the requirements.
+		env.Spec.TeamSettings.GitServer = requirements.Cluster.GitServer
 		return nil
 	})
 	if err != nil {
