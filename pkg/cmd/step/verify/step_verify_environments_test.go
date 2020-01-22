@@ -37,7 +37,7 @@ func TestStepVerifyEnvironmentsOptions_StoreRequirementsInTeamSettings(t *testin
 		},
 	}
 
-	requirementsYamlFile := path.Join("test_data", "preinstall", "no_tls", "jx-requirements.yml")
+	requirementsYamlFile := path.Join("test_data", "verify_environments", "default", "jx-requirements.yml")
 	exists, err := util.FileExists(requirementsYamlFile)
 	assert.NoError(t, err)
 	assert.True(t, exists)
@@ -68,7 +68,7 @@ func TestStepVerifyEnvironmentsOptions_StoreRequirementsConfigMapWithModificatio
 	options := &commonOpts
 	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
 
-	requirementsYamlFile := path.Join("test_data", "preinstall", "no_tls", "jx-requirements.yml")
+	requirementsYamlFile := path.Join("test_data", "verify_environments", "ghe", "jx-requirements.yml")
 	exists, err := util.FileExists(requirementsYamlFile)
 	assert.NoError(t, err)
 	assert.True(t, exists)
@@ -104,6 +104,8 @@ func TestStepVerifyEnvironmentsOptions_StoreRequirementsConfigMapWithModificatio
 
 	teamSettings, err := testOptions.TeamSettings()
 	assert.NoError(t, err)
+
+	assert.Equal(t, requirements.Cluster.GitServer, teamSettings.GitServer, "the GitServer field should be set to the requirements.cluster.gitServer value")
 
 	requirementsCm := teamSettings.BootRequirements
 	assert.NotEqual(t, "", requirementsCm, "the BootRequirements field should be present and not empty")
