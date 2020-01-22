@@ -215,6 +215,8 @@ type EnvironmentConfig struct {
 	Ingress IngressConfig `json:"ingress,omitempty"`
 	// RemoteCluster specifies this environment runs on a remote cluster to the development cluster
 	RemoteCluster bool `json:"remoteCluster,omitempty"`
+	// PromotionStrategy what kind of promotion strategy to use
+	PromotionStrategy v1.PromotionStrategyType `json:"promotionStrategy,omitempty"`
 }
 
 // IngressConfig contains dns specific requirements
@@ -340,6 +342,8 @@ type ClusterConfig struct {
 	HelmMajorVersion string `json:"helmMajorVersion,omitempty"`
 	// DevEnvApprovers contains an optional list of approvers to populate the initial OWNERS file in the dev env repo
 	DevEnvApprovers []string `json:"devEnvApprovers,omitempty"`
+	// DockerRegistryOrg the default organisation used for container images
+	DockerRegistryOrg string `json:"dockerRegistryOrg,omitempty"`
 }
 
 // VaultConfig contains Vault configuration for boot
