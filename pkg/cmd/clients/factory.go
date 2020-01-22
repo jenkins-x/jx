@@ -2,6 +2,11 @@ package clients
 
 import (
 	"fmt"
+
+	"github.com/heptio/sonobuoy/pkg/client"
+	sonoboy_dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
+	"k8s.io/client-go/dynamic"
+
 	"io"
 	"net/url"
 	"os"
@@ -22,8 +27,6 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 
-	"github.com/heptio/sonobuoy/pkg/client"
-	"github.com/heptio/sonobuoy/pkg/dynamic"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -626,7 +629,7 @@ func (f *factory) CreateTektonClient() (tektonclient.Interface, string, error) {
 	return f.jxFactory.CreateTektonClient()
 }
 
-func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
+func (f *factory) CreateDynamicClient() (dynamic.Interface, string, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -636,7 +639,7 @@ func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
 		return nil, "", err
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
-	client, err := dynamic.NewAPIHelperFromRESTConfig(config)
+	client, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}
@@ -715,7 +718,7 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
 	}
-	skc, err := dynamic.NewAPIHelperFromRESTConfig(config)
+	skc, err := sonoboy_dynamic.NewAPIHelperFromRESTConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance dynamic client failed to be created")
 	}

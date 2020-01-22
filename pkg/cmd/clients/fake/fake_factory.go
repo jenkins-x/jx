@@ -4,6 +4,8 @@ import (
 	"io"
 	"os"
 
+	"k8s.io/client-go/dynamic"
+
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -22,7 +24,7 @@ import (
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	fake_vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
 	"github.com/heptio/sonobuoy/pkg/client"
-	"github.com/heptio/sonobuoy/pkg/dynamic"
+	sonoboy_dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -62,7 +64,7 @@ type FakeFactory struct {
 	kserveClient  kserve.Interface
 	tektonClient  tektonclient.Interface
 	prowJobClient prowjobclient.Interface
-	dyncClient    *dynamic.APIHelper
+	dyncClient    dynamic.Interface
 }
 
 var _ clients.Factory = (*FakeFactory)(nil)
@@ -81,7 +83,7 @@ func NewFakeFactoryFromClients(apiClient apiextensionsclientset.Interface,
 	jxClient versioned.Interface,
 	kubeClient kubernetes.Interface,
 	tektonClient tektonclient.Interface,
-	dyncClient *dynamic.APIHelper) *FakeFactory {
+	dyncClient dynamic.Interface) *FakeFactory {
 	f := &FakeFactory{
 		namespace:    "jx",
 		apiClient:    apiClient,
@@ -296,7 +298,7 @@ func (f *FakeFactory) CreateTektonClient() (tektonclient.Interface, string, erro
 }
 
 // CreateDynamicClient creates a new Kubernetes Dynamic client
-func (f *FakeFactory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
+func (f *FakeFactory) CreateDynamicClient() (dynamic.Interface, string, error) {
 	if f.dyncClient == nil {
 		config, err := f.CreateKubeConfig()
 		if err != nil {
@@ -307,7 +309,7 @@ func (f *FakeFactory) CreateDynamicClient() (*dynamic.APIHelper, string, error) 
 			return nil, "", err
 		}
 		ns := kube.CurrentNamespace(kubeConfig)
-		f.dyncClient, err = dynamic.NewAPIHelperFromRESTConfig(config)
+		f.dyncClient, err = dynamic.NewForConfig(config)
 		if err != nil {
 			return nil, ns, err
 		}
@@ -358,7 +360,7 @@ func (f *FakeFactory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
 	}
-	skc, err := dynamic.NewAPIHelperFromRESTConfig(config)
+	skc, err := sonoboy_dynamic.NewAPIHelperFromRESTConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance dynamic client failed to be created")
 	}

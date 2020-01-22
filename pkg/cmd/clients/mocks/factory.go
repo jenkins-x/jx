@@ -10,7 +10,6 @@ import (
 
 	versioned "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	client "github.com/heptio/sonobuoy/pkg/client"
-	dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
 	golang_jenkins "github.com/jenkins-x/golang-jenkins"
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	versioned0 "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -26,6 +25,7 @@ import (
 	pegomock "github.com/petergtz/pegomock"
 	versioned3 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	dynamic "k8s.io/client-go/dynamic"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 	versioned4 "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -199,18 +199,18 @@ func (mock *MockFactory) CreateCustomJenkinsClient(_param0 kubernetes.Interface,
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
+func (mock *MockFactory) CreateDynamicClient() (dynamic.Interface, string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateDynamicClient", params, []reflect.Type{reflect.TypeOf((**dynamic.APIHelper)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *dynamic.APIHelper
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateDynamicClient", params, []reflect.Type{reflect.TypeOf((*dynamic.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 dynamic.Interface
 	var ret1 string
 	var ret2 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(*dynamic.APIHelper)
+			ret0 = result[0].(dynamic.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(string)
