@@ -146,7 +146,7 @@ func MockFactoryFakeClients(mockFactory *clients_test.MockFactory) {
 	pegomock.When(mockFactory.CreateKnativeServeClient()).ThenReturn(pegomock.ReturnValue(kservefake.NewSimpleClientset()), pegomock.ReturnValue("jx"), pegomock.ReturnValue(nil))
 }
 
-// CreateTestJxHomeDir creates a temporary JX_HOME directory for the tests, copying over any existing config, returning
+// CreateTestJxHomeDir creates a temporary JX_HOME directory for the tests, returning
 // the original JX_HOME directory, the temporary JX_HOME value, and any error.
 func CreateTestJxHomeDir() (string, string, error) {
 	originalDir, err := util.ConfigDir()
