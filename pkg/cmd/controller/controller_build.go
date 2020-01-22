@@ -275,9 +275,11 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 		return
 	}
 	if pod != nil {
+		log.Logger().Warnf("UPDATE FOR POD %s", pod.Name)
 		if pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] != "" {
 			if pod.Labels[syntax.LabelStageName] != "" {
 				prName := pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
+				log.Logger().Warnf("PR NAME IS %s FOR POD %s", prName, pod.Name)
 				pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
 				if err != nil {
 					log.Logger().Warnf("Error getting PipelineRun for name %s: %s", prName, err)
@@ -306,7 +308,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 					return
 				}
 
-				log.Logger().Debugf("Found pipeline run %s", pri.Name)
+				log.Logger().Warnf("Found pipeline run %s", pri.Name)
 
 				activities := jxClient.JenkinsV1().PipelineActivities(ns)
 				key := o.createPromoteStepActivityKeyFromRun(pri)
@@ -323,7 +325,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 							return err
 						}
 						if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
-							log.Logger().Debugf("updating PipelineActivity %s from updatePipelineActivityForRun()", a.Name)
+							log.Logger().Warnf("updating PipelineActivity %s from updatePipelineActivityForRun()", a.Name)
 							_, err := activities.PatchUpdate(a)
 							if err != nil {
 								log.Logger().Warnf("Failed to update PipelineActivity %s due to: %s", a.Name, err.Error())
@@ -701,6 +703,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 		// Only complete the job if it's failed, or if it's finished and the PRI we're looking at is _not_ the metapipeline
 		if spec.Status == v1.ActivityStatusTypeFailed || (spec.Status.IsTerminated() && pri.Type != tekton.MetaPipeline.String()) {
+			log.Logger().Warnf("BUILD OF ACTIVITY %s IS REALLY FINISHED", activity.Name)
 			if !biggestFinishedAt.IsZero() {
 				spec.CompletedTimestamp = &biggestFinishedAt
 			}
@@ -742,8 +745,11 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 					spec.BuildLogsURL = logURL
 				}
 			}
+		} else {
+			log.Logger().Warnf("BUILD OF ACTIVITY %s IS PARTIALLY DONE", activity.Name)
 		}
 	} else {
+		log.Logger().Warnf("BUILD OF ACTIVITY %s IS STILL RUNNING", activity.Name)
 		if running {
 			spec.Status = v1.ActivityStatusTypeRunning
 		} else {
@@ -758,6 +764,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 	}
 
+	log.Logger().Warnf("STATUS REPORT TIME FOR ACTIVITY %s", activity.Name)
 	// TODO this is a tactical approach until we move all the reporting of tekton pipelines into tekton outputs
 	o.reportStatus(kubeClient, ns, activity, pri, pod)
 
@@ -1228,20 +1235,20 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		"duration":    util.DurationString(activity.Spec.StartedTimestamp, activity.Spec.CompletedTimestamp),
 	}
 	if gitURL == "" {
-		log.Logger().WithFields(fields).Debugf("Cannot report pipeline %s as we have no git SHA", activity.Name)
+		log.Logger().WithFields(fields).Warnf("Cannot report pipeline %s as we have no git SHA", activity.Name)
 		return
 
 	}
 	if sha == "" {
-		log.Logger().WithFields(fields).Debugf("Cannot report pipeline %s as we have no git SHA", activity.Name)
+		log.Logger().WithFields(fields).Warnf("Cannot report pipeline %s as we have no git SHA", activity.Name)
 		return
 	}
 	if owner == "" {
-		log.Logger().WithFields(fields).Debugf("Cannot report pipeline %s as we have no git Owner", activity.Name)
+		log.Logger().WithFields(fields).Warnf("Cannot report pipeline %s as we have no git Owner", activity.Name)
 		return
 	}
 	if repo == "" {
-		log.Logger().WithFields(fields).Debugf("Cannot report pipeline %s as we have no git repository name", activity.Name)
+		log.Logger().WithFields(fields).Warnf("Cannot report pipeline %s as we have no git repository name", activity.Name)
 		return
 	}
 
@@ -1250,14 +1257,18 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		activity.Annotations = map[string]string{}
 	}
 	if status == "" {
+		log.Logger().WithFields(fields).Warnf("Cannot report pipeline %s as we have no status", activity.Name)
+
 		return
 	}
 	switch activity.Annotations[kube.AnnotationGitReportState] {
 	// hasn't changed
 	case string(activityStatus):
+		log.Logger().WithFields(fields).Warnf("Cannot report pipeline %s as we status hasn't changed", activity.Name)
 		return
 		// already completed - avoid reporting again if a promotion happens after a PR has merged and the pipeline updates status
 	case string(v1.ActivityStatusTypeSucceeded), string(v1.ActivityStatusTypeAborted), string(v1.ActivityStatusTypeFailed):
+		log.Logger().WithFields(fields).Warnf("Cannot report pipeline %s as we already did it", activity.Name)
 		return
 	}
 
@@ -1291,7 +1302,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	if err != nil {
 		log.Logger().WithFields(fields).WithError(err).Warnf("failed to report git status")
 	} else {
-		log.Logger().WithFields(fields).Info("reported git status")
+		log.Logger().WithFields(fields).Warnf("reported git status")
 	}
 }
 
