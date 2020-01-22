@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
+
 	//"github.com/jenkins-x/jx/pkg/cmd/controller"
 
 	"github.com/ghodss/yaml"
@@ -149,28 +151,29 @@ func MockFactoryFakeClients(mockFactory *clients_test.MockFactory) {
 func CreateTestJxHomeDir() (string, string, error) {
 	originalDir, err := util.ConfigDir()
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "Unable to get JX home configuration directory")
 	}
 	newDir, err := ioutil.TempDir("", ".jx")
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "Unable to create a temporary JX home configuration directory")
 	}
 	contents, err := ioutil.ReadDir(originalDir)
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "Unable to read JX home configuration directory")
 	}
 	for _, f := range contents {
 		if strings.HasSuffix(f.Name(), ".yaml") {
 			err = util.CopyFileOrDir(path.Join(originalDir, f.Name()), path.Join(newDir, f.Name()), true)
 			if err != nil {
-				return "", "", err
+				return "", "", errors.Wrap(err, "Unable to copy JX home directory to temporary directory ")
 			}
 		}
 	}
+	originalDir = os.Getenv("JX_HOME")
 	err = os.Setenv("JX_HOME", newDir)
 	if err != nil {
-		os.Unsetenv("JX_HOME")
-		return "", "", err
+		err := os.Setenv("JX_HOME", originalDir)
+		return "", "", errors.Wrap(err, "Unable to set JX home directory variable ")
 	}
 	return originalDir, newDir, nil
 }
