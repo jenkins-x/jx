@@ -157,18 +157,7 @@ func CreateTestJxHomeDir() (string, string, error) {
 	if err != nil {
 		return "", "", errors.Wrap(err, "Unable to create a temporary JX home configuration directory")
 	}
-	contents, err := ioutil.ReadDir(originalDir)
-	if err != nil {
-		return "", "", errors.Wrap(err, "Unable to read JX home configuration directory")
-	}
-	for _, f := range contents {
-		if strings.HasSuffix(f.Name(), ".yaml") {
-			err = util.CopyFileOrDir(path.Join(originalDir, f.Name()), path.Join(newDir, f.Name()), true)
-			if err != nil {
-				return "", "", errors.Wrap(err, "Unable to copy JX home directory to temporary directory ")
-			}
-		}
-	}
+
 	originalDir = os.Getenv("JX_HOME")
 	err = os.Setenv("JX_HOME", newDir)
 	if err != nil {
