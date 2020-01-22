@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"sigs.k8s.io/yaml"
 
@@ -184,7 +186,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 	log.Logger().Info("\n")
-	if !o.DisableVerifyHelm {
+	if !o.DisableVerifyHelm && !features.IsHelmfile() {
 		err = o.verifyHelm(ns)
 		if err != nil {
 			return err
@@ -650,7 +652,7 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		requirements.VersionStream.Ref = ref
 	}
 
-	err = requirements.SaveConfig(requirementsFileName)
+	err = o.SaveConfig(requirements, requirementsFileName)
 	if err != nil {
 		return nil, errors.Wrap(err, "error saving requirements file")
 	}
@@ -665,7 +667,11 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 
 func (o *StepVerifyPreInstallOptions) writeOwnersFile(requirements *config.RequirementsConfig) error {
 	if len(requirements.Cluster.DevEnvApprovers) > 0 {
-		filename := filepath.Join(o.Dir, "OWNERS")
+		path := filepath.Join(o.Dir, "OWNERS")
+		filename, err := filepath.Abs(path)
+		if err != nil {
+			return errors.Wrapf(err, "failed to resolve path %s", path)
+		}
 		data := prow.Owners{}
 		for _, approver := range requirements.Cluster.DevEnvApprovers {
 			data.Approvers = append(data.Approvers, approver)
@@ -852,7 +858,7 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 		if value != "" {
 			storageEntryConfig.URL = value
 
-			err = requirements.SaveConfig(requirementsFileName)
+			err = o.SaveConfig(requirements, requirementsFileName)
 			if err != nil {
 				return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
 			}
@@ -938,7 +944,7 @@ func (o *StepVerifyPreInstallOptions) verifyIngress(requirements *config.Require
 	if requirements.Ingress.IsAutoDNSDomain() && !requirements.Ingress.IgnoreLoadBalancer {
 		log.Logger().Infof("Clearing the domain %s as when using auto-DNS domains we need to regenerate to ensure its always accurate in case the cluster or ingress service is recreated", util.ColorInfo(domain))
 		requirements.Ingress.Domain = ""
-		err := requirements.SaveConfig(requirementsFileName)
+		err := o.SaveConfig(requirements, requirementsFileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
 		}
@@ -958,9 +964,57 @@ func (o *StepVerifyPreInstallOptions) ValidateRequirements(requirements *config.
 	}
 	if requirements.Repository == config.RepositoryTypeBucketRepo && requirements.Cluster.ChartRepository == "" {
 		requirements.Cluster.ChartRepository = "http://bucketrepo/bucketrepo/charts/"
-		err := requirements.SaveConfig(fileName)
+		err := o.SaveConfig(requirements, fileName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save changes to file: %s", fileName)
+		}
+	}
+
+	// lets verify that we have a repository name defined for every environment
+	modified := false
+	for i, env := range requirements.Environments {
+		if env.Repository == "" {
+			clusterName := requirements.Cluster.ClusterName
+			if clusterName != "" {
+				clusterName = clusterName + "-"
+			}
+			repoName := "environment-" + clusterName + env.Key
+			requirements.Environments[i].Repository = naming.ToValidName(repoName)
+			modified = true
+		}
+	}
+	if modified {
+		err := o.SaveConfig(requirements, fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save changes to file: %s", fileName)
+		}
+	}
+	return nil
+}
+
+// SaveConfig saves the configuration file to the given project directory
+func (o *StepVerifyPreInstallOptions) SaveConfig(c *config.RequirementsConfig, fileName string) error {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save file %s", fileName)
+	}
+
+	if features.IsHelmfile() {
+		y := config.RequirementsValues{
+			RequirementsConfig: c,
+		}
+		data, err = yaml.Marshal(y)
+		if err != nil {
+			return err
+		}
+
+		err = ioutil.WriteFile(path.Join(path.Dir(fileName), config.RequirementsValuesFileName), data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save file %s", config.RequirementsValuesFileName)
 		}
 	}
 	return nil
