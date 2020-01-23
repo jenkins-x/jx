@@ -12,6 +12,43 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ns = "jx"
+)
+
+func TestFindSourceRepository(t *testing.T) {
+	existingRepos := &v1.SourceRepositoryList{
+		Items: []v1.SourceRepository{
+			// Standard auto-created source repository
+			createSourceRepository("first-org-first-repo", "first-org", "first-repo", "https://github.com", false),
+			// Arbitrary name
+			createSourceRepository("random-name", "second-org", "second-repo", "https://github.com", false),
+			// Unlabeled, to verify proper behavior with legacy autocreated source repositories without labels
+			createSourceRepository("third-org-third-repo", "third-org", "third-repo", "https://github.com", true),
+		},
+	}
+	jxClient := fake.NewSimpleClientset(existingRepos)
+
+	// Test the standard auto-created
+	firstSr, err := kube.FindSourceRepository(jxClient, ns, "first-org", "first-repo", "github")
+	assert.NoError(t, err)
+	assert.NotNil(t, firstSr)
+	assert.Equal(t, "first-org-first-repo", firstSr.Name)
+
+	// Test the arbitrary name
+	secondSr, err := kube.FindSourceRepository(jxClient, ns, "second-org", "second-repo", "github")
+	assert.NoError(t, err)
+	assert.NotNil(t, secondSr)
+	assert.Equal(t, "random-name", secondSr.Name)
+
+	// Test the unlabeled case
+	thirdSr, err := kube.FindSourceRepository(jxClient, ns, "third-org", "third-repo", "github")
+	assert.NoError(t, err)
+	assert.NotNil(t, thirdSr)
+	assert.Equal(t, "third-org-third-repo", thirdSr.Name)
+	assert.Equal(t, "", thirdSr.Labels[v1.LabelOwner])
+}
+
 func TestGetOrCreateSourceRepositories(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -44,35 +81,13 @@ func TestGetOrCreateSourceRepositories(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ns := "jx"
-
-			var existingRepo *v1.SourceRepository
+			var existingRepo v1.SourceRepository
 			if tt.existingName != "" {
-				existingRepo = &v1.SourceRepository{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "SourceRepository",
-						APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      tt.existingName,
-						Namespace: ns,
-						Labels: map[string]string{
-							v1.LabelOwner:      tt.org,
-							v1.LabelRepository: tt.repo,
-							v1.LabelProvider:   kube.ToProviderName(tt.providerURL),
-						},
-					},
-					Spec: v1.SourceRepositorySpec{
-						Org:          tt.org,
-						Provider:     tt.providerURL,
-						ProviderName: kube.ToProviderName(tt.providerURL),
-						Repo:         tt.repo,
-					},
-				}
+				existingRepo = createSourceRepository(tt.existingName, tt.org, tt.repo, tt.providerURL, false)
 			}
 			var jxClient *fake.Clientset
-			if existingRepo != nil {
-				jxClient = fake.NewSimpleClientset(existingRepo)
+			if tt.existingName != "" {
+				jxClient = fake.NewSimpleClientset(&existingRepo)
 			} else {
 				jxClient = fake.NewSimpleClientset()
 			}
@@ -81,7 +96,7 @@ func TestGetOrCreateSourceRepositories(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, createdOrExisting)
 
-			if existingRepo == nil {
+			if tt.existingName == "" {
 				createdRepoName := naming.ToValidName(tt.org + "-" + tt.repo)
 				assert.Equal(t, createdRepoName, createdOrExisting.Name, "new SourceRepository name should be %s but is %s", createdRepoName, createdOrExisting.Name)
 			} else {
@@ -93,4 +108,32 @@ func TestGetOrCreateSourceRepositories(t *testing.T) {
 			assert.Equal(t, kube.ToProviderName(tt.providerURL), createdOrExisting.Spec.ProviderName)
 		})
 	}
+}
+
+func createSourceRepository(name, org, repo, providerURL string, skipLabels bool) v1.SourceRepository {
+	labels := make(map[string]string)
+	if !skipLabels {
+		labels[v1.LabelOwner] = org
+		labels[v1.LabelRepository] = repo
+		labels[v1.LabelProvider] = kube.ToProviderName(providerURL)
+	}
+
+	return v1.SourceRepository{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SourceRepository",
+			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+			Labels:    labels,
+		},
+		Spec: v1.SourceRepositorySpec{
+			Org:          org,
+			Provider:     providerURL,
+			ProviderName: kube.ToProviderName(providerURL),
+			Repo:         repo,
+		},
+	}
+
 }
