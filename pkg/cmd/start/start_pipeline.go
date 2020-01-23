@@ -204,6 +204,7 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 		return errors.Wrap(err, "failed to create JX client")
 	}
 
+	log.Logger().Warnf("start owner %s, repo %s", owner, repo)
 	sr, err := kube.FindSourceRepositoryWithoutProvider(jxClient, ns, owner, repo)
 	if err != nil {
 		return errors.Wrap(err, "cannot determine git source URL")
@@ -246,7 +247,7 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 		Labels:         labelMap,
 		ServiceAccount: o.ServiceAccount,
 	}
-
+	log.Logger().Warnf("STARTING PIPELINE FOR %s", pullRef.SourceURL())
 	pipelineActivity, tektonCRDs, err := client.Create(pipelineCreateParam)
 	if err != nil {
 		return errors.Wrap(err, "unable to create Tekton CRDs")
