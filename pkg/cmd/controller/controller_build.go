@@ -315,6 +315,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 				if key != nil {
 					name := ""
 					err := util.Retry(time.Second*20, func() error {
+						log.Logger().Warnf("GETTING OR CREATING FOR %s", key.Name)
 						a, created, err := key.GetOrCreate(jxClient, ns)
 						if err != nil {
 							operation := "update"
@@ -332,7 +333,10 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 								name = a.Name
 								return err
 							}
+						} else {
+							log.Logger().Warnf("NOT UPDATING ACTIVITY %s BECAUSE NO CHANGE", a.Name)
 						}
+						log.Logger().Warnf("AND WE DONE WITH UPDATE FOR %s", a.Name)
 						return nil
 					})
 					if err != nil {
@@ -767,9 +771,10 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 	log.Logger().Warnf("STATUS REPORT TIME FOR ACTIVITY %s", activity.Name)
 	// TODO this is a tactical approach until we move all the reporting of tekton pipelines into tekton outputs
 	o.reportStatus(kubeClient, ns, activity, pri, pod)
-
+	log.Logger().Warnf("PAST REPORT FOR ACTIVITY %s", activity.Name)
 	// lets compare YAML in case we modify arrays in place on a copy (such as the steps) and don't detect we changed things
 	newYaml := toYamlString(activity)
+	log.Logger().Warnf("PAST YAML STRINGING FOR ACTIVITY %s", activity.Name)
 	return originYaml != newYaml
 }
 
