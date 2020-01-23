@@ -40,40 +40,42 @@ func GetRepositoryGitURL(s *v1.SourceRepository) (string, error) {
 	return spec.HTTPCloneURL, nil
 }
 
+// FindSourceRepositoryWithoutProvider returns a SourceRepository for the given namespace, owner and repo name.
+// If no SourceRepository is found, return nil.
+func FindSourceRepositoryWithoutProvider(jxClient versioned.Interface, ns string, owner string, name string) (*v1.SourceRepository, error) {
+	return FindSourceRepository(jxClient, ns, owner, name, "")
+}
+
+// findSourceRepositoryByLabels returns a SourceRepository matching the given label selector, if it exists.
+func findSourceRepositoryByLabels(jxClient versioned.Interface, ns string, labelSelector string) (*v1.SourceRepository, error) {
+	repos, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing SourceRepositorys matching label selector %s in namespace %s", labelSelector, ns)
+	}
+	if repos != nil && len(repos.Items) == 1 {
+		return &repos.Items[0], nil
+	}
+	return nil, nil
+}
+
 // FindSourceRepository returns a SourceRepository for the given namespace, owner, repo name, and (optional) provider name.
-// If no SourceRepository is found, return an error if doNotFailIfNotFound is false, otherwise just return a nil repo.
-func FindSourceRepository(jxClient versioned.Interface, ns string, owner string, name string, providerName string, doNotFailIfNotFound bool) (*v1.SourceRepository, error) {
+// If no SourceRepository is found, return nil.
+func FindSourceRepository(jxClient versioned.Interface, ns string, owner string, name string, providerName string) (*v1.SourceRepository, error) {
+	// Look up by resource name is retained for compatibility with SourceRepositorys created before they were always created with labels
 	resourceName := naming.ToValidName(owner + "-" + name)
-	var errToReturn error
 	repo, err := jxClient.JenkinsV1().SourceRepositories(ns).Get(resourceName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// Wipe the repo, since Get returns an empty SourceRepository, not a nil one, if not found
-			repo = nil
-
 			labelSelector := fmt.Sprintf("%s=%s,%s=%s", v1.LabelOwner, owner, v1.LabelRepository, name)
 			if providerName != "" {
 				labelSelector += fmt.Sprintf(",%s=%s", v1.LabelProvider, providerName)
 			}
 
-			repos, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{
-				LabelSelector: labelSelector,
-			})
-			if err != nil {
-				errToReturn = err
-			}
-			if repos != nil && len(repos.Items) == 1 {
-				repo = &repos.Items[0]
-			}
-		} else {
-			errToReturn = err
+			return findSourceRepositoryByLabels(jxClient, ns, labelSelector)
 		}
-	}
-	if errToReturn != nil {
-		return nil, errors.Wrapf(errToReturn, "failed to find SourceRepository %s in namespace %s", resourceName, ns)
-	}
-	if repo == nil && !doNotFailIfNotFound {
-		return nil, fmt.Errorf("couldn't find SourceRepository for owner %s, repository %s, optional provider %s in namespace %s", owner, name, providerName, ns)
+		return nil, errors.Wrapf(err, "getting SourceRepository %s in namespace %s", resourceName, ns)
 	}
 	return repo, nil
 }
@@ -84,47 +86,22 @@ func GetOrCreateSourceRepositoryCallback(jxClient versioned.Interface, ns string
 	resourceName := naming.ToValidName(organisation + "-" + name)
 
 	repositories := jxClient.JenkinsV1().SourceRepositories(ns)
-	description := fmt.Sprintf("Imported application for %s/%s", organisation, name)
 
 	providerName := ToProviderName(providerURL)
 
-	foundSr, err := FindSourceRepository(jxClient, ns, organisation, name, providerName, true)
+	foundSr, err := FindSourceRepository(jxClient, ns, organisation, name, providerName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to find existing SourceRepository")
 	}
 
 	// If we did not find an existing SourceRepository for this org/repo, create one
 	if foundSr == nil {
-		labels := map[string]string{}
-		sr := &v1.SourceRepository{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "SourceRepository",
-				APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   resourceName,
-				Labels: labels,
-			},
-			Spec: v1.SourceRepositorySpec{
-				Description:  description,
-				Org:          organisation,
-				Provider:     providerURL,
-				ProviderName: providerName,
-				Repo:         name,
-			},
-		}
-		if callback != nil {
-			callback(sr)
-		}
-		sr.Sanitize()
-		answer, err := repositories.Create(sr)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create new SourceRepository for organisation %s and repository %s", organisation, name)
-		}
-		return answer, nil
+		return createSourceRepositoryCallback(jxClient, ns, name, organisation, providerURL, callback)
 	}
 
 	// If we did find a SourceRepository, use that as our basis and see if we need to update it.
+	description := fmt.Sprintf("Imported application for %s/%s", organisation, name)
+
 	srCopy := foundSr.DeepCopy()
 	srCopy.Name = foundSr.Name
 	srCopy.Spec.Description = description
@@ -187,33 +164,46 @@ func ToProviderName(gitURL string) string {
 	return naming.ToValidName(gitURL)
 }
 
-// CreateSourceRepository creates a repo. If a repo already exists, it will return an error
-func CreateSourceRepository(client versioned.Interface, namespace string, name, organisation, providerURL string) error {
-	//FIXME: repo is not always == name, need to find a better value for ObjectMeta.Name!
-	// for now lets convert to a safe name using the organisation + repo name
+// createSourceRepositoryCallback creates a repo, returning the created repo and an error if it couldn't be created
+func createSourceRepositoryCallback(client versioned.Interface, namespace string, name, organisation, providerURL string, callback func(*v1.SourceRepository)) (*v1.SourceRepository, error) {
 	resourceName := naming.ToValidName(organisation + "-" + name)
 
-	repository := &v1.SourceRepository{
+	description := fmt.Sprintf("Imported application for %s/%s", organisation, name)
+
+	providerName := ToProviderName(providerURL)
+	labels := map[string]string{
+		v1.LabelProvider:   providerName,
+		v1.LabelOwner:      organisation,
+		v1.LabelRepository: name,
+	}
+
+	sr := &v1.SourceRepository{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "SourceRepository",
 			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: resourceName,
+			Name:   resourceName,
+			Labels: labels,
 		},
 		Spec: v1.SourceRepositorySpec{
-			Description: fmt.Sprintf("Imported application for %s/%s", organisation, name),
-			Org:         organisation,
-			Provider:    providerURL,
-			Repo:        name,
+			Description:  description,
+			Org:          organisation,
+			Provider:     providerURL,
+			ProviderName: providerName,
+			Repo:         name,
 		},
 	}
-	repository.Sanitize()
-	if _, err := client.JenkinsV1().SourceRepositories(namespace).Create(repository); err != nil {
-		return err
+	if callback != nil {
+		callback(sr)
+	}
+	sr.Sanitize()
+	answer, err := client.JenkinsV1().SourceRepositories(namespace).Create(sr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create new SourceRepository for organisation %s and repository %s", organisation, name)
 	}
 
-	return nil
+	return answer, nil
 }
 
 // IsEnvironmentRepository returns true if the given repository is an environment repository

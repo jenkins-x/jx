@@ -204,9 +204,12 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 		return errors.Wrap(err, "failed to create JX client")
 	}
 
-	sr, err := kube.FindSourceRepository(jxClient, ns, owner, repo, "", false)
+	sr, err := kube.FindSourceRepositoryWithoutProvider(jxClient, ns, owner, repo)
 	if err != nil {
 		return errors.Wrap(err, "cannot determine git source URL")
+	}
+	if sr == nil {
+		return fmt.Errorf("could not find existing SourceRepository for owner %s and repo %s", owner, repo)
 	}
 
 	sourceURL, err := kube.GetRepositoryGitURL(sr)
