@@ -49,6 +49,9 @@ type BootOptions struct {
 	RequirementsFile string
 
 	AttemptRestore bool
+
+	// UpgradeGit if we want to automaticalaly upgrade this boot clone if there have been changes since the current clone
+	NoUpgradeGit bool
 }
 
 var (
@@ -101,6 +104,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
 	cmd.Flags().StringVarP(&options.RequirementsFile, "requirements", "r", "", "requirements file which will overwrite the default requirements file")
 	cmd.Flags().BoolVarP(&options.AttemptRestore, "attempt-restore", "a", false, "attempt to boot from an existing dev environment repository")
+	cmd.Flags().BoolVarP(&options.NoUpgradeGit, "no-update-git", "", false, "disables any attempt to update the local git clone if its old")
 
 	return cmd
 }
@@ -279,7 +283,7 @@ func (o *BootOptions) Run() error {
 	}
 
 	// only update boot if the a GitRef has not been supplied
-	if o.GitRef == "" {
+	if o.GitRef == "" && !o.NoUpgradeGit {
 		err = o.updateBootCloneIfOutOfDate(gitRef)
 		if err != nil {
 			return err
