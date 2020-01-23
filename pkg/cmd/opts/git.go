@@ -182,7 +182,19 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		return "", err
 	}
 
-	kind, err := kube.GetGitServiceKind(jxClient, kubeClient, devNs, hostURL)
+	var clusterAuthConfig *auth.AuthConfig
+
+	// Pass the in-cluster git auth config to GetGitServiceKind
+	clusterAuthConfigSvc, err := o.GitAuthConfigService()
+	if err != nil {
+		return "", errors.Wrapf(err, "getting cluster-based auth configmap for checking kind of git url %s", hostURL)
+	}
+	if clusterAuthConfigSvc != nil {
+		clusterAuthConfig = clusterAuthConfigSvc.Config()
+	}
+
+	kind, err := kube.GetGitServiceKind(jxClient, kubeClient, devNs, clusterAuthConfig, hostURL)
+
 	if err != nil {
 		return kind, err
 	}
