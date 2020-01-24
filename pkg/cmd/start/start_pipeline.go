@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -212,6 +213,8 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 	if sr == nil {
 		return fmt.Errorf("could not find existing SourceRepository for owner %s and repo %s", owner, repo)
 	}
+	sry, _ := yaml.Marshal(sr)
+	log.Logger().Warnf("start pipeline sr : %s", sry)
 
 	sourceURL, err := kube.GetRepositoryGitURL(sr)
 	if err != nil {
@@ -220,6 +223,7 @@ func (o *StartPipelineOptions) createMetaPipeline(jobName string) error {
 	if sourceURL == "" {
 		return fmt.Errorf("no git URL returned from SourceRepository %s", sr.Name)
 	}
+	log.Logger().Warnf("sourceURL: %s", sourceURL)
 
 	log.Logger().Debug("creating meta pipeline client")
 	client, err := metapipeline.NewMetaPipelineClient()
