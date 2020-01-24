@@ -291,6 +291,16 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			fetchRefSpec := fmt.Sprintf("pull/%d/head:%s", *existingPr.Number, localBranch)
 			err = gitter.FetchBranch(dir, remote, fetchRefSpec)
 			if err != nil {
+				cmd := util.Command{
+					Dir:  dir,
+					Name: "git",
+					Args: []string{"remote", "-v"},
+				}
+				// Ensure that error output is in English so parsing work
+				cmd.Env = map[string]string{"LC_ALL": "C"}
+				remoteOutput, _ := cmd.RunWithoutRetry()
+
+				log.Logger().Warnf("failed to fetch remote %s - remote list:\n%s", remote, remoteOutput)
 				return nil, errors.Wrapf(err, "fetching %s for merge", fetchRefSpec)
 			}
 
