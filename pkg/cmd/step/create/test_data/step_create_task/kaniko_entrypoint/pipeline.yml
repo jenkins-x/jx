@@ -18,7 +18,7 @@ spec:
     name: version
     type: string
   resources:
-  - name: jenkins-x-jx-fix-kaniko-special
+  - name: jenkins-x-jx-fix-kaniko-special-6nl7g
     type: git
   tasks:
   - name: ci
@@ -28,7 +28,7 @@ spec:
     resources:
       inputs:
       - name: workspace
-        resource: jenkins-x-jx-fix-kaniko-special
+        resource: jenkins-x-jx-fix-kaniko-special-6nl7g
     taskRef:
       name: jenkins-x-jx-fix-kaniko-special-6nl7g-ci-1
 status: {}

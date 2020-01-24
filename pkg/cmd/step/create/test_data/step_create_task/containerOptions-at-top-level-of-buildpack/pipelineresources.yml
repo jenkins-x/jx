@@ -3,7 +3,7 @@ items:
   kind: PipelineResource
   metadata:
     creationTimestamp: null
-    name: abayer-jx-demo-qs-master
+    name: abayer-jx-demo-qs-master-b5j7r
   spec:
     params:
     - name: revision

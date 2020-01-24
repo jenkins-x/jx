@@ -18,7 +18,7 @@ spec:
     name: version
     type: string
   resources:
-  - name: abayer-js-test-repo-no-default
+  - name: abayer-js-test-repo-no-default-j2tds
     type: git
   tasks:
   - name: from-build-pack
@@ -28,7 +28,7 @@ spec:
     resources:
       inputs:
       - name: workspace
-        resource: abayer-js-test-repo-no-default
+        resource: abayer-js-test-repo-no-default-j2tds
     taskRef:
       name: abayer-js-test-repo-no-default-j2tds-from-build-pack-1
 status: {}

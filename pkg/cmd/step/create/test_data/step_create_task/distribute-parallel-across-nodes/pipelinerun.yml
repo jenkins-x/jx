@@ -25,10 +25,10 @@ spec:
               tekton.dev/pipelineRun: abayer-js-test-repo-really-long-shnql-1
           topologyKey: kubernetes.io/hostname
   resources:
-  - name: abayer-js-test-repo-really-long
+  - name: abayer-js-test-repo-really-long-shnql
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
-      name: abayer-js-test-repo-really-long
+      name: abayer-js-test-repo-really-long-shnql
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}

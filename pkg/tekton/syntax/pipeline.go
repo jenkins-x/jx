@@ -1718,7 +1718,6 @@ func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
 type CRDsFromPipelineParams struct {
 	PipelineIdentifier string
 	BuildIdentifier    string
-	ResourceIdentifier string
 	Namespace          string
 	PodTemplates       map[string]*corev1.Pod
 	VersionsDir        string
@@ -1761,7 +1760,7 @@ func (j *ParsedPipeline) GenerateCRDs(params CRDsFromPipelineParams) (*tektonv1a
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
 				{
-					Name: params.ResourceIdentifier,
+					Name: params.PipelineIdentifier,
 					Type: tektonv1alpha1.PipelineResourceTypeGit,
 				},
 			},

@@ -3,7 +3,7 @@ items:
   kind: PipelineResource
   metadata:
     creationTimestamp: null
-    name: jenkins-x-jx-fix-kaniko-special
+    name: jenkins-x-jx-fix-kaniko-special-6nl7g
   spec:
     params:
     - name: revision

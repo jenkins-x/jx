@@ -371,12 +371,17 @@ func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, crea
 }
 
 // PipelineResourceNameFromGitInfo returns the pipeline resource name for the given git repository, branch and context
-func PipelineResourceNameFromGitInfo(gitInfo *gits.GitRepository, branch string, context string, pipelineType string, forceUnique bool) string {
-	return PipelineResourceName(gitInfo.Organisation, gitInfo.Name, branch, context, pipelineType, forceUnique)
+func PipelineResourceNameFromGitInfo(gitInfo *gits.GitRepository, branch string, context string, pipelineType string) string {
+	return PipelineResourceName(gitInfo.Organisation, gitInfo.Name, branch, context, pipelineType)
 }
 
-// PipelineResourceName returns the pipeline resource name for the given git org, repo name, branch and context
-func PipelineResourceName(organisation string, name string, branch string, context string, pipelineType string, forceUnique bool) string {
+// PipelineResourceName returns the pipeline resource name for the given git org, repo name, branch and context. It will always be unique.
+func PipelineResourceName(organisation string, name string, branch string, context string, pipelineType string) string {
+	return possiblyUniquePipelineResourceName(organisation, name, branch, context, pipelineType, true)
+}
+
+// possiblyUniquePipelineResourceName returns the pipeline resource name for the given git org, repo name, branch and context, possibly forcing it to be unique
+func possiblyUniquePipelineResourceName(organisation string, name string, branch string, context string, pipelineType string, forceUnique bool) string {
 	dirtyName := organisation + "-" + name + "-" + branch
 	if context != "" {
 		dirtyName += "-" + context
@@ -416,6 +421,9 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 	}
 
 	for _, resource := range crds.Resources() {
+		if activityOwnerReference != nil {
+			resource.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
+		}
 		_, err := CreateOrUpdateSourceResource(tektonClient, ns, resource)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)

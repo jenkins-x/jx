@@ -3,7 +3,7 @@ items:
   kind: PipelineResource
   metadata:
     creationTimestamp: null
-    name: abayer-js-test-repo-override-de
+    name: abayer-js-test-repo-override-de-vr6ds
   spec:
     params:
     - name: revision

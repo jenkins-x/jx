@@ -516,9 +516,8 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				resourceName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), false)
-				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String(), true)
-				crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, resourceName)
+				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String())
+				crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
 				if tt.generateError != nil {
 					if err == nil {
 						t.Fatalf("Expected an error %s generating CRDs, did not see it", tt.generateError)

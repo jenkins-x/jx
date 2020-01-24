@@ -3,7 +3,7 @@ items:
   kind: PipelineResource
   metadata:
     creationTimestamp: null
-    name: abayer-golang-qs-test-master
+    name: abayer-golang-qs-test-master-klrgx
   spec:
     params:
     - name: revision
