@@ -10,6 +10,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,6 +44,7 @@ func GetRepositoryGitURL(s *v1.SourceRepository) (string, error) {
 // FindSourceRepositoryWithoutProvider returns a SourceRepository for the given namespace, owner and repo name.
 // If no SourceRepository is found, return nil.
 func FindSourceRepositoryWithoutProvider(jxClient versioned.Interface, ns string, owner string, name string) (*v1.SourceRepository, error) {
+	log.Logger().Warnf("find w/o provider owner %s, repo %s", owner, name)
 	return FindSourceRepository(jxClient, ns, owner, name, "")
 }
 

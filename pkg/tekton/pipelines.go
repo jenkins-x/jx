@@ -49,7 +49,7 @@ func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.G
 	name := gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch + "-" + buildNumber
 
 	pipeline := gitInfo.Organisation + "/" + gitInfo.Name + "/" + branch
-	log.Logger().Infof("PipelineActivity for %s", name)
+	log.Logger().Infof("PipelineActivity for %s - git repo: %s", name, gitInfo.URL)
 	key := &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     name,
