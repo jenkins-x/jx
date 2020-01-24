@@ -49,11 +49,9 @@ var (
 )
 
 const (
-	builderImage           = "gcr.io/jenkinsxio/builder-go"
-	keepDevEnvKey          = "keepDevEnv"
-	keepDevEnvForGitConfig = "\n[merge \"keepDevEnv\"]\n" +
-		"\tname = Always keep the dev env version during merges and cherry-picks\n" +
-		"\tdriver = true\n"
+	builderImage         = "gcr.io/jenkinsxio/builder-go"
+	keepDevEnvKey        = "keepDevEnv"
+	keepDevEnvDriverName = "Always keep the dev env version during merges and cherry-picks"
 )
 
 // NewCmdUpgradeBoot creates the command
@@ -330,35 +328,17 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 	if err != nil {
 		return errors.Wrap(err, "failed to cherry pick upgrade commits")
 	}
-	err = o.excludeFiles(currentSha)
-	if err != nil {
-		return errors.Wrap(err, "failed to exclude files from commit")
-	}
 	return nil
 }
 
 func (o *UpgradeBootOptions) configureGitMergeExcludes() error {
-	gitConfigFile := filepath.Join(o.Dir, ".git", "config")
-	var existingGitConfig string
-	gcExists, err := util.FileExists(gitConfigFile)
+	err := o.Git().Config(o.Dir, "--local", fmt.Sprintf("merge.%s.name", keepDevEnvKey), keepDevEnvDriverName)
 	if err != nil {
-		return errors.Wrapf(err, "checking if git config for repo at %s exists", gitConfigFile)
+		return errors.Wrapf(err, "configuring name for exclude merge driver in %s", o.Dir)
 	}
-	if gcExists {
-		// Read the existing .git/config
-		gcBytes, err := ioutil.ReadFile(gitConfigFile)
-		if err != nil {
-			return errors.Wrapf(err, "reading existing git config for repo from %s", gitConfigFile)
-		}
-		existingGitConfig = string(gcBytes)
-	}
-
-	// Write the existing .git/config content and our custom driver to .git/config in the repo
-	gitConfigContent := existingGitConfig + keepDevEnvForGitConfig
-
-	err = ioutil.WriteFile(gitConfigFile, []byte(gitConfigContent), util.DefaultFileWritePermissions)
+	err = o.Git().Config(o.Dir, "--local", fmt.Sprintf("merge.%s.driver", keepDevEnvKey), "true")
 	if err != nil {
-		return errors.Wrapf(err, "writing new git config for repo to %s", gitConfigFile)
+		return errors.Wrapf(err, "configuring driver for exclude merge driver in %s", o.Dir)
 	}
 
 	// Read the existing .git/info/attributes if it exists
@@ -461,18 +441,6 @@ func (o *UpgradeBootOptions) setupGitConfig(dir string) error {
 	err = o.Git().SetEmail(dir, email)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set email for %s", email)
-	}
-	return nil
-}
-
-func (o *UpgradeBootOptions) excludeFiles(commit string) error {
-	err := o.Git().CheckoutCommitFiles(o.Dir, commit, filesExcludedFromCherryPick)
-	if err != nil {
-		return errors.Wrap(err, "failed to checkout files")
-	}
-	err = o.Git().AddCommitFiles(o.Dir, "chore: exclude files from upgrade", filesExcludedFromCherryPick)
-	if err != nil && !strings.Contains(err.Error(), "nothing to commit") {
-		return errors.Wrapf(err, "failed to commit excluded files %v", filesExcludedFromCherryPick)
 	}
 	return nil
 }
