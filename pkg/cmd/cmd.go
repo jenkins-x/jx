@@ -91,6 +91,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	addCommands := add.NewCmdAdd(commonOpts)
 	createCommands := create.NewCmdCreate(commonOpts)
 	deleteCommands := deletecmd.NewCmdDelete(commonOpts)
+
 	getCommands := get.NewCmdGet(commonOpts)
 	editCommands := edit.NewCmdEdit(commonOpts)
 	updateCommands := update.NewCmdUpdate(commonOpts)

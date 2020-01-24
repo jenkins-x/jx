@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/pkg/cmd/create/helmfile"
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/create/vault"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
@@ -70,6 +71,7 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateEtcHosts(commonOpts))
 	cmd.AddCommand(NewCmdCreateGkeServiceAccount(commonOpts))
 	cmd.AddCommand(NewCmdCreateGit(commonOpts))
+	cmd.AddCommand(helmfile.NewCmdCreateHelmfile(commonOpts))
 	cmd.AddCommand(NewCmdCreateIssue(commonOpts))
 	cmd.AddCommand(NewCmdCreateJenkins(commonOpts))
 	cmd.AddCommand(NewCmdCreateJHipster(commonOpts))

@@ -89,9 +89,17 @@ func (h *HelmCLI) checkCompatibility() {
 		log.Logger().Warnf("Unable to parse the current helm version: %s", version)
 		return
 	}
-	if v.Major > 2 {
-		log.Logger().Fatalf("Your current helm version v%d is not supported. Please downgrade to helm v2.", v.Major)
+
+	if os.Getenv("JX_HELM3") == "true" {
+		if v.Major != 3 {
+			log.Logger().Fatalf("You have set $JX_HELM3=true but your helm client version is %d", v.Major)
+		}
+	} else {
+		if v.Major > 2 {
+			log.Logger().Fatalf("Your current helm version v%d is not supported. Please downgrade to helm v2.", v.Major)
+		}
 	}
+
 }
 
 // SetHost is used to point at a locally running tiller
