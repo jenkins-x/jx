@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/config"
+
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
@@ -547,7 +549,16 @@ func (o *CommonOptions) Helm() helm.Helmer {
 			// let disable loading/modifying team environments as we typically install on empty k8s clusters
 			o.ModifyEnvironmentFn = o.IgnoreModifyEnvironment
 			o.ModifyDevEnvironmentFn = o.IgnoreModifyDevEnvironment
-			helmer := o.NewHelm(false, "helm3", true, false)
+
+			// check helmfile featureflag but default to existing behaviour if there's any issues
+			var helmer helm.Helmer
+			r, _, _ := config.LoadRequirementsConfig("")
+			if r.Helmfile {
+				helmer = o.NewHelm(false, "helm", true, false)
+			} else {
+				helmer = o.NewHelm(false, "helm3", true, false)
+			}
+
 			o.SetHelm(helmer)
 			return helmer
 		}
