@@ -1195,6 +1195,15 @@ func (g *GitCLI) Remotes(dir string) ([]string, error) {
 	return strings.Split(out, "\n"), nil
 }
 
+// RemotesVerbose will list the full details of the remotes
+func (g *GitCLI) RemotesVerbose(dir string) ([]string, error) {
+	out, err := g.gitCmdWithOutput(dir, "remote", "-v")
+	if err != nil {
+		return nil, errors.Wrapf(err, "running git remote -v")
+	}
+	return strings.Split(out, "\n"), nil
+}
+
 // CloneBare will create a bare clone of url
 func (g *GitCLI) CloneBare(dir string, url string) error {
 	err := g.gitCmd(dir, "clone", "--bare", url, dir)
