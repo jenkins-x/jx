@@ -30,10 +30,10 @@ spec:
               way-too-long-a-label-seriously-this-just-goes-on-for-so-many-ch: this-hasinvalidcharacters
           topologyKey: kubernetes.io/hostname
   resources:
-  - name: abayer-js-test-repo-really-long
+  - name: abayer-js-test-repo-really-long-m97mw
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
-      name: abayer-js-test-repo-really-long
+      name: abayer-js-test-repo-really-long-m97mw
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}

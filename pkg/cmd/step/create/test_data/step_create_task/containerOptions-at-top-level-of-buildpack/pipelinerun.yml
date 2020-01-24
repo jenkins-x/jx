@@ -18,10 +18,10 @@ spec:
     name: abayer-jx-demo-qs-master-b5j7r-1
   podTemplate: {}
   resources:
-  - name: abayer-jx-demo-qs-master
+  - name: abayer-jx-demo-qs-master-b5j7r
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
-      name: abayer-jx-demo-qs-master
+      name: abayer-jx-demo-qs-master-b5j7r
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}

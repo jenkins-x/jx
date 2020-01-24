@@ -3,7 +3,7 @@ items:
   kind: PipelineResource
   metadata:
     creationTimestamp: null
-    name: abayer-js-test-repo-really-long
+    name: abayer-js-test-repo-really-long-fzfnf
   spec:
     params:
     - name: revision

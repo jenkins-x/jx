@@ -3,7 +3,7 @@ items:
   kind: PipelineResource
   metadata:
     creationTimestamp: null
-    name: abayer-js-test-repo-build-pack
+    name: abayer-js-test-repo-build-pack-9l9zj
   spec:
     params:
     - name: revision

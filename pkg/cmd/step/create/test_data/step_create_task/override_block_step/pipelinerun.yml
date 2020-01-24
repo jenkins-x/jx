@@ -18,10 +18,10 @@ spec:
     name: abayer-golang-qs-test-master-twkr2-1
   podTemplate: {}
   resources:
-  - name: abayer-golang-qs-test-master
+  - name: abayer-golang-qs-test-master-twkr2
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
-      name: abayer-golang-qs-test-master
+      name: abayer-golang-qs-test-master-twkr2
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}

@@ -42,7 +42,6 @@ type CRDCreationParameters struct {
 	Namespace           string
 	Context             string
 	PipelineName        string
-	ResourceName        string
 	PipelineKind        PipelineKind
 	BuildNumber         string
 	GitInfo             gits.GitRepository
@@ -79,7 +78,6 @@ func createMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 	crdParams := syntax.CRDsFromPipelineParams{
 		PipelineIdentifier: params.PipelineName,
 		BuildIdentifier:    params.BuildNumber,
-		ResourceIdentifier: params.ResourceName,
 		Namespace:          params.Namespace,
 		PodTemplates:       params.PodTemplates,
 		VersionsDir:        params.VersionsDir,
@@ -97,7 +95,7 @@ func createMetaPipelineCRDs(params CRDCreationParameters) (*tekton.CRDWrapper, e
 	if revision == "" {
 		revision = params.PullRef.BaseBranch()
 	}
-	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.ResourceName, &params.GitInfo, revision)}
+	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(params.PipelineName, &params.GitInfo, revision)}
 	run := tekton.CreatePipelineRun(resources, pipeline.Name, pipeline.APIVersion, labels, params.ServiceAccount, nil, nil, nil, nil)
 
 	tektonCRDs, err := tekton.NewCRDWrapper(pipeline, tasks, resources, structure, run)

@@ -18,10 +18,10 @@ spec:
     name: abayer-js-test-repo-really-long-j9gz7-1
   podTemplate: {}
   resources:
-  - name: abayer-js-test-repo-really-long
+  - name: abayer-js-test-repo-really-long-j9gz7
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
-      name: abayer-js-test-repo-really-long
+      name: abayer-js-test-repo-really-long-j9gz7
   serviceAccountName: tekton-bot
   timeout: 10h0m0s
 status: {}
