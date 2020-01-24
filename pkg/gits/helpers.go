@@ -526,6 +526,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 		return "", "", nil, nil, errors.Wrapf(err, "getting repository %s/%s", originalOrg, originalRepo)
 	}
 	originURL := upstreamInfo.CloneURL
+	log.Logger().Warnf("initial fork-and-pull origin URL: %s", originURL)
 	if forkName == "" {
 		forkName = upstreamInfo.Name
 	}
@@ -551,6 +552,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 			log.Logger().Infof("Forked Git repository to %s\n", util.ColorInfo(forkInfo.HTMLURL))
 		}
 		originURL = forkInfo.CloneURL
+		log.Logger().Warnf("forked origin URL: %s", originURL)
 	}
 
 	// Prepare the git repo
@@ -595,6 +597,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	if err != nil {
 		return "", "", nil, nil, errors.Wrapf(err, "unable to add username to git url %s", originURL)
 	}
+	log.Logger().Warnf("fork-and-pull setting remote url for %s to %s", originRemote, originURLWithUser)
 	err = gitter.SetRemoteURL(dir, originRemote, originURLWithUser)
 	if err != nil {
 		return "", "", nil, nil, errors.Wrapf(err, "failed to set %s url to %s", originRemote, originURL)
