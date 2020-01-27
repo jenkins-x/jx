@@ -538,3 +538,13 @@ func (g *GitLocal) Describe(dir string, contains bool, commitish string, abbrev 
 func (g *GitLocal) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
 	return g.GitCLI.IsAncestor(dir, possibleAncestor, commitish)
 }
+
+// WriteRepoAttributes writes the given content to .git/info/attributes
+func (g *GitLocal) WriteRepoAttributes(dir string, content string) error {
+	return g.GitCLI.WriteRepoAttributes(dir, content)
+}
+
+// ReadRepoAttributes reads the existing content, if any, in .git/info/attributes
+func (g *GitLocal) ReadRepoAttributes(dir string) (string, error) {
+	return g.GitCLI.ReadRepoAttributes(dir)
+}

@@ -289,6 +289,9 @@ type Gitter interface {
 	DeleteLocalBranch(dir string, branch string) error
 
 	SetUpstreamTo(dir string, branch string) error
+
+	WriteRepoAttributes(dir string, contents string) error
+	ReadRepoAttributes(dir string) (string, error)
 }
 
 // PullRequestDetails is the details for creating a pull request

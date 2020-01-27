@@ -1263,3 +1263,32 @@ func (g *GitCLI) IsAncestor(dir string, possibleAncestor string, commitish strin
 	// Default case is that this is an ancestor, since there's no error from the merge-base call.
 	return true, nil
 }
+
+// WriteRepoAttributes writes the given content to .git/info/attributes
+func (g *GitCLI) WriteRepoAttributes(dir string, content string) error {
+	// Read the existing .git/info/attributes if it exists
+	gitAttrFile := filepath.Join(dir, ".git", "info", "attributes")
+
+	err := ioutil.WriteFile(gitAttrFile, []byte(content), util.DefaultFileWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "writing new repo-local git attributes to %s", gitAttrFile)
+	}
+	return nil
+}
+
+// ReadRepoAttributes reads the existing content, if any, in .git/info/attributes
+func (g *GitCLI) ReadRepoAttributes(dir string) (string, error) {
+	gitAttrFile := filepath.Join(dir, ".git", "info", "attributes")
+	gaExists, err := util.FileExists(gitAttrFile)
+	if err != nil {
+		return "", errors.Wrapf(err, "checking if repo-local git attributes file %s exists", gitAttrFile)
+	}
+	if gaExists {
+		gaBytes, err := ioutil.ReadFile(gitAttrFile)
+		if err != nil {
+			return "", errors.Wrapf(err, "reading existing repo-local git attributes from %s", gitAttrFile)
+		}
+		return string(gaBytes), nil
+	}
+	return "", nil
+}
