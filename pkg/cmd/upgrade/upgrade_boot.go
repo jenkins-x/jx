@@ -324,15 +324,15 @@ func (o *UpgradeBootOptions) updateBootConfig(versionStreamURL string, versionSt
 		return errors.Wrapf(err, "configuring files (%s) to always use existing version when conflicting with upstream", strings.Join(filesExcludedFromCherryPick, ", "))
 	}
 
+	defer func() {
+		err = o.removeMergeExcludesFromAttributes()
+	}()
+
 	err = o.cherryPickCommits(configCloneDir, currentSha, upgradeSha)
 	if err != nil {
 		return errors.Wrap(err, "failed to cherry pick upgrade commits")
 	}
 
-	err = o.removeMergeExcludesFromAttributes()
-	if err != nil {
-		return errors.Wrapf(err, "removing special handling of files to exclude from merging from upstream")
-	}
 	return nil
 }
 
@@ -349,19 +349,9 @@ func (o *UpgradeBootOptions) configureGitMergeExcludes() error {
 		return errors.Wrapf(err, "configuring driver for exclude merge driver in %s", o.Dir)
 	}
 
-	// Read the existing .git/info/attributes if it exists
-	gitAttrFile := filepath.Join(o.Dir, ".git", "info", "attributes")
-	var existingGitAttr string
-	gaExists, err := util.FileExists(gitAttrFile)
+	existingGitAttr, err := o.Git().ReadRepoAttributes(o.Dir)
 	if err != nil {
-		return errors.Wrapf(err, "checking if repo-local git attributes file %s exists", gitAttrFile)
-	}
-	if gaExists {
-		gaBytes, err := ioutil.ReadFile(gitAttrFile)
-		if err != nil {
-			return errors.Wrapf(err, "reading existing repo-local git attributes from %s", gitAttrFile)
-		}
-		existingGitAttr = string(gaBytes)
+		return errors.Wrapf(err, "reading repo-local git attributes")
 	}
 
 	// Write the existing .git/info/attributes content and marking the selected files as using our custom driver
@@ -373,9 +363,9 @@ func (o *UpgradeBootOptions) configureGitMergeExcludes() error {
 		}
 	}
 
-	err = ioutil.WriteFile(gitAttrFile, []byte(gitAttrContent), util.DefaultFileWritePermissions)
+	err = o.Git().WriteRepoAttributes(o.Dir, gitAttrContent)
 	if err != nil {
-		return errors.Wrapf(err, "writing new repo-local git attributes to %s", gitAttrFile)
+		return errors.Wrapf(err, "writing new repo-local git attributes")
 	}
 
 	return nil
@@ -383,35 +373,20 @@ func (o *UpgradeBootOptions) configureGitMergeExcludes() error {
 
 func (o *UpgradeBootOptions) removeMergeExcludesFromAttributes() error {
 	// Read the existing .git/info/attributes if it exists
-	gitAttrFile := filepath.Join(o.Dir, ".git", "info", "attributes")
-	gaExists, err := util.FileExists(gitAttrFile)
+	existingGitAttr, err := o.Git().ReadRepoAttributes(o.Dir)
 	if err != nil {
-		return errors.Wrapf(err, "checking if repo-local git attributes file %s exists", gitAttrFile)
+		return errors.Wrapf(err, "reading current repo-local git attributes")
 	}
-	if gaExists {
-		gaBytes, err := ioutil.ReadFile(gitAttrFile)
-		if err != nil {
-			return errors.Wrapf(err, "reading existing repo-local git attributes from %s", gitAttrFile)
-		}
-
+	if existingGitAttr != "" {
 		var newGitAttrLines []string
-		for _, l := range strings.Split(string(gaBytes), "\n") {
+		for _, l := range strings.Split(existingGitAttr, "\n") {
 			if !strings.Contains(l, fmt.Sprintf("merge=%s", keepDevEnvKey)) {
 				newGitAttrLines = append(newGitAttrLines, l)
 			}
 		}
-
-		// If there are no other lines but the merge exclude ones in attributes, just remove the file.
-		if len(newGitAttrLines) == 0 {
-			err = util.DeleteFile(gitAttrFile)
-			if err != nil {
-				return errors.Wrapf(err, "deleting now-empty git attributes file at %s", gitAttrFile)
-			}
-		} else {
-			err = ioutil.WriteFile(gitAttrFile, []byte(strings.Join(newGitAttrLines, "\n")), util.DefaultFileWritePermissions)
-			if err != nil {
-				return errors.Wrapf(err, "writing cleaned-up git attributes to %s", gitAttrFile)
-			}
+		err = o.Git().WriteRepoAttributes(o.Dir, strings.Join(newGitAttrLines, "\n"))
+		if err != nil {
+			return errors.Wrapf(err, "writing cleaned-up git attributes")
 		}
 	}
 	return nil
