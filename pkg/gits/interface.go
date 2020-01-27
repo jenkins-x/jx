@@ -176,6 +176,7 @@ type GitProvider interface {
 // Gitter defines common git actions used by Jenkins X via git cli
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
 type Gitter interface {
+	Config(dir string, args ...string) error
 	FindGitConfigDir(dir string) (string, string, error)
 	PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer)
 
@@ -288,6 +289,9 @@ type Gitter interface {
 	DeleteLocalBranch(dir string, branch string) error
 
 	SetUpstreamTo(dir string, branch string) error
+
+	WriteRepoAttributes(dir string, contents string) error
+	ReadRepoAttributes(dir string) (string, error)
 }
 
 // PullRequestDetails is the details for creating a pull request

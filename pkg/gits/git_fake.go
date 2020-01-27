@@ -47,6 +47,10 @@ func NewGitFake() Gitter {
 	return &GitFake{}
 }
 
+func (g *GitFake) Config(dir string, args ...string) error {
+	return nil
+}
+
 // FindGitConfigDir finds the git config dir
 func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
 	return dir, dir, nil
@@ -679,4 +683,14 @@ func (g *GitFake) Describe(dir string, contains bool, commitish string, abbrev s
 // IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
 func (g *GitFake) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
 	return false, nil
+}
+
+// WriteRepoAttributes writes the given content to .git/info/attributes
+func (g *GitFake) WriteRepoAttributes(dir string, content string) error {
+	return nil
+}
+
+// ReadRepoAttributes reads the existing content, if any, in .git/info/attributes
+func (g *GitFake) ReadRepoAttributes(dir string) (string, error) {
+	return "", nil
 }

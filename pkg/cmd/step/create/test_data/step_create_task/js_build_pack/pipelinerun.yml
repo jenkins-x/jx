@@ -18,10 +18,10 @@ spec:
     name: abayer-js-test-repo-build-pack-9l9zj-1
   podTemplate: {}
   resources:
-  - name: abayer-js-test-repo-build-pack
+  - name: abayer-js-test-repo-build-pack-9l9zj
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
-      name: abayer-js-test-repo-build-pack
+      name: abayer-js-test-repo-build-pack-9l9zj
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}

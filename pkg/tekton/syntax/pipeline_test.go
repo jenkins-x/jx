@@ -1417,7 +1417,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			crdParams := syntax.CRDsFromPipelineParams{
 				PipelineIdentifier: "somepipeline",
 				BuildIdentifier:    "1",
-				ResourceIdentifier: "somepipeline",
 				Namespace:          "jx",
 				VersionsDir:        testVersionsDir,
 				SourceDir:          "source",

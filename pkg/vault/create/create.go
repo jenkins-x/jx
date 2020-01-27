@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
-
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
 	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
@@ -117,16 +116,45 @@ func (p *VaultCreationParam) validate() error {
 		}
 	}
 
+	if p.KubeProvider == cloud.AWS {
+		if p.AWS == nil {
+			validationErrors = append(validationErrors, errors.Errorf("%s selected as kube provider, but no %s specific parameters provided", cloud.AWS, cloud.AWS))
+		}
+		if err := p.AWS.validate(); err != nil {
+			validationErrors = append(validationErrors, err)
+		}
+	}
+
 	return util.CombineErrors(validationErrors...)
 }
 
 func (p *GKEParam) validate() error {
 	var validationErrors []error
+	if p == nil {
+		return nil
+	}
 	if p.ProjectID == "" {
 		validationErrors = append(validationErrors, errors.New("the GKE project ID needs to be provided"))
 	}
 	if p.Zone == "" {
 		validationErrors = append(validationErrors, errors.New("the GKE zone needs to be provided"))
+	}
+	return util.CombineErrors(validationErrors...)
+}
+
+func (p *AWSParam) validate() error {
+	var validationErrors []error
+	if p == nil {
+		return nil
+	}
+	if p.TemplatesDir == "" {
+		validationErrors = append(validationErrors, errors.New("the cloud formation template dir needs to be provided"))
+	}
+	if p.AccessKeyID == "" {
+		validationErrors = append(validationErrors, errors.New("the AccessKeyID needs to be provided"))
+	}
+	if p.SecretAccessKey == "" {
+		validationErrors = append(validationErrors, errors.New("the SecretAccessKey needs to be provided"))
 	}
 	return util.CombineErrors(validationErrors...)
 }

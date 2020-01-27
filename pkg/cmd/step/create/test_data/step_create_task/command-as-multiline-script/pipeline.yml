@@ -18,7 +18,7 @@ spec:
     name: version
     type: string
   resources:
-  - name: abayer-js-test-repo-really-long
+  - name: abayer-js-test-repo-really-long-vt9mj
     type: git
   tasks:
   - name: build-a-really-long-stage-name-please-but-not-too-long-thanks
@@ -28,10 +28,10 @@ spec:
     resources:
       inputs:
       - name: workspace
-        resource: abayer-js-test-repo-really-long
+        resource: abayer-js-test-repo-really-long-vt9mj
       outputs:
       - name: workspace
-        resource: abayer-js-test-repo-really-long
+        resource: abayer-js-test-repo-really-long-vt9mj
     retries: 5
     taskRef:
       name: abayer-js-test-repo-really-long-vt9mj-build-a-really-long-sta-1
@@ -44,7 +44,7 @@ spec:
       - from:
         - build-a-really-long-stage-name-please-but-not-too-long-thanks
         name: workspace
-        resource: abayer-js-test-repo-really-long
+        resource: abayer-js-test-repo-really-long-vt9mj
     runAfter:
     - build-a-really-long-stage-name-please-but-not-too-long-thanks
     taskRef:

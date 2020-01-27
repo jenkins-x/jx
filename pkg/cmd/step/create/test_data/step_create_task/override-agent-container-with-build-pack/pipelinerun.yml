@@ -18,10 +18,10 @@ spec:
     name: abayer-js-test-repo-override-de-vr6ds-1
   podTemplate: {}
   resources:
-  - name: abayer-js-test-repo-override-de
+  - name: abayer-js-test-repo-override-de-vr6ds
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
-      name: abayer-js-test-repo-override-de
+      name: abayer-js-test-repo-override-de-vr6ds
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}

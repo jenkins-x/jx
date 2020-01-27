@@ -32,6 +32,10 @@ func (g *GitLocal) FindGitConfigDir(dir string) (string, string, error) {
 	return g.GitCLI.FindGitConfigDir(dir)
 }
 
+func (g *GitLocal) Config(dir string, args ...string) error {
+	return g.GitCLI.Config(dir, args...)
+}
+
 // Clone clones the given git URL into the given directory
 // Faked out
 func (g *GitLocal) Clone(url string, dir string) error {
@@ -533,4 +537,14 @@ func (g *GitLocal) Describe(dir string, contains bool, commitish string, abbrev 
 // IsAncestor checks if the possible ancestor commit-ish is an ancestor of the given commit-ish.
 func (g *GitLocal) IsAncestor(dir string, possibleAncestor string, commitish string) (bool, error) {
 	return g.GitCLI.IsAncestor(dir, possibleAncestor, commitish)
+}
+
+// WriteRepoAttributes writes the given content to .git/info/attributes
+func (g *GitLocal) WriteRepoAttributes(dir string, content string) error {
+	return g.GitCLI.WriteRepoAttributes(dir, content)
+}
+
+// ReadRepoAttributes reads the existing content, if any, in .git/info/attributes
+func (g *GitLocal) ReadRepoAttributes(dir string) (string, error) {
+	return g.GitCLI.ReadRepoAttributes(dir)
 }

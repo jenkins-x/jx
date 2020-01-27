@@ -38,9 +38,24 @@ type GitCLI struct {
 
 // NewGitCLI creates a new GitCLI instance
 func NewGitCLI() *GitCLI {
-	return &GitCLI{
+	cli := &GitCLI{
 		Env: map[string]string{},
 	}
+	// Ensure that error output is in English so parsing work
+	cli.Env["LC_ALL"] = "C"
+	// When jx is called as credential helper we want to make sure that potential debug trace is not interfering with the process
+	cli.Env["JX_LOG_LEVEL"] = "error"
+	return cli
+}
+
+// Config runs a 'git config' command in the specified directory
+func (g *GitCLI) Config(dir string, args ...string) error {
+	if args == nil {
+		args = []string{"config"}
+	} else {
+		args = append([]string{"config"}, args...)
+	}
+	return g.gitCmd(dir, args...)
 }
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -550,8 +565,7 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Args: args,
 		Env:  g.Env,
 	}
-	// Ensure that error output is in English so parsing work
-	cmd.Env = map[string]string{"LC_ALL": "C"}
+	log.Logger().Debug(cmd.String())
 	output, err := cmd.RunWithoutRetry()
 	return errors.Wrapf(err, "git output: %s", output)
 }
@@ -561,9 +575,9 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 		Dir:  dir,
 		Name: "git",
 		Args: args,
+		Env:  g.Env,
 	}
-	// Ensure that error output is in English so parsing work
-	cmd.Env = map[string]string{"LC_ALL": "C"}
+	log.Logger().Debug(cmd.String())
 	return cmd.RunWithoutRetry()
 }
 
@@ -1248,4 +1262,33 @@ func (g *GitCLI) IsAncestor(dir string, possibleAncestor string, commitish strin
 	}
 	// Default case is that this is an ancestor, since there's no error from the merge-base call.
 	return true, nil
+}
+
+// WriteRepoAttributes writes the given content to .git/info/attributes
+func (g *GitCLI) WriteRepoAttributes(dir string, content string) error {
+	// Read the existing .git/info/attributes if it exists
+	gitAttrFile := filepath.Join(dir, ".git", "info", "attributes")
+
+	err := ioutil.WriteFile(gitAttrFile, []byte(content), util.DefaultFileWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "writing new repo-local git attributes to %s", gitAttrFile)
+	}
+	return nil
+}
+
+// ReadRepoAttributes reads the existing content, if any, in .git/info/attributes
+func (g *GitCLI) ReadRepoAttributes(dir string) (string, error) {
+	gitAttrFile := filepath.Join(dir, ".git", "info", "attributes")
+	gaExists, err := util.FileExists(gitAttrFile)
+	if err != nil {
+		return "", errors.Wrapf(err, "checking if repo-local git attributes file %s exists", gitAttrFile)
+	}
+	if gaExists {
+		gaBytes, err := ioutil.ReadFile(gitAttrFile)
+		if err != nil {
+			return "", errors.Wrapf(err, "reading existing repo-local git attributes from %s", gitAttrFile)
+		}
+		return string(gaBytes), nil
+	}
+	return "", nil
 }

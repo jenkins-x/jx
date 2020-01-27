@@ -882,6 +882,10 @@ func NewFakeRepository(owner string, repoName string, addFiles func(dir string) 
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
+		err = gitter.SetRemoteURL(cloneDir, "origin", repo.GitRepo.CloneURL)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
 		err = addFiles(cloneDir)
 		if err != nil {
 			return nil, errors.Wrapf(err, "adding files to %s", dir)
@@ -892,6 +896,7 @@ func NewFakeRepository(owner string, repoName string, addFiles func(dir string) 
 		}
 
 		err = gitter.CommitDir(cloneDir, "Initial Commit")
+
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
