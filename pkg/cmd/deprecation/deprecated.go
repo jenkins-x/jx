@@ -12,7 +12,7 @@ import (
 var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	"install": {
 		replacement: "jx boot",
-		date:        "Feb 1 2020",
+		date:        "Jun 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
@@ -87,10 +87,10 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
 	},
 	"create spring": {
-		replacement: "jx create quickstart",
+		replacement: "jx create project",
 		date:        "Feb 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
-			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
+			util.ColorStatus("https://jenkins-x.io/commands/jx_create_project/")),
 	},
 	"create addon knative-build": {
 		date: "Feb 1 2020",
