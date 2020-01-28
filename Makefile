@@ -61,7 +61,7 @@ BUILDFLAGS :=  -ldflags \
 		$(BUILD_TIME_CONFIG_FLAGS)"
 
 # Some tests expect default values for version.*, so just use the config package values there.
-TEST_BUILDFLAGS :=  -ldflags " $(BUILD_TIME_CONFIG_FLAGS)"
+TEST_BUILDFLAGS :=  -ldflags "$(BUILD_TIME_CONFIG_FLAGS)"
 
 ifdef DEBUG
 BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
@@ -134,29 +134,23 @@ tidy-deps: ## Cleans up dependencies
 make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
-test: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
+test: make-reports-dir ## Run tests with the "unit" build tag
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) --tags=unit -failfast -short ./... $(TEST_BUILDFLAGS)
+
+test-coverage : make-reports-dir ## Run tests and coverage for all tests with the "unit" build tag
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) --tags=unit $(COVERFLAGS) -failfast -short ./... $(TEST_BUILDFLAGS)
 
-test-cloud-gke: make-reports-dir ## Run ONLY the tests that have no build flags (and example of a build tag is the "integration" build tag)
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./pkg/cloud/gke -failfast -short ./pkg/cloud/gke $(TEST_BUILDFLAGS)
-
-test-report: make-reports-dir get-test-deps test ## Create the test report
+test-report: make-reports-dir get-test-deps test-coverage ## Create the test report
 	@gocov convert $(COVER_OUT) | gocov report
 
-test-report-html: make-reports-dir get-test-deps test ## Create the test report in HTML format
+test-report-html: make-reports-dir get-test-deps test-coverage ## Create the test report in HTML format
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-verbose: make-reports-dir ## Run the unit tests in verbose mode
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -v $(COVERFLAGS) -failfast ./... $(TEST_BUILDFLAGS)
 
-test-slow-report: get-test-deps test-slow make-reports-dir
-	@gocov convert $(COVER_OUT) | gocov report
-
 test-slow: make-reports-dir ## Run unit tests sequentially
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(COVERFLAGS) ./... $(TEST_BUILDFLAGS)
-
-test-slow-report-html: make-reports-dir get-test-deps test-slow
-	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-integration: get-test-deps## Run the integration tests
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration  -short ./... $(TEST_BUILDFLAGS)
@@ -184,9 +178,6 @@ test-slow-integration-report: make-reports-dir get-test-deps test-slow-integrati
 
 test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-integration
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
-
-test-soak: make-reports-dir get-test-deps
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags soak $(COVERFLAGS) ./... $(TEST_BUILDFLAGS)
 
 test1: get-test-deps make-reports-dir ## Runs single test specified by test name, eg 'make test1 TEST=TestFoo'
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) ./... $(TEST_BUILDFLAGS) -test.v -run $(TEST)
