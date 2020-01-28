@@ -35,6 +35,7 @@ type BehaviorOptions struct {
 	Branch            string
 	NoImport          bool
 	CredentialsSecret string
+	GitOrganisation   string
 }
 
 var (
@@ -72,6 +73,8 @@ func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "master", "The git branch to use to run the BDD tests")
 	cmd.Flags().BoolVarP(&options.NoImport, "no-import", "", false, "Create the pipeline directly, don't import the repository")
 	cmd.Flags().StringVarP(&options.CredentialsSecret, "credentials-secret", "", "", "The name of the secret to generate the bdd credentials from, if not specified, the default git auth will be used")
+	cmd.Flags().StringVarP(&options.GitOrganisation, "git-organisation", "", "", "Override the git org for the tests rather than reading from teamSettings")
+
 	return cmd
 }
 
@@ -83,7 +86,16 @@ func (o *BehaviorOptions) Run() error {
 	}
 
 	if o.NoImport {
-		return o.runPipelineDirectly("jenkins-x", "bdd-jx", o.SourceGitURL)
+		owner := "jenkins-x"
+		repo := "bdd-jx"
+		err = o.runPipelineDirectly(owner, repo, o.SourceGitURL)
+		if err != nil {
+			return errors.Wrapf(err, "unable to run job directly %s/%s", owner, repo)
+		}
+		// let sleep a little bit to give things a head start
+		time.Sleep(time.Second * 3)
+
+		return o.followLogs(owner, repo)
 	}
 
 	list, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{})
@@ -127,6 +139,10 @@ func (o *BehaviorOptions) Run() error {
 	// let sleep a little bit to give things a head start
 	time.Sleep(time.Second * 3)
 
+	return o.followLogs(owner, repo)
+}
+
+func (o *BehaviorOptions) followLogs(owner string, repo string) error {
 	commonOptions := *o.CommonOptions
 	commonOptions.BatchMode = true
 	lo := &get.GetBuildLogsOptions{
@@ -220,6 +236,10 @@ func (o *BehaviorOptions) runPipelineDirectly(owner string, repo string, sourceU
 	envVars := map[string]string{}
 	if o.CredentialsSecret != "" {
 		envVars["JX_CREDENTIALS_FROM_SECRET"] = o.CredentialsSecret
+	}
+
+	if o.GitOrganisation != "" {
+		envVars["GIT_ORGANISATION"] = o.GitOrganisation
 	}
 
 	pipelineCreateParam := metapipeline.PipelineCreateParam{

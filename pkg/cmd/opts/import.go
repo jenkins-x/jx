@@ -42,7 +42,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 
 	credentials, err = o.updateJenkinsCredentials(credentials, jc, gitProvider)
 	if err != nil {
-		return errors.Wrapf(err, "updating credentils %q in Jenkins", credentials)
+		return errors.Wrapf(err, "updating credentials %q in Jenkins", credentials)
 	}
 
 	if err := o.createJenkinsJob(jc, gitInfo.Organisation); err != nil {
