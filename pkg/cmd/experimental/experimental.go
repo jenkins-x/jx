@@ -10,7 +10,7 @@ import (
 
 // alphaCommands list of deprecated commands along with some more deprecation details
 var alphaCommands = map[string]info{
-	"create helmfile": {
+	"step create helmfile": {
 		info:        "** EXPERIMENTAL COMMAND ** Generates a helmfile from a jx-apps.yml see enhancement https://github.com/jenkins-x/enhancements/pull/1",
 		createdDate: "Jan 28 2020",
 	},
