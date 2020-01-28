@@ -28,14 +28,10 @@ const (
 
 var (
 	createHelmfileLong = templates.LongDesc(`
-		** EXPERIMENTAL COMMAND **
-
 		Creates a new helmfile.yaml from a jx-apps.yaml
 `)
 
 	createHelmfileExample = templates.Examples(`
-		** EXPERIMENTAL COMMAND **
-
 		# Create a new helmfile.yaml from a jx-apps.yaml
 		jx create helmfile
 	`)
