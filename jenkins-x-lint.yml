@@ -34,14 +34,18 @@ pipelineConfig:
                 image: golang:1.12.10
                 command: ./hack/linter.sh
                 dir: /workspace/source
+              - name: ensure-test-classification
+                image: bash
+                command: ./hack/ensure-test-classification.sh
+                dir: /workspace/source
               - name: mk-jx-project-dir	
-                image: busybox	
+                image: bash
                 command: mkdir	
                 args:	
                   - -p	
                   - /workspace/go/src/github.com/jenkins-x/jx
               - name: copy-jx-project-to-gopath
-                image: busybox	
+                image: bash
                 command: cp	
                 args:	
                   - -Rv	
