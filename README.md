@@ -16,6 +16,28 @@ JX is a command line tool for installing and using [Jenkins X](https://jenkins-x
 
 Check out [how to install jx](https://jenkins-x.io/docs/getting-started/setup/install/).
 
+## Getting Started
+
+Please check out the [Getting Started Guide](https://jenkins-x.io/docs/getting-started/) on how to:
+
+* [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/docs/getting-started/setup/create-cluster/)
+* [install Jenkins X on existing Kubernetes clusters](https://jenkins-x.io/docs/managing-jx/old/install-on-cluster/)
+
+Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/getting-started/next/).
+
+## Welcome to the Jenkins X Community
+
+We value respect and inclusiveness and follow the [CDF Code of Conduct](https://github.com/cdfoundation/toc/blob/master/CODE_OF_CONDUCT.md) in all interactions.
+
+We’d love to talk with you about Jenkins X and are happy to help if you have any questions.
+
+Talk to us on our slack channels, which are part of the Kubernetes slack. Join Kubernetes slack [here](https://slack.k8s.io/) and find us on our channels:
+
+[#jenkins-x-user](https://app.slack.com/client/T09NY5SBT/C9MBGQJRH) for users of Jenkins X
+[#jenkins-x-dev](https://app.slack.com/client/T09NY5SBT/C9LTHT2BB) for developers of Jenkins X
+
+Find out more about our bi-weekly office hours, where we discuss all things Jenkins X, and other events [here](https://jenkins-x.io/community/).
+
 ## Getting Help
 
 To find out the available commands type:
@@ -28,15 +50,6 @@ Or to get help on a specific command, say, `create` then type:
 
 You can also browse the [jx command reference documentation](https://jenkins-x.io/commands/jx/).
 
-## Getting Started
-
-Please check out the [Getting Started Guide](https://jenkins-x.io/docs/getting-started/) on how to:
-
-* [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/docs/getting-started/setup/create-cluster/)
-* [install Jenkins X on existing Kubernetes clusters](https://jenkins-x.io/docs/managing-jx/old/install-on-cluster/)
-
-Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/getting-started/next/).
-    
 ## Reference
 
 * [Command Line Reference](https://jenkins-x.io/commands/jx/#jx)
@@ -325,8 +338,9 @@ Please [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we c
 	
 ## Contributing
 
-If you're looking to build from source or get started hacking on jx, please see the
-[hacking guide][hacking] for more information.
+We welcome your contributions.
+
+If you're looking to build from source or get started hacking on jx, please see the [Contributing Guide](https://jenkins-x.io/docs/contributing/code/) on the Jenkins X website.
 
 
 [![](https://codescene.io/projects/4772/status.svg) Get more details at **codescene.io**.](https://codescene.io/projects/4772/jobs/latest-successful/results)
