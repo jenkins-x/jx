@@ -53,9 +53,6 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	"create post": {
 		date: "Feb 1 2020",
 	},
-	"create step": {
-		date: "Feb 1 2020",
-	},
 	"create archetype": {
 		replacement: "jx create quickstart",
 		date:        "Feb 1 2020",
