@@ -12,13 +12,11 @@ import (
 
 	"github.com/vrischmann/envconfig"
 
-	"github.com/imdario/mergo"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/features"
-
 	"github.com/ghodss/yaml"
+	"github.com/imdario/mergo"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 
@@ -477,6 +475,9 @@ type RequirementsConfig struct {
 	// GitOps if enabled we will setup a webhook in the boot configuration git repository so that we can
 	// re-run 'jx boot' when changes merge to the master branch
 	GitOps bool `json:"gitops,omitempty"`
+	// Indicates if we are using helmfile and helm 3 to spin up environments. This is currently an experimental
+	// feature flag used to implement better Multi-Cluster support. See https://github.com/jenkins-x/jx/issues/6442
+	Helmfile bool `json:"helmfile,omitempty"`
 	// Kaniko whether to enable kaniko for building docker images
 	Kaniko bool `json:"kaniko,omitempty"`
 	// Ingress contains ingress specific requirements
@@ -648,7 +649,7 @@ func (c *RequirementsConfig) SaveConfig(fileName string) error {
 		return errors.Wrapf(err, "failed to save file %s", fileName)
 	}
 
-	if features.IsHelmfile() {
+	if c.Helmfile {
 		y := RequirementsValues{
 			RequirementsConfig: c,
 		}

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
-	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"sigs.k8s.io/yaml"
 
@@ -186,7 +185,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 	log.Logger().Info("\n")
-	if !o.DisableVerifyHelm && !features.IsHelmfile() {
+	if !o.DisableVerifyHelm && !requirements.Helmfile {
 		err = o.verifyHelm(ns)
 		if err != nil {
 			return err
@@ -1003,7 +1002,7 @@ func (o *StepVerifyPreInstallOptions) SaveConfig(c *config.RequirementsConfig, f
 		return errors.Wrapf(err, "failed to save file %s", fileName)
 	}
 
-	if features.IsHelmfile() {
+	if c.Helmfile {
 		y := config.RequirementsValues{
 			RequirementsConfig: c,
 		}
