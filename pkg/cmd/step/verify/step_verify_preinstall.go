@@ -96,6 +96,11 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	err = o.ConfigureCommonOptions(requirements)
+	if err != nil {
+		return err
+	}
+
 	requirements, err = o.gatherRequirements(requirements, requirementsFileName)
 	if err != nil {
 		return err

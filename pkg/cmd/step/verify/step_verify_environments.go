@@ -339,7 +339,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	}
 
 	if name == kube.LabelValueDevEnvironment || environment.Spec.Kind == v1.EnvironmentKindTypeDevelopment {
-		if o.IsJXBoot() && requirements.GitOps {
+		if o.IsJXBoot() && requirements.GitOps && os.Getenv(boot.DisablePushUpdatesToDevEnvironment) != "true" {
 			provider, err := envGitInfo.CreateProviderForUser(server, userAuth, gitKind, gitter)
 			if err != nil {
 				return errors.Wrap(err, "unable to create git provider")
