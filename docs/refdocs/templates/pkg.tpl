@@ -4,6 +4,7 @@
 ---
 title: API Documentation
 linktitle: API Documentation
+description: Reference of the Jenkins X REST APIs and custom resources
 weight: 10
 ---
 
