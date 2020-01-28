@@ -85,8 +85,11 @@ var (
 
 	CreateClusterExample = templates.Examples(`
 
-		jx create cluster minikube
+		# create a cluster on Google Cloud
+		jx create cluster gke --skip-installation
 
+		# create a cluster on AWS via EKS
+		jx create cluster eks --skip-installation
 `)
 )
 
