@@ -36,6 +36,7 @@ type BehaviorOptions struct {
 	NoImport          bool
 	CredentialsSecret string
 	GitOrganisation   string
+	UseGoProxy        bool
 }
 
 var (
@@ -74,6 +75,7 @@ func NewCmdStepVerifyBehavior(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoImport, "no-import", "", false, "Create the pipeline directly, don't import the repository")
 	cmd.Flags().StringVarP(&options.CredentialsSecret, "credentials-secret", "", "", "The name of the secret to generate the bdd credentials from, if not specified, the default git auth will be used")
 	cmd.Flags().StringVarP(&options.GitOrganisation, "git-organisation", "", "", "Override the git org for the tests rather than reading from teamSettings")
+	cmd.Flags().BoolVarP(&options.UseGoProxy, "use-go-proxy", "", false, "Enable the GoProxy for the bdd tests")
 
 	return cmd
 }
@@ -240,6 +242,10 @@ func (o *BehaviorOptions) runPipelineDirectly(owner string, repo string, sourceU
 
 	if o.GitOrganisation != "" {
 		envVars["GIT_ORGANISATION"] = o.GitOrganisation
+	}
+
+	if o.UseGoProxy {
+		envVars["GOPROXY"] = "https://proxy.golang.org"
 	}
 
 	pipelineCreateParam := metapipeline.PipelineCreateParam{
