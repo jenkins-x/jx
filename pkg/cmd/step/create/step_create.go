@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/cmd/step/create/helmfile"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +28,7 @@ func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdStepCreateDevPodWorkpace(commonOpts))
+	cmd.AddCommand(helmfile.NewCmdCreateHelmfile(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateJenkinsConfig(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateTask(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateInstallValues(commonOpts))
