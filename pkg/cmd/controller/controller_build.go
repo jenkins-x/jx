@@ -293,7 +293,8 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 					log.Logger().Warnf("Error getting PodList for PipelineRun %s: %s", prName, err)
 					return
 				}
-				structure, err := jxClient.JenkinsV1().PipelineStructures(ns).Get(prName, metav1.GetOptions{})
+
+				structure, err := tekton.StructureForPipelineRun(jxClient, ns, pr)
 				if err != nil {
 					log.Logger().Warnf("Error getting PipelineStructure for PipelineRun %s: %s", prName, err)
 					return

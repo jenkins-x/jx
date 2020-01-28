@@ -2,9 +2,12 @@ package tekton_test
 
 import (
 	"path"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -14,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -213,4 +217,79 @@ func TestGenerateNextBuildNumber(t *testing.T) {
 			assert.Equal(t, tt.expectedBuildNumber, nextBuildNumber)
 		})
 	}
+}
+
+func TestStructureForPipelineRun(t *testing.T) {
+	pipelineName := "some-pipeline-1"
+	unrelatedSuffix := "-not-related"
+
+	existingStructure := &v1.PipelineStructure{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: pipelineName,
+			Namespace: ns,
+		},
+	}
+
+	originalRun := &v1alpha1.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pipelineName,
+			Namespace: ns,
+			Labels: map[string]string{
+				pipeline.GroupName+pipeline.PipelineLabelKey: pipelineName,
+			},
+		},
+		Spec: v1alpha1.PipelineRunSpec{
+			PipelineRef: v1alpha1.PipelineRef{
+				Name: pipelineName,
+			},
+		},
+	}
+
+	secondRun := &v1alpha1.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pipelineName+"-a1b2c",
+			Namespace: ns,
+			Labels: map[string]string{
+				pipeline.GroupName+pipeline.PipelineLabelKey: pipelineName,
+			},
+		},
+		Spec: v1alpha1.PipelineRunSpec{
+			PipelineRef: v1alpha1.PipelineRef{
+				Name: pipelineName,
+			},
+		},
+	}
+
+	unrelatedRun := &v1alpha1.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pipelineName+unrelatedSuffix,
+			Namespace: ns,
+			Labels: map[string]string{
+				pipeline.GroupName+pipeline.PipelineLabelKey: pipelineName+unrelatedSuffix,
+			},
+		},
+		Spec: v1alpha1.PipelineRunSpec{
+			PipelineRef: v1alpha1.PipelineRef{
+				Name: pipelineName+unrelatedSuffix,
+			},
+		},
+	}
+
+	jxClient := jxfake.NewSimpleClientset(existingStructure)
+
+	forOriginal, err := tekton.StructureForPipelineRun(jxClient, ns, originalRun)
+	assert.NoError(t, err)
+	if d := cmp.Diff(existingStructure, forOriginal); d != "" {
+		t.Errorf("Generated PipelineStructure for original PipelineRun did not match expected: %s", d)
+	}
+
+	forSecondRun, err := tekton.StructureForPipelineRun(jxClient, ns, secondRun)
+	assert.NoError(t, err)
+	if d := cmp.Diff(existingStructure, forSecondRun); d != "" {
+		t.Errorf("Generated PipelineStructure for second run PipelineRun did not match expected: %s", d)
+	}
+
+	_, err = tekton.StructureForPipelineRun(jxClient, ns, unrelatedRun)
+	assert.NotNil(t, err)
+	assert.True(t, strings.Contains(err.Error(),"pipelinestructures.jenkins.io \""+pipelineName+unrelatedSuffix+"\" not found"))
 }
