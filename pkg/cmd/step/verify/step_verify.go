@@ -33,6 +33,7 @@ func NewCmdStepVerify(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepVerifyDependencies(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyEnvironments(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyGit(commonOpts))
+	cmd.AddCommand(NewCmdStepVerifyIngress(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyInstall(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyPackages(commonOpts))
 	cmd.AddCommand(NewCmdStepVerifyPod(commonOpts))

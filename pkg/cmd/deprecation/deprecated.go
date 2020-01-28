@@ -174,6 +174,11 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	"step create jenkins": {
 		date: "Feb 1 2020",
 	},
+	"step create install values": {
+		replacement: "jx step verify ingress",
+		date:        "June 1 2020",
+		info:        "the command stays, its just been renamed to be with the other 'jx step verify ...' commands to improve the UX",
+	},
 	"step post": {
 		date: "Feb 1 2020",
 	},
