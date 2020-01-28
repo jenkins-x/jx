@@ -30,6 +30,7 @@ date: %s
 title: "%s"
 slug: %s
 url: %s
+description: %s
 ---
 `
 )
@@ -99,7 +100,7 @@ func (o *CreateDocsOptions) Run(jxCommand *cobra.Command) error {
 		name := filepath.Base(filename)
 		base := strings.TrimSuffix(name, path.Ext(name))
 		url := "/commands/" + strings.ToLower(base) + "/"
-		return fmt.Sprintf(gendocFrontmatterTemplate, now, strings.Replace(base, "_", " ", -1), base, url)
+		return fmt.Sprintf(gendocFrontmatterTemplate, now, strings.Replace(base, "_", " ", -1), base, url, "list of jx commands")
 	}
 	linkHandler := func(name string) string {
 		base := strings.TrimSuffix(name, path.Ext(name))
@@ -121,7 +122,7 @@ func (o *CreateDocsOptions) genMarkdownDeprecation(cmd *cobra.Command, dir strin
 	defer f.Close()
 
 	header := fmt.Sprintf(gendocFrontmatterTemplate, date, "deprecated commands",
-		basename, "/commands/"+strings.ToLower(basename)+"/")
+		basename, "/commands/"+strings.ToLower(basename)+"/", "list of jx commands which have been deprecated")
 
 	if _, err := io.WriteString(f, header); err != nil {
 		return err
