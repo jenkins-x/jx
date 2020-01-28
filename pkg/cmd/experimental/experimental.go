@@ -1,6 +1,7 @@
 package experimental
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -30,7 +31,7 @@ type info struct {
 func AlphaCommands(cmd *cobra.Command) {
 	path := commandPath(cmd)
 	if alpha, ok := alphaCommands[path]; ok {
-		msg := "Alpha command, expect this to change or be removed"
+		msg := fmt.Sprintf("Alpha command, expect this to change or be removed, created: %s", alpha.createdDate)
 		cmd.Short = util.ColorWarning(msg)
 
 		cmd.Long = util.ColorWarning(msg + "\n" + alpha.info)
@@ -48,8 +49,9 @@ func AlphaCommands(cmd *cobra.Command) {
 func BetaCommands(cmd *cobra.Command) {
 	path := commandPath(cmd)
 	if beta, ok := betaCommands[path]; ok {
-		cmd.Short = "Beta command, still experimental but maturing towards being GA"
-		cmd.Long = beta.info
+		msg := fmt.Sprintf("Beta command, still experimental but maturing towards being GA, created: %s", beta.createdDate)
+		cmd.Short = util.ColorWarning(msg)
+		cmd.Long = util.ColorWarning(msg + "\n" + beta.info)
 	}
 	if !cmd.HasSubCommands() {
 		return
