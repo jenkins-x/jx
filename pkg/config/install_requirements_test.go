@@ -102,6 +102,7 @@ func TestRequirementsConfigMarshalExistingFileKanikoFalse(t *testing.T) {
 
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
+	t.Logf("saved file %s", file)
 
 	requirements, fileName, err := config.LoadRequirementsConfig(dir)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", dir)
@@ -353,7 +354,7 @@ func TestHelmfileRequirementValues(t *testing.T) {
 	valuesFileExists, err := util.FileExists(valuesFile)
 	assert.False(t, valuesFileExists, "file %s should not exist", valuesFile)
 
-	os.Setenv("JX_HELMFILE", "true")
+	requirements.Helmfile = true
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
 	assert.FileExists(t, file)
