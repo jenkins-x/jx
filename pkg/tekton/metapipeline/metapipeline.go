@@ -35,6 +35,9 @@ const (
 	createTektonCRDsStepName = "create-tekton-crds"
 
 	tektonBaseDir = "/workspace"
+
+	mavenSettingsSecretName = "jenkins-maven-settings" // #nosec
+	mavenSettingsMount      = "/root/.m2/"
 )
 
 // CRDCreationParameters are the parameters needed to create the Tekton CRDs
@@ -133,6 +136,14 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 		},
 		Options: &syntax.StageOptions{
 			RootOptions: &syntax.RootOptions{
+				Volumes: []*corev1.Volume{{
+					Name: mavenSettingsSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: mavenSettingsSecretName,
+						},
+					},
+				}},
 				ContainerOptions: &corev1.Container{
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
@@ -144,6 +155,10 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 							"memory": resource.MustParse("256Mi"),
 						},
 					},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      mavenSettingsSecretName,
+						MountPath: mavenSettingsMount,
+					}},
 				},
 			},
 		},
