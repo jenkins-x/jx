@@ -6,15 +6,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
 
 const (
 	// ApplicationsConfigFileName is the name of the applications configuration file
 	ApplicationsConfigFileName = "jx-apps.yml"
+	// PhaseSystem is installed before the apps phase
+	PhaseSystem Phase = "system"
+	// PhaseApps is installed after the system phase
+	PhaseApps Phase = "apps"
 )
+
+// PhaseValues the string values for Phases
+var PhaseValues = []string{"system", "apps"}
 
 // ApplicationConfig contains applications to install during boot
 type ApplicationConfig struct {
@@ -31,8 +38,13 @@ type Application struct {
 	// Repository the helm repository
 	Repository string `json:"repository"`
 	// Namespace to install the application into
-	Namespace string `json:"namespace"`
+	Namespace string `json:"namespace,omitempty"`
+	// Phase of the pipeline to install application
+	Phase Phase `json:"phase,omitempty"`
 }
+
+// Phase of the pipeline to install application
+type Phase string
 
 // LoadApplicationsConfig loads the boot applications configuration file
 // if there is not a file called `jx-apps.yml` in the given dir we will scan up the parent
@@ -64,6 +76,16 @@ func LoadApplicationsConfig(dir string) (*ApplicationConfig, error) {
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
 		return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
+	}
+
+	// validate all phases are known types, default to apps if not specified
+	for _, app := range config.Applications {
+		if app.Phase != "" {
+			if app.Phase != PhaseSystem && app.Phase != PhaseApps {
+				return config, fmt.Errorf("failed to validate YAML file, invalid phase '%s', needed on of %v",
+					string(app.Phase), PhaseValues)
+			}
+		}
 	}
 
 	return config, err

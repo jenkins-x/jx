@@ -2,4 +2,6 @@ defaultNamespace: jx
 applications:
 - name: velero
   repository: https://kubernetes-charts.storage.googleapis.com
-  namespace: jx
+- name: cert-manager
+  repository: https://charts.jetstack.io
+  phase: system
