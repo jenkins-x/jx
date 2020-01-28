@@ -33,8 +33,9 @@ We’d love to talk with you about Jenkins X and are happy to help if you have a
 
 Talk to us on our slack channels, which are part of the Kubernetes slack. Join Kubernetes slack [here](https://slack.k8s.io/) and find us on our channels:
 
-[#jenkins-x-user](https://app.slack.com/client/T09NY5SBT/C9MBGQJRH) for users of Jenkins X
-[#jenkins-x-dev](https://app.slack.com/client/T09NY5SBT/C9LTHT2BB) for developers of Jenkins X
+* [#jenkins-x-user](https://app.slack.com/client/T09NY5SBT/C9MBGQJRH) for users of Jenkins X
+
+* [#jenkins-x-dev](https://app.slack.com/client/T09NY5SBT/C9LTHT2BB) for developers of Jenkins X
 
 Find out more about our bi-weekly office hours, where we discuss all things Jenkins X, and other events [here](https://jenkins-x.io/community/).
 
@@ -340,13 +341,11 @@ Please [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we c
 
 We welcome your contributions.
 
-If you're looking to build from source or get started hacking on jx, please see the [Contributing Guide](https://jenkins-x.io/docs/contributing/code/) on the Jenkins X website.
+If you're looking to build from source or get started hacking on jx, please see the [CONTRIBUTING.MD](CONTRIBUTING.MD) or our [Contributing Guide](https://jenkins-x.io/docs/contributing/code/) on the Jenkins X website.
 
 
 [![](https://codescene.io/projects/4772/status.svg) Get more details at **codescene.io**.](https://codescene.io/projects/4772/jobs/latest-successful/results)
 
 
-
-[hacking]: docs/contributing/hacking.md
 
 [experiments]: docs/contributing/experiments.md
