@@ -50,7 +50,7 @@ type BootOptions struct {
 
 	AttemptRestore bool
 
-	// UpgradeGit if we want to automaticalaly upgrade this boot clone if there have been changes since the current clone
+	// UpgradeGit if we want to automatically upgrade this boot clone if there have been changes since the current clone
 	NoUpgradeGit bool
 }
 
@@ -160,6 +160,11 @@ func (o *BootOptions) Run() error {
 
 	requirements, _, _ := config.LoadRequirementsConfig(o.Dir)
 
+	err = o.ConfigureCommonOptions(requirements)
+	if err != nil {
+		return err
+	}
+
 	// lets report errors parsing this file after the check we are outside of a git clone
 	o.defaultVersionStream(requirements)
 
@@ -167,7 +172,9 @@ func (o *BootOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "there was a problem creating a version resolver from versions stream repository %s and ref %s", requirements.VersionStream.URL, requirements.VersionStream.Ref)
 	}
-	if o.GitRef == "" {
+
+	// lets avoid trying to reset the current git clone to master if using NoUpgradeGit
+	if o.GitRef == "" && !o.NoUpgradeGit {
 		gitRef, err = o.determineGitRef(resolver, requirements, gitURL)
 		if err != nil {
 			return errors.Wrapf(err, "failed to determine git ref")
@@ -312,6 +319,9 @@ func (o *BootOptions) Run() error {
 		boot.ConfigBaseRefEnvVarName:       gitRef,
 		boot.VersionsRepoURLEnvVarName:     requirements.VersionStream.URL,
 		boot.VersionsRepoBaseRefEnvVarName: requirements.VersionStream.Ref,
+	}
+	if o.NoUpgradeGit {
+		so.AdditionalEnvVars[boot.DisablePushUpdatesToDevEnvironment] = "true"
 	}
 	if requirements.Cluster.HelmMajorVersion == "3" {
 		so.AdditionalEnvVars["JX_HELM3"] = "true"

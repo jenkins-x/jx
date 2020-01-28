@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"reflect"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -109,7 +110,7 @@ func (o *CommonOptions) ModifyEnvironment(name string, callback func(env *v1.Env
 	return o.ModifyEnvironmentFn(name, callback)
 }
 
-// defaultModifyDevEnvironment default implementation of modifying the Development environment settings
+// DefaultModifyDevEnvironment default implementation of modifying the Development environment settings
 func (o *CommonOptions) DefaultModifyDevEnvironment(callback func(env *v1.Environment) error) error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
@@ -146,6 +147,29 @@ func (o *CommonOptions) DefaultModifyDevEnvironment(callback func(env *v1.Enviro
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
 	return environments.ModifyDevEnvironmentWithNs(jxClient, ns, callback)
+}
+
+// HelmfileModifyDevEnvironment default implementation of modifying the Development environment settings without
+// eagerly populating kubernetes which we do via helmfile/helm
+func (o *CommonOptions) HelmfileModifyDevEnvironment(callback func(env *v1.Environment) error) error {
+	_, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the jx client")
+	}
+	env := kube.CreateDefaultDevEnvironment(ns)
+	env.Spec.TeamSettings.HelmBinary = "helm"
+	env.Spec.TeamSettings.HelmTemplate = false
+	env.Spec.TeamSettings.NoTiller = true
+	return callback(env)
+}
+
+// ConfigureCommonOptions lets us configure the common options based on the requirements
+func (o *CommonOptions) ConfigureCommonOptions(requirements *config.RequirementsConfig) error {
+	if requirements.Helmfile {
+		// if using helmfile lets disable eagerly creating the dev Environment and instead lets create that via helm
+		o.ModifyDevEnvironmentFn = o.HelmfileModifyDevEnvironment
+	}
+	return nil
 }
 
 // defaultModifyEnvironment default implementation of modifying an environment
