@@ -46,7 +46,7 @@ func NewCmdUpgradeCLI(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "cli",
-		Short:   "Upgrades the jx command line application if there are is a new version available in the version stream",
+		Short:   "Upgrades the jx command line application if there is a new version available in the version stream",
 		Aliases: []string{"client", "clients"},
 		Long:    upgradeCLILong,
 		Example: upgradeCLIExample,
