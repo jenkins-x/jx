@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/envctx"
 
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
@@ -154,6 +155,7 @@ type CommonOptions struct {
 	secretURLClient     secreturl.Client
 	vaultOperatorClient vaultoperatorclient.Interface
 	versionResolver     *versionstream.VersionResolver
+	envctx              *envctx.EnvironmentContext
 }
 
 type ServerFlags struct {

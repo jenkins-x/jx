@@ -16,6 +16,9 @@ import (
 // EnvironmentContext gets or creates a team context with the common values for working with requirements, team settings
 // and version resolvers
 func (o *CommonOptions) EnvironmentContext() (*envctx.EnvironmentContext, error) {
+	if o.envctx != nil {
+		return o.envctx, nil
+	}
 	var err error
 	tc := &envctx.EnvironmentContext{}
 	tc.GitOps, tc.DevEnv = o.GetDevEnv()
@@ -35,6 +38,10 @@ func (o *CommonOptions) EnvironmentContext() (*envctx.EnvironmentContext, error)
 	return tc, nil
 }
 
+func (o *CommonOptions) SetEnvironmentContext(envctx *envctx.EnvironmentContext) {
+	o.envctx = envctx
+}
+
 // CreateVersionResolver creates a new VersionResolver service
 func (o *CommonOptions) CreateVersionResolver(repo string, gitRef string) (*versionstream.VersionResolver, error) {
 	versionsDir, _, err := o.CloneJXVersionsRepo(repo, gitRef)
@@ -50,7 +57,12 @@ func (o *CommonOptions) CreateVersionResolver(repo string, gitRef string) (*vers
 func (o *CommonOptions) GetVersionResolver() (*versionstream.VersionResolver, error) {
 	var err error
 	if o.versionResolver == nil {
-		o.versionResolver, err = o.CreateVersionResolver("", "")
+		if o.envctx != nil {
+			o.versionResolver = o.envctx.VersionResolver
+		}
+		if o.versionResolver == nil {
+			o.versionResolver, err = o.CreateVersionResolver("", "")
+		}
 	}
 	return o.versionResolver, err
 }
