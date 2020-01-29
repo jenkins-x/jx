@@ -37,7 +37,9 @@ storage:
     url: ""
 terraform: true
 vault: {}
-velero: {}
+velero:
+  schedule: ""
+  ttl: ""
 versionStream:
   ref: v1.0.3
   url: https://github.com/jenkins-x/jenkins-x-versions.git

@@ -35,7 +35,9 @@ storage:
     enabled: false
     url: ""
 vault: {}
-velero: {}
+velero:
+  schedule: ""
+  ttl: ""
 versionStream:
   ref: v1.0.0
   url: https://github.com/jenkins-x/jenkins-x-versions.git
