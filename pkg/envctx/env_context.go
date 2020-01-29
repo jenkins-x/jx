@@ -1,6 +1,7 @@
 package envctx
 
 import (
+	"path/filepath"
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -77,6 +78,13 @@ func (c *EnvironmentContext) ChartDetails(chartName string, repo string) (*Chart
 	}
 	if prefix != "" && name == localName {
 		name = prefix + "/" + name
+	}
+
+	// for local charts use the dir as the name
+	if strings.HasPrefix(repo, ".") || strings.HasPrefix(repo, "/") {
+		name = filepath.Join(repo, localName)
+		repo = ""
+		prefix = filepath.Dir(name)
 	}
 	return &ChartDetails{
 		Name:       name,
