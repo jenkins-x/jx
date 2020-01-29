@@ -182,7 +182,7 @@ func loadHelmfile(dir string) (*helmfile2.HelmState, string, error) {
 		return config, fmt.Errorf("failed to load file %s due to %s", fileName, err)
 		return config, text, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
 	}
-	text = string(data)
+	text = strings.TrimSpace(string(data))
 	validationErrors, err := util.ValidateYaml(config, data)
 	if err != nil {
 		return config, text, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)

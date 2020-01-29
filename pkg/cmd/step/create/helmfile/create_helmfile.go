@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
 	"path"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/envctx"
 	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,17 +38,11 @@ var (
 	`)
 )
 
-// GeneratedValues is a struct that gets marshalled into helm values for creating namespaces via helm
-type GeneratedValues struct {
-	Namespaces []string `json:"namespaces"`
-}
-
 // CreateHelmfileOptions the options for the create helmfile command
 type CreateHelmfileOptions struct {
 	options.CreateOptions
-
-	dir        string
 	outputDir  string
+	dir        string
 	valueFiles []string
 }
 
@@ -167,8 +159,8 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 			}
 		}
 	}
+
 	var repositories []helmfile2.RepositorySpec
-	var releases []helmfile2.ReleaseSpec
 	for repoURL, name := range repos {
 		_, err = url.ParseRequestURI(repoURL)
 		// skip non URLs as they're probably local directories which don't need to be in the helmfile.repository section
@@ -194,13 +186,24 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 
 		// check if a local directory and values file exists for the app
 		extraValuesFiles := o.valueFiles
-		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml", phase)
-		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml.gotmpl", phase)
+		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml")
+		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml.gotmpl")
 
+		version := app.Version
+		if version == "" && ec.VersionResolver != nil {
+			sv, err := ec.VersionResolver.StableVersion(versionstream.KindChart, details.Name)
+			if err != nil {
+				return errors.Wrapf(err, "failed to resolve version of chart %s", details.Name)
+			}
+			if sv != nil {
+				version = sv.Version
+			}
+		}
 		chartName := details.Name
 		release := helmfile2.ReleaseSpec{
 			Name:      details.LocalName,
 			Namespace: app.Namespace,
+			Version:   version,
 			Chart:     chartName,
 			Values:    extraValuesFiles,
 		}
@@ -214,6 +217,15 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 	if err != nil {
 		return errors.Wrapf(err, "failed to check namespaces exists")
 	}
+
+	// lets sort the repositories in name order to minimise PR differences.
+	// the releases are ordered via the `jx-apps.yml` file
+	sort.Slice(repositories, func(i, j int) bool {
+		r1 := repositories[i]
+		r2 := repositories[j]
+		return strings.Compare(r1.Name, r2.Name) < 0
+	})
+
 	h := helmfile2.HelmState{
 		Bases: []string{"../environments.yaml"},
 		HelmDefaults: helmfile2.HelmSpec{
@@ -227,6 +239,7 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 		Repositories: repositories,
 		Releases:     releases,
 	}
+
 	data, err := yaml.Marshal(h)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal helmfile data")
@@ -251,6 +264,7 @@ func (o *CreateHelmfileOptions) writeHelmfile(err error, phase string, data []by
 	if err != nil {
 		return errors.Wrapf(err, "failed to save file %s", helmfile)
 	}
+
 	return nil
 }
 

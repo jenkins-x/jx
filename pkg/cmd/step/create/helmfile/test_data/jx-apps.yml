@@ -6,5 +6,6 @@ applications:
   repository: https://kubernetes-charts.storage.googleapis.com
   namespace: jx
 - name: bitnami/nexus
+  version: 9.2.1
 - name: jetstack/cert-manager
   namespace: cert-manager
