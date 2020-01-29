@@ -1,3 +1,5 @@
+// +build integration
+
 package envctx_test
 
 import (
