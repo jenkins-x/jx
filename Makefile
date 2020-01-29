@@ -79,18 +79,6 @@ ifdef DISABLE_TEST_CACHING
 GOTEST += -count=1
 endif
 
-# support for building a covered jx binary (one with the coverage instrumentation compiled in). The `build-covered`
-# target also builds the covered binary explicitly
-COVERED_MAIN_SRC_FILE=./cmd/jx
-COVERAGE_BUILDFLAGS = -c -tags covered_binary -coverpkg=./... -covermode=count
-COVERAGE_BUILD_TARGET = test
-ifdef COVERED_BINARY
-BUILDFLAGS += $(COVERAGE_BUILDFLAGS)
-BUILD_TARGET = $(COVERAGE_BUILD_TARGET)
-MAIN_SRC_FILE = $(COVERED_MAIN_SRC_FILE)
-
-endif
-
 TEST_PACKAGE ?= ./...
 COVER_OUT:=$(REPORTS_DIR)/cover.out
 COVERFLAGS=-coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./...
@@ -120,10 +108,6 @@ build: $(GO_DEPENDENCIES) ## Build jx binary for current OS
 
 build-all: $(GO_DEPENDENCIES) build make-reports-dir ## Build all files - runtime, all tests etc.
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -run=nope -tags=integration -failfast -short ./... $(BUILDFLAGS)
-
-.PHONY: build-covered
-build-covered: $(GO_DEPENDENCIES) ## Build jx binary for current OS with coverage instrumentation to build/$(NAME).covered
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) $(COVERAGE_BUILD_TARGET) $(BUILDFLAGS) $(COVERAGE_BUILDFLAGS) -o build/$(NAME).covered $(COVERED_MAIN_SRC_FILE)
 
 tidy-deps: ## Cleans up dependencies
 	$(GO) mod tidy
