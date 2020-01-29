@@ -75,6 +75,8 @@ const (
 	RequirementVaultDisableURLDiscovery = "JX_REQUIREMENT_VAULT_DISABLE_URL_DISCOVERY"
 	// RequirementSecretStorageType the secret storage type
 	RequirementSecretStorageType = "JX_REQUIREMENT_SECRET_STORAGE_TYPE"
+	// RequirementHelmfile if helmfile and helm 3 is being used for environments
+	RequirementHelmfile = "JX_REQUIREMENT_HELMFILE"
 	// RequirementKanikoServiceAccountName the service account name for kaniko
 	RequirementKanikoServiceAccountName = "JX_REQUIREMENT_KANIKO_SA_NAME"
 	// RequirementKaniko if kaniko is required
@@ -947,6 +949,11 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func()
 			for _, e := range c.Environments {
 				e.Ingress.TLS.Production = false
 			}
+		}
+	}
+	if "" != os.Getenv(RequirementHelmfile) {
+		if envVarBoolean(os.Getenv(RequirementHelmfile)) {
+			c.Helmfile = true
 		}
 	}
 	if "" != os.Getenv(RequirementKaniko) {
