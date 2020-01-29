@@ -251,7 +251,7 @@ func (t TektonLogger) GetRunningBuildLogs(pa *v1.PipelineActivity, buildName str
 
 		// Assuming we have a run to log, go get its logs, looping until we've seen all stages for that run.
 		if runToLog != nil {
-			structure, err := t.JXClient.JenkinsV1().PipelineStructures(pa.Namespace).Get(runToLog.Name, metav1.GetOptions{})
+			structure, err := tekton.StructureForPipelineRun(t.JXClient, pa.Namespace, runToLog)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get pipeline structure for %s in namespace %s", runToLog.Name, pa.Namespace)
 			}

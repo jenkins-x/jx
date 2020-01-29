@@ -8,8 +8,10 @@ import (
 	"time"
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
-	v1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	clientv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 
@@ -120,7 +122,7 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 	return answer, nil
 }
 
-func nextBuildNumberFromActivity(activityInterface v1.PipelineActivityInterface, gitInfo *gits.GitRepository, branch string) (string, error) {
+func nextBuildNumberFromActivity(activityInterface clientv1.PipelineActivityInterface, gitInfo *gits.GitRepository, branch string) (string, error) {
 	labelMap := labels.Set{
 		"owner":      gitInfo.Organisation,
 		"repository": gitInfo.Name,
@@ -491,6 +493,26 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 	}
 
 	return nil
+}
+
+// StructureForPipelineRun finds the PipelineStructure for the given PipelineRun, trying its name first and then its
+// Pipeline name, returning an error if no PipelineStructure can be found.
+func StructureForPipelineRun(jxClient versioned.Interface, ns string, run *pipelineapi.PipelineRun) (*v1.PipelineStructure, error) {
+	// Use the Pipeline name for this run.
+	pipelineName := run.Labels[pipeline.GroupName+pipeline.PipelineLabelKey]
+	// Fall back on the PipelineRef.Name if there isn't a label.
+	if pipelineName == "" {
+		pipelineName = run.Spec.PipelineRef.Name
+	}
+	// If we still have no name, error out.
+	if pipelineName == "" {
+		return nil, fmt.Errorf("couldn't find a Pipeline name for PipelineRun %s", run.Name)
+	}
+	structure, err := jxClient.JenkinsV1().PipelineStructures(ns).Get(pipelineName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting PipelineStructure with Pipeline name %s for PipelineRun %s", pipelineName, run.Name)
+	}
+	return structure, nil
 }
 
 // PipelineRunIsNotPending returns true if the PipelineRun has completed or has running steps.
