@@ -11,21 +11,6 @@ helmDefaults:
   verify: false
   wait: true
 releases:
-- chart: stable/nginx-ingress
-  name: nginx-ingress
-  namespace: nginx
-  needs:
-  - jx/namespace-nginx
-  values:
-  - test_data/jenkins-x-versions/apps/stable/nginx-ingress/values.yaml.gotmpl
-- chart: stable/velero
-  name: velero
-  namespace: velero
-  needs:
-  - jx/namespace-velero
-  values:
-  - test_data/jenkins-x-versions/apps/stable/velero/values.yaml.gotmpl
-  version: 2.7.4
 - chart: stable/external-dns
   name: external-dns
   namespace: jx
@@ -41,16 +26,6 @@ releases:
 - chart: ../repositories
   name: repositories
   namespace: jx
-- chart: zloeber/namespace
-  name: namespace-nginx
-  namespace: jx
-  values:
-  - generated/nginx/values.yaml
-- chart: zloeber/namespace
-  name: namespace-velero
-  namespace: jx
-  values:
-  - generated/velero/values.yaml
 repositories:
 - name: bitnami
   url: https://charts.bitnami.com/bitnami
@@ -58,7 +33,3 @@ repositories:
   url: https://storage.googleapis.com/chartmuseum.jenkins-x.io
 - name: stable
   url: https://kubernetes-charts.storage.googleapis.com
-- name: zloeber/namespace
-  url: git+https://github.com/zloeber/helm-namespace@chart
-- name: zloeber/namespace
-  url: git+https://github.com/zloeber/helm-namespace@chart
