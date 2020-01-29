@@ -52,10 +52,10 @@ This step will annotate a secret or configmap so that the replicator can replica
 	stepReplicateExample = templates.Examples(`
 		NOTE: quote and namespaces that include a wildcard
 		# lets collect some files to the team's default storage location (which if not configured uses the current git repository's gh-pages branch)
-		jx step replicate configmap foo --namespace jx-staging --namespace "foo-preview*"
+		jx step replicate configmap foo --replicate-to-namespace jx-staging --replicate-to-namespace "foo-preview*"
 
 		# lets collect some files to the team's default storage location (which if not configured uses the current git repository's gh-pages branch)
-		jx step replicate secret bar --namespace jx-staging --namespace "foo-preview*"
+		jx step replicate secret bar --replicate-to-namespace jx-staging --replicate-to-namespace "foo-preview*"
 
 `)
 )
