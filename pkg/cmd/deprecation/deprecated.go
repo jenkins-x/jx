@@ -85,7 +85,7 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	},
 	"create spring": {
 		replacement: "jx create project",
-		date:        "Feb 1 2020",
+		date:        "Mar 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/commands/jx_create_project/")),
 	},
