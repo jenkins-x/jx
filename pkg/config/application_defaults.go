@@ -16,7 +16,8 @@ const (
 	ApplicationsDefaultsConfigFileName = "defaults.yml"
 )
 
-// ApplicationConfig contains applications to install during boot
+// ApplicationDefaultsConfig contains optional defaults for applications installed via helmfile / helm 3 which are
+// typically discovered from the Version Stream
 type ApplicationDefaultsConfig struct {
 	// Namespace the default namespace to install this app into
 	Namespace string `json:"namespace,omitempty"`
