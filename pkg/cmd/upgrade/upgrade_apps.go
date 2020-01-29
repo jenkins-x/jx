@@ -112,7 +112,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *UpgradeAppsOptions) Run() error {
-	ec, err := o.EnvironmentContext()
+	ec, err := o.EnvironmentContext(".")
 	if err != nil {
 		return err
 	}

@@ -84,7 +84,7 @@ func NewCmdDeleteApp(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *DeleteAppOptions) Run() error {
-	ec, err := o.EnvironmentContext()
+	ec, err := o.EnvironmentContext(".")
 	if err != nil {
 		return err
 	}

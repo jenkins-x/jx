@@ -1,0 +1,48 @@
+{{- if and (hasKey .Values.jxRequirements "velero") (hasKey .Values.jxRequirements.velero "namespace") }}
+{{- if .Values.jxRequirements.velero.namespace }}
+enabled: true
+{{- else }}
+enabled: false
+{{- end }}
+{{- else }}
+enabled: false
+{{- end }}
+rbac:
+  create: true
+credentials:
+  useSecret: true
+  existingSecret: velero-secret
+{{- if eq .Values.jxRequirements.cluster.provider "gke" }}
+configuration:
+  provider: gcp
+  backupStorageLocation:
+    name: gcp
+    bucket: {{ .Values.jxRequirements.storage.backup.url | quote }}
+{{- else if or (eq .Values.jxRequirements.cluster.provider "aws") (eq .Values.jxRequirements.cluster.provider "eks") }}
+configuration:
+  provider: aws
+  backupStorageLocation:
+    name: aws
+    bucket: {{ .Values.jxRequirements.storage.backup.url | quote }}
+    config:
+      region: {{ .Values.jxRequirements.cluster.region | quote }}
+{{- else if eq .Values.jxRequirements.cluster.provider "azure" }}
+configuration:
+  provider: azure
+  backupStorageLocation:
+    name: azure
+    bucket: {{ .Values.jxRequirements.storage.backup.url | quote }}
+    config:
+      storageAccount: {{ .Values.jxRequirements.velero.serviceAccount | quote }}
+{{- else if eq .Values.jxRequirements.cluster.provider "iks" }}
+snapshotsEnabled: false
+configuration:
+  provider: aws
+  backupStorageLocation:
+    name: aws
+    bucket: bucket-name
+    config:
+      region: {{ .Values.jxRequirements.cluster.region | quote }}
+      s3ForcePathStyle: "true"
+      s3Url: {{ .Values.jxRequirements.storage.backup.url | quote }}
+{{- end }}

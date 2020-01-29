@@ -13,14 +13,7 @@ import (
 func TestEnvironmentContextResolveChartDetails(t *testing.T) {
 	t.Parallel()
 
-	versionsDir := path.Join("test_data", "jenkins-x-versions")
-	assert.DirExists(t, versionsDir)
-
-	ec := &envctx.EnvironmentContext{
-		VersionResolver: &versionstream.VersionResolver{
-			VersionsDir: versionsDir,
-		},
-	}
+	ec := createTestEnvironmentContext(t)
 
 	type testData struct {
 		Test       string
@@ -89,4 +82,31 @@ func TestEnvironmentContextResolveChartDetails(t *testing.T) {
 		assert.Equal(t, expected.Repository, actual.Repository, "chartDetails.Repository for test %s", test.Test)
 
 	}
+}
+
+func TestEnvironmentContextResolveApplicationDefaults(t *testing.T) {
+	t.Parallel()
+
+	ec := createTestEnvironmentContext(t)
+
+	chartName := "stable/nginx-ingress"
+	details, valuesFiles, err := ec.ResolveApplicationDefaults(chartName)
+	require.NoError(t, err, "failed to resolve application defaults for chart %s", chartName)
+	assert.Equal(t, len(valuesFiles), 1, "should have a values file")
+	assert.Equal(t, "system", details.Phase, "details.Phase")
+	assert.Equal(t, "nginx", details.Namespace, "details.Namespace")
+
+	t.Logf("found details %#v and values files %#v\n", details, valuesFiles)
+}
+
+func createTestEnvironmentContext(t *testing.T) *envctx.EnvironmentContext {
+	versionsDir := path.Join("test_data", "jenkins-x-versions")
+	assert.DirExists(t, versionsDir)
+
+	ec := &envctx.EnvironmentContext{
+		VersionResolver: &versionstream.VersionResolver{
+			VersionsDir: versionsDir,
+		},
+	}
+	return ec
 }
