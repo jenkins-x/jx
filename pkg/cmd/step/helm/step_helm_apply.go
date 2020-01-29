@@ -248,7 +248,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	requirements, requirementsFileName, err := o.getRequirements()
-	if err != nil {
+	if err != nil || requirements == nil {
 		return errors.Wrap(err, "loading the requirements")
 	}
 
@@ -392,6 +392,11 @@ func (o *StepHelmApplyOptions) Run() error {
 func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, string, error) {
 	// Try to load first the requirements from current directory
 	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+
+	_, err = os.Stat(requirementsFileName)
+	if os.IsNotExist(err) {
+		_, err = os.Stat(filepath.Join(o.Dir, requirementsFileName))
+	}
 	if err == nil {
 		return requirements, requirementsFileName, nil
 	}
@@ -400,11 +405,11 @@ func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, st
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting the jx client")
 	}
-	teamSetttings, err := kube.GetDevEnvTeamSettings(jxClient, ns)
+	teamSettings, err := kube.GetDevEnvTeamSettings(jxClient, ns)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting the team setting from the cluster")
 	}
-	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSetttings)
+	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSettings)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting the requirements from team settings")
 	}
