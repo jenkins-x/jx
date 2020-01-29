@@ -80,7 +80,7 @@ func (o *CreateHelmfileOptions) Run() error {
 		return errors.Wrap(err, "failed to load applications")
 	}
 
-	ec, err := o.EnvironmentContext()
+	ec, err := o.EnvironmentContext(o.dir)
 	if err != nil {
 		return err
 	}
@@ -176,30 +176,50 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 
 	var releases []helmfile2.ReleaseSpec
 	for _, app := range apps.Applications {
-		if app.Namespace == "" {
-			app.Namespace = apps.DefaultNamespace
-		}
 		details := charts[app.Name]
 		if details == nil {
 			return fmt.Errorf("cannot find chart details for name %s", app.Name)
 		}
+		chartName := details.Name
+
+		extraValuesFiles := []string{}
+		version := app.Version
+		if ec.VersionResolver != nil {
+			if version == "" {
+				sv, err := ec.VersionResolver.StableVersion(versionstream.KindChart, details.Name)
+				if err != nil {
+					return errors.Wrapf(err, "failed to resolve version of chart %s", details.Name)
+				}
+				if sv != nil {
+					version = sv.Version
+				}
+			}
+
+			defaults, valuesFiles, err := ec.ResolveApplicationDefaults(chartName)
+			if err != nil {
+				return err
+			}
+			extraValuesFiles = append(extraValuesFiles, valuesFiles...)
+			if app.Namespace == "" {
+				app.Namespace = defaults.Namespace
+			}
+			/*
+
+				TODO when PR merged
+				if app.Phase == "" {
+					app.Phase = defaults.Phase
+				}
+			*/
+		}
+		if app.Namespace == "" {
+			app.Namespace = apps.DefaultNamespace
+		}
 
 		// check if a local directory and values file exists for the app
-		extraValuesFiles := o.valueFiles
+		extraValuesFiles = append(extraValuesFiles, o.valueFiles...)
 		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml")
 		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml.gotmpl")
 
-		version := app.Version
-		if version == "" && ec.VersionResolver != nil {
-			sv, err := ec.VersionResolver.StableVersion(versionstream.KindChart, details.Name)
-			if err != nil {
-				return errors.Wrapf(err, "failed to resolve version of chart %s", details.Name)
-			}
-			if sv != nil {
-				version = sv.Version
-			}
-		}
-		chartName := details.Name
 		release := helmfile2.ReleaseSpec{
 			Name:      details.LocalName,
 			Namespace: app.Namespace,

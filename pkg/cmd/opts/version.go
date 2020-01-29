@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/envctx"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -15,25 +16,62 @@ import (
 
 // EnvironmentContext gets or creates a team context with the common values for working with requirements, team settings
 // and version resolvers
-func (o *CommonOptions) EnvironmentContext() (*envctx.EnvironmentContext, error) {
+func (o *CommonOptions) EnvironmentContext(dir string) (*envctx.EnvironmentContext, error) {
 	if o.envctx != nil {
 		return o.envctx, nil
 	}
 	var err error
 	tc := &envctx.EnvironmentContext{}
 	tc.GitOps, tc.DevEnv = o.GetDevEnv()
+	if tc.DevEnv == nil {
+		tc.DevEnv = kube.CreateDefaultDevEnvironment("jx")
+	}
 	teamSettings := tc.TeamSettings()
-	tc.Requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSettings)
+
+	// lets default to local file system for the requirements as we are often invoked before we've created the cluster
+	fileName := ""
+	tc.Requirements, fileName, err = config.LoadRequirementsConfig(dir)
 	if err != nil {
 		return tc, err
+	}
+	if fileName == "" {
+		// lets try the environment CRD if we have no local file
+		req, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+		if err != nil {
+			return tc, err
+		}
+		if req != nil {
+			tc.Requirements = req
+		}
+	}
+	if err != nil {
+		return tc, err
+	}
+	if tc.Requirements == nil {
+		tc.Requirements, _, err = config.LoadRequirementsConfig(dir)
+		if err != nil {
+			return tc, err
+		}
 	}
 	err = o.ConfigureCommonOptions(tc.Requirements)
 	if err != nil {
 		return tc, err
 	}
-	tc.VersionResolver, err = o.CreateVersionResolver(teamSettings.VersionStreamURL, teamSettings.VersionStreamRef)
+	versionStreamURL := teamSettings.VersionStreamURL
+	versionStreamRef := teamSettings.VersionStreamRef
+	if versionStreamURL == "" {
+		versionStreamURL = tc.Requirements.VersionStream.URL
+	}
+	if versionStreamRef == "" {
+		versionStreamRef = tc.Requirements.VersionStream.Ref
+	}
+	tc.VersionResolver, err = o.CreateVersionResolver(versionStreamURL, versionStreamRef)
 	if err != nil {
 		return tc, err
+	}
+	o.envctx = tc
+	if o.versionResolver == nil {
+		o.versionResolver = tc.VersionResolver
 	}
 	return tc, nil
 }

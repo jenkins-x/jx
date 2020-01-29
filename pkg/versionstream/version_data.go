@@ -24,6 +24,9 @@ type Callback func(kind VersionKind, name string, version *StableVersion) (bool,
 type VersionKind string
 
 const (
+	// KindApp represents the app (application) defaults configuration for use with hemlfile and helm 3
+	KindApp VersionKind = "apps"
+
 	// KindChart represents a chart version
 	KindChart VersionKind = "charts"
 

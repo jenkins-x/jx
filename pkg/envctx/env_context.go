@@ -7,7 +7,12 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream"
+)
+
+var (
+	valuesFileNames = []string{"values.yaml", "values.yaml.gotmpl"}
 )
 
 // EnvironmentContext contains the common interfaces and structs needed for working with a development environment
@@ -92,4 +97,24 @@ func (c *EnvironmentContext) ChartDetails(chartName string, repo string) (*Chart
 		LocalName:  localName,
 		Repository: repo,
 	}, nil
+}
+
+// ResolveApplicationDefaults resolves the application defaults in the version stream if there are any
+func (c *EnvironmentContext) ResolveApplicationDefaults(chartName string) (*config.ApplicationDefaultsConfig, []string, error) {
+	valueFiles := []string{}
+	dir := filepath.Join(c.VersionResolver.VersionsDir, string(versionstream.KindApp), chartName)
+	defaults, _, err := config.LoadApplicationDefaultsConfig(dir)
+	if err != nil {
+		return defaults, valueFiles, err
+	}
+
+	// list the values files
+	for _, f := range valuesFileNames {
+		fileName := filepath.Join(dir, f)
+		exists, _ := util.FileExists(fileName)
+		if exists {
+			valueFiles = append(valueFiles, fileName)
+		}
+	}
+	return defaults, valueFiles, nil
 }

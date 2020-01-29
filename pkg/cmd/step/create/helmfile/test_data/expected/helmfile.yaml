@@ -6,14 +6,21 @@ helmDefaults:
   force: false
   recreatePods: false
   tillerless: false
-  timeout: 180
+  timeout: 520
   tls: false
   verify: false
   wait: true
 releases:
+- chart: stable/nginx-ingress
+  name: nginx-ingress
+  namespace: nginx
+  values:
+  - test_data/jenkins-x-versions/apps/stable/nginx-ingress/values.yaml.gotmpl
 - chart: stable/velero
   name: velero
   namespace: velero
+  values:
+  - test_data/jenkins-x-versions/apps/stable/velero/values.yaml.gotmpl
   version: 2.7.4
 - chart: stable/external-dns
   name: external-dns

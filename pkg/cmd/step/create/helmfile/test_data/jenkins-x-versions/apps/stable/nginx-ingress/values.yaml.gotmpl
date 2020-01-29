@@ -1,0 +1,15 @@
+controller:
+  replicaCount: 3
+  extraArgs:
+    publish-service: kube-system/jxing-nginx-ingress-controller
+  service:
+    omitClusterIP: true
+  {{- if eq .Values.jxRequirements.cluster.provider "eks" }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+  {{- end }}
+defaultBackend:
+  service:
+    omitClusterIP: true
+rbac:
+  create: true

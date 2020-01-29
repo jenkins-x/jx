@@ -118,7 +118,7 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string) {
 
 // Run implements this command
 func (o *AddAppOptions) Run() error {
-	ec, err := o.EnvironmentContext()
+	ec, err := o.EnvironmentContext(".")
 	if err != nil {
 		return err
 	}
