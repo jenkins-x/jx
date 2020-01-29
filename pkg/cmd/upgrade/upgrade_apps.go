@@ -112,10 +112,12 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *UpgradeAppsOptions) Run() error {
-	o.GitOps, o.DevEnv = o.GetDevEnv()
-	if o.Repo == "" {
-		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
+	ec, err := o.EnvironmentContext()
+	if err != nil {
+		return err
 	}
+	o.GitOps = ec.GitOps
+	o.DevEnv = ec.DevEnv
 
 	kubeClient, err := o.KubeClient()
 	if err != nil {
@@ -141,6 +143,7 @@ func (o *UpgradeAppsOptions) Run() error {
 		JxClient:            jxClient,
 		InstallTimeout:      opts.DefaultInstallTimeout,
 		EnvironmentCloneDir: o.CloneDir,
+		VersionResolver:     ec.VersionResolver,
 	}
 	if o.Namespace != "" {
 		installOpts.Namespace = o.Namespace
