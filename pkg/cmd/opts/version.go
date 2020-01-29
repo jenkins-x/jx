@@ -76,6 +76,8 @@ func (o *CommonOptions) EnvironmentContext(dir string) (*envctx.EnvironmentConte
 	return tc, nil
 }
 
+// SetEnvironmentContext allows the EnvironmentContext to be specified.
+// this method is mostly used for tests but can be used to share a cached EnvironmentContext between commands
 func (o *CommonOptions) SetEnvironmentContext(envctx *envctx.EnvironmentContext) {
 	o.envctx = envctx
 }
