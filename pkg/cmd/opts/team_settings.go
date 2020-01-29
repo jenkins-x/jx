@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -168,6 +169,10 @@ func (o *CommonOptions) ConfigureCommonOptions(requirements *config.Requirements
 	if requirements.Helmfile {
 		// if using helmfile lets disable eagerly creating the dev Environment and instead lets create that via helm
 		o.ModifyDevEnvironmentFn = o.HelmfileModifyDevEnvironment
+
+		if o.helm == nil {
+			o.helm = helm.NewHelmCLI("helm", helm.V3, "", false)
+		}
 	}
 	return nil
 }

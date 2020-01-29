@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,7 +41,8 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		Gitter: o.Gitter,
 		ModifyChartFn: environments.CreateAddRequirementFn(app, alias, version,
 			repository, o.valuesFiles, dir, o.Verbose, o.Helmer),
-		GitProvider: o.GitProvider,
+		ModifyAppsFn: environments.CreateAddApplicationConfigFn(app, version, repository),
+		GitProvider:  o.GitProvider,
 	}
 
 	info, err := options.Create(o.DevEnv, o.EnvironmentCloneDir, &details, nil, "", autoMerge)
@@ -102,7 +105,8 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 		Gitter: o.Gitter,
 		ModifyChartFn: environments.CreateUpgradeRequirementsFn(all, app, alias, version, username, password,
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
-		GitProvider: o.GitProvider,
+		ModifyAppsFn: environments.CreateUpgradeApplicationConfigFn(all, app, version),
+		GitProvider:  o.GitProvider,
 	}
 
 	_, err = options.Create(o.DevEnv, o.EnvironmentCloneDir, &details, nil, app, autoMerge)
@@ -145,6 +149,26 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 		}
 		return nil
 	}
+	modifyAppsFn := func(appsConfig *config.ApplicationConfig, dir string, pullRequestDetails *gits.PullRequestDetails) error {
+		// See if the app already exists in requirements
+		found := false
+		for i, d := range appsConfig.Applications {
+			if d.Name == app {
+				found = true
+				appsConfig.Applications = append(appsConfig.Applications[:i], appsConfig.Applications[i+1:]...)
+			}
+		}
+
+		// If app not found, add it
+		if !found {
+			a := app
+			if alias != "" {
+				a = fmt.Sprintf("%s with alias %s", a, alias)
+			}
+			return fmt.Errorf("unable to delete app %s as not installed", app)
+		}
+		return nil
+	}
 	details := gits.PullRequestDetails{
 		BranchName: "delete-app-" + app,
 		Title:      fmt.Sprintf("Delete %s", app),
@@ -154,6 +178,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 	options := environments.EnvironmentPullRequestOptions{
 		Gitter:        o.Gitter,
 		ModifyChartFn: modifyChartFn,
+		ModifyAppsFn:  modifyAppsFn,
 		GitProvider:   o.GitProvider,
 	}
 
@@ -200,6 +225,35 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 		return nil, errors.Wrapf(err, "failed to checkout %s to dir %s", o.DevEnv.Spec.Source.Ref, dir)
 	}
 
+	appsList := v1.AppList{}
+
+	// lets check if we are using a `jx-apps.yml` file
+	appsConfig, fileName, err := config.LoadApplicationsConfig(dir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to load applications config in environment clone of %s", cloneUrl)
+	}
+	if fileName != "" {
+		// lets use the jx-apps.yml file
+		for _, a := range appsConfig.Applications {
+			app := v1.App{}
+			app.Name = naming.ToValidName(a.Name)
+			app.Namespace = a.Namespace
+			if app.Namespace == "" {
+				app.Namespace = o.DevEnv.Namespace
+			}
+			app.Labels = map[string]string{
+				helm.LabelAppName:    a.Name,
+				helm.LabelAppVersion: a.Version,
+			}
+			app.Annotations = map[string]string{
+				helm.AnnotationAppDescription: a.Description,
+				helm.AnnotationAppRepository:  a.Repository,
+			}
+			appsList.Items = append(appsList.Items, app)
+		}
+		return &appsList, nil
+	}
+
 	envDir := filepath.Join(dir, helm.DefaultEnvironmentChartDir)
 	if err != nil {
 		return nil, err
@@ -223,7 +277,6 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 		return nil, errors.Wrap(err, "couldn't unmarshal the environment's requirements.yaml file")
 	}
 
-	appsList := v1.AppList{}
 	for _, d := range reqs.Dependencies {
 		if appNames[d.Name] == true || len(appNames) == 0 {
 			//Make sure we ignore the jenkins-x-platform requirement

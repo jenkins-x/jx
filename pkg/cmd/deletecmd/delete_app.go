@@ -84,7 +84,12 @@ func NewCmdDeleteApp(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *DeleteAppOptions) Run() error {
-	o.GitOps, o.DevEnv = o.GetDevEnv()
+	ec, err := o.EnvironmentContext()
+	if err != nil {
+		return err
+	}
+	o.GitOps = ec.GitOps
+	o.DevEnv = ec.DevEnv
 
 	installOptions := apps.InstallOptions{
 		IOFileHandles:       o.GetIOFileHandles(),
@@ -95,6 +100,7 @@ func (o *DeleteAppOptions) Run() error {
 		Helmer:              o.Helm(),
 		AutoMerge:           o.AutoMerge,
 		EnvironmentCloneDir: o.CloneDir,
+		VersionResolver:     ec.VersionResolver,
 	}
 
 	if o.GitOps {

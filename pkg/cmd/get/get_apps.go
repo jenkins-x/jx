@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -105,6 +106,19 @@ func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *GetAppsOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
+	teamSettings := &o.DevEnv.Spec.TeamSettings
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return err
+	}
+	err = o.ConfigureCommonOptions(requirements)
+	if err != nil {
+		return err
+	}
+	versionResolver, err := o.CreateVersionResolver(teamSettings.VersionStreamURL, teamSettings.VersionStreamRef)
+	if err != nil {
+		return err
+	}
 	kubeClient, err := o.GetOptions.KubeClient()
 	if err != nil {
 		return err
@@ -126,6 +140,7 @@ func (o *GetAppsOptions) Run() error {
 		Helmer:              o.Helm(),
 		JxClient:            jxClient,
 		EnvironmentCloneDir: envsDir,
+		VersionResolver:     versionResolver,
 	}
 
 	if o.GetSecretsLocation() == secrets.VaultLocationKind {
@@ -236,7 +251,6 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 				table.AddRow(row...)
 			}
 		}
-
 	}
 	return table
 }

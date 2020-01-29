@@ -11,7 +11,7 @@ import (
 )
 
 func TestJenkinsXAppsUnmarshalling(t *testing.T) {
-	apps, err := LoadApplicationsConfig(path.Join("test_data"))
+	apps, _, err := LoadApplicationsConfig(path.Join("test_data"))
 	assert.NoError(t, err)
 
 	// assert marshalling of a jx-apps.yaml

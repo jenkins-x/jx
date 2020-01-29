@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 
@@ -61,6 +60,9 @@ var (
 		# Add an app
 		jx add app jx-app-jacoco
 
+		# Add an app using a chart repository prefix from the version stream 'charts/repositories.yml' file
+		jx add app flagger/flagger
+
 		# Add an app from a local path
 		jx add app .`)
 )
@@ -116,14 +118,12 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string) {
 
 // Run implements this command
 func (o *AddAppOptions) Run() error {
-	o.GitOps, o.DevEnv = o.GetDevEnv()
-	if o.Repo == "" {
-		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
+	ec, err := o.EnvironmentContext()
+	if err != nil {
+		return err
 	}
-	if o.Repo == "" {
-		o.Repo = kube.DefaultChartMuseumURL
-	}
-
+	o.GitOps = ec.GitOps
+	o.DevEnv = ec.DevEnv
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrapf(err, "getting jx client")
@@ -135,6 +135,7 @@ func (o *AddAppOptions) Run() error {
 	if o.Namespace == "" {
 		o.Namespace = ns
 	}
+
 	installOpts := apps.InstallOptions{
 		IOFileHandles: o.GetIOFileHandles(),
 		DevEnv:        o.DevEnv,
@@ -150,6 +151,7 @@ func (o *AddAppOptions) Run() error {
 		JxClient:            jxClient,
 		InstallTimeout:      opts.DefaultInstallTimeout,
 		EnvironmentCloneDir: o.CloneDir,
+		VersionResolver:     ec.VersionResolver,
 	}
 
 	if o.GitOps {
@@ -214,16 +216,16 @@ func (o *AddAppOptions) Run() error {
 		return o.Cmd.Help()
 	}
 
-	if o.Repo == "" {
-		return fmt.Errorf("must specify a repository")
-	}
-
-	var version string
-	if o.Version != "" {
-		version = o.Version
-	}
 	app := args[0]
-	return installOpts.AddApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
+
+	details, err := ec.ChartDetails(app, o.Repo)
+	if err != nil {
+		return err
+	}
+	if details.Repository == "" {
+		return fmt.Errorf("must specify a repository or use a repository prefix in the chart name %s", details.Name)
+	}
+	return installOpts.AddApp(details, o.Version, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
 		o.Alias, o.HelmUpdate)
 }
 

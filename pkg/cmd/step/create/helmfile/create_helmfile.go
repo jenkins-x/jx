@@ -82,8 +82,7 @@ func NewCmdCreateHelmfile(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateHelmfileOptions) Run() error {
-
-	apps, err := config.LoadApplicationsConfig(o.dir)
+	apps, _, err := config.LoadApplicationsConfig(o.dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load applications")
 	}
