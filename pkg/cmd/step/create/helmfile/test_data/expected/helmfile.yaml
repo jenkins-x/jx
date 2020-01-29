@@ -1,0 +1,32 @@
+bases:
+- ../environments.yaml
+helmDefaults:
+  atomic: true
+  devel: false
+  force: false
+  recreatePods: false
+  tillerless: false
+  timeout: 180
+  tls: false
+  verify: false
+  wait: true
+releases:
+- chart: stable/velero
+  name: velero
+  namespace: velero
+- chart: stable/external-dns
+  name: external-dns
+  namespace: jx
+- chart: bitnami/nexus
+  name: nexus
+  namespace: jx
+- chart: jetstack/cert-manager
+  name: cert-manager
+  namespace: cert-manager
+repositories:
+- name: stable
+  url: https://kubernetes-charts.storage.googleapis.com
+- name: bitnami
+  url: https://charts.bitnami.com/bitnami
+- name: jenkins-x
+  url: https://storage.googleapis.com/chartmuseum.jenkins-x.io

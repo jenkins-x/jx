@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/envctx"
 	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -87,6 +88,16 @@ func (o *CreateHelmfileOptions) Run() error {
 		return errors.Wrap(err, "failed to load applications")
 	}
 
+	ec, err := o.EnvironmentContext()
+	if err != nil {
+		return err
+	}
+
+	helmPrefixes, err := ec.VersionResolver.GetRepositoryPrefixes()
+	if err != nil {
+		return err
+	}
+
 	helm := o.Helm()
 	localHelmRepos, err := helm.ListRepos()
 	if err != nil {
@@ -122,22 +133,37 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 	// contains the repo url and name to reference it by in the release spec
 	// use a map to dedupe repositories
 	repos := make(map[string]string)
-	for _, app := range applications {
-		_, err = url.ParseRequestURI(app.Repository)
+	charts := make(map[string]*envctx.ChartDetails)
+	for _, app := range apps.Applications {
+		details, err := ec.ChartDetails(app.Name, app.Repository)
+		if err != nil {
+			return errors.Wrapf(err, "failed to resolve chart details for %s repository %s", app.Name, app.Repository)
+		}
+
+		charts[app.Name] = details
+
+		_, err = url.ParseRequestURI(details.Repository)
 		if err != nil {
 			// if the repository isn't a valid URL lets just use whatever was supplied in the application repository field, probably it is a directory path
-			repos[app.Repository] = app.Repository
+			repos[details.Repository] = details.Repository
 		} else {
 			matched := false
 			// check if URL matches a repo in helms local list
 			for key, value := range localHelmRepos {
-				if app.Repository == value {
-					repos[app.Repository] = key
+				if details.Repository == value {
+					repos[details.Repository] = key
 					matched = true
 				}
 			}
 			if !matched {
-				repos[app.Repository] = uuid.New().String()
+				prefix := helmPrefixes.PrefixForURL(details.Repository)
+				if prefix == "" {
+					prefix = details.Prefix
+				}
+				if prefix == "" {
+					prefix = uuid.New().String()
+				}
+				repos[details.Repository] = prefix
 			}
 		}
 	}
@@ -153,11 +179,17 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 			}
 			repositories = append(repositories, repository)
 		}
-	}
-	for _, app := range applications {
 
+	}
+
+	var releases []helmfile2.ReleaseSpec
+	for _, app := range apps.Applications {
 		if app.Namespace == "" {
 			app.Namespace = apps.DefaultNamespace
+		}
+		details := charts[app.Name]
+		if details == nil {
+			return fmt.Errorf("cannot find chart details for name %s", app.Name)
 		}
 
 		// check if a local directory and values file exists for the app
@@ -165,9 +197,9 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml", phase)
 		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml.gotmpl", phase)
 
-		chartName := fmt.Sprintf("%s/%s", repos[app.Repository], app.Name)
+		chartName := details.Name
 		release := helmfile2.ReleaseSpec{
-			Name:      app.Name,
+			Name:      details.LocalName,
 			Namespace: app.Namespace,
 			Chart:     chartName,
 			Values:    extraValuesFiles,

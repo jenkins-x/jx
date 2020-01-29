@@ -1,5 +1,3 @@
-// +build unit
-
 package helmfile
 
 import (
@@ -21,6 +19,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/google/go-cmp/cmp"
+	"github.com/jenkins-x/jx/pkg/envctx"
+	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
+	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -37,15 +39,27 @@ func TestDedupeRepositories(t *testing.T) {
 		dir:           "test_data",
 		CreateOptions: *getCreateOptions(),
 	}
+	o.SetEnvironmentContext(createTestEnvironmentContext(t))
 	err = o.Run()
 	assert.NoError(t, err)
 
 	h, err := loadHelmfile(path.Join(tempDir, "apps"))
+	h, got, err := loadHelmfile(tempDir)
+	assert.NoError(t, err)
+
+	_, want, err := loadHelmfile(path.Join("test_data", "expected"))
 	assert.NoError(t, err)
 
 	// assert there are 3 repos and not 4 as one of them in the jx-applications.yaml is a duplicate
 	assert.Equal(t, 3, len(h.Repositories))
 
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("Unexpected helmfile generated")
+		t.Log(diff)
+
+		t.Logf("generated helmfile:\n")
+		t.Logf("\n%s\n", got)
+	}
 }
 
 func TestExtraAppValues(t *testing.T) {
@@ -57,10 +71,11 @@ func TestExtraAppValues(t *testing.T) {
 		dir:           path.Join("test_data", "extra-values"),
 		CreateOptions: *getCreateOptions(),
 	}
+	o.SetEnvironmentContext(createTestEnvironmentContext(t))
 	err = o.Run()
 	assert.NoError(t, err)
 
-	h, err := loadHelmfile(path.Join(tempDir, "apps"))
+	h, _, err := loadHelmfile(tempDir, "apps")))
 	assert.NoError(t, err)
 
 	// assert we added the local values.yaml for the velero app
@@ -78,10 +93,11 @@ func TestExtraFlagValues(t *testing.T) {
 		valueFiles:    []string{"foo/bar.yaml"},
 		CreateOptions: *getCreateOptions(),
 	}
+	o.SetEnvironmentContext(createTestEnvironmentContext(t))
 	err = o.Run()
 	assert.NoError(t, err)
 
-	h, err := loadHelmfile(path.Join(tempDir, "apps"))
+	h, _, err := loadHelmfile(path.Join(tempDir, "apps"))
 	assert.NoError(t, err)
 
 	// assert we added the values file passed in as a CLI flag
@@ -147,6 +163,8 @@ func TestSystem(t *testing.T) {
 
 func loadHelmfile(dir string) (*helmfile2.HelmState, error) {
 
+func loadHelmfile(dir string) (*helmfile2.HelmState, string, error) {
+	text := ""
 	fileName := helmfile
 	if dir != "" {
 		fileName = filepath.Join(dir, helmfile)
@@ -154,7 +172,7 @@ func loadHelmfile(dir string) (*helmfile2.HelmState, error) {
 
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
-		return nil, errors.Errorf("no %s found in directory %s", fileName, dir)
+		return nil, text, errors.Errorf("no %s found in directory %s", fileName, dir)
 	}
 
 	config := &helmfile2.HelmState{}
@@ -162,14 +180,24 @@ func loadHelmfile(dir string) (*helmfile2.HelmState, error) {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return config, fmt.Errorf("failed to load file %s due to %s", fileName, err)
+		return config, text, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+	}
+	text = string(data)
+	validationErrors, err := util.ValidateYaml(config, data)
+	if err != nil {
+		return config, text, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)
 	}
 
+	if len(validationErrors) > 0 {
+		return config, text, fmt.Errorf("Validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
+	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
 		return config, fmt.Errorf("failed to unmarshal YAML file %s due to %s", fileName, err)
+		return config, text, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
 
-	return config, err
+	return config, text, err
 }
 
 func getCreateOptions() *options.CreateOptions {
@@ -196,5 +224,16 @@ func getCreateOptions() *options.CreateOptions {
 
 	return &options.CreateOptions{
 		CommonOptions: &commonOpts,
+	}
+}
+
+func createTestEnvironmentContext(t *testing.T) *envctx.EnvironmentContext {
+	versionsDir := path.Join("test_data", "jenkins-x-versions")
+	assert.DirExists(t, versionsDir)
+
+	return &envctx.EnvironmentContext{
+		VersionResolver: &versionstream.VersionResolver{
+			VersionsDir: versionsDir,
+		},
 	}
 }
