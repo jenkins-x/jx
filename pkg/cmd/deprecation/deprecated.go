@@ -78,7 +78,7 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
 	},
 	"create jhipster": {
-		replacement: "jx create projet",
+		replacement: "jx create project",
 		date:        "Feb 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
