@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"path"
+	"sort"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/envctx"
 	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
+	"github.com/jenkins-x/jx/pkg/versionstream"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -37,6 +42,11 @@ var (
 		jx create helmfile
 	`)
 )
+
+// GeneratedValues is a struct that gets marshalled into helm values for creating namespaces via helm
+type GeneratedValues struct {
+	Namespaces []string `json:"namespaces"`
+}
 
 // CreateHelmfileOptions the options for the create helmfile command
 type CreateHelmfileOptions struct {
@@ -99,21 +109,42 @@ func (o *CreateHelmfileOptions) Run() error {
 	// iterate over all apps and split them into phases to generate separate helmfiles for each
 	var applications []config.Application
 	var systemApplications []config.Application
-	for _, app := range apps.Applications {
+	charts := make(map[string]*envctx.ChartDetails)
+
+	for i := range apps.Applications {
+		app := &apps.Applications[i]
+		details, err := ec.ChartDetails(app.Name, app.Repository)
+		if err != nil {
+			return errors.Wrapf(err, "failed to resolve chart details for %s repository %s", app.Name, app.Repository)
+		}
+		charts[app.Name] = details
+
+		defaults, valuesFiles, err := ec.ResolveApplicationDefaults(details.Name)
+		if err != nil {
+			return err
+		}
+		app.ValueFiles = append(app.ValueFiles, valuesFiles...)
+		if app.Namespace == "" {
+			app.Namespace = defaults.Namespace
+		}
+		if app.Phase == "" {
+			app.Phase = config.Phase(defaults.Phase)
+		}
+
 		// default phase is apps so set it in if empty
 		if app.Phase == "" || app.Phase == config.PhaseApps {
-			applications = append(applications, app)
+			applications = append(applications, *app)
 		}
 		if app.Phase == config.PhaseSystem {
-			systemApplications = append(systemApplications, app)
+			systemApplications = append(systemApplications, *app)
 		}
 	}
 
-	err = o.generateHelmFile(applications, err, localHelmRepos, apps, string(config.PhaseApps))
+	err = o.generateHelmFile(ec, helmPrefixes, applications, charts, err, localHelmRepos, apps, string(config.PhaseApps))
 	if err != nil {
 		return errors.Wrap(err, "failed to generate apps helmfile")
 	}
-	err = o.generateHelmFile(systemApplications, err, localHelmRepos, apps, string(config.PhaseSystem))
+	err = o.generateHelmFile(ec, helmPrefixes, systemApplications, charts, err, localHelmRepos, apps, string(config.PhaseSystem))
 	if err != nil {
 		return errors.Wrap(err, "failed to generate system helmfile")
 	}
@@ -121,18 +152,14 @@ func (o *CreateHelmfileOptions) Run() error {
 	return nil
 }
 
-func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Application, err error, localHelmRepos map[string]string, apps *config.ApplicationConfig, phase string) error {
-	// contains the repo url and name to reference it by in the release spec
+func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, helmPrefixes *versionstream.RepositoryPrefixes, applications []config.Application, charts map[string]*envctx.ChartDetails, err error, localHelmRepos map[string]string, apps *config.ApplicationConfig, phase string) error {
 	// use a map to dedupe repositories
 	repos := make(map[string]string)
-	charts := make(map[string]*envctx.ChartDetails)
-	for _, app := range apps.Applications {
-		details, err := ec.ChartDetails(app.Name, app.Repository)
-		if err != nil {
-			return errors.Wrapf(err, "failed to resolve chart details for %s repository %s", app.Name, app.Repository)
+	for _, app := range applications {
+		details := charts[app.Name]
+		if details == nil {
+			continue
 		}
-
-		charts[app.Name] = details
 
 		_, err = url.ParseRequestURI(details.Repository)
 		if err != nil {
@@ -169,20 +196,28 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 				Name: name,
 				URL:  repoURL,
 			}
-			repositories = append(repositories, repository)
+			found := false
+			for _, r := range repositories {
+				if r.URL == repoURL {
+					found = true
+					break
+				}
+			}
+			if !found {
+				repositories = append(repositories, repository)
+			}
 		}
 
 	}
 
 	var releases []helmfile2.ReleaseSpec
-	for _, app := range apps.Applications {
+	for i := range applications {
+		app := &applications[i]
 		details := charts[app.Name]
 		if details == nil {
-			return fmt.Errorf("cannot find chart details for name %s", app.Name)
+			continue
 		}
 		chartName := details.Name
-
-		extraValuesFiles := []string{}
 		version := app.Version
 		if ec.VersionResolver != nil {
 			if version == "" {
@@ -194,35 +229,19 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 					version = sv.Version
 				}
 			}
-
-			defaults, valuesFiles, err := ec.ResolveApplicationDefaults(chartName)
-			if err != nil {
-				return err
-			}
-			extraValuesFiles = append(extraValuesFiles, valuesFiles...)
-			if app.Namespace == "" {
-				app.Namespace = defaults.Namespace
-			}
-			/*
-
-				TODO when PR merged
-				if app.Phase == "" {
-					app.Phase = defaults.Phase
-				}
-			*/
 		}
 		if app.Namespace == "" {
 			app.Namespace = apps.DefaultNamespace
 		}
 
 		// check if a local directory and values file exists for the app
-		extraValuesFiles = append(extraValuesFiles, o.valueFiles...)
-		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml")
-		extraValuesFiles = o.addExtraAppValues(app, extraValuesFiles, "values.yaml.gotmpl")
+		extraValuesFiles := append(app.ValueFiles, o.valueFiles...)
+		extraValuesFiles = o.addExtraAppValues(*app, extraValuesFiles, "values.yaml", phase)
+		extraValuesFiles = o.addExtraAppValues(*app, extraValuesFiles, "values.yaml.gotmpl", phase)
 
 		release := helmfile2.ReleaseSpec{
 			Name:      details.LocalName,
-			Namespace: app.Namespace,
+			Namespace: applications[i].Namespace,
 			Version:   version,
 			Chart:     chartName,
 			Values:    extraValuesFiles,

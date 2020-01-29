@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
@@ -16,12 +17,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/envctx"
-	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -43,15 +43,14 @@ func TestDedupeRepositories(t *testing.T) {
 	err = o.Run()
 	assert.NoError(t, err)
 
-	h, err := loadHelmfile(path.Join(tempDir, "apps"))
-	h, got, err := loadHelmfile(tempDir)
+	h, got, err := loadHelmfile(path.Join(tempDir, "apps"))
 	assert.NoError(t, err)
 
 	_, want, err := loadHelmfile(path.Join("test_data", "expected"))
 	assert.NoError(t, err)
 
 	// assert there are 3 repos and not 4 as one of them in the jx-applications.yaml is a duplicate
-	assert.Equal(t, 3, len(h.Repositories))
+	assert.Equal(t, 5, len(h.Repositories))
 
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Errorf("Unexpected helmfile generated")
@@ -75,7 +74,7 @@ func TestExtraAppValues(t *testing.T) {
 	err = o.Run()
 	assert.NoError(t, err)
 
-	h, _, err := loadHelmfile(tempDir, "apps")))
+	h, _, err := loadHelmfile(path.Join(tempDir, "apps"))
 	assert.NoError(t, err)
 
 	// assert we added the local values.yaml for the velero app
@@ -118,7 +117,7 @@ func TestCreateNamespaceChart(t *testing.T) {
 	err = o.Run()
 	assert.NoError(t, err)
 
-	h, err := loadHelmfile(path.Join(tempDir, "apps"))
+	h, _, err := loadHelmfile(path.Join(tempDir, "apps"))
 	assert.NoError(t, err)
 
 	exists, err := util.FileExists(path.Join(tempDir, "apps", "generated", "foo", "values.yaml"))
@@ -150,18 +149,16 @@ func TestSystem(t *testing.T) {
 	err = o.Run()
 	assert.NoError(t, err)
 
-	appHelmfile, err := loadHelmfile(path.Join(tempDir, "apps"))
+	appHelmfile, _, err := loadHelmfile(path.Join(tempDir, "apps"))
 	assert.NoError(t, err)
 
-	systemHelmfile, err := loadHelmfile(path.Join(tempDir, "system"))
+	systemHelmfile, _, err := loadHelmfile(path.Join(tempDir, "system"))
 	assert.NoError(t, err)
 
 	// assert we added the local values.yaml for the velero app
 	assert.Equal(t, "velero", appHelmfile.Releases[0].Name)
 	assert.Equal(t, "cert-manager", systemHelmfile.Releases[0].Name)
 }
-
-func loadHelmfile(dir string) (*helmfile2.HelmState, error) {
 
 func loadHelmfile(dir string) (*helmfile2.HelmState, string, error) {
 	text := ""
@@ -179,10 +176,9 @@ func loadHelmfile(dir string) (*helmfile2.HelmState, string, error) {
 
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return config, fmt.Errorf("failed to load file %s due to %s", fileName, err)
-		return config, text, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+		return config, text, fmt.Errorf("failed to load file %s due to %s", fileName, err)
 	}
-	text = strings.TrimSpace(string(data))
+	text = string(data)
 	validationErrors, err := util.ValidateYaml(config, data)
 	if err != nil {
 		return config, text, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)
@@ -193,7 +189,6 @@ func loadHelmfile(dir string) (*helmfile2.HelmState, string, error) {
 	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return config, fmt.Errorf("failed to unmarshal YAML file %s due to %s", fileName, err)
 		return config, text, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
 
