@@ -232,7 +232,7 @@ func (o *CreateHelmfileOptions) generateHelmFile(applications []config.Applicati
 			Atomic:  true,
 			Verify:  false,
 			Wait:    true,
-			Timeout: 180,
+			Timeout: 520,
 			// need Force to be false https://github.com/helm/helm/issues/6378
 			Force: false,
 		},

@@ -27,6 +27,9 @@ releases:
   name: cert-manager
   namespace: cert-manager
   version: v0.11.0
+- chart: ../repositories
+  name: repositories
+  namespace: jx
 repositories:
 - name: bitnami
   url: https://charts.bitnami.com/bitnami

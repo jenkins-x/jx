@@ -9,3 +9,5 @@ applications:
   version: 9.2.1
 - name: jetstack/cert-manager
   namespace: cert-manager
+- name: repositories
+  repository: ".."

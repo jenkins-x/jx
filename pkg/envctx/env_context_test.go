@@ -63,6 +63,17 @@ func TestEnvironmentContextResolveChartDetails(t *testing.T) {
 				Repository: "http://chartmuseum.jenkins-x.io",
 			},
 		},
+		{
+			Test:       "localChart",
+			Name:       "repositories",
+			Repository: "..",
+			Expected: envctx.ChartDetails{
+				Name:       "../repositories",
+				Prefix:     "..",
+				LocalName:  "repositories",
+				Repository: "",
+			},
+		},
 	}
 
 	for _, test := range tests {
