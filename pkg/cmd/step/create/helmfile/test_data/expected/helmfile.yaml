@@ -14,19 +14,23 @@ releases:
 - chart: stable/velero
   name: velero
   namespace: velero
+  version: 2.7.4
 - chart: stable/external-dns
   name: external-dns
   namespace: jx
+  version: 2.15.3
 - chart: bitnami/nexus
   name: nexus
   namespace: jx
+  version: 9.2.1
 - chart: jetstack/cert-manager
   name: cert-manager
   namespace: cert-manager
+  version: v0.11.0
 repositories:
-- name: stable
-  url: https://kubernetes-charts.storage.googleapis.com
 - name: bitnami
   url: https://charts.bitnami.com/bitnami
 - name: jenkins-x
   url: https://storage.googleapis.com/chartmuseum.jenkins-x.io
+- name: stable
+  url: https://kubernetes-charts.storage.googleapis.com
