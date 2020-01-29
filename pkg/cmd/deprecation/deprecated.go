@@ -18,7 +18,7 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	},
 	"init": {
 		replacement: "jx boot",
-		date:        "Feb 1 2020",
+		date:        "Jun 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
@@ -54,31 +54,31 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 		date: "Feb 1 2020",
 	},
 	"create archetype": {
-		replacement: "jx create quickstart",
+		replacement: "jx create project",
 		date:        "Feb 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
 	},
 	"create micro": {
-		replacement: "jx create quickstart",
+		replacement: "jx create project",
 		date:        "Feb 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
 	},
 	"create lile": {
-		replacement: "jx create quickstart",
+		replacement: "jx create project",
 		date:        "Feb 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
 	},
 	"create camel": {
-		replacement: "jx create quickstart",
+		replacement: "jx create project",
 		date:        "Feb 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
 	},
 	"create jhipster": {
-		replacement: "jx create quickstart",
+		replacement: "jx create projet",
 		date:        "Feb 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/first-project/create-quickstart/")),
@@ -102,7 +102,7 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	},
 	"upgrade platform": {
 		replacement: "jx upgrade boot",
-		date:        "Feb 1 2020",
+		date:        "Jun 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
@@ -120,7 +120,7 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	},
 	"upgrade ingress": {
 		replacement: "jx boot",
-		date:        "Feb 1 2020",
+		date:        "Jun 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
@@ -181,11 +181,11 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 		date: "Feb 1 2020",
 	},
 	"step credential": {
-		date: "Feb 1 2020",
+		date: "Jun 1 2020",
 		info: "This is replaced by Tekton's mounted secrets",
 	},
 	"step git credential": {
-		date: "Apr 1 2020",
+		date: "Jun 1 2020",
 		info: "This is replaced by Tekton's mounted secrets",
 	},
 	"step split monorepo": {
@@ -199,7 +199,7 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	},
 	"console": {
 		replacement: "jx ui",
-		date:        "Mar 1 2020",
+		date:        "Jun 1 2020",
 		info:        "Classic Jenkins console will be replaced by Jenkins X UI app",
 	},
 	"controller workflow": {
