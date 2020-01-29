@@ -9,24 +9,36 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-
 	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	helm_cmd "github.com/jenkins-x/jx/pkg/cmd/step/helm"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/mholt/archiver"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	helm_cmd "github.com/jenkins-x/jx/pkg/cmd/step/helm"
+	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 func TestApplyAppsTemplateOverrides(t *testing.T) {
 	testOptions := testhelpers.CreateAppTestOptions(true, "dummy", t)
 	_, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
+
+	jx, ns, err := testOptions.CommonOptions.JXClient()
+	require.NoError(t, err)
+
+	env, err := jx.JenkinsV1().Environments(ns).Get("dev", v12.GetOptions{})
+	require.NoError(t, err)
+
+	env.Spec.TeamSettings.BootRequirements = "secretStorage: vault"
+
+	_, err = jx.JenkinsV1().Environments(ns).Update(env)
+	require.NoError(t, err)
 
 	envsDir, err := testOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
