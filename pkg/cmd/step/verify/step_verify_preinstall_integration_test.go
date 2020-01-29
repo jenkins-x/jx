@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/gits"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
@@ -211,7 +210,7 @@ func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 	commonOpts := opts.CommonOptions{
 		BatchMode: false,
 	}
-	o := &create.StepCreateInstallValuesOptions{
+	o := &verify.StepVerifyIngressOptions{
 		StepOptions: step.StepOptions{
 			CommonOptions: &commonOpts,
 		},
