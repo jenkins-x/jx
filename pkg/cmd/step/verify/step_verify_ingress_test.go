@@ -27,10 +27,10 @@ import (
 )
 
 func TestVerifyIngress(t *testing.T) {
-	testData := path.Join("test_data", "step_create_install_values")
+	testData := path.Join("test_data", "verify_ingress")
 	assert.DirExists(t, testData)
 
-	outputDir, err := ioutil.TempDir("", "test-step-create-install-values-")
+	outputDir, err := ioutil.TempDir("", "test-step-verify-ingress-")
 	require.NoError(t, err)
 
 	err = util.CopyDir(testData, outputDir, true)
