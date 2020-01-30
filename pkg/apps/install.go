@@ -108,7 +108,7 @@ func (o *InstallOptions) AddApp(details *envctx.ChartDetails, version string, us
 			opts := GitOpsOptions{
 				InstallOptions: o,
 			}
-			err = opts.AddApp(details.Name, dir, chartDetails.Version, repository, alias, o.AutoMerge)
+			err = opts.AddApp(details.LocalName, details.Name, dir, chartDetails.Version, repository, alias, o.AutoMerge)
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", chartName, version, alias)
 			}
