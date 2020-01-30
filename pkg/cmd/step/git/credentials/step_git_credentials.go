@@ -103,8 +103,11 @@ func (o *StepGitCredentialsOptions) Run() error {
 		}
 
 		secret, err := kubeClient.CoreV1().Secrets(ns).Get(o.CredentialsSecret, metav1.GetOptions{})
-		if err != nil && !apierrors.IsNotFound(err) {
-			return errors.Wrapf(err, "failed to find secret '%s' in namespace '%s'", o.CredentialsSecret, ns)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return errors.Wrapf(err, "failed to find secret '%s' in namespace '%s'", o.CredentialsSecret, ns)
+			}
+			return errors.Wrapf(err, "failed to read secret '%s' in namespace '%s'", o.CredentialsSecret, ns)
 		}
 
 		creds, err := credentialhelper.CreateGitCredentialFromURL(string(secret.Data["url"]), string(secret.Data["token"]), string(secret.Data["user"]))
