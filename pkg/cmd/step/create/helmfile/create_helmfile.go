@@ -90,7 +90,7 @@ func (o *CreateHelmfileOptions) Run() error {
 		return errors.Wrap(err, "failed to load applications")
 	}
 
-	ec, err := o.EnvironmentContext(o.dir)
+	ec, err := o.EnvironmentContext(o.dir, true)
 	if err != nil {
 		return err
 	}
