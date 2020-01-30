@@ -97,8 +97,8 @@ func TestExtraFlagValues(t *testing.T) {
 		valueFiles:    []string{"foo/bar.yaml"},
 		CreateOptions: *getCreateOptions(),
 	}
-	o.SetEnvironmentContext(createTestEnvironmentContext(t))
 	configureTestCommonOptions(t, o)
+	o.SetEnvironmentContext(createTestEnvironmentContext(t))
 	err = o.Run()
 	assert.NoError(t, err)
 
@@ -120,13 +120,14 @@ func TestCreateNamespaceChart(t *testing.T) {
 		valueFiles: []string{"foo/bar.yaml"},
 	}
 	configureTestCommonOptions(t, o)
+	o.SetEnvironmentContext(createTestEnvironmentContext(t))
 	err = o.Run()
 	assert.NoError(t, err)
 
-	h, _, err := loadHelmfile(path.Join(tempDir, "apps"))
+	h, _, err := loadHelmfile(path.Join(tempDir, "system"))
 	assert.NoError(t, err)
 
-	exists, err := util.FileExists(path.Join(tempDir, "apps", "generated", "foo", "values.yaml"))
+	exists, err := util.FileExists(path.Join(tempDir, "system", "generated", "foo", "values.yaml"))
 	assert.True(t, exists, "generated namespace values file not found")
 
 	// assert we added the values file passed in as a CLI flag
@@ -134,7 +135,7 @@ func TestCreateNamespaceChart(t *testing.T) {
 
 	for _, release := range h.Releases {
 		if release.Name == "velero" {
-			assert.Equal(t, "foo/bar.yaml", release.Values[0])
+			assert.Equal(t, "foo/bar.yaml", release.Values[1])
 		} else {
 			assert.Equal(t, "namespace-foo", release.Name)
 			assert.Equal(t, path.Join("generated", "foo", "values.yaml"), release.Values[0])
@@ -152,19 +153,17 @@ func TestSystem(t *testing.T) {
 		dir:       path.Join("test_data", "system"),
 	}
 	configureTestCommonOptions(t, o)
+	o.SetEnvironmentContext(createTestEnvironmentContext(t))
 
 	err = o.Run()
-	assert.NoError(t, err)
-
-	appHelmfile, _, err := loadHelmfile(path.Join(tempDir, "apps"))
 	assert.NoError(t, err)
 
 	systemHelmfile, _, err := loadHelmfile(path.Join(tempDir, "system"))
 	assert.NoError(t, err)
 
 	// assert we added the local values.yaml for the velero app
-	assert.Equal(t, "velero", appHelmfile.Releases[0].Name)
-	assert.Equal(t, "cert-manager", systemHelmfile.Releases[0].Name)
+	assert.Equal(t, "velero", systemHelmfile.Releases[0].Name)
+	assert.Equal(t, "cert-manager", systemHelmfile.Releases[1].Name)
 }
 
 func loadHelmfile(dir string) (*helmfile2.HelmState, string, error) {

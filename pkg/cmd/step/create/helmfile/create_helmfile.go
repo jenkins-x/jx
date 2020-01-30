@@ -85,7 +85,7 @@ func NewCmdCreateHelmfile(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateHelmfileOptions) Run() error {
-	apps, _, err := config.LoadApplicationsConfig(o.dir)
+	apps, _, err := config.LoadAppConfig(o.dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load applications")
 	}
@@ -107,12 +107,12 @@ func (o *CreateHelmfileOptions) Run() error {
 	}
 
 	// iterate over all apps and split them into phases to generate separate helmfiles for each
-	var applications []config.Application
-	var systemApplications []config.Application
+	var applications []config.App
+	var systemApplications []config.App
 	charts := make(map[string]*envctx.ChartDetails)
 
-	for i := range apps.Applications {
-		app := &apps.Applications[i]
+	for i := range apps.Apps {
+		app := &apps.Apps[i]
 		details, err := ec.ChartDetails(app.Name, app.Repository)
 		if err != nil {
 			return errors.Wrapf(err, "failed to resolve chart details for %s repository %s", app.Name, app.Repository)
@@ -152,7 +152,7 @@ func (o *CreateHelmfileOptions) Run() error {
 	return nil
 }
 
-func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, helmPrefixes *versionstream.RepositoryPrefixes, applications []config.Application, charts map[string]*envctx.ChartDetails, err error, localHelmRepos map[string]string, apps *config.ApplicationConfig, phase string) error {
+func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, helmPrefixes *versionstream.RepositoryPrefixes, applications []config.App, charts map[string]*envctx.ChartDetails, err error, localHelmRepos map[string]string, apps *config.AppConfig, phase string) error {
 	// use a map to dedupe repositories
 	repos := make(map[string]string)
 	for _, app := range applications {
@@ -307,7 +307,7 @@ func (o *CreateHelmfileOptions) writeHelmfile(err error, phase string, data []by
 	return nil
 }
 
-func (o *CreateHelmfileOptions) addExtraAppValues(app config.Application, newValuesFiles []string, valuesFilename, phase string) []string {
+func (o *CreateHelmfileOptions) addExtraAppValues(app config.App, newValuesFiles []string, valuesFilename, phase string) []string {
 	fileName := path.Join(o.dir, phase, app.Name, valuesFilename)
 	exists, _ := util.FileExists(fileName)
 	if exists {

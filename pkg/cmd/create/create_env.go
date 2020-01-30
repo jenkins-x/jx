@@ -86,7 +86,7 @@ func NewCmdCreateEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "environment",
-		Short:   "Create a new Environment which is used to promote your Team's Applications via Continuous Delivery",
+		Short:   "Create a new Environment which is used to promote your Team's Apps via Continuous Delivery",
 		Aliases: []string{"env"},
 		Long:    create_env_long,
 		Example: create_env_example,

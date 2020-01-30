@@ -33,8 +33,8 @@ type GetApplicationsOptions struct {
 	Previews    bool
 }
 
-// Applications is a map indexed by the application name then the environment name
-// Applications map[string]map[string]*ApplicationEnvironmentInfo
+// Apps is a map indexed by the application name then the environment name
+// Apps map[string]map[string]*ApplicationEnvironmentInfo
 
 // EnvApps contains data about app deployments in an environment
 type EnvApps struct {
@@ -83,7 +83,7 @@ func NewCmdGetApplications(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "applications",
-		Short:   "Display one or more Applications and their versions",
+		Short:   "Display one or more Apps and their versions",
 		Aliases: []string{"application", "version", "versions"},
 		Long:    getVersionLong,
 		Example: getVersionExample,

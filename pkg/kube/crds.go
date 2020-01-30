@@ -390,7 +390,7 @@ func RegisterSourceRepositoryGroup(apiClient apiextensionsclientset.Interface) e
 	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
-// RegisterSourceRepositoryCRD ensures that the CRD is registered for Applications
+// RegisterSourceRepositoryCRD ensures that the CRD is registered for Apps
 func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "sourcerepositories." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{

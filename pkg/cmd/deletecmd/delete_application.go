@@ -42,7 +42,7 @@ const (
 
 var (
 	deleteApplicationLong = templates.LongDesc(`
-		Deletes one or more Applications
+		Deletes one or more Apps
 
 		Note that this command does not remove the underlying Git Repositories.
 
@@ -192,7 +192,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 
 	names := removeEnvironments(jobs, envMap)
 	if len(names) == 0 {
-		return deletedApplications, fmt.Errorf("There are no Applications in Jenkins")
+		return deletedApplications, fmt.Errorf("There are no Apps in Jenkins")
 	}
 
 	srList, err := repoService.List(metav1.ListOptions{})
@@ -201,7 +201,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 	}
 
 	if len(o.Args) == 0 {
-		o.Args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Prow:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
+		o.Args, err = util.SelectNamesWithFilter(names, "Pick Apps to remove from Prow:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return deletedApplications, err
 		}
@@ -318,11 +318,11 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 	}
 
 	if len(names) == 0 {
-		return deletedApplications, fmt.Errorf("There are no Applications in Jenkins")
+		return deletedApplications, fmt.Errorf("There are no Apps in Jenkins")
 	}
 
 	if len(args) == 0 {
-		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
+		args, err = util.SelectNamesWithFilter(names, "Pick Apps to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.GetIOFileHandles())
 		if err != nil {
 			return deletedApplications, err
 		}
@@ -339,7 +339,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 	deleteMessage := strings.Join(args, ", ")
 
 	if !o.BatchMode {
-		if answer, err := util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.GetIOFileHandles()); !answer {
+		if answer, err := util.Confirm("You are about to delete these Apps from Jenkins: "+deleteMessage, false, "The list of Apps names to be deleted from Jenkins", o.GetIOFileHandles()); !answer {
 			return deletedApplications, err
 		}
 	}
