@@ -31,9 +31,10 @@ func (o *CommonOptions) EnvironmentContext(dir string, preferRequirementsFile bo
 	}
 	teamSettings := tc.TeamSettings()
 
-	// lets default to local file system for the requirements as we are often invoked before we've created the cluster
 	exists := false
 	if preferRequirementsFile {
+		// lets default to local file system for the requirements as we being invoked
+		// in a `jx boot` pipeline and we have not yet fully populated the `Environment` resources yet
 		fileName := ""
 		tc.Requirements, fileName, err = config.LoadRequirementsConfig(dir)
 		if err != nil {
@@ -68,13 +69,14 @@ func (o *CommonOptions) EnvironmentContext(dir string, preferRequirementsFile bo
 	if err != nil {
 		return tc, err
 	}
-	versionStreamURL := teamSettings.VersionStreamURL
-	versionStreamRef := teamSettings.VersionStreamRef
-	if versionStreamURL == "" {
+	versionStreamURL := ""
+	versionStreamRef := ""
+	if preferRequirementsFile {
 		versionStreamURL = tc.Requirements.VersionStream.URL
-	}
-	if versionStreamRef == "" {
 		versionStreamRef = tc.Requirements.VersionStream.Ref
+	} else {
+		versionStreamURL = teamSettings.VersionStreamURL
+		versionStreamRef = teamSettings.VersionStreamRef
 	}
 	tc.VersionResolver, err = o.CreateVersionResolver(versionStreamURL, versionStreamRef)
 	if err != nil {
