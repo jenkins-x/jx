@@ -148,7 +148,11 @@ const (
 	// DeploymentProwBuild the name of the Deployment for the Prow webhook engine
 	DeploymentProwBuild = "prow-build"
 
+	// DefaultEnvironmentGitRepoURL the default git repository used for environments when using helm 2
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
+
+	// DefaultEnvironmentHelmfileGitRepoURL the default git repository used for remote environments with helmfile
+	DefaultEnvironmentHelmfileGitRepoURL = "https://github.com/jenkins-x/default-environment-helmfile.git"
 
 	DefaultOrganisationGitRepoURL = "https://github.com/jenkins-x/default-organisation.git"
 

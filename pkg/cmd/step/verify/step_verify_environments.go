@@ -305,13 +305,13 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	prefix := ""
 
 	gitServerURL := envGitInfo.HostURL()
-	config := authConfigSvc.Config()
-	server, userAuth := config.GetPipelineAuth()
+	authConfig := authConfigSvc.Config()
+	server, userAuth := authConfig.GetPipelineAuth()
 
 	if gha {
 		userAuth = nil
 		if server == nil {
-			for _, s := range config.Servers {
+			for _, s := range authConfig.Servers {
 				if s.URL == gitServerURL {
 					server = s
 					break
@@ -328,12 +328,19 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 		}
 	}
 
-	helmValues, err := o.createEnvironmentHelmValues(requirements, environment)
-	if err != nil {
-		return errors.Wrap(err, "creating environment helm values")
-	}
+	var helmValues config.HelmValuesConfig
 	batchMode := o.BatchMode
 	forkGitURL := kube.DefaultEnvironmentGitRepoURL
+	helmfile := false
+	if requirements.Helmfile && environment.Spec.RemoteCluster {
+		helmfile = true
+		forkGitURL = kube.DefaultEnvironmentHelmfileGitRepoURL
+	} else {
+		helmValues, err = o.createEnvironmentHelmValues(requirements, environment)
+		if err != nil {
+			return errors.Wrap(err, "creating environment helm values")
+		}
+	}
 
 	if server == nil {
 		return fmt.Errorf("no auth server found for git server %s from gitURL %s", gitServerURL, gitURL)
@@ -375,7 +382,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 			IgnoreExistingRepository: true,
 		}
 
-		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, gitter, o.ResolveChartMuseumURL, o.GetIOFileHandles())
+		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, helmfile, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, gitter, o.ResolveChartMuseumURL, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "failed to create git repository for gitURL %s", gitURL)
 		}
