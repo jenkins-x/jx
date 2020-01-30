@@ -15,8 +15,11 @@ import (
 )
 
 // EnvironmentContext gets or creates a team context with the common values for working with requirements, team settings
-// and version resolvers
-func (o *CommonOptions) EnvironmentContext(dir string) (*envctx.EnvironmentContext, error) {
+// and version resolvers.
+//
+// if preferRequirementsFile is true we look for the local `jx-requirements.yml` file first and then fall back to the
+// development environment settings; otherwise we try to use the requirements from the environment if present
+func (o *CommonOptions) EnvironmentContext(dir string, preferRequirementsFile bool) (*envctx.EnvironmentContext, error) {
 	if o.envctx != nil {
 		return o.envctx, nil
 	}
@@ -29,12 +32,18 @@ func (o *CommonOptions) EnvironmentContext(dir string) (*envctx.EnvironmentConte
 	teamSettings := tc.TeamSettings()
 
 	// lets default to local file system for the requirements as we are often invoked before we've created the cluster
-	fileName := ""
-	tc.Requirements, fileName, err = config.LoadRequirementsConfig(dir)
-	if err != nil {
-		return tc, err
+	exists := false
+	if preferRequirementsFile {
+		fileName := ""
+		tc.Requirements, fileName, err = config.LoadRequirementsConfig(dir)
+		if err != nil {
+			return tc, err
+		}
+		if fileName != "" {
+			exists, _ = util.FileExists(fileName)
+		}
 	}
-	if fileName == "" {
+	if !preferRequirementsFile || !exists {
 		// lets try the environment CRD if we have no local file
 		req, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 		if err != nil {
@@ -47,6 +56,8 @@ func (o *CommonOptions) EnvironmentContext(dir string) (*envctx.EnvironmentConte
 	if err != nil {
 		return tc, err
 	}
+
+	// if we can't find a requirements then lets just create the defaults for now
 	if tc.Requirements == nil {
 		tc.Requirements, _, err = config.LoadRequirementsConfig(dir)
 		if err != nil {

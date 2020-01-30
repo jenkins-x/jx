@@ -104,7 +104,7 @@ func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetAppsOptions) Run() error {
-	ec, err := o.EnvironmentContext(".")
+	ec, err := o.EnvironmentContext(".", false)
 	if err != nil {
 		return err
 	}
