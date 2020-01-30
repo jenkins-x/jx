@@ -204,12 +204,10 @@ func (o *UpgradeAppsOptions) Run() error {
 	} else if len(o.Args) == 1 {
 		app = o.Args[0]
 	}
-
-	var version string
-	if o.Version != "" {
-		version = o.Version
+	details, err := ec.ChartDetails(app, o.Repo)
+	if err != nil {
+		return err
 	}
-
-	return installOpts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.Alias, o.HelmUpdate, o.AskAll)
+	return installOpts.UpgradeApp(details.LocalName, o.Version, details.Repository, o.Username, o.Password, o.ReleaseName, o.Alias, o.HelmUpdate, o.AskAll)
 
 }
