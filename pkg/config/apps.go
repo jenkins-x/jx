@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	// ApplicationsConfigFileName is the name of the applications configuration file
-	ApplicationsConfigFileName = "jx-apps.yml"
+	// AppConfigFileName is the name of the applications configuration file
+	AppConfigFileName = "jx-apps.yml"
 	// PhaseSystem is installed before the apps phase
 	PhaseSystem Phase = "system"
 	// PhaseApps is installed after the system phase
@@ -23,16 +23,16 @@ const (
 // PhaseValues the string values for Phases
 var PhaseValues = []string{"system", "apps"}
 
-// ApplicationConfig contains applications to install during boot
-type ApplicationConfig struct {
-	// Applications of applications
-	Applications []Application `json:"applications"`
+// AppConfig contains the apps to install during boot for helmfile / helm 3
+type AppConfig struct {
+	// Apps of applications
+	Apps []App `json:"apps"`
 	// DefaultNamespace the default namespace to install applications into
 	DefaultNamespace string `json:"defaultNamespace,omitempty"`
 }
 
-// Application is an application to install during boot
-type Application struct {
+// App is the configuration of an app used during boot for helmfile / helm 3
+type App struct {
 	// Name of the application / helm chart
 	Name string `json:"name,omitempty"`
 	// Repository the helm repository
@@ -53,11 +53,11 @@ type Application struct {
 // Phase of the pipeline to install application
 type Phase string
 
-// LoadApplicationsConfig loads the boot applications configuration file
+// LoadAppConfig loads the boot applications configuration file
 // if there is not a file called `jx-apps.yml` in the given dir we will scan up the parent
 // directories looking for the requirements file as we often run 'jx' steps in sub directories.
-func LoadApplicationsConfig(dir string) (*ApplicationConfig, string, error) {
-	fileName := ApplicationsConfigFileName
+func LoadAppConfig(dir string) (*AppConfig, string, error) {
+	fileName := AppConfigFileName
 	if dir != "" {
 		fileName = filepath.Join(dir, fileName)
 	}
@@ -67,7 +67,7 @@ func LoadApplicationsConfig(dir string) (*ApplicationConfig, string, error) {
 		return nil, fileName, errors.Errorf("error looking up %s in directory %s", fileName, dir)
 	}
 
-	config := &ApplicationConfig{}
+	config := &AppConfig{}
 	if !exists {
 		return config, "", nil
 	}
@@ -89,7 +89,7 @@ func LoadApplicationsConfig(dir string) (*ApplicationConfig, string, error) {
 	}
 
 	// validate all phases are known types, default to apps if not specified
-	for _, app := range config.Applications {
+	for _, app := range config.Apps {
 		if app.Phase != "" {
 			if app.Phase != PhaseSystem && app.Phase != PhaseApps {
 				return config, fileName, fmt.Errorf("failed to validate YAML file, invalid phase '%s', needed on of %v",
@@ -102,7 +102,7 @@ func LoadApplicationsConfig(dir string) (*ApplicationConfig, string, error) {
 }
 
 // SaveConfig saves the configuration file to the given project directory
-func (c *ApplicationConfig) SaveConfig(fileName string) error {
+func (c *AppConfig) SaveConfig(fileName string) error {
 	data, err := yaml.Marshal(c)
 	if err != nil {
 		return err

@@ -1,5 +1,5 @@
 defaultNamespace: jx
-applications:
+apps:
 - name: stable/nginx-ingress
 - name: stable/velero
   namespace: velero

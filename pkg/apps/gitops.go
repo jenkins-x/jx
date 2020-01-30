@@ -41,7 +41,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		Gitter: o.Gitter,
 		ModifyChartFn: environments.CreateAddRequirementFn(app, alias, version,
 			repository, o.valuesFiles, dir, o.Verbose, o.Helmer),
-		ModifyAppsFn: environments.CreateAddApplicationConfigFn(app, version, repository),
+		ModifyAppsFn: environments.CreateAddAppConfigFn(app, version, repository),
 		GitProvider:  o.GitProvider,
 	}
 
@@ -105,7 +105,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 		Gitter: o.Gitter,
 		ModifyChartFn: environments.CreateUpgradeRequirementsFn(all, app, alias, version, username, password,
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
-		ModifyAppsFn: environments.CreateUpgradeApplicationConfigFn(all, app, version),
+		ModifyAppsFn: environments.CreateUpgradeAppConfigFn(all, app, version),
 		GitProvider:  o.GitProvider,
 	}
 
@@ -149,13 +149,13 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string, autoMerge bool) erro
 		}
 		return nil
 	}
-	modifyAppsFn := func(appsConfig *config.ApplicationConfig, dir string, pullRequestDetails *gits.PullRequestDetails) error {
+	modifyAppsFn := func(appsConfig *config.AppConfig, dir string, pullRequestDetails *gits.PullRequestDetails) error {
 		// See if the app already exists in requirements
 		found := false
-		for i, d := range appsConfig.Applications {
+		for i, d := range appsConfig.Apps {
 			if d.Name == app {
 				found = true
-				appsConfig.Applications = append(appsConfig.Applications[:i], appsConfig.Applications[i+1:]...)
+				appsConfig.Apps = append(appsConfig.Apps[:i], appsConfig.Apps[i+1:]...)
 			}
 		}
 
@@ -228,13 +228,13 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 	appsList := v1.AppList{}
 
 	// lets check if we are using a `jx-apps.yml` file
-	appsConfig, fileName, err := config.LoadApplicationsConfig(dir)
+	appsConfig, fileName, err := config.LoadAppConfig(dir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to load applications config in environment clone of %s", cloneUrl)
 	}
 	if fileName != "" {
 		// lets use the jx-apps.yml file
-		for _, a := range appsConfig.Applications {
+		for _, a := range appsConfig.Apps {
 			app := v1.App{}
 			app.Name = naming.ToValidName(a.Name)
 			app.Namespace = a.Namespace

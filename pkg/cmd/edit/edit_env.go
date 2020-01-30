@@ -62,7 +62,7 @@ func NewCmdEditEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "environment",
-		Short:   "Edits an Environment which is used to promote your Team's Applications via Continuous Delivery",
+		Short:   "Edits an Environment which is used to promote your Team's Apps via Continuous Delivery",
 		Aliases: []string{"env"},
 		Long:    editEnvLong,
 		Example: editEnvExample,

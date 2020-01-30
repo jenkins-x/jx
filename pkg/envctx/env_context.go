@@ -100,10 +100,10 @@ func (c *EnvironmentContext) ChartDetails(chartName string, repo string) (*Chart
 }
 
 // ResolveApplicationDefaults resolves the application defaults in the version stream if there are any
-func (c *EnvironmentContext) ResolveApplicationDefaults(chartName string) (*config.ApplicationDefaultsConfig, []string, error) {
+func (c *EnvironmentContext) ResolveApplicationDefaults(chartName string) (*config.AppDefaultsConfig, []string, error) {
 	valueFiles := []string{}
 	dir := filepath.Join(c.VersionResolver.VersionsDir, string(versionstream.KindApp), chartName)
-	defaults, _, err := config.LoadApplicationDefaultsConfig(dir)
+	defaults, _, err := config.LoadAppDefaultsConfig(dir)
 	if err != nil {
 		return defaults, valueFiles, err
 	}

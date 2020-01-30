@@ -357,7 +357,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsEnvDir string,
 		log.Logger().Errorf("unable to fetch chart - %s", err)
 	}
 
-	modifyAppsFn := environments.CreateAddApplicationConfigFn(chart, version, repo)
+	modifyAppsFn := environments.CreateAddAppConfigFn(chart, version, repo)
 	hasAppsFile, err := environments.ModifyAppsFile(gitOpsEnvDir, nil, modifyAppsFn)
 	if err != nil {
 		return err

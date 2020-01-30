@@ -87,7 +87,7 @@ func (d Deployment) URL(kc kubernetes.Interface, a Application) string {
 	return url
 }
 
-// GetApplications fetches all Applications
+// GetApplications fetches all Apps
 func GetApplications(factory clients.Factory) (List, error) {
 	list := List{
 		Items: make([]Application, 0),

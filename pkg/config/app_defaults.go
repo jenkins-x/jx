@@ -12,13 +12,13 @@ import (
 )
 
 const (
-	// ApplicationsDefaultsConfigFileName is the name of the applications configuration file
-	ApplicationsDefaultsConfigFileName = "defaults.yml"
+	// AppDefaultsConfigFileName is the name of the apps configuration file in the version stream
+	AppDefaultsConfigFileName = "defaults.yml"
 )
 
-// ApplicationDefaultsConfig contains optional defaults for applications installed via helmfile / helm 3 which are
+// AppDefaultsConfig contains optional defaults for apps installed via helmfile / helm 3 which are
 // typically discovered from the Version Stream
-type ApplicationDefaultsConfig struct {
+type AppDefaultsConfig struct {
 	// Namespace the default namespace to install this app into
 	Namespace string `json:"namespace,omitempty"`
 	// Phase the boot phase this app should be installed in. Leave blank if you are not sure.
@@ -26,11 +26,11 @@ type ApplicationDefaultsConfig struct {
 	Phase string `json:"phase,omitempty"`
 }
 
-// LoadApplicationDefaultsConfig loads the boot application default configuration
+// LoadAppDefaultsConfig loads the boot apps default configuration when using helmfile / helm 3 in the version stream
 // used to default values if the user does not specify any configuration when doing `jx add app foo`
 // to try encourage default configurations across installations (e.g. using default namespace names and so forth)
-func LoadApplicationDefaultsConfig(dir string) (*ApplicationDefaultsConfig, string, error) {
-	fileName := ApplicationsDefaultsConfigFileName
+func LoadAppDefaultsConfig(dir string) (*AppDefaultsConfig, string, error) {
+	fileName := AppDefaultsConfigFileName
 	if dir != "" {
 		fileName = filepath.Join(dir, fileName)
 	}
@@ -40,7 +40,7 @@ func LoadApplicationDefaultsConfig(dir string) (*ApplicationDefaultsConfig, stri
 		return nil, fileName, errors.Errorf("error looking up %s in directory %s", fileName, dir)
 	}
 
-	config := &ApplicationDefaultsConfig{}
+	config := &AppDefaultsConfig{}
 	if !exists {
 		return config, "", nil
 	}
