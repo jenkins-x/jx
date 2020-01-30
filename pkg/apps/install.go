@@ -83,18 +83,20 @@ func (o *InstallOptions) AddApp(details *envctx.ChartDetails, version string, us
 		return errors.Wrapf(err, "adding helm repo")
 	}
 
-	chartName, err := o.resolvePrefixesAgainstRepos(repository, app)
-	if err != nil {
-		return errors.WithStack(err)
+	if details.Name == details.LocalName {
+		details.Name, err = o.resolvePrefixesAgainstRepos(repository, details.LocalName)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
-
+	chartName := details.Name
 	if chartName == "" {
 		return errors.Errorf("unable to find %s in %s", app, repository)
 	}
 
 	// The chart inspector allows us to operate on the unpacked chart.
 	// We need to ask questions then as we have access to the schema, and can add secrets.
-	interrogateChartFn := o.createInterrogateChartFn(version, chartName, repository, username, password, alias, true)
+	interrogateChartFn := o.createInterrogateChartFn(version, details.LocalName, repository, username, password, alias, true)
 
 	// Called whilst the chart is unpacked and modifiable
 	installAppFunc := func(dir string) error {
@@ -144,7 +146,7 @@ func (o *InstallOptions) AddApp(details *envctx.ChartDetails, version string, us
 	}
 
 	// Do the actual work
-	return helm.InspectChart(chartName, version, repository, username, password, o.Helmer, installAppFunc)
+	return helm.InspectChart(details.LocalName, version, repository, username, password, o.Helmer, installAppFunc)
 }
 
 //GetApps gets a list of installed apps
