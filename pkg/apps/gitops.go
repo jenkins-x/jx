@@ -30,7 +30,7 @@ type GitOpsOptions struct {
 }
 
 // AddApp adds the app with version rooted in dir from the repository. An alias can be specified.
-func (o *GitOpsOptions) AddApp(app string, dir string, version string, repository string, alias string, autoMerge bool) error {
+func (o *GitOpsOptions) AddApp(app string, fullChartName string, dir string, version string, repository string, alias string, autoMerge bool) error {
 	details := gits.PullRequestDetails{
 		BranchName: "add-app-" + app + "-" + version,
 		Title:      fmt.Sprintf("Add %s %s", app, version),
@@ -41,7 +41,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		Gitter: o.Gitter,
 		ModifyChartFn: environments.CreateAddRequirementFn(app, alias, version,
 			repository, o.valuesFiles, dir, o.Verbose, o.Helmer),
-		ModifyAppsFn: environments.CreateAddAppConfigFn(app, version, repository),
+		ModifyAppsFn: environments.CreateAddAppConfigFn(fullChartName, version, repository),
 		GitProvider:  o.GitProvider,
 	}
 

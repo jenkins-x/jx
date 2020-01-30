@@ -225,6 +225,7 @@ func (o *AddAppOptions) Run() error {
 	if details.Repository == "" {
 		return fmt.Errorf("must specify a repository or use a repository prefix in the chart name %s", details.Name)
 	}
+	o.Repo = details.Repository
 	return installOpts.AddApp(details, o.Version, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
 		o.Alias, o.HelmUpdate)
 }
