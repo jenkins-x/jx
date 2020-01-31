@@ -235,17 +235,20 @@ func (o *BootOptions) Run() error {
 	so.CommonOptions.SetDevNamespace(requirements.Cluster.Namespace)
 	// lets ensure the namespace is set in the jenkins-x.yml file
 	envVars := make([]v1.EnvVar, 0)
-	for _, e := range projectConfig.PipelineConfig.Pipelines.Release.Pipeline.Environment {
-		if e.Name == "DEPLOY_NAMESPACE" {
-			envVars = append(envVars, v1.EnvVar{
-				Name:  "DEPLOY_NAMESPACE",
-				Value: requirements.Cluster.Namespace,
-			})
-		} else {
-			envVars = append(envVars, e)
+	if projectConfig.PipelineConfig != nil && projectConfig.PipelineConfig.Pipelines.Release != nil {
+		for _, e := range projectConfig.PipelineConfig.Pipelines.Release.Pipeline.Environment {
+			if e.Name == "DEPLOY_NAMESPACE" {
+				envVars = append(envVars, v1.EnvVar{
+					Name:  "DEPLOY_NAMESPACE",
+					Value: requirements.Cluster.Namespace,
+				})
+			} else {
+				envVars = append(envVars, e)
+			}
 		}
+		projectConfig.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
+
 	}
-	projectConfig.PipelineConfig.Pipelines.Release.Pipeline.Environment = envVars
 	err = projectConfig.SaveConfig(pipelineFile)
 	if err != nil {
 		return errors.Wrapf(err, "setting namespace in jenkins-x.yml")
