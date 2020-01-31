@@ -233,6 +233,12 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 		if app.Namespace == "" {
 			app.Namespace = apps.DefaultNamespace
 		}
+		if app.Namespace == "" && ec.DevEnv != nil {
+			app.Namespace = ec.DevEnv.Namespace
+		}
+		if app.Namespace == "" && ec.Requirements != nil {
+			app.Namespace = ec.Requirements.Cluster.Namespace
+		}
 
 		// check if a local directory and values file exists for the app
 		extraValuesFiles := append(app.ValueFiles, o.valueFiles...)
