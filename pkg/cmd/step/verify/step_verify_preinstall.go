@@ -96,6 +96,14 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
+	if requirements.Helmfile {
+		// lets make sure we have the secrets defined as an env var
+		secretsYaml := os.Getenv("JX_SECRETS_YAML")
+		if secretsYaml == "" {
+			return fmt.Errorf("no $JX_SECRETS_YAML environment variable defined.\nPlease point this at your 'secrets.yaml' file.\nSee https://github.com/jenkins-x/enhancements/blob/master/proposals/2/docs/getting-started.md#setting-up-your-secrets\n")
+		}
+	}
+
 	err = o.ConfigureCommonOptions(requirements)
 	if err != nil {
 		return err
@@ -117,6 +125,9 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	// lets find the namespace to use
+	if o.Namespace == "" {
+		o.Namespace = requirements.Cluster.Namespace
+	}
 	ns, err := o.GetDeployNamespace(o.Namespace)
 	if err != nil {
 		return err
