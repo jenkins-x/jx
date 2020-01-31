@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -559,6 +560,28 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		requirements.SetAppVersion(app, version, o.HelmRepositoryURL, o.Alias)
 		return nil
 	}
+	modifyAppsFn := func(appsConfig *config.AppConfig, dir string, pullRequestDetails *gits.PullRequestDetails) error {
+		var err error
+		if version == "" {
+			version, err = o.findLatestVersion(app)
+			if err != nil {
+				return err
+			}
+		}
+		for i := range appsConfig.Apps {
+			appConfig := &appsConfig.Apps[i]
+			if appConfig.Name == app {
+				appConfig.Version = version
+				return nil
+			}
+		}
+		appsConfig.Apps = append(appsConfig.Apps, config.App{
+			Name:    app,
+			Version: version,
+		})
+		return nil
+	}
+
 	gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(env.Spec.Source.URL)
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
@@ -572,6 +595,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	options := environments.EnvironmentPullRequestOptions{
 		Gitter:        o.Git(),
 		ModifyChartFn: modifyChartFn,
+		ModifyAppsFn:  modifyAppsFn,
 		GitProvider:   gitProvider,
 	}
 	filter := &gits.PullRequestFilter{}
