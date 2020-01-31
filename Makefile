@@ -1,19 +1,3 @@
-#
-# Copyright (C) Original Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
@@ -99,7 +83,6 @@ get-test-deps: ## Install test dependencies
 	$(GO_NOMOD) get github.com/axw/gocov/gocov
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
-
 print-version: ## Print version
 	@echo $(VERSION)
 
@@ -131,12 +114,9 @@ test-report-html: make-reports-dir get-test-deps test-coverage ## Create the tes
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
 test-verbose: make-reports-dir ## Run the unit tests in verbose mode
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -v $(COVERFLAGS) -failfast ./... $(TEST_BUILDFLAGS)
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -v $(COVERFLAGS) --tags=unit -failfast ./... $(TEST_BUILDFLAGS)
 
-test-slow: make-reports-dir ## Run unit tests sequentially
-	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(COVERFLAGS) ./... $(TEST_BUILDFLAGS)
-
-test-integration: get-test-deps## Run the integration tests
+test-integration: get-test-deps ## Run the integration tests
 	@CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration  -short ./... $(TEST_BUILDFLAGS)
 
 test-integration1: make-reports-dir
@@ -163,29 +143,11 @@ test-slow-integration-report: make-reports-dir get-test-deps test-slow-integrati
 test-slow-integration-report-html: make-reports-dir get-test-deps test-slow-integration
 	@gocov convert $(COVER_OUT) | gocov-html > $(REPORTS_DIR)/cover.html && open $(REPORTS_DIR)/cover.html
 
-test1: get-test-deps make-reports-dir ## Runs single test specified by test name, eg 'make test1 TEST=TestFoo'
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) ./... $(TEST_BUILDFLAGS) -test.v -run $(TEST)
-
-test1-pkg: get-test-deps make-reports-dir ## Runs single test specified by path to test file, eg 'make test-single-file PKG=./pkg/util TEST=TestFoo'
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(PKG) $(TEST_BUILDFLAGS) -test.v $(TEST)
+test1: get-test-deps make-reports-dir ## Runs single test specified by test name and optional package, eg 'make test1 TEST_PACKAGE=./pkg/gits TEST=TestGitCLI'
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(TEST_BUILDFLAGS) -tags="unit integration" $(TEST_PACKAGE) -run $(TEST)
 
 testbin: get-test-deps make-reports-dir
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/cmd -o build/jx-test $(TEST_BUILDFLAGS)
-
-testbin-gits: get-test-deps make-reports-dir
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/gits -o build/jx-test-gits $(TEST_BUILDFLAGS)
-
-debugtest1: testbin
-	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- $(TEST_BUILDFLAGS) -test.run $(TEST)
-
-debugtest1gits: testbin-gits
-	cd pkg/gits && dlv --log --listen=:2345 --headless=true --api-version=2 exec ../../build/jx-test-gits -- $(TEST_BUILDFLAGS) -test.run $(TEST)
-
-inttestbin: get-test-deps
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -tags=integration -c github.com/jenkins-x/jx/pkg/cmd -o build/jx-inttest $(TEST_BUILDFLAGS)
-
-debuginttest1: inttestbin
-	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- $(TEST_BUILDFLAGS) -test.run $(TEST)
 
 install: $(GO_DEPENDENCIES) ## Install the binary
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) $(MAIN_SRC_FILE)
@@ -200,9 +162,6 @@ arm: ## Build for ARM
 
 win: ## Build for Windows
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/win/$(NAME)-windows-amd64.exe $(MAIN_SRC_FILE)
-
-win32:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=386 $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/win32/$(NAME)-386.exe $(MAIN_SRC_FILE)
 
 darwin: ## Build for OSX
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/darwin/$(NAME) $(MAIN_SRC_FILE)
