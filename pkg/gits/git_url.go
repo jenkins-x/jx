@@ -200,6 +200,12 @@ func parsePath(path string, info *GitRepository, requireRepo bool) (*GitReposito
 	// This is necessary for Bitbucket Server in some cases.
 	trimPath := strings.TrimPrefix(path, "/scm")
 
+	// This is necessary for Bitbucket Server, EG: /projects/ORG/repos/NAME/pull-requests/1/overview
+	reOverview := regexp.MustCompile("/pull-requests/[0-9]+/overview$")
+	if reOverview.MatchString(trimPath) {
+		trimPath = strings.TrimSuffix(trimPath, "/overview")
+	}
+
 	// This is necessary for Bitbucket Server in other cases
 	trimPath = strings.Replace(trimPath, "/projects/", "/", 1)
 	trimPath = strings.Replace(trimPath, "/repos/", "/", 1)

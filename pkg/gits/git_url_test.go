@@ -110,10 +110,16 @@ func TestParseGitURL(t *testing.T) {
 			"git@github.com:bar/foo", "github.com", "bar", "foo",
 		},
 		{
+			"git@github.com:bar/overview", "github.com", "bar", "overview",
+		},
+		{
 			"git@gitlab.com:bar/subgroup/foo", "gitlab.com", "bar", "foo",
 		},
 		{
 			"https://gitlab.com/bar/subgroup/foo", "gitlab.com", "bar", "foo",
+		},
+		{
+			"https://gitlab.com/bar/subgroup/overview", "gitlab.com", "bar", "overview",
 		},
 		{
 			"bar/foo", "github.com", "bar", "foo",
@@ -123,6 +129,9 @@ func TestParseGitURL(t *testing.T) {
 		},
 		{
 			"https://bitbucketserver.com/projects/myproject/repos/foo/pull-requests/1", "bitbucketserver.com", "myproject", "foo",
+		},
+		{
+			"https://bitbucketserver.com/projects/myproject/repos/foo/pull-requests/1/overview", "bitbucketserver.com", "myproject", "foo",
 		},
 	}
 	for _, data := range testCases {
