@@ -190,6 +190,8 @@ var (
 	DefaultVersionsRef = "master"
 	// DefaultBootRepository default git repo for boot
 	DefaultBootRepository = "https://github.com/jenkins-x/jenkins-x-boot-config.git"
+	// DefaultBootHelmfileRepository default git repo for boot with helmfile
+	DefaultBootHelmfileRepository = "https://github.com/jenkins-x/jenkins-x-boot-helmfile-config.git"
 	// LatestVersionStringsBucket optional bucket name to search in for latest version strings
 	LatestVersionStringsBucket = ""
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
+	"github.com/jenkins-x/jx/pkg/cloud"
 
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
@@ -50,8 +51,11 @@ type BootOptions struct {
 
 	AttemptRestore bool
 
-	// UpgradeGit if we want to automatically upgrade this boot clone if there have been changes since the current clone
+	// NoUpgradeGit if we want to automatically upgrade this boot clone if there have been changes since the current clone
 	NoUpgradeGit bool
+
+	// Helmfile to enable helmfile and helm 3 support
+	Helmfile bool
 }
 
 var (
@@ -105,6 +109,7 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.RequirementsFile, "requirements", "r", "", "requirements file which will overwrite the default requirements file")
 	cmd.Flags().BoolVarP(&options.AttemptRestore, "attempt-restore", "a", false, "attempt to boot from an existing dev environment repository")
 	cmd.Flags().BoolVarP(&options.NoUpgradeGit, "no-update-git", "", false, "disables any attempt to update the local git clone if its old")
+	cmd.Flags().BoolVarP(&options.Helmfile, "helmfile", "", false, "enables helmfile and helm 3 support. Note this is currently experimental. See: https://github.com/jenkins-x/enhancements/tree/master/proposals/2/docs")
 
 	return cmd
 }
@@ -285,6 +290,9 @@ func (o *BootOptions) determineGitURLAndRef() (string, string) {
 	if err != nil {
 		log.Logger().Info("Creating boot config with defaults, as not in an existing boot directory with a git repository.")
 		gitURL = config.DefaultBootRepository
+		if o.Helmfile {
+			gitURL = config.DefaultBootHelmfileRepository
+		}
 		gitRef = config.DefaultVersionsRef
 	}
 
@@ -561,7 +569,20 @@ func (o *BootOptions) defaultVersionStream(requirements *config.RequirementsConf
 func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig, requirementsFile string) error {
 	provider := requirements.Cluster.Provider
 	if provider == "" {
-		return config.MissingRequirement("provider", requirementsFile)
+		if o.BatchMode {
+			return config.MissingRequirement("provider", requirementsFile)
+		}
+
+		var err error
+		requirements.Cluster.Provider, err = util.PickNameWithDefault(cloud.KubernetesProviders, "Select Kubernetes provider", cloud.GKE, "the type of Kubernetes installation", o.GetIOFileHandles())
+		if err != nil {
+			return errors.Wrap(err, "selecting Kubernetes provider")
+		}
+		err = requirements.SaveConfig(requirementsFile)
+		if err != nil {
+			return err
+		}
+		log.Logger().Infof("saved requirements file %s", requirementsFile)
 	}
 	if requirements.Cluster.Namespace == "" {
 		return config.MissingRequirement("namespace", requirementsFile)
