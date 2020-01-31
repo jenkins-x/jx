@@ -92,6 +92,12 @@ func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *StepGitCredentialsOptions) Run() error {
+	// lets avoid eagerly creating the `dev` Environment resource if using helmfile/helm 3
+	_, err := o.EnvironmentContext(".", true)
+	if err != nil {
+		return err
+	}
+
 	if os.Getenv("JX_CREDENTIALS_FROM_SECRET") != "" {
 		log.Logger().Infof("Overriding CredentialsSecret from env var JX_CREDENTIALS_FROM_SECRET")
 		o.CredentialsSecret = os.Getenv("JX_CREDENTIALS_FROM_SECRET")
