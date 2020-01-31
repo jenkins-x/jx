@@ -635,6 +635,7 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 	c.ContainerOptions = mergedContainer
 	base.defaultContainerAndDir()
 	c.defaultContainerAndDir()
+	c.Env = syntax.CombineEnv(c.Env, base.Env)
 	c.Pipelines.Extend(&base.Pipelines)
 	return nil
 }
