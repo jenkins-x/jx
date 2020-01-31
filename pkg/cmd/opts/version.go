@@ -14,8 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
 )
 
-// EnvironmentContext gets or creates a team context with the common values for working with requirements, team settings
-// and version resolvers.
+// EnvironmentContext gets or creates an environment context with the common values for working with requirements, team settings
+// and version resolver.
 //
 // if preferRequirementsFile is true we look for the local `jx-requirements.yml` file first and then fall back to the
 // development environment settings; otherwise we try to use the requirements from the environment if present
@@ -24,21 +24,21 @@ func (o *CommonOptions) EnvironmentContext(dir string, preferRequirementsFile bo
 		return o.envctx, nil
 	}
 	var err error
-	tc := &envctx.EnvironmentContext{}
-	tc.GitOps, tc.DevEnv = o.GetDevEnv()
-	if tc.DevEnv == nil {
-		tc.DevEnv = kube.CreateDefaultDevEnvironment("jx")
+	ec := &envctx.EnvironmentContext{}
+	ec.GitOps, ec.DevEnv = o.GetDevEnv()
+	if ec.DevEnv == nil {
+		ec.DevEnv = kube.CreateDefaultDevEnvironment("jx")
 	}
-	teamSettings := tc.TeamSettings()
+	teamSettings := ec.TeamSettings()
 
 	exists := false
 	if preferRequirementsFile {
 		// lets default to local file system for the requirements as we being invoked
 		// in a `jx boot` pipeline and we have not yet fully populated the `Environment` resources yet
 		fileName := ""
-		tc.Requirements, fileName, err = config.LoadRequirementsConfig(dir)
+		ec.Requirements, fileName, err = config.LoadRequirementsConfig(dir)
 		if err != nil {
-			return tc, err
+			return ec, err
 		}
 		if fileName != "" {
 			exists, _ = util.FileExists(fileName)
@@ -48,45 +48,45 @@ func (o *CommonOptions) EnvironmentContext(dir string, preferRequirementsFile bo
 		// lets try the environment CRD if we have no local file
 		req, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 		if err != nil {
-			return tc, err
+			return ec, err
 		}
 		if req != nil {
-			tc.Requirements = req
+			ec.Requirements = req
 		}
 	}
 	if err != nil {
-		return tc, err
+		return ec, err
 	}
 
 	// if we can't find a requirements then lets just create the defaults for now
-	if tc.Requirements == nil {
-		tc.Requirements, _, err = config.LoadRequirementsConfig(dir)
+	if ec.Requirements == nil {
+		ec.Requirements, _, err = config.LoadRequirementsConfig(dir)
 		if err != nil {
-			return tc, err
+			return ec, err
 		}
 	}
-	err = o.ConfigureCommonOptions(tc.Requirements)
+	err = o.ConfigureCommonOptions(ec.Requirements)
 	if err != nil {
-		return tc, err
+		return ec, err
 	}
 	versionStreamURL := ""
 	versionStreamRef := ""
 	if preferRequirementsFile {
-		versionStreamURL = tc.Requirements.VersionStream.URL
-		versionStreamRef = tc.Requirements.VersionStream.Ref
+		versionStreamURL = ec.Requirements.VersionStream.URL
+		versionStreamRef = ec.Requirements.VersionStream.Ref
 	} else {
 		versionStreamURL = teamSettings.VersionStreamURL
 		versionStreamRef = teamSettings.VersionStreamRef
 	}
-	tc.VersionResolver, err = o.CreateVersionResolver(versionStreamURL, versionStreamRef)
+	ec.VersionResolver, err = o.CreateVersionResolver(versionStreamURL, versionStreamRef)
 	if err != nil {
-		return tc, err
+		return ec, err
 	}
-	o.envctx = tc
+	o.envctx = ec
 	if o.versionResolver == nil {
-		o.versionResolver = tc.VersionResolver
+		o.versionResolver = ec.VersionResolver
 	}
-	return tc, nil
+	return ec, nil
 }
 
 // SetEnvironmentContext allows the EnvironmentContext to be specified.
