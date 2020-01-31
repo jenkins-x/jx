@@ -270,7 +270,7 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requi
 	}
 	var authConfigSvc auth.ConfigService
 	if gha {
-		authConfigSvc, err = o.GitAuthConfigServiceGitHubMode("")
+		authConfigSvc, err = o.GitAuthConfigServiceGitHubAppMode("github")
 		if err != nil {
 			return errors.Wrap(err, "creating git auth config service")
 		}

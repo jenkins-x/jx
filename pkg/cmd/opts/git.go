@@ -255,9 +255,9 @@ func (o *CommonOptions) GitProviderForGitServerURL(gitServiceURL string, gitKind
 
 	var authConfigSvc auth.ConfigService
 	if gha {
-		authConfigSvc, err = o.GitAuthConfigServiceGitHubMode(gitKind)
+		authConfigSvc, err = o.GitAuthConfigServiceGitHubAppMode(gitKind)
 		if err != nil {
-			return nil, errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubMode")
+			return nil, errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubAppMode")
 		}
 	} else {
 		authConfigSvc, err = o.GitAuthConfigService()
