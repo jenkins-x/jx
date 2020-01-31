@@ -41,13 +41,6 @@ type StepVerifyEnvironmentsOptions struct {
 	Dir string
 }
 
-// NewRemoteRequirementsConfig creates a new default remote requirements config
-func NewRemoteRequirementsConfig() *config.RequirementsConfig {
-	stagingReq := config.NewRequirementsConfig()
-	stagingReq.Repository = config.RepositoryTypeUnknown
-	return stagingReq
-}
-
 // NewCmdStepVerifyEnvironments creates the `jx step verify pod` command
 func NewCmdStepVerifyEnvironments(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepVerifyEnvironmentsOptions{
@@ -438,8 +431,9 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 // ModifyEnvironmentRequirements populates the remote requirements from the development requirements
 func ModifyEnvironmentRequirements(out io.Writer, devRequirements *config.RequirementsConfig, env *v1.Environment, remoteRequirements *config.RequirementsConfig) error {
 	found := false
+	e := &config.EnvironmentConfig{}
 	for i := range remoteRequirements.Environments {
-		e := &remoteRequirements.Environments[i]
+		e = &remoteRequirements.Environments[i]
 		if e.Key == "dev" {
 			found = true
 			err := configureRemoteEnvironment(out, devRequirements, env, remoteRequirements, e)
@@ -450,7 +444,7 @@ func ModifyEnvironmentRequirements(out io.Writer, devRequirements *config.Requir
 		}
 	}
 	if !found {
-		e := &config.EnvironmentConfig{}
+		e = &config.EnvironmentConfig{}
 		err := configureRemoteEnvironment(out, devRequirements, env, remoteRequirements, e)
 		if err != nil {
 			return err
@@ -458,6 +452,9 @@ func ModifyEnvironmentRequirements(out io.Writer, devRequirements *config.Requir
 		remoteRequirements.Environments = append(remoteRequirements.Environments, *e)
 	}
 
+	if len(remoteRequirements.Cluster.DevEnvApprovers) == 0 {
+		remoteRequirements.Cluster.DevEnvApprovers = devRequirements.Cluster.DevEnvApprovers
+	}
 	remoteRequirements.GitOps = true
 	remoteRequirements.Helmfile = true
 	remoteRequirements.Kaniko = devRequirements.Kaniko
@@ -468,6 +465,9 @@ func ModifyEnvironmentRequirements(out io.Writer, devRequirements *config.Requir
 	}
 	if remoteRequirements.Cluster.Provider == "" {
 		remoteRequirements.Cluster.Provider = devRequirements.Cluster.Provider
+	}
+	if remoteRequirements.Cluster.EnvironmentGitOwner == "" {
+		remoteRequirements.Cluster.EnvironmentGitOwner = e.Owner
 	}
 	remoteRequirements.Cluster.EnvironmentGitPublic = devRequirements.Cluster.EnvironmentGitPublic
 	if remoteRequirements.Cluster.GitKind == "" {
@@ -507,6 +507,13 @@ func ModifyEnvironmentRequirements(out io.Writer, devRequirements *config.Requir
 		remoteRequirements.Velero.TimeToLive = devRequirements.Velero.TimeToLive
 	}
 	return nil
+}
+
+// NewRemoteRequirementsConfig creates a new default remote requirements config
+func NewRemoteRequirementsConfig() *config.RequirementsConfig {
+	stagingReq := config.NewRequirementsConfig()
+	stagingReq.Repository = config.RepositoryTypeUnknown
+	return stagingReq
 }
 
 func configureRemoteEnvironment(out io.Writer, requirements *config.RequirementsConfig, env *v1.Environment, remoteRequirements *config.RequirementsConfig, envConfig *config.EnvironmentConfig) error {

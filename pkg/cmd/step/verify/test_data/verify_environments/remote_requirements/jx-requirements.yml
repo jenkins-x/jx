@@ -1,8 +1,12 @@
 autoUpdate:
-    enabled: false
-    schedule: ""
+  enabled: false
+  schedule: ""
 bootConfigURL: https://github.com/someuser/environment-mycluster-staging.git
 cluster:
+  devEnvApprovers:
+  - jstrachan
+  - rawlingsj
+  environmentGitOwner: someuser
   gitKind: github
   gitName: github
   gitServer: https://github.com
