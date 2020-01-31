@@ -67,9 +67,9 @@ func (o *StepVerifyGitOptions) Run() error {
 
 	var authSvc auth.ConfigService
 	if gha {
-		authSvc, err = o.GitAuthConfigServiceGitHubMode("github")
+		authSvc, err = o.GitAuthConfigServiceGitHubAppMode("github")
 		if err != nil {
-			return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubMode")
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubAppMode")
 		}
 	} else {
 		authSvc, err = o.GitAuthConfigService()

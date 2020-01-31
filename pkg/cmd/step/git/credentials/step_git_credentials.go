@@ -130,9 +130,9 @@ func (o *StepGitCredentialsOptions) Run() error {
 
 	var authConfigSvc auth.ConfigService
 	if gha {
-		authConfigSvc, err = o.GitAuthConfigServiceGitHubMode(o.GitKind)
+		authConfigSvc, err = o.GitAuthConfigServiceGitHubAppMode(o.GitKind)
 		if err != nil {
-			return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubMode")
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubAppMode")
 		}
 	} else {
 		authConfigSvc, err = o.GitAuthConfigService()
