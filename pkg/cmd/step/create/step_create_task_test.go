@@ -371,6 +371,24 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:             "release",
 			branchAsRevision: true,
 		},
+		{
+			name:         "override-pod-template-env-var",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+			noKaniko:     true,
+		},
+		{
+			name:         "override-pod-template-env-var-extending-build-pack",
+			language:     "maven-with-overridden-env-var",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+			noKaniko:     true,
+		},
 	}
 
 	k8sObjects := []runtime.Object{
