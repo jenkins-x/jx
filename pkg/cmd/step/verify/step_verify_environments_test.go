@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
@@ -18,7 +19,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/stretchr/testify/require"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -257,4 +260,41 @@ func pipelineEnvValueForKey(envVars []corev1.EnvVar, key string) string {
 		}
 	}
 	return ""
+}
+
+func TestModifyEnvironmentRequirements(t *testing.T) {
+	devReq := config.NewRequirementsConfig()
+	devReq.VersionStream.Ref = "master"
+	devReq.VersionStream.URL = "https://github.com/jenkins-x/jenkins-x-versions.git"
+	stagingReq := NewRemoteRequirementsConfig()
+	stagingEnv := kube.NewPermanentEnvironment("staging")
+	stagingEnv.Spec.RemoteCluster = true
+	stagingEnv.Spec.Source.URL = "https://github.com/someuser/environment-mycluster-staging.git"
+	stagingEnv.Spec.Source.Ref = "master"
+	err := ModifyEnvironmentRequirements(os.Stdout, devReq, stagingEnv, stagingReq)
+	require.NoError(t, err, "failed to invoke ModifyEnvironmentRequirements")
+
+	expectedFile := path.Join("test_data", "verify_environments", "remote_requirements", "jx-requirements.yml")
+	assert.FileExists(t, expectedFile)
+
+	expected, err := config.LoadRequirementsConfigFile(expectedFile)
+	require.NoError(t, err, "failed to load expected requirements %s", expectedFile)
+	expected.Repository = config.RepositoryTypeUnknown
+	diff := cmp.Diff(stagingReq, expected)
+	if diff != "" {
+		t.Logf("generated staging requirements not matching:\n")
+		t.Logf("%s\n", diff)
+		assert.Fail(t, "generated staging requirements not matching")
+
+		logYaml(t, stagingReq, "actual")
+		logYaml(t, expected, "expected")
+	}
+}
+
+func logYaml(t *testing.T, value interface{}, message string) {
+	data, err := yaml.Marshal(value)
+	assert.NoError(t, err, "failed to marshal to yaml")
+	if data != nil {
+		t.Logf("%s:\n%s\n", message, string(data))
+	}
 }

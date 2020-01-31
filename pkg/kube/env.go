@@ -314,7 +314,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, de
 					showURLEdit = false
 					var err error
 					helmfileMode := false
-					repo, gitProvider, err = DoCreateEnvironmentGitRepo(batchMode, helmfileMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, handles)
+					repo, gitProvider, err = DoCreateEnvironmentGitRepo(batchMode, helmfileMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, chartMusemFn, nil, handles)
 					if err != nil {
 						return repo, gitProvider, errors.Wrap(err, "creating environment git repository")
 					}
@@ -365,7 +365,10 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, de
 // DoCreateEnvironmentGitRepo actually creates the git repository for the environment
 func DoCreateEnvironmentGitRepo(batchMode bool, helmfileMode bool, authConfigSvc auth.ConfigService, env *v1.Environment, forkEnvGitURL string,
 	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string,
-	git gits.Gitter, chartMuseumFn ResolveChartMuseumURLFn, handles util.IOFileHandles) (*gits.GitRepository, gits.GitProvider, error) {
+	git gits.Gitter, chartMuseumFn ResolveChartMuseumURLFn,
+	modifyFilesFn func(out io.Writer, dir string, git gits.Gitter) error,
+	handles util.IOFileHandles) (*gits.GitRepository, gits.GitProvider, error) {
+
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
 	details, err := gits.PickNewGitRepository(batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git, handles)
 	if err != nil {
@@ -405,6 +408,12 @@ func DoCreateEnvironmentGitRepo(batchMode bool, helmfileMode bool, authConfigSvc
 			err = addValues(handles.Out, dir, helmValues, git)
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "adding helm values to the environment")
+			}
+		}
+		if modifyFilesFn != nil {
+			err = modifyFilesFn(handles.Out, dir, git)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "modifying the environment files")
 			}
 		}
 		err = git.PushMaster(dir)
@@ -464,6 +473,12 @@ func DoCreateEnvironmentGitRepo(batchMode bool, helmfileMode bool, authConfigSvc
 						return nil, nil, errors.Wrap(err, "adding helm values to the forked environment repo")
 					}
 				}
+				if modifyFilesFn != nil {
+					err = modifyFilesFn(handles.Out, dir, git)
+					if err != nil {
+						return nil, nil, errors.Wrap(err, "modifying the environment files")
+					}
+				}
 				err = git.Push(dir, "origin", false, "HEAD")
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "pushing forked environment dir %q", dir)
@@ -508,6 +523,12 @@ func DoCreateEnvironmentGitRepo(batchMode bool, helmfileMode bool, authConfigSvc
 				err = addValues(handles.Out, dir, helmValues, git)
 				if err != nil {
 					return nil, nil, errors.Wrap(err, "adding helm values into environment git repository")
+				}
+			}
+			if modifyFilesFn != nil {
+				err = modifyFilesFn(handles.Out, dir, git)
+				if err != nil {
+					return nil, nil, errors.Wrap(err, "modifying the environment files")
 				}
 			}
 			err = git.PushMaster(dir)

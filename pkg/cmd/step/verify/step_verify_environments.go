@@ -2,6 +2,7 @@ package verify
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -38,6 +39,13 @@ const (
 type StepVerifyEnvironmentsOptions struct {
 	StepVerifyOptions
 	Dir string
+}
+
+// NewRemoteRequirementsConfig creates a new default remote requirements config
+func NewRemoteRequirementsConfig() *config.RequirementsConfig {
+	stagingReq := config.NewRequirementsConfig()
+	stagingReq.Repository = config.RepositoryTypeUnknown
+	return stagingReq
 }
 
 // NewCmdStepVerifyEnvironments creates the `jx step verify pod` command
@@ -382,9 +390,146 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 			IgnoreExistingRepository: true,
 		}
 
-		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, helmfile, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, gitter, o.ResolveChartMuseumURL, o.GetIOFileHandles())
+		modifyFn := func(out io.Writer, dir string, git gits.Gitter) error {
+			envReq, fileName, err := config.LoadRequirementsConfig(dir)
+			if err != nil {
+				return errors.Wrap(err, "failed to load environment requirements")
+			}
+			exists, err := util.FileExists(fileName)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				envReq = NewRemoteRequirementsConfig()
+			}
+
+			// lets generate/update the requirements file for the environment
+			err = ModifyEnvironmentRequirements(out, requirements, environment, envReq)
+			if err != nil {
+				return errors.Wrapf(err, "failed to modify environment requirements")
+			}
+
+			err = envReq.SaveConfig(fileName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to save environment requirements")
+			}
+			err = git.Add(dir, "*")
+			if err != nil {
+				return err
+			}
+			changes, err := git.HasChanges(dir)
+			if err != nil {
+				return err
+			}
+			if changes {
+				return git.CommitDir(dir, "modify environment requirements configuration")
+			}
+			return nil
+		}
+
+		_, _, err = kube.DoCreateEnvironmentGitRepo(batchMode, helmfile, authConfigSvc, environment, forkGitURL, envDir, gitRepoOptions, helmValues, prefix, gitter, o.ResolveChartMuseumURL, modifyFn, o.GetIOFileHandles())
 		if err != nil {
 			return errors.Wrapf(err, "failed to create git repository for gitURL %s", gitURL)
+		}
+	}
+	return nil
+}
+
+// ModifyEnvironmentRequirements populates the remote requirements from the development requirements
+func ModifyEnvironmentRequirements(out io.Writer, devRequirements *config.RequirementsConfig, env *v1.Environment, remoteRequirements *config.RequirementsConfig) error {
+	found := false
+	for i := range remoteRequirements.Environments {
+		e := &remoteRequirements.Environments[i]
+		if e.Key == "dev" {
+			found = true
+			err := configureRemoteEnvironment(out, devRequirements, env, remoteRequirements, e)
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+	if !found {
+		e := &config.EnvironmentConfig{}
+		err := configureRemoteEnvironment(out, devRequirements, env, remoteRequirements, e)
+		if err != nil {
+			return err
+		}
+		remoteRequirements.Environments = append(remoteRequirements.Environments, *e)
+	}
+
+	remoteRequirements.GitOps = true
+	remoteRequirements.Helmfile = true
+	remoteRequirements.Kaniko = devRequirements.Kaniko
+	remoteRequirements.Webhook = config.WebhookTypeLighthouse
+	remoteRequirements.SecretStorage = devRequirements.SecretStorage
+	if env.Spec.Source.URL != "" {
+		remoteRequirements.BootConfigURL = env.Spec.Source.URL
+	}
+	if remoteRequirements.Cluster.Provider == "" {
+		remoteRequirements.Cluster.Provider = devRequirements.Cluster.Provider
+	}
+	remoteRequirements.Cluster.EnvironmentGitPublic = devRequirements.Cluster.EnvironmentGitPublic
+	if remoteRequirements.Cluster.GitKind == "" {
+		remoteRequirements.Cluster.GitKind = devRequirements.Cluster.GitKind
+		if remoteRequirements.Cluster.GitKind == "" {
+			remoteRequirements.Cluster.GitKind = gits.KindGitHub
+		}
+	}
+	if remoteRequirements.Cluster.GitName == "" {
+		remoteRequirements.Cluster.GitName = devRequirements.Cluster.GitName
+		if remoteRequirements.Cluster.GitName == "" {
+			remoteRequirements.Cluster.GitName = gits.KindGitHub
+		}
+	}
+	if remoteRequirements.Cluster.GitServer == "" {
+		remoteRequirements.Cluster.GitServer = devRequirements.Cluster.GitServer
+		if remoteRequirements.Cluster.GitServer == "" {
+			remoteRequirements.Cluster.GitServer = gits.GitHubURL
+		}
+	}
+	if remoteRequirements.Cluster.Namespace == "" {
+		remoteRequirements.Cluster.Namespace = env.Spec.Namespace
+	}
+	if remoteRequirements.VersionStream.URL == "" {
+		remoteRequirements.VersionStream.URL = devRequirements.VersionStream.URL
+	}
+	if remoteRequirements.VersionStream.Ref == "" {
+		remoteRequirements.VersionStream.Ref = devRequirements.VersionStream.Ref
+	}
+	if remoteRequirements.Ingress.NamespaceSubDomain == "" {
+		remoteRequirements.Ingress.NamespaceSubDomain = fmt.Sprintf("-%s.", remoteRequirements.Cluster.Namespace)
+	}
+	if remoteRequirements.Velero.Schedule == "" {
+		remoteRequirements.Velero.Schedule = devRequirements.Velero.Schedule
+	}
+	if remoteRequirements.Velero.TimeToLive == "" {
+		remoteRequirements.Velero.TimeToLive = devRequirements.Velero.TimeToLive
+	}
+	return nil
+}
+
+func configureRemoteEnvironment(out io.Writer, requirements *config.RequirementsConfig, env *v1.Environment, remoteRequirements *config.RequirementsConfig, envConfig *config.EnvironmentConfig) error {
+	envConfig.Key = "dev"
+	envConfig.PromotionStrategy = env.Spec.PromotionStrategy
+	envConfig.RemoteCluster = env.Spec.RemoteCluster
+	u := env.Spec.Source.URL
+	if u != "" {
+		gitInfo, err := gits.ParseGitURL(u)
+		if err != nil {
+			return err
+		}
+		if gitInfo.Organisation != "" {
+			envConfig.Owner = gitInfo.Organisation
+		}
+		if gitInfo.Name != "" {
+			envConfig.Repository = gitInfo.Name
+		}
+		if envConfig.GitKind == "" && gitInfo.IsGitHub() {
+			envConfig.GitKind = gits.KindGitHub
+		}
+		if envConfig.GitServer == "" {
+			envConfig.GitServer = gitInfo.HostURLWithoutUser()
 		}
 	}
 	return nil

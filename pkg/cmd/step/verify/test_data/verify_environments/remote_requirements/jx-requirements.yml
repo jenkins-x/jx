@@ -1,0 +1,57 @@
+autoUpdate:
+    enabled: false
+    schedule: ""
+bootConfigURL: https://github.com/someuser/environment-mycluster-staging.git
+cluster:
+  gitKind: github
+  gitName: github
+  gitServer: https://github.com
+  namespace: jx-staging
+environments:
+- gitKind: github
+  gitServer: https://github.com
+  ingress:
+    domain: ""
+    externalDNS: false
+    namespaceSubDomain: ""
+    tls:
+      email: ""
+      enabled: false
+      production: false
+  key: dev
+  owner: someuser
+  promotionStrategy: Auto
+  remoteCluster: true
+  repository: environment-mycluster-staging
+gitops: true
+helmfile: true
+ingress:
+  domain: ""
+  externalDNS: false
+  namespaceSubDomain: -jx-staging.
+  tls:
+    email: ""
+    enabled: false
+    production: false
+secretStorage: local
+storage:
+  backup:
+    enabled: false
+    url: ""
+  logs:
+    enabled: false
+    url: ""
+  reports:
+    enabled: false
+    url: ""
+  repository:
+    enabled: false
+    url: ""
+vault: {}
+velero:
+  schedule: ""
+  ttl: ""
+versionStream:
+  ref: master
+  url: https://github.com/jenkins-x/jenkins-x-versions.git
+webhook: lighthouse
