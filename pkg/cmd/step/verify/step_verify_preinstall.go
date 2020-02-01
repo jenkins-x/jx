@@ -38,6 +38,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	defaultSecretsYaml = `secrets:     
+  adminUser:
+    username: "admin"
+    password: "" 
+  hmacToken: "" 
+  pipelineUser:
+    username: ""  
+    email: "" 
+    token: ""
+`
+)
+
 // StepVerifyPreInstallOptions contains the command line flags
 type StepVerifyPreInstallOptions struct {
 	StepVerifyOptions
@@ -1061,9 +1074,29 @@ func (o *StepVerifyPreInstallOptions) validateSecretsYAML() error {
 	// lets make sure we have the secrets defined as an env var
 	secretsYaml := os.Getenv("JX_SECRETS_YAML")
 	if secretsYaml == "" {
-		return fmt.Errorf("no $JX_SECRETS_YAML environment variable defined.\nPlease point this at your 'secrets.yaml' file.\nSee https://github.com/jenkins-x/enhancements/blob/master/proposals/2/docs/getting-started.md#setting-up-your-secrets\n")
+		return fmt.Errorf("no $JX_SECRETS_YAML environment variable defined.\nPlease point this at your 'secrets.yaml' file.\nSee https://github.com/jenkins-x/enhancements/blob/master/proposals/2/docs/getting-started.md#setting-up-your-secrets")
 	}
 
-	// TODO lets validate the contents and populate them?
+	// lets write a default file if it doesn't exist so that we can run things like `helmfile lint` in PR pipelines
+	// and it provides users with a file they can edit to fill in easily
+	exists, err := util.FileExists(secretsYaml)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		dir := filepath.Dir(secretsYaml)
+		err = os.MkdirAll(dir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to ensure secrets dir exists: %s", dir)
+		}
+
+		err = ioutil.WriteFile(secretsYaml, []byte(defaultSecretsYaml), util.DefaultFileWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save default secrets YAML file to : %s", dir)
+		}
+		log.Logger().Infof("generated a default empty Secrets YAML file at: %s", util.ColorInfo(secretsYaml))
+	}
+
+	// TODO lets validate the contents and populate the secrets file?
 	return nil
 }
