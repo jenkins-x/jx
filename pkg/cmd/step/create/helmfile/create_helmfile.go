@@ -274,7 +274,7 @@ func (o *CreateHelmfileOptions) ensureNamespaceExist(helmfileRepos []helmfile2.R
 				}
 
 				repository := helmfile2.RepositorySpec{
-					Name: "zloeber/namespace",
+					Name: "zloeber",
 					URL:  "git+https://github.com/zloeber/helm-namespace@chart",
 				}
 				helmfileRepos = append(helmfileRepos, repository)
