@@ -32,7 +32,7 @@ func NewCmdDiagnose(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to display the kube resources from. If left out, defaults to the current namespace")
-	cmd.Flags().StringArrayVarP(&options.Show, "show", "", []string{"version", "status", "pvc", "pods", "ingresses", "secrets"}, "Determine what information to diagnose")
+	cmd.Flags().StringArrayVarP(&options.Show, "show", "", []string{"version", "status", "pvc", "pods", "ingresses", "secrets", "configmaps"}, "Determine what information to diagnose")
 	return cmd
 }
 
@@ -81,6 +81,13 @@ func (o *DiagnoseOptions) Run() error {
 
 	if o.showOption("secrets") {
 		err := printStatus(o, "Kubernetes Secrets", "kubectl", "get", "secrets", "--namespace", ns)
+		if err != nil {
+			return err
+		}
+	}
+
+	if o.showOption("configmaps") {
+		err := printStatus(o, "Kubernetes Configmaps", "kubectl", "get", "configmaps", "--namespace", ns)
 		if err != nil {
 			return err
 		}
