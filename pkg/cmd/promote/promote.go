@@ -589,7 +589,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 
 		for i := range appsConfig.Apps {
 			appConfig := &appsConfig.Apps[i]
-			if appConfig.Name == app {
+			if appConfig.Name == app || appConfig.Name == details.Name {
 				appConfig.Version = version
 				return nil
 			}
