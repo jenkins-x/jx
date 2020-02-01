@@ -97,10 +97,9 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	}
 
 	if requirements.Helmfile {
-		// lets make sure we have the secrets defined as an env var
-		secretsYaml := os.Getenv("JX_SECRETS_YAML")
-		if secretsYaml == "" {
-			return fmt.Errorf("no $JX_SECRETS_YAML environment variable defined.\nPlease point this at your 'secrets.yaml' file.\nSee https://github.com/jenkins-x/enhancements/blob/master/proposals/2/docs/getting-started.md#setting-up-your-secrets\n")
+		err = o.validateSecretsYAML()
+		if err != nil {
+			return err
 		}
 	}
 
@@ -1056,4 +1055,15 @@ func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() (bool, error)
 	}
 	log.Logger().Info("Running in Batch Mode, execution will continue")
 	return true, nil
+}
+
+func (o *StepVerifyPreInstallOptions) validateSecretsYAML() error {
+	// lets make sure we have the secrets defined as an env var
+	secretsYaml := os.Getenv("JX_SECRETS_YAML")
+	if secretsYaml == "" {
+		return fmt.Errorf("no $JX_SECRETS_YAML environment variable defined.\nPlease point this at your 'secrets.yaml' file.\nSee https://github.com/jenkins-x/enhancements/blob/master/proposals/2/docs/getting-started.md#setting-up-your-secrets\n")
+	}
+
+	// TODO lets validate the contents and populate them?
+	return nil
 }

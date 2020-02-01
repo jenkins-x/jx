@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/envctx"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -83,7 +84,8 @@ type PromoteOptions struct {
 	prow                    bool
 
 	// Used for testing
-	CloneDir string
+	CloneDir   string
+	envContext *envctx.EnvironmentContext
 }
 
 type ReleaseInfo struct {
@@ -252,7 +254,13 @@ func (o *PromoteOptions) EnsureApplicationNameIsDefined(sf searchForChartFn, df 
 
 // Run implements this command
 func (o *PromoteOptions) Run() error {
-	err := o.EnsureApplicationNameIsDefined(o.SearchForChart, o.DiscoverAppName)
+	var err error
+	o.envContext, err = o.EnvironmentContext(".", false)
+	if err != nil {
+		return err
+	}
+
+	err = o.EnsureApplicationNameIsDefined(o.SearchForChart, o.DiscoverAppName)
 	if err != nil {
 		return err
 	}
@@ -568,6 +576,17 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 				return err
 			}
 		}
+		chartMuseumURL, err := o.ResolveChartMuseumURL()
+		if err != nil {
+			return errors.Wrap(err, "failed to resolve chart museum URL")
+		}
+
+		details, err := o.envContext.ChartDetails(app, chartMuseumURL)
+		if err != nil {
+			return err
+		}
+		details.DefaultPrefix(appsConfig, "dev")
+
 		for i := range appsConfig.Apps {
 			appConfig := &appsConfig.Apps[i]
 			if appConfig.Name == app {
@@ -576,7 +595,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 			}
 		}
 		appsConfig.Apps = append(appsConfig.Apps, config.App{
-			Name:    app,
+			Name:    details.Name,
 			Version: version,
 		})
 		return nil

@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/envctx"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
@@ -17,11 +18,14 @@ func TestEnvironmentContextResolveChartDetails(t *testing.T) {
 
 	ec := createTestEnvironmentContext(t)
 
+	appsConfig := &config.AppConfig{}
+
 	type testData struct {
 		Test       string
 		Name       string
 		Repository string
 		Expected   envctx.ChartDetails
+		AppsConfig *config.AppConfig
 	}
 	tests := []testData{
 		{
@@ -69,6 +73,32 @@ func TestEnvironmentContextResolveChartDetails(t *testing.T) {
 				Repository: "",
 			},
 		},
+		{
+			Test: "findPrefixFromAppsConfig",
+			Name: "mydemo",
+			// lets try use an alias
+			Repository: "http://chartmuseum-jx.myinstall.com",
+			AppsConfig: appsConfig,
+			Expected: envctx.ChartDetails{
+				Name:       "dev/mydemo",
+				Prefix:     "dev",
+				LocalName:  "mydemo",
+				Repository: "http://chartmuseum-jx.myinstall.com",
+			},
+		},
+		{
+			Test: "findPrefixFromAppsConfigWithDifferentChartMusem",
+			Name: "mydemo",
+			// lets try use an alias
+			Repository: "http://chartmuseum-anotherteam.myinstall.com",
+			AppsConfig: appsConfig,
+			Expected: envctx.ChartDetails{
+				Name:       "dev2/mydemo",
+				Prefix:     "dev2",
+				LocalName:  "mydemo",
+				Repository: "http://chartmuseum-anotherteam.myinstall.com",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -78,11 +108,25 @@ func TestEnvironmentContextResolveChartDetails(t *testing.T) {
 		actual, err := ec.ChartDetails(name, repo)
 		require.NoError(t, err, "failed to find chart details for %s and %s", name, repo)
 
+		if test.AppsConfig != nil {
+			actual.DefaultPrefix(test.AppsConfig, "dev")
+		}
 		assert.Equal(t, expected.Name, actual.Name, "chartDetails.Name for test %s", test.Test)
 		assert.Equal(t, expected.LocalName, actual.LocalName, "chartDetails.LocalName for test %s", test.Test)
 		assert.Equal(t, expected.Prefix, actual.Prefix, "chartDetails.Prefix for test %s", test.Test)
 		assert.Equal(t, expected.Repository, actual.Repository, "chartDetails.Repository for test %s", test.Test)
 
+		if test.AppsConfig != nil {
+			found := false
+			for _, r := range test.AppsConfig.Repositories {
+				if r.URL == repo {
+					t.Logf("the repository %s has been added to the appsConfig.repositories", repo)
+					found = true
+					break
+				}
+			}
+			assert.Equal(t, true, found, "could not find repository %s in the appsConfig.repositories", repo)
+		}
 	}
 }
 

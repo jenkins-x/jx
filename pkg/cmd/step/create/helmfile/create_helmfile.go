@@ -210,6 +210,19 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 
 	}
 
+	for _, ar := range apps.Repositories {
+		found := false
+		for _, r := range repositories {
+			if r.URL == ar.URL {
+				found = true
+				break
+			}
+		}
+		if !found {
+			repositories = append(repositories, ar)
+		}
+	}
+
 	var releases []helmfile2.ReleaseSpec
 	for i := range applications {
 		app := &applications[i]

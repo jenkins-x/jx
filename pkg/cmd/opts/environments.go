@@ -51,5 +51,14 @@ func (o *CommonOptions) ResolveChartMuseumURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return services.FindServiceURL(kubeClient, ns, kube.ServiceChartMuseum)
+	answer, err := services.FindServiceURL(kubeClient, ns, kube.ServiceChartMuseum)
+	if err != nil {
+		// lets try find a `chartmusem` ingress
+		var err2 error
+		answer, err2 = services.FindIngressURL(kubeClient, ns, "chartmuseum")
+		if err2 == nil {
+			return answer, nil
+		}
+	}
+	return answer, err
 }

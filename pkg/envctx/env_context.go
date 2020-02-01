@@ -1,11 +1,13 @@
 package envctx
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/helmfile"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -97,6 +99,59 @@ func (c *EnvironmentContext) ChartDetails(chartName string, repo string) (*Chart
 		LocalName:  localName,
 		Repository: repo,
 	}, nil
+}
+
+// DefaultPrefix if the chart has no prefix lets default it based on the apps config
+// for helmfile by finding the appConfig.repository entry. If this is a new repository
+// lets add it into the appsConfig.repository using the given default prefix.
+func (d *ChartDetails) DefaultPrefix(appsConfig *config.AppConfig, defaultPrefix string) {
+	if d.Prefix != "" {
+		return
+	}
+	found := false
+	prefixes := map[string]string{}
+	urls := map[string]string{}
+	for _, r := range appsConfig.Repositories {
+		if r.URL == d.Repository {
+			found = true
+		}
+		if r.Name != "" {
+			urls[r.URL] = r.Name
+			prefixes[r.Name] = r.URL
+		}
+	}
+
+	prefix := urls[d.Repository]
+	if prefix == "" {
+		if prefixes[defaultPrefix] == "" {
+			prefix = defaultPrefix
+		} else {
+			// the defaultPrefix exists and maps to another URL
+			// so lets create another similar prefix name as an alias for this repo URL
+			i := 2
+			for {
+				prefix = fmt.Sprintf("%s%d", defaultPrefix, i)
+				if prefixes[prefix] == "" {
+					break
+				}
+				i++
+			}
+		}
+	}
+	if !found {
+		appsConfig.Repositories = append(appsConfig.Repositories, helmfile.RepositorySpec{
+			Name: prefix,
+			URL:  d.Repository,
+		})
+
+	}
+	d.SetPrefix(prefix)
+}
+
+// SetPrefix sets the prefix and updates the associated name
+func (d *ChartDetails) SetPrefix(value string) {
+	d.Prefix = value
+	d.Name = d.Prefix + "/" + d.Name
 }
 
 // ResolveApplicationDefaults resolves the application defaults in the version stream if there are any

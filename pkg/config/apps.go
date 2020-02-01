@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helmfile"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
@@ -27,6 +28,8 @@ var PhaseValues = []string{"system", "apps"}
 type AppConfig struct {
 	// Apps of applications
 	Apps []App `json:"apps"`
+	// Repositories list of helm repositories
+	Repositories []helmfile.RepositorySpec `json:"repositories,omitempty"`
 	// DefaultNamespace the default namespace to install applications into
 	DefaultNamespace string `json:"defaultNamespace,omitempty"`
 }
