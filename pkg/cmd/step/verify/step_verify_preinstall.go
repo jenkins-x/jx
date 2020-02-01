@@ -231,7 +231,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 
 					err = o.lazyCreateVeleroSecret(requirements, vns)
 					if err != nil {
-						return errors.Wrapf(err, "failed to lazily create the kaniko secret in: %s", vns)
+						return errors.Wrapf(err, "failed to lazily create the velero secret in: %s", vns)
 					}
 					// lets rerun the verify step to ensure its all sorted now
 					err = o.validateVelero(vns)
