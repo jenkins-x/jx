@@ -79,12 +79,12 @@ func NewCmdCreateClientOpenAPI(genOpts GenerateOptions) *cobra.Command {
 	}
 
 	openAPIDependencies := []string{
-		"k8s.io/apimachinery:pkg/apis:meta:v1",
-		"k8s.io/apimachinery:pkg/api:resource:",
-		"k8s.io/apimachinery:pkg/util:intstr:",
-		"k8s.io/api::batch:v1",
-		"k8s.io/api::core:v1",
-		"k8s.io/api::rbac:v1",
+		"k8s.io/apimachinery?modules:pkg/apis:meta:v1",
+		"k8s.io/apimachinery?modules:pkg/api:resource:",
+		"k8s.io/apimachinery?modules:pkg/util:intstr:",
+		"k8s.io/api?modules::batch:v1",
+		"k8s.io/api?modules::core:v1",
+		"k8s.io/api?modules::rbac:v1",
 	}
 
 	moduleName := strings.TrimPrefix(strings.TrimPrefix(wd, filepath.Join(build.Default.GOPATH, "src")), "/")
