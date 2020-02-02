@@ -49,8 +49,8 @@ type App struct {
 	Version string `json:"version,omitempty"`
 	// Description an optional description of the app
 	Description string `json:"description,omitempty"`
-	// ValueFiles any explicit value files to be used
-	ValueFiles []string `json:"valueFiles,omitempty"`
+	// Values any explicit value files to be used
+	Values []string `json:"values,omitempty"`
 }
 
 // Phase of the pipeline to install application

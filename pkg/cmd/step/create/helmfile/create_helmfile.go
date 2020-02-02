@@ -123,7 +123,7 @@ func (o *CreateHelmfileOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		app.ValueFiles = append(app.ValueFiles, valuesFiles...)
+		app.Values = append(app.Values, valuesFiles...)
 		if app.Namespace == "" {
 			app.Namespace = defaults.Namespace
 		}
@@ -254,7 +254,7 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 		}
 
 		// check if a local directory and values file exists for the app
-		extraValuesFiles := append(app.ValueFiles, o.valueFiles...)
+		extraValuesFiles := append(app.Values, o.valueFiles...)
 		extraValuesFiles = o.addExtraAppValues(*app, extraValuesFiles, "values.yaml", phase)
 		extraValuesFiles = o.addExtraAppValues(*app, extraValuesFiles, "values.yaml.gotmpl", phase)
 
@@ -331,6 +331,15 @@ func (o *CreateHelmfileOptions) addExtraAppValues(app config.App, newValuesFiles
 	exists, _ := util.FileExists(fileName)
 	if exists {
 		newValuesFiles = append(newValuesFiles, path.Join(app.Name, valuesFilename))
+	}
+	parts := strings.Split(app.Name, "/")
+	if len(parts) == 2 {
+		localName := parts[1]
+		fileName := path.Join(o.dir, phase, localName, valuesFilename)
+		exists, _ := util.FileExists(fileName)
+		if exists {
+			newValuesFiles = append(newValuesFiles, path.Join(localName, valuesFilename))
+		}
 	}
 	return newValuesFiles
 }

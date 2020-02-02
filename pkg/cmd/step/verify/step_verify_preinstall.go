@@ -54,17 +54,18 @@ const (
 // StepVerifyPreInstallOptions contains the command line flags
 type StepVerifyPreInstallOptions struct {
 	StepVerifyOptions
-	Debug                 bool
-	Dir                   string
-	LazyCreate            bool
-	DisableVerifyHelm     bool
-	DisableVerifyPackages bool
-	LazyCreateFlag        string
-	Namespace             string
-	ProviderValuesDir     string
-	TestKanikoSecretData  string
-	TestVeleroSecretData  string
-	WorkloadIdentity      bool
+	Debug                  bool
+	Dir                    string
+	LazyCreate             bool
+	DisableVerifyHelm      bool
+	DisableVerifyPackages  bool
+	DefaultHelmfileSecrets bool
+	LazyCreateFlag         string
+	Namespace              string
+	ProviderValuesDir      string
+	TestKanikoSecretData   string
+	TestVeleroSecretData   string
+	WorkloadIdentity       bool
 }
 
 // NewCmdStepVerifyPreInstall creates the `jx step verify pod` command
@@ -97,6 +98,7 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.WorkloadIdentity, "workload-identity", "", false, "Enable this if using GKE Workload Identity to avoid reconnecting to the Cluster.")
 	cmd.Flags().BoolVarP(&options.DisableVerifyPackages, "disable-verify-packages", "", false, "Disable packages verification, helpful when testing different package versions.")
 	cmd.Flags().BoolVarP(&options.DisableVerifyHelm, "disable-verify-helm", "", false, "Disable Helm verification, helpful when testing different Helm versions.")
+	cmd.Flags().BoolVarP(&options.DefaultHelmfileSecrets, "default-helmfile-secrets", "", false, "If we are in a Pull Request and using helmfile we may want to generate default secrets if they are not yet present so we can lint the helmfile.")
 
 	return cmd
 }
@@ -1074,7 +1076,16 @@ func (o *StepVerifyPreInstallOptions) validateSecretsYAML() error {
 	// lets make sure we have the secrets defined as an env var
 	secretsYaml := os.Getenv("JX_SECRETS_YAML")
 	if secretsYaml == "" {
-		return fmt.Errorf("no $JX_SECRETS_YAML environment variable defined.\nPlease point this at your 'secrets.yaml' file.\nSee https://github.com/jenkins-x/enhancements/blob/master/proposals/2/docs/getting-started.md#setting-up-your-secrets")
+		if o.DefaultHelmfileSecrets {
+			dir, err := ioutil.TempDir("", "jx-secrets-")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir for default secrets YAML")
+			}
+			secretsYaml := filepath.Join(dir, "secrets.yaml")
+			os.Setenv("JX_SECRETS_YAML", secretsYaml)
+		} else {
+			return fmt.Errorf("no $JX_SECRETS_YAML environment variable defined.\nPlease point this at your 'secrets.yaml' file.\nSee https://github.com/jenkins-x/enhancements/blob/master/proposals/2/docs/getting-started.md#setting-up-your-secrets")
+		}
 	}
 
 	// lets write a default file if it doesn't exist so that we can run things like `helmfile lint` in PR pipelines
