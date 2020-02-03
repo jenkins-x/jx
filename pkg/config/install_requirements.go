@@ -10,16 +10,15 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/vrischmann/envconfig"
-
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/pkg/errors"
-
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -516,90 +515,50 @@ func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
 	if dir != "" {
 		fileName = filepath.Join(dir, fileName)
 	}
-	originalFileName := fileName
-	exists, err := util.FileExists(fileName)
-	if err != nil || !exists {
-		path, err := filepath.Abs(fileName)
-		if err != nil {
-			config, _ := LoadRequirementsConfigFile(fileName)
-			return config, fileName, err
-		}
-		subDir := GetParentDir(path)
 
-		// lets walk up the directory tree to see if we can find a requirements file in a parent dir
-		// if by the end we have not found a requirements file lets use the original filename
-		for {
-			subDir = GetParentDir(subDir)
-			if subDir == "" || subDir == "/" {
-				break
-			}
-			fileName = filepath.Join(subDir, RequirementsConfigFileName)
-			exists, _ := util.FileExists(fileName)
-			if exists {
-				config, err := LoadRequirementsConfigFile(fileName)
-				return config, fileName, err
-			}
+	absolute, err := filepath.Abs(fileName)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "creating absolute path")
+	}
+	sub := filepath.Dir(absolute)
+	for sub != "" && sub != "." && sub != "/" {
+		fileName = filepath.Join(sub, RequirementsConfigFileName)
+		config, err := LoadRequirementsConfigFile(fileName)
+		if err == nil {
+			return config, fileName, nil
 		}
-		// set back to the original filename
-		fileName = originalFileName
+		sub = filepath.Dir(sub)
 	}
-	config, err := LoadRequirementsConfigFile(fileName)
-	return config, fileName, err
-}
-
-// LoadActiveInstallProfile loads the active install profile
-func LoadActiveInstallProfile() string {
-	jxHome, err := util.ConfigDir()
-	if err == nil {
-		profileSettingsFile := filepath.Join(jxHome, DefaultProfileFile)
-		exists, err := util.FileExists(profileSettingsFile)
-		if err == nil && exists {
-			jxProfle := JxInstallProfile{}
-			data, err := ioutil.ReadFile(profileSettingsFile)
-			err = yaml.Unmarshal(data, &jxProfle)
-			if err == nil {
-				return jxProfle.InstallType
-			}
-		}
-	}
-	return OpenSourceProfile
-}
-
-// GetParentDir returns the parent directory without a trailing separator
-func GetParentDir(path string) string {
-	subDir, _ := filepath.Split(path)
-	if subDir == "" {
-		return ""
-	}
-	i := len(subDir) - 1
-	if os.IsPathSeparator(subDir[i]) {
-		subDir = subDir[0:i]
-	}
-	return subDir
+	return nil, "", errors.New("jx-requirements.yml file not found")
 }
 
 // LoadRequirementsConfigFile loads a specific project YAML configuration file
 func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
-	config := NewRequirementsConfig()
-	exists, err := util.FileExists(fileName)
-	if err != nil || !exists {
-		return config, err
+	config := &RequirementsConfig{}
+	_, err := os.Stat(fileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "checking if file %s exists", fileName)
 	}
+
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+		return nil, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
 	}
+
 	validationErrors, err := util.ValidateYaml(config, data)
 	if err != nil {
-		return config, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)
+		return nil, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)
 	}
+
 	if len(validationErrors) > 0 {
-		return config, fmt.Errorf("Validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
+		return nil, fmt.Errorf("Validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
 	}
+
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
+		return nil, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
+
 	config.addDefaults()
 	config.handleDeprecation()
 	return config, nil
