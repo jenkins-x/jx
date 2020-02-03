@@ -158,3 +158,7 @@ func Test_StartsWith(t *testing.T) {
 	assert.True(t, util.StartsWith("ML-a-machine-learning-quickstart", "ML-"))
 	assert.False(t, util.StartsWith("not-a-machine-learning-quickstart", "ML-"))
 }
+
+func Test_ToCamelCase(t *testing.T) {
+	assert.Equal(t, util.ToCamelCase("my-super-name"), "MySuperName")
+}
