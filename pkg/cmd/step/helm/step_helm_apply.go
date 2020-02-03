@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/platform"
-
 	"github.com/google/uuid"
+	"github.com/mholt/archiver"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -22,12 +24,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/platform"
 	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/mholt/archiver"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -248,7 +248,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	requirements, requirementsFileName, err := o.getRequirements()
-	if err != nil || requirements == nil {
+	if err != nil {
 		return errors.Wrap(err, "loading the requirements")
 	}
 
@@ -392,14 +392,10 @@ func (o *StepHelmApplyOptions) Run() error {
 func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, string, error) {
 	// Try to load first the requirements from current directory
 	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
-
-	_, err = os.Stat(requirementsFileName)
-	if os.IsNotExist(err) {
-		_, err = os.Stat(filepath.Join(o.Dir, requirementsFileName))
-	}
 	if err == nil {
 		return requirements, requirementsFileName, nil
 	}
+
 	// When no requirements file is found, try to load the requirements from team settings
 	jxClient, ns, err := o.JXClient()
 	if err != nil {
@@ -409,6 +405,15 @@ func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, st
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting the team setting from the cluster")
 	}
+
+	// TODO To stay backwards compatible with code after fixing #6653, we need to create a dummy RequirementsConfig here
+	// TODO This is a special case for static master and needs to be removed (HF)
+	if !teamSettings.IsJenkinsXPipelines() {
+		requirements = config.NewRequirementsConfig()
+		requirementsFileName = config.RequirementsConfigFileName
+		return requirements, requirementsFileName, nil
+	}
+
 	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSettings)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting the requirements from team settings")

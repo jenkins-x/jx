@@ -120,15 +120,9 @@ func TestRequirementsConfigMarshalInEmptyDir(t *testing.T) {
 	dir, err := ioutil.TempDir("", "test-requirements-config-empty-")
 
 	requirements, fileName, err := config.LoadRequirementsConfig(dir)
-	assert.NoError(t, err, "failed to load requirements file in dir %s", dir)
-
-	exists, err := util.FileExists(fileName)
-	assert.NoError(t, err, "failed to check file exists %s", fileName)
-	assert.False(t, exists, "file should not exist %s", fileName)
-
-	assert.Equal(t, config.WebhookTypeProw, requirements.Webhook, "requirements.WebhookTypeProw")
-	assert.Equal(t, false, requirements.Kaniko, "requirements.Kaniko")
-	assert.Equal(t, config.SecretStorageTypeLocal, requirements.SecretStorage, "requirements.SecretStorage")
+	assert.Error(t, err)
+	assert.Empty(t, fileName)
+	assert.Nil(t, requirements)
 }
 
 func TestRequirementsConfigIngressAutoDNS(t *testing.T) {
