@@ -392,8 +392,8 @@ func (o *StepHelmOptions) overwriteProviderValues(requirements *config.Requireme
 func (o *StepHelmOptions) getChartValues(targetNS string) ([]string, []string) {
 	return []string{
 			fmt.Sprintf("tags.jx-ns-%s=true", targetNS),
-			fmt.Sprintf("global.jx-ns-%s=true", targetNS),
+			fmt.Sprintf("global.jxNs%s=true", util.ToCamelCase(targetNS)),
 		}, []string{
-			fmt.Sprintf("global.jx-ns=%s", targetNS),
+			fmt.Sprintf("global.jxNs=%s", targetNS),
 		}
 }

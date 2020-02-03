@@ -280,3 +280,9 @@ func StripTrailingSlash(url string) string {
 func StartsWith(s, substr string) bool {
 	return strings.Index(s, substr) == 0
 }
+
+// ToCamelCase turn "my-super-name" into "MySuperName"
+// Usefule for creating valid go-template variable names
+func ToCamelCase(s string) string {
+	return strings.Replace(strings.Title(s), "-", "", -1)
+}

@@ -1182,24 +1182,24 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 }
 
 func (o *PromoteOptions) GetEnvChartValues(targetNS string, env *v1.Environment) ([]string, []string) {
-	kind := strings.ToLower(string(env.Spec.Kind))
+	kind := string(env.Spec.Kind)
 	values := []string{
 		fmt.Sprintf("tags.jx-ns-%s=true", targetNS),
-		fmt.Sprintf("global.jx-ns-%s=true", targetNS),
-		fmt.Sprintf("tags.jx-%s=true", kind),
+		fmt.Sprintf("global.jxNs%s=true", util.ToCamelCase(targetNS)),
+		fmt.Sprintf("tags.jx-%s=true", strings.ToLower(kind)),
 		fmt.Sprintf("tags.jx-env-%s=true", env.ObjectMeta.Name),
-		fmt.Sprintf("global.jx-%s=true", kind),
-		fmt.Sprintf("global.jx-env-%s=true", env.ObjectMeta.Name),
+		fmt.Sprintf("global.jx%s=true", kind),
+		fmt.Sprintf("global.jxEnv%s=true", util.ToCamelCase(env.ObjectMeta.Name)),
 	}
 	valueString := []string{
-		fmt.Sprintf("global.jx-ns=%s", targetNS),
-		fmt.Sprintf("global.jx-type-env=%s", kind),
-		fmt.Sprintf("global.jx-env=%s", env.ObjectMeta.Name),
+		fmt.Sprintf("global.jxNs=%s", targetNS),
+		fmt.Sprintf("global.jxTypeEnv=%s", strings.ToLower(kind)),
+		fmt.Sprintf("global.jxEnv=%s", env.ObjectMeta.Name),
 	}
 	if env.Spec.Kind == v1.EnvironmentKindTypePreview {
 		valueString = append(valueString,
-			fmt.Sprintf("global.jx-preview-app=%s", env.Spec.PreviewGitSpec.ApplicationName),
-			fmt.Sprintf("global.jx-preview-pr=%s", env.Spec.PreviewGitSpec.Name),
+			fmt.Sprintf("global.jxPreviewApp=%s", env.Spec.PreviewGitSpec.ApplicationName),
+			fmt.Sprintf("global.jxPreviewPr=%s", env.Spec.PreviewGitSpec.Name),
 		)
 	}
 	return values, valueString
