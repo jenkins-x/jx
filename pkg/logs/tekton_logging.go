@@ -15,6 +15,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 
 	"github.com/fatih/color"
 	"github.com/google/uuid"
@@ -150,11 +151,15 @@ func createPipelineActivityName(labels map[string]string, buildNumber string) st
 	if repository == "" {
 		repository = labels["repo"]
 	}
-	baseName := strings.ToLower(fmt.Sprintf("%s/%s/%s #%s", labels[v1.LabelOwner], repository, labels[v1.LabelBranch], buildNumber))
+	baseName := fmt.Sprintf("%s/%s/%s #%s",
+		naming.ToValidName(labels[v1.LabelOwner]),
+		naming.ToValidName(repository),
+		naming.ToValidName(labels[v1.LabelBranch]),
+		strings.ToLower(buildNumber))
 
 	context := labels[v1.LabelContext]
 	if context != "" {
-		return strings.ToLower(fmt.Sprintf("%s %s", baseName, context))
+		return fmt.Sprintf("%s %s", baseName, naming.ToValidName(context))
 	}
 
 	return baseName

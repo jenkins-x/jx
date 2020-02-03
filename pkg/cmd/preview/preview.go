@@ -655,7 +655,8 @@ func (o *PreviewOptions) Run() error {
 
 // findPreviewURL finds the preview URL
 func (o *PreviewOptions) findPreviewURL(kubeClient kubernetes.Interface, kserveClient kserve.Interface) (string, []string, error) {
-	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
+	app := naming.ToValidName(o.Application)
+	appNames := []string{app, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + app}
 	url := ""
 	var err error
 	fn := func() (bool, error) {
@@ -682,7 +683,7 @@ func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns
 		return err
 	}
 
-	scheme, port, err := services.FindServiceSchemePort(kubeClient, ns, application)
+	scheme, port, err := services.FindServiceSchemePort(kubeClient, ns, naming.ToValidName(application))
 	if err != nil {
 		log.Logger().Warnf("Failed to find the service %s : %s", application, err)
 	}

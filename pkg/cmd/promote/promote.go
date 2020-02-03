@@ -1064,7 +1064,7 @@ func (o *PromoteOptions) CommentOnIssues(targetNS string, environment *v1.Enviro
 	appNames := []string{app, o.ReleaseName, ens + "-" + app}
 	url := ""
 	for _, n := range appNames {
-		url, err = services.FindServiceURL(kubeClient, ens, n)
+		url, err = services.FindServiceURL(kubeClient, ens, naming.ToValidName(n))
 		if url != "" {
 			break
 		}
