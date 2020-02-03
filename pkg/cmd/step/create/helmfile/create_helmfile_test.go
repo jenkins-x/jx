@@ -35,34 +35,37 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func TestDedupeRepositories(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "test-applications-config")
+func TestGeneratedHelfiles(t *testing.T) {
+	rootTempDir, err := ioutil.TempDir("", "test-applications-config")
 	assert.NoError(t, err, "should create a temporary config dir")
 
-	o := &CreateHelmfileOptions{
-		outputDir:     tempDir,
-		dir:           "test_data",
-		CreateOptions: *getCreateOptions(),
-	}
-	o.SetEnvironmentContext(createTestEnvironmentContext(t))
-	err = o.Run()
-	assert.NoError(t, err)
+	for _, name := range []string{"dedupe_repositories", "empty-system", "empty"} {
+		tempDir := filepath.Join(rootTempDir, name)
+		sourceDir := filepath.Join("test_data", name)
+		o := &CreateHelmfileOptions{
+			outputDir:     tempDir,
+			dir:           sourceDir,
+			CreateOptions: *getCreateOptions(),
+		}
+		o.SetEnvironmentContext(createTestEnvironmentContext(t))
+		err = o.Run()
+		assert.NoError(t, err, "failed to generate helmfiles for %s", name)
 
-	h, got, err := loadHelmfile(path.Join(tempDir, "apps"))
-	assert.NoError(t, err)
+		for _, folder := range []string{"apps", "system"} {
+			_, got, err := loadHelmfile(path.Join(tempDir, folder))
+			assert.NoError(t, err)
 
-	_, want, err := loadHelmfile(path.Join("test_data", "expected"))
-	assert.NoError(t, err)
+			_, want, err := loadHelmfile(path.Join(sourceDir, "expected", folder))
+			assert.NoError(t, err)
 
-	// assert there are 3 repos and not 4 as one of them in the jx-applications.yaml is a duplicate
-	assert.Equal(t, 3, len(h.Repositories))
+			if diff := cmp.Diff(got, want); diff != "" {
+				t.Errorf("Unexpected helmfile generated for %s folder %s", name, folder)
+				t.Log(diff)
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("Unexpected helmfile generated")
-		t.Log(diff)
-
-		t.Logf("generated helmfile:\n")
-		t.Logf("\n%s\n", got)
+				t.Logf("generated helmfile for %s in %s:\n", name, folder)
+				t.Logf("\n%s\n", got)
+			}
+		}
 	}
 }
 

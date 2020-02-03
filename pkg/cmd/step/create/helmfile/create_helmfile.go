@@ -223,6 +223,14 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 		}
 	}
 
+	defaultNamespace := apps.DefaultNamespace
+	if defaultNamespace == "" && ec.DevEnv != nil {
+		defaultNamespace = ec.DevEnv.Namespace
+	}
+	if defaultNamespace == "" && ec.Requirements != nil {
+		defaultNamespace = ec.Requirements.Cluster.Namespace
+	}
+
 	var releases []helmfile2.ReleaseSpec
 	for i := range applications {
 		app := &applications[i]
@@ -244,13 +252,7 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 			}
 		}
 		if app.Namespace == "" {
-			app.Namespace = apps.DefaultNamespace
-		}
-		if app.Namespace == "" && ec.DevEnv != nil {
-			app.Namespace = ec.DevEnv.Namespace
-		}
-		if app.Namespace == "" && ec.Requirements != nil {
-			app.Namespace = ec.Requirements.Cluster.Namespace
+			app.Namespace = defaultNamespace
 		}
 
 		// check if a local directory and values file exists for the app
@@ -264,6 +266,16 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 			Version:   version,
 			Chart:     chartName,
 			Values:    extraValuesFiles,
+		}
+		releases = append(releases, release)
+	}
+
+	// if we have no releases then lets add a dummy entry to avoid `helmfile sync` failing
+	if len(releases) == 0 {
+		release := helmfile2.ReleaseSpec{
+			Name:      "empty",
+			Chart:     "jenkins-x/empty",
+			Namespace: defaultNamespace,
 		}
 		releases = append(releases, release)
 	}

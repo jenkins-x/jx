@@ -1,0 +1,20 @@
+bases:
+- ../environments.yaml
+helmDefaults:
+  atomic: true
+  devel: false
+  force: false
+  recreatePods: false
+  tillerless: false
+  timeout: 520
+  tls: false
+  verify: false
+  wait: true
+releases:
+- chart: bitnami/nexus
+  name: nexus
+  namespace: jx
+  version: 9.2.1
+repositories:
+- name: bitnami
+  url: https://charts.bitnami.com/bitnami

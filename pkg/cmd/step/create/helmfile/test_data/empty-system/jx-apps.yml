@@ -1,0 +1,4 @@
+defaultNamespace: jx
+apps:
+- name: bitnami/nexus
+  version: 9.2.1
