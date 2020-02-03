@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -437,5 +438,22 @@ func (o *CreateHelmfileOptions) writeGeneratedNamespaceValues(namespace, phase s
 		return err
 	}
 	err = ioutil.WriteFile(path.Join(o.outputDir, phase, "generated", namespace, "values.yaml"), data, util.DefaultWritePermissions)
+	return nil
+}
+
+func (o *CreateHelmfileOptions) ensureJxRequirementsYamlExists(requirements *config.RequirementsConfig) error {
+	fileName := filepath.Join(o.dir, config.RequirementsValuesFileName)
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if file exists %s", fileName)
+
+	}
+	if exists {
+		return nil
+	}
+	err = config.SaveRequirementsValuesFile(requirements, o.dir)
+	if err != nil {
+		return errors.Wrap(err, "failed to save requirements yaml file")
+	}
 	return nil
 }

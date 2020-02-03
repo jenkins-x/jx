@@ -1009,3 +1009,21 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func()
 func envVarBoolean(value string) bool {
 	return value == "true" || value == "yes"
 }
+
+// SaveRequirementsValuesFile saves the requirements yaml file for use with helmfile / helm 3
+func SaveRequirementsValuesFile(c *RequirementsConfig, dir string) error {
+	y := RequirementsValues{
+		RequirementsConfig: c,
+	}
+	data, err := yaml.Marshal(y)
+	if err != nil {
+		return err
+	}
+
+	fileName := path.Join(dir, RequirementsValuesFileName)
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save file %s", fileName)
+	}
+	return nil
+}

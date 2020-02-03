@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -1034,17 +1033,9 @@ func (o *StepVerifyPreInstallOptions) SaveConfig(c *config.RequirementsConfig, f
 	}
 
 	if c.Helmfile {
-		y := config.RequirementsValues{
-			RequirementsConfig: c,
-		}
-		data, err = yaml.Marshal(y)
+		err = config.SaveRequirementsValuesFile(c, filepath.Dir(fileName))
 		if err != nil {
 			return err
-		}
-
-		err = ioutil.WriteFile(path.Join(path.Dir(fileName), config.RequirementsValuesFileName), data, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "failed to save file %s", config.RequirementsValuesFileName)
 		}
 	}
 	return nil
