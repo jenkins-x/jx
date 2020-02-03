@@ -114,6 +114,39 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 	assert.Equal(t, 1, len(paNames))
 }
 
+// Based on a real case
+func TestGetTektonPipelinesWithActivePipelineActivityInvalidName(t *testing.T) {
+	testCaseDir := path.Join("test_data", "invalid_name")
+	jxClient, _, _, _, ns := getFakeClientsAndNs(t)
+
+	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
+	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
+	tl := TektonLogger{
+		JXClient:     jxClient,
+		TektonClient: tektonClient,
+		Namespace:    ns,
+		LogWriter: &TestWriter{
+			StreamLinesLogged: make([]string, 0),
+			SingleLinesLogged: make([]string, 0),
+		},
+		LogsRetrieverFunc: LogsProvider,
+	}
+
+	activity := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
+	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(activity)
+	assert.NoError(t, err)
+
+	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{"context=fakecontext"})
+
+	assert.NoError(t, err, "There shouldn't be any error obtaining PipelineActivities and PipelineRuns")
+	if assert.Equal(t, len(names), 1, "There should be one found pipeline") {
+		assert.Equal(t, "myself/my-awesome-project-org/pr-2 #1 fakecontext", names[0], "There should be a match build in the returned names")
+		_, exists := paNames[names[0]]
+		assert.True(t, exists, "There should be a matching PipelineActivity in the paMap")
+	}
+	assert.Equal(t, len(names), len(paNames))
+}
+
 func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 	jxClient, tektonClient, kubeClient, _, ns := getFakeClientsAndNs(t)
 	tl := TektonLogger{

@@ -263,7 +263,7 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 		appName = gitInfo.Name
 	}
 	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
-		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
+		return dockerRegistry + "/" + dockerRegistryOrg + "/" + naming.ToValidName(appName)
 	}
 	log.Logger().Warnf("could not generate chart repository name for GetDockerRegistry %s, GetDockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
 	return ""
