@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/platform"
-
 	"github.com/google/uuid"
+	"github.com/mholt/archiver"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -22,12 +24,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/platform"
 	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/mholt/archiver"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -393,10 +393,6 @@ func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, st
 	// Try to load first the requirements from current directory
 	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
 
-	_, err = os.Stat(requirementsFileName)
-	if os.IsNotExist(err) {
-		_, err = os.Stat(filepath.Join(o.Dir, requirementsFileName))
-	}
 	if err == nil {
 		return requirements, requirementsFileName, nil
 	}

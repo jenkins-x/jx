@@ -596,43 +596,9 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	args := cluster.Args
 
 	// lets modify the local requirements file if it exists
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Flags.Dir)
+	requirements, err := o.getTestSpecificRequirementsIfExists(cluster)
 	if err != nil {
-		return err
-	}
-	exists, err := util.FileExists(requirementsFile)
-	if err != nil {
-		return err
-	}
-	if exists {
-		// lets modify the version stream to use the PR
-		if o.Flags.VersionsRepoPr {
-			requirements.VersionStream.Ref = o.InstallOptions.Flags.VersionsGitRef
-			log.Logger().Infof("setting the jx-requirements.yml version stream ref to: %s\n", util.ColorInfo(requirements.VersionStream.Ref))
-		}
-		requirements.VersionStream.URL = o.InstallOptions.Flags.VersionsRepository
-
-		if cluster.Name != requirements.Cluster.ClusterName {
-			requirements.Cluster.ClusterName = cluster.Name
-
-			// lets ensure that there's git repositories setup
-			o.ensureTestEnvironmentRepoSetup(requirements, "staging")
-			o.ensureTestEnvironmentRepoSetup(requirements, "production")
-
-			err = requirements.SaveConfig(requirementsFile)
-			if err != nil {
-				return errors.Wrapf(err, "failed to save file %s after setting the cluster name to %s", requirementsFile, cluster.Name)
-			}
-			log.Logger().Infof("wrote file %s after setting the cluster name to %s\n", requirementsFile, cluster.Name)
-
-			data, err := ioutil.ReadFile(requirementsFile)
-			if err != nil {
-				return errors.Wrapf(err, "failed to load file %s", requirementsFile)
-			}
-			log.Logger().Infof("%s is:\n", requirementsFile)
-			log.Logger().Infof("%s\n", util.ColorStatus(string(data)))
-			log.Logger().Info("\n")
-		}
+		return errors.Wrapf(err, "unable to generate test specific jx-requirements.yaml")
 	}
 
 	if cluster.Terraform {
@@ -769,6 +735,43 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 		}
 	}
 	return err
+}
+
+func (o *StepBDDOptions) getTestSpecificRequirementsIfExists(cluster *CreateCluster) (*config.RequirementsConfig, error) {
+	requirements, requirementsFile, _ := config.LoadRequirementsConfig(o.Flags.Dir)
+	if requirements == nil {
+		return nil, nil
+	}
+
+	// lets modify the version stream to use the PR
+	if o.Flags.VersionsRepoPr {
+		requirements.VersionStream.Ref = o.InstallOptions.Flags.VersionsGitRef
+		log.Logger().Infof("setting the jx-requirements.yml version stream ref to: %s\n", util.ColorInfo(requirements.VersionStream.Ref))
+	}
+	requirements.VersionStream.URL = o.InstallOptions.Flags.VersionsRepository
+
+	if cluster.Name != requirements.Cluster.ClusterName {
+		requirements.Cluster.ClusterName = cluster.Name
+
+		// lets ensure that there's git repositories setup
+		o.ensureTestEnvironmentRepoSetup(requirements, "staging")
+		o.ensureTestEnvironmentRepoSetup(requirements, "production")
+
+		err := requirements.SaveConfig(requirementsFile)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to save file %s after setting the cluster name to %s", requirementsFile, cluster.Name)
+		}
+		log.Logger().Infof("wrote file %s after setting the cluster name to %s\n", requirementsFile, cluster.Name)
+
+		data, err := ioutil.ReadFile(requirementsFile)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to load file %s", requirementsFile)
+		}
+		log.Logger().Infof("%s is:\n", requirementsFile)
+		log.Logger().Infof("%s\n", util.ColorStatus(string(data)))
+		log.Logger().Info("\n")
+	}
+	return requirements, nil
 }
 
 func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.RequirementsConfig, envName string) {

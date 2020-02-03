@@ -9,13 +9,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/pkg/cmd/edit/requirements"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCmdEditRequirements(t *testing.T) {
@@ -63,16 +64,19 @@ func TestCmdEditRequirements(t *testing.T) {
 				assert.Equal(t, "gs://foo", req.Storage.Logs.URL, "req.Storage.Logs.URL")
 				assert.True(t, req.Storage.Logs.Enabled, "req.Storage.Logs.Enabled")
 			},
+			initialFile: gitOpsEnabled,
 		},
 		{
-			name: "bad-git-kind",
-			args: []string{"--git-kind=gitlob"},
-			fail: true,
+			name:        "bad-git-kind",
+			args:        []string{"--git-kind=gitlob"},
+			fail:        true,
+			initialFile: gitOpsEnabled,
 		},
 		{
-			name: "bad-secret",
-			args: []string{"--secret=vaulx"},
-			fail: true,
+			name:        "bad-secret",
+			args:        []string{"--secret=vaulx"},
+			fail:        true,
+			initialFile: gitOpsEnabled,
 		},
 	}
 
