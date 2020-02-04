@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/envctx"
 	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/versionstream"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -225,7 +226,6 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 				repositories = append(repositories, repository)
 			}
 		}
-
 	}
 
 	for _, ar := range apps.Repositories {
@@ -296,6 +296,21 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 			Namespace: defaultNamespace,
 		}
 		releases = append(releases, release)
+
+		found := false
+		for _, repo := range repositories {
+			if repo.Name == "jenkins-x" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			repository := helmfile2.RepositorySpec{
+				Name: "jenkins-x",
+				URL:  kube.DefaultChartMuseumURL,
+			}
+			repositories = append(repositories, repository)
+		}
 	}
 
 	// ensure any namespaces referenced are created first, do this via an extra chart that creates namespaces
