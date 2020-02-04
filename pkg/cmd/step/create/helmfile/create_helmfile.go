@@ -242,13 +242,12 @@ func (o *CreateHelmfileOptions) generateHelmFile(ec *envctx.EnvironmentContext, 
 	}
 
 	defaultNamespace := apps.DefaultNamespace
-	if defaultNamespace == "" && ec.DevEnv != nil {
-		defaultNamespace = ec.DevEnv.Namespace
-	}
 	if defaultNamespace == "" && ec.Requirements != nil {
 		defaultNamespace = ec.Requirements.Cluster.Namespace
 	}
-
+	if defaultNamespace == "" && ec.DevEnv != nil {
+		defaultNamespace = ec.DevEnv.Namespace
+	}
 	var releases []helmfile2.ReleaseSpec
 	for i := range applications {
 		app := &applications[i]
