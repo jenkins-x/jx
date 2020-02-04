@@ -179,7 +179,7 @@ func (o *CommonOptions) ConfigureCommonOptions(requirements *config.Requirements
 		// lets check if we have helm 2.x on the PATh if we are in a pipeline on classic jx builder images
 		version, err := o.Helm().Version(false)
 		if err != nil {
-			return err
+			log.Logger().Infof("failed to get helm version: %s", err.Error())
 		}
 		version = strings.TrimPrefix(version, "v")
 		if strings.HasPrefix(version, "2.") || strings.HasPrefix(version, "1.") {
