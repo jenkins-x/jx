@@ -186,21 +186,10 @@ func (o *CommonOptions) ConfigureCommonOptions(requirements *config.Requirements
 		if strings.HasPrefix(version, "2.") || strings.HasPrefix(version, "1.") {
 			log.Logger().Info("old helm binary on the PATH so replacing with helm 3")
 
-			path := util.WhichBinary("helm")
 			helm3Path := util.WhichBinary("helm3")
-			if path == "" {
-				log.Logger().Warnf("could not find helm on the $PATH")
-				return nil
+			if helm3Path != "" {
+				o.helm = helm.NewHelmCLI("helm3", helm.V3, "", false)
 			}
-			if helm3Path == "" {
-				log.Logger().Warnf("please install helm 3.x")
-				return nil
-			}
-			err := util.CopyFile(helm3Path, path)
-			if err != nil {
-				return errors.Wrapf(err, "failed to copy file %s to %s", helm3Path, path)
-			}
-			log.Logger().Infof("updated helm 2 binary to helm 3 at %s", path)
 		}
 	}
 	return nil
