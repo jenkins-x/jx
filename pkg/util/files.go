@@ -8,10 +8,12 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -564,4 +566,21 @@ func GlobAllFiles(basedir string, pattern string, fn func(string) error) error {
 func ToValidFileSystemName(name string) string {
 	replacer := strings.NewReplacer(".", "_", "/", "_")
 	return replacer.Replace(name)
+}
+
+// WhichBinary returns the full path to the binary by looking on the $PATH
+func WhichBinary(binaryName string) string {
+	if runtime.GOOS == "windows" {
+		binaryName += ".exe"
+	}
+
+	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
+	for _, p := range paths {
+		fullPath := filepath.Join(p, binaryName)
+		exists, err := util.FileExists(fullPath)
+		if err == nil && exists {
+			return fullPath
+		}
+	}
+	return ""
 }

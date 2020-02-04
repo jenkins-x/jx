@@ -154,6 +154,9 @@ const (
 	// DefaultEnvironmentHelmfileGitRepoURL the default git repository used for remote environments with helmfile
 	DefaultEnvironmentHelmfileGitRepoURL = "https://github.com/jenkins-x/default-environment-helmfile.git"
 
+	// DefaultEnvironmentHelmfileLocalGitRepoURL the default git repository used for local environments with helmfile
+	DefaultEnvironmentHelmfileLocalGitRepoURL = "https://github.com/jenkins-x/default-environment-helmfile-local.git"
+
 	DefaultOrganisationGitRepoURL = "https://github.com/jenkins-x/default-organisation.git"
 
 	// AnnotationTitle the human readable name of a resource which can include mixed case, spaces and punctuation
