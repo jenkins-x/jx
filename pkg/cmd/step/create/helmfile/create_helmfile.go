@@ -79,7 +79,7 @@ func NewCmdCreateHelmfile(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&o.dir, "dir", "", ".", "the directory to look for a 'jx-apps.yml' file")
 	cmd.Flags().StringVarP(&o.outputDir, "outputDir", "", "", "The directory to write the helmfile.yaml file")
-	cmd.Flags().StringArrayVarP(&o.valueFiles, "values", "", []string{""}, "specify values in a YAML file or a URL(can specify multiple)")
+	cmd.Flags().StringArrayVarP(&o.valueFiles, "values", "", nil, "specify values in a YAML file or a URL(can specify multiple)")
 
 	return cmd
 }
@@ -92,6 +92,23 @@ func (o *CreateHelmfileOptions) Run() error {
 	}
 
 	ec, err := o.EnvironmentContext(o.dir, true)
+	if err != nil {
+		return err
+	}
+
+	if len(o.valueFiles) == 0 {
+		secretsYaml := os.Getenv("JX_SECRETS_YAML")
+		if secretsYaml == "" {
+			return fmt.Errorf("no option --values is specified and there is no $JX_SECRETS_YAML environment variable")
+		}
+
+		// lets use the default values
+		o.valueFiles = []string{
+			secretsYaml,
+			"../jx-requirements.values.yaml.gotmpl",
+		}
+	}
+	err = o.ensureJxRequirementsYamlExists(ec.Requirements)
 	if err != nil {
 		return err
 	}
