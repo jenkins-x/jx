@@ -350,6 +350,9 @@ func (o *CommonOptions) getAuthConfig() (*auth.AuthConfig, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create the git auth config service")
 	}
+	if authConfigSvc == nil {
+		return nil, errors.New("empty auth config")
+	}
 	authConfig := authConfigSvc.Config()
 	if authConfig == nil {
 		return nil, errors.New("empty Git config")

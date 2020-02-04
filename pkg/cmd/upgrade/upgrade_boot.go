@@ -449,13 +449,15 @@ func (o *UpgradeBootOptions) cherryPickCommits(cloneDir, fromSha, toSha string) 
 
 func (o *UpgradeBootOptions) setupGitConfig(dir string) error {
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create/get jx client and dev namespace")
+	}
 	devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get dev environment in namespace %s", devNs)
 	}
 	username := devEnv.Spec.TeamSettings.PipelineUsername
 	email := devEnv.Spec.TeamSettings.PipelineUserEmail
-
 	err = o.Git().SetUsername(dir, username)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set username %s", username)
@@ -521,9 +523,15 @@ func (o *UpgradeBootOptions) deleteLocalBranch(branch string) error {
 
 func (o *UpgradeBootOptions) cloneDevEnv() error {
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create/get jx client and dev namespace")
+	}
 	devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get dev environment in namespace %s", devNs)
+	}
+	if devEnv == nil {
+		return errors.Wrapf(errors.New("Cannot find environment with dev selector"), "No development environment found for namespace %s", devNs)
 	}
 	devEnvURL := devEnv.Spec.Source.URL
 
@@ -537,6 +545,9 @@ func (o *UpgradeBootOptions) cloneDevEnv() error {
 	}
 
 	gitInfo, err := gits.ParseGitURL(devEnvURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse url %s", devEnvURL)
+	}
 	_, userAuth, err := o.GetPipelineGitAuthForRepo(gitInfo)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pipeline user auth")
