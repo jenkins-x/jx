@@ -181,6 +181,7 @@ func (o *CommonOptions) ConfigureCommonOptions(requirements *config.Requirements
 		if err != nil {
 			log.Logger().Infof("failed to get helm version: %s", err.Error())
 		}
+		version = strings.TrimPrefix(version, "Client: ")
 		version = strings.TrimPrefix(version, "v")
 		if strings.HasPrefix(version, "2.") || strings.HasPrefix(version, "1.") {
 			log.Logger().Info("old helm binary on the PATH so replacing with helm 3")
