@@ -591,6 +591,9 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 				}
 			}
 		}
+		if requirements.Cluster.Registry == "" {
+			requirements.Cluster.Registry = "gcr.io"
+		}
 		if !autoAcceptDefaults {
 			if !o.WorkloadIdentity && !o.InCluster() {
 				// connect to the specified cluster if different from the currently connected one
