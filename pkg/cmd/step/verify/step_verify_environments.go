@@ -333,9 +333,13 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentRepository(name string,
 	batchMode := o.BatchMode
 	forkGitURL := kube.DefaultEnvironmentGitRepoURL
 	helmfile := false
-	if requirements.Helmfile && environment.Spec.RemoteCluster {
+	if requirements.Helmfile {
 		helmfile = true
-		forkGitURL = kube.DefaultEnvironmentHelmfileGitRepoURL
+		if environment.Spec.RemoteCluster {
+			forkGitURL = kube.DefaultEnvironmentHelmfileGitRepoURL
+		} else {
+			forkGitURL = kube.DefaultEnvironmentHelmfileLocalGitRepoURL
+		}
 	} else {
 		helmValues, err = o.createEnvironmentHelmValues(requirements, environment)
 		if err != nil {
