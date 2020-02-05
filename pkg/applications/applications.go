@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/flagger"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -54,7 +55,7 @@ func (l List) Environments() map[string]v1.Environment {
 
 // Name returns the application name
 func (a Application) Name() string {
-	return a.SourceRepository.Spec.Repo
+	return naming.ToValidName(a.SourceRepository.Spec.Repo)
 }
 
 // IsPreview returns true if the environment is a preview environment
@@ -166,7 +167,7 @@ func (l List) appendMatchingDeployments(envs map[string]*v1.Environment, deps ma
 				if err != nil {
 					return errors.Wrap(err, "getting app name")
 				}
-				if depAppName == app.SourceRepository.Spec.Repo && !flagger.IsCanaryAuxiliaryDeployment(dep) {
+				if depAppName == app.Name() && !flagger.IsCanaryAuxiliaryDeployment(dep) {
 					depCopy := dep
 					app.Environments[env.Name] = Environment{
 						*env,
