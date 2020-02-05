@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	stackdriver "github.com/TV4/logrus-stackdriver-formatter"
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
@@ -42,6 +43,9 @@ const (
 
 	// FormatLayoutText uses classic colorful Jenkins X layout
 	FormatLayoutText FormatLayoutType = "text"
+
+	// FormatLayoutStackdriver uses a custom formatter for stackdriver
+	FormatLayoutStackdriver FormatLayoutType = "stackdriver"
 )
 
 func initializeLogger() error {
@@ -74,6 +78,8 @@ func initializeLogger() error {
 		format := os.Getenv("JX_LOG_FORMAT")
 		if format == "json" {
 			setFormatter(FormatLayoutJSON)
+		} else if format == "stackdriver" {
+			setFormatter(FormatLayoutStackdriver)
 		} else {
 			setFormatter(FormatLayoutText)
 		}
@@ -121,6 +127,8 @@ func setFormatter(layout FormatLayoutType) {
 	switch layout {
 	case FormatLayoutJSON:
 		logrus.SetFormatter(&logrus.JSONFormatter{})
+	case FormatLayoutStackdriver:
+		logrus.SetFormatter(stackdriver.NewFormatter())
 	default:
 		logrus.SetFormatter(NewJenkinsXTextFormat())
 	}
