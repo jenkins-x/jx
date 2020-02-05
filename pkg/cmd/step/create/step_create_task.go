@@ -1035,6 +1035,13 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			})
 		}
 	}
+
+	// resolve any env var expressions in the values such as `PATH=foo:$PATH`
+	for i := range envVars {
+		if envVars[i].Value != "" {
+			envVars[i].Value = os.ExpandEnv(envVars[i].Value)
+		}
+	}
 	container.Env = envVars
 }
 
