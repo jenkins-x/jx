@@ -39,6 +39,12 @@ const (
 	braceMatchingRegex = "(\\$(\\{(?P<var>inputs\\.params\\.[_a-zA-Z][_a-zA-Z0-9.-]*)\\}))"
 )
 
+var (
+	ipAddressRegistryRegex = regexp.MustCompile(`\d+\.\d+\.\d+\.\d+.\d+(:\d+)?`)
+
+	commandIsSkaffoldRegex = regexp.MustCompile(`export VERSION=.*? && skaffold build.*`)
+)
+
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
 	Agent      *Agent          `json:"agent,omitempty"`
@@ -1097,7 +1103,11 @@ type StepPlaceholderReplacementArgs struct {
 	GitName           string
 	GitOrg            string
 	GitHost           string
+	DockerRegistry    string
 	DockerRegistryOrg string
+	ProjectID         string
+	KanikoImage       string
+	UseKaniko         bool
 }
 
 // ReplacePlaceholdersInStepAndStageDirs traverses this pipeline's stages and any nested stages for any steps (and any nested steps)
@@ -1134,6 +1144,7 @@ func (s *Stage) replacePlaceholdersInStage(args StepPlaceholderReplacementArgs) 
 
 func (s *Step) replacePlaceholdersInStep(args StepPlaceholderReplacementArgs) {
 	if s.GetCommand() != "" {
+		s.modifyStep(args)
 		dir := args.WorkspaceDir
 
 		if s.Dir != "" {
@@ -1169,6 +1180,40 @@ func (s *Step) replacePlaceholdersInStep(args StepPlaceholderReplacementArgs) {
 			loopSteps = append(loopSteps, nested)
 		}
 		s.Loop.Steps = loopSteps
+	}
+}
+
+// modifyStep allows a container step to be modified to do something different
+func (s *Step) modifyStep(params StepPlaceholderReplacementArgs) {
+	if params.UseKaniko {
+		if strings.HasPrefix(s.GetCommand(), "skaffold build") ||
+			(len(s.Arguments) > 0 && strings.HasPrefix(strings.Join(s.Arguments[1:], " "), "skaffold build")) ||
+			commandIsSkaffoldRegex.MatchString(s.GetCommand()) {
+
+			sourceDir := params.WorkspaceDir
+			dockerfile := filepath.Join(sourceDir, "Dockerfile")
+			localRepo := params.DockerRegistry
+			destination := params.DockerRegistry + "/" + params.DockerRegistryOrg + "/" + params.GitName
+
+			args := []string{"--cache=true", "--cache-dir=/workspace",
+				"--context=" + sourceDir,
+				"--dockerfile=" + dockerfile,
+				"--destination=" + destination + ":${inputs.params.version}",
+				"--cache-repo=" + localRepo + "/" + params.ProjectID + "/cache",
+			}
+			if localRepo != "gcr.io" {
+				args = append(args, "--skip-tls-verify-registry="+localRepo)
+			}
+
+			if ipAddressRegistryRegex.MatchString(localRepo) {
+				args = append(args, "--insecure")
+			}
+
+			s.Command = "/kaniko/executor"
+			s.Arguments = args
+
+			s.Image = params.KanikoImage
+		}
 	}
 }
 
