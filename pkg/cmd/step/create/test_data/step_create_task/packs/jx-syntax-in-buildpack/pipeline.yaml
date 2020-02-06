@@ -13,7 +13,7 @@ pipelines:
             - command: source /root/.bashrc && flake8
               name: flake8
               image: maven
-              dir: /workspace/source
+              dir: /workspace/source/REPLACE_ME_APP_NAME
   release:
     pipeline:
       agent:
@@ -25,4 +25,4 @@ pipelines:
             - command: source /root/.bashrc && flake8
               name: flake8
               image: maven
-              dir: /workspace/source
+              dir: /workspace/source/REPLACE_ME_APP_NAME
