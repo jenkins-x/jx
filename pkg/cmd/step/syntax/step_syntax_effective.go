@@ -432,7 +432,11 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 		GitName:           o.GitInfo.Name,
 		GitOrg:            o.GitInfo.Organisation,
 		GitHost:           o.GitInfo.Host,
+		ProjectID:         o.ProjectID,
+		DockerRegistry:    o.getDockerRegistry(projectConfig),
 		DockerRegistryOrg: o.GetDockerRegistryOrg(projectConfig, o.GitInfo),
+		KanikoImage:       o.KanikoImage,
+		UseKaniko:         o.UseKaniko,
 	}
 	parsed.ReplacePlaceholdersInStepAndStageDirs(replacePlaceholderArgs)
 	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
