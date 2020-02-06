@@ -308,7 +308,11 @@ func TestStatusReleasesForHelm3(t *testing.T) {
 }
 
 func TestLint(t *testing.T) {
-	expectedArgs := []string{"lint"}
+	expectedArgs := []string{"lint",
+		"--set", "tags.jx-lint=true",
+		"--set", "global.jxLint=true",
+		"--set-string", "global.jxTypeEnv=lint",
+	}
 	expectedOutput := "test"
 	helm, runner := createHelm(t, nil, expectedOutput)
 

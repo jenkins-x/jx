@@ -16,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// Test_HelmInitRecursiveDependencyBuild_extraction test that chart achives
+// Test_HelmInitRecursiveDependencyBuild_extraction tests that chart achives
 // are properly extracted
 func Test_HelmInitRecursiveDependencyBuild_extraction(t *testing.T) {
 	o := NewCommonOptionsWithFactory(clients.NewFactory())
@@ -63,4 +63,21 @@ func Test_HelmInitRecursiveDependencyBuild_extraction(t *testing.T) {
 		return nil
 	}))
 	require.Equal(t, expected, found, "wrong files extracted")
+}
+
+// Test_HelmInitDependencyBuild_lint tests that the lint phase
+// passes the required variables
+func Test_HelmInitDependencyBuild_lint(t *testing.T) {
+	o := NewCommonOptionsWithFactory(clients.NewFactory())
+
+	dir, err := ioutil.TempDir("", "lint_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	dirChart := filepath.Join(dir, "lint")
+	err = util.CopyDir("test_data/lint", dirChart, true)
+	require.NoError(t, err)
+
+	_, err = o.HelmInitDependencyBuild(dirChart, []string{}, []string{})
+	require.NoError(t, err, "calling HelmInitDependencyBuild")
 }

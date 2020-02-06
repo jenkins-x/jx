@@ -647,7 +647,11 @@ func (h *HelmCLI) StatusReleaseWithOutput(ns string, releaseName string, outputF
 
 // Lint lints the helm chart from the current working directory and returns the warnings in the output
 func (h *HelmCLI) Lint(valuesFiles []string) (string, error) {
-	args := []string{"lint"}
+	args := []string{"lint",
+		"--set", "tags.jx-lint=true",
+		"--set", "global.jxLint=true",
+		"--set-string", "global.jxTypeEnv=lint",
+	}
 	for _, valueFile := range valuesFiles {
 		if valueFile != "" {
 			args = append(args, "--values", valueFile)
