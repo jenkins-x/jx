@@ -777,10 +777,38 @@ func (o *CommonOptions) InstallMinishift() error {
 
 // InstallGcloud installs gcloud cli
 func (o *CommonOptions) InstallGcloud() error {
-	if runtime.GOOS != "darwin" || o.NoBrew {
-		return errors.New("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
+	versionResolver, err := o.GetVersionResolver()
+	if err != nil {
+		return err
 	}
-	return o.RunCommand("brew", "cask", "install", "google-cloud-sdk")
+	stableVersion, err := versionResolver.StableVersionNumber(versionstream.KindPackage, "gcloud")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-%s-%s-x86.tar.gz", stableVersion, runtime.GOOS)
+	if strings.Contains(runtime.GOARCH, "64") {
+		clientURL = fmt.Sprintf("https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-%s-%s-x86_64.tar.gz", stableVersion, runtime.GOOS)
+	}
+	binDir, err := util.JXBinLocation()
+	binary := "gcloud"
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := packages.ShouldInstallBinary(binary)
+	if err != nil || !flag {
+		return err
+	}
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + ".tgz"
+	err = packages.DownloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
 }
 
 // InstallAzureCli installs azure cli
