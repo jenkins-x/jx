@@ -1091,6 +1091,87 @@ func (j *ParsedPipeline) GetPossibleAffinityPolicy(name string) *corev1.Affinity
 	return nil
 }
 
+// StepPlaceholderReplacementArgs specifies the arguments required for replacing placeholders in build pack directories.
+type StepPlaceholderReplacementArgs struct {
+	WorkspaceDir      string
+	GitName           string
+	GitOrg            string
+	GitHost           string
+	DockerRegistryOrg string
+}
+
+// ReplacePlaceholdersInStepAndStageDirs traverses this pipeline's stages and any nested stages for any steps (and any nested steps)
+// within the stages, and replaces "REPLACE_ME_..." placeholders in those steps' directories.
+func (j *ParsedPipeline) ReplacePlaceholdersInStepAndStageDirs(args StepPlaceholderReplacementArgs) {
+	var stages []Stage
+	for _, s := range j.Stages {
+		s.replacePlaceholdersInStage(args)
+		stages = append(stages, s)
+	}
+	j.Stages = stages
+}
+
+func (s *Stage) replacePlaceholdersInStage(args StepPlaceholderReplacementArgs) {
+	var steps []Step
+	var stages []Stage
+	var parallel []Stage
+	for _, step := range s.Steps {
+		step.replacePlaceholdersInStep(args)
+		steps = append(steps, step)
+	}
+	for _, nested := range s.Stages {
+		nested.replacePlaceholdersInStage(args)
+		stages = append(stages, nested)
+	}
+	for _, p := range s.Parallel {
+		p.replacePlaceholdersInStage(args)
+		parallel = append(parallel, p)
+	}
+	s.Steps = steps
+	s.Stages = stages
+	s.Parallel = parallel
+}
+
+func (s *Step) replacePlaceholdersInStep(args StepPlaceholderReplacementArgs) {
+	if s.GetCommand() != "" {
+		dir := args.WorkspaceDir
+
+		if s.Dir != "" {
+			dir = s.Dir
+		}
+		// Replace the Go buildpack path with the correct location for Tekton builds.
+		dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", args.WorkspaceDir, -1)
+
+		dir = strings.Replace(dir, util.PlaceHolderAppName, args.GitName, -1)
+		dir = strings.Replace(dir, util.PlaceHolderOrg, args.GitOrg, -1)
+		dir = strings.Replace(dir, util.PlaceHolderGitProvider, strings.ToLower(args.GitHost), -1)
+		dir = strings.Replace(dir, util.PlaceHolderDockerRegistryOrg, args.DockerRegistryOrg, -1)
+
+		if strings.HasPrefix(dir, "./") {
+			dir = args.WorkspaceDir + strings.TrimPrefix(dir, ".")
+		}
+		if !filepath.IsAbs(dir) {
+			dir = filepath.Join(args.WorkspaceDir, dir)
+		}
+
+		s.Dir = dir
+	}
+	var steps []*Step
+	for _, nested := range s.Steps {
+		nested.replacePlaceholdersInStep(args)
+		steps = append(steps, nested)
+	}
+	s.Steps = steps
+	if s.Loop != nil {
+		var loopSteps []Step
+		for _, nested := range s.Loop.Steps {
+			nested.replacePlaceholdersInStep(args)
+			loopSteps = append(loopSteps, nested)
+		}
+		s.Loop.Steps = loopSteps
+	}
+}
+
 // AddContainerEnvVarsToPipeline allows for adding a slice of container environment variables directly to the
 // pipeline, if they're not already defined.
 func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) {

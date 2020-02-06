@@ -426,6 +426,15 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 		}
 	}
 
+	// Replace placeholders in directories.
+	replacePlaceholderArgs := syntax.StepPlaceholderReplacementArgs{
+		WorkspaceDir:      o.getWorkspaceDir(),
+		GitName:           o.GitInfo.Name,
+		GitOrg:            o.GitInfo.Organisation,
+		GitHost:           o.GitInfo.Host,
+		DockerRegistryOrg: o.GetDockerRegistryOrg(projectConfig, o.GitInfo),
+	}
+	parsed.ReplacePlaceholdersInStepAndStageDirs(replacePlaceholderArgs)
 	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
 
 	if pipelineConfig.ContainerOptions != nil {

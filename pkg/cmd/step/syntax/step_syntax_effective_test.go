@@ -463,8 +463,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 						Pipeline: sht.ParsedPipeline(
 							sht.PipelineAgent("go"),
 							sht.PipelineStage("from-build-pack",
-								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
-								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build"), sht.StepDir("/workspace/source")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build"), sht.StepDir("/workspace/source")),
 							),
 						),
 					},
@@ -472,8 +472,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 						Pipeline: sht.ParsedPipeline(
 							sht.PipelineAgent("go"),
 							sht.PipelineStage("from-build-pack",
-								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
-								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build"), sht.StepDir("/workspace/source")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build"), sht.StepDir("/workspace/source")),
 							),
 						),
 					},
@@ -481,8 +481,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 						Pipeline: sht.ParsedPipeline(
 							sht.PipelineAgent("go"),
 							sht.PipelineStage("from-build-pack",
-								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
-								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build"), sht.StepDir("/workspace/source")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build"), sht.StepDir("/workspace/source")),
 							),
 						),
 					},
@@ -515,8 +515,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineEnvVar("FRUIT", "BANANA"),
 							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 							sht.PipelineStage("from-build-pack",
-								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
-								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build"), sht.StepDir("/workspace/source")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build"), sht.StepDir("/workspace/source")),
 							),
 						),
 					},
@@ -526,8 +526,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineEnvVar("FRUIT", "BANANA"),
 							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 							sht.PipelineStage("from-build-pack",
-								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
-								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build"), sht.StepDir("/workspace/source")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build"), sht.StepDir("/workspace/source")),
 							),
 						),
 					},
@@ -537,8 +537,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineEnvVar("FRUIT", "BANANA"),
 							sht.PipelineEnvVar("GIT_AUTHOR_NAME", "somebodyelse"),
 							sht.PipelineStage("from-build-pack",
-								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build")),
-								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build")),
+								sht.StageStep(sht.StepCmd("make build"), sht.StepName("build"), sht.StepDir("/workspace/source")),
+								sht.StageStep(sht.StepCmd("jx step helm build"), sht.StepName("helm-build"), sht.StepDir("/workspace/source")),
 							),
 						),
 					},
@@ -831,7 +831,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 							sht.PipelineAgent("maven"),
 							sht.PipelineStage("build",
 								sht.StageStep(sht.StepCmd("source /root/.bashrc && flake8"), sht.StepImage("maven"),
-									sht.StepDir("/workspace/source"), sht.StepName("flake8")),
+									sht.StepDir("/workspace/source/jx-demo-qs"), sht.StepName("flake8")),
 							),
 						),
 					},
@@ -839,9 +839,9 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 						Pipeline: sht.ParsedPipeline(
 							sht.PipelineAgent("maven"),
 							sht.PipelineStage("build",
-								sht.StageStep(sht.StepCmd("source /root/.bashrc && flake8"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
+								sht.StageStep(sht.StepCmd("source /root/.bashrc && flake8"), sht.StepImage("maven"), sht.StepDir("/workspace/source/jx-demo-qs"),
 									sht.StepName("flake8")),
-								sht.StageStep(sht.StepCmd("echo hi there"), sht.StepName("hi-there")),
+								sht.StageStep(sht.StepCmd("echo hi there"), sht.StepName("hi-there"), sht.StepDir("/workspace/source")),
 							),
 						),
 					},
@@ -932,8 +932,6 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				t.Fatalf("Error creating canonical pipeline: %s", err)
 			}
 			if d, _ := kmp.SafeDiff(tt.expected, newConfig, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
-				cy, _ := yaml.Marshal(newConfig)
-				t.Logf("NEW CONFIG: %s", cy)
 				t.Errorf("Generated canonical pipeline does not match expected:\n%s", d)
 			}
 		})
