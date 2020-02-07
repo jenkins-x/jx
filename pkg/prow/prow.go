@@ -2,7 +2,6 @@ package prow
 
 import (
 	"encoding/json"
-	//"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -156,14 +155,14 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "promotion"
 	ps.Agent = o.Agent
-	ps.Branches = []string{"master"}
+	ps.Branches = []string{"^master$"}
 
 	return ps
 }
 
 func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps := config.Postsubmit{}
-	ps.Branches = []string{"master"}
+	ps.Branches = []string{"^master$"}
 	ps.Name = "release"
 	ps.Agent = o.Agent
 
@@ -602,7 +601,8 @@ func (o *Options) GetReleaseJobs() ([]string, error) {
 		for _, q := range p {
 			for _, b := range q.Branches {
 				repo = strings.Replace(repo, ":", "", -1)
-				jobName := fmt.Sprintf("%s/%s", repo, b)
+				branch := prowBranchConfigToGitBranchName(b)
+				jobName := fmt.Sprintf("%s/%s", repo, branch)
 				if o.IgnoreBranch {
 					jobName = repo
 				}
@@ -627,12 +627,16 @@ func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit,
 	}
 
 	key := fmt.Sprintf("%s/%s", org, repo)
-	for _, p := range prowConfig.Postsubmits[key] {
+	postsubmits := prowConfig.Postsubmits[key]
 
-		for _, a := range p.Branches {
-			if a == branch {
-				return p, nil
-			}
+	err = config.SetPostsubmitRegexes(postsubmits)
+	if err != nil {
+		return p, errors.Wrap(err, "compiling prow postsubmit regexes")
+	}
+
+	for _, p := range postsubmits {
+		if p.Brancher.ShouldRun(branch) {
+			return p, nil
 		}
 	}
 	return p, fmt.Errorf("no prow config build spec found for %s/%s/%s", org, repo, branch)
@@ -650,4 +654,12 @@ func CreateProwJob(client kubernetes.Interface, ns string, j prowapi.ProwJob) (p
 		return retJob, fmt.Errorf("creating prowjob %v: %s", err, string(resp))
 	}
 	return retJob, err
+}
+
+// prowBranchConfigToGitBranchName converts a (prow) branch (regex)
+// into a git branch name
+func prowBranchConfigToGitBranchName(b string) string {
+	branch := strings.TrimLeft(b, "^")
+	branch = strings.TrimRight(branch, "$")
+	return branch
 }

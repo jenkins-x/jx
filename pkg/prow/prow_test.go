@@ -492,6 +492,7 @@ func TestGetPostSubmitJob(t *testing.T) {
 
 	assert.NotEmpty(t, job.Name, "job name is empty")
 	assert.Equal(t, "release", job.Name)
+	assert.Contains(t, job.Branches, "^master$")
 }
 
 func getProwConfig(t *testing.T, o TestOptions) (*config.Config, error) {
