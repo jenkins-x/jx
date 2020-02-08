@@ -142,7 +142,10 @@ func (o *GetBuildLogsOptions) Run() error {
 		return err
 	}
 
-	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
+	devEnv, err := kube.GetDevEnvironment(jxClient, ns)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get dev environment in namespace %s", ns)
+	}
 	if devEnv == nil {
 		return fmt.Errorf("No development environment found for namespace %s", ns)
 	}
