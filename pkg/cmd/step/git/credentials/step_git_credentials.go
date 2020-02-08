@@ -123,9 +123,17 @@ func (o *StepGitCredentialsOptions) Run() error {
 		return err
 	}
 
-	if gha && o.GitHubAppOwner == "" {
-		log.Logger().Infof("this command does nothing if using github app mode and no %s option specified", optionGitHubAppOwner)
-		return nil
+	if gha {
+		log.Logger().Info("Running in GitHub App mode")
+	} else {
+		log.Logger().Info("Not running in GitHub App mode")
+	}
+
+	if !o.CredentialHelper {
+		if gha && o.GitHubAppOwner == "" {
+			log.Logger().Infof("this command does nothing if using github app mode and no %s option specified", optionGitHubAppOwner)
+			return nil
+		}
 	}
 
 	var authConfigSvc auth.ConfigService
