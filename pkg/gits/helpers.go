@@ -719,7 +719,9 @@ func configureJxAsGitCredentialHelper(dir string, gitter Gitter) error {
 	if err != nil {
 		return errors.Wrapf(err, "unable to determine jx binary location")
 	}
-	return gitter.Config(dir, "--local", "credential.helper", fmt.Sprintf("%s step git credentials --credential-helper", jxProcessBinary))
+	config := []string{"--local", "credential.helper", fmt.Sprintf("%s step git credential-helper", jxProcessBinary)}
+	log.Logger().Infof("setting git config to '%s'", strings.Join(config, " "))
+	return gitter.Config(dir, config...)
 }
 
 // AddUserToURL adds the specified user to the given git URL and returns the new URL.

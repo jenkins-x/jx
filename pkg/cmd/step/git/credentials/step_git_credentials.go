@@ -37,7 +37,6 @@ type StepGitCredentialsOptions struct {
 	GitHubAppOwner    string
 	GitKind           string
 	CredentialsSecret string
-	CredentialHelper  bool
 }
 
 var (
@@ -52,9 +51,6 @@ var (
 
 		# generate the Git credentials to a output file
 		jx step git credentials -o /tmp/mycreds
-
-		# respond to a gitcredentials request
-		jx step git credentials --credential-helper
 `)
 )
 
@@ -80,7 +76,6 @@ func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.GitHubAppOwner, optionGitHubAppOwner, "g", "", "The owner (organisation or user name) if using GitHub App based tokens")
 	cmd.Flags().StringVarP(&options.CredentialsSecret, "credentials-secret", "s", "", "The secret name to read the credentials from")
 	cmd.Flags().StringVarP(&options.GitKind, "git-kind", "", "", "The git kind. e.g. github, bitbucketserver etc")
-	cmd.Flags().BoolVar(&options.CredentialHelper, "credential-helper", false, "respond to a gitcredentials request")
 	return cmd
 }
 
@@ -129,11 +124,9 @@ func (o *StepGitCredentialsOptions) Run() error {
 		log.Logger().Info("Not running in GitHub App mode")
 	}
 
-	if !o.CredentialHelper {
-		if gha && o.GitHubAppOwner == "" {
-			log.Logger().Infof("this command does nothing if using github app mode and no %s option specified", optionGitHubAppOwner)
-			return nil
-		}
+	if gha && o.GitHubAppOwner == "" {
+		log.Logger().Infof("this command does nothing if using github app mode and no %s option specified", optionGitHubAppOwner)
+		return nil
 	}
 
 	var authConfigSvc auth.ConfigService
@@ -152,19 +145,6 @@ func (o *StepGitCredentialsOptions) Run() error {
 	credentials, err := o.CreateGitCredentialsFromAuthService(authConfigSvc)
 	if err != nil {
 		return errors.Wrap(err, "creating git credentials")
-	}
-
-	if o.CredentialHelper {
-		helper, err := credentialhelper.CreateGitCredentialsHelper(os.Stdin, os.Stdout, credentials)
-		if err != nil {
-			return errors.Wrap(err, "unable to create git credential helper")
-		}
-		// the credential helper operation (get|store|remove) is passed as last argument to the helper
-		err = helper.Run(os.Args[len(os.Args)-1])
-		if err != nil {
-			return err
-		}
-		return nil
 	}
 
 	outFile, err = o.determineOutputFile()

@@ -1,0 +1,158 @@
+package credentialhelper
+
+import (
+	"os"
+
+	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/gits/credentialhelper"
+	"github.com/pkg/errors"
+
+	"github.com/jenkins-x/jx/pkg/cmd/helper"
+
+	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/spf13/cobra"
+)
+
+const (
+	optionGitHubAppOwner = "github-app-owner"
+)
+
+// StepGitCredentialHelperOptions contains the command line flags
+type StepGitCredentialHelperOptions struct {
+	step.StepOptions
+
+	OutputFile        string
+	GitKind           string
+	GitHubAppOwner    string
+}
+
+var (
+	StepGitCredentialHelperLong = templates.LongDesc(`
+		This pipeline step generates a Git credentials file for the current Git provider secrets
+
+`)
+
+	StepGitCredentialHelperExample = templates.Examples(`
+		# respond to a git credentials request
+		jx step git credentials-helper
+`)
+)
+
+func NewCmdStepGitCredentialHelper(commonOpts *opts.CommonOptions) *cobra.Command {
+	options := StepGitCredentialHelperOptions{
+		StepOptions: step.StepOptions{
+			CommonOptions: commonOpts,
+		},
+	}
+	cmd := &cobra.Command{
+		Use:     "credential-helper",
+		Short:   "Creates a Git credentials helper",
+		Long:    StepGitCredentialHelperLong,
+		Example: StepGitCredentialHelperExample,
+		Run: func(cmd *cobra.Command, args []string) {
+			options.Cmd = cmd
+			options.Args = args
+			err := options.Run()
+			helper.CheckErr(err)
+		},
+	}
+	cmd.Flags().StringVarP(&options.GitKind, "git-kind", "", "", "The git kind. e.g. github, bitbucketserver etc")
+	cmd.Flags().StringVarP(&options.GitHubAppOwner, optionGitHubAppOwner, "g", "", "The owner (organisation or user name) if using GitHub App based tokens")
+
+	return cmd
+}
+
+func (o *StepGitCredentialHelperOptions) Run() error {
+	gha, err := o.IsGitHubAppMode()
+	if err != nil {
+		return err
+	}
+
+	if gha {
+		log.Logger().Info("Running in GitHub App mode")
+	} else {
+		log.Logger().Info("Not running in GitHub App mode")
+	}
+
+	var authConfigSvc auth.ConfigService
+	if gha {
+		authConfigSvc, err = o.GitAuthConfigServiceGitHubAppMode(o.GitKind)
+		if err != nil {
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubAppMode")
+		}
+	} else {
+		authConfigSvc, err = o.GitAuthConfigService()
+		if err != nil {
+			return errors.Wrap(err, "when creating auth config service using GitAuthConfigService")
+		}
+	}
+
+	credentials, err := o.CreateGitCredentialsFromAuthService(authConfigSvc)
+	if err != nil {
+		return errors.Wrap(err, "creating git credentials")
+	}
+
+	helper, err := credentialhelper.CreateGitCredentialsHelper(os.Stdin, os.Stdout, credentials)
+	if err != nil {
+		return errors.Wrap(err, "unable to create git credential helper")
+	}
+
+	// the credential helper operation (get|store|remove) is passed as last argument to the helper
+	err = helper.Run(os.Args[len(os.Args)-1])
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreateGitCredentialsFromAuthService creates the git credentials using the auth config service
+func (o *StepGitCredentialHelperOptions) CreateGitCredentialsFromAuthService(authConfigSvc auth.ConfigService) ([]credentialhelper.GitCredential, error) {
+	var credentialList []credentialhelper.GitCredential
+
+	cfg := authConfigSvc.Config()
+	if cfg == nil {
+		return nil, errors.New("no git auth config found")
+	}
+
+	for _, server := range cfg.Servers {
+		var auths []*auth.UserAuth
+		if o.GitHubAppOwner != "" {
+			auths = server.Users
+		} else {
+			gitAuth := server.CurrentAuth()
+			if gitAuth == nil {
+				continue
+			} else {
+				auths = append(auths, gitAuth)
+			}
+		}
+		for _, gitAuth := range auths {
+			if o.GitHubAppOwner != "" && gitAuth.GithubAppOwner != o.GitHubAppOwner {
+				continue
+			}
+			username := gitAuth.Username
+			password := gitAuth.ApiToken
+			if password == "" {
+				password = gitAuth.BearerToken
+			}
+			if password == "" {
+				password = gitAuth.Password
+			}
+			if username == "" || password == "" {
+				log.Logger().Warnf("Empty auth config for git service URL %q", server.URL)
+				continue
+			}
+
+			credential, err := credentialhelper.CreateGitCredentialFromURL(server.URL, username, password)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid git auth information")
+			}
+
+			credentialList = append(credentialList, credential)
+		}
+	}
+	return credentialList, nil
+}
