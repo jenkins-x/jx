@@ -24,23 +24,23 @@ const (
 type StepGitCredentialHelperOptions struct {
 	step.StepOptions
 
-	OutputFile        string
-	GitKind           string
-	GitHubAppOwner    string
+	GitKind        string
+	GitHubAppOwner string
 }
 
 var (
-	StepGitCredentialHelperLong = templates.LongDesc(`
+	stepGitCredentialHelperLong = templates.LongDesc(`
 		This pipeline step generates a Git credentials file for the current Git provider secrets
 
 `)
 
-	StepGitCredentialHelperExample = templates.Examples(`
+	stepGitCredentialHelperExample = templates.Examples(`
 		# respond to a git credentials request
 		jx step git credentials-helper
 `)
 )
 
+// NewCmdStepGitCredentialHelper creates a new command
 func NewCmdStepGitCredentialHelper(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitCredentialHelperOptions{
 		StepOptions: step.StepOptions{
@@ -50,8 +50,8 @@ func NewCmdStepGitCredentialHelper(commonOpts *opts.CommonOptions) *cobra.Comman
 	cmd := &cobra.Command{
 		Use:     "credential-helper",
 		Short:   "Creates a Git credentials helper",
-		Long:    StepGitCredentialHelperLong,
-		Example: StepGitCredentialHelperExample,
+		Long:    stepGitCredentialHelperLong,
+		Example: stepGitCredentialHelperExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -65,6 +65,7 @@ func NewCmdStepGitCredentialHelper(commonOpts *opts.CommonOptions) *cobra.Comman
 	return cmd
 }
 
+// Run the main function
 func (o *StepGitCredentialHelperOptions) Run() error {
 	gha, err := o.IsGitHubAppMode()
 	if err != nil {
