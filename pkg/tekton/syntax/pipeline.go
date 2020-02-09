@@ -1110,31 +1110,47 @@ type StepPlaceholderReplacementArgs struct {
 	UseKaniko         bool
 }
 
+func (p *StepPlaceholderReplacementArgs) workingDirAsPointer() *string {
+	// TODO: Is there a better way to ensure that we're creating a pointer of a copy of the string?
+	copyOfWorkingDir := p.WorkspaceDir
+	return &copyOfWorkingDir
+}
+
 // ReplacePlaceholdersInStepAndStageDirs traverses this pipeline's stages and any nested stages for any steps (and any nested steps)
 // within the stages, and replaces "REPLACE_ME_..." placeholders in those steps' directories.
 func (j *ParsedPipeline) ReplacePlaceholdersInStepAndStageDirs(args StepPlaceholderReplacementArgs) {
 	var stages []Stage
 	for _, s := range j.Stages {
-		s.replacePlaceholdersInStage(args)
+		s.replacePlaceholdersInStage(j.WorkingDir, args)
 		stages = append(stages, s)
 	}
 	j.Stages = stages
 }
 
-func (s *Stage) replacePlaceholdersInStage(args StepPlaceholderReplacementArgs) {
+func (s *Stage) replacePlaceholdersInStage(parentDir *string, args StepPlaceholderReplacementArgs) {
 	var steps []Step
 	var stages []Stage
 	var parallel []Stage
+	// If there's no working directory and this stage contains steps, we should set a stage directory
+	if s.WorkingDir == nil && len(s.Steps) > 0 {
+		// If there's no parent working directory, use the default provided.
+		if parentDir == nil {
+			s.WorkingDir = args.workingDirAsPointer()
+		} else {
+			s.WorkingDir = parentDir
+		}
+	}
+	s.WorkingDir = replacePlaceholdersInDir(s.WorkingDir, args)
 	for _, step := range s.Steps {
 		step.replacePlaceholdersInStep(args)
 		steps = append(steps, step)
 	}
 	for _, nested := range s.Stages {
-		nested.replacePlaceholdersInStage(args)
+		nested.replacePlaceholdersInStage(s.WorkingDir, args)
 		stages = append(stages, nested)
 	}
 	for _, p := range s.Parallel {
-		p.replacePlaceholdersInStage(args)
+		p.replacePlaceholdersInStage(s.WorkingDir, args)
 		parallel = append(parallel, p)
 	}
 	s.Steps = steps
@@ -1142,30 +1158,32 @@ func (s *Stage) replacePlaceholdersInStage(args StepPlaceholderReplacementArgs) 
 	s.Parallel = parallel
 }
 
+func replacePlaceholdersInDir(originalDir *string, args StepPlaceholderReplacementArgs) *string {
+	if originalDir == nil || *originalDir == "" {
+		return originalDir
+	}
+	dir := *originalDir
+	// Replace the Go buildpack path with the correct location for Tekton builds.
+	dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", args.WorkspaceDir, -1)
+
+	dir = strings.Replace(dir, util.PlaceHolderAppName, args.GitName, -1)
+	dir = strings.Replace(dir, util.PlaceHolderOrg, args.GitOrg, -1)
+	dir = strings.Replace(dir, util.PlaceHolderGitProvider, strings.ToLower(args.GitHost), -1)
+	dir = strings.Replace(dir, util.PlaceHolderDockerRegistryOrg, args.DockerRegistryOrg, -1)
+
+	if strings.HasPrefix(dir, "./") {
+		dir = args.WorkspaceDir + strings.TrimPrefix(dir, ".")
+	}
+	if !filepath.IsAbs(dir) {
+		dir = filepath.Join(args.WorkspaceDir, dir)
+	}
+	return &dir
+}
+
 func (s *Step) replacePlaceholdersInStep(args StepPlaceholderReplacementArgs) {
 	if s.GetCommand() != "" {
 		s.modifyStep(args)
-		dir := args.WorkspaceDir
-
-		if s.Dir != "" {
-			dir = s.Dir
-		}
-		// Replace the Go buildpack path with the correct location for Tekton builds.
-		dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", args.WorkspaceDir, -1)
-
-		dir = strings.Replace(dir, util.PlaceHolderAppName, args.GitName, -1)
-		dir = strings.Replace(dir, util.PlaceHolderOrg, args.GitOrg, -1)
-		dir = strings.Replace(dir, util.PlaceHolderGitProvider, strings.ToLower(args.GitHost), -1)
-		dir = strings.Replace(dir, util.PlaceHolderDockerRegistryOrg, args.DockerRegistryOrg, -1)
-
-		if strings.HasPrefix(dir, "./") {
-			dir = args.WorkspaceDir + strings.TrimPrefix(dir, ".")
-		}
-		if !filepath.IsAbs(dir) {
-			dir = filepath.Join(args.WorkspaceDir, dir)
-		}
-
-		s.Dir = dir
+		s.Dir = *replacePlaceholdersInDir(&s.Dir, args)
 	}
 	var steps []*Step
 	for _, nested := range s.Steps {
