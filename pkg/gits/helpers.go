@@ -486,6 +486,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	// check whether we are going to change the upstream remote (e.g. on initial boot)
 	upstreamChange := false
 	if dirExists {
+		log.Logger().Debugf("dir %s already exists", dir)
 		d, gitConfig, err := gitter.FindGitConfigDir(dir)
 		if err != nil {
 			return "", "", nil, nil, errors.Wrapf(err, "checking if %s is already a git repository", dir)
@@ -721,7 +722,8 @@ func configureJxAsGitCredentialHelper(dir string, gitter Gitter, repoOwner strin
 	if err != nil {
 		return errors.Wrapf(err, "unable to determine jx binary location")
 	}
-	config := []string{"--local", "credential.helper", fmt.Sprintf("%s step git credentials --credential-helper --github-app-owner %s", jxProcessBinary, repoOwner)}
+	config := []string{"--local", "credential.helper", fmt.Sprintf("%s step git credentials --credential-helper --repo-owner %s", jxProcessBinary, repoOwner)}
+	log.Logger().Debugf("setting git config to: %s", strings.Join(config, " "))
 	return gitter.Config(dir, config...)
 }
 

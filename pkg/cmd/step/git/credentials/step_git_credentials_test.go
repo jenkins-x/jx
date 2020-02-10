@@ -117,9 +117,9 @@ var _ = Describe("step git merge", func() {
 			`)
 
 			options := &StepGitCredentialsOptions{
-				OutputFile:     outFile,
-				GitHubAppOwner: "jstrachan-gh-app",
-				GitKind:        gits.KindGitHub,
+				OutputFile: outFile,
+				RepoOwner:  "jstrachan-gh-app",
+				GitKind:    gits.KindGitHub,
 			}
 
 			credentials, err := options.CreateGitCredentialsFromAuthService(authSvc)
