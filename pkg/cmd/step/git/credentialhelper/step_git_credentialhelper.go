@@ -96,6 +96,8 @@ func (o *StepGitCredentialHelperOptions) Run() error {
 		return errors.Wrap(err, "creating git credentials")
 	}
 
+	log.Logger().Infof("got credential %s", credentials)
+
 	helper, err := credentialhelper.CreateGitCredentialsHelper(os.Stdin, os.Stdout, credentials)
 	if err != nil {
 		return errors.Wrap(err, "unable to create git credential helper")
@@ -119,6 +121,15 @@ func (o *StepGitCredentialHelperOptions) CreateGitCredentialsFromAuthService(aut
 	}
 
 	for _, server := range cfg.Servers {
+		log.Logger().Infof("checking config for server %s at %s", server.Name, server.URL)
+		log.Logger().Infof("found %d user auths", len(server.Users))
+
+		for _, ua := range server.Users {
+			log.Logger().Infof("Username: %s", ua.Username)
+			log.Logger().Infof("GithubAppOwner: %s", ua.GithubAppOwner)
+			log.Logger().Infof("ApiToken: %s", ua.ApiToken)
+		}
+
 		var auths []*auth.UserAuth
 		if o.GitHubAppOwner != "" {
 			auths = server.Users
@@ -130,7 +141,11 @@ func (o *StepGitCredentialHelperOptions) CreateGitCredentialsFromAuthService(aut
 				auths = append(auths, gitAuth)
 			}
 		}
+
+		log.Logger().Infof("Got Auth: %d", len(auths))
+
 		for _, gitAuth := range auths {
+			log.Logger().Infof("Checking : '%s' with %s", o.GitHubAppOwner, gitAuth.GithubAppOwner)
 			if o.GitHubAppOwner != "" && gitAuth.GithubAppOwner != o.GitHubAppOwner {
 				continue
 			}
@@ -155,5 +170,7 @@ func (o *StepGitCredentialHelperOptions) CreateGitCredentialsFromAuthService(aut
 			credentialList = append(credentialList, credential)
 		}
 	}
+
+	log.Logger().Infof("Got Cred List: %d", len(credentialList))
 	return credentialList, nil
 }

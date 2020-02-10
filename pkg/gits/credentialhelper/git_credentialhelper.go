@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/pkg/errors"
 )
 
@@ -77,7 +79,9 @@ func (h *GitCredentialsHelper) Get() error {
 		return errors.Wrap(scanner.Err(), "unable to create GitCredential struct")
 	}
 
+	log.Logger().Infof("filling credentials into answer")
 	answer := h.Fill(gitCredential)
+	log.Logger().Infof("got answer %s", answer)
 
 	_, err = fmt.Fprintf(h.out, answer.String())
 	if err != nil {
@@ -92,14 +96,17 @@ func (h *GitCredentialsHelper) Get() error {
 func (h *GitCredentialsHelper) Fill(queryCredential GitCredential) GitCredential {
 	for _, authCredential := range h.knownCredentials {
 		if queryCredential.Protocol != authCredential.Protocol {
+			log.Logger().Infof("protocol doesn't match: '%s' != '%s'", queryCredential.Protocol, authCredential.Protocol)
 			continue
 		}
 
 		if queryCredential.Host != authCredential.Host {
+			log.Logger().Infof("host doesn't match: '%s' != '%s'", queryCredential.Host, authCredential.Host)
 			continue
 		}
 
 		if queryCredential.Path != authCredential.Path {
+			log.Logger().Infof("path doesn't match: '%s' != '%s'", queryCredential.Path, authCredential.Path)
 			continue
 		}
 
@@ -107,5 +114,6 @@ func (h *GitCredentialsHelper) Fill(queryCredential GitCredential) GitCredential
 		return answer
 	}
 
+	log.Logger().Warn("did not match, returning empty credential")
 	return GitCredential{}
 }
