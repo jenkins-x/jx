@@ -272,7 +272,7 @@ func (o *StepVerifyEnvironmentsOptions) validateGitRepository(name string, requi
 	if gha {
 		authConfigSvc, err = o.GitAuthConfigServiceGitHubAppMode("github")
 		if err != nil {
-			return errors.Wrap(err, "creating git auth config service")
+			return errors.Wrap(err, "creating github app auth config service")
 		}
 	} else {
 		authConfigSvc, err = o.GitAuthConfigService()
@@ -510,9 +510,9 @@ func (o *StepVerifyEnvironmentsOptions) pushDevEnvironmentUpdates(environmentRep
 
 	err = gitter.Push(localRepoDir, remoteName, true, "master")
 	if err != nil {
-		return errors.Wrapf(err, "unable to push %s to %s", localRepoDir, environmentRepo.URL)
+		return errors.Wrapf(err, "unable to push %s to %s", localRepoDir, environmentRepo.CloneURL)
 	}
-	log.Logger().Infof("Pushed Git repository to %s\n\n", util.ColorInfo(environmentRepo.HTMLURL))
+	log.Logger().Infof("Pushed Git repository to %s", util.ColorInfo(environmentRepo.HTMLURL))
 
 	return nil
 }
