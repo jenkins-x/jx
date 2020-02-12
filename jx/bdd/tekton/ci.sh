@@ -37,6 +37,7 @@ export XDG_CONFIG_HOME=$JX_HOME
 
 echo "running the BDD tests with JX_HOME = $JX_HOME"
 jx step bdd --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
+  --test-git-repo https://github.com/abayer/bdd-jx.git \
   --config jx/bdd/tekton/cluster.yaml \
   --gopath /tmp  \
   --git-provider=github \

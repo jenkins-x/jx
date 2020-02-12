@@ -72,6 +72,7 @@ helm repo add jenkins-x https://storage.googleapis.com/chartmuseum.jenkins-x.io
 sed -i "s/builder-go.*/&:$VERSION/g" jenkins-x.yml
 
 jx step bdd \
+    --test-git-repo https://github.com/abayer/bdd-jx.git \
     --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
     --config ../jx/bdd/boot-vault/cluster.yaml \
     --gopath /tmp \
