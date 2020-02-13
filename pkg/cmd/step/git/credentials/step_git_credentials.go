@@ -87,6 +87,7 @@ func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.CredentialsSecret, "credentials-secret", "s", "", "The secret name to read the credentials from")
 	cmd.Flags().StringVarP(&options.GitKind, "git-kind", "", "", "The git kind. e.g. github, bitbucketserver etc")
 	cmd.Flags().BoolVar(&options.CredentialHelper, "credential-helper", false, "respond to a gitcredentials request")
+
 	return cmd
 }
 
@@ -152,7 +153,7 @@ func (o *StepGitCredentialsOptions) Run() error {
 		}
 	}
 
-	credentials, err := o.CreateGitCredentialsFromAuthService(authConfigSvc)
+	credentials, err := o.CreateGitCredentialsFromAuthService(authConfigSvc, gha)
 	if err != nil {
 		return errors.Wrap(err, "creating git credentials")
 	}
@@ -230,7 +231,7 @@ func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, cr
 }
 
 // CreateGitCredentialsFromAuthService creates the git credentials using the auth config service
-func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConfigSvc auth.ConfigService) ([]credentialhelper.GitCredential, error) {
+func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConfigSvc auth.ConfigService, githubAppEnabled bool) ([]credentialhelper.GitCredential, error) {
 	var credentialList []credentialhelper.GitCredential
 
 	cfg := authConfigSvc.Config()
@@ -240,7 +241,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConf
 
 	for _, server := range cfg.Servers {
 		var auths []*auth.UserAuth
-		if o.RepoOwner != "" {
+		if githubAppEnabled && o.RepoOwner != "" {
 			auths = server.Users
 		} else {
 			gitAuth := server.CurrentAuth()
@@ -251,7 +252,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFromAuthService(authConf
 			}
 		}
 		for _, gitAuth := range auths {
-			if o.RepoOwner != "" && gitAuth.GithubAppOwner != o.RepoOwner {
+			if githubAppEnabled && o.RepoOwner != "" && gitAuth.GithubAppOwner != o.RepoOwner {
 				continue
 			}
 			username := gitAuth.Username
