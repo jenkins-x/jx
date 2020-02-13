@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/auth"
+
 	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
 
 	"github.com/jenkins-x/jx/pkg/cmd/create/options"
@@ -869,12 +871,24 @@ func (o *CreateDevPodOptions) Run() error {
 
 		// Only add git secrets to the Theia container when sync flag is missing (otherwise Theia container won't exist)
 		if !o.Sync {
-			// Add Git Secrets to Theia container
-			gitAuthSvc, err := o.GitAuthConfigService()
+			gha, err := o.IsGitHubAppMode()
 			if err != nil {
-				return errors.Wrap(err, "creating git auth config service")
+				return err
 			}
-			gitCredentials, err := o.GitCredentials.CreateGitCredentialsFromAuthService(gitAuthSvc)
+			// Add Git Secrets to Theia container
+			var authConfigSvc auth.ConfigService
+			if gha {
+				authConfigSvc, err = o.GitAuthConfigServiceGitHubAppMode("")
+				if err != nil {
+					return errors.Wrap(err, "when creating auth config service using GitAuthConfigServiceGitHubAppMode")
+				}
+			} else {
+				authConfigSvc, err = o.GitAuthConfigService()
+				if err != nil {
+					return errors.Wrap(err, "when creating auth config service using GitAuthConfigService")
+				}
+			}
+			gitCredentials, err := o.GitCredentials.CreateGitCredentialsFromAuthService(authConfigSvc, gha)
 			if err != nil {
 				return errors.Wrap(err, "creating git credentials")
 			}
