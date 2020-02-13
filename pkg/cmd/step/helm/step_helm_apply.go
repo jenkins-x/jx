@@ -51,6 +51,9 @@ var (
 		Applies the helm chart in a given directory.
 
 		This step is usually used to apply any GitOps promotion changes into a Staging or Production cluster.
+
+        Environment Variables:
+		- JX_NO_DELETE_TMP_DIR="true" - prevents the removal of the temporary directory.
 `)
 
 	StepHelmApplyExample = templates.Examples(`
