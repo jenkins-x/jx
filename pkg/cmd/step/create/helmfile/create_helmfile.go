@@ -97,18 +97,13 @@ func (o *CreateHelmfileOptions) Run() error {
 		return err
 	}
 
-	if len(o.valueFiles) == 0 {
-		secretsYaml := os.Getenv("JX_SECRETS_YAML")
-		if secretsYaml == "" {
-			return fmt.Errorf("no option --values is specified and there is no $JX_SECRETS_YAML environment variable")
-		}
+	o.valueFiles = append(o.valueFiles, "../jx-requirements.values.yaml.gotmpl")
 
-		// lets use the default values
-		o.valueFiles = []string{
-			secretsYaml,
-			"../jx-requirements.values.yaml.gotmpl",
-		}
+	secretsYaml := os.Getenv("JX_SECRETS_YAML")
+	if secretsYaml != "" {
+		o.valueFiles = append(o.valueFiles, secretsYaml)
 	}
+
 	err = o.ensureJxRequirementsYamlExists(ec.Requirements)
 	if err != nil {
 		return err
