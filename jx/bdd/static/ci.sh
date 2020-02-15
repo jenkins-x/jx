@@ -46,8 +46,11 @@ git config --global --add user.email jenkins-x@googlegroups.com
 # Disable checking that the PipelineActivity has been updated by the build controller properly, since we're not using the build controller with static masters.
 export BDD_DISABLE_PIPELINEACTIVITY_CHECK=true
 
+git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
+cd boot-source
+
 # lets trigger the BDD tests in a clusterand git provider
-jx step bdd -b \
+jx step bdd \
   --config jx/bdd/static/cluster.yaml \
   --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
   --provider=gke \
