@@ -41,7 +41,7 @@ cd boot-source
 echo "running the BDD tests with JX_HOME = $JX_HOME"
 jx step bdd \
   --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
-  --config jx/bdd/tekton/cluster.yaml \
+  --config ../jx/bdd/tekton/cluster.yaml \
   --gopath /tmp  \
   --git-provider=github \
   --git-username $GH_USERNAME \

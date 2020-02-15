@@ -51,7 +51,7 @@ cd boot-source
 
 # lets trigger the BDD tests in a clusterand git provider
 jx step bdd \
-  --config jx/bdd/static/cluster.yaml \
+  --config ../jx/bdd/static/cluster.yaml \
   --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
   --provider=gke \
   --git-provider=ghe \
