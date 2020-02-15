@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type KubernetesProvider string
@@ -18,9 +19,10 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running create cluster
 type CreateClusterOptions struct {
 	options.CreateOptions
-	Provider       string
-	InstallOptions InstallOptions
-	Flags          initcmd.InitFlags
+	Provider         string
+	InstallOptions   InstallOptions
+	Flags            initcmd.InitFlags
+	SkipInstallation bool `mapstructure:"skip-installation"`
 }
 
 const (
@@ -118,6 +120,8 @@ func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	o.InstallOptions.AddInstallFlags(cmd, true)
+	cmd.Flags().BoolVarP(&o.SkipInstallation, optionSkipInstallation, "", false, "Provision cluster only, don't install Jenkins X into it")
+	_ = viper.BindPFlag(optionSkipInstallation, cmd.Flags().Lookup(optionSkipInstallation))
 }
 
 func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider string) CreateClusterOptions {
