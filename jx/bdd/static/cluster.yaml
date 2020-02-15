@@ -11,3 +11,8 @@ clusters:
       - --max-num-nodes=5
       - -z=europe-west1-c
       - --skip-login
+    commands:
+      - command: jx
+        args:
+          - boot
+          - -b

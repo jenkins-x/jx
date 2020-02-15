@@ -31,6 +31,7 @@ const (
 	optionCluster           = "cluster"
 	optionClusterName       = "cluster-name"
 	optionCloudProvider     = "cloud-provider"
+	optionSkipInstallation  = "skip-installation"
 )
 
 const (
@@ -120,7 +121,7 @@ func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	o.InstallOptions.AddInstallFlags(cmd, true)
-	cmd.Flags().BoolVarP(&o.SkipInstallation, optionSkipInstallation, "", false, "Provision cluster only, don't install Jenkins X into it")
+	cmd.Flags().BoolVarP(&o.SkipInstallation, optionSkipInstallation, "", true, "Provision cluster only, don't install Jenkins X into it")
 	_ = viper.BindPFlag(optionSkipInstallation, cmd.Flags().Lookup(optionSkipInstallation))
 }
 

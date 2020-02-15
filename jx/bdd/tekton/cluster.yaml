@@ -14,6 +14,10 @@ clusters:
     commands:
       - command: jx
         args:
+          - boot
+          - -b
+      - command: jx
+        args:
           - step
           - git
           - credentials
