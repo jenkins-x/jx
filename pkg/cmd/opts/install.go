@@ -227,31 +227,70 @@ func (o *CommonOptions) InstallKustomize() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.RunCommand("brew", "install", "kustomize")
 	}
+
 	binDir, err := util.JXBinLocation()
 	if err != nil {
-		return err
-	}
-	fileName, flag, err := packages.ShouldInstallBinary("kustomize")
-	if err != nil || !flag {
-		return err
+		return errors.Wrapf(err, "unable to find JXBinLocation")
 	}
 
-	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes-sigs", "kustomize")
+	fullBinaryPath := filepath.Join(binDir, "kustomize")
+	exists, err := util.FileExists(fullBinaryPath)
 	if err != nil {
-		return fmt.Errorf("unable to get latest version for github.com/%s/%s %v", "kubernetes-sigs", "kustomize", err)
+		return errors.Wrapf(err, "unable to verify if binary exists")
+	}
+	if exists {
+		log.Logger().Debugf("binary %s already exists", fullBinaryPath)
+		return nil
 	}
 
-	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
-	tmpFile := fullPath + ".tmp"
-	err = packages.DownloadFile(clientURL, tmpFile)
+	// get the stable jx supported version of kustomize to be install
+	versionResolver, err := o.GetVersionResolver()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to retrieve version resolver")
 	}
-	err = util.RenameFile(tmpFile, fullPath)
+
+	stableVersion, err := versionResolver.StableVersion(versionstream.KindPackage, "kustomize")
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to get stable version from the jenkins-x-versions for github.com/%s/%s %v ", "kubernetes-sigs", "kustomize", err)
 	}
+
+	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%%2Fv%s/kustomize_v%s_%s_%s.tar.gz", stableVersion.Version, stableVersion.Version, runtime.GOOS, runtime.GOARCH)
+	tmpDir := filepath.Join(binDir, "kustomize.tmp")
+	err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create tmp directory")
+	}
+
+	defer func() {
+		err = os.RemoveAll(tmpDir)
+		if err != nil {
+			log.Logger().Warnf("Failed to Remove tmp directory: %v", err)
+		}
+	}()
+
+	fullPath := filepath.Join(binDir, "kustomize")
+	tarFile := filepath.Join(tmpDir, "kustomize.tar.gz")
+	defer func() {
+		err = os.Remove(tarFile)
+		if err != nil {
+			log.Logger().Warnf("failed to Remove tarFile : %v", err)
+		}
+	}()
+
+	err = packages.DownloadFile(clientURL, tarFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to Download File")
+	}
+	err = util.UnTargz(tarFile, tmpDir, []string{"kustomize"})
+	if err != nil {
+		return errors.Wrapf(err, "failed to Un-tar file")
+	}
+
+	err = os.Rename(filepath.Join(tmpDir, "kustomize"), fullPath)
+	if err != nil {
+		return errors.Wrapf(err, "failed to rename file")
+	}
+
 	return os.Chmod(fullPath, 0755)
 }
 

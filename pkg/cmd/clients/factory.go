@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/kustomize"
+
 	"github.com/jenkins-x/jx/pkg/config"
 
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
@@ -775,4 +777,9 @@ func (f *factory) CreateCertManagerClient() (certmngclient.Interface, error) {
 		return nil, err
 	}
 	return certmngclient.NewForConfig(config)
+}
+
+// CreateKustomizer creates a Kustomize client
+func (f *factory) CreateKustomizer() kustomize.Kustomizer {
+	return kustomize.NewKustomizeCLI()
 }

@@ -17,6 +17,7 @@ import (
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	helm "github.com/jenkins-x/jx/pkg/helm"
 	secrets "github.com/jenkins-x/jx/pkg/io/secrets"
+	kustomize "github.com/jenkins-x/jx/pkg/kustomize"
 	table "github.com/jenkins-x/jx/pkg/table"
 	util "github.com/jenkins-x/jx/pkg/util"
 	vault "github.com/jenkins-x/jx/pkg/vault"
@@ -418,6 +419,21 @@ func (mock *MockFactory) CreateKubeConfig() (*rest.Config, error) {
 		}
 	}
 	return ret0, ret1
+}
+
+func (mock *MockFactory) CreateKustomizer() kustomize.Kustomizer {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateKustomizer", params, []reflect.Type{reflect.TypeOf((*kustomize.Kustomizer)(nil)).Elem()})
+	var ret0 kustomize.Kustomizer
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(kustomize.Kustomizer)
+		}
+	}
+	return ret0
 }
 
 func (mock *MockFactory) CreateLocalGitAuthConfigService() (auth.ConfigService, error) {
@@ -1277,6 +1293,23 @@ func (c *MockFactory_CreateKubeConfig_OngoingVerification) GetCapturedArguments(
 }
 
 func (c *MockFactory_CreateKubeConfig_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierMockFactory) CreateKustomizer() *MockFactory_CreateKustomizer_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateKustomizer", params, verifier.timeout)
+	return &MockFactory_CreateKustomizer_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockFactory_CreateKustomizer_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockFactory_CreateKustomizer_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockFactory_CreateKustomizer_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockFactory) CreateLocalGitAuthConfigService() *MockFactory_CreateLocalGitAuthConfigService_OngoingVerification {
