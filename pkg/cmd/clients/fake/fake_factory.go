@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/kustomize"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
@@ -392,4 +393,9 @@ func (f *FakeFactory) CreateCertManagerClient() (certmngclient.Interface, error)
 // CreateLocalGitAuthConfigService creates a new service which loads/saves the auth config from/to a local file.
 func (f *FakeFactory) CreateLocalGitAuthConfigService() (auth.ConfigService, error) {
 	return f.GetDelegateFactory().CreateLocalGitAuthConfigService()
+}
+
+// CreateKustomizer creates a Kustomizer client
+func (f *FakeFactory) CreateKustomizer() kustomize.Kustomizer {
+	return f.GetDelegateFactory().CreateKustomizer()
 }

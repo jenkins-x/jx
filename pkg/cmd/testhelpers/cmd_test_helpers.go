@@ -168,17 +168,22 @@ func CreateTestJxHomeDir() (string, string, error) {
 }
 
 // CleanupTestJxHomeDir should be called in a deferred function whenever CreateTestJxHomeDir is called
-func CleanupTestJxHomeDir(originalDir, tempDir string) error {
-	os.Unsetenv("JX_HOME")
-	if originalDir != "" {
-		// Don't delete if it's not a temp dir or if it's the original dir
-		if strings.HasPrefix(tempDir, os.TempDir()) && originalDir != tempDir {
-			err := os.RemoveAll(tempDir)
-			if err != nil {
-				return err
-			}
-		}
+func CleanupTestJxHomeDir(originalDir, tempDir string) (err error) {
+	// Don't delete if it's not a temp dir or if it's the original dir
+	if originalDir != "" && strings.HasPrefix(tempDir, os.TempDir()) && originalDir != tempDir {
+		err = os.Setenv("JX_HOME", originalDir)
 	}
+
+	if err != nil || originalDir == "" {
+		_ = os.Unsetenv("JX_HOME")
+	}
+
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		log.Logger().Warnf("Unable to remove temporary directory %s: %s", tempDir, err)
+		return err
+	}
+
 	return nil
 }
 

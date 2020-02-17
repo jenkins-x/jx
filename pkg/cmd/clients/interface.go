@@ -3,6 +3,8 @@ package clients
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/kustomize"
+
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -165,4 +167,7 @@ type Factory interface {
 
 	// ResetSecretsLocation resets the location of the secrets
 	ResetSecretsLocation()
+
+	// CreateKustomizer creates a kustomize client
+	CreateKustomizer() kustomize.Kustomizer
 }
