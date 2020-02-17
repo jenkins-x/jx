@@ -48,11 +48,18 @@ export JX_BATCH_MODE="true"
 
 # Use the latest boot config promoted in the version stream instead of master to avoid conflicts during boot, because
 # boot fetches always the latest version available in the version stream.
-git clone  https://github.com/jenkins-x/jenkins-x-versions.git versions
-export BOOT_CONFIG_VERSION=$(jx step get dependency-version --host=github.com --owner=jenkins-x --repo=jenkins-x-boot-config --dir versions | sed 's/.*: \(.*\)/\1/')
 git clone https://github.com/jenkins-x/jenkins-x-boot-config.git boot-source
-cd boot-source
-git checkout tags/v${BOOT_CONFIG_VERSION} -b latest-boot-config
+if curl --header 'Accept: application/vnd.github.v3.raw' -O https://api.github.com/repos/abayer/jx-cross-repo-test-configuration/contents/pr-${PULL_NUMBER}.yml; then
+  BOOT_PR=$(yq r pr-${PULL_NUMBER}.yml jenkins-x-boot-config | sed 's/pr-(\d+)/\1/')
+  cd boot-source
+  git fetch origin pull/${BOOT_PR}/head:latest-boot-config
+  git checkout latest-boot-config
+else
+  git clone  https://github.com/jenkins-x/jenkins-x-versions.git
+  export BOOT_CONFIG_VERSION=$(jx step get dependency-version --host=github.com --owner=jenkins-x --repo=jenkins-x-boot-config --dir versions | sed 's/.*: \(.*\)/\1/')
+  cd boot-source
+  git checkout tags/v${BOOT_CONFIG_VERSION} -b latest-boot-config
+fi
 
 cp ../jx/bdd/boot-vault/jx-requirements.yml .
 cp ../jx/bdd/boot-vault/parameters.yaml env
