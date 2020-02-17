@@ -43,6 +43,9 @@ sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_
 git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
+# Disable checking that the PipelineActivity has been updated by the build controller properly, since we're not using the build controller with static masters.
+export BDD_DISABLE_PIPELINEACTIVITY_CHECK=true
+
 # lets trigger the BDD tests in a clusterand git provider
 jx step bdd -b \
   --config jx/bdd/static/cluster.yaml \
