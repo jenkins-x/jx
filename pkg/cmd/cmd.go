@@ -18,11 +18,19 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"runtime"
+	"strconv"
+	"strings"
+	"syscall"
 
 	"github.com/jenkins-x/jx/pkg/cmd/deprecation"
 	"github.com/jenkins-x/jx/pkg/cmd/experimental"
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
 	"github.com/jenkins-x/jx/pkg/cmd/ui"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/boot"
@@ -43,14 +51,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/uninstall"
 	"github.com/jenkins-x/jx/pkg/cmd/update"
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
-
-	"io"
-	"os"
-	"os/exec"
-	"runtime"
-	"strconv"
-	"strings"
-	"syscall"
 
 	"github.com/jenkins-x/jx/pkg/cmd/add"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
@@ -339,6 +339,88 @@ func setLoggingLevel(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+
+	logWarningForRemovalOfStaticMasters(cmd, args)
+}
+
+func logWarningForRemovalOfStaticMasters(cmd *cobra.Command, args []string) {
+	// If we're running in a cluster, just don't do anything. There's no reason to flood the build logs, and BDD tests
+	// can depend on parsing specific output.
+	//if cluster.IsInCluster() {
+	//	return
+	//}
+
+	shouldWarn := false
+
+	clientFactory := clients.NewFactory()
+	jxClient, ns, err := clientFactory.CreateJXClient()
+
+	// If we get an error, work on the assumption that we're just not connected to a cluster, so we'll check if we're
+	// being called in "jx create cluster" with the appropriate flags for spinning up and installing with a static master.
+	if err != nil {
+		if commandHasParentName(cmd, "create cluster") {
+			shouldWarn = isStaticMasterInstall(args)
+		}
+	} else {
+		// If the jxClient is nil, don't bother continuing, something else is wrong enough that it's not worth warning about
+		// removal.
+		if jxClient == nil {
+			return
+		}
+
+		// Try to get the dev env.
+		env, err := jxClient.JenkinsV1().Environments(ns).Get(kube.LabelValueDevEnvironment, metav1.GetOptions{})
+
+		// If we get an error, just ignore it and move on - something else is wrong enough that it's not worth worrying about
+		// whether we should be warning about removal.
+		if err != nil {
+			return
+		}
+
+		// If the environment is nil, then we're not in a functional jx cluster. Check if we're running "jx install" with
+		// the right flags for setting up with a static master.
+		if env == nil {
+			if commandHasParentName(cmd, "install") {
+				shouldWarn = isStaticMasterInstall(args)
+			}
+		} else {
+			// Get the team settings from the dev env.
+			teamSettings := &env.Spec.TeamSettings
+
+			shouldWarn = !teamSettings.IsJenkinsXPipelines()
+		}
+	}
+
+	// If the team settings say we're _not_ running with modern pipelines, log the warning.
+	if shouldWarn {
+		cmd.Println("Jenkins X releases starting on SOME DATE will no longer support static Jenkins masters.")
+		cmd.Println("If you are currently running Jenkins X with static masters, your cluster will still work, but newer versions of Jenkins X will be unable to work with static masters.")
+		cmd.Println("You will not want to upgrade your cluster or your local 'jx' binary past version WHATEVER.")
+	}
+}
+
+func isStaticMasterInstall(args []string) bool {
+	isTekton := false
+	isProw := false
+	isStatic := false
+	isSkipInstall := false
+
+	for _, a := range args {
+		if a == "--tekton" {
+			isTekton = true
+		}
+		if a == "--prow" {
+			isProw = true
+		}
+		if a == "--static-jenkins" {
+			isStatic = true
+		}
+		if a == "--skip-installation" {
+			isSkipInstall = true
+		}
+	}
+
+	return (!isSkipInstall && !(isTekton || isProw)) || isStatic
 }
 
 func runHelp(cmd *cobra.Command, args []string) {
