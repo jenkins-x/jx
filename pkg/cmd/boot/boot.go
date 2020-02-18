@@ -127,12 +127,7 @@ func (o *BootOptions) Run() error {
 		}
 	}
 
-	projectConfig, pipelineFile, err := config.LoadProjectConfig(o.Dir)
-	if err != nil {
-		return err
-	}
-
-	isBootClone, err := existingBootClone(pipelineFile)
+	isBootClone, err := existingBootClone(o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if this is an existing boot clone")
 	}
@@ -183,7 +178,7 @@ func (o *BootOptions) Run() error {
 
 	if !isBootClone {
 		log.Logger().Infof("No Jenkins X pipeline file %s or no jx boot requirements file %s found. You are not running this command from inside a "+
-			"Jenkins X Boot git clone", info(pipelineFile), info(config.RequirementsConfigFileName))
+			"Jenkins X Boot git clone", info(config.ProjectConfigFileName), info(config.RequirementsConfigFileName))
 
 		gitInfo, err := gits.ParseGitURL(gitURL)
 		if err != nil {
@@ -258,18 +253,20 @@ func (o *BootOptions) Run() error {
 			return err
 		}
 
-		projectConfig, pipelineFile, err = config.LoadProjectConfig(o.Dir)
-		if err != nil {
-			return err
-		}
-		bootCloneExists, err = util.FileExists(pipelineFile)
+		pipelineFile := filepath.Join(o.Dir, config.RequirementsConfigFileName)
+		pipelineFileExists, err := util.FileExists(pipelineFile)
 		if err != nil {
 			return err
 		}
 
-		if !bootCloneExists {
+		if !pipelineFileExists {
 			return fmt.Errorf("The cloned repository %s does not include a Jenkins X Pipeline file at %s", gitURL, pipelineFile)
 		}
+	}
+
+	projectConfig, pipelineFile, err := config.LoadProjectConfig(o.Dir)
+	if err != nil {
+		return err
 	}
 
 	if err := o.overrideRequirements(gitURL); err != nil {
@@ -483,12 +480,12 @@ func (o *BootOptions) updateBootCloneIfOutOfDate(gitRef string) error {
 	return nil
 }
 
-func existingBootClone(pipelineFile string) (bool, error) {
-	pipelineExists, err := util.FileExists(pipelineFile)
+func existingBootClone(dir string) (bool, error) {
+	pipelineExists, err := util.FileExists(filepath.Join(dir, config.ProjectConfigFileName))
 	if err != nil {
 		return false, err
 	}
-	requirementsExist, err := util.FileExists(config.RequirementsConfigFileName)
+	requirementsExist, err := util.FileExists(filepath.Join(dir, config.RequirementsConfigFileName))
 	if err != nil {
 		return false, err
 	}
